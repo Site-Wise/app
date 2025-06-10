@@ -6,7 +6,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import { useAuth } from './composables/useAuth';
 import AppLayout from './components/AppLayout.vue';
 

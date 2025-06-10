@@ -1,14 +1,15 @@
 import { ref, computed } from 'vue';
 import { authService } from '../services/pocketbase';
+import type { User } from '../services/pocketbase';
 
-const user = ref(authService.currentUser);
+const user = ref<User | null>(authService.currentUser);
 const isAuthenticated = computed(() => authService.isAuthenticated);
 
 export function useAuth() {
   const login = async (email: string, password: string) => {
     try {
       const authData = await authService.login(email, password);
-      user.value = authData.record;
+      user.value = authData.record as User;
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
