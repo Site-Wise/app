@@ -1,30 +1,30 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <!-- Sidebar -->
-    <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0" 
+    <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0" 
          :class="{ '-translate-x-full': !sidebarOpen, 'translate-x-0': sidebarOpen }">
-      <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+      <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center space-x-2">
-          <HardHat class="h-8 w-8 text-primary-600" />
-          <span class="text-xl font-bold text-gray-900">ConstructTrack</span>
+          <HardHat class="h-8 w-8 text-primary-600 dark:text-primary-400" />
+          <span class="text-xl font-bold text-gray-900 dark:text-white">ConstructTrack</span>
         </div>
         <!-- Close button for mobile -->
         <button
           @click="sidebarOpen = false"
-          class="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          class="lg:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
         >
           <X class="h-5 w-5" />
         </button>
       </div>
       
       <!-- Quick Actions -->
-      <div class="p-4 border-b border-gray-200">
-        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Quick Actions</h3>
+      <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Quick Actions</h3>
         <div class="space-y-2">
           <router-link
             to="/items"
             @click="showQuickModal('item')"
-            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-primary-50 hover:text-primary-700 transition-colors duration-200"
+            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-200"
           >
             <Plus class="mr-2 h-4 w-4" />
             Add Item
@@ -32,7 +32,7 @@
           <router-link
             to="/vendors"
             @click="showQuickModal('vendor')"
-            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-primary-50 hover:text-primary-700 transition-colors duration-200"
+            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-200"
           >
             <Plus class="mr-2 h-4 w-4" />
             Add Vendor
@@ -40,7 +40,7 @@
           <router-link
             to="/incoming"
             @click="showQuickModal('delivery')"
-            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-primary-50 hover:text-primary-700 transition-colors duration-200"
+            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-200"
           >
             <Plus class="mr-2 h-4 w-4" />
             Record Delivery
@@ -48,7 +48,7 @@
           <router-link
             to="/payments"
             @click="showQuickModal('payment')"
-            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-primary-50 hover:text-primary-700 transition-colors duration-200"
+            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-200"
           >
             <Plus class="mr-2 h-4 w-4" />
             Record Payment
@@ -57,14 +57,14 @@
       </div>
       
       <nav class="mt-4 px-4">
-        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Navigation</h3>
+        <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Navigation</h3>
         <div class="space-y-2">
           <router-link
             v-for="item in navigation"
             :key="item.name"
             :to="item.to"
             class="flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200"
-            :class="item.current ? 'bg-primary-100 text-primary-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'"
+            :class="item.current ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'"
             @click="sidebarOpen = false"
           >
             <component :is="item.icon" class="mr-3 h-5 w-5" />
@@ -84,12 +84,12 @@
     <!-- Main content -->
     <div class="lg:pl-64">
       <!-- Top bar -->
-      <div class="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-200">
+      <div class="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
           <div class="flex items-center space-x-4">
             <button
               @click="sidebarOpen = !sidebarOpen"
-              class="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              class="lg:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <Menu class="h-6 w-6" />
             </button>
@@ -98,14 +98,14 @@
             <div class="hidden md:flex items-center space-x-2">
               <button
                 @click="showQuickModal('item')"
-                class="flex items-center px-3 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+                class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
               >
                 <Package class="mr-1 h-4 w-4" />
                 Add Item
               </button>
               <button
                 @click="showQuickModal('delivery')"
-                class="flex items-center px-3 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+                class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
               >
                 <TruckIcon class="mr-1 h-4 w-4" />
                 Record Delivery
@@ -114,25 +114,28 @@
           </div>
           
           <div class="flex items-center space-x-4">
+            <!-- Theme Toggle -->
+            <ThemeToggle />
+            
             <div class="relative" ref="userMenuRef">
               <button
                 @click="userMenuOpen = !userMenuOpen"
-                class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-800"
               >
-                <div class="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center">
+                <div class="h-8 w-8 rounded-full bg-primary-600 dark:bg-primary-500 flex items-center justify-center">
                   <span class="text-white font-medium">{{ userInitials }}</span>
                 </div>
-                <span class="ml-2 text-gray-700">{{ user?.name }}</span>
-                <ChevronDown class="ml-1 h-4 w-4 text-gray-500" />
+                <span class="ml-2 text-gray-700 dark:text-gray-300">{{ user?.name }}</span>
+                <ChevronDown class="ml-1 h-4 w-4 text-gray-500 dark:text-gray-400" />
               </button>
               
               <div
                 v-if="userMenuOpen"
-                class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
+                class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50 border border-gray-200 dark:border-gray-700"
               >
                 <button
                   @click="handleLogout"
-                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                   <LogOut class="inline mr-2 h-4 w-4" />
                   Sign out
@@ -151,18 +154,18 @@
 
     <!-- Quick Action Modal -->
     <div v-if="quickModalType" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <div class="mt-3">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
               {{ quickModalTitle }}
             </h3>
-            <button @click="closeQuickModal" class="text-gray-400 hover:text-gray-600">
+            <button @click="closeQuickModal" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
               <X class="h-5 w-5" />
             </button>
           </div>
           
-          <p class="text-sm text-gray-600 mb-4">
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
             {{ quickModalDescription }}
           </p>
           
@@ -184,6 +187,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
+import ThemeToggle from './ThemeToggle.vue';
 import {
   HardHat,
   BarChart3,

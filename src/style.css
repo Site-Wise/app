@@ -8,33 +8,33 @@
   }
   
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
   }
 }
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800;
   }
   
   .btn-primary {
-    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+    @apply btn bg-primary-600 dark:bg-primary-500 text-white hover:bg-primary-700 dark:hover:bg-primary-600 focus:ring-primary-500 dark:focus:ring-primary-400;
   }
   
   .btn-secondary {
-    @apply btn bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500;
+    @apply btn bg-secondary-600 dark:bg-secondary-500 text-white hover:bg-secondary-700 dark:hover:bg-secondary-600 focus:ring-secondary-500 dark:focus:ring-secondary-400;
   }
   
   .btn-outline {
-    @apply btn bg-white text-gray-700 border-gray-300 hover:bg-gray-50 focus:ring-primary-500;
+    @apply btn bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:ring-primary-500 dark:focus:ring-primary-400;
   }
   
   .input {
-    @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200;
+    @apply block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-primary-500 dark:focus:border-primary-400 transition-colors duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100;
   }
   
   .card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+    @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6;
   }
   
   .status-badge {
@@ -42,18 +42,42 @@
   }
   
   .status-pending {
-    @apply status-badge bg-warning-100 text-warning-800;
+    @apply status-badge bg-warning-100 dark:bg-warning-900/30 text-warning-800 dark:text-warning-300;
   }
   
   .status-paid {
-    @apply status-badge bg-success-100 text-success-800;
+    @apply status-badge bg-success-100 dark:bg-success-900/30 text-success-800 dark:text-success-300;
   }
   
   .status-partial {
-    @apply status-badge bg-primary-100 text-primary-800;
+    @apply status-badge bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300;
   }
   
   .status-overdue {
-    @apply status-badge bg-error-100 text-error-800;
+    @apply status-badge bg-error-100 dark:bg-error-900/30 text-error-800 dark:text-error-300;
+  }
+}
+
+/* Custom scrollbar for dark mode */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-gray-800;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-500;
   }
 }

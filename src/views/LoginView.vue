@@ -1,25 +1,25 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
       <div>
         <div class="flex items-center justify-center">
-          <HardHat class="h-12 w-12 text-primary-600" />
+          <HardHat class="h-12 w-12 text-primary-600 dark:text-primary-400" />
         </div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
           Sign in to ConstructTrack
         </h2>
-        <p class="mt-2 text-center text-sm text-gray-600">
+        <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
           Manage your construction site efficiently
         </p>
       </div>
       
       <div class="card">
         <form @submit.prevent="handleLogin" class="space-y-6">
-          <div v-if="error" class="rounded-md bg-error-50 p-4">
+          <div v-if="error" class="rounded-md bg-error-50 dark:bg-error-900/30 p-4">
             <div class="flex">
-              <AlertCircle class="h-5 w-5 text-error-400" />
+              <AlertCircle class="h-5 w-5 text-error-400 dark:text-error-300" />
               <div class="ml-3">
-                <h3 class="text-sm font-medium text-error-800">
+                <h3 class="text-sm font-medium text-error-800 dark:text-error-300">
                   {{ error }}
                 </h3>
               </div>
@@ -27,7 +27,7 @@
           </div>
 
           <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">
+            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Email address
             </label>
             <div class="mt-1">
@@ -45,7 +45,7 @@
           </div>
 
           <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">
+            <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Password
             </label>
             <div class="mt-1">
@@ -77,10 +77,10 @@
         <div class="mt-6">
           <div class="relative">
             <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-gray-300" />
+              <div class="w-full border-t border-gray-300 dark:border-gray-600" />
             </div>
             <div class="relative flex justify-center text-sm">
-              <span class="px-2 bg-white text-gray-500">New to ConstructTrack?</span>
+              <span class="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">New to ConstructTrack?</span>
             </div>
           </div>
           
@@ -98,10 +98,10 @@
       <!-- Register Form -->
       <div v-if="showRegister" class="card">
         <form @submit.prevent="handleRegister" class="space-y-6">
-          <h3 class="text-lg font-medium text-gray-900">Create Account</h3>
+          <h3 class="text-lg font-medium text-gray-900 dark:text-white">Create Account</h3>
           
           <div>
-            <label for="reg-name" class="block text-sm font-medium text-gray-700">
+            <label for="reg-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Full Name
             </label>
             <div class="mt-1">
@@ -118,7 +118,7 @@
           </div>
 
           <div>
-            <label for="reg-email" class="block text-sm font-medium text-gray-700">
+            <label for="reg-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Email address
             </label>
             <div class="mt-1">
@@ -136,7 +136,7 @@
           </div>
 
           <div>
-            <label for="reg-password" class="block text-sm font-medium text-gray-700">
+            <label for="reg-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Password
             </label>
             <div class="mt-1">
