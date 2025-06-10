@@ -95,7 +95,8 @@ export interface Payment {
 
 export class AuthService {
   async login(email: string, password: string) {
-    return await pb.collection('users').authWithPassword(email, password);
+    const authData = await pb.collection('users').authWithPassword(email, password);
+    return authData;
   }
 
   async register(email: string, password: string, name: string) {
@@ -118,7 +119,7 @@ export class AuthService {
 
   get currentUser(): User | null {
     const model = pb.authStore.model;
-    if (!model) return null;
+    if (!model || !this.isAuthenticated) return null;
     
     return {
       id: model.id,
