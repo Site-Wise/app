@@ -15,7 +15,7 @@
 
     <!-- Items Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="item in items" :key="item.id" class="card">
+      <div v-for="item in items" :key="item.id" class="card hover:shadow-md transition-shadow duration-200 cursor-pointer" @click="viewItemDetail(item.id!)">
         <div class="flex items-start justify-between">
           <div class="flex-1">
             <h3 class="text-lg font-semibold text-gray-900">{{ item.name }}</h3>
@@ -29,8 +29,20 @@
                 {{ item.category }}
               </div>
             </div>
+            
+            <!-- Delivery Summary -->
+            <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-gray-700">Total Delivered</span>
+                <span class="text-sm font-semibold text-blue-600">{{ getItemDeliveredQuantity(item.id!) }} {{ item.unit }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm font-medium text-gray-700">Avg. Price</span>
+                <span class="text-sm font-semibold text-green-600">₹{{ getItemAveragePrice(item.id!).toFixed(2) }}</span>
+              </div>
+            </div>
           </div>
-          <div class="flex items-center space-x-2">
+          <div class="flex items-center space-x-2" @click.stop>
             <button @click="editItem(item)" class="p-1 text-gray-400 hover:text-gray-600">
               <Edit2 class="h-4 w-4" />
             </button>
@@ -103,10 +115,18 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { Package, Plus, Edit2, Trash2, Loader2 } from 'lucide-vue-next';
-import { itemService, type Item } from '../services/pocketbase';
+import { 
+  itemService, 
+  incomingItemService,
+  type Item,
+  type IncomingItem
+} from '../services/pocketbase';
 
+const router = useRouter();
 const items = ref<Item[]>([]);
+const incomingItems = ref<IncomingItem[]>([]);
 const showAddModal = ref(false);
 const editingItem = ref<Item | null>(null);
 const loading = ref(false);
@@ -119,12 +139,37 @@ const form = reactive({
   category: ''
 });
 
-const loadItems = async () => {
+const loadData = async () => {
   try {
-    items.value = await itemService.getAll();
+    const [itemsData, incomingData] = await Promise.all([
+      itemService.getAll(),
+      incomingItemService.getAll()
+    ]);
+    items.value = itemsData;
+    incomingItems.value = incomingData;
   } catch (error) {
-    console.error('Error loading items:', error);
+    console.error('Error loading data:', error);
   }
+};
+
+const getItemDeliveredQuantity = (itemId: string) => {
+  return incomingItems.value
+    .filter(delivery => delivery.item === itemId)
+    .reduce((sum, delivery) => sum + delivery.quantity, 0);
+};
+
+const getItemAveragePrice = (itemId: string) => {
+  const itemDeliveries = incomingItems.value.filter(delivery => delivery.item === itemId);
+  if (itemDeliveries.length === 0) return 0;
+  
+  const totalValue = itemDeliveries.reduce((sum, delivery) => sum + delivery.total_amount, 0);
+  const totalQuantity = itemDeliveries.reduce((sum, delivery) => sum + delivery.quantity, 0);
+  
+  return totalQuantity > 0 ? totalValue / totalQuantity : 0;
+};
+
+const viewItemDetail = (itemId: string) => {
+  router.push(`/items/${itemId}`);
 };
 
 const saveItem = async () => {
@@ -135,7 +180,7 @@ const saveItem = async () => {
     } else {
       await itemService.create(form);
     }
-    await loadItems();
+    await loadData();
     closeModal();
   } catch (error) {
     console.error('Error saving item:', error);
@@ -159,7 +204,7 @@ const deleteItem = async (id: string) => {
   if (confirm('Are you sure you want to delete this item?')) {
     try {
       await itemService.delete(id);
-      await loadItems();
+      await loadData();
     } catch (error) {
       console.error('Error deleting item:', error);
     }
@@ -183,7 +228,7 @@ const handleQuickAction = () => {
 };
 
 onMounted(() => {
-  loadItems();
+  loadData();
   window.addEventListener('show-add-modal', handleQuickAction);
 });
 
