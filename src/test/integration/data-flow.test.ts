@@ -151,7 +151,7 @@ describe('Data Flow Integration', () => {
   })
 
   it('should refresh data when site changes', async () => {
-    const { itemService, vendorService } = await import('../../services/pocketbase')
+    const { itemService } = await import('../../services/pocketbase')
     const router = createMockRouter()
     
     const wrapper = mount(ItemsView, {

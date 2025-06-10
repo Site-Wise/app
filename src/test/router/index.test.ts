@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { createRouter, createWebHistory } from 'vue-router'
 
 // Mock the auth service
 vi.mock('../../services/pocketbase', () => ({
@@ -21,22 +20,20 @@ describe('Router', () => {
   it('should have correct routes defined', () => {
     const routes = router.getRoutes()
     
-    expect(routes.find(r => r.path === '/')).toBeDefined()
-    expect(routes.find(r => r.path === '/login')).toBeDefined()
-    expect(routes.find(r => r.path === '/select-site')).toBeDefined()
-    expect(routes.find(r => r.path === '/items')).toBeDefined()
-    expect(routes.find(r => r.path === '/vendors')).toBeDefined()
-    expect(routes.find(r => r.path === '/quotations')).toBeDefined()
-    expect(routes.find(r => r.path === '/incoming')).toBeDefined()
-    expect(routes.find(r => r.path === '/payments')).toBeDefined()
+    expect(routes.find((r: any) => r.path === '/')).toBeDefined()
+    expect(routes.find((r: any) => r.path === '/login')).toBeDefined()
+    expect(routes.find((r: any) => r.path === '/select-site')).toBeDefined()
+    expect(routes.find((r: any) => r.path === '/items')).toBeDefined()
+    expect(routes.find((r: any) => r.path === '/vendors')).toBeDefined()
+    expect(routes.find((r: any) => r.path === '/quotations')).toBeDefined()
+    expect(routes.find((r: any) => r.path === '/incoming')).toBeDefined()
+    expect(routes.find((r: any) => r.path === '/payments')).toBeDefined()
   })
 
   it('should redirect to login when not authenticated', async () => {
     const { authService } = await import('../../services/pocketbase')
     vi.mocked(authService).isAuthenticated = false
     
-    const to = { meta: { requiresAuth: true } }
-    const from = {}
     const next = vi.fn()
     
     // This would require accessing the beforeEach guard, which is not directly exposed
@@ -48,8 +45,6 @@ describe('Router', () => {
     const { getCurrentSiteId } = await import('../../services/pocketbase')
     vi.mocked(getCurrentSiteId).mockReturnValue(null)
     
-    const to = { meta: { requiresSite: true } }
-    const from = {}
     const next = vi.fn()
     
     // This would require accessing the beforeEach guard
@@ -61,8 +56,6 @@ describe('Router', () => {
     vi.mocked(authService).isAuthenticated = true
     vi.mocked(getCurrentSiteId).mockReturnValue('site-1')
     
-    const to = { meta: { requiresAuth: true, requiresSite: true } }
-    const from = {}
     const next = vi.fn()
     
     // This would require accessing the beforeEach guard

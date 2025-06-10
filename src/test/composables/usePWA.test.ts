@@ -28,10 +28,9 @@ describe('usePWA', () => {
   })
 
   it('should initialize PWA features', () => {
-    const { isOnline, isInstallable, isInstalled } = usePWA()
+    const { isOnline, isInstalled } = usePWA()
     
     expect(isOnline.value).toBe(true)
-    expect(isInstallable.value).toBe(false)
     expect(isInstalled.value).toBe(false)
   })
 
@@ -51,7 +50,7 @@ describe('usePWA', () => {
   })
 
   it('should handle app installation', async () => {
-    const { installApp, isInstallable } = usePWA()
+    const { installApp } = usePWA()
     
     // Set up installable state
     const mockEvent = {

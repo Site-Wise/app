@@ -151,7 +151,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
+import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Users, Plus, Edit2, Trash2, Loader2, User, Mail, Phone, MapPin, X } from 'lucide-vue-next';
 import { 

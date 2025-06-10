@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { useAuth } from '../../composables/useAuth'
-import { createMockPocketBase, mockUser } from '../mocks/pocketbase'
+import { mockUser } from '../mocks/pocketbase'
 
 // Mock the auth service
 vi.mock('../../services/pocketbase', () => ({

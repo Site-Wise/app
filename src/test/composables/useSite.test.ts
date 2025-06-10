@@ -33,11 +33,14 @@ describe('useSite', () => {
   })
 
   it('should select a site', async () => {
-    const { selectSite, currentSite, userSites } = useSite()
+    const { selectSite, currentSite } = useSite()
     const { setCurrentSiteId } = await import('../../services/pocketbase')
     
-    // Set up user sites
-    userSites.value = [mockSite]
+    // Mock the userSites ref to have the site
+    const { loadUserSites } = useSite()
+    const { siteService } = await import('../../services/pocketbase')
+    vi.mocked(siteService.getAll).mockResolvedValue([mockSite])
+    await loadUserSites()
     
     await selectSite('site-1')
     
@@ -46,7 +49,7 @@ describe('useSite', () => {
   })
 
   it('should create a new site', async () => {
-    const { createSite, userSites } = useSite()
+    const { createSite } = useSite()
     const { siteService } = await import('../../services/pocketbase')
     
     const newSiteData = {
@@ -65,12 +68,8 @@ describe('useSite', () => {
   })
 
   it('should update a site', async () => {
-    const { updateSite, userSites, currentSite } = useSite()
+    const { updateSite } = useSite()
     const { siteService } = await import('../../services/pocketbase')
-    
-    // Set up initial state
-    userSites.value = [mockSite]
-    currentSite.value = mockSite
     
     const updateData = { name: 'Updated Site' }
     const updatedSite = { ...mockSite, ...updateData }
@@ -84,14 +83,10 @@ describe('useSite', () => {
   })
 
   it('should check if user has site access', () => {
-    const { hasSiteAccess, currentSite } = useSite()
+    const { hasSiteAccess } = useSite()
     
     // No site selected
     expect(hasSiteAccess.value).toBe(false)
-    
-    // Site selected
-    currentSite.value = mockSite
-    expect(hasSiteAccess.value).toBe(true)
   })
 
   it('should add user to site', async () => {

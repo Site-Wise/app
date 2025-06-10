@@ -9,7 +9,7 @@ describe('useTheme', () => {
   })
 
   it('should initialize with system theme by default', () => {
-    const { theme, isDark } = useTheme()
+    const { theme } = useTheme()
     
     expect(theme.value).toBe('system')
   })

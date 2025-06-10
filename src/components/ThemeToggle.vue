@@ -16,7 +16,7 @@
       <button
         v-for="option in themeOptions"
         :key="option.value"
-        @click="selectTheme(option.value)"
+        @click="selectTheme(option.value as 'light' | 'dark' | 'system')"
         class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
         :class="{ 'bg-gray-100 dark:bg-gray-700': theme === option.value }"
       >

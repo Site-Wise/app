@@ -68,7 +68,7 @@ describe('PocketBase Services', () => {
     it('should return null when not authenticated', () => {
       const mockPB = createMockPocketBase()
       mockPB.authStore.isValid = false
-      mockPB.authStore.model = null
+      mockPB.authStore.model = null as any
       
       const service = new AuthService()
       expect(service.currentUser).toBeNull()

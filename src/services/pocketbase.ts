@@ -200,7 +200,7 @@ export class SiteService {
     }
   }
 
-  async create(data: Omit<Site, 'id'>): Promise<Site> {
+  async create(data: Pick<Site, 'name' | 'description' | 'total_units' | 'total_planned_area'>): Promise<Site> {
     const user = authService.currentUser;
     if (!user) throw new Error('User not authenticated');
 
@@ -256,7 +256,7 @@ export class SiteService {
     const currentSites = userRecord.sites || [];
     
     await pb.collection('users').update(userId, {
-      sites: currentSites.filter(id => id !== siteId)
+      sites: currentSites.filter((id: string) => id !== siteId)
     });
 
     // Get current site record
@@ -264,7 +264,7 @@ export class SiteService {
     const currentUsers = siteRecord.users || [];
     
     await pb.collection('sites').update(siteId, {
-      users: currentUsers.filter(id => id !== userId)
+      users: currentUsers.filter((id: string) => id !== userId)
     });
   }
 

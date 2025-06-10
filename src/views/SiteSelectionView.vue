@@ -126,7 +126,7 @@ const selectSite = async (siteId: string) => {
 const handleCreateSite = async () => {
   createLoading.value = true;
   try {
-    const newSite = await createSite(createForm);
+    await createSite(createForm);
     closeCreateModal();
     router.push('/');
   } catch (error) {

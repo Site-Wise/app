@@ -379,7 +379,7 @@ const generateLedgerCSV = () => {
   
   const headers = ['Date', 'Type', 'Description', 'Item', 'Quantity', 'Unit Price', 'Amount', 'Payment Status', 'Reference', 'Notes'];
   
-  const rows = [];
+  const rows: (string | number)[][] = [];
   
   // Add deliveries
   vendorIncomingItems.value.forEach(item => {
@@ -414,7 +414,7 @@ const generateLedgerCSV = () => {
   });
   
   // Sort by date
-  rows.sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime());
+  rows.sort((a, b) => new Date(a[0] as string).getTime() - new Date(b[0] as string).getTime());
   
   // Add summary row
   rows.push([

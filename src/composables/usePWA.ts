@@ -5,6 +5,12 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
+interface ServiceWorkerRegistrationWithSync extends ServiceWorkerRegistration {
+  sync?: {
+    register(tag: string): Promise<void>;
+  };
+}
+
 export function usePWA() {
   const isInstallable = ref(false);
   const isInstalled = ref(false);
@@ -136,7 +142,10 @@ export function usePWA() {
     // Register for background sync if available
     if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
       navigator.serviceWorker.ready.then((registration) => {
-        return registration.sync.register('background-sync-items');
+        const regWithSync = registration as ServiceWorkerRegistrationWithSync;
+        if (regWithSync.sync) {
+          return regWithSync.sync.register('background-sync-items');
+        }
       });
     }
   };

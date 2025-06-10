@@ -1,4 +1,4 @@
-import { mount, VueWrapper } from '@vue/test-utils'
+import { mount } from '@vue/test-utils'
 import { createRouter, createWebHistory } from 'vue-router'
 import { vi } from 'vitest'
 
@@ -38,15 +38,15 @@ export const waitForAsync = () => new Promise(resolve => setTimeout(resolve, 0))
 
 // Mock window events
 export const mockWindowEvent = (eventName: string) => {
-  const listeners: Function[] = []
+  const listeners: EventListenerOrEventListenerObject[] = []
   
-  window.addEventListener = vi.fn((event: string, listener: Function) => {
+  window.addEventListener = vi.fn((event: string, listener: EventListenerOrEventListenerObject) => {
     if (event === eventName) {
       listeners.push(listener)
     }
   })
   
-  window.removeEventListener = vi.fn((event: string, listener: Function) => {
+  window.removeEventListener = vi.fn((event: string, listener: EventListenerOrEventListenerObject) => {
     if (event === eventName) {
       const index = listeners.indexOf(listener)
       if (index > -1) {
@@ -57,7 +57,13 @@ export const mockWindowEvent = (eventName: string) => {
   
   return {
     trigger: (data?: any) => {
-      listeners.forEach(listener => listener(data))
+      listeners.forEach(listener => {
+        if (typeof listener === 'function') {
+          listener(data)
+        } else {
+          listener.handleEvent(data)
+        }
+      })
     },
     listeners
   }

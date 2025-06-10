@@ -43,7 +43,7 @@ export function useSite() {
     }
   };
 
-  const createSite = async (siteData: Omit<Site, 'id' | 'admin_user' | 'users'>) => {
+  const createSite = async (siteData: Pick<Site, 'name' | 'description' | 'total_units' | 'total_planned_area'>) => {
     try {
       const newSite = await siteService.create(siteData);
       userSites.value.push(newSite);

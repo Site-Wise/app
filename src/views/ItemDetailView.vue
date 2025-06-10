@@ -298,8 +298,6 @@ const drawPriceChart = () => {
   if (data.length === 0) return;
   
   // Calculate scales
-  const minDate = data[0].date;
-  const maxDate = data[data.length - 1].date;
   const minPriceValue = Math.min(...data.map(d => d.price));
   const maxPriceValue = Math.max(...data.map(d => d.price));
   const priceRange = maxPriceValue - minPriceValue;
@@ -403,7 +401,7 @@ const recordDelivery = () => {
   router.push('/incoming');
 };
 
-const viewDelivery = (delivery: IncomingItem) => {
+const viewDelivery = (_delivery: IncomingItem) => {
   router.push('/incoming');
 };
 
