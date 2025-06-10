@@ -9,7 +9,7 @@ export function useAuth() {
   const login = async (email: string, password: string) => {
     try {
       const authData = await authService.login(email, password);
-      user.value = authData.record as User;
+      user.value = authData.record as unknown as User;
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };

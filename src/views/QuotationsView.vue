@@ -196,14 +196,31 @@ const saveQuotation = async () => {
   loading.value = true;
   try {
     const data = { ...form };
-    if (!data.minimum_quantity) delete data.minimum_quantity;
-    if (!data.valid_until) delete data.valid_until;
-    if (!data.notes) delete data.notes;
+    
+    // Create a clean data object without optional empty fields
+    const cleanData: Partial<Quotation> = {
+      vendor: data.vendor,
+      item: data.item,
+      unit_price: data.unit_price,
+      status: data.status
+    };
+    
+    if (data.minimum_quantity) {
+      cleanData.minimum_quantity = data.minimum_quantity;
+    }
+    
+    if (data.valid_until) {
+      cleanData.valid_until = data.valid_until;
+    }
+    
+    if (data.notes) {
+      cleanData.notes = data.notes;
+    }
     
     if (editingQuotation.value) {
-      await quotationService.update(editingQuotation.value.id!, data);
+      await quotationService.update(editingQuotation.value.id!, cleanData);
     } else {
-      await quotationService.create(data);
+      await quotationService.create(cleanData as Omit<Quotation, 'id'>);
     }
     await loadData();
     closeModal();

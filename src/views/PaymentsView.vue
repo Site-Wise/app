@@ -295,12 +295,12 @@ const viewPayment = (payment: Payment) => {
   viewingPayment.value = payment;
 };
 
-const deletePayment = async (id: string) => {
+const deletePayment = async (paymentId: string) => {
   if (confirm('Are you sure you want to delete this payment record? This cannot be undone and may affect item payment status.')) {
     try {
       // Note: In a real implementation, you'd also need to reverse the payment status updates
       // For now, we'll just delete the payment record
-      // await paymentService.delete(id);
+      // await paymentService.delete(paymentId);
       // await loadData();
       alert('Payment deletion is not implemented yet. You would need to manually adjust affected items.');
     } catch (error) {
