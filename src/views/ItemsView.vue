@@ -2,8 +2,8 @@
   <div>
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Items</h1>
-        <p class="mt-1 text-sm text-gray-600">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Items</h1>
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
           Manage your construction items and quantities
         </p>
       </div>
@@ -18,35 +18,35 @@
       <div v-for="item in items" :key="item.id" class="card hover:shadow-md transition-shadow duration-200 cursor-pointer" @click="viewItemDetail(item.id!)">
         <div class="flex items-start justify-between">
           <div class="flex-1">
-            <h3 class="text-lg font-semibold text-gray-900">{{ item.name }}</h3>
-            <p v-if="item.description" class="text-sm text-gray-600 mt-1">{{ item.description }}</p>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ item.name }}</h3>
+            <p v-if="item.description" class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ item.description }}</p>
             <div class="mt-3 flex items-center space-x-4">
-              <div class="flex items-center text-sm text-gray-500">
+              <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
                 <Package class="mr-1 h-4 w-4" />
                 {{ item.quantity }} {{ item.unit }}
               </div>
-              <div v-if="item.category" class="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
+              <div v-if="item.category" class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-xs text-gray-600 dark:text-gray-300">
                 {{ item.category }}
               </div>
             </div>
             
             <!-- Delivery Summary -->
-            <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+            <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div class="flex justify-between items-center mb-2">
-                <span class="text-sm font-medium text-gray-700">Total Delivered</span>
-                <span class="text-sm font-semibold text-blue-600">{{ getItemDeliveredQuantity(item.id!) }} {{ item.unit }}</span>
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Total Delivered</span>
+                <span class="text-sm font-semibold text-blue-600 dark:text-blue-400">{{ getItemDeliveredQuantity(item.id!) }} {{ item.unit }}</span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-sm font-medium text-gray-700">Avg. Price</span>
-                <span class="text-sm font-semibold text-green-600">₹{{ getItemAveragePrice(item.id!).toFixed(2) }}</span>
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Avg. Price</span>
+                <span class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{ getItemAveragePrice(item.id!).toFixed(2) }}</span>
               </div>
             </div>
           </div>
           <div class="flex items-center space-x-2" @click.stop>
-            <button @click="editItem(item)" class="p-1 text-gray-400 hover:text-gray-600">
+            <button @click="editItem(item)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
               <Edit2 class="h-4 w-4" />
             </button>
-            <button @click="deleteItem(item.id!)" class="p-1 text-gray-400 hover:text-red-600">
+            <button @click="deleteItem(item.id!)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400">
               <Trash2 class="h-4 w-4" />
             </button>
           </div>
@@ -56,44 +56,44 @@
       <div v-if="items.length === 0" class="col-span-full">
         <div class="text-center py-12">
           <Package class="mx-auto h-12 w-12 text-gray-400" />
-          <h3 class="mt-2 text-sm font-medium text-gray-900">No items</h3>
-          <p class="mt-1 text-sm text-gray-500">Get started by creating a new item.</p>
+          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No items</h3>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new item.</p>
         </div>
       </div>
     </div>
 
     <!-- Add/Edit Modal -->
     <div v-if="showAddModal || editingItem" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">
+          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
             {{ editingItem ? 'Edit Item' : 'Add New Item' }}
           </h3>
           
           <form @submit.prevent="saveItem" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700">Name</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
               <input v-model="form.name" type="text" required class="input mt-1" placeholder="Enter item name" />
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700">Description</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
               <textarea v-model="form.description" class="input mt-1" rows="3" placeholder="Enter item description"></textarea>
             </div>
             
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700">Quantity</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</label>
                 <input v-model.number="form.quantity" type="number" required class="input mt-1" placeholder="0" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">Unit</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Unit</label>
                 <input v-model="form.unit" type="text" required class="input mt-1" placeholder="kg, pcs, m²" />
               </div>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700">Category</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
               <input v-model="form.category" type="text" class="input mt-1" placeholder="Enter category" />
             </div>
             
@@ -227,12 +227,18 @@ const handleQuickAction = () => {
   showAddModal.value = true;
 };
 
+const handleSiteChange = () => {
+  loadData();
+};
+
 onMounted(() => {
   loadData();
   window.addEventListener('show-add-modal', handleQuickAction);
+  window.addEventListener('site-changed', handleSiteChange);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
+  window.removeEventListener('site-changed', handleSiteChange);
 });
 </script>

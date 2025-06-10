@@ -3,12 +3,12 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-8">
       <div class="flex items-center space-x-4">
-        <button @click="$router.back()" class="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-          <ArrowLeft class="h-5 w-5 text-gray-600" />
+        <button @click="$router.back()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <ArrowLeft class="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">{{ item.name }}</h1>
-          <p class="mt-1 text-sm text-gray-600">Item Details & Delivery History</p>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ item.name }}</h1>
+          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Item Details & Delivery History</p>
         </div>
       </div>
       <div class="flex items-center space-x-3">
@@ -27,27 +27,27 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
       <!-- Item Information -->
       <div class="card">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Item Information</h2>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Item Information</h2>
         <div class="space-y-3">
           <div>
-            <span class="text-sm font-medium text-gray-700">Name:</span>
-            <p class="text-gray-900">{{ item.name }}</p>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Name:</span>
+            <p class="text-gray-900 dark:text-white">{{ item.name }}</p>
           </div>
           <div v-if="item.description">
-            <span class="text-sm font-medium text-gray-700">Description:</span>
-            <p class="text-gray-900">{{ item.description }}</p>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Description:</span>
+            <p class="text-gray-900 dark:text-white">{{ item.description }}</p>
           </div>
           <div>
-            <span class="text-sm font-medium text-gray-700">Unit:</span>
-            <p class="text-gray-900">{{ item.unit }}</p>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Unit:</span>
+            <p class="text-gray-900 dark:text-white">{{ item.unit }}</p>
           </div>
           <div>
-            <span class="text-sm font-medium text-gray-700">Stock Quantity:</span>
-            <p class="text-gray-900">{{ item.quantity }} {{ item.unit }}</p>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Stock Quantity:</span>
+            <p class="text-gray-900 dark:text-white">{{ item.quantity }} {{ item.unit }}</p>
           </div>
           <div v-if="item.category">
-            <span class="text-sm font-medium text-gray-700">Category:</span>
-            <span class="px-2 py-1 bg-primary-100 text-primary-800 text-xs rounded-full">{{ item.category }}</span>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Category:</span>
+            <span class="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300 text-xs rounded-full">{{ item.category }}</span>
           </div>
         </div>
       </div>
@@ -55,38 +55,38 @@
       <!-- Delivery Summary -->
       <div class="lg:col-span-2">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="card bg-blue-50 border-blue-200">
+          <div class="card bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700">
             <div class="flex items-center">
-              <div class="p-2 bg-blue-100 rounded-lg">
-                <TruckIcon class="h-6 w-6 text-blue-600" />
+              <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <TruckIcon class="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div class="ml-4">
-                <p class="text-sm font-medium text-blue-700">Total Deliveries</p>
-                <p class="text-2xl font-bold text-blue-900">{{ itemDeliveries.length }}</p>
+                <p class="text-sm font-medium text-blue-700 dark:text-blue-300">Total Deliveries</p>
+                <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ itemDeliveries.length }}</p>
               </div>
             </div>
           </div>
 
-          <div class="card bg-green-50 border-green-200">
+          <div class="card bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700">
             <div class="flex items-center">
-              <div class="p-2 bg-green-100 rounded-lg">
-                <Package class="h-6 w-6 text-green-600" />
+              <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <Package class="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
               <div class="ml-4">
-                <p class="text-sm font-medium text-green-700">Total Delivered</p>
-                <p class="text-2xl font-bold text-green-900">{{ totalDeliveredQuantity }} {{ item.unit }}</p>
+                <p class="text-sm font-medium text-green-700 dark:text-green-300">Total Delivered</p>
+                <p class="text-2xl font-bold text-green-900 dark:text-green-100">{{ totalDeliveredQuantity }} {{ item.unit }}</p>
               </div>
             </div>
           </div>
 
-          <div class="card bg-yellow-50 border-yellow-200">
+          <div class="card bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700">
             <div class="flex items-center">
-              <div class="p-2 bg-yellow-100 rounded-lg">
-                <DollarSign class="h-6 w-6 text-yellow-600" />
+              <div class="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+                <DollarSign class="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div class="ml-4">
-                <p class="text-sm font-medium text-yellow-700">Avg. Unit Price</p>
-                <p class="text-2xl font-bold text-yellow-900">₹{{ averageUnitPrice.toFixed(2) }}</p>
+                <p class="text-sm font-medium text-yellow-700 dark:text-yellow-300">Avg. Unit Price</p>
+                <p class="text-2xl font-bold text-yellow-900 dark:text-yellow-100">₹{{ averageUnitPrice.toFixed(2) }}</p>
               </div>
             </div>
           </div>
@@ -94,19 +94,19 @@
 
         <!-- Price Range -->
         <div class="mt-6 card">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Price Range</h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Price Range</h3>
           <div class="grid grid-cols-3 gap-4">
             <div class="text-center">
-              <p class="text-2xl font-bold text-green-600">₹{{ minPrice.toFixed(2) }}</p>
-              <p class="text-sm text-gray-600">Lowest</p>
+              <p class="text-2xl font-bold text-green-600 dark:text-green-400">₹{{ minPrice.toFixed(2) }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Lowest</p>
             </div>
             <div class="text-center">
-              <p class="text-2xl font-bold text-blue-600">₹{{ averageUnitPrice.toFixed(2) }}</p>
-              <p class="text-sm text-gray-600">Average</p>
+              <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">₹{{ averageUnitPrice.toFixed(2) }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Average</p>
             </div>
             <div class="text-center">
-              <p class="text-2xl font-bold text-red-600">₹{{ maxPrice.toFixed(2) }}</p>
-              <p class="text-sm text-gray-600">Highest</p>
+              <p class="text-2xl font-bold text-red-600 dark:text-red-400">₹{{ maxPrice.toFixed(2) }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Highest</p>
             </div>
           </div>
         </div>
@@ -115,13 +115,13 @@
 
     <!-- Price Chart -->
     <div class="card mb-8">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">Unit Price Trend</h2>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Unit Price Trend</h2>
       <div class="h-64 relative">
         <canvas ref="chartCanvas" class="w-full h-full"></canvas>
         <div v-if="itemDeliveries.length === 0" class="absolute inset-0 flex items-center justify-center">
           <div class="text-center">
             <BarChart3 class="mx-auto h-12 w-12 text-gray-400" />
-            <p class="mt-2 text-gray-500">No delivery data to display</p>
+            <p class="mt-2 text-gray-500 dark:text-gray-400">No delivery data to display</p>
           </div>
         </div>
       </div>
@@ -130,38 +130,38 @@
     <!-- Delivery History -->
     <div class="card">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-gray-900">Delivery History</h2>
-        <span class="text-sm text-gray-500">{{ itemDeliveries.length }} deliveries</span>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Delivery History</h2>
+        <span class="text-sm text-gray-500 dark:text-gray-400">{{ itemDeliveries.length }} deliveries</span>
       </div>
       
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Status</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Vendor</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Quantity</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Unit Price</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Amount</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Payment Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             <tr v-for="delivery in itemDeliveries" :key="delivery.id">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                 {{ formatDate(delivery.delivery_date) }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                 {{ delivery.expand?.vendor?.name || 'Unknown Vendor' }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                 {{ delivery.quantity }} {{ item.unit }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                 ₹{{ delivery.unit_price.toFixed(2) }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                 ₹{{ delivery.total_amount.toFixed(2) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
@@ -170,7 +170,7 @@
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button @click="viewDelivery(delivery)" class="text-primary-600 hover:text-primary-900">
+                <button @click="viewDelivery(delivery)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300">
                   <Eye class="h-4 w-4" />
                 </button>
               </td>
@@ -180,8 +180,8 @@
         
         <div v-if="itemDeliveries.length === 0" class="text-center py-12">
           <TruckIcon class="mx-auto h-12 w-12 text-gray-400" />
-          <h3 class="mt-2 text-sm font-medium text-gray-900">No deliveries recorded</h3>
-          <p class="mt-1 text-sm text-gray-500">Start tracking by recording a delivery.</p>
+          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No deliveries recorded</h3>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Start tracking by recording a delivery.</p>
         </div>
       </div>
     </div>

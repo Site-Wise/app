@@ -2,8 +2,8 @@
   <div>
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Incoming Items</h1>
-        <p class="mt-1 text-sm text-gray-600">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Incoming Items</h1>
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
           Track deliveries and manage receipts
         </p>
       </div>
@@ -15,37 +15,37 @@
 
     <!-- Incoming Items Table -->
     <div class="card overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-700">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Status</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Date</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Item</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Vendor</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Quantity</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Unit Price</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Payment Status</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Delivery Date</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           <tr v-for="item in incomingItems" :key="item.id">
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-medium text-gray-900">{{ item.expand?.item?.name || 'Unknown Item' }}</div>
-              <div class="text-sm text-gray-500">{{ item.expand?.item?.unit || 'units' }}</div>
+              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ item.expand?.item?.name || 'Unknown Item' }}</div>
+              <div class="text-sm text-gray-500 dark:text-gray-400">{{ item.expand?.item?.unit || 'units' }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-900">{{ item.expand?.vendor?.name || 'Unknown Vendor' }}</div>
+              <div class="text-sm text-gray-900 dark:text-white">{{ item.expand?.vendor?.name || 'Unknown Vendor' }}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
               {{ item.quantity }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
               ₹{{ item.unit_price.toFixed(2) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-900">₹{{ item.total_amount.toFixed(2) }}</div>
-              <div v-if="item.paid_amount > 0" class="text-xs text-green-600">
+              <div class="text-sm text-gray-900 dark:text-white">₹{{ item.total_amount.toFixed(2) }}</div>
+              <div v-if="item.paid_amount > 0" class="text-xs text-green-600 dark:text-green-400">
                 Paid: ₹{{ item.paid_amount.toFixed(2) }}
               </div>
             </td>
@@ -54,18 +54,18 @@
                 {{ item.payment_status }}
               </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
               {{ formatDate(item.delivery_date) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
               <div class="flex items-center space-x-2">
-                <button @click="viewItem(item)" class="text-primary-600 hover:text-primary-900">
+                <button @click="viewItem(item)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300">
                   <Eye class="h-4 w-4" />
                 </button>
-                <button @click="editItem(item)" class="text-primary-600 hover:text-primary-900">
+                <button @click="editItem(item)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300">
                   <Edit2 class="h-4 w-4" />
                 </button>
-                <button @click="deleteItem(item.id!)" class="text-red-600 hover:text-red-900">
+                <button @click="deleteItem(item.id!)" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
                   <Trash2 class="h-4 w-4" />
                 </button>
               </div>
@@ -76,22 +76,22 @@
       
       <div v-if="incomingItems.length === 0" class="text-center py-12">
         <TruckIcon class="mx-auto h-12 w-12 text-gray-400" />
-        <h3 class="mt-2 text-sm font-medium text-gray-900">No deliveries recorded</h3>
-        <p class="mt-1 text-sm text-gray-500">Start tracking by recording a delivery.</p>
+        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No deliveries recorded</h3>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Start tracking by recording a delivery.</p>
       </div>
     </div>
 
     <!-- Add/Edit Modal -->
     <div v-if="showAddModal || editingItem" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto">
         <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">
+          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
             {{ editingItem ? 'Edit Delivery' : 'Record New Delivery' }}
           </h3>
           
           <form @submit.prevent="saveItem" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700">Item</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Item</label>
               <select v-model="form.item" required class="input mt-1">
                 <option value="">Select an item</option>
                 <option v-for="item in items" :key="item.id" :value="item.id">
@@ -101,7 +101,7 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700">Vendor</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Vendor</label>
               <select v-model="form.vendor" required class="input mt-1">
                 <option value="">Select a vendor</option>
                 <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
@@ -112,27 +112,27 @@
             
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700">Quantity</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</label>
                 <input v-model.number="form.quantity" type="number" required class="input mt-1" placeholder="0" @input="calculateTotal" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">Unit Price</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Unit Price</label>
                 <input v-model.number="form.unit_price" type="number" step="0.01" required class="input mt-1" placeholder="0.00" @input="calculateTotal" />
               </div>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700">Total Amount</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Total Amount</label>
               <input v-model.number="form.total_amount" type="number" step="0.01" required class="input mt-1" readonly />
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700">Delivery Date</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Delivery Date</label>
               <input v-model="form.delivery_date" type="date" required class="input mt-1" />
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700">Payment Status</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Payment Status</label>
               <select v-model="form.payment_status" required class="input mt-1">
                 <option value="pending">Pending</option>
                 <option value="partial">Partial</option>
@@ -141,12 +141,12 @@
             </div>
             
             <div v-if="form.payment_status !== 'pending'">
-              <label class="block text-sm font-medium text-gray-700">Paid Amount</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Paid Amount</label>
               <input v-model.number="form.paid_amount" type="number" step="0.01" class="input mt-1" placeholder="0.00" />
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700">Photos</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Photos</label>
               <input 
                 type="file" 
                 multiple 
@@ -164,7 +164,7 @@
                 </div>
               </div>
               <div v-if="editingItem && editingItem.photos && editingItem.photos.length > 0" class="mt-2">
-                <p class="text-sm text-gray-600 mb-2">Existing photos:</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Existing photos:</p>
                 <div class="grid grid-cols-3 gap-2">
                   <div v-for="(photo, index) in editingItem.photos" :key="index" class="relative">
                     <img :src="getPhotoUrl(photo)" alt="Existing photo" class="w-full h-20 object-cover rounded" />
@@ -174,7 +174,7 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700">Notes</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
               <textarea v-model="form.notes" class="input mt-1" rows="3" placeholder="Delivery notes"></textarea>
             </div>
             
@@ -194,42 +194,42 @@
 
     <!-- View Modal -->
     <div v-if="viewingItem" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">Delivery Details</h3>
+          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Delivery Details</h3>
           
           <div class="space-y-4">
             <div>
-              <span class="font-medium text-gray-700">Item:</span>
-              <span class="ml-2">{{ viewingItem.expand?.item?.name || 'Unknown Item' }}</span>
+              <span class="font-medium text-gray-700 dark:text-gray-300">Item:</span>
+              <span class="ml-2 text-gray-900 dark:text-white">{{ viewingItem.expand?.item?.name || 'Unknown Item' }}</span>
             </div>
             <div>
-              <span class="font-medium text-gray-700">Vendor:</span>
-              <span class="ml-2">{{ viewingItem.expand?.vendor?.name || 'Unknown Vendor' }}</span>
+              <span class="font-medium text-gray-700 dark:text-gray-300">Vendor:</span>
+              <span class="ml-2 text-gray-900 dark:text-white">{{ viewingItem.expand?.vendor?.name || 'Unknown Vendor' }}</span>
             </div>
             <div>
-              <span class="font-medium text-gray-700">Quantity:</span>
-              <span class="ml-2">{{ viewingItem.quantity }} {{ viewingItem.expand?.item?.unit || 'units' }}</span>
+              <span class="font-medium text-gray-700 dark:text-gray-300">Quantity:</span>
+              <span class="ml-2 text-gray-900 dark:text-white">{{ viewingItem.quantity }} {{ viewingItem.expand?.item?.unit || 'units' }}</span>
             </div>
             <div>
-              <span class="font-medium text-gray-700">Total Amount:</span>
-              <span class="ml-2">₹{{ viewingItem.total_amount.toFixed(2) }}</span>
+              <span class="font-medium text-gray-700 dark:text-gray-300">Total Amount:</span>
+              <span class="ml-2 text-gray-900 dark:text-white">₹{{ viewingItem.total_amount.toFixed(2) }}</span>
             </div>
             <div>
-              <span class="font-medium text-gray-700">Payment Status:</span>
+              <span class="font-medium text-gray-700 dark:text-gray-300">Payment Status:</span>
               <span :class="`ml-2 status-${viewingItem.payment_status}`">
                 {{ viewingItem.payment_status }}
               </span>
             </div>
             <div v-if="viewingItem.photos && viewingItem.photos.length > 0">
-              <span class="font-medium text-gray-700">Photos:</span>
+              <span class="font-medium text-gray-700 dark:text-gray-300">Photos:</span>
               <div class="mt-2 grid grid-cols-2 gap-2">
                 <img v-for="photo in viewingItem.photos" :key="photo" :src="getPhotoUrl(photo)" alt="Delivery photo" class="w-full h-32 object-cover rounded" />
               </div>
             </div>
             <div v-if="viewingItem.notes">
-              <span class="font-medium text-gray-700">Notes:</span>
-              <p class="ml-2 text-gray-600">{{ viewingItem.notes }}</p>
+              <span class="font-medium text-gray-700 dark:text-gray-300">Notes:</span>
+              <p class="ml-2 text-gray-600 dark:text-gray-400">{{ viewingItem.notes }}</p>
             </div>
           </div>
           
@@ -438,12 +438,18 @@ const handleQuickAction = () => {
   showAddModal.value = true;
 };
 
+const handleSiteChange = () => {
+  loadData();
+};
+
 onMounted(() => {
   loadData();
   window.addEventListener('show-add-modal', handleQuickAction);
+  window.addEventListener('site-changed', handleSiteChange);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
+  window.removeEventListener('site-changed', handleSiteChange);
 });
 </script>
