@@ -1,5 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- PWA Prompts -->
+    <PWAPrompt />
+    
     <!-- Sidebar -->
     <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0" 
          :class="{ '-translate-x-full': !sidebarOpen, 'translate-x-0': sidebarOpen }">
@@ -188,6 +191,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import ThemeToggle from './ThemeToggle.vue';
+import PWAPrompt from './PWAPrompt.vue';
 import {
   HardHat,
   BarChart3,
