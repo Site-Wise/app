@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import { Package, Plus, Edit2, Trash2, Loader2 } from 'lucide-vue-next';
 import { itemService, type Item } from '../services/pocketbase';
 
@@ -178,7 +178,16 @@ const closeModal = () => {
   });
 };
 
+const handleQuickAction = () => {
+  showAddModal.value = true;
+};
+
 onMounted(() => {
   loadItems();
+  window.addEventListener('show-add-modal', handleQuickAction);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('show-add-modal', handleQuickAction);
 });
 </script>

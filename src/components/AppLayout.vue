@@ -3,14 +3,61 @@
     <!-- Sidebar -->
     <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0" 
          :class="{ '-translate-x-full': !sidebarOpen, 'translate-x-0': sidebarOpen }">
-      <div class="flex items-center justify-center h-16 px-4 border-b border-gray-200">
+      <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200">
         <div class="flex items-center space-x-2">
           <HardHat class="h-8 w-8 text-primary-600" />
           <span class="text-xl font-bold text-gray-900">ConstructTrack</span>
         </div>
+        <!-- Close button for mobile -->
+        <button
+          @click="sidebarOpen = false"
+          class="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+        >
+          <X class="h-5 w-5" />
+        </button>
       </div>
       
-      <nav class="mt-8 px-4">
+      <!-- Quick Actions -->
+      <div class="p-4 border-b border-gray-200">
+        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Quick Actions</h3>
+        <div class="space-y-2">
+          <router-link
+            to="/items"
+            @click="showQuickModal('item')"
+            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-primary-50 hover:text-primary-700 transition-colors duration-200"
+          >
+            <Plus class="mr-2 h-4 w-4" />
+            Add Item
+          </router-link>
+          <router-link
+            to="/vendors"
+            @click="showQuickModal('vendor')"
+            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-primary-50 hover:text-primary-700 transition-colors duration-200"
+          >
+            <Plus class="mr-2 h-4 w-4" />
+            Add Vendor
+          </router-link>
+          <router-link
+            to="/incoming"
+            @click="showQuickModal('delivery')"
+            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-primary-50 hover:text-primary-700 transition-colors duration-200"
+          >
+            <Plus class="mr-2 h-4 w-4" />
+            Record Delivery
+          </router-link>
+          <router-link
+            to="/payments"
+            @click="showQuickModal('payment')"
+            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-primary-50 hover:text-primary-700 transition-colors duration-200"
+          >
+            <Plus class="mr-2 h-4 w-4" />
+            Record Payment
+          </router-link>
+        </div>
+      </div>
+      
+      <nav class="mt-4 px-4">
+        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Navigation</h3>
         <div class="space-y-2">
           <router-link
             v-for="item in navigation"
@@ -18,6 +65,7 @@
             :to="item.to"
             class="flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200"
             :class="item.current ? 'bg-primary-100 text-primary-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'"
+            @click="sidebarOpen = false"
           >
             <component :is="item.icon" class="mr-3 h-5 w-5" />
             {{ item.name }}
@@ -26,17 +74,44 @@
       </nav>
     </div>
 
+    <!-- Overlay for mobile -->
+    <div 
+      v-if="sidebarOpen" 
+      @click="sidebarOpen = false"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 z-40 lg:hidden"
+    ></div>
+
     <!-- Main content -->
     <div class="lg:pl-64">
       <!-- Top bar -->
       <div class="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-200">
         <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-          <button
-            @click="sidebarOpen = !sidebarOpen"
-            class="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-          >
-            <Menu class="h-6 w-6" />
-          </button>
+          <div class="flex items-center space-x-4">
+            <button
+              @click="sidebarOpen = !sidebarOpen"
+              class="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            >
+              <Menu class="h-6 w-6" />
+            </button>
+            
+            <!-- Quick action buttons in header -->
+            <div class="hidden md:flex items-center space-x-2">
+              <button
+                @click="showQuickModal('item')"
+                class="flex items-center px-3 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+              >
+                <Package class="mr-1 h-4 w-4" />
+                Add Item
+              </button>
+              <button
+                @click="showQuickModal('delivery')"
+                class="flex items-center px-3 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+              >
+                <TruckIcon class="mr-1 h-4 w-4" />
+                Record Delivery
+              </button>
+            </div>
+          </div>
           
           <div class="flex items-center space-x-4">
             <div class="relative" ref="userMenuRef">
@@ -73,6 +148,35 @@
         <router-view />
       </main>
     </div>
+
+    <!-- Quick Action Modal -->
+    <div v-if="quickModalType" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900">
+              {{ quickModalTitle }}
+            </h3>
+            <button @click="closeQuickModal" class="text-gray-400 hover:text-gray-600">
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+          
+          <p class="text-sm text-gray-600 mb-4">
+            {{ quickModalDescription }}
+          </p>
+          
+          <div class="flex space-x-3">
+            <button @click="navigateToPage" class="flex-1 btn-primary">
+              Continue
+            </button>
+            <button @click="closeQuickModal" class="flex-1 btn-outline">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -90,7 +194,9 @@ import {
   CreditCard,
   Menu,
   ChevronDown,
-  LogOut
+  LogOut,
+  Plus,
+  X
 } from 'lucide-vue-next';
 
 const route = useRoute();
@@ -100,6 +206,7 @@ const { user, logout } = useAuth();
 const sidebarOpen = ref(false);
 const userMenuOpen = ref(false);
 const userMenuRef = ref<HTMLElement | null>(null);
+const quickModalType = ref<string | null>(null);
 
 const navigation = computed(() => [
   { name: 'Dashboard', to: '/', icon: BarChart3, current: route.name === 'Dashboard' },
@@ -119,6 +226,55 @@ const userInitials = computed(() => {
     .toUpperCase()
     .slice(0, 2);
 });
+
+const quickModalTitle = computed(() => {
+  const titles = {
+    item: 'Add New Item',
+    vendor: 'Add New Vendor',
+    delivery: 'Record New Delivery',
+    payment: 'Record New Payment'
+  };
+  return titles[quickModalType.value as keyof typeof titles] || '';
+});
+
+const quickModalDescription = computed(() => {
+  const descriptions = {
+    item: 'Add a new construction item to your inventory with quantities and specifications.',
+    vendor: 'Add a new vendor contact with their details and specialties.',
+    delivery: 'Record a new delivery with photos, quantities, and payment information.',
+    payment: 'Record a payment made to a vendor and update delivery statuses.'
+  };
+  return descriptions[quickModalType.value as keyof typeof descriptions] || '';
+});
+
+const showQuickModal = (type: string) => {
+  quickModalType.value = type;
+  sidebarOpen.value = false; // Close sidebar on mobile
+};
+
+const closeQuickModal = () => {
+  quickModalType.value = null;
+};
+
+const navigateToPage = () => {
+  const routes = {
+    item: '/items',
+    vendor: '/vendors',
+    delivery: '/incoming',
+    payment: '/payments'
+  };
+  
+  const targetRoute = routes[quickModalType.value as keyof typeof routes];
+  if (targetRoute) {
+    router.push(targetRoute);
+    // Add a small delay to ensure navigation completes before triggering modal
+    setTimeout(() => {
+      // Emit event to trigger add modal on the target page
+      window.dispatchEvent(new CustomEvent('show-add-modal'));
+    }, 100);
+  }
+  closeQuickModal();
+};
 
 const handleLogout = () => {
   logout();

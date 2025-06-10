@@ -138,7 +138,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import { Users, Plus, Edit2, Trash2, Loader2, User, Mail, Phone, MapPin, X } from 'lucide-vue-next';
 import { vendorService, type Vendor } from '../services/pocketbase';
 
@@ -230,7 +230,16 @@ const closeModal = () => {
   newTag.value = '';
 };
 
+const handleQuickAction = () => {
+  showAddModal.value = true;
+};
+
 onMounted(() => {
   loadVendors();
+  window.addEventListener('show-add-modal', handleQuickAction);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('show-add-modal', handleQuickAction);
 });
 </script>

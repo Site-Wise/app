@@ -236,7 +236,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import { TruckIcon, Plus, Edit2, Trash2, Loader2, Eye } from 'lucide-vue-next';
 import { 
   incomingItemService, 
@@ -383,7 +383,16 @@ const closeModal = () => {
   });
 };
 
+const handleQuickAction = () => {
+  showAddModal.value = true;
+};
+
 onMounted(() => {
   loadData();
+  window.addEventListener('show-add-modal', handleQuickAction);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('show-add-modal', handleQuickAction);
 });
 </script>

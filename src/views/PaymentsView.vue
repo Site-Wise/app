@@ -194,7 +194,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
 import { CreditCard, Plus, Eye, Trash2, Loader2 } from 'lucide-vue-next';
 import { 
   paymentService, 
@@ -327,7 +327,16 @@ const closeModal = () => {
   vendorOutstanding.value = 0;
 };
 
+const handleQuickAction = () => {
+  showAddModal.value = true;
+};
+
 onMounted(() => {
   loadData();
+  window.addEventListener('show-add-modal', handleQuickAction);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('show-add-modal', handleQuickAction);
 });
 </script>
