@@ -47,10 +47,7 @@ export default defineConfig({
               cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
-              },
-              cacheKeyWillBeUsed: async ({ request }) => {
-                return `${request.url}?version=1`;
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 365 days
               }
             }
           },
@@ -61,7 +58,7 @@ export default defineConfig({
               cacheName: 'gstatic-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 365 days
               }
             }
           },
@@ -73,14 +70,17 @@ export default defineConfig({
               networkTimeoutSeconds: 10,
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // <== 24 hours
+                maxAgeSeconds: 60 * 60 * 24 // 24 hours
               }
             }
           }
-        ]
+        ],
+        // Remove problematic options that might cause the AJV validation error
+        skipWaiting: true,
+        clientsClaim: true
       },
       devOptions: {
-        enabled: true
+        enabled: false // Disable in development to avoid the error
       }
     })
   ],
