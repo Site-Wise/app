@@ -71,11 +71,11 @@
         <div class="space-y-4">
           <div v-for="delivery in recentDeliveries" :key="delivery.id" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <div class="flex-1">
-              <p class="text-sm font-medium text-gray-900">{{ delivery.expand?.item?.name }}</p>
-              <p class="text-xs text-gray-600">{{ delivery.expand?.vendor?.name }}</p>
+              <p class="text-sm font-medium text-gray-900">{{ delivery.expand?.item?.name || 'Unknown Item' }}</p>
+              <p class="text-xs text-gray-600">{{ delivery.expand?.vendor?.name || 'Unknown Vendor' }}</p>
             </div>
             <div class="text-right">
-              <p class="text-sm font-medium text-gray-900">{{ delivery.quantity }} {{ delivery.expand?.item?.unit }}</p>
+              <p class="text-sm font-medium text-gray-900">{{ delivery.quantity }} {{ delivery.expand?.item?.unit || 'units' }}</p>
               <span :class="`status-${delivery.payment_status}`">
                 {{ delivery.payment_status }}
               </span>
@@ -98,8 +98,8 @@
         <div class="space-y-4">
           <div v-for="quotation in pendingQuotations" :key="quotation.id" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <div class="flex-1">
-              <p class="text-sm font-medium text-gray-900">{{ quotation.expand?.item?.name }}</p>
-              <p class="text-xs text-gray-600">{{ quotation.expand?.vendor?.name }}</p>
+              <p class="text-sm font-medium text-gray-900">{{ quotation.expand?.item?.name || 'Unknown Item' }}</p>
+              <p class="text-xs text-gray-600">{{ quotation.expand?.vendor?.name || 'Unknown Vendor' }}</p>
             </div>
             <div class="text-right">
               <p class="text-sm font-medium text-gray-900">${{ quotation.unit_price }}</p>

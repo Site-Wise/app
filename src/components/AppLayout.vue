@@ -39,7 +39,7 @@
           </button>
           
           <div class="flex items-center space-x-4">
-            <div class="relative">
+            <div class="relative" ref="userMenuRef">
               <button
                 @click="userMenuOpen = !userMenuOpen"
                 class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
@@ -54,7 +54,6 @@
               <div
                 v-if="userMenuOpen"
                 class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
-                @click.away="userMenuOpen = false"
               >
                 <button
                   @click="handleLogout"
@@ -78,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import {
@@ -100,6 +99,7 @@ const { user, logout } = useAuth();
 
 const sidebarOpen = ref(false);
 const userMenuOpen = ref(false);
+const userMenuRef = ref<HTMLElement | null>(null);
 
 const navigation = computed(() => [
   { name: 'Dashboard', to: '/', icon: BarChart3, current: route.name === 'Dashboard' },
@@ -124,4 +124,18 @@ const handleLogout = () => {
   logout();
   router.push('/login');
 };
+
+const handleClickOutside = (event: Event) => {
+  if (userMenuRef.value && !userMenuRef.value.contains(event.target as Node)) {
+    userMenuOpen.value = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>

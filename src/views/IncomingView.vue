@@ -31,11 +31,11 @@
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-for="item in incomingItems" :key="item.id">
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-medium text-gray-900">{{ item.expand?.item?.name }}</div>
-              <div class="text-sm text-gray-500">{{ item.expand?.item?.unit }}</div>
+              <div class="text-sm font-medium text-gray-900">{{ item.expand?.item?.name || 'Unknown Item' }}</div>
+              <div class="text-sm text-gray-500">{{ item.expand?.item?.unit || 'units' }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-900">{{ item.expand?.vendor?.name }}</div>
+              <div class="text-sm text-gray-900">{{ item.expand?.vendor?.name || 'Unknown Vendor' }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
               {{ item.quantity }}
@@ -192,15 +192,15 @@
           <div class="space-y-4">
             <div>
               <span class="font-medium text-gray-700">Item:</span>
-              <span class="ml-2">{{ viewingItem.expand?.item?.name }}</span>
+              <span class="ml-2">{{ viewingItem.expand?.item?.name || 'Unknown Item' }}</span>
             </div>
             <div>
               <span class="font-medium text-gray-700">Vendor:</span>
-              <span class="ml-2">{{ viewingItem.expand?.vendor?.name }}</span>
+              <span class="ml-2">{{ viewingItem.expand?.vendor?.name || 'Unknown Vendor' }}</span>
             </div>
             <div>
               <span class="font-medium text-gray-700">Quantity:</span>
-              <span class="ml-2">{{ viewingItem.quantity }} {{ viewingItem.expand?.item?.unit }}</span>
+              <span class="ml-2">{{ viewingItem.quantity }} {{ viewingItem.expand?.item?.unit || 'units' }}</span>
             </div>
             <div>
               <span class="font-medium text-gray-700">Total Amount:</span>
@@ -289,12 +289,16 @@ const calculateTotal = () => {
 };
 
 const handleFileUpload = (event: Event) => {
-  const files = (event.target as HTMLInputElement).files;
+  const target = event.target as HTMLInputElement;
+  const files = target.files;
   if (files) {
     Array.from(files).forEach(file => {
       const reader = new FileReader();
       reader.onload = (e) => {
-        form.photos.push(e.target?.result as string);
+        const result = e.target?.result;
+        if (typeof result === 'string') {
+          form.photos.push(result);
+        }
       };
       reader.readAsDataURL(file);
     });

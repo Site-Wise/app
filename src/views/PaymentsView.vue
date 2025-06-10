@@ -29,7 +29,7 @@
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-for="payment in payments" :key="payment.id">
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-medium text-gray-900">{{ payment.expand?.vendor?.name }}</div>
+              <div class="text-sm font-medium text-gray-900">{{ payment.expand?.vendor?.name || 'Unknown Vendor' }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="text-sm font-medium text-gray-900">${{ payment.amount.toFixed(2) }}</div>
@@ -153,7 +153,7 @@
           <div class="space-y-4">
             <div>
               <span class="font-medium text-gray-700">Vendor:</span>
-              <span class="ml-2">{{ viewingPayment.expand?.vendor?.name }}</span>
+              <span class="ml-2">{{ viewingPayment.expand?.vendor?.name || 'Unknown Vendor' }}</span>
             </div>
             <div>
               <span class="font-medium text-gray-700">Amount:</span>
@@ -175,8 +175,8 @@
               <span class="font-medium text-gray-700">Items Affected:</span>
               <div class="ml-2 mt-2 space-y-2">
                 <div v-for="item in viewingPayment.expand.incoming_items" :key="item.id" class="p-2 bg-gray-50 rounded">
-                  <p class="text-sm font-medium">{{ item.expand?.item?.name }}</p>
-                  <p class="text-xs text-gray-600">{{ item.expand?.vendor?.name }} - ${{ item.total_amount.toFixed(2) }}</p>
+                  <p class="text-sm font-medium">{{ item.expand?.item?.name || 'Unknown Item' }}</p>
+                  <p class="text-xs text-gray-600">{{ item.expand?.vendor?.name || 'Unknown Vendor' }} - ${{ item.total_amount.toFixed(2) }}</p>
                 </div>
               </div>
             </div>
@@ -204,6 +204,11 @@ import {
   type Vendor,
   type IncomingItem
 } from '../services/pocketbase';
+
+interface VendorWithOutstanding extends Vendor {
+  outstandingAmount: number;
+  pendingItems: number;
+}
 
 const payments = ref<Payment[]>([]);
 const vendors = ref<Vendor[]>([]);
@@ -235,7 +240,7 @@ const vendorsWithOutstanding = computed(() => {
       ...vendor,
       outstandingAmount,
       pendingItems: vendorItems.length
-    };
+    } as VendorWithOutstanding;
   }).filter(vendor => vendor.outstandingAmount > 0);
 });
 
@@ -279,8 +284,8 @@ const savePayment = async () => {
   }
 };
 
-const quickPayment = (vendor: any) => {
-  form.vendor = vendor.id;
+const quickPayment = (vendor: VendorWithOutstanding) => {
+  form.vendor = vendor.id!;
   form.amount = vendor.outstandingAmount;
   loadVendorOutstanding();
   showAddModal.value = true;
