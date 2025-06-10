@@ -32,7 +32,7 @@
               <div class="text-sm font-medium text-gray-900">{{ payment.expand?.vendor?.name || 'Unknown Vendor' }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-medium text-gray-900">${{ payment.amount.toFixed(2) }}</div>
+              <div class="text-sm font-medium text-gray-900">₹{{ payment.amount.toFixed(2) }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
               {{ formatDate(payment.payment_date) }}
@@ -74,7 +74,7 @@
             <p class="text-sm text-gray-600">{{ vendor.pendingItems }} pending deliveries</p>
           </div>
           <div class="text-right">
-            <p class="text-lg font-semibold text-gray-900">${{ vendor.outstandingAmount.toFixed(2) }}</p>
+            <p class="text-lg font-semibold text-gray-900">₹{{ vendor.outstandingAmount.toFixed(2) }}</p>
             <button @click="quickPayment(vendor)" class="text-sm text-primary-600 hover:text-primary-500">
               Pay Now
             </button>
@@ -106,7 +106,7 @@
             
             <div v-if="form.vendor && vendorOutstanding > 0" class="p-3 bg-yellow-50 rounded-lg">
               <p class="text-sm text-yellow-800">
-                Outstanding amount for this vendor: <strong>${{ vendorOutstanding.toFixed(2) }}</strong>
+                Outstanding amount for this vendor: <strong>₹{{ vendorOutstanding.toFixed(2) }}</strong>
               </p>
             </div>
             
@@ -157,7 +157,7 @@
             </div>
             <div>
               <span class="font-medium text-gray-700">Amount:</span>
-              <span class="ml-2">${{ viewingPayment.amount.toFixed(2) }}</span>
+              <span class="ml-2">₹{{ viewingPayment.amount.toFixed(2) }}</span>
             </div>
             <div>
               <span class="font-medium text-gray-700">Payment Date:</span>

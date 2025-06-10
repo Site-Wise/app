@@ -52,7 +52,7 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600">Outstanding Amount</p>
-            <p class="text-2xl font-semibold text-gray-900">${{ stats.outstandingAmount.toFixed(2) }}</p>
+            <p class="text-2xl font-semibold text-gray-900">₹{{ stats.outstandingAmount.toFixed(2) }}</p>
           </div>
         </div>
       </div>
@@ -102,7 +102,7 @@
               <p class="text-xs text-gray-600">{{ quotation.expand?.vendor?.name || 'Unknown Vendor' }}</p>
             </div>
             <div class="text-right">
-              <p class="text-sm font-medium text-gray-900">${{ quotation.unit_price }}</p>
+              <p class="text-sm font-medium text-gray-900">₹{{ quotation.unit_price }}</p>
               <span class="status-pending">{{ quotation.status }}</span>
             </div>
           </div>
@@ -119,15 +119,15 @@
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Payment Status Overview</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="text-center p-4 bg-success-50 rounded-lg">
-            <p class="text-2xl font-bold text-success-600">${{ paymentStats.paid.toFixed(2) }}</p>
+            <p class="text-2xl font-bold text-success-600">₹{{ paymentStats.paid.toFixed(2) }}</p>
             <p class="text-sm text-success-700">Paid</p>
           </div>
           <div class="text-center p-4 bg-warning-50 rounded-lg">
-            <p class="text-2xl font-bold text-warning-600">${{ paymentStats.partial.toFixed(2) }}</p>
+            <p class="text-2xl font-bold text-warning-600">₹{{ paymentStats.partial.toFixed(2) }}</p>
             <p class="text-sm text-warning-700">Partial</p>
           </div>
           <div class="text-center p-4 bg-error-50 rounded-lg">
-            <p class="text-2xl font-bold text-error-600">${{ paymentStats.pending.toFixed(2) }}</p>
+            <p class="text-2xl font-bold text-error-600">₹{{ paymentStats.pending.toFixed(2) }}</p>
             <p class="text-sm text-error-700">Pending</p>
           </div>
         </div>

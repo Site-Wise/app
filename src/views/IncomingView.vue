@@ -41,12 +41,12 @@
               {{ item.quantity }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              ${{ item.unit_price.toFixed(2) }}
+              ₹{{ item.unit_price.toFixed(2) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-900">${{ item.total_amount.toFixed(2) }}</div>
+              <div class="text-sm text-gray-900">₹{{ item.total_amount.toFixed(2) }}</div>
               <div v-if="item.paid_amount > 0" class="text-xs text-green-600">
-                Paid: ${{ item.paid_amount.toFixed(2) }}
+                Paid: ₹{{ item.paid_amount.toFixed(2) }}
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
@@ -204,7 +204,7 @@
             </div>
             <div>
               <span class="font-medium text-gray-700">Total Amount:</span>
-              <span class="ml-2">${{ viewingItem.total_amount.toFixed(2) }}</span>
+              <span class="ml-2">₹{{ viewingItem.total_amount.toFixed(2) }}</span>
             </div>
             <div>
               <span class="font-medium text-gray-700">Payment Status:</span>
