@@ -153,13 +153,22 @@
                 accept="image/*" 
                 @change="handleFileUpload" 
                 class="input mt-1"
+                ref="fileInput"
               />
-              <div v-if="form.photos && form.photos.length > 0" class="mt-2 grid grid-cols-3 gap-2">
-                <div v-for="(photo, index) in form.photos" :key="index" class="relative">
-                  <img :src="photo" alt="Delivery photo" class="w-full h-20 object-cover rounded" />
-                  <button type="button" @click="removePhoto(index)" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+              <div v-if="selectedFiles.length > 0" class="mt-2 grid grid-cols-3 gap-2">
+                <div v-for="(file, index) in selectedFiles" :key="index" class="relative">
+                  <img :src="file.preview" alt="Delivery photo" class="w-full h-20 object-cover rounded" />
+                  <button type="button" @click="removeFile(index)" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
                     ×
                   </button>
+                </div>
+              </div>
+              <div v-if="editingItem && editingItem.photos && editingItem.photos.length > 0" class="mt-2">
+                <p class="text-sm text-gray-600 mb-2">Existing photos:</p>
+                <div class="grid grid-cols-3 gap-2">
+                  <div v-for="(photo, index) in editingItem.photos" :key="index" class="relative">
+                    <img :src="getPhotoUrl(photo)" alt="Existing photo" class="w-full h-20 object-cover rounded" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -215,7 +224,7 @@
             <div v-if="viewingItem.photos && viewingItem.photos.length > 0">
               <span class="font-medium text-gray-700">Photos:</span>
               <div class="mt-2 grid grid-cols-2 gap-2">
-                <img v-for="photo in viewingItem.photos" :key="photo" :src="photo" alt="Delivery photo" class="w-full h-32 object-cover rounded" />
+                <img v-for="photo in viewingItem.photos" :key="photo" :src="getPhotoUrl(photo)" alt="Delivery photo" class="w-full h-32 object-cover rounded" />
               </div>
             </div>
             <div v-if="viewingItem.notes">
@@ -242,10 +251,16 @@ import {
   incomingItemService, 
   itemService, 
   vendorService,
+  pb,
   type IncomingItem, 
   type Item, 
   type Vendor 
 } from '../services/pocketbase';
+
+interface FileWithPreview {
+  file: File;
+  preview: string;
+}
 
 const incomingItems = ref<IncomingItem[]>([]);
 const items = ref<Item[]>([]);
@@ -254,6 +269,8 @@ const showAddModal = ref(false);
 const editingItem = ref<IncomingItem | null>(null);
 const viewingItem = ref<IncomingItem | null>(null);
 const loading = ref(false);
+const fileInput = ref<HTMLInputElement | null>(null);
+const selectedFiles = ref<FileWithPreview[]>([]);
 
 const form = reactive({
   item: '',
@@ -262,7 +279,6 @@ const form = reactive({
   unit_price: 0,
   total_amount: 0,
   delivery_date: new Date().toISOString().split('T')[0],
-  photos: [] as string[],
   notes: '',
   payment_status: 'pending' as 'pending' | 'partial' | 'paid',
   paid_amount: 0
@@ -292,12 +308,16 @@ const handleFileUpload = (event: Event) => {
   const target = event.target as HTMLInputElement;
   const files = target.files;
   if (files) {
+    selectedFiles.value = [];
     Array.from(files).forEach(file => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result;
         if (typeof result === 'string') {
-          form.photos.push(result);
+          selectedFiles.value.push({
+            file,
+            preview: result
+          });
         }
       };
       reader.readAsDataURL(file);
@@ -305,8 +325,20 @@ const handleFileUpload = (event: Event) => {
   }
 };
 
-const removePhoto = (index: number) => {
-  form.photos.splice(index, 1);
+const removeFile = (index: number) => {
+  selectedFiles.value.splice(index, 1);
+  // Clear the file input
+  if (fileInput.value) {
+    fileInput.value.value = '';
+  }
+};
+
+const getPhotoUrl = (filename: string) => {
+  // For existing photos, construct the PocketBase file URL
+  if (editingItem.value) {
+    return `${pb.baseUrl}/api/files/incoming_items/${editingItem.value.id}/${filename}`;
+  }
+  return filename;
 };
 
 const saveItem = async () => {
@@ -317,11 +349,27 @@ const saveItem = async () => {
       data.paid_amount = 0;
     }
     
+    let savedItem: IncomingItem;
+    
     if (editingItem.value) {
-      await incomingItemService.update(editingItem.value.id!, data);
+      // Update existing item
+      savedItem = await incomingItemService.update(editingItem.value.id!, data);
     } else {
-      await incomingItemService.create(data);
+      // Create new item
+      savedItem = await incomingItemService.create(data);
     }
+    
+    // Upload photos if any are selected
+    if (selectedFiles.value.length > 0 && savedItem.id) {
+      const formData = new FormData();
+      selectedFiles.value.forEach(fileObj => {
+        formData.append('photos', fileObj.file);
+      });
+      
+      // Update the record with photos
+      await pb.collection('incoming_items').update(savedItem.id, formData);
+    }
+    
     await loadData();
     closeModal();
   } catch (error) {
@@ -340,11 +388,11 @@ const editItem = (item: IncomingItem) => {
     unit_price: item.unit_price,
     total_amount: item.total_amount,
     delivery_date: item.delivery_date,
-    photos: item.photos || [],
     notes: item.notes || '',
     payment_status: item.payment_status,
     paid_amount: item.paid_amount
   });
+  selectedFiles.value = [];
 };
 
 const viewItem = (item: IncomingItem) => {
@@ -369,6 +417,10 @@ const formatDate = (dateString: string) => {
 const closeModal = () => {
   showAddModal.value = false;
   editingItem.value = null;
+  selectedFiles.value = [];
+  if (fileInput.value) {
+    fileInput.value.value = '';
+  }
   Object.assign(form, {
     item: '',
     vendor: '',
@@ -376,7 +428,6 @@ const closeModal = () => {
     unit_price: 0,
     total_amount: 0,
     delivery_date: new Date().toISOString().split('T')[0],
-    photos: [],
     notes: '',
     payment_status: 'pending',
     paid_amount: 0
