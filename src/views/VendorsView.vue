@@ -15,7 +15,7 @@
 
     <!-- Vendors Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="vendor in vendors" :key="vendor.id" class="card">
+      <div v-for="vendor in vendors" :key="vendor.id" class="card hover:shadow-md transition-shadow duration-200 cursor-pointer" @click="viewVendorDetail(vendor.id!)">
         <div class="flex items-start justify-between">
           <div class="flex-1">
             <h3 class="text-lg font-semibold text-gray-900">{{ vendor.name }}</h3>
@@ -37,13 +37,26 @@
                 {{ vendor.address }}
               </div>
             </div>
+            
+            <!-- Financial Summary -->
+            <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-gray-700">Outstanding</span>
+                <span class="text-sm font-semibold text-red-600">₹{{ getVendorOutstanding(vendor.id!).toFixed(2) }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm font-medium text-gray-700">Total Paid</span>
+                <span class="text-sm font-semibold text-green-600">₹{{ getVendorPaid(vendor.id!).toFixed(2) }}</span>
+              </div>
+            </div>
+            
             <div v-if="vendor.tags && vendor.tags.length > 0" class="mt-4 flex flex-wrap gap-1">
               <span v-for="tag in vendor.tags" :key="tag" class="px-2 py-1 bg-primary-100 text-primary-800 text-xs rounded-full">
                 {{ tag }}
               </span>
             </div>
           </div>
-          <div class="flex items-center space-x-2">
+          <div class="flex items-center space-x-2" @click.stop>
             <button @click="editVendor(vendor)" class="p-1 text-gray-400 hover:text-gray-600">
               <Edit2 class="h-4 w-4" />
             </button>
@@ -138,11 +151,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { Users, Plus, Edit2, Trash2, Loader2, User, Mail, Phone, MapPin, X } from 'lucide-vue-next';
-import { vendorService, type Vendor } from '../services/pocketbase';
+import { 
+  vendorService, 
+  incomingItemService, 
+  paymentService,
+  type Vendor,
+  type IncomingItem,
+  type Payment
+} from '../services/pocketbase';
 
+const router = useRouter();
 const vendors = ref<Vendor[]>([]);
+const incomingItems = ref<IncomingItem[]>([]);
+const payments = ref<Payment[]>([]);
 const showAddModal = ref(false);
 const editingVendor = ref<Vendor | null>(null);
 const loading = ref(false);
@@ -157,11 +181,35 @@ const form = reactive({
   tags: [] as string[]
 });
 
-const loadVendors = async () => {
+const getVendorOutstanding = (vendorId: string) => {
+  return incomingItems.value
+    .filter(item => item.vendor === vendorId)
+    .reduce((sum, item) => sum + (item.total_amount - item.paid_amount), 0);
+};
+
+const getVendorPaid = (vendorId: string) => {
+  return payments.value
+    .filter(payment => payment.vendor === vendorId)
+    .reduce((sum, payment) => sum + payment.amount, 0);
+};
+
+const viewVendorDetail = (vendorId: string) => {
+  router.push(`/vendors/${vendorId}`);
+};
+
+const loadData = async () => {
   try {
-    vendors.value = await vendorService.getAll();
+    const [vendorsData, incomingData, paymentsData] = await Promise.all([
+      vendorService.getAll(),
+      incomingItemService.getAll(),
+      paymentService.getAll()
+    ]);
+    
+    vendors.value = vendorsData;
+    incomingItems.value = incomingData;
+    payments.value = paymentsData;
   } catch (error) {
-    console.error('Error loading vendors:', error);
+    console.error('Error loading data:', error);
   }
 };
 
@@ -173,7 +221,7 @@ const saveVendor = async () => {
     } else {
       await vendorService.create(form);
     }
-    await loadVendors();
+    await loadData();
     closeModal();
   } catch (error) {
     console.error('Error saving vendor:', error);
@@ -198,7 +246,7 @@ const deleteVendor = async (id: string) => {
   if (confirm('Are you sure you want to delete this vendor?')) {
     try {
       await vendorService.delete(id);
-      await loadVendors();
+      await loadData();
     } catch (error) {
       console.error('Error deleting vendor:', error);
     }
@@ -235,7 +283,7 @@ const handleQuickAction = () => {
 };
 
 onMounted(() => {
-  loadVendors();
+  loadData();
   window.addEventListener('show-add-modal', handleQuickAction);
 });
 
