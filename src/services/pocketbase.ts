@@ -1,6 +1,9 @@
 import PocketBase from 'pocketbase';
 
-export const pb = new PocketBase('http://127.0.0.1:8090');
+// Get PocketBase URL from environment variables with fallback
+const POCKETBASE_URL = import.meta.env.VITE_POCKETBASE_URL || 'http://127.0.0.1:8090';
+
+export const pb = new PocketBase(POCKETBASE_URL);
 
 // Enable auto cancellation for duplicate requests
 pb.autoCancellation(false);
