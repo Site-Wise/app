@@ -63,6 +63,11 @@ const router = createRouter({
       name: 'Payments',
       component: () => import('../views/PaymentsView.vue'),
       meta: { requiresAuth: true, requiresSite: true }
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'NotFound',
+      redirect: '/'
     }
   ]
 });
@@ -71,21 +76,30 @@ router.beforeEach((to, _from, next) => {
   const isAuthenticated = authService.isAuthenticated;
   const currentSiteId = getCurrentSiteId();
 
+  // Handle authentication requirements
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login');
-  } else if (to.meta.requiresGuest && isAuthenticated) {
-    // If user is authenticated but no site is selected, go to site selection
+    return;
+  }
+
+  // Handle guest-only routes (like login)
+  if (to.meta.requiresGuest && isAuthenticated) {
     if (!currentSiteId) {
       next('/select-site');
     } else {
       next('/');
     }
-  } else if (to.meta.requiresSite && !currentSiteId) {
-    // If route requires a site but none is selected, go to site selection
-    next('/select-site');
-  } else {
-    next();
+    return;
   }
+
+  // Handle site selection requirements
+  if (to.meta.requiresSite && !currentSiteId) {
+    next('/select-site');
+    return;
+  }
+
+  // Allow navigation
+  next();
 });
 
 export default router;

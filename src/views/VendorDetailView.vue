@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-8">
       <div class="flex items-center space-x-4">
-        <button @click="$router.back()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        <button @click="goBack" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
           <ArrowLeft class="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
         <div>
@@ -292,6 +292,15 @@ const partialDeliveries = computed(() => {
 const paidDeliveries = computed(() => {
   return vendorIncomingItems.value.filter(item => item.payment_status === 'paid').length;
 });
+
+const goBack = () => {
+  try {
+    router.back();
+  } catch (error) {
+    console.error('Navigation error:', error);
+    router.push('/vendors');
+  }
+};
 
 const loadVendorData = async () => {
   const vendorId = route.params.id as string;

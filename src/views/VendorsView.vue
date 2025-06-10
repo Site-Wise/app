@@ -57,10 +57,10 @@
             </div>
           </div>
           <div class="flex items-center space-x-2" @click.stop>
-            <button @click="editVendor(vendor)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
+            <button @click="editVendor(vendor)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" title="Edit">
               <Edit2 class="h-4 w-4" />
             </button>
-            <button @click="deleteVendor(vendor.id!)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400">
+            <button @click="deleteVendor(vendor.id!)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400" title="Delete">
               <Trash2 class="h-4 w-4" />
             </button>
           </div>
@@ -194,7 +194,11 @@ const getVendorPaid = (vendorId: string) => {
 };
 
 const viewVendorDetail = (vendorId: string) => {
-  router.push(`/vendors/${vendorId}`);
+  try {
+    router.push(`/vendors/${vendorId}`);
+  } catch (error) {
+    console.error('Navigation error:', error);
+  }
 };
 
 const loadData = async () => {
