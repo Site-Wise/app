@@ -20,6 +20,11 @@
         </button>
       </div>
       
+      <!-- Site Selector in Sidebar -->
+      <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+        <SiteSelector />
+      </div>
+      
       <!-- Quick Actions -->
       <div class="p-4 border-b border-gray-200 dark:border-gray-700">
         <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Quick Actions</h3>
@@ -97,6 +102,11 @@
               <Menu class="h-6 w-6" />
             </button>
             
+            <!-- Site Selector for mobile -->
+            <div class="lg:hidden">
+              <SiteSelector />
+            </div>
+            
             <!-- Quick action buttons in header -->
             <div class="hidden md:flex items-center space-x-2">
               <button
@@ -117,6 +127,11 @@
           </div>
           
           <div class="flex items-center space-x-4">
+            <!-- Site Selector for desktop -->
+            <div class="hidden lg:block">
+              <SiteSelector />
+            </div>
+            
             <!-- Theme Toggle -->
             <ThemeToggle />
             
@@ -190,8 +205,10 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
+import { useSite } from '../composables/useSite';
 import ThemeToggle from './ThemeToggle.vue';
 import PWAPrompt from './PWAPrompt.vue';
+import SiteSelector from './SiteSelector.vue';
 import {
   HardHat,
   BarChart3,
@@ -210,6 +227,7 @@ import {
 const route = useRoute();
 const router = useRouter();
 const { user, logout } = useAuth();
+const { hasSiteAccess } = useSite();
 
 const sidebarOpen = ref(false);
 const userMenuOpen = ref(false);
@@ -256,6 +274,10 @@ const quickModalDescription = computed(() => {
 });
 
 const showQuickModal = (type: string) => {
+  if (!hasSiteAccess.value) {
+    alert('Please select a site first');
+    return;
+  }
   quickModalType.value = type;
   sidebarOpen.value = false; // Close sidebar on mobile
 };

@@ -1,58 +1,67 @@
 <template>
   <div>
     <div class="mb-8">
-      <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
-      <p class="mt-1 text-sm text-gray-600">
-        Overview of your construction site management
-      </p>
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            Overview of {{ currentSite?.name || 'your construction site' }} management
+          </p>
+        </div>
+        <div v-if="currentSite" class="text-right">
+          <div class="text-sm text-gray-500 dark:text-gray-400">
+            {{ currentSite.total_units }} units • {{ currentSite.total_planned_area.toLocaleString() }} sqft
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <div class="card">
         <div class="flex items-center">
-          <div class="p-2 bg-primary-100 rounded-lg">
-            <Package class="h-8 w-8 text-primary-600" />
+          <div class="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+            <Package class="h-8 w-8 text-primary-600 dark:text-primary-400" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600">Total Items</p>
-            <p class="text-2xl font-semibold text-gray-900">{{ stats.totalItems }}</p>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Items</p>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ stats.totalItems }}</p>
           </div>
         </div>
       </div>
 
       <div class="card">
         <div class="flex items-center">
-          <div class="p-2 bg-secondary-100 rounded-lg">
-            <Users class="h-8 w-8 text-secondary-600" />
+          <div class="p-2 bg-secondary-100 dark:bg-secondary-900/30 rounded-lg">
+            <Users class="h-8 w-8 text-secondary-600 dark:text-secondary-400" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600">Active Vendors</p>
-            <p class="text-2xl font-semibold text-gray-900">{{ stats.totalVendors }}</p>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Active Vendors</p>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ stats.totalVendors }}</p>
           </div>
         </div>
       </div>
 
       <div class="card">
         <div class="flex items-center">
-          <div class="p-2 bg-warning-100 rounded-lg">
-            <TruckIcon class="h-8 w-8 text-warning-600" />
+          <div class="p-2 bg-warning-100 dark:bg-warning-900/30 rounded-lg">
+            <TruckIcon class="h-8 w-8 text-warning-600 dark:text-warning-400" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600">Pending Deliveries</p>
-            <p class="text-2xl font-semibold text-gray-900">{{ stats.pendingDeliveries }}</p>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Deliveries</p>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ stats.pendingDeliveries }}</p>
           </div>
         </div>
       </div>
 
       <div class="card">
         <div class="flex items-center">
-          <div class="p-2 bg-success-100 rounded-lg">
-            <DollarSign class="h-8 w-8 text-success-600" />
+          <div class="p-2 bg-success-100 dark:bg-success-900/30 rounded-lg">
+            <DollarSign class="h-8 w-8 text-success-600 dark:text-success-400" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600">Outstanding Amount</p>
-            <p class="text-2xl font-semibold text-gray-900">₹{{ stats.outstandingAmount.toFixed(2) }}</p>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Outstanding Amount</p>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-white">₹{{ stats.outstandingAmount.toFixed(2) }}</p>
           </div>
         </div>
       </div>
@@ -63,25 +72,25 @@
       <!-- Recent Deliveries -->
       <div class="card">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold text-gray-900">Recent Deliveries</h2>
-          <router-link to="/incoming" class="text-primary-600 hover:text-primary-500 text-sm font-medium">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Deliveries</h2>
+          <router-link to="/incoming" class="text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 text-sm font-medium">
             View all
           </router-link>
         </div>
         <div class="space-y-4">
-          <div v-for="delivery in recentDeliveries" :key="delivery.id" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div v-for="delivery in recentDeliveries" :key="delivery.id" class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <div class="flex-1">
-              <p class="text-sm font-medium text-gray-900">{{ delivery.expand?.item?.name || 'Unknown Item' }}</p>
-              <p class="text-xs text-gray-600">{{ delivery.expand?.vendor?.name || 'Unknown Vendor' }}</p>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ delivery.expand?.item?.name || 'Unknown Item' }}</p>
+              <p class="text-xs text-gray-600 dark:text-gray-400">{{ delivery.expand?.vendor?.name || 'Unknown Vendor' }}</p>
             </div>
             <div class="text-right">
-              <p class="text-sm font-medium text-gray-900">{{ delivery.quantity }} {{ delivery.expand?.item?.unit || 'units' }}</p>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ delivery.quantity }} {{ delivery.expand?.item?.unit || 'units' }}</p>
               <span :class="`status-${delivery.payment_status}`">
                 {{ delivery.payment_status }}
               </span>
             </div>
           </div>
-          <div v-if="recentDeliveries.length === 0" class="text-center py-4 text-gray-500">
+          <div v-if="recentDeliveries.length === 0" class="text-center py-4 text-gray-500 dark:text-gray-400">
             No recent deliveries
           </div>
         </div>
@@ -90,23 +99,23 @@
       <!-- Pending Quotations -->
       <div class="card">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold text-gray-900">Pending Quotations</h2>
-          <router-link to="/quotations" class="text-primary-600 hover:text-primary-500 text-sm font-medium">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Pending Quotations</h2>
+          <router-link to="/quotations" class="text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 text-sm font-medium">
             View all
           </router-link>
         </div>
         <div class="space-y-4">
-          <div v-for="quotation in pendingQuotations" :key="quotation.id" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div v-for="quotation in pendingQuotations" :key="quotation.id" class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <div class="flex-1">
-              <p class="text-sm font-medium text-gray-900">{{ quotation.expand?.item?.name || 'Unknown Item' }}</p>
-              <p class="text-xs text-gray-600">{{ quotation.expand?.vendor?.name || 'Unknown Vendor' }}</p>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ quotation.expand?.item?.name || 'Unknown Item' }}</p>
+              <p class="text-xs text-gray-600 dark:text-gray-400">{{ quotation.expand?.vendor?.name || 'Unknown Vendor' }}</p>
             </div>
             <div class="text-right">
-              <p class="text-sm font-medium text-gray-900">₹{{ quotation.unit_price }}</p>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">₹{{ quotation.unit_price }}</p>
               <span class="status-pending">{{ quotation.status }}</span>
             </div>
           </div>
-          <div v-if="pendingQuotations.length === 0" class="text-center py-4 text-gray-500">
+          <div v-if="pendingQuotations.length === 0" class="text-center py-4 text-gray-500 dark:text-gray-400">
             No pending quotations
           </div>
         </div>
@@ -116,19 +125,19 @@
     <!-- Payment Status Overview -->
     <div class="mt-8">
       <div class="card">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Payment Status Overview</h2>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment Status Overview</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="text-center p-4 bg-success-50 rounded-lg">
-            <p class="text-2xl font-bold text-success-600">₹{{ paymentStats.paid.toFixed(2) }}</p>
-            <p class="text-sm text-success-700">Paid</p>
+          <div class="text-center p-4 bg-success-50 dark:bg-success-900/20 rounded-lg">
+            <p class="text-2xl font-bold text-success-600 dark:text-success-400">₹{{ paymentStats.paid.toFixed(2) }}</p>
+            <p class="text-sm text-success-700 dark:text-success-300">Paid</p>
           </div>
-          <div class="text-center p-4 bg-warning-50 rounded-lg">
-            <p class="text-2xl font-bold text-warning-600">₹{{ paymentStats.partial.toFixed(2) }}</p>
-            <p class="text-sm text-warning-700">Partial</p>
+          <div class="text-center p-4 bg-warning-50 dark:bg-warning-900/20 rounded-lg">
+            <p class="text-2xl font-bold text-warning-600 dark:text-warning-400">₹{{ paymentStats.partial.toFixed(2) }}</p>
+            <p class="text-sm text-warning-700 dark:text-warning-300">Partial</p>
           </div>
-          <div class="text-center p-4 bg-error-50 rounded-lg">
-            <p class="text-2xl font-bold text-error-600">₹{{ paymentStats.pending.toFixed(2) }}</p>
-            <p class="text-sm text-error-700">Pending</p>
+          <div class="text-center p-4 bg-error-50 dark:bg-error-900/20 rounded-lg">
+            <p class="text-2xl font-bold text-error-600 dark:text-error-400">₹{{ paymentStats.pending.toFixed(2) }}</p>
+            <p class="text-sm text-error-700 dark:text-error-300">Pending</p>
           </div>
         </div>
       </div>
@@ -137,8 +146,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, onUnmounted } from 'vue';
 import { Package, Users, TruckIcon, DollarSign } from 'lucide-vue-next';
+import { useSite } from '../composables/useSite';
 import { 
   itemService, 
   vendorService, 
@@ -149,6 +159,8 @@ import {
   type Quotation,
   type IncomingItem
 } from '../services/pocketbase';
+
+const { currentSite } = useSite();
 
 const items = ref<Item[]>([]);
 const vendors = ref<Vendor[]>([]);
@@ -208,7 +220,16 @@ const loadData = async () => {
   }
 };
 
+const handleSiteChange = () => {
+  loadData();
+};
+
 onMounted(() => {
   loadData();
+  window.addEventListener('site-changed', handleSiteChange);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('site-changed', handleSiteChange);
 });
 </script>

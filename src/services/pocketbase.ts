@@ -13,8 +13,25 @@ export interface User {
   email: string;
   name: string;
   avatar?: string;
+  sites: string[]; // Array of site IDs the user has access to
   created: string;
   updated: string;
+}
+
+export interface Site {
+  id?: string;
+  name: string;
+  description?: string;
+  total_units: number;
+  total_planned_area: number; // in sqft
+  admin_user: string; // User ID of the admin
+  users: string[]; // Array of user IDs with access to this site
+  created?: string;
+  updated?: string;
+  expand?: {
+    admin_user?: User;
+    users?: User[];
+  };
 }
 
 export interface Item {
@@ -24,6 +41,7 @@ export interface Item {
   unit: string;
   quantity: number;
   category?: string;
+  site: string; // Site ID
   created?: string;
   updated?: string;
 }
@@ -36,6 +54,7 @@ export interface Vendor {
   phone?: string;
   address?: string;
   tags: string[];
+  site: string; // Site ID
   created?: string;
   updated?: string;
 }
@@ -49,6 +68,7 @@ export interface Quotation {
   valid_until?: string;
   notes?: string;
   status: 'pending' | 'approved' | 'rejected' | 'expired';
+  site: string; // Site ID
   created?: string;
   updated?: string;
   expand?: {
@@ -69,6 +89,7 @@ export interface IncomingItem {
   notes?: string;
   payment_status: 'pending' | 'partial' | 'paid';
   paid_amount: number;
+  site: string; // Site ID
   created?: string;
   updated?: string;
   expand?: {
@@ -85,6 +106,7 @@ export interface Payment {
   reference?: string;
   notes?: string;
   incoming_items: string[];
+  site: string; // Site ID
   created?: string;
   updated?: string;
   expand?: {
@@ -92,6 +114,25 @@ export interface Payment {
     incoming_items?: IncomingItem[];
   };
 }
+
+// Site context management
+let currentSiteId: string | null = null;
+
+export const getCurrentSiteId = (): string | null => {
+  if (!currentSiteId) {
+    currentSiteId = localStorage.getItem('currentSiteId');
+  }
+  return currentSiteId;
+};
+
+export const setCurrentSiteId = (siteId: string | null) => {
+  currentSiteId = siteId;
+  if (siteId) {
+    localStorage.setItem('currentSiteId', siteId);
+  } else {
+    localStorage.removeItem('currentSiteId');
+  }
+};
 
 export class AuthService {
   async login(email: string, password: string) {
@@ -105,12 +146,14 @@ export class AuthService {
       password,
       passwordConfirm: password,
       name,
+      sites: [], // Initialize with empty sites array
     };
     return await pb.collection('users').create(data);
   }
 
   logout() {
     pb.authStore.clear();
+    setCurrentSiteId(null); // Clear current site on logout
   }
 
   get isAuthenticated() {
@@ -126,20 +169,155 @@ export class AuthService {
       email: model.email || '',
       name: model.name || '',
       avatar: model.avatar,
+      sites: model.sites || [],
       created: model.created || '',
       updated: model.updated || ''
     };
   }
 }
 
+export class SiteService {
+  async getAll(): Promise<Site[]> {
+    const user = authService.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    // Get sites where user is admin or has access
+    const records = await pb.collection('sites').getFullList({
+      filter: `admin_user="${user.id}" || users~"${user.id}"`,
+      expand: 'admin_user,users'
+    });
+    return records.map(record => this.mapRecordToSite(record));
+  }
+
+  async getById(id: string): Promise<Site | null> {
+    try {
+      const record = await pb.collection('sites').getOne(id, {
+        expand: 'admin_user,users'
+      });
+      return this.mapRecordToSite(record);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async create(data: Omit<Site, 'id'>): Promise<Site> {
+    const user = authService.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    const siteData = {
+      ...data,
+      admin_user: user.id,
+      users: [user.id] // Admin is automatically added to users
+    };
+
+    const record = await pb.collection('sites').create(siteData);
+    
+    // Update user's sites array
+    await this.addUserToSite(user.id, record.id);
+    
+    return this.mapRecordToSite(record);
+  }
+
+  async update(id: string, data: Partial<Site>): Promise<Site> {
+    const record = await pb.collection('sites').update(id, data);
+    return this.mapRecordToSite(record);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    await pb.collection('sites').delete(id);
+    return true;
+  }
+
+  async addUserToSite(userId: string, siteId: string): Promise<void> {
+    // Get current user record
+    const userRecord = await pb.collection('users').getOne(userId);
+    const currentSites = userRecord.sites || [];
+    
+    if (!currentSites.includes(siteId)) {
+      await pb.collection('users').update(userId, {
+        sites: [...currentSites, siteId]
+      });
+    }
+
+    // Get current site record
+    const siteRecord = await pb.collection('sites').getOne(siteId);
+    const currentUsers = siteRecord.users || [];
+    
+    if (!currentUsers.includes(userId)) {
+      await pb.collection('sites').update(siteId, {
+        users: [...currentUsers, userId]
+      });
+    }
+  }
+
+  async removeUserFromSite(userId: string, siteId: string): Promise<void> {
+    // Get current user record
+    const userRecord = await pb.collection('users').getOne(userId);
+    const currentSites = userRecord.sites || [];
+    
+    await pb.collection('users').update(userId, {
+      sites: currentSites.filter(id => id !== siteId)
+    });
+
+    // Get current site record
+    const siteRecord = await pb.collection('sites').getOne(siteId);
+    const currentUsers = siteRecord.users || [];
+    
+    await pb.collection('sites').update(siteId, {
+      users: currentUsers.filter(id => id !== userId)
+    });
+  }
+
+  private mapRecordToSite(record: RecordModel): Site {
+    return {
+      id: record.id,
+      name: record.name,
+      description: record.description,
+      total_units: record.total_units,
+      total_planned_area: record.total_planned_area,
+      admin_user: record.admin_user,
+      users: record.users || [],
+      created: record.created,
+      updated: record.updated,
+      expand: record.expand ? {
+        admin_user: record.expand.admin_user ? this.mapRecordToUser(record.expand.admin_user) : undefined,
+        users: record.expand.users ? record.expand.users.map((user: RecordModel) => this.mapRecordToUser(user)) : undefined
+      } : undefined
+    };
+  }
+
+  private mapRecordToUser(record: RecordModel): User {
+    return {
+      id: record.id,
+      email: record.email,
+      name: record.name,
+      avatar: record.avatar,
+      sites: record.sites || [],
+      created: record.created,
+      updated: record.updated
+    };
+  }
+}
+
 export class ItemService {
   async getAll(): Promise<Item[]> {
-    const records = await pb.collection('items').getFullList();
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('items').getFullList({
+      filter: `site="${siteId}"`
+    });
     return records.map(record => this.mapRecordToItem(record));
   }
 
-  async create(data: Omit<Item, 'id'>): Promise<Item> {
-    const record = await pb.collection('items').create(data);
+  async create(data: Omit<Item, 'id' | 'site'>): Promise<Item> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const record = await pb.collection('items').create({
+      ...data,
+      site: siteId
+    });
     return this.mapRecordToItem(record);
   }
 
@@ -161,6 +339,7 @@ export class ItemService {
       unit: record.unit,
       quantity: record.quantity,
       category: record.category,
+      site: record.site,
       created: record.created,
       updated: record.updated
     };
@@ -169,12 +348,23 @@ export class ItemService {
 
 export class VendorService {
   async getAll(): Promise<Vendor[]> {
-    const records = await pb.collection('vendors').getFullList();
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('vendors').getFullList({
+      filter: `site="${siteId}"`
+    });
     return records.map(record => this.mapRecordToVendor(record));
   }
 
-  async create(data: Omit<Vendor, 'id'>): Promise<Vendor> {
-    const record = await pb.collection('vendors').create(data);
+  async create(data: Omit<Vendor, 'id' | 'site'>): Promise<Vendor> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const record = await pb.collection('vendors').create({
+      ...data,
+      site: siteId
+    });
     return this.mapRecordToVendor(record);
   }
 
@@ -197,6 +387,7 @@ export class VendorService {
       phone: record.phone,
       address: record.address,
       tags: record.tags || [],
+      site: record.site,
       created: record.created,
       updated: record.updated
     };
@@ -205,14 +396,24 @@ export class VendorService {
 
 export class QuotationService {
   async getAll(): Promise<Quotation[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
     const records = await pb.collection('quotations').getFullList({
+      filter: `site="${siteId}"`,
       expand: 'vendor,item'
     });
     return records.map(record => this.mapRecordToQuotation(record));
   }
 
-  async create(data: Omit<Quotation, 'id'>): Promise<Quotation> {
-    const record = await pb.collection('quotations').create(data);
+  async create(data: Omit<Quotation, 'id' | 'site'>): Promise<Quotation> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const record = await pb.collection('quotations').create({
+      ...data,
+      site: siteId
+    });
     return this.mapRecordToQuotation(record);
   }
 
@@ -236,6 +437,7 @@ export class QuotationService {
       valid_until: record.valid_until,
       notes: record.notes,
       status: record.status,
+      site: record.site,
       created: record.created,
       updated: record.updated,
       expand: record.expand ? {
@@ -254,6 +456,7 @@ export class QuotationService {
       phone: record.phone,
       address: record.address,
       tags: record.tags || [],
+      site: record.site,
       created: record.created,
       updated: record.updated
     };
@@ -267,6 +470,7 @@ export class QuotationService {
       unit: record.unit,
       quantity: record.quantity,
       category: record.category,
+      site: record.site,
       created: record.created,
       updated: record.updated
     };
@@ -275,14 +479,24 @@ export class QuotationService {
 
 export class IncomingItemService {
   async getAll(): Promise<IncomingItem[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
     const records = await pb.collection('incoming_items').getFullList({
+      filter: `site="${siteId}"`,
       expand: 'vendor,item'
     });
     return records.map(record => this.mapRecordToIncomingItem(record));
   }
 
-  async create(data: Omit<IncomingItem, 'id'>): Promise<IncomingItem> {
-    const record = await pb.collection('incoming_items').create(data);
+  async create(data: Omit<IncomingItem, 'id' | 'site'>): Promise<IncomingItem> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const record = await pb.collection('incoming_items').create({
+      ...data,
+      site: siteId
+    });
     return this.mapRecordToIncomingItem(record);
   }
 
@@ -316,6 +530,7 @@ export class IncomingItemService {
       notes: record.notes,
       payment_status: record.payment_status,
       paid_amount: record.paid_amount,
+      site: record.site,
       created: record.created,
       updated: record.updated,
       expand: record.expand ? {
@@ -334,6 +549,7 @@ export class IncomingItemService {
       phone: record.phone,
       address: record.address,
       tags: record.tags || [],
+      site: record.site,
       created: record.created,
       updated: record.updated
     };
@@ -347,6 +563,7 @@ export class IncomingItemService {
       unit: record.unit,
       quantity: record.quantity,
       category: record.category,
+      site: record.site,
       created: record.created,
       updated: record.updated
     };
@@ -355,15 +572,25 @@ export class IncomingItemService {
 
 export class PaymentService {
   async getAll(): Promise<Payment[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
     const records = await pb.collection('payments').getFullList({
+      filter: `site="${siteId}"`,
       expand: 'vendor,incoming_items'
     });
     return records.map(record => this.mapRecordToPayment(record));
   }
 
-  async create(data: Omit<Payment, 'id'>): Promise<Payment> {
+  async create(data: Omit<Payment, 'id' | 'site'>): Promise<Payment> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
     // Create the payment
-    const record = await pb.collection('payments').create(data);
+    const record = await pb.collection('payments').create({
+      ...data,
+      site: siteId
+    });
     
     // Update payment status of related incoming items
     await this.updateIncomingItemsPaymentStatus(data.vendor, data.amount);
@@ -372,9 +599,12 @@ export class PaymentService {
   }
 
   private async updateIncomingItemsPaymentStatus(vendorId: string, paymentAmount: number) {
+    const siteId = getCurrentSiteId();
+    if (!siteId) return;
+
     const incomingItems = await pb.collection('incoming_items')
       .getFullList({
-        filter: `vendor="${vendorId}" && payment_status!="paid"`,
+        filter: `vendor="${vendorId}" && payment_status!="paid" && site="${siteId}"`,
         sort: 'created'
       });
 
@@ -407,6 +637,7 @@ export class PaymentService {
       reference: record.reference,
       notes: record.notes,
       incoming_items: record.incoming_items || [],
+      site: record.site,
       created: record.created,
       updated: record.updated,
       expand: record.expand ? {
@@ -426,6 +657,7 @@ export class PaymentService {
       phone: record.phone,
       address: record.address,
       tags: record.tags || [],
+      site: record.site,
       created: record.created,
       updated: record.updated
     };
@@ -444,6 +676,7 @@ export class PaymentService {
       notes: record.notes,
       payment_status: record.payment_status,
       paid_amount: record.paid_amount,
+      site: record.site,
       created: record.created,
       updated: record.updated,
       expand: record.expand ? {
@@ -461,6 +694,7 @@ export class PaymentService {
       unit: record.unit,
       quantity: record.quantity,
       category: record.category,
+      site: record.site,
       created: record.created,
       updated: record.updated
     };
@@ -468,6 +702,7 @@ export class PaymentService {
 }
 
 export const authService = new AuthService();
+export const siteService = new SiteService();
 export const itemService = new ItemService();
 export const vendorService = new VendorService();
 export const quotationService = new QuotationService();
