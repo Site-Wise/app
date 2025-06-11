@@ -6,10 +6,10 @@
           <HardHat class="h-12 w-12 text-primary-600 dark:text-primary-400" />
         </div>
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-          Sign in to ConstructTrack
+          {{ t('auth.loginTitle') }}
         </h2>
         <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-          Manage your construction site efficiently
+          {{ t('auth.loginSubtitle') }}
         </p>
       </div>
       
@@ -28,7 +28,7 @@
 
           <div>
             <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Email address
+              {{ t('auth.email') }}
             </label>
             <div class="mt-1">
               <input
@@ -39,14 +39,14 @@
                 autocomplete="email"
                 required
                 class="input"
-                placeholder="Enter your email"
+                :placeholder="t('forms.enterEmail')"
               />
             </div>
           </div>
 
           <div>
             <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Password
+              {{ t('auth.password') }}
             </label>
             <div class="mt-1">
               <input
@@ -57,7 +57,7 @@
                 autocomplete="current-password"
                 required
                 class="input"
-                placeholder="Enter your password"
+                :placeholder="t('forms.enterPassword')"
               />
             </div>
           </div>
@@ -69,7 +69,7 @@
               class="w-full btn-primary"
             >
               <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-              {{ loading ? 'Signing in...' : 'Sign in' }}
+              {{ loading ? t('auth.signingIn') : t('auth.signIn') }}
             </button>
           </div>
         </form>
@@ -80,7 +80,7 @@
               <div class="w-full border-t border-gray-300 dark:border-gray-600" />
             </div>
             <div class="relative flex justify-center text-sm">
-              <span class="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">New to ConstructTrack?</span>
+              <span class="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">{{ t('auth.newToApp') }}</span>
             </div>
           </div>
           
@@ -89,7 +89,7 @@
               @click="showRegister = !showRegister"
               class="w-full btn-outline"
             >
-              Create new account
+              {{ t('auth.createNewAccount') }}
             </button>
           </div>
         </div>
@@ -98,11 +98,11 @@
       <!-- Register Form -->
       <div v-if="showRegister" class="card">
         <form @submit.prevent="handleRegister" class="space-y-6">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white">Create Account</h3>
+          <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ t('auth.registerTitle') }}</h3>
           
           <div>
             <label for="reg-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Full Name
+              {{ t('auth.fullName') }}
             </label>
             <div class="mt-1">
               <input
@@ -112,14 +112,14 @@
                 type="text"
                 required
                 class="input"
-                placeholder="Enter your full name"
+                :placeholder="t('forms.enterFullName')"
               />
             </div>
           </div>
 
           <div>
             <label for="reg-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Email address
+              {{ t('auth.email') }}
             </label>
             <div class="mt-1">
               <input
@@ -130,14 +130,14 @@
                 autocomplete="email"
                 required
                 class="input"
-                placeholder="Enter your email"
+                :placeholder="t('forms.enterEmail')"
               />
             </div>
           </div>
 
           <div>
             <label for="reg-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Password
+              {{ t('auth.password') }}
             </label>
             <div class="mt-1">
               <input
@@ -147,7 +147,7 @@
                 type="password"
                 required
                 class="input"
-                placeholder="Create a password"
+                :placeholder="t('forms.createPassword')"
               />
             </div>
           </div>
@@ -159,14 +159,14 @@
               class="flex-1 btn-primary"
             >
               <Loader2 v-if="registerLoading" class="mr-2 h-4 w-4 animate-spin" />
-              Create Account
+              {{ t('auth.createAccount') }}
             </button>
             <button
               type="button"
               @click="showRegister = false"
               class="flex-1 btn-outline"
             >
-              Cancel
+              {{ t('common.cancel') }}
             </button>
           </div>
         </form>
@@ -179,10 +179,12 @@
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
+import { useI18n } from '../composables/useI18n';
 import { HardHat, AlertCircle, Loader2 } from 'lucide-vue-next';
 
 const router = useRouter();
 const { login, register } = useAuth();
+const { t } = useI18n();
 
 const loading = ref(false);
 const registerLoading = ref(false);
@@ -209,10 +211,10 @@ const handleLogin = async () => {
     if (result.success) {
       router.push('/');
     } else {
-      error.value = result.error || 'Login failed';
+      error.value = result.error || t('auth.loginFailed');
     }
   } catch (err: any) {
-    error.value = err.message || 'An error occurred';
+    error.value = err.message || t('messages.error');
   } finally {
     loading.value = false;
   }
@@ -233,10 +235,10 @@ const handleRegister = async () => {
         router.push('/');
       }
     } else {
-      error.value = result.error || 'Registration failed';
+      error.value = result.error || t('auth.registrationFailed');
     }
   } catch (err: any) {
-    error.value = err.message || 'An error occurred';
+    error.value = err.message || t('messages.error');
   } finally {
     registerLoading.value = false;
   }

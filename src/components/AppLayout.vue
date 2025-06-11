@@ -31,7 +31,7 @@
             @click="sidebarOpen = false"
           >
             <component :is="item.icon" class="mr-3 h-5 w-5" />
-            {{ item.name }}
+            {{ t(item.nameKey) }}
           </router-link>
         </div>
       </nav>
@@ -69,35 +69,35 @@
                 class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
               >
                 <Package class="mr-1 h-4 w-4" />
-                Add Item
+                {{ t('quickActions.addItem') }}
               </button>
               <button
                 @click="quickAction('vendor')"
                 class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
               >
                 <Users class="mr-1 h-4 w-4" />
-                Add Vendor
+                {{ t('quickActions.addVendor') }}
               </button>
               <button
                 @click="quickAction('account')"
                 class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
               >
                 <CreditCard class="mr-1 h-4 w-4" />
-                Add Account
+                {{ t('quickActions.addAccount') }}
               </button>
               <button
                 @click="quickAction('delivery')"
                 class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
               >
                 <TruckIcon class="mr-1 h-4 w-4" />
-                Record Delivery
+                {{ t('quickActions.recordDelivery') }}
               </button>
               <button
                 @click="quickAction('payment')"
                 class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
               >
                 <DollarSign class="mr-1 h-4 w-4" />
-                Record Payment
+                {{ t('quickActions.recordPayment') }}
               </button>
             </div>
           </div>
@@ -107,6 +107,9 @@
             <div class="hidden lg:block">
               <SiteSelector />
             </div>
+            
+            <!-- Language Selector -->
+            <LanguageSelector />
             
             <!-- Theme Toggle -->
             <ThemeToggle />
@@ -132,7 +135,7 @@
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                   <LogOut class="inline mr-2 h-4 w-4" />
-                  Sign out
+                  {{ t('nav.logout') }}
                 </button>
               </div>
             </div>
@@ -160,7 +163,7 @@
           class="flex items-center w-full px-4 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 transform hover:scale-105"
         >
           <component :is="action.icon" class="mr-3 h-5 w-5" />
-          <span class="text-sm font-medium">{{ action.label }}</span>
+          <span class="text-sm font-medium">{{ t(action.labelKey) }}</span>
         </button>
       </div>
 
@@ -188,9 +191,11 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { useSite } from '../composables/useSite';
+import { useI18n } from '../composables/useI18n';
 import ThemeToggle from './ThemeToggle.vue';
 import PWAPrompt from './PWAPrompt.vue';
 import SiteSelector from './SiteSelector.vue';
+import LanguageSelector from './LanguageSelector.vue';
 import {
   HardHat,
   BarChart3,
@@ -211,6 +216,7 @@ const route = useRoute();
 const router = useRouter();
 const { user, logout } = useAuth();
 const { hasSiteAccess } = useSite();
+const { t } = useI18n();
 
 const sidebarOpen = ref(false);
 const userMenuOpen = ref(false);
@@ -218,21 +224,21 @@ const fabMenuOpen = ref(false);
 const userMenuRef = ref<HTMLElement | null>(null);
 
 const navigation = computed(() => [
-  { name: 'Dashboard', to: '/', icon: BarChart3, current: route.name === 'Dashboard' },
-  { name: 'Items', to: '/items', icon: Package, current: route.name === 'Items' },
-  { name: 'Vendors', to: '/vendors', icon: Users, current: route.name === 'Vendors' },
-  { name: 'Accounts', to: '/accounts', icon: CreditCard, current: route.name === 'Accounts' },
-  { name: 'Quotations', to: '/quotations', icon: FileText, current: route.name === 'Quotations' },
-  { name: 'Incoming Items', to: '/incoming', icon: TruckIcon, current: route.name === 'Incoming' },
-  { name: 'Payments', to: '/payments', icon: CreditCard, current: route.name === 'Payments' },
+  { name: 'Dashboard', nameKey: 'nav.dashboard', to: '/', icon: BarChart3, current: route.name === 'Dashboard' },
+  { name: 'Items', nameKey: 'nav.items', to: '/items', icon: Package, current: route.name === 'Items' },
+  { name: 'Vendors', nameKey: 'nav.vendors', to: '/vendors', icon: Users, current: route.name === 'Vendors' },
+  { name: 'Accounts', nameKey: 'nav.accounts', to: '/accounts', icon: CreditCard, current: route.name === 'Accounts' },
+  { name: 'Quotations', nameKey: 'nav.quotations', to: '/quotations', icon: FileText, current: route.name === 'Quotations' },
+  { name: 'Incoming Items', nameKey: 'nav.incoming', to: '/incoming', icon: TruckIcon, current: route.name === 'Incoming' },
+  { name: 'Payments', nameKey: 'nav.payments', to: '/payments', icon: CreditCard, current: route.name === 'Payments' },
 ]);
 
 const fabActions = [
-  { type: 'item', label: 'Add Item', icon: Package },
-  { type: 'vendor', label: 'Add Vendor', icon: Users },
-  { type: 'account', label: 'Add Account', icon: CreditCard },
-  { type: 'delivery', label: 'Record Delivery', icon: TruckIcon },
-  { type: 'payment', label: 'Record Payment', icon: DollarSign },
+  { type: 'item', labelKey: 'quickActions.addItem', icon: Package },
+  { type: 'vendor', labelKey: 'quickActions.addVendor', icon: Users },
+  { type: 'account', labelKey: 'quickActions.addAccount', icon: CreditCard },
+  { type: 'delivery', labelKey: 'quickActions.recordDelivery', icon: TruckIcon },
+  { type: 'payment', labelKey: 'quickActions.recordPayment', icon: DollarSign },
 ];
 
 const userInitials = computed(() => {
@@ -247,7 +253,7 @@ const userInitials = computed(() => {
 
 const quickAction = (type: string) => {
   if (!hasSiteAccess.value) {
-    alert('Please select a site first');
+    alert(t('messages.selectSiteFirst'));
     return;
   }
 

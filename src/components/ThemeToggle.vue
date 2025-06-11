@@ -21,7 +21,7 @@
         :class="{ 'bg-gray-100 dark:bg-gray-700': theme === option.value }"
       >
         <component :is="option.icon" class="mr-3 h-4 w-4" />
-        {{ option.label }}
+        {{ t(option.labelKey) }}
         <Check v-if="theme === option.value" class="ml-auto h-4 w-4 text-primary-600 dark:text-primary-400" />
       </button>
     </div>
@@ -32,14 +32,16 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Sun, Moon, Monitor, ChevronDown, Check } from 'lucide-vue-next';
 import { useTheme } from '../composables/useTheme';
+import { useI18n } from '../composables/useI18n';
 
 const { theme, isDark, setTheme } = useTheme();
+const { t } = useI18n();
 const dropdownOpen = ref(false);
 
 const themeOptions = [
-  { value: 'light', label: 'Light', icon: Sun },
-  { value: 'dark', label: 'Dark', icon: Moon },
-  { value: 'system', label: 'System', icon: Monitor }
+  { value: 'light', labelKey: 'theme.light', icon: Sun },
+  { value: 'dark', labelKey: 'theme.dark', icon: Moon },
+  { value: 'system', labelKey: 'theme.system', icon: Monitor }
 ];
 
 const currentIcon = computed(() => {

@@ -11,10 +11,10 @@
       </div>
       <div class="flex-1">
         <h3 class="text-sm font-medium text-gray-900 dark:text-white">
-          Install ConstructTrack
+          {{ t('pwa.installTitle') }}
         </h3>
         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          Install our app for a better experience with offline access and quick shortcuts.
+          {{ t('pwa.installMessage') }}
         </p>
         <div class="mt-3 flex space-x-2">
           <button
@@ -24,13 +24,13 @@
           >
             <Download v-if="!installing" class="mr-1 h-3 w-3" />
             <Loader2 v-else class="mr-1 h-3 w-3 animate-spin" />
-            {{ installing ? 'Installing...' : 'Install' }}
+            {{ installing ? t('pwa.installing') : t('pwa.install') }}
           </button>
           <button
             @click="dismiss"
             class="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
           >
-            Later
+            {{ t('pwa.later') }}
           </button>
         </div>
       </div>
@@ -54,10 +54,10 @@
       </div>
       <div class="flex-1">
         <h3 class="text-sm font-medium text-blue-900 dark:text-blue-100">
-          Update Available
+          {{ t('pwa.updateTitle') }}
         </h3>
         <p class="mt-1 text-sm text-blue-700 dark:text-blue-200">
-          A new version of ConstructTrack is available. Update now to get the latest features.
+          {{ t('pwa.updateMessage') }}
         </p>
         <div class="mt-3 flex space-x-2">
           <button
@@ -67,13 +67,13 @@
           >
             <RefreshCw v-if="!updating" class="mr-1 h-3 w-3" />
             <Loader2 v-else class="mr-1 h-3 w-3 animate-spin" />
-            {{ updating ? 'Updating...' : 'Update Now' }}
+            {{ updating ? t('pwa.updating') : t('pwa.updateNow') }}
           </button>
           <button
             @click="updateDismissed = true"
             class="inline-flex items-center px-3 py-1.5 border border-blue-300 dark:border-blue-600 text-xs font-medium rounded text-blue-700 dark:text-blue-200 bg-white dark:bg-blue-900/50 hover:bg-blue-50 dark:hover:bg-blue-900/70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
-            Later
+            {{ t('pwa.later') }}
           </button>
         </div>
       </div>
@@ -94,7 +94,7 @@
     <div class="flex items-center space-x-2">
       <WifiOff class="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
       <span class="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-        You're offline
+        {{ t('pwa.youreOffline') }}
       </span>
     </div>
   </div>
@@ -104,8 +104,10 @@
 import { ref, onMounted } from 'vue';
 import { HardHat, Download, X, RefreshCw, WifiOff, Loader2 } from 'lucide-vue-next';
 import { usePWA } from '../composables/usePWA';
+import { useI18n } from '../composables/useI18n';
 
 const { isInstallable, updateAvailable, isOnline, installApp, updateApp } = usePWA();
+const { t } = useI18n();
 
 const dismissed = ref(false);
 const updateDismissed = ref(false);
