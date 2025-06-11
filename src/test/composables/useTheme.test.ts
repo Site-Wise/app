@@ -4,8 +4,23 @@ import { useTheme } from '../../composables/useTheme'
 describe('useTheme', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    localStorage.clear()
+    
+    // Mock localStorage to always return null initially
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn().mockReturnValue(null),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+        clear: vi.fn()
+      },
+      writable: true
+    })
+    
     document.documentElement.classList.remove('dark')
+    
+    // Reset theme to system
+    const { setTheme } = useTheme()
+    setTheme('system')
   })
 
   it('should initialize with system theme by default', () => {
@@ -37,7 +52,7 @@ describe('useTheme', () => {
   })
 
   it('should follow system preference when set to system', () => {
-    const { setTheme, isDark } = useTheme()
+    const { setTheme, isDark, initializeTheme } = useTheme()
     
     // Mock system preference for dark mode
     window.matchMedia = vi.fn().mockImplementation(query => ({
@@ -48,12 +63,25 @@ describe('useTheme', () => {
     
     setTheme('system')
     
+    // Initialize theme to update system preference
+    initializeTheme()
+    
     // Should follow system preference (mocked as dark)
     expect(isDark.value).toBe(true)
   })
 
   it('should load saved theme from localStorage', () => {
-    localStorage.setItem('theme', 'dark')
+    // Create a fresh localStorage mock for this test
+    const localStorageData: Record<string, string> = { 'theme': 'dark' }
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn((key: string) => localStorageData[key] || null),
+        setItem: vi.fn((key: string, value: string) => { localStorageData[key] = value }),
+        removeItem: vi.fn((key: string) => { delete localStorageData[key] }),
+        clear: vi.fn(() => { Object.keys(localStorageData).forEach(key => delete localStorageData[key]) })
+      },
+      writable: true
+    })
     
     const { initializeTheme, theme } = useTheme()
     initializeTheme()
@@ -62,7 +90,17 @@ describe('useTheme', () => {
   })
 
   it('should ignore invalid theme from localStorage', () => {
-    localStorage.setItem('theme', 'invalid-theme')
+    // Create a fresh localStorage mock with invalid theme
+    const localStorageData: Record<string, string> = { 'theme': 'invalid-theme' }
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn((key: string) => localStorageData[key] || null),
+        setItem: vi.fn((key: string, value: string) => { localStorageData[key] = value }),
+        removeItem: vi.fn((key: string) => { delete localStorageData[key] }),
+        clear: vi.fn(() => { Object.keys(localStorageData).forEach(key => delete localStorageData[key]) })
+      },
+      writable: true
+    })
     
     const { initializeTheme, theme } = useTheme()
     initializeTheme()

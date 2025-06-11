@@ -31,7 +31,7 @@
             @click="sidebarOpen = false"
           >
             <component :is="item.icon" class="mr-3 h-5 w-5" />
-            {{ item.name }}
+            {{ t(item.nameKey) }}
           </router-link>
         </div>
       </nav>
@@ -107,17 +107,26 @@
             <div class="hidden lg:block">
               <SiteSelector />
             </div>
+
+            <!-- Language Selector -->
+            <LanguageSelector class="hidden md:block" />
             
             <!-- Theme Toggle -->
-            <ThemeToggle />
+            <ThemeToggle class="hidden md:block" />
             
             <div class="relative" ref="userMenuRef">
               <button
                 @click="userMenuOpen = !userMenuOpen"
                 class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-800"
               >
-                <div class="h-8 w-8 rounded-full bg-primary-600 dark:bg-primary-500 flex items-center justify-center">
-                  <span class="text-white font-medium">{{ userInitials }}</span>
+                <div class="relative">
+                  <div class="h-8 w-8 rounded-full bg-primary-600 dark:bg-primary-500 flex items-center justify-center">
+                    <span class="text-white font-medium">{{ userInitials }}</span>
+                  </div>
+                  <!-- Invitation Badge -->
+                  <div v-if="receivedInvitationsCount > 0" class="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full flex items-center justify-center">
+                    <span class="text-xs font-bold text-white">{{ receivedInvitationsCount > 9 ? '9+' : receivedInvitationsCount }}</span>
+                  </div>
                 </div>
                 <span class="ml-2 text-gray-700 dark:text-gray-300">{{ user?.name }}</span>
                 <ChevronDown class="ml-1 h-4 w-4 text-gray-500 dark:text-gray-400" />
@@ -125,8 +134,36 @@
               
               <div
                 v-if="userMenuOpen"
-                class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50 border border-gray-200 dark:border-gray-700"
+                class="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-2 z-50 border border-gray-200 dark:border-gray-700"
               >
+                <!-- Invitations Section -->
+                <div v-if="receivedInvitationsCount > 0" class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                      <div class="p-1 bg-blue-100 dark:bg-blue-900/30 rounded">
+                        <Mail class="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <span class="text-xs font-medium text-gray-900 dark:text-white">Invitations</span>
+                    </div>
+                    <span class="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-xs px-2 py-0.5 rounded-full">{{ receivedInvitationsCount }}</span>
+                  </div>
+                  <button 
+                    @click="goToInvites"
+                    class="w-full text-left text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                  >
+                    View all invitations →
+                  </button>
+                </div>
+                
+                <!-- User Menu Items -->
+                <button
+                  v-if="canManageUsers"
+                  @click="goToUserManagement"
+                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700"
+                >
+                  <Users class="inline mr-2 h-4 w-4" />
+                  Manage Users
+                </button>
                 <button
                   @click="handleLogout"
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -134,6 +171,21 @@
                   <LogOut class="inline mr-2 h-4 w-4" />
                   Sign out
                 </button>
+
+                <!-- Mobile Controls Section -->
+                <div class="block md:hidden border-t border-gray-200 dark:border-gray-700 mt-1 pt-2">
+                  <div class="px-3 pb-2">
+                    <!-- Language and Theme side by side -->
+                    <div class="flex items-center space-x-2">
+                      <div class="flex-1 min-w-0">
+                        <LanguageSelector />
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <ThemeToggle />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -160,7 +212,7 @@
           class="flex items-center w-full px-4 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 transform hover:scale-105"
         >
           <component :is="action.icon" class="mr-3 h-5 w-5" />
-          <span class="text-sm font-medium">{{ action.label }}</span>
+          <span class="text-sm font-medium">{{ t(action.labelKey) }}</span>
         </button>
       </div>
 
@@ -182,3 +234,132 @@
     ></div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useAuth } from '../composables/useAuth';
+import { useSite } from '../composables/useSite';
+import { useI18n } from '../composables/useI18n';
+import { useInvitations } from '../composables/useInvitations';
+import ThemeToggle from './ThemeToggle.vue';
+import PWAPrompt from './PWAPrompt.vue';
+import SiteSelector from './SiteSelector.vue';
+import LanguageSelector from './LanguageSelector.vue';
+import {
+  HardHat,
+  BarChart3,
+  Package,
+  Users,
+  FileText,
+  TruckIcon,
+  CreditCard,
+  Menu,
+  ChevronDown,
+  LogOut,
+  Plus,
+  X,
+  DollarSign,
+  Mail
+} from 'lucide-vue-next';
+
+const route = useRoute();
+const router = useRouter();
+const { user, logout } = useAuth();
+const { hasSiteAccess, canManageUsers } = useSite();
+const { t } = useI18n();
+const { receivedInvitationsCount, loadReceivedInvitations } = useInvitations();
+
+const sidebarOpen = ref(false);
+const userMenuOpen = ref(false);
+const fabMenuOpen = ref(false);
+const userMenuRef = ref<HTMLElement | null>(null);
+
+const navigation = computed(() => [
+  { name: 'Dashboard', nameKey: 'nav.dashboard', to: '/', icon: BarChart3, current: route.name === 'Dashboard' },
+  { name: 'Items', nameKey: 'nav.items', to: '/items', icon: Package, current: route.name === 'Items' },
+  { name: 'Vendors', nameKey: 'nav.vendors', to: '/vendors', icon: Users, current: route.name === 'Vendors' },
+  { name: 'Accounts', nameKey: 'nav.accounts', to: '/accounts', icon: CreditCard, current: route.name === 'Accounts' },
+  { name: 'Quotations', nameKey: 'nav.quotations', to: '/quotations', icon: FileText, current: route.name === 'Quotations' },
+  { name: 'Incoming Items', nameKey: 'nav.incoming', to: '/incoming', icon: TruckIcon, current: route.name === 'Incoming' },
+  { name: 'Payments', nameKey: 'nav.payments', to: '/payments', icon: CreditCard, current: route.name === 'Payments' },
+]);
+
+const fabActions = [
+  { type: 'item', labelKey: 'quickActions.addItem', icon: Package },
+  { type: 'vendor', labelKey: 'quickActions.addVendor', icon: Users },
+  { type: 'account', labelKey: 'quickActions.addAccount', icon: CreditCard },
+  { type: 'delivery', labelKey: 'quickActions.recordDelivery', icon: TruckIcon },
+  { type: 'payment', labelKey: 'quickActions.recordPayment', icon: DollarSign },
+];
+
+const userInitials = computed(() => {
+  if (!user.value?.name) return 'U';
+  return user.value.name
+    .split(' ')
+    .map(name => name[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+});
+
+const quickAction = (type: string) => {
+  if (!hasSiteAccess.value) {
+    alert(t('messages.selectSiteFirst'));
+    return;
+  }
+
+  // Close mobile menu
+  fabMenuOpen.value = false;
+  sidebarOpen.value = false;
+
+  const routes = {
+    item: '/items',
+    vendor: '/vendors',
+    account: '/accounts',
+    delivery: '/incoming',
+    payment: '/payments'
+  };
+  
+  const targetRoute = routes[type as keyof typeof routes];
+  if (targetRoute) {
+    router.push(targetRoute);
+    // Add a small delay to ensure navigation completes before triggering modal
+    setTimeout(() => {
+      // Emit event to trigger add modal on the target page
+      window.dispatchEvent(new CustomEvent('show-add-modal'));
+    }, 100);
+  }
+};
+
+const handleLogout = () => {
+  logout();
+  router.push('/login');
+};
+
+const handleClickOutside = (event: Event) => {
+  if (userMenuRef.value && !userMenuRef.value.contains(event.target as Node)) {
+    userMenuOpen.value = false;
+  }
+};
+
+const goToInvites = () => {
+  userMenuOpen.value = false;
+  router.push('/invites');
+};
+
+const goToUserManagement = () => {
+  userMenuOpen.value = false;
+  router.push('/users');
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+  // Load invitations when component mounts
+  loadReceivedInvitations();
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
+</script>

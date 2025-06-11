@@ -5,6 +5,27 @@ describe('usePWA', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     
+    // Mock localStorage
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn().mockReturnValue('[]'),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+        clear: vi.fn()
+      },
+      writable: true
+    })
+    
+    // Mock ServiceWorkerRegistration prototype
+    Object.defineProperty(window, 'ServiceWorkerRegistration', {
+      value: {
+        prototype: {
+          sync: {}
+        }
+      },
+      writable: true
+    })
+    
     // Reset navigator mocks
     Object.defineProperty(window, 'navigator', {
       value: {
@@ -35,16 +56,18 @@ describe('usePWA', () => {
   })
 
   it('should detect when app is installable', () => {
-    const { isInstallable } = usePWA()
+    const { isInstallable, initializePWA } = usePWA()
+    
+    // Initialize PWA to set up event listeners
+    initializePWA()
     
     // Simulate beforeinstallprompt event
-    const mockEvent = {
-      preventDefault: vi.fn(),
-      prompt: vi.fn().mockResolvedValue(undefined),
-      userChoice: Promise.resolve({ outcome: 'accepted' })
-    }
+    const mockEvent = new Event('beforeinstallprompt') as any
+    mockEvent.preventDefault = vi.fn()
+    mockEvent.prompt = vi.fn().mockResolvedValue(undefined)
+    mockEvent.userChoice = Promise.resolve({ outcome: 'accepted' })
     
-    window.dispatchEvent(new CustomEvent('beforeinstallprompt', { detail: mockEvent }))
+    window.dispatchEvent(mockEvent)
     
     expect(isInstallable.value).toBe(true)
   })
@@ -68,9 +91,12 @@ describe('usePWA', () => {
   })
 
   it('should detect online/offline status', () => {
-    const { isOnline } = usePWA()
+    const { isOnline, initializePWA } = usePWA()
     
     expect(isOnline.value).toBe(true)
+    
+    // Initialize PWA to set up event listeners
+    initializePWA()
     
     // Simulate going offline
     Object.defineProperty(navigator, 'onLine', {
@@ -133,6 +159,18 @@ describe('usePWA', () => {
 
   it('should add items to offline queue', () => {
     const { addToOfflineQueue } = usePWA()
+    
+    // Create a real localStorage mock that stores data
+    const localStorageData: Record<string, string> = {}
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn((key: string) => localStorageData[key] || null),
+        setItem: vi.fn((key: string, value: string) => { localStorageData[key] = value }),
+        removeItem: vi.fn((key: string) => { delete localStorageData[key] }),
+        clear: vi.fn(() => { Object.keys(localStorageData).forEach(key => delete localStorageData[key]) })
+      },
+      writable: true
+    })
     
     const request = {
       url: '/api/items',

@@ -101,6 +101,12 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresSite: true, permission: 'canManageUsers' }
     },
     {
+      path: '/invites',
+      name: 'Invites',
+      component: () => import('../views/InvitesView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
       redirect: '/'

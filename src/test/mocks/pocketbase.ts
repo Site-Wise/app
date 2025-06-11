@@ -1,5 +1,5 @@
 import { vi } from 'vitest'
-import type { User, Site, Item, Vendor, Quotation, IncomingItem, Payment, ServiceBooking } from '../../services/pocketbase'
+import type { User, Site, Item, Vendor, Quotation, IncomingItem, Payment, ServiceBooking, SiteUser, SiteInvitation } from '../../services/pocketbase'
 
 export const mockUser: User = {
   id: 'user-1',
@@ -114,6 +114,31 @@ export const mockPayment: Payment = {
   updated: '2024-01-01T00:00:00Z'
 }
 
+export const mockSiteUser: SiteUser = {
+  id: 'site-user-1',
+  site: 'site-1',
+  user: 'user-1',
+  role: 'owner',
+  assigned_by: 'user-1',
+  assigned_at: '2024-01-01T00:00:00Z',
+  is_active: true,
+  created: '2024-01-01T00:00:00Z',
+  updated: '2024-01-01T00:00:00Z'
+}
+
+export const mockSiteInvitation: SiteInvitation = {
+  id: 'invitation-1',
+  site: 'site-1',
+  email: 'invite@example.com',
+  role: 'supervisor',
+  invited_by: 'user-1',
+  invited_at: '2024-01-01T00:00:00Z',
+  status: 'pending',
+  expires_at: '2024-01-08T00:00:00Z',
+  created: '2024-01-01T00:00:00Z',
+  updated: '2024-01-01T00:00:00Z'
+}
+
 export const createMockPocketBase = () => {
   const collections = new Map()
   
@@ -125,6 +150,8 @@ export const createMockPocketBase = () => {
   collections.set('quotations', [mockQuotation])
   collections.set('incoming_items', [mockIncomingItem])
   collections.set('payments', [mockPayment])
+  collections.set('site_users', [mockSiteUser])
+  collections.set('site_invitations', [mockSiteInvitation])
   
   return {
     authStore: {
@@ -133,7 +160,21 @@ export const createMockPocketBase = () => {
       clear: vi.fn(),
     },
     collection: vi.fn((name: string) => ({
-      getFullList: vi.fn().mockResolvedValue(collections.get(name) || []),
+      getFullList: vi.fn().mockImplementation((options: any = {}) => {
+        const items = collections.get(name) || []
+        
+        // Handle expansion for site_users collection
+        if (name === 'site_users' && options.expand === 'site') {
+          return Promise.resolve(items.map((siteUser: any) => ({
+            ...siteUser,
+            expand: {
+              site: mockSite
+            }
+          })))
+        }
+        
+        return Promise.resolve(items)
+      }),
       getOne: vi.fn().mockImplementation((id: string) => {
         const items = collections.get(name) || []
         const item = items.find((item: any) => item.id === id)
@@ -171,3 +212,68 @@ export const createMockPocketBase = () => {
     baseUrl: 'http://localhost:8090'
   }
 }
+
+// Mock service instances
+export const mockAuthService = {
+  currentUser: mockUser,
+  isAuthenticated: true,
+  login: vi.fn().mockResolvedValue({ record: mockUser, token: 'mock-token' }),
+  register: vi.fn().mockResolvedValue(mockUser),
+  logout: vi.fn(),
+  getCurrentUserWithRoles: vi.fn().mockResolvedValue({
+    ...mockUser,
+    siteRoles: [{ site: 'site-1', siteName: 'Test Site', role: 'owner', isActive: true }]
+  })
+}
+
+export const mockSiteUserService = {
+  getAll: vi.fn().mockResolvedValue([mockSiteUser]),
+  getBySite: vi.fn().mockResolvedValue([mockSiteUser]),
+  getByUser: vi.fn().mockResolvedValue([mockSiteUser]),
+  getUserRoleForSite: vi.fn().mockResolvedValue('owner'),
+  assignRole: vi.fn().mockResolvedValue(mockSiteUser),
+  updateRole: vi.fn().mockResolvedValue(mockSiteUser),
+  deactivateRole: vi.fn().mockResolvedValue(mockSiteUser),
+  delete: vi.fn().mockResolvedValue(true)
+}
+
+export const mockSiteInvitationService = {
+  getAll: vi.fn().mockResolvedValue([mockSiteInvitation]),
+  getBySite: vi.fn().mockResolvedValue([mockSiteInvitation]),
+  create: vi.fn().mockResolvedValue(mockSiteInvitation),
+  updateStatus: vi.fn().mockResolvedValue(mockSiteInvitation),
+  delete: vi.fn().mockResolvedValue(true)
+}
+
+export const mockSiteService = {
+  getAll: vi.fn().mockResolvedValue([mockSite]),
+  getById: vi.fn().mockResolvedValue(mockSite),
+  create: vi.fn().mockResolvedValue(mockSite),
+  update: vi.fn().mockResolvedValue(mockSite),
+  delete: vi.fn().mockResolvedValue(true),
+  addUserToSite: vi.fn().mockResolvedValue(undefined),
+  removeUserFromSite: vi.fn().mockResolvedValue(undefined),
+  changeUserRole: vi.fn().mockResolvedValue(undefined)
+}
+
+// Site context functions
+export const getCurrentSiteId = vi.fn().mockReturnValue('site-1')
+export const setCurrentSiteId = vi.fn()
+export const getCurrentUserRole = vi.fn().mockReturnValue('owner')
+export const setCurrentUserRole = vi.fn()
+export const calculatePermissions = vi.fn().mockReturnValue({
+  canCreate: true,
+  canRead: true,
+  canUpdate: true,
+  canDelete: true,
+  canManageUsers: true,
+  canManageRoles: true,
+  canExport: true,
+  canViewFinancials: true
+})
+
+// Export services
+export const authService = mockAuthService
+export const siteService = mockSiteService
+export const siteUserService = mockSiteUserService
+export const siteInvitationService = mockSiteInvitationService

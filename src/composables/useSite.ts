@@ -4,7 +4,7 @@ import {
   siteUserService,
   getCurrentSiteId, 
   setCurrentSiteId,
-  getCurrentUserRole,
+  // getCurrentUserRole,
   setCurrentUserRole,
   type Site 
 } from '../services/pocketbase';
@@ -20,15 +20,34 @@ export function useSite() {
     isLoading.value = true;
     try {
       const sites = await siteService.getAll();
-      userSites.value = sites;
+      
+      // Load ownership info for each site
+      const authService = await import('../services/pocketbase').then(m => m.authService);
+      const user = authService.currentUser;
+      if (user) {
+        const sitesWithOwnership = await Promise.all(
+          sites.map(async (site) => {
+            const role = await siteUserService.getUserRoleForSite(user.id, site.id!);
+            return {
+              ...site,
+              userRole: role,
+              isOwner: role === 'owner'
+            };
+          })
+        );
+        userSites.value = sitesWithOwnership;
+      } else {
+        userSites.value = sites;
+      }
       
       // If no current site is set but user has sites, set the first one
       const savedSiteId = getCurrentSiteId();
-      if (!savedSiteId && sites.length > 0) {
-        await selectSite(sites[0].id!);
+
+      if (!savedSiteId && userSites.value.length > 0) {
+        await selectSite(userSites.value[0].id!);
       } else if (savedSiteId) {
         // Verify the saved site is still accessible
-        const savedSite = sites.find(site => site.id === savedSiteId);
+        const savedSite = userSites.value.find(site => site.id === savedSiteId);
         if (savedSite) {
           currentSite.value = savedSite;
           // Load user role for this site
@@ -213,6 +232,20 @@ export function useSite() {
     return currentUserRole.value === 'owner';
   });
 
+  const isOwnerOfSite = async (siteId: string): Promise<boolean> => {
+    try {
+      const authService = await import('../services/pocketbase').then(m => m.authService);
+      const user = authService.currentUser;
+      if (!user) return false;
+
+      const role = await siteUserService.getUserRoleForSite(user.id, siteId);
+      return role === 'owner';
+    } catch (error) {
+      console.error('Error checking site ownership:', error);
+      return false;
+    }
+  };
+
   return {
     currentSite: computed(() => currentSite.value),
     userSites: computed(() => userSites.value),
@@ -227,6 +260,7 @@ export function useSite() {
     updateSite,
     addUserToSite,
     removeUserFromSite,
-    changeUserRole
+    changeUserRole,
+    isOwnerOfSite
   };
 }

@@ -354,6 +354,9 @@
     "getStarted": "Invite users to get started.",
     "confirmRemoveUser": "Are you sure you want to remove {name} from this site?",
     "inviteEmailSent": "Invitation email sent to {email}",
+    "userNotFound": "No user found with email {email}",
+    "userAlreadyAssigned": "User is already assigned to this site",
+    "userAssignedSuccessfully": "User {email} has been assigned the role of {role}",
     "roles": {
       "owner": "Owner",
       "supervisor": "Supervisor",

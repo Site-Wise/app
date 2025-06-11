@@ -1,13 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { computed } from 'vue'
 import SiteSelector from '../../components/SiteSelector.vue'
 import { mockSite } from '../mocks/pocketbase'
 
 // Mock the useSite composable
 vi.mock('../../composables/useSite', () => ({
   useSite: () => ({
-    currentSite: { value: mockSite },
-    userSites: { value: [mockSite] },
+    currentSite: computed(() => mockSite),
+    userSites: computed(() => [mockSite]),
     selectSite: vi.fn(),
     createSite: vi.fn()
   })
@@ -48,9 +49,12 @@ describe('SiteSelector', () => {
     
     await wrapper.find('button').trigger('click')
     
-    // Find and click create site button
-    const createButton = wrapper.find('button:contains("Create New Site")')
-    if (createButton.exists()) {
+    // Find the create site button by text content
+    const buttons = wrapper.findAll('button')
+    const createButton = buttons.find(button => button.text().includes('Create New Site'))
+    
+    expect(createButton).toBeDefined()
+    if (createButton) {
       await createButton.trigger('click')
       expect(wrapper.find('.fixed').exists()).toBe(true)
     }

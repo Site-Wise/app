@@ -5,7 +5,14 @@ import { mockUser } from '../mocks/pocketbase'
 // Mock the auth service
 vi.mock('../../services/pocketbase', () => ({
   authService: {
-    currentUser: mockUser,
+    currentUser: {
+      id: 'user-1',
+      email: 'test@example.com',
+      name: 'Test User',
+      sites: ['site-1'],
+      created: '2024-01-01T00:00:00Z',
+      updated: '2024-01-01T00:00:00Z'
+    },
     isAuthenticated: true,
     login: vi.fn(),
     register: vi.fn(),
@@ -76,9 +83,9 @@ describe('useAuth', () => {
     expect(result.error).toBe('Email already exists')
   })
 
-  it('should logout user', () => {
+  it('should logout user', async () => {
     const { logout } = useAuth()
-    const { authService } = require('../../services/pocketbase')
+    const { authService } = await import('../../services/pocketbase')
     
     logout()
     

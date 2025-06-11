@@ -60,6 +60,24 @@ export interface SiteUser {
   };
 }
 
+export interface SiteInvitation {
+  id?: string;
+  site: string;        // Site ID
+  email: string;       // Email address invited (for identification, not actual email sending)
+  role: 'owner' | 'supervisor' | 'accountant';
+  invited_by: string;  // User ID who sent the invitation
+  invited_at: string;  // Timestamp
+  status: 'pending' | 'accepted' | 'expired';
+  expires_at: string;  // Expiration timestamp
+  created?: string;
+  updated?: string;
+  expand?: {
+    site?: Site;
+    invited_by?: User;
+  };
+  // Note: Email functionality is not implemented - invitations are managed in-app only
+}
+
 export interface Permissions {
   canCreate: boolean;
   canRead: boolean;
@@ -1594,9 +1612,92 @@ export class PaymentService {
   }
 }
 
+export class SiteInvitationService {
+  async getAll(): Promise<SiteInvitation[]> {
+    const records = await pb.collection('site_invitations').getFullList({
+      expand: 'site,invited_by'
+    });
+    return records.map(record => this.mapRecordToSiteInvitation(record));
+  }
+
+  async getBySite(siteId: string): Promise<SiteInvitation[]> {
+    const records = await pb.collection('site_invitations').getFullList({
+      filter: `site="${siteId}"`,
+      expand: 'invited_by'
+    });
+    return records.map(record => this.mapRecordToSiteInvitation(record));
+  }
+
+  async create(data: Omit<SiteInvitation, 'id' | 'created' | 'updated'>): Promise<SiteInvitation> {
+    // Note: Duplicate invitation validation is handled in useInvitations composable
+    // Note: Email sending functionality is commented out - invitations are managed in-app only
+    // TODO: Implement email sending here when email service is ready
+    // await emailService.sendInvitation(data.email, invitationData);
+
+    const record = await pb.collection('site_invitations').create(data);
+    return this.mapRecordToSiteInvitation(record);
+  }
+
+  async updateStatus(id: string, status: 'accepted' | 'expired'): Promise<SiteInvitation> {
+    const record = await pb.collection('site_invitations').update(id, { status });
+    return this.mapRecordToSiteInvitation(record);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    await pb.collection('site_invitations').delete(id);
+    return true;
+  }
+
+  private mapRecordToSiteInvitation(record: RecordModel): SiteInvitation {
+    return {
+      id: record.id,
+      site: record.site,
+      email: record.email,
+      role: record.role,
+      invited_by: record.invited_by,
+      invited_at: record.invited_at,
+      status: record.status,
+      expires_at: record.expires_at,
+      created: record.created,
+      updated: record.updated,
+      expand: record.expand ? {
+        site: record.expand.site ? this.mapRecordToSite(record.expand.site) : undefined,
+        invited_by: record.expand.invited_by ? this.mapRecordToUser(record.expand.invited_by) : undefined
+      } : undefined
+    };
+  }
+
+  private mapRecordToSite(record: RecordModel): Site {
+    return {
+      id: record.id,
+      name: record.name,
+      description: record.description,
+      total_units: record.total_units,
+      total_planned_area: record.total_planned_area,
+      admin_user: record.admin_user,
+      users: record.users || [],
+      created: record.created,
+      updated: record.updated
+    };
+  }
+
+  private mapRecordToUser(record: RecordModel): User {
+    return {
+      id: record.id,
+      email: record.email,
+      name: record.name,
+      avatar: record.avatar,
+      sites: record.sites || [],
+      created: record.created,
+      updated: record.updated
+    };
+  }
+}
+
 export const authService = new AuthService();
 export const siteService = new SiteService();
 export const siteUserService = new SiteUserService();
+export const siteInvitationService = new SiteInvitationService();
 export const accountService = new AccountService();
 export const itemService = new ItemService();
 export const serviceService = new ServiceService();

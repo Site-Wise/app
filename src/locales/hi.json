@@ -302,6 +302,9 @@
     "getStarted": "शुरुआत करने के लिए उपयोगकर्ताओं को आमंत्रित करें।",
     "confirmRemoveUser": "क्या आप वाकई {name} को इस साइट से हटाना चाहते हैं?",
     "inviteEmailSent": "{email} को आमंत्रण ईमेल भेजा गया",
+    "userNotFound": "ईमेल {email} के साथ कोई उपयोगकर्ता नहीं मिला",
+    "userAlreadyAssigned": "उपयोगकर्ता पहले से ही इस साइट को सौंपा गया है",
+    "userAssignedSuccessfully": "उपयोगकर्ता {email} को {role} की भूमिका सौंपी गई है",
     "roles": {
       "owner": "मालिक",
       "supervisor": "पर्यवेक्षक",
