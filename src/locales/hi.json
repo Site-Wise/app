@@ -77,6 +77,7 @@
     "quotations": "कोटेशन",
     "incoming": "आने वाली वस्तुएं",
     "payments": "भुगतान",
+    "users": "उपयोगकर्ता",
     "settings": "सेटिंग्स",
     "profile": "प्रोफाइल",
     "logout": "साइन आउट"
@@ -108,6 +109,7 @@
     "newToApp": "ConstructTrack में नए हैं?",
     "alreadyHaveAccount": "पहले से खाता है?",
     "createNewAccount": "नया खाता बनाएं",
+    "createAccount": "खाता बनाएं",
     "backToLogin": "लॉगिन पर वापस जाएं"
   },
   "dashboard": {
@@ -277,6 +279,31 @@
     "noOtherSites": "कोई अन्य साइट उपलब्ध नहीं",
     "createNewSite": "नई साइट बनाएं"
   },
+  "users": {
+    "title": "उपयोगकर्ता प्रबंधन",
+    "subtitle": "साइट उपयोगकर्ताओं और उनकी भूमिकाओं का प्रबंधन करें",
+    "inviteUser": "उपयोगकर्ता आमंत्रित करें",
+    "role": "भूमिका",
+    "assignedBy": "द्वारा असाइन किया गया",
+    "assignedAt": "असाइन किया गया",
+    "changeRole": "भूमिका बदलें",
+    "newRole": "नई भूमिका",
+    "updateRole": "भूमिका अपडेट करें",
+    "removeUser": "उपयोगकर्ता हटाएं",
+    "activate": "सक्रिय करें",
+    "deactivate": "निष्क्रिय करें",
+    "sendInvite": "आमंत्रण भेजें",
+    "selectRole": "एक भूमिका चुनें",
+    "noUsers": "कोई उपयोगकर्ता नहीं मिला",
+    "getStarted": "शुरुआत करने के लिए उपयोगकर्ताओं को आमंत्रित करें।",
+    "confirmRemoveUser": "क्या आप वाकई {name} को इस साइट से हटाना चाहते हैं?",
+    "inviteEmailSent": "{email} को आमंत्रण ईमेल भेजा गया",
+    "roles": {
+      "owner": "मालिक",
+      "supervisor": "पर्यवेक्षक",
+      "accountant": "लेखाकार"
+    }
+  },
   "quickActions": {
     "addItem": "वस्तु जोड़ें",
     "addVendor": "विक्रेता जोड़ें",
@@ -340,7 +367,10 @@
     "deliveryNotes": "डिलीवरी टिप्पणी",
     "paymentNotes": "भुगतान टिप्पणी",
     "additionalNotes": "अतिरिक्त टिप्पणी",
-    "optional": "वैकल्पिक"
+    "optional": "वैकल्पिक",
+    "enterFullName": "अपना पूरा नाम दर्ज करें",
+    "enterPassword": "अपना पासवर्ड दर्ज करें",
+    "createPassword": "एक पासवर्ड बनाएं"
   },
   "pwa": {
     "installApp": "ConstructTrack इंस्टॉल करें",

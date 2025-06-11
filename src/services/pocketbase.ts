@@ -18,6 +18,15 @@ export interface User {
   updated: string;
 }
 
+export interface UserWithRoles extends User {
+  siteRoles: Array<{
+    site: string;
+    siteName: string;
+    role: 'owner' | 'supervisor' | 'accountant';
+    isActive: boolean;
+  }>;
+}
+
 export interface Site {
   id?: string;
   name: string;
@@ -32,6 +41,34 @@ export interface Site {
     admin_user?: User;
     users?: User[];
   };
+}
+
+export interface SiteUser {
+  id?: string;
+  site: string;        // Site ID
+  user: string;        // User ID  
+  role: 'owner' | 'supervisor' | 'accountant';
+  assigned_by: string; // User ID who assigned this role
+  assigned_at: string; // Timestamp
+  is_active: boolean;  // Can be deactivated without deletion
+  created?: string;
+  updated?: string;
+  expand?: {
+    site?: Site;
+    user?: User;
+    assigned_by?: User;
+  };
+}
+
+export interface Permissions {
+  canCreate: boolean;
+  canRead: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
+  canManageUsers: boolean;
+  canManageRoles: boolean;
+  canExport: boolean;
+  canViewFinancials: boolean;
 }
 
 export interface Account {
@@ -135,6 +172,7 @@ export interface Payment {
 
 // Site context management
 let currentSiteId: string | null = null;
+let currentUserRole: 'owner' | 'supervisor' | 'accountant' | null = null;
 
 export const getCurrentSiteId = (): string | null => {
   if (!currentSiteId) {
@@ -149,6 +187,87 @@ export const setCurrentSiteId = (siteId: string | null) => {
     localStorage.setItem('currentSiteId', siteId);
   } else {
     localStorage.removeItem('currentSiteId');
+  }
+};
+
+export const getCurrentUserRole = (): 'owner' | 'supervisor' | 'accountant' | null => {
+  if (!currentUserRole) {
+    currentUserRole = localStorage.getItem('currentUserRole') as 'owner' | 'supervisor' | 'accountant' | null;
+  }
+  return currentUserRole;
+};
+
+export const setCurrentUserRole = (role: 'owner' | 'supervisor' | 'accountant' | null) => {
+  currentUserRole = role;
+  if (role) {
+    localStorage.setItem('currentUserRole', role);
+  } else {
+    localStorage.removeItem('currentUserRole');
+  }
+};
+
+export const calculatePermissions = (role: 'owner' | 'supervisor' | 'accountant' | null): Permissions => {
+  if (!role) {
+    return {
+      canCreate: false,
+      canRead: false,
+      canUpdate: false,
+      canDelete: false,
+      canManageUsers: false,
+      canManageRoles: false,
+      canExport: false,
+      canViewFinancials: false
+    };
+  }
+
+  switch (role) {
+    case 'owner':
+      return {
+        canCreate: true,
+        canRead: true,
+        canUpdate: true,
+        canDelete: true,
+        canManageUsers: true,
+        canManageRoles: true,
+        canExport: true,
+        canViewFinancials: true
+      };
+    
+    case 'supervisor':
+      return {
+        canCreate: true,
+        canRead: true,
+        canUpdate: true,
+        canDelete: false, // Cannot delete
+        canManageUsers: false,
+        canManageRoles: false,
+        canExport: true,
+        canViewFinancials: true
+      };
+    
+    case 'accountant':
+      return {
+        canCreate: false,
+        canRead: true,
+        canUpdate: false,
+        canDelete: false,
+        canManageUsers: false,
+        canManageRoles: false,
+        canExport: true, // Can export financial reports
+        canViewFinancials: true
+      };
+    
+    default:
+      return {
+        canCreate: false,
+        canRead: false,
+        canUpdate: false,
+        canDelete: false,
+        canManageUsers: false,
+        canManageRoles: false,
+        canExport: false,
+        canViewFinancials: false
+      };
   }
 };
 
@@ -172,6 +291,7 @@ export class AuthService {
   logout() {
     pb.authStore.clear();
     setCurrentSiteId(null); // Clear current site on logout
+    setCurrentUserRole(null); // Clear current role on logout
   }
 
   get isAuthenticated() {
@@ -192,6 +312,149 @@ export class AuthService {
       updated: model.updated || ''
     };
   }
+
+  async getCurrentUserWithRoles(): Promise<UserWithRoles | null> {
+    const user = this.currentUser;
+    if (!user) return null;
+
+    try {
+      // Get user's site roles
+      const siteUsers = await pb.collection('site_users').getFullList({
+        filter: `user="${user.id}" && is_active=true`,
+        expand: 'site'
+      });
+
+      const siteRoles = siteUsers.map(siteUser => ({
+        site: siteUser.site,
+        siteName: siteUser.expand?.site?.name || 'Unknown Site',
+        role: siteUser.role as 'owner' | 'supervisor' | 'accountant',
+        isActive: siteUser.is_active
+      }));
+
+      return {
+        ...user,
+        siteRoles
+      };
+    } catch (error) {
+      console.error('Error fetching user roles:', error);
+      return {
+        ...user,
+        siteRoles: []
+      };
+    }
+  }
+}
+
+export class SiteUserService {
+  async getAll(): Promise<SiteUser[]> {
+    const records = await pb.collection('site_users').getFullList({
+      expand: 'site,user,assigned_by'
+    });
+    return records.map(record => this.mapRecordToSiteUser(record));
+  }
+
+  async getBySite(siteId: string): Promise<SiteUser[]> {
+    const records = await pb.collection('site_users').getFullList({
+      filter: `site="${siteId}"`,
+      expand: 'user,assigned_by'
+    });
+    return records.map(record => this.mapRecordToSiteUser(record));
+  }
+
+  async getByUser(userId: string): Promise<SiteUser[]> {
+    const records = await pb.collection('site_users').getFullList({
+      filter: `user="${userId}"`,
+      expand: 'site,assigned_by'
+    });
+    return records.map(record => this.mapRecordToSiteUser(record));
+  }
+
+  async getUserRoleForSite(userId: string, siteId: string): Promise<'owner' | 'supervisor' | 'accountant' | null> {
+    try {
+      const record = await pb.collection('site_users').getFirstListItem(
+        `user="${userId}" && site="${siteId}" && is_active=true`
+      );
+      return record.role as 'owner' | 'supervisor' | 'accountant';
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async assignRole(data: {
+    site: string;
+    user: string;
+    role: 'owner' | 'supervisor' | 'accountant';
+    assigned_by: string;
+  }): Promise<SiteUser> {
+    const siteUserData = {
+      ...data,
+      assigned_at: new Date().toISOString(),
+      is_active: true
+    };
+
+    const record = await pb.collection('site_users').create(siteUserData);
+    return this.mapRecordToSiteUser(record);
+  }
+
+  async updateRole(id: string, data: Partial<SiteUser>): Promise<SiteUser> {
+    const record = await pb.collection('site_users').update(id, data);
+    return this.mapRecordToSiteUser(record);
+  }
+
+  async deactivateRole(id: string): Promise<SiteUser> {
+    const record = await pb.collection('site_users').update(id, { is_active: false });
+    return this.mapRecordToSiteUser(record);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    await pb.collection('site_users').delete(id);
+    return true;
+  }
+
+  private mapRecordToSiteUser(record: RecordModel): SiteUser {
+    return {
+      id: record.id,
+      site: record.site,
+      user: record.user,
+      role: record.role,
+      assigned_by: record.assigned_by,
+      assigned_at: record.assigned_at,
+      is_active: record.is_active,
+      created: record.created,
+      updated: record.updated,
+      expand: record.expand ? {
+        site: record.expand.site ? this.mapRecordToSite(record.expand.site) : undefined,
+        user: record.expand.user ? this.mapRecordToUser(record.expand.user) : undefined,
+        assigned_by: record.expand.assigned_by ? this.mapRecordToUser(record.expand.assigned_by) : undefined
+      } : undefined
+    };
+  }
+
+  private mapRecordToSite(record: RecordModel): Site {
+    return {
+      id: record.id,
+      name: record.name,
+      description: record.description,
+      total_units: record.total_units,
+      total_planned_area: record.total_planned_area,
+      admin_user: record.admin_user,
+      users: record.users || [],
+      created: record.created,
+      updated: record.updated
+    };
+  }
+
+  private mapRecordToUser(record: RecordModel): User {
+    return {
+      id: record.id,
+      email: record.email,
+      name: record.name,
+      avatar: record.avatar,
+      sites: record.sites || [],
+      created: record.created,
+      updated: record.updated
+    };
+  }
 }
 
 export class SiteService {
@@ -199,12 +462,14 @@ export class SiteService {
     const user = authService.currentUser;
     if (!user) throw new Error('User not authenticated');
 
-    // Get sites where user is admin or has access
-    const records = await pb.collection('sites').getFullList({
-      filter: `admin_user="${user.id}" || users~"${user.id}"`,
-      expand: 'admin_user,users'
+    // Get sites where user has any role
+    const siteUsers = await pb.collection('site_users').getFullList({
+      filter: `user="${user.id}" && is_active=true`,
+      expand: 'site'
     });
-    return records.map(record => this.mapRecordToSite(record));
+
+    const sites = siteUsers.map(siteUser => siteUser.expand?.site).filter(Boolean);
+    return sites.map(site => this.mapRecordToSite(site));
   }
 
   async getById(id: string): Promise<Site | null> {
@@ -230,8 +495,13 @@ export class SiteService {
 
     const record = await pb.collection('sites').create(siteData);
     
-    // Update user's sites array
-    await this.addUserToSite(user.id, record.id);
+    // Create site_user record with owner role
+    await siteUserService.assignRole({
+      site: record.id,
+      user: user.id,
+      role: 'owner',
+      assigned_by: user.id
+    });
     
     return this.mapRecordToSite(record);
   }
@@ -246,8 +516,25 @@ export class SiteService {
     return true;
   }
 
-  async addUserToSite(userId: string, siteId: string): Promise<void> {
-    // Get current user record
+  async addUserToSite(userId: string, siteId: string, role: 'owner' | 'supervisor' | 'accountant' = 'supervisor'): Promise<void> {
+    const currentUser = authService.currentUser;
+    if (!currentUser) throw new Error('User not authenticated');
+
+    // Check if current user has permission to add users
+    const currentUserRole = await siteUserService.getUserRoleForSite(currentUser.id, siteId);
+    if (currentUserRole !== 'owner') {
+      throw new Error('Permission denied: Only owners can add users');
+    }
+
+    // Create site_user record
+    await siteUserService.assignRole({
+      site: siteId,
+      user: userId,
+      role,
+      assigned_by: currentUser.id
+    });
+
+    // Update user's sites array
     const userRecord = await pb.collection('users').getOne(userId);
     const currentSites = userRecord.sites || [];
     
@@ -257,7 +544,7 @@ export class SiteService {
       });
     }
 
-    // Get current site record
+    // Update site's users array
     const siteRecord = await pb.collection('sites').getOne(siteId);
     const currentUsers = siteRecord.users || [];
     
@@ -269,7 +556,25 @@ export class SiteService {
   }
 
   async removeUserFromSite(userId: string, siteId: string): Promise<void> {
-    // Get current user record
+    const currentUser = authService.currentUser;
+    if (!currentUser) throw new Error('User not authenticated');
+
+    // Check if current user has permission to remove users
+    const currentUserRole = await siteUserService.getUserRoleForSite(currentUser.id, siteId);
+    if (currentUserRole !== 'owner') {
+      throw new Error('Permission denied: Only owners can remove users');
+    }
+
+    // Deactivate site_user record
+    const siteUsers = await pb.collection('site_users').getFullList({
+      filter: `user="${userId}" && site="${siteId}"`
+    });
+
+    for (const siteUser of siteUsers) {
+      await siteUserService.deactivateRole(siteUser.id);
+    }
+
+    // Update user's sites array
     const userRecord = await pb.collection('users').getOne(userId);
     const currentSites = userRecord.sites || [];
     
@@ -277,13 +582,33 @@ export class SiteService {
       sites: currentSites.filter((id: string) => id !== siteId)
     });
 
-    // Get current site record
+    // Update site's users array
     const siteRecord = await pb.collection('sites').getOne(siteId);
     const currentUsers = siteRecord.users || [];
     
     await pb.collection('sites').update(siteId, {
       users: currentUsers.filter((id: string) => id !== userId)
     });
+  }
+
+  async changeUserRole(userId: string, siteId: string, newRole: 'owner' | 'supervisor' | 'accountant'): Promise<void> {
+    const currentUser = authService.currentUser;
+    if (!currentUser) throw new Error('User not authenticated');
+
+    // Check if current user has permission to change roles
+    const currentUserRole = await siteUserService.getUserRoleForSite(currentUser.id, siteId);
+    if (currentUserRole !== 'owner') {
+      throw new Error('Permission denied: Only owners can change user roles');
+    }
+
+    // Find and update the site_user record
+    const siteUsers = await pb.collection('site_users').getFullList({
+      filter: `user="${userId}" && site="${siteId}" && is_active=true`
+    });
+
+    if (siteUsers.length > 0) {
+      await siteUserService.updateRole(siteUsers[0].id, { role: newRole });
+    }
   }
 
   private mapRecordToSite(record: RecordModel): Site {
@@ -341,6 +666,13 @@ export class AccountService {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
 
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create accounts');
+    }
+
     const record = await pb.collection('accounts').create({
       ...data,
       current_balance: data.opening_balance, // Initialize current balance with opening balance
@@ -350,11 +682,25 @@ export class AccountService {
   }
 
   async update(id: string, data: Partial<Account>): Promise<Account> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canUpdate) {
+      throw new Error('Permission denied: Cannot update accounts');
+    }
+
     const record = await pb.collection('accounts').update(id, data);
     return this.mapRecordToAccount(record);
   }
 
   async delete(id: string): Promise<boolean> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canDelete) {
+      throw new Error('Permission denied: Cannot delete accounts');
+    }
+
     await pb.collection('accounts').delete(id);
     return true;
   }
@@ -420,6 +766,13 @@ export class ItemService {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
 
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create items');
+    }
+
     const record = await pb.collection('items').create({
       ...data,
       site: siteId
@@ -428,11 +781,25 @@ export class ItemService {
   }
 
   async update(id: string, data: Partial<Item>): Promise<Item> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canUpdate) {
+      throw new Error('Permission denied: Cannot update items');
+    }
+
     const record = await pb.collection('items').update(id, data);
     return this.mapRecordToItem(record);
   }
 
   async delete(id: string): Promise<boolean> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canDelete) {
+      throw new Error('Permission denied: Cannot delete items');
+    }
+
     await pb.collection('items').delete(id);
     return true;
   }
@@ -467,6 +834,13 @@ export class VendorService {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
 
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create vendors');
+    }
+
     const record = await pb.collection('vendors').create({
       ...data,
       site: siteId
@@ -475,11 +849,25 @@ export class VendorService {
   }
 
   async update(id: string, data: Partial<Vendor>): Promise<Vendor> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canUpdate) {
+      throw new Error('Permission denied: Cannot update vendors');
+    }
+
     const record = await pb.collection('vendors').update(id, data);
     return this.mapRecordToVendor(record);
   }
 
   async delete(id: string): Promise<boolean> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canDelete) {
+      throw new Error('Permission denied: Cannot delete vendors');
+    }
+
     await pb.collection('vendors').delete(id);
     return true;
   }
@@ -516,6 +904,13 @@ export class QuotationService {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
 
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create quotations');
+    }
+
     const record = await pb.collection('quotations').create({
       ...data,
       site: siteId
@@ -524,11 +919,25 @@ export class QuotationService {
   }
 
   async update(id: string, data: Partial<Quotation>): Promise<Quotation> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canUpdate) {
+      throw new Error('Permission denied: Cannot update quotations');
+    }
+
     const record = await pb.collection('quotations').update(id, data);
     return this.mapRecordToQuotation(record);
   }
 
   async delete(id: string): Promise<boolean> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canDelete) {
+      throw new Error('Permission denied: Cannot delete quotations');
+    }
+
     await pb.collection('quotations').delete(id);
     return true;
   }
@@ -599,6 +1008,13 @@ export class IncomingItemService {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
 
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create incoming items');
+    }
+
     const record = await pb.collection('incoming_items').create({
       ...data,
       site: siteId
@@ -607,11 +1023,25 @@ export class IncomingItemService {
   }
 
   async update(id: string, data: Partial<IncomingItem>): Promise<IncomingItem> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canUpdate) {
+      throw new Error('Permission denied: Cannot update incoming items');
+    }
+
     const record = await pb.collection('incoming_items').update(id, data);
     return this.mapRecordToIncomingItem(record);
   }
 
   async delete(id: string): Promise<boolean> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canDelete) {
+      throw new Error('Permission denied: Cannot delete incoming items');
+    }
+
     await pb.collection('incoming_items').delete(id);
     return true;
   }
@@ -691,6 +1121,13 @@ export class PaymentService {
   async create(data: Omit<Payment, 'id' | 'site'>): Promise<Payment> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
+
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create payments');
+    }
 
     // Create the payment
     const record = await pb.collection('payments').create({
@@ -831,6 +1268,7 @@ export class PaymentService {
 
 export const authService = new AuthService();
 export const siteService = new SiteService();
+export const siteUserService = new SiteUserService();
 export const accountService = new AccountService();
 export const itemService = new ItemService();
 export const vendorService = new VendorService();

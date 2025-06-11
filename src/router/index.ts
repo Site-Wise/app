@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { authService, getCurrentSiteId } from '../services/pocketbase';
+import { authService, getCurrentSiteId, getCurrentUserRole, calculatePermissions } from '../services/pocketbase';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -20,61 +20,67 @@ const router = createRouter({
       path: '/',
       name: 'Dashboard',
       component: () => import('../views/DashboardView.vue'),
-      meta: { requiresAuth: true, requiresSite: true }
+      meta: { requiresAuth: true, requiresSite: true, permission: 'canRead' }
     },
     {
       path: '/items',
       name: 'Items',
       component: () => import('../views/ItemsView.vue'),
-      meta: { requiresAuth: true, requiresSite: true }
+      meta: { requiresAuth: true, requiresSite: true, permission: 'canRead' }
     },
     {
       path: '/items/:id',
       name: 'ItemDetail',
       component: () => import('../views/ItemDetailView.vue'),
-      meta: { requiresAuth: true, requiresSite: true }
+      meta: { requiresAuth: true, requiresSite: true, permission: 'canRead' }
     },
     {
       path: '/vendors',
       name: 'Vendors',
       component: () => import('../views/VendorsView.vue'),
-      meta: { requiresAuth: true, requiresSite: true }
+      meta: { requiresAuth: true, requiresSite: true, permission: 'canRead' }
     },
     {
       path: '/vendors/:id',
       name: 'VendorDetail',
       component: () => import('../views/VendorDetailView.vue'),
-      meta: { requiresAuth: true, requiresSite: true }
+      meta: { requiresAuth: true, requiresSite: true, permission: 'canRead' }
     },
     {
       path: '/accounts',
       name: 'Accounts',
       component: () => import('../views/AccountsView.vue'),
-      meta: { requiresAuth: true, requiresSite: true }
+      meta: { requiresAuth: true, requiresSite: true, permission: 'canViewFinancials' }
     },
     {
       path: '/accounts/:id',
       name: 'AccountDetail',
       component: () => import('../views/AccountDetailView.vue'),
-      meta: { requiresAuth: true, requiresSite: true }
+      meta: { requiresAuth: true, requiresSite: true, permission: 'canViewFinancials' }
     },
     {
       path: '/quotations',
       name: 'Quotations',
       component: () => import('../views/QuotationsView.vue'),
-      meta: { requiresAuth: true, requiresSite: true }
+      meta: { requiresAuth: true, requiresSite: true, permission: 'canRead' }
     },
     {
       path: '/incoming',
       name: 'Incoming',
       component: () => import('../views/IncomingView.vue'),
-      meta: { requiresAuth: true, requiresSite: true }
+      meta: { requiresAuth: true, requiresSite: true, permission: 'canRead' }
     },
     {
       path: '/payments',
       name: 'Payments',
       component: () => import('../views/PaymentsView.vue'),
-      meta: { requiresAuth: true, requiresSite: true }
+      meta: { requiresAuth: true, requiresSite: true, permission: 'canViewFinancials' }
+    },
+    {
+      path: '/users',
+      name: 'UserManagement',
+      component: () => import('../views/UserManagementView.vue'),
+      meta: { requiresAuth: true, requiresSite: true, permission: 'canManageUsers' }
     },
     {
       path: '/:pathMatch(.*)*',
@@ -87,6 +93,7 @@ const router = createRouter({
 router.beforeEach((to, _from, next) => {
   const isAuthenticated = authService.isAuthenticated;
   const currentSiteId = getCurrentSiteId();
+  const userRole = getCurrentUserRole();
 
   // Handle authentication requirements
   if (to.meta.requiresAuth && !isAuthenticated) {
@@ -108,6 +115,18 @@ router.beforeEach((to, _from, next) => {
   if (to.meta.requiresSite && !currentSiteId) {
     next('/select-site');
     return;
+  }
+
+  // Handle permission requirements
+  if (to.meta.permission && currentSiteId) {
+    const permissions = calculatePermissions(userRole);
+    const requiredPermission = to.meta.permission as keyof typeof permissions;
+    
+    if (!permissions[requiredPermission]) {
+      // Redirect to dashboard if user doesn't have permission
+      next('/');
+      return;
+    }
   }
 
   // Allow navigation

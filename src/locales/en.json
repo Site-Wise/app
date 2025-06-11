@@ -77,6 +77,7 @@
     "quotations": "Quotations",
     "incoming": "Incoming Items",
     "payments": "Payments",
+    "users": "Users",
     "settings": "Settings",
     "profile": "Profile",
     "logout": "Sign out"
@@ -108,6 +109,7 @@
     "newToApp": "New to ConstructTrack?",
     "alreadyHaveAccount": "Already have an account?",
     "createNewAccount": "Create new account",
+    "createAccount": "Create Account",
     "backToLogin": "Back to login"
   },
   "dashboard": {
@@ -277,6 +279,31 @@
     "noOtherSites": "No other sites available",
     "createNewSite": "Create New Site"
   },
+  "users": {
+    "title": "User Management",
+    "subtitle": "Manage site users and their roles",
+    "inviteUser": "Invite User",
+    "role": "Role",
+    "assignedBy": "Assigned By",
+    "assignedAt": "Assigned At",
+    "changeRole": "Change Role",
+    "newRole": "New Role",
+    "updateRole": "Update Role",
+    "removeUser": "Remove User",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "sendInvite": "Send Invite",
+    "selectRole": "Select a role",
+    "noUsers": "No users found",
+    "getStarted": "Invite users to get started.",
+    "confirmRemoveUser": "Are you sure you want to remove {name} from this site?",
+    "inviteEmailSent": "Invitation email sent to {email}",
+    "roles": {
+      "owner": "Owner",
+      "supervisor": "Supervisor",
+      "accountant": "Accountant"
+    }
+  },
   "quickActions": {
     "addItem": "Add Item",
     "addVendor": "Add Vendor",
@@ -340,7 +367,10 @@
     "deliveryNotes": "Delivery notes",
     "paymentNotes": "Payment notes",
     "additionalNotes": "Additional notes",
-    "optional": "Optional"
+    "optional": "Optional",
+    "enterFullName": "Enter your full name",
+    "enterPassword": "Enter your password",
+    "createPassword": "Create a password"
   },
   "pwa": {
     "installApp": "Install ConstructTrack",
