@@ -67,7 +67,8 @@
     "cancelled": "Cancelled",
     "draft": "Draft",
     "published": "Published",
-    "archived": "Archived"
+    "archived": "Archived",
+    "more": "more"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -238,13 +239,16 @@
     "deliveryDate": "Delivery Date",
     "paymentStatus": "Payment Status",
     "paidAmount": "Paid Amount",
+    "paid": "Paid",
     "photos": "Photos",
     "deliveryNotes": "Delivery notes",
     "deliveryDetails": "Delivery Details",
     "existingPhotos": "Existing photos:",
     "noDeliveries": "No deliveries recorded",
     "startTracking": "Start tracking by recording a delivery.",
-    "itemsAffected": "Items Affected"
+    "itemsAffected": "Items Affected",
+    "noPhotos": "No photos",
+    "noPhotosMessage": "No photos attached to this delivery"
   },
   "payments": {
     "title": "Payments",
@@ -370,7 +374,8 @@
     "optional": "Optional",
     "enterFullName": "Enter your full name",
     "enterPassword": "Enter your password",
-    "createPassword": "Create a password"
+    "createPassword": "Create a password",
+    "unitPrice": "Unit Price"
   },
   "pwa": {
     "installApp": "Install ConstructTrack",
@@ -419,5 +424,15 @@
     "fileTooBig": "File is too big",
     "invalidFormat": "Invalid file format",
     "noFilesSelected": "No files selected"
+  },
+  "photos": {
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit Fullscreen",
+    "rotateLeft": "Rotate Left",
+    "rotateRight": "Rotate Right",
+    "previousPhoto": "Previous Photo",
+    "nextPhoto": "Next Photo"
   }
 }

@@ -67,7 +67,8 @@
     "cancelled": "रद्द",
     "draft": "मसौदा",
     "published": "प्रकाशित",
-    "archived": "संग्रहीत"
+    "archived": "संग्रहीत",
+    "more": "और"
   },
   "nav": {
     "dashboard": "डैशबोर्ड",
@@ -238,13 +239,16 @@
     "deliveryDate": "डिलीवरी दिनांक",
     "paymentStatus": "भुगतान स्थिति",
     "paidAmount": "भुगतान की गई राशि",
+    "paid": "भुगतान किया गया",
     "photos": "फोटो",
     "deliveryNotes": "डिलीवरी टिप्पणी",
     "deliveryDetails": "डिलीवरी विवरण",
     "existingPhotos": "मौजूदा फोटो:",
     "noDeliveries": "कोई डिलीवरी रिकॉर्ड नहीं",
     "startTracking": "डिलीवरी रिकॉर्ड करके ट्रैकिंग शुरू करें।",
-    "itemsAffected": "प्रभावित वस्तुएं"
+    "itemsAffected": "प्रभावित वस्तुएं",
+    "noPhotos": "कोई फोटो नहीं",
+    "noPhotosMessage": "इस डिलीवरी के साथ कोई फोटो संलग्न नहीं"
   },
   "payments": {
     "title": "भुगतान",
@@ -370,7 +374,8 @@
     "optional": "वैकल्पिक",
     "enterFullName": "अपना पूरा नाम दर्ज करें",
     "enterPassword": "अपना पासवर्ड दर्ज करें",
-    "createPassword": "एक पासवर्ड बनाएं"
+    "createPassword": "एक पासवर्ड बनाएं",
+    "unitPrice": "इकाई मूल्य"
   },
   "pwa": {
     "installApp": "ConstructTrack इंस्टॉल करें",
@@ -419,5 +424,15 @@
     "fileTooBig": "फाइल बहुत बड़ी है",
     "invalidFormat": "अमान्य फाइल प्रारूप",
     "noFilesSelected": "कोई फाइल चयनित नहीं"
+  },
+  "photos": {
+    "zoomIn": "ज़ूम इन",
+    "zoomOut": "ज़ूम आउट",
+    "fullscreen": "फुलस्क्रीन",
+    "exitFullscreen": "फुलस्क्रीन से बाहर निकलें",
+    "rotateLeft": "बाएं घुमाएं",
+    "rotateRight": "दाएं घुमाएं",
+    "previousPhoto": "पिछली फोटो",
+    "nextPhoto": "अगली फोटो"
   }
 }
