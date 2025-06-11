@@ -20,55 +20,7 @@
         </button>
       </div>
       
-      <!-- Quick Actions -->
-      <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-        <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Quick Actions</h3>
-        <div class="space-y-2">
-          <router-link
-            to="/items"
-            @click="showQuickModal('item')"
-            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-200"
-          >
-            <Plus class="mr-2 h-4 w-4" />
-            Add Item
-          </router-link>
-          <router-link
-            to="/vendors"
-            @click="showQuickModal('vendor')"
-            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-200"
-          >
-            <Plus class="mr-2 h-4 w-4" />
-            Add Vendor
-          </router-link>
-          <router-link
-            to="/accounts"
-            @click="showQuickModal('account')"
-            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-200"
-          >
-            <Plus class="mr-2 h-4 w-4" />
-            Add Account
-          </router-link>
-          <router-link
-            to="/incoming"
-            @click="showQuickModal('delivery')"
-            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-200"
-          >
-            <Plus class="mr-2 h-4 w-4" />
-            Record Delivery
-          </router-link>
-          <router-link
-            to="/payments"
-            @click="showQuickModal('payment')"
-            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-200"
-          >
-            <Plus class="mr-2 h-4 w-4" />
-            Record Payment
-          </router-link>
-        </div>
-      </div>
-      
       <nav class="mt-4 px-4">
-        <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Navigation</h3>
         <div class="space-y-2">
           <router-link
             v-for="item in navigation"
@@ -110,21 +62,42 @@
               <SiteSelector />
             </div>
             
-            <!-- Quick action buttons in header -->
+            <!-- Quick action buttons in header for desktop -->
             <div class="hidden md:flex items-center space-x-2">
               <button
-                @click="showQuickModal('item')"
+                @click="quickAction('item')"
                 class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
               >
                 <Package class="mr-1 h-4 w-4" />
                 Add Item
               </button>
               <button
-                @click="showQuickModal('delivery')"
+                @click="quickAction('vendor')"
+                class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
+              >
+                <Users class="mr-1 h-4 w-4" />
+                Add Vendor
+              </button>
+              <button
+                @click="quickAction('account')"
+                class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
+              >
+                <CreditCard class="mr-1 h-4 w-4" />
+                Add Account
+              </button>
+              <button
+                @click="quickAction('delivery')"
                 class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
               >
                 <TruckIcon class="mr-1 h-4 w-4" />
                 Record Delivery
+              </button>
+              <button
+                @click="quickAction('payment')"
+                class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
+              >
+                <DollarSign class="mr-1 h-4 w-4" />
+                Record Payment
               </button>
             </div>
           </div>
@@ -168,39 +141,45 @@
       </div>
 
       <!-- Page content -->
-      <main class="p-4 sm:p-6 lg:p-8">
+      <main class="p-4 sm:p-6 lg:p-8 pb-20 md:pb-8">
         <router-view />
       </main>
     </div>
 
-    <!-- Quick Action Modal -->
-    <div v-if="quickModalType" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <div class="mt-3">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
-              {{ quickModalTitle }}
-            </h3>
-            <button @click="closeQuickModal" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
-              <X class="h-5 w-5" />
-            </button>
-          </div>
-          
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            {{ quickModalDescription }}
-          </p>
-          
-          <div class="flex space-x-3">
-            <button @click="navigateToPage" class="flex-1 btn-primary">
-              Continue
-            </button>
-            <button @click="closeQuickModal" class="flex-1 btn-outline">
-              Cancel
-            </button>
-          </div>
-        </div>
+    <!-- Mobile Floating Action Button -->
+    <div class="md:hidden fixed bottom-6 right-6 z-50">
+      <!-- FAB Menu Options -->
+      <div
+        v-if="fabMenuOpen"
+        class="absolute bottom-16 right-0 mb-2 space-y-2 min-w-max"
+      >
+        <button
+          v-for="action in fabActions"
+          :key="action.type"
+          @click="quickAction(action.type)"
+          class="flex items-center w-full px-4 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 transform hover:scale-105"
+        >
+          <component :is="action.icon" class="mr-3 h-5 w-5" />
+          <span class="text-sm font-medium">{{ action.label }}</span>
+        </button>
       </div>
+
+      <!-- FAB Button -->
+      <button
+        @click="fabMenuOpen = !fabMenuOpen"
+        class="w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-110 flex items-center justify-center"
+        :class="{ 'rotate-45': fabMenuOpen }"
+      >
+        <Plus class="h-6 w-6" />
+      </button>
     </div>
+
+    <!-- FAB Overlay for mobile -->
+    <div 
+      v-if="fabMenuOpen" 
+      @click="fabMenuOpen = false"
+      class="md:hidden fixed inset-0 bg-transparent z-40"
+    ></div>
   </div>
 </template>
 
@@ -224,7 +203,8 @@ import {
   ChevronDown,
   LogOut,
   Plus,
-  X
+  X,
+  DollarSign
 } from 'lucide-vue-next';
 
 const route = useRoute();
@@ -234,8 +214,8 @@ const { hasSiteAccess } = useSite();
 
 const sidebarOpen = ref(false);
 const userMenuOpen = ref(false);
+const fabMenuOpen = ref(false);
 const userMenuRef = ref<HTMLElement | null>(null);
-const quickModalType = ref<string | null>(null);
 
 const navigation = computed(() => [
   { name: 'Dashboard', to: '/', icon: BarChart3, current: route.name === 'Dashboard' },
@@ -247,6 +227,14 @@ const navigation = computed(() => [
   { name: 'Payments', to: '/payments', icon: CreditCard, current: route.name === 'Payments' },
 ]);
 
+const fabActions = [
+  { type: 'item', label: 'Add Item', icon: Package },
+  { type: 'vendor', label: 'Add Vendor', icon: Users },
+  { type: 'account', label: 'Add Account', icon: CreditCard },
+  { type: 'delivery', label: 'Record Delivery', icon: TruckIcon },
+  { type: 'payment', label: 'Record Payment', icon: DollarSign },
+];
+
 const userInitials = computed(() => {
   if (!user.value?.name) return 'U';
   return user.value.name
@@ -257,42 +245,16 @@ const userInitials = computed(() => {
     .slice(0, 2);
 });
 
-const quickModalTitle = computed(() => {
-  const titles = {
-    item: 'Add New Item',
-    vendor: 'Add New Vendor',
-    account: 'Add New Account',
-    delivery: 'Record New Delivery',
-    payment: 'Record New Payment'
-  };
-  return titles[quickModalType.value as keyof typeof titles] || '';
-});
-
-const quickModalDescription = computed(() => {
-  const descriptions = {
-    item: 'Add a new construction item to your inventory with quantities and specifications.',
-    vendor: 'Add a new vendor contact with their details and specialties.',
-    account: 'Add a new payment account to track different payment modes.',
-    delivery: 'Record a new delivery with photos, quantities, and payment information.',
-    payment: 'Record a payment made to a vendor and update delivery statuses.'
-  };
-  return descriptions[quickModalType.value as keyof typeof descriptions] || '';
-});
-
-const showQuickModal = (type: string) => {
+const quickAction = (type: string) => {
   if (!hasSiteAccess.value) {
     alert('Please select a site first');
     return;
   }
-  quickModalType.value = type;
-  sidebarOpen.value = false; // Close sidebar on mobile
-};
 
-const closeQuickModal = () => {
-  quickModalType.value = null;
-};
+  // Close mobile menu
+  fabMenuOpen.value = false;
+  sidebarOpen.value = false;
 
-const navigateToPage = () => {
   const routes = {
     item: '/items',
     vendor: '/vendors',
@@ -301,7 +263,7 @@ const navigateToPage = () => {
     payment: '/payments'
   };
   
-  const targetRoute = routes[quickModalType.value as keyof typeof routes];
+  const targetRoute = routes[type as keyof typeof routes];
   if (targetRoute) {
     router.push(targetRoute);
     // Add a small delay to ensure navigation completes before triggering modal
@@ -310,7 +272,6 @@ const navigateToPage = () => {
       window.dispatchEvent(new CustomEvent('show-add-modal'));
     }, 100);
   }
-  closeQuickModal();
 };
 
 const handleLogout = () => {
