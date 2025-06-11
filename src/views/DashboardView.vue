@@ -3,14 +3,14 @@
     <div class="mb-8">
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('dashboard.title') }}</h1>
           <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            Overview of {{ currentSite?.name || 'your construction site' }} management
+            {{ t('dashboard.subtitle', { siteName: currentSite?.name || 'your construction site' }) }}
           </p>
         </div>
         <div v-if="currentSite" class="text-right">
           <div class="text-sm text-gray-500 dark:text-gray-400">
-            {{ currentSite.total_units }} units • {{ currentSite.total_planned_area.toLocaleString() }} sqft
+            {{ currentSite.total_units }} {{ t('dashboard.units') }} • {{ currentSite.total_planned_area.toLocaleString() }} {{ t('dashboard.sqft') }}
           </div>
         </div>
       </div>
@@ -29,7 +29,7 @@
             <Package class="h-8 w-8 text-primary-600 dark:text-primary-400" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Items</p>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.totalItems') }}</p>
             <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ stats.totalItems }}</p>
           </div>
         </div>
@@ -41,7 +41,7 @@
             <Users class="h-8 w-8 text-secondary-600 dark:text-secondary-400" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Active Vendors</p>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.activeVendors') }}</p>
             <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ stats.totalVendors }}</p>
           </div>
         </div>
@@ -53,7 +53,7 @@
             <TruckIcon class="h-8 w-8 text-warning-600 dark:text-warning-400" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Deliveries</p>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.pendingDeliveries') }}</p>
             <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ stats.pendingDeliveries }}</p>
           </div>
         </div>
@@ -65,7 +65,7 @@
             <DollarSign class="h-8 w-8 text-error-600 dark:text-error-400" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Outstanding Amount</p>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.outstandingAmount') }}</p>
             <p class="text-2xl font-semibold text-gray-900 dark:text-white">₹{{ stats.outstandingAmount.toLocaleString() }}</p>
           </div>
         </div>
@@ -73,19 +73,19 @@
     </div>
 
     <div class="card">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment Status Overview</h2>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">{{ t('dashboard.paymentStatusOverview') }}</h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="text-center p-4 bg-success-50 dark:bg-success-900/20 rounded-lg">
           <p class="text-2xl font-bold text-success-600 dark:text-success-400">₹{{ paymentStats.paid.toLocaleString() }}</p>
-          <p class="text-sm text-success-700 dark:text-success-300">Paid ({{ paymentStats.paidCount }} deliveries)</p>
+          <p class="text-sm text-success-700 dark:text-success-300">{{ t('common.paid') }} ({{ paymentStats.paidCount }} deliveries)</p>
         </div>
         <div class="text-center p-4 bg-warning-50 dark:bg-warning-900/20 rounded-lg">
           <p class="text-2xl font-bold text-warning-600 dark:text-warning-400">₹{{ paymentStats.partial.toLocaleString() }}</p>
-          <p class="text-sm text-warning-700 dark:text-warning-300">Partial ({{ paymentStats.partialCount }} deliveries)</p>
+          <p class="text-sm text-warning-700 dark:text-warning-300">{{ t('common.partial') }} ({{ paymentStats.partialCount }} deliveries)</p>
         </div>
         <div class="text-center p-4 bg-error-50 dark:bg-error-900/20 rounded-lg">
           <p class="text-2xl font-bold text-error-600 dark:text-error-400">₹{{ paymentStats.pending.toLocaleString() }}</p>
-          <p class="text-sm text-error-700 dark:text-error-300">Pending ({{ paymentStats.pendingCount }} deliveries)</p>
+          <p class="text-sm text-error-700 dark:text-error-300">{{ t('common.pending') }} ({{ paymentStats.pendingCount }} deliveries)</p>
         </div>
       </div>
     </div>
@@ -95,9 +95,9 @@
       <!-- Recent Deliveries -->
       <div class="card">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Deliveries</h2>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('dashboard.recentDeliveries') }}</h2>
           <router-link to="/incoming" class="text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 text-sm font-medium">
-            View all
+            {{ t('dashboard.viewAll') }}
           </router-link>
         </div>
         <div class="space-y-4">
@@ -108,14 +108,14 @@
               <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(delivery.delivery_date) }}</p>
             </div>
             <div class="text-right">
-              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ delivery.quantity }} {{ delivery.expand?.item?.unit || 'units' }}</p>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ delivery.quantity }} {{ delivery.expand?.item?.unit || t('dashboard.units') }}</p>
               <span :class="`status-${delivery.payment_status}`">
                 {{ delivery.payment_status }}
               </span>
             </div>
           </div>
           <div v-if="recentDeliveries.length === 0" class="text-center py-4 text-gray-500 dark:text-gray-400">
-            No recent deliveries
+            {{ t('dashboard.noRecentDeliveries') }}
           </div>
         </div>
       </div>
@@ -123,9 +123,9 @@
       <!-- Recent payments -->
       <div class="card">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Recent payments</h2>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('dashboard.recentPayments') }}</h2>
           <router-link to="/payments" class="text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 text-sm font-medium">
-            View all
+            {{ t('dashboard.viewAll') }}
           </router-link>
         </div>
         <div class="space-y-4">
@@ -140,7 +140,7 @@
             </div>
           </div>
           <div v-if="madePayments.length === 0" class="text-center py-4 text-gray-500 dark:text-gray-400">
-            No recent payments
+            {{ t('dashboard.noRecentPayments') }}
           </div>
         </div>
       </div>
@@ -152,6 +152,7 @@
 import { ref, onMounted, computed, onUnmounted } from 'vue';
 import { Package, Users, TruckIcon, DollarSign, Loader2 } from 'lucide-vue-next';
 import { useSite } from '../composables/useSite';
+import { useI18n } from '../composables/useI18n';
 import { 
   itemService, 
   vendorService, 
@@ -162,6 +163,8 @@ import {
   type Payment,
   type IncomingItem
 } from '../services/pocketbase';
+
+const { t } = useI18n();
 
 const { currentSite } = useSite();
 

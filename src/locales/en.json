@@ -68,7 +68,9 @@
     "draft": "Draft",
     "published": "Published",
     "archived": "Archived",
-    "more": "more"
+    "more": "more",
+    "items": "items",
+    "unknown": "Unknown"
   },
   "nav": {
     "dashboard": "Dashboard",

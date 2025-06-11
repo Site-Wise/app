@@ -2,14 +2,14 @@
   <div>
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Items</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('items.title') }}</h1>
         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          Manage your construction items and quantities
+          {{ t('items.subtitle') }}
         </p>
       </div>
       <button @click="showAddModal = true" class="btn-primary">
         <Plus class="mr-2 h-4 w-4" />
-        Add Item
+        {{ t('items.addItem') }}
       </button>
     </div>
 
@@ -33,11 +33,11 @@
             <!-- Delivery Summary -->
             <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div class="flex justify-between items-center mb-2">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Total Delivered</span>
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.totalDelivered') }}</span>
                 <span class="text-sm font-semibold text-blue-600 dark:text-blue-400">{{ getItemDeliveredQuantity(item.id!) }} {{ item.unit }}</span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Avg. Price</span>
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.avgPrice') }}</span>
                 <span class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{ getItemAveragePrice(item.id!).toFixed(2) }}</span>
               </div>
             </div>
@@ -56,8 +56,8 @@
       <div v-if="items.length === 0" class="col-span-full">
         <div class="text-center py-12">
           <Package class="mx-auto h-12 w-12 text-gray-400" />
-          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No items</h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new item.</p>
+          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('items.noItems') }}</h3>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('items.getStarted') }}</p>
         </div>
       </div>
     </div>
@@ -67,43 +67,43 @@
       <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
-            {{ editingItem ? 'Edit Item' : 'Add New Item' }}
+            {{ editingItem ? t('items.editItem') : t('items.addItem') }}
           </h3>
           
           <form @submit.prevent="saveItem" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
-              <input v-model="form.name" type="text" required class="input mt-1" placeholder="Enter item name" />
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.name') }}</label>
+              <input v-model="form.name" type="text" required class="input mt-1" :placeholder="t('forms.enterItemName')" />
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-              <textarea v-model="form.description" class="input mt-1" rows="3" placeholder="Enter item description"></textarea>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.description') }}</label>
+              <textarea v-model="form.description" class="input mt-1" rows="3" :placeholder="t('forms.enterDescription')"></textarea>
             </div>
             
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</label>
-                <input v-model.number="form.quantity" type="number" required class="input mt-1" placeholder="0" />
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.quantity') }}</label>
+                <input v-model.number="form.quantity" type="number" required class="input mt-1" :placeholder="t('forms.enterQuantity')" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Unit</label>
-                <input v-model="form.unit" type="text" required class="input mt-1" placeholder="kg, pcs, m²" />
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.unit') }}</label>
+                <input v-model="form.unit" type="text" required class="input mt-1" :placeholder="t('forms.enterUnit')" />
               </div>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
-              <input v-model="form.category" type="text" class="input mt-1" placeholder="Enter category" />
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.category') }}</label>
+              <input v-model="form.category" type="text" class="input mt-1" :placeholder="t('forms.enterCategory')" />
             </div>
             
             <div class="flex space-x-3 pt-4">
               <button type="submit" :disabled="loading" class="flex-1 btn-primary">
                 <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-                {{ editingItem ? 'Update' : 'Create' }}
+                {{ editingItem ? t('common.update') : t('common.create') }}
               </button>
               <button type="button" @click="closeModal" class="flex-1 btn-outline">
-                Cancel
+                {{ t('common.cancel') }}
               </button>
             </div>
           </form>
@@ -117,12 +117,15 @@
 import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Package, Plus, Edit2, Trash2, Loader2 } from 'lucide-vue-next';
+import { useI18n } from '../composables/useI18n';
 import { 
   itemService, 
   incomingItemService,
   type Item,
   type IncomingItem
 } from '../services/pocketbase';
+
+const { t } = useI18n();
 
 const router = useRouter();
 const items = ref<Item[]>([]);
@@ -201,7 +204,7 @@ const editItem = (item: Item) => {
 };
 
 const deleteItem = async (id: string) => {
-  if (confirm('Are you sure you want to delete this item?')) {
+  if (confirm(t('messages.confirmDelete', { item: t('common.item') }))) {
     try {
       await itemService.delete(id);
       await loadData();

@@ -1,21 +1,79 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+
+// All mocks must be at the top before any imports
+vi.mock('../../composables/useI18n', () => ({
+  useI18n: () => ({
+    t: (key: string, params?: any) => {
+      const translations: Record<string, string> = {
+        'items.title': 'Items',
+        'items.subtitle': 'Manage your construction items and quantities',
+        'items.addItem': 'Add Item',
+        'items.editItem': 'Edit Item',
+        'items.deleteItem': 'Delete Item',
+        'items.noItems': 'No items',
+        'items.getStarted': 'Get started by creating a new item.',
+        'items.totalDelivered': 'Total Delivered',
+        'items.avgPrice': 'Avg. Price',
+        'items.unit': 'Unit',
+        'common.name': 'Name',
+        'common.description': 'Description',
+        'common.quantity': 'Quantity',
+        'common.item': 'item',
+        'forms.enterItemName': 'Enter item name',
+        'forms.enterDescription': 'Enter item description',
+        'forms.enterQuantity': 'Enter quantity',
+        'forms.enterUnit': 'kg, pcs, m²',
+        'forms.enterCategory': 'Enter category',
+        'common.update': 'Update',
+        'common.create': 'Create',
+        'common.cancel': 'Cancel',
+        'messages.confirmDelete': 'Are you sure you want to delete this {item}?'
+      }
+      let result = translations[key] || key
+      if (params) {
+        Object.keys(params).forEach(param => {
+          result = result.replace(`{${param}}`, params[param])
+        })
+      }
+      return result
+    }
+  })
+}))
+
+vi.mock('../../services/pocketbase', () => {
+  const mockItem = {
+    id: 'item-1',
+    name: 'Test Item',
+    description: 'Test Description',
+    quantity: 100,
+    unit: 'kg',
+    category: 'Test Category'
+  }
+  
+  const mockIncomingItem = {
+    id: 'incoming-1',
+    item: 'item-1',
+    quantity: 10,
+    total_amount: 1000
+  }
+  
+  return {
+    itemService: {
+      getAll: vi.fn().mockResolvedValue([mockItem]),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn()
+    },
+    incomingItemService: {
+      getAll: vi.fn().mockResolvedValue([mockIncomingItem])
+    }
+  }
+})
+
+// Import dependencies after all mocks
 import ItemsView from '../../views/ItemsView.vue'
 import { createMockRouter } from '../utils/test-utils'
-import { mockItem, mockIncomingItem } from '../mocks/pocketbase'
-
-// Mock the services
-vi.mock('../../services/pocketbase', () => ({
-  itemService: {
-    getAll: vi.fn().mockResolvedValue([mockItem]),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn()
-  },
-  incomingItemService: {
-    getAll: vi.fn().mockResolvedValue([mockIncomingItem])
-  }
-}))
 
 describe('ItemsView', () => {
   let wrapper: any
@@ -47,9 +105,9 @@ describe('ItemsView', () => {
     // Wait for data to load
     await wrapper.vm.$nextTick()
     
-    expect(wrapper.text()).toContain(mockItem.name)
-    expect(wrapper.text()).toContain(mockItem.description)
-    expect(wrapper.text()).toContain(`${mockItem.quantity} ${mockItem.unit}`)
+    expect(wrapper.text()).toContain('Test Item')
+    expect(wrapper.text()).toContain('Test Description')
+    expect(wrapper.text()).toContain('100 kg')
   })
 
   it('should show add modal when add button is clicked', async () => {
@@ -57,13 +115,20 @@ describe('ItemsView', () => {
     await addButton.trigger('click')
     
     expect(wrapper.find('.fixed').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Add New Item')
+    expect(wrapper.text()).toContain('Add Item')
   })
 
   it('should handle item creation', async () => {
     const { itemService } = await import('../../services/pocketbase')
     const mockCreate = vi.mocked(itemService.create)
-    mockCreate.mockResolvedValue(mockItem)
+    mockCreate.mockResolvedValue({
+      id: 'item-1',
+      name: 'Test Item',
+      description: 'Test Description',
+      quantity: 100,
+      unit: 'kg',
+      category: 'Test Category'
+    })
     
     // Open add modal
     const addButton = wrapper.find('button:contains("Add Item")')
@@ -72,7 +137,7 @@ describe('ItemsView', () => {
     // Fill form
     await wrapper.find('input[placeholder="Enter item name"]').setValue('New Item')
     await wrapper.find('input[placeholder="kg, pcs, m²"]').setValue('kg')
-    await wrapper.find('input[placeholder="0"]').setValue('100')
+    await wrapper.find('input[type="number"]').setValue('100')
     
     // Submit form
     await wrapper.find('form').trigger('submit')
@@ -89,7 +154,14 @@ describe('ItemsView', () => {
   it('should handle item editing', async () => {
     const { itemService } = await import('../../services/pocketbase')
     const mockUpdate = vi.mocked(itemService.update)
-    mockUpdate.mockResolvedValue(mockItem)
+    mockUpdate.mockResolvedValue({
+      id: 'item-1',
+      name: 'Test Item',
+      description: 'Test Description',
+      quantity: 100,
+      unit: 'kg',
+      category: 'Test Category'
+    })
     
     // Wait for items to load
     await wrapper.vm.$nextTick()
@@ -120,7 +192,7 @@ describe('ItemsView', () => {
       await deleteButton.trigger('click')
       
       expect(window.confirm).toHaveBeenCalled()
-      expect(mockDelete).toHaveBeenCalledWith(mockItem.id)
+      expect(mockDelete).toHaveBeenCalledWith('item-1')
     }
   })
 
@@ -136,7 +208,7 @@ describe('ItemsView', () => {
     if (itemCard.exists()) {
       await itemCard.trigger('click')
       
-      expect(pushSpy).toHaveBeenCalledWith(`/items/${mockItem.id}`)
+      expect(pushSpy).toHaveBeenCalledWith('/items/item-1')
     }
   })
 

@@ -2,14 +2,14 @@
   <div>
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Payments</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('payments.title') }}</h1>
         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          Track payments to vendors and manage payment status
+          {{ t('payments.subtitle') }}
         </p>
       </div>
       <button @click="showAddModal = true" class="btn-primary">
         <Plus class="mr-2 h-4 w-4" />
-        Record Payment
+        {{ t('payments.recordPayment') }}
       </button>
     </div>
 
@@ -18,24 +18,24 @@
       <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead class="bg-gray-50 dark:bg-gray-700">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Vendor</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Account</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Payment Date</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Reference</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Items Affected</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.vendor') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.account') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.amount') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('payments.paymentDate') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.reference') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('payments.itemsAffected') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.actions') }}</th>
           </tr>
         </thead>
         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           <tr v-for="payment in payments" :key="payment.id">
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ payment.expand?.vendor?.name || 'Unknown Vendor' }}</div>
+              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ payment.expand?.vendor?.name || t('common.unknown') + ' ' + t('common.vendor') }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
                 <component :is="getAccountIcon(payment.expand?.account?.type)" class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <div class="text-sm text-gray-900 dark:text-white">{{ payment.expand?.account?.name || 'Unknown Account' }}</div>
+                <div class="text-sm text-gray-900 dark:text-white">{{ payment.expand?.account?.name || t('common.unknown') + ' ' + t('common.account') }}</div>
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
@@ -48,7 +48,7 @@
               {{ payment.reference || '-' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-              {{ payment.incoming_items?.length || 0 }} items
+              {{ payment.incoming_items?.length || 0 }} {{ t('common.items') }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
               <div class="flex items-center space-x-2">
@@ -102,9 +102,9 @@
           
           <form @submit.prevent="savePayment" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Vendor</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.vendor') }}</label>
               <select v-model="form.vendor" required class="input mt-1" @change="loadVendorOutstanding">
-                <option value="">Select a vendor</option>
+                <option value="">{{ t('forms.selectVendor') }}</option>
                 <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
                   {{ vendor.name }}
                 </option>
@@ -112,9 +112,9 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Payment Account</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.paymentAccount') }}</label>
               <select v-model="form.account" required class="input mt-1">
-                <option value="">Select an account</option>
+                <option value="">{{ t('forms.selectAccount') }}</option>
                 <option v-for="account in activeAccounts" :key="account.id" :value="account.id">
                   {{ account.name }} ({{ account.type.replace('_', ' ') }}) - ₹{{ account.current_balance.toFixed(2) }}
                 </option>
@@ -128,12 +128,12 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Amount</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.amount') }}</label>
               <input v-model.number="form.amount" type="number" step="0.01" required class="input mt-1" placeholder="0.00" />
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Payment Date</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.paymentDate') }}</label>
               <input v-model="form.payment_date" type="date" required class="input mt-1" />
             </div>
             
@@ -230,6 +230,7 @@ import {
   Smartphone,
   Building2
 } from 'lucide-vue-next';
+import { useI18n } from '../composables/useI18n';
 import { 
   paymentService, 
   vendorService,
@@ -240,6 +241,8 @@ import {
   type Account,
   type IncomingItem
 } from '../services/pocketbase';
+
+const { t } = useI18n();
 
 interface VendorWithOutstanding extends Vendor {
   outstandingAmount: number;

@@ -1,6 +1,41 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { computed } from 'vue'
+
+// Mock i18n composable - must be at the top
+vi.mock('../../composables/useI18n', () => ({
+  useI18n: () => ({
+    t: (key: string, params?: any) => {
+      const translations: Record<string, string> = {
+        'dashboard.title': 'Dashboard',
+        'dashboard.subtitle': 'Overview of {siteName} management',
+        'dashboard.totalItems': 'Total Items',
+        'dashboard.activeVendors': 'Active Vendors',
+        'dashboard.pendingDeliveries': 'Pending Deliveries',
+        'dashboard.outstandingAmount': 'Outstanding Amount',
+        'dashboard.recentDeliveries': 'Recent Deliveries',
+        'dashboard.recentPayments': 'Recent Payments',
+        'dashboard.paymentStatusOverview': 'Payment Status Overview',
+        'dashboard.viewAll': 'View all',
+        'dashboard.noRecentDeliveries': 'No recent deliveries',
+        'dashboard.noRecentPayments': 'No recent payments',
+        'dashboard.units': 'units',
+        'dashboard.sqft': 'sqft',
+        'common.paid': 'Paid',
+        'common.partial': 'Partial',
+        'common.pending': 'Pending'
+      }
+      let result = translations[key] || key
+      if (params) {
+        Object.keys(params).forEach(param => {
+          result = result.replace(`{${param}}`, params[param])
+        })
+      }
+      return result
+    }
+  })
+}))
+
 import DashboardView from '../../views/DashboardView.vue'
 import { createMockRouter } from '../utils/test-utils'
 
@@ -141,7 +176,7 @@ describe('DashboardView', () => {
   })
 
   it('should render recent payments section', () => {
-    expect(wrapper.text()).toContain('Recent payments')
+    expect(wrapper.text()).toContain('Recent Payments')
   })
 
   it('should load data on mount', async () => {

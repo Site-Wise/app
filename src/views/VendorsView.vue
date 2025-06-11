@@ -2,14 +2,14 @@
   <div>
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Vendors</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('vendors.title') }}</h1>
         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          Manage your vendor contacts and relationships
+          {{ t('vendors.subtitle') }}
         </p>
       </div>
       <button @click="showAddModal = true" class="btn-primary">
         <Plus class="mr-2 h-4 w-4" />
-        Add Vendor
+        {{ t('vendors.addVendor') }}
       </button>
     </div>
 
@@ -41,11 +41,11 @@
             <!-- Financial Summary -->
             <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div class="flex justify-between items-center mb-2">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Outstanding</span>
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.outstanding') }}</span>
                 <span class="text-sm font-semibold text-red-600 dark:text-red-400">₹{{ getVendorOutstanding(vendor.id!).toFixed(2) }}</span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Total Paid</span>
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.totalPaid') }}</span>
                 <span class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{ getVendorPaid(vendor.id!).toFixed(2) }}</span>
               </div>
             </div>
@@ -70,8 +70,8 @@
       <div v-if="vendors.length === 0" class="col-span-full">
         <div class="text-center py-12">
           <Users class="mx-auto h-12 w-12 text-gray-400" />
-          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No vendors</h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by adding a vendor.</p>
+          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('vendors.noVendors') }}</h3>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('vendors.getStarted') }}</p>
         </div>
       </div>
     </div>
@@ -81,37 +81,37 @@
       <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
-            {{ editingVendor ? 'Edit Vendor' : 'Add New Vendor' }}
+            {{ editingVendor ? t('vendors.editVendor') : t('vendors.addVendor') }}
           </h3>
           
           <form @submit.prevent="saveVendor" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Company Name</label>
-              <input v-model="form.name" type="text" required class="input mt-1" placeholder="Enter company name" />
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.companyName') }}</label>
+              <input v-model="form.name" type="text" required class="input mt-1" :placeholder="t('forms.enterCompanyName')" />
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Person</label>
-              <input v-model="form.contact_person" type="text" class="input mt-1" placeholder="Enter contact person" />
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.contactPerson') }}</label>
+              <input v-model="form.contact_person" type="text" class="input mt-1" :placeholder="t('forms.enterContactPerson')" />
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-              <input v-model="form.email" type="email" class="input mt-1" placeholder="Enter email address" />
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.email') }}</label>
+              <input v-model="form.email" type="email" class="input mt-1" :placeholder="t('forms.enterEmail')" />
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
-              <input v-model="form.phone" type="tel" class="input mt-1" placeholder="Enter phone number" />
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.phone') }}</label>
+              <input v-model="form.phone" type="tel" class="input mt-1" :placeholder="t('forms.enterPhone')" />
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
-              <textarea v-model="form.address" class="input mt-1" rows="2" placeholder="Enter address"></textarea>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.address') }}</label>
+              <textarea v-model="form.address" class="input mt-1" rows="2" :placeholder="t('forms.enterAddress')"></textarea>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags (Specialties)</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('vendors.specialties') }}</label>
               <div class="flex flex-wrap gap-2 mb-2">
                 <span v-for="(tag, index) in form.tags" :key="index" class="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300 text-xs rounded-full flex items-center">
                   {{ tag }}
@@ -125,7 +125,7 @@
                   v-model="newTag" 
                   type="text" 
                   class="input flex-1" 
-                  placeholder="Add specialty (e.g., Steel, Concrete)"
+                  :placeholder="t('vendors.addSpecialty')"
                   @keydown.enter.prevent="addTag"
                 />
                 <button type="button" @click="addTag" class="ml-2 btn-outline">
@@ -137,10 +137,10 @@
             <div class="flex space-x-3 pt-4">
               <button type="submit" :disabled="loading" class="flex-1 btn-primary">
                 <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-                {{ editingVendor ? 'Update' : 'Create' }}
+                {{ editingVendor ? t('common.update') : t('common.create') }}
               </button>
               <button type="button" @click="closeModal" class="flex-1 btn-outline">
-                Cancel
+                {{ t('common.cancel') }}
               </button>
             </div>
           </form>
@@ -154,6 +154,7 @@
 import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Users, Plus, Edit2, Trash2, Loader2, User, Mail, Phone, MapPin, X } from 'lucide-vue-next';
+import { useI18n } from '../composables/useI18n';
 import { 
   vendorService, 
   incomingItemService, 
@@ -162,6 +163,8 @@ import {
   type IncomingItem,
   type Payment
 } from '../services/pocketbase';
+
+const { t } = useI18n();
 
 const router = useRouter();
 const vendors = ref<Vendor[]>([]);
@@ -247,7 +250,7 @@ const editVendor = (vendor: Vendor) => {
 };
 
 const deleteVendor = async (id: string) => {
-  if (confirm('Are you sure you want to delete this vendor?')) {
+  if (confirm(t('messages.confirmDelete', { vendor: t('common.vendor') }))) {
     try {
       await vendorService.delete(id);
       await loadData();

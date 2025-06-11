@@ -1,6 +1,43 @@
 import { mount, VueWrapper } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { nextTick } from 'vue'
+
+// Mock i18n composable - must be at the top
+vi.mock('../../composables/useI18n', () => ({
+  useI18n: () => ({
+    t: (key: string, params?: any) => {
+      const translations: Record<string, string> = {
+        'auth.loginTitle': 'Sign in to ConstructTrack',
+        'auth.loginSubtitle': 'Manage your construction site efficiently',
+        'auth.email': 'Email address',
+        'auth.password': 'Password',
+        'auth.signIn': 'Sign in',
+        'auth.signingIn': 'Signing in...',
+        'auth.newToApp': 'New to ConstructTrack?',
+        'auth.createNewAccount': 'Create new account',
+        'auth.registerTitle': 'Create Account',
+        'auth.fullName': 'Full Name',
+        'auth.createAccount': 'Create Account',
+        'auth.loginFailed': 'Login failed',
+        'auth.registrationFailed': 'Registration failed',
+        'common.cancel': 'Cancel',
+        'forms.enterEmail': 'Enter email address',
+        'forms.enterPassword': 'Enter your password',
+        'forms.enterFullName': 'Enter your full name',
+        'forms.createPassword': 'Create a password',
+        'messages.error': 'An error occurred'
+      }
+      let result = translations[key] || key
+      if (params) {
+        Object.keys(params).forEach(param => {
+          result = result.replace(`{${param}}`, params[param])
+        })
+      }
+      return result
+    }
+  })
+}))
+
 import LoginComponent from '../../views/LoginView.vue'
 
 // Mock the router
@@ -14,7 +51,7 @@ vi.mock('vue-router', () => ({
 // Mock the auth composable
 const mockLogin = vi.fn()
 const mockRegister = vi.fn()
-vi.mock('@/composables/useAuth', () => ({
+vi.mock('../../composables/useAuth', () => ({
   useAuth: () => ({
     login: mockLogin,
     register: mockRegister
