@@ -4,7 +4,7 @@ import {
   siteUserService,
   getCurrentSiteId, 
   setCurrentSiteId,
-  // getCurrentUserRole,
+  getCurrentUserRole,
   setCurrentUserRole,
   type Site 
 } from '../services/pocketbase';
@@ -54,7 +54,11 @@ export function useSite() {
     try {
       const authService = await import('../services/pocketbase').then(m => m.authService);
       const user = authService.currentUser;
-      if (!user) return;
+      if (!user) {
+        currentUserRole.value = null;
+        setCurrentUserRole(null);
+        return;
+      }
 
       const role = await siteUserService.getUserRoleForSite(user.id, currentSite.value.id!);
       currentUserRole.value = role;
@@ -108,6 +112,11 @@ export function useSite() {
 
   const addUserToSite = async (userId: string, siteId: string, role: 'owner' | 'supervisor' | 'accountant' = 'supervisor') => {
     try {
+      // Check if current user has permission
+      if (!isCurrentUserAdmin.value) {
+        throw new Error('Permission denied: Only site owners can add users');
+      }
+
       await siteService.addUserToSite(userId, siteId, role);
       // Reload sites to get updated user list
       await loadUserSites();
@@ -119,6 +128,29 @@ export function useSite() {
 
   const removeUserFromSite = async (userId: string, siteId: string) => {
     try {
+      // Check if current user has permission
+      if (!isCurrentUserAdmin.value) {
+        throw new Error('Permission denied: Only site owners can remove users');
+      }
+
+      // Prevent removing self if they're the only owner
+      const authService = await import('../services/pocketbase').then(m => m.authService);
+      const currentUser = authService.currentUser;
+      
+      if (currentUser && currentUser.id === userId && currentUserRole.value === 'owner') {
+        // Check if there are other owners
+        const siteUsers = await siteUserService.getBySite(siteId);
+        const otherOwners = siteUsers.filter(su => 
+          su.role === 'owner' && 
+          su.user !== userId && 
+          su.is_active
+        );
+        
+        if (otherOwners.length === 0) {
+          throw new Error('Cannot remove the last owner from the site');
+        }
+      }
+
       await siteService.removeUserFromSite(userId, siteId);
       // Reload sites to get updated user list
       await loadUserSites();
@@ -130,14 +162,39 @@ export function useSite() {
 
   const changeUserRole = async (userId: string, siteId: string, newRole: 'owner' | 'supervisor' | 'accountant') => {
     try {
-      await siteService.changeUserRole(userId, siteId, newRole);
-      // If changing current user's role, update local state
+      // Check if current user has permission
+      if (!isCurrentUserAdmin.value) {
+        throw new Error('Permission denied: Only site owners can change user roles');
+      }
+
+      // Prevent changing own role if they're the only owner
       const authService = await import('../services/pocketbase').then(m => m.authService);
       const currentUser = authService.currentUser;
+      
+      if (currentUser && currentUser.id === userId && currentUserRole.value === 'owner' && newRole !== 'owner') {
+        // Check if there are other owners
+        const siteUsers = await siteUserService.getBySite(siteId);
+        const otherOwners = siteUsers.filter(su => 
+          su.role === 'owner' && 
+          su.user !== userId && 
+          su.is_active
+        );
+        
+        if (otherOwners.length === 0) {
+          throw new Error('Cannot change role of the last owner');
+        }
+      }
+
+      await siteService.changeUserRole(userId, siteId, newRole);
+      
+      // If changing current user's role, update local state
       if (currentUser && currentUser.id === userId && siteId === currentSite.value?.id) {
         currentUserRole.value = newRole;
         setCurrentUserRole(newRole);
       }
+      
+      // Reload sites to get updated user list
+      await loadUserSites();
     } catch (error) {
       console.error('Error changing user role:', error);
       throw error;
