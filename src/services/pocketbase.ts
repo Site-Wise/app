@@ -98,6 +98,21 @@ export interface Item {
   updated?: string;
 }
 
+export interface Service {
+  id?: string;
+  name: string;
+  description?: string;
+  category: 'labor' | 'equipment' | 'professional' | 'transport' | 'other';
+  service_type: string; // e.g., 'Plumber', 'Electrician', 'Tractor', 'Digger'
+  unit: string; // e.g., 'hour', 'day', 'job', 'sqft'
+  standard_rate?: number; // Standard hourly/daily rate
+  is_active: boolean;
+  tags: string[]; // e.g., ['electrical', 'maintenance', 'emergency']
+  site: string; // Site ID
+  created?: string;
+  updated?: string;
+}
+
 export interface Vendor {
   id?: string;
   name: string;
@@ -114,7 +129,9 @@ export interface Vendor {
 export interface Quotation {
   id?: string;
   vendor: string;
-  item: string;
+  item?: string;
+  service?: string; // New field for service quotations
+  quotation_type: 'item' | 'service'; // New field to distinguish type
   unit_price: number;
   minimum_quantity?: number;
   valid_until?: string;
@@ -126,6 +143,7 @@ export interface Quotation {
   expand?: {
     vendor?: Vendor;
     item?: Item;
+    service?: Service;
   };
 }
 
@@ -150,6 +168,29 @@ export interface IncomingItem {
   };
 }
 
+export interface ServiceBooking {
+  id?: string;
+  service: string;
+  vendor: string;
+  start_date: string;
+  end_date?: string;
+  duration: number; // in hours or days based on service unit
+  unit_rate: number;
+  total_amount: number;
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  completion_photos?: string[];
+  notes?: string;
+  payment_status: 'pending' | 'partial' | 'paid';
+  paid_amount: number;
+  site: string; // Site ID
+  created?: string;
+  updated?: string;
+  expand?: {
+    vendor?: Vendor;
+    service?: Service;
+  };
+}
+
 export interface Payment {
   id?: string;
   vendor: string;
@@ -159,6 +200,7 @@ export interface Payment {
   reference?: string;
   notes?: string;
   incoming_items: string[];
+  service_bookings: string[]; // New field for service payments
   site: string; // Site ID
   created?: string;
   updated?: string;
@@ -167,6 +209,7 @@ export interface Payment {
     vendor?: Vendor;
     account?: Account;
     incoming_items?: IncomingItem[];
+    service_bookings?: ServiceBooking[];
   };
 }
 
@@ -819,6 +862,86 @@ export class ItemService {
   }
 }
 
+export class ServiceService {
+  async getAll(): Promise<Service[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('services').getFullList({
+      filter: `site="${siteId}"`
+    });
+    return records.map(record => this.mapRecordToService(record));
+  }
+
+  async getById(id: string): Promise<Service | null> {
+    try {
+      const record = await pb.collection('services').getOne(id);
+      return this.mapRecordToService(record);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async create(data: Omit<Service, 'id' | 'site'>): Promise<Service> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create services');
+    }
+
+    const record = await pb.collection('services').create({
+      ...data,
+      site: siteId
+    });
+    return this.mapRecordToService(record);
+  }
+
+  async update(id: string, data: Partial<Service>): Promise<Service> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canUpdate) {
+      throw new Error('Permission denied: Cannot update services');
+    }
+
+    const record = await pb.collection('services').update(id, data);
+    return this.mapRecordToService(record);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canDelete) {
+      throw new Error('Permission denied: Cannot delete services');
+    }
+
+    await pb.collection('services').delete(id);
+    return true;
+  }
+
+  private mapRecordToService(record: RecordModel): Service {
+    return {
+      id: record.id,
+      name: record.name,
+      description: record.description,
+      category: record.category,
+      service_type: record.service_type,
+      unit: record.unit,
+      standard_rate: record.standard_rate,
+      is_active: record.is_active,
+      tags: record.tags || [],
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+}
+
 export class VendorService {
   async getAll(): Promise<Vendor[]> {
     const siteId = getCurrentSiteId();
@@ -895,7 +1018,7 @@ export class QuotationService {
 
     const records = await pb.collection('quotations').getFullList({
       filter: `site="${siteId}"`,
-      expand: 'vendor,item'
+      expand: 'vendor,item,service'
     });
     return records.map(record => this.mapRecordToQuotation(record));
   }
@@ -947,6 +1070,8 @@ export class QuotationService {
       id: record.id,
       vendor: record.vendor,
       item: record.item,
+      service: record.service,
+      quotation_type: record.quotation_type,
       unit_price: record.unit_price,
       minimum_quantity: record.minimum_quantity,
       valid_until: record.valid_until,
@@ -957,7 +1082,8 @@ export class QuotationService {
       updated: record.updated,
       expand: record.expand ? {
         vendor: record.expand.vendor ? this.mapRecordToVendor(record.expand.vendor) : undefined,
-        item: record.expand.item ? this.mapRecordToItem(record.expand.item) : undefined
+        item: record.expand.item ? this.mapRecordToItem(record.expand.item) : undefined,
+        service: record.expand.service ? this.mapRecordToService(record.expand.service) : undefined
       } : undefined
     };
   }
@@ -985,6 +1111,23 @@ export class QuotationService {
       unit: record.unit,
       quantity: record.quantity,
       category: record.category,
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+
+  private mapRecordToService(record: RecordModel): Service {
+    return {
+      id: record.id,
+      name: record.name,
+      description: record.description,
+      category: record.category,
+      service_type: record.service_type,
+      unit: record.unit,
+      standard_rate: record.standard_rate,
+      is_active: record.is_active,
+      tags: record.tags || [],
       site: record.site,
       created: record.created,
       updated: record.updated
@@ -1106,6 +1249,136 @@ export class IncomingItemService {
   }
 }
 
+export class ServiceBookingService {
+  async getAll(): Promise<ServiceBooking[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('service_bookings').getFullList({
+      filter: `site="${siteId}"`,
+      expand: 'vendor,service'
+    });
+    return records.map(record => this.mapRecordToServiceBooking(record));
+  }
+
+  async getById(id: string): Promise<ServiceBooking | null> {
+    try {
+      const record = await pb.collection('service_bookings').getOne(id, {
+        expand: 'vendor,service'
+      });
+      return this.mapRecordToServiceBooking(record);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async create(data: Omit<ServiceBooking, 'id' | 'site'>): Promise<ServiceBooking> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create service bookings');
+    }
+
+    const record = await pb.collection('service_bookings').create({
+      ...data,
+      site: siteId
+    });
+    return this.mapRecordToServiceBooking(record);
+  }
+
+  async update(id: string, data: Partial<ServiceBooking>): Promise<ServiceBooking> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canUpdate) {
+      throw new Error('Permission denied: Cannot update service bookings');
+    }
+
+    const record = await pb.collection('service_bookings').update(id, data);
+    return this.mapRecordToServiceBooking(record);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canDelete) {
+      throw new Error('Permission denied: Cannot delete service bookings');
+    }
+
+    await pb.collection('service_bookings').delete(id);
+    return true;
+  }
+
+  async uploadCompletionPhoto(bookingId: string, file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append('completion_photos', file);
+    const record = await pb.collection('service_bookings').update(bookingId, formData);
+    return record.completion_photos[record.completion_photos.length - 1];
+  }
+
+  private mapRecordToServiceBooking(record: RecordModel): ServiceBooking {
+    return {
+      id: record.id,
+      service: record.service,
+      vendor: record.vendor,
+      start_date: record.start_date,
+      end_date: record.end_date,
+      duration: record.duration,
+      unit_rate: record.unit_rate,
+      total_amount: record.total_amount,
+      status: record.status,
+      completion_photos: record.completion_photos,
+      notes: record.notes,
+      payment_status: record.payment_status,
+      paid_amount: record.paid_amount,
+      site: record.site,
+      created: record.created,
+      updated: record.updated,
+      expand: record.expand ? {
+        vendor: record.expand.vendor ? this.mapRecordToVendor(record.expand.vendor) : undefined,
+        service: record.expand.service ? this.mapRecordToService(record.expand.service) : undefined
+      } : undefined
+    };
+  }
+
+  private mapRecordToVendor(record: RecordModel): Vendor {
+    return {
+      id: record.id,
+      name: record.name,
+      contact_person: record.contact_person,
+      email: record.email,
+      phone: record.phone,
+      address: record.address,
+      tags: record.tags || [],
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+
+  private mapRecordToService(record: RecordModel): Service {
+    return {
+      id: record.id,
+      name: record.name,
+      description: record.description,
+      category: record.category,
+      service_type: record.service_type,
+      unit: record.unit,
+      standard_rate: record.standard_rate,
+      is_active: record.is_active,
+      tags: record.tags || [],
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+}
+
 export class PaymentService {
   async getAll(): Promise<Payment[]> {
     const siteId = getCurrentSiteId();
@@ -1113,7 +1386,7 @@ export class PaymentService {
 
     const records = await pb.collection('payments').getFullList({
       filter: `site="${siteId}"`,
-      expand: 'vendor,account,incoming_items'
+      expand: 'vendor,account,incoming_items,service_bookings'
     });
     return records.map(record => this.mapRecordToPayment(record));
   }
@@ -1138,8 +1411,9 @@ export class PaymentService {
     // Update account balance (subtract payment amount)
     await accountService.updateBalance(data.account, data.amount, 'subtract');
     
-    // Update payment status of related incoming items
+    // Update payment status of related incoming items and service bookings
     await this.updateIncomingItemsPaymentStatus(data.vendor, data.amount);
+    await this.updateServiceBookingsPaymentStatus(data.vendor, data.amount);
     
     return this.mapRecordToPayment(record);
   }
@@ -1174,6 +1448,36 @@ export class PaymentService {
     }
   }
 
+  private async updateServiceBookingsPaymentStatus(vendorId: string, paymentAmount: number) {
+    const siteId = getCurrentSiteId();
+    if (!siteId) return;
+
+    const serviceBookings = await pb.collection('service_bookings')
+      .getFullList({
+        filter: `vendor="${vendorId}" && payment_status!="paid" && site="${siteId}"`,
+        sort: 'created'
+      });
+
+    let remainingAmount = paymentAmount;
+    
+    for (const booking of serviceBookings) {
+      if (remainingAmount <= 0) break;
+      
+      const outstandingAmount = booking.total_amount - booking.paid_amount;
+      const paymentForBooking = Math.min(remainingAmount, outstandingAmount);
+      
+      const newPaidAmount = booking.paid_amount + paymentForBooking;
+      const newStatus = newPaidAmount >= booking.total_amount ? 'paid' : 'partial';
+      
+      await pb.collection('service_bookings').update(booking.id, {
+        paid_amount: newPaidAmount,
+        payment_status: newStatus
+      });
+      
+      remainingAmount -= paymentForBooking;
+    }
+  }
+
   private mapRecordToPayment(record: RecordModel): Payment {
     return {
       id: record.id,
@@ -1184,6 +1488,7 @@ export class PaymentService {
       reference: record.reference,
       notes: record.notes,
       incoming_items: record.incoming_items || [],
+      service_bookings: record.service_bookings || [],
       site: record.site,
       created: record.created,
       updated: record.updated,
@@ -1191,7 +1496,9 @@ export class PaymentService {
         vendor: record.expand.vendor ? this.mapRecordToVendor(record.expand.vendor) : undefined,
         account: record.expand.account ? this.mapRecordToAccount(record.expand.account) : undefined,
         incoming_items: record.expand.incoming_items ? 
-          record.expand.incoming_items.map((item: RecordModel) => this.mapRecordToIncomingItem(item)) : undefined
+          record.expand.incoming_items.map((item: RecordModel) => this.mapRecordToIncomingItem(item)) : undefined,
+        service_bookings: record.expand.service_bookings ?
+          record.expand.service_bookings.map((booking: RecordModel) => this.mapRecordToServiceBooking(booking)) : undefined
       } : undefined
     };
   }
@@ -1251,6 +1558,27 @@ export class PaymentService {
     };
   }
 
+  private mapRecordToServiceBooking(record: RecordModel): ServiceBooking {
+    return {
+      id: record.id,
+      service: record.service,
+      vendor: record.vendor,
+      start_date: record.start_date,
+      end_date: record.end_date,
+      duration: record.duration,
+      unit_rate: record.unit_rate,
+      total_amount: record.total_amount,
+      status: record.status,
+      completion_photos: record.completion_photos,
+      notes: record.notes,
+      payment_status: record.payment_status,
+      paid_amount: record.paid_amount,
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+
   private mapRecordToItem(record: RecordModel): Item {
     return {
       id: record.id,
@@ -1271,7 +1599,9 @@ export const siteService = new SiteService();
 export const siteUserService = new SiteUserService();
 export const accountService = new AccountService();
 export const itemService = new ItemService();
+export const serviceService = new ServiceService();
 export const vendorService = new VendorService();
 export const quotationService = new QuotationService();
 export const incomingItemService = new IncomingItemService();
+export const serviceBookingService = new ServiceBookingService();
 export const paymentService = new PaymentService();

@@ -35,6 +35,24 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresSite: true, permission: 'canRead' }
     },
     {
+      path: '/services',
+      name: 'Services',
+      component: () => import('../views/ServicesView.vue'),
+      meta: { requiresAuth: true, requiresSite: true, permission: 'canRead' }
+    },
+    {
+      path: '/services/:id',
+      name: 'ServiceDetail',
+      component: () => import('../views/ServiceDetailView.vue'),
+      meta: { requiresAuth: true, requiresSite: true, permission: 'canRead' }
+    },
+    {
+      path: '/service-bookings',
+      name: 'ServiceBookings',
+      component: () => import('../views/ServiceBookingsView.vue'),
+      meta: { requiresAuth: true, requiresSite: true, permission: 'canRead' }
+    },
+    {
       path: '/vendors',
       name: 'Vendors',
       component: () => import('../views/VendorsView.vue'),
