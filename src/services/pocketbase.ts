@@ -125,6 +125,7 @@ export interface Payment {
   site: string; // Site ID
   created?: string;
   updated?: string;
+  running_balance?: number; // Calculated field for account statements
   expand?: {
     vendor?: Vendor;
     account?: Account;
@@ -366,6 +367,23 @@ export class AccountService {
       ? account.current_balance + amount 
       : account.current_balance - amount;
 
+    return this.update(id, { current_balance: newBalance });
+  }
+
+  async recalculateBalance(id: string): Promise<Account> {
+    const account = await this.getById(id);
+    if (!account) throw new Error('Account not found');
+
+    // Get all payments for this account
+    const payments = await paymentService.getAll();
+    const accountPayments = payments.filter(payment => payment.account === id);
+    
+    // Calculate total payments made from this account
+    const totalPayments = accountPayments.reduce((sum, payment) => sum + payment.amount, 0);
+    
+    // Recalculate current balance: opening balance - total payments
+    const newBalance = account.opening_balance - totalPayments;
+    
     return this.update(id, { current_balance: newBalance });
   }
 

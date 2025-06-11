@@ -15,7 +15,7 @@
 
     <!-- Accounts Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="account in accounts" :key="account.id" class="card hover:shadow-md transition-shadow duration-200">
+      <div v-for="account in accounts" :key="account.id" class="card hover:shadow-md transition-shadow duration-200 cursor-pointer" @click="viewAccountDetail(account.id!)">
         <div class="flex items-start justify-between">
           <div class="flex-1">
             <div class="flex items-center space-x-2 mb-2">
@@ -55,7 +55,7 @@
             </div>
           </div>
           
-          <div class="flex items-center space-x-2 ml-4">
+          <div class="flex items-center space-x-2 ml-4" @click.stop>
             <button @click="editAccount(account)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" title="Edit">
               <Edit2 class="h-4 w-4" />
             </button>
@@ -186,6 +186,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { 
   CreditCard, 
   Plus, 
@@ -206,6 +207,7 @@ import {
   type Account
 } from '../services/pocketbase';
 
+const router = useRouter();
 const accounts = ref<Account[]>([]);
 const showAddModal = ref(false);
 const editingAccount = ref<Account | null>(null);
@@ -251,6 +253,10 @@ const maskAccountNumber = (accountNumber: string) => {
   const lastFour = accountNumber.slice(-4);
   const masked = '*'.repeat(accountNumber.length - 4);
   return masked + lastFour;
+};
+
+const viewAccountDetail = (accountId: string) => {
+  router.push(`/accounts/${accountId}`);
 };
 
 const loadData = async () => {
