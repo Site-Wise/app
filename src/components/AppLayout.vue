@@ -1,3 +1,4 @@
+<template>
 <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <!-- PWA Prompts -->
     <PWAPrompt />
@@ -180,3 +181,4 @@
       class="md:hidden fixed inset-0 bg-transparent z-40"
     ></div>
   </div>
+</template>
