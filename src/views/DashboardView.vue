@@ -72,8 +72,26 @@
       </div>
     </div>
 
+    <div class="card">
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment Status Overview</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="text-center p-4 bg-success-50 dark:bg-success-900/20 rounded-lg">
+          <p class="text-2xl font-bold text-success-600 dark:text-success-400">₹{{ paymentStats.paid.toLocaleString() }}</p>
+          <p class="text-sm text-success-700 dark:text-success-300">Paid ({{ paymentStats.paidCount }} deliveries)</p>
+        </div>
+        <div class="text-center p-4 bg-warning-50 dark:bg-warning-900/20 rounded-lg">
+          <p class="text-2xl font-bold text-warning-600 dark:text-warning-400">₹{{ paymentStats.partial.toLocaleString() }}</p>
+          <p class="text-sm text-warning-700 dark:text-warning-300">Partial ({{ paymentStats.partialCount }} deliveries)</p>
+        </div>
+        <div class="text-center p-4 bg-error-50 dark:bg-error-900/20 rounded-lg">
+          <p class="text-2xl font-bold text-error-600 dark:text-error-400">₹{{ paymentStats.pending.toLocaleString() }}</p>
+          <p class="text-sm text-error-700 dark:text-error-300">Pending ({{ paymentStats.pendingCount }} deliveries)</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Recent Activities Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
       <!-- Recent Deliveries -->
       <div class="card">
         <div class="flex items-center justify-between mb-4">
@@ -102,75 +120,28 @@
         </div>
       </div>
 
-      <!-- Pending Quotations -->
+      <!-- Recent payments -->
       <div class="card">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Pending Quotations</h2>
-          <router-link to="/quotations" class="text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 text-sm font-medium">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Recent payments</h2>
+          <router-link to="/payments" class="text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 text-sm font-medium">
             View all
           </router-link>
         </div>
         <div class="space-y-4">
-          <div v-for="quotation in pendingQuotations" :key="quotation.id" class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div v-for="payment in madePayments" :key="payment.id" class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <div class="flex-1">
-              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ quotation.expand?.item?.name || 'Unknown Item' }}</p>
-              <p class="text-xs text-gray-600 dark:text-gray-400">{{ quotation.expand?.vendor?.name || 'Unknown Vendor' }}</p>
-              <p v-if="quotation.valid_until" class="text-xs text-gray-500 dark:text-gray-400">Valid until: {{ formatDate(quotation.valid_until) }}</p>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ payment.expand?.vendor?.name || 'Unknown Vendor' }}</p>
+              <p class="text-xs text-gray-600 dark:text-gray-400">{{ payment.expand?.account?.name }}</p>
+              <p v-if="payment.created" class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(payment.created) }}</p>
             </div>
             <div class="text-right">
-              <p class="text-sm font-medium text-gray-900 dark:text-white">₹{{ quotation.unit_price.toLocaleString() }}</p>
-              <span class="status-pending">{{ quotation.status }}</span>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">₹{{ payment.amount || 'Unknown Amount' }}</p>
             </div>
           </div>
-          <div v-if="pendingQuotations.length === 0" class="text-center py-4 text-gray-500 dark:text-gray-400">
-            No pending quotations
+          <div v-if="madePayments.length === 0" class="text-center py-4 text-gray-500 dark:text-gray-400">
+            No recent payments
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Payment Status Overview -->
-    <div class="mt-8">
-      <div class="card">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment Status Overview</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="text-center p-4 bg-success-50 dark:bg-success-900/20 rounded-lg">
-            <p class="text-2xl font-bold text-success-600 dark:text-success-400">₹{{ paymentStats.paid.toLocaleString() }}</p>
-            <p class="text-sm text-success-700 dark:text-success-300">Paid ({{ paymentStats.paidCount }} deliveries)</p>
-          </div>
-          <div class="text-center p-4 bg-warning-50 dark:bg-warning-900/20 rounded-lg">
-            <p class="text-2xl font-bold text-warning-600 dark:text-warning-400">₹{{ paymentStats.partial.toLocaleString() }}</p>
-            <p class="text-sm text-warning-700 dark:text-warning-300">Partial ({{ paymentStats.partialCount }} deliveries)</p>
-          </div>
-          <div class="text-center p-4 bg-error-50 dark:bg-error-900/20 rounded-lg">
-            <p class="text-2xl font-bold text-error-600 dark:text-error-400">₹{{ paymentStats.pending.toLocaleString() }}</p>
-            <p class="text-sm text-error-700 dark:text-error-300">Pending ({{ paymentStats.pendingCount }} deliveries)</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="mt-8">
-      <div class="card">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <router-link to="/items" class="flex flex-col items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-            <Package class="h-8 w-8 text-primary-600 dark:text-primary-400 mb-2" />
-            <span class="text-sm font-medium text-gray-900 dark:text-white">Add Item</span>
-          </router-link>
-          <router-link to="/vendors" class="flex flex-col items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-            <Users class="h-8 w-8 text-secondary-600 dark:text-secondary-400 mb-2" />
-            <span class="text-sm font-medium text-gray-900 dark:text-white">Add Vendor</span>
-          </router-link>
-          <router-link to="/incoming" class="flex flex-col items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-            <TruckIcon class="h-8 w-8 text-warning-600 dark:text-warning-400 mb-2" />
-            <span class="text-sm font-medium text-gray-900 dark:text-white">Record Delivery</span>
-          </router-link>
-          <router-link to="/payments" class="flex flex-col items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-            <DollarSign class="h-8 w-8 text-success-600 dark:text-success-400 mb-2" />
-            <span class="text-sm font-medium text-gray-900 dark:text-white">Record Payment</span>
-          </router-link>
         </div>
       </div>
     </div>
@@ -184,11 +155,11 @@ import { useSite } from '../composables/useSite';
 import { 
   itemService, 
   vendorService, 
-  quotationService, 
+  paymentService, 
   incomingItemService,
   type Item,
   type Vendor,
-  type Quotation,
+  type Payment,
   type IncomingItem
 } from '../services/pocketbase';
 
@@ -197,7 +168,7 @@ const { currentSite } = useSite();
 const loading = ref(true);
 const items = ref<Item[]>([]);
 const vendors = ref<Vendor[]>([]);
-const quotations = ref<Quotation[]>([]);
+const payments = ref<Payment[]>([]);
 const incomingItems = ref<IncomingItem[]>([]);
 
 const stats = computed(() => {
@@ -222,9 +193,8 @@ const recentDeliveries = computed(() =>
     .slice(0, 5)
 );
 
-const pendingQuotations = computed(() => 
-  quotations.value
-    .filter(q => q.status === 'pending')
+const madePayments = computed(() => 
+  payments.value
     .sort((a, b) => new Date(b.created!).getTime() - new Date(a.created!).getTime())
     .slice(0, 5)
 );
@@ -251,16 +221,16 @@ const paymentStats = computed(() => {
 const loadData = async () => {
   loading.value = true;
   try {
-    const [itemsData, vendorsData, quotationsData, incomingData] = await Promise.all([
+    const [itemsData, vendorsData, paymentsData, incomingData] = await Promise.all([
       itemService.getAll(),
       vendorService.getAll(),
-      quotationService.getAll(),
+      paymentService.getAll(),
       incomingItemService.getAll()
     ]);
     
     items.value = itemsData;
     vendors.value = vendorsData;
-    quotations.value = quotationsData;
+    payments.value = paymentsData;
     incomingItems.value = incomingData;
   } catch (error) {
     console.error('Error loading dashboard data:', error);
