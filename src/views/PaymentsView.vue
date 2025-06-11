@@ -262,7 +262,8 @@ const form = reactive({
   payment_date: new Date().toISOString().split('T')[0],
   reference: '',
   notes: '',
-  incoming_items: [] as string[]
+  incoming_items: [] as string[],
+  service_bookings: [] as string[]
 });
 
 const activeAccounts = computed(() => {

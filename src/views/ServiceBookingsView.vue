@@ -446,4 +446,3 @@ onUnmounted(() => {
   window.removeEventListener('site-changed', handleSiteChange);
 });
 </script>
-</template>

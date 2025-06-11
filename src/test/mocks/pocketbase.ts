@@ -1,5 +1,5 @@
 import { vi } from 'vitest'
-import type { User, Site, Item, Vendor, Quotation, IncomingItem, Payment } from '../../services/pocketbase'
+import type { User, Site, Item, Vendor, Quotation, IncomingItem, Payment, ServiceBooking } from '../../services/pocketbase'
 
 export const mockUser: User = {
   id: 'user-1',
@@ -51,6 +51,8 @@ export const mockQuotation: Quotation = {
   id: 'quotation-1',
   vendor: 'vendor-1',
   item: 'item-1',
+  service: '',
+  quotation_type: 'item',
   unit_price: 50,
   minimum_quantity: 100,
   valid_until: '2024-12-31',
@@ -78,6 +80,25 @@ export const mockIncomingItem: IncomingItem = {
   updated: '2024-01-01T00:00:00Z'
 }
 
+export const mockServiceBooking: ServiceBooking = {
+  id: 'booking-1',
+  service: 'service-1',
+  start_date: '2024-01-15',
+  end_date: '2024-02-15',
+  vendor: 'vendor-1',
+  duration: 20,
+  unit_rate: 45,
+  total_amount: 22500,
+  status: 'scheduled',
+  completion_photos: [],
+  notes: 'Delivered on time',
+  payment_status: 'pending',
+  paid_amount: 0,
+  site: 'site-1',
+  created: '2024-01-01T00:00:00Z',
+  updated: '2024-01-01T00:00:00Z'
+}
+
 export const mockPayment: Payment = {
   id: 'payment-1',
   vendor: 'vendor-1',
@@ -87,6 +108,7 @@ export const mockPayment: Payment = {
   reference: 'CHK-001',
   notes: 'Partial payment',
   incoming_items: ['incoming-1'],
+  service_bookings: ['booking-1'],
   site: 'site-1',
   created: '2024-01-01T00:00:00Z',
   updated: '2024-01-01T00:00:00Z'

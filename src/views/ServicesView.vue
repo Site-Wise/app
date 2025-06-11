@@ -262,8 +262,6 @@ import {
   Users,
   Truck,
   Calendar,
-  HardHat,
-  Zap,
   Briefcase,
   Car,
   Settings
@@ -460,4 +458,3 @@ onUnmounted(() => {
   window.removeEventListener('site-changed', handleSiteChange);
 });
 </script>
-</template>

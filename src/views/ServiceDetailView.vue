@@ -141,7 +141,7 @@
                 {{ booking.expand?.vendor?.name || 'Unknown Vendor' }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                {{ booking.quantity }} {{ service.unit }}
+                {{ booking.duration }} {{ service.unit }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                 ₹{{ booking.unit_rate.toFixed(2) }}
@@ -197,13 +197,13 @@ const service = ref<Service | null>(null);
 const serviceBookings = ref<ServiceBooking[]>([]);
 
 const totalHours = computed(() => {
-  return serviceBookings.value.reduce((sum, booking) => sum + booking.quantity, 0);
+  return serviceBookings.value.reduce((sum, booking) => sum + booking.duration, 0);
 });
 
 const averageRate = computed(() => {
   if (serviceBookings.value.length === 0) return 0;
   const totalValue = serviceBookings.value.reduce((sum, booking) => sum + booking.total_amount, 0);
-  const totalQuantity = serviceBookings.value.reduce((sum, booking) => sum + booking.quantity, 0);
+  const totalQuantity = serviceBookings.value.reduce((sum, booking) => sum + booking.duration, 0);
   return totalQuantity > 0 ? totalValue / totalQuantity : 0;
 });
 
@@ -280,7 +280,7 @@ const generateServiceReportCSV = () => {
   const rows = serviceBookings.value.map(booking => [
     booking.start_date,
     booking.expand?.vendor?.name || 'Unknown Vendor',
-    booking.quantity,
+    booking.duration,
     booking.unit_rate,
     booking.total_amount,
     booking.status,

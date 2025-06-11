@@ -220,7 +220,7 @@ import {
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSite } from '../composables/useSite';
-import { usePermissions } from '../composables/usePermissions';
+// import { usePermissions } from '../composables/usePermissions';
 import { 
   siteUserService,
   type SiteUser
@@ -228,7 +228,7 @@ import {
 
 const { t } = useI18n();
 const { currentSite, canManageUsers, changeUserRole } = useSite();
-const { canManageUsers: hasUserManagementPermission } = usePermissions();
+// const { canManageUsers: hasUserManagementPermission } = usePermissions();
 
 const siteUsers = ref<SiteUser[]>([]);
 const showInviteModal = ref(false);

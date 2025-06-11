@@ -386,7 +386,8 @@ const savePayment = async () => {
       payment_date: paymentForm.payment_date,
       reference: paymentForm.reference,
       notes: paymentForm.notes,
-      incoming_items: []
+      incoming_items: [],
+      service_bookings: [],
     });
     
     await loadVendorData();

@@ -4,7 +4,7 @@ import {
   siteUserService,
   getCurrentSiteId, 
   setCurrentSiteId,
-  getCurrentUserRole,
+  // getCurrentUserRole,
   setCurrentUserRole,
   type Site 
 } from '../services/pocketbase';
