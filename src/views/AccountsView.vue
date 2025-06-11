@@ -256,7 +256,12 @@ const maskAccountNumber = (accountNumber: string) => {
 };
 
 const viewAccountDetail = (accountId: string) => {
-  router.push(`/accounts/${accountId}`);
+  console.log('Navigating to account detail:', accountId);
+  try {
+    router.push(`/accounts/${accountId}`);
+  } catch (error) {
+    console.error('Navigation error:', error);
+  }
 };
 
 const loadData = async () => {

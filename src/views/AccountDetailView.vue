@@ -385,6 +385,7 @@ const goBack = () => {
 
 const loadAccountData = async () => {
   const accountId = route.params.id as string;
+  console.log('Loading account data for ID:', accountId);
   
   try {
     const [accountData, allPayments] = await Promise.all([
@@ -392,12 +393,18 @@ const loadAccountData = async () => {
       paymentService.getAll()
     ]);
     
+    console.log('Account data loaded:', accountData);
+    console.log('All payments:', allPayments);
+    
     account.value = accountData;
     accountTransactions.value = allPayments
       .filter(payment => payment.account === accountId)
       .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime());
       
+    console.log('Account transactions:', accountTransactions.value);
+      
     if (!account.value) {
+      console.error('Account not found, redirecting to accounts list');
       router.push('/accounts');
     }
   } catch (error) {
@@ -508,6 +515,7 @@ const formatDate = (dateString: string) => {
 };
 
 onMounted(() => {
+  console.log('AccountDetailView mounted, route params:', route.params);
   loadAccountData();
 });
 </script>
