@@ -41,6 +41,14 @@
             Add Vendor
           </router-link>
           <router-link
+            to="/accounts"
+            @click="showQuickModal('account')"
+            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-200"
+          >
+            <Plus class="mr-2 h-4 w-4" />
+            Add Account
+          </router-link>
+          <router-link
             to="/incoming"
             @click="showQuickModal('delivery')"
             class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-200"
@@ -233,6 +241,7 @@ const navigation = computed(() => [
   { name: 'Dashboard', to: '/', icon: BarChart3, current: route.name === 'Dashboard' },
   { name: 'Items', to: '/items', icon: Package, current: route.name === 'Items' },
   { name: 'Vendors', to: '/vendors', icon: Users, current: route.name === 'Vendors' },
+  { name: 'Accounts', to: '/accounts', icon: CreditCard, current: route.name === 'Accounts' },
   { name: 'Quotations', to: '/quotations', icon: FileText, current: route.name === 'Quotations' },
   { name: 'Incoming Items', to: '/incoming', icon: TruckIcon, current: route.name === 'Incoming' },
   { name: 'Payments', to: '/payments', icon: CreditCard, current: route.name === 'Payments' },
@@ -252,6 +261,7 @@ const quickModalTitle = computed(() => {
   const titles = {
     item: 'Add New Item',
     vendor: 'Add New Vendor',
+    account: 'Add New Account',
     delivery: 'Record New Delivery',
     payment: 'Record New Payment'
   };
@@ -262,6 +272,7 @@ const quickModalDescription = computed(() => {
   const descriptions = {
     item: 'Add a new construction item to your inventory with quantities and specifications.',
     vendor: 'Add a new vendor contact with their details and specialties.',
+    account: 'Add a new payment account to track different payment modes.',
     delivery: 'Record a new delivery with photos, quantities, and payment information.',
     payment: 'Record a payment made to a vendor and update delivery statuses.'
   };
@@ -285,6 +296,7 @@ const navigateToPage = () => {
   const routes = {
     item: '/items',
     vendor: '/vendors',
+    account: '/accounts',
     delivery: '/incoming',
     payment: '/payments'
   };

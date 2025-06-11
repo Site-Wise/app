@@ -19,6 +19,7 @@
         <thead class="bg-gray-50 dark:bg-gray-700">
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Vendor</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Account</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Payment Date</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Reference</th>
@@ -30,6 +31,12 @@
           <tr v-for="payment in payments" :key="payment.id">
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="text-sm font-medium text-gray-900 dark:text-white">{{ payment.expand?.vendor?.name || 'Unknown Vendor' }}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex items-center">
+                <component :is="getAccountIcon(payment.expand?.account?.type)" class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <div class="text-sm text-gray-900 dark:text-white">{{ payment.expand?.account?.name || 'Unknown Account' }}</div>
+              </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="text-sm font-medium text-gray-900 dark:text-white">₹{{ payment.amount.toFixed(2) }}</div>
@@ -104,6 +111,16 @@
               </select>
             </div>
             
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Payment Account</label>
+              <select v-model="form.account" required class="input mt-1">
+                <option value="">Select an account</option>
+                <option v-for="account in activeAccounts" :key="account.id" :value="account.id">
+                  {{ account.name }} ({{ account.type.replace('_', ' ') }}) - ₹{{ account.current_balance.toFixed(2) }}
+                </option>
+              </select>
+            </div>
+            
             <div v-if="form.vendor && vendorOutstanding > 0" class="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
               <p class="text-sm text-yellow-800 dark:text-yellow-300">
                 Outstanding amount for this vendor: <strong>₹{{ vendorOutstanding.toFixed(2) }}</strong>
@@ -156,6 +173,13 @@
               <span class="ml-2 text-gray-900 dark:text-white">{{ viewingPayment.expand?.vendor?.name || 'Unknown Vendor' }}</span>
             </div>
             <div>
+              <span class="font-medium text-gray-700 dark:text-gray-300">Account:</span>
+              <div class="ml-2 flex items-center">
+                <component :is="getAccountIcon(viewingPayment.expand?.account?.type)" class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <span class="text-gray-900 dark:text-white">{{ viewingPayment.expand?.account?.name || 'Unknown Account' }}</span>
+              </div>
+            </div>
+            <div>
               <span class="font-medium text-gray-700 dark:text-gray-300">Amount:</span>
               <span class="ml-2 text-gray-900 dark:text-white">₹{{ viewingPayment.amount.toFixed(2) }}</span>
             </div>
@@ -195,13 +219,25 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
-import { CreditCard, Plus, Eye, Trash2, Loader2 } from 'lucide-vue-next';
+import { 
+  CreditCard, 
+  Plus, 
+  Eye, 
+  Trash2, 
+  Loader2,
+  Banknote,
+  Wallet,
+  Smartphone,
+  Building2
+} from 'lucide-vue-next';
 import { 
   paymentService, 
   vendorService,
+  accountService,
   incomingItemService,
   type Payment, 
   type Vendor,
+  type Account,
   type IncomingItem
 } from '../services/pocketbase';
 
@@ -212,6 +248,7 @@ interface VendorWithOutstanding extends Vendor {
 
 const payments = ref<Payment[]>([]);
 const vendors = ref<Vendor[]>([]);
+const accounts = ref<Account[]>([]);
 const incomingItems = ref<IncomingItem[]>([]);
 const showAddModal = ref(false);
 const viewingPayment = ref<Payment | null>(null);
@@ -220,11 +257,16 @@ const vendorOutstanding = ref(0);
 
 const form = reactive({
   vendor: '',
+  account: '',
   amount: 0,
   payment_date: new Date().toISOString().split('T')[0],
   reference: '',
   notes: '',
   incoming_items: [] as string[]
+});
+
+const activeAccounts = computed(() => {
+  return accounts.value.filter(account => account.is_active);
 });
 
 const vendorsWithOutstanding = computed(() => {
@@ -244,16 +286,30 @@ const vendorsWithOutstanding = computed(() => {
   }).filter(vendor => vendor.outstandingAmount > 0);
 });
 
+const getAccountIcon = (type?: Account['type']) => {
+  if (!type) return Wallet;
+  const icons = {
+    bank: Building2,
+    credit_card: CreditCard,
+    cash: Banknote,
+    digital_wallet: Smartphone,
+    other: Wallet
+  };
+  return icons[type] || Wallet;
+};
+
 const loadData = async () => {
   try {
-    const [paymentsData, vendorsData, incomingData] = await Promise.all([
+    const [paymentsData, vendorsData, accountsData, incomingData] = await Promise.all([
       paymentService.getAll(),
       vendorService.getAll(),
+      accountService.getAll(),
       incomingItemService.getAll()
     ]);
     
     payments.value = paymentsData;
     vendors.value = vendorsData;
+    accounts.value = accountsData;
     incomingItems.value = incomingData;
   } catch (error) {
     console.error('Error loading data:', error);
@@ -318,6 +374,7 @@ const closeModal = () => {
   showAddModal.value = false;
   Object.assign(form, {
     vendor: '',
+    account: '',
     amount: 0,
     payment_date: new Date().toISOString().split('T')[0],
     reference: '',

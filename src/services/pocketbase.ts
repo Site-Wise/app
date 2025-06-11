@@ -34,6 +34,21 @@ export interface Site {
   };
 }
 
+export interface Account {
+  id?: string;
+  name: string;
+  type: 'bank' | 'credit_card' | 'cash' | 'digital_wallet' | 'other';
+  account_number?: string;
+  bank_name?: string;
+  description?: string;
+  is_active: boolean;
+  opening_balance: number;
+  current_balance: number;
+  site: string; // Site ID
+  created?: string;
+  updated?: string;
+}
+
 export interface Item {
   id?: string;
   name: string;
@@ -101,6 +116,7 @@ export interface IncomingItem {
 export interface Payment {
   id?: string;
   vendor: string;
+  account: string; // Account ID for payment mode
   amount: number;
   payment_date: string;
   reference?: string;
@@ -111,6 +127,7 @@ export interface Payment {
   updated?: string;
   expand?: {
     vendor?: Vendor;
+    account?: Account;
     incoming_items?: IncomingItem[];
   };
 }
@@ -293,6 +310,77 @@ export class SiteService {
       name: record.name,
       avatar: record.avatar,
       sites: record.sites || [],
+      created: record.created,
+      updated: record.updated
+    };
+  }
+}
+
+export class AccountService {
+  async getAll(): Promise<Account[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('accounts').getFullList({
+      filter: `site="${siteId}"`
+    });
+    return records.map(record => this.mapRecordToAccount(record));
+  }
+
+  async getById(id: string): Promise<Account | null> {
+    try {
+      const record = await pb.collection('accounts').getOne(id);
+      return this.mapRecordToAccount(record);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async create(data: Omit<Account, 'id' | 'site' | 'current_balance'>): Promise<Account> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const record = await pb.collection('accounts').create({
+      ...data,
+      current_balance: data.opening_balance, // Initialize current balance with opening balance
+      site: siteId
+    });
+    return this.mapRecordToAccount(record);
+  }
+
+  async update(id: string, data: Partial<Account>): Promise<Account> {
+    const record = await pb.collection('accounts').update(id, data);
+    return this.mapRecordToAccount(record);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    await pb.collection('accounts').delete(id);
+    return true;
+  }
+
+  async updateBalance(id: string, amount: number, operation: 'add' | 'subtract'): Promise<Account> {
+    const account = await this.getById(id);
+    if (!account) throw new Error('Account not found');
+
+    const newBalance = operation === 'add' 
+      ? account.current_balance + amount 
+      : account.current_balance - amount;
+
+    return this.update(id, { current_balance: newBalance });
+  }
+
+  private mapRecordToAccount(record: RecordModel): Account {
+    return {
+      id: record.id,
+      name: record.name,
+      type: record.type,
+      account_number: record.account_number,
+      bank_name: record.bank_name,
+      description: record.description,
+      is_active: record.is_active,
+      opening_balance: record.opening_balance,
+      current_balance: record.current_balance,
+      site: record.site,
       created: record.created,
       updated: record.updated
     };
@@ -577,7 +665,7 @@ export class PaymentService {
 
     const records = await pb.collection('payments').getFullList({
       filter: `site="${siteId}"`,
-      expand: 'vendor,incoming_items'
+      expand: 'vendor,account,incoming_items'
     });
     return records.map(record => this.mapRecordToPayment(record));
   }
@@ -591,6 +679,9 @@ export class PaymentService {
       ...data,
       site: siteId
     });
+    
+    // Update account balance (subtract payment amount)
+    await accountService.updateBalance(data.account, data.amount, 'subtract');
     
     // Update payment status of related incoming items
     await this.updateIncomingItemsPaymentStatus(data.vendor, data.amount);
@@ -632,6 +723,7 @@ export class PaymentService {
     return {
       id: record.id,
       vendor: record.vendor,
+      account: record.account,
       amount: record.amount,
       payment_date: record.payment_date,
       reference: record.reference,
@@ -642,6 +734,7 @@ export class PaymentService {
       updated: record.updated,
       expand: record.expand ? {
         vendor: record.expand.vendor ? this.mapRecordToVendor(record.expand.vendor) : undefined,
+        account: record.expand.account ? this.mapRecordToAccount(record.expand.account) : undefined,
         incoming_items: record.expand.incoming_items ? 
           record.expand.incoming_items.map((item: RecordModel) => this.mapRecordToIncomingItem(item)) : undefined
       } : undefined
@@ -657,6 +750,23 @@ export class PaymentService {
       phone: record.phone,
       address: record.address,
       tags: record.tags || [],
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+
+  private mapRecordToAccount(record: RecordModel): Account {
+    return {
+      id: record.id,
+      name: record.name,
+      type: record.type,
+      account_number: record.account_number,
+      bank_name: record.bank_name,
+      description: record.description,
+      is_active: record.is_active,
+      opening_balance: record.opening_balance,
+      current_balance: record.current_balance,
       site: record.site,
       created: record.created,
       updated: record.updated
@@ -703,6 +813,7 @@ export class PaymentService {
 
 export const authService = new AuthService();
 export const siteService = new SiteService();
+export const accountService = new AccountService();
 export const itemService = new ItemService();
 export const vendorService = new VendorService();
 export const quotationService = new QuotationService();

@@ -164,6 +164,10 @@
               <div>
                 <h4 class="font-medium text-gray-900 dark:text-white">₹{{ payment.amount.toFixed(2) }}</h4>
                 <p class="text-sm text-gray-600 dark:text-gray-400">{{ formatDate(payment.payment_date) }}</p>
+                <div v-if="payment.expand?.account" class="flex items-center mt-1">
+                  <component :is="getAccountIcon(payment.expand.account.type)" class="mr-1 h-3 w-3 text-gray-500 dark:text-gray-400" />
+                  <span class="text-xs text-gray-500 dark:text-gray-400">{{ payment.expand.account.name }}</span>
+                </div>
               </div>
               <div class="text-right text-sm">
                 <p v-if="payment.reference" class="text-gray-600 dark:text-gray-400">Ref: {{ payment.reference }}</p>
@@ -190,6 +194,16 @@
               <p class="text-sm text-yellow-800 dark:text-yellow-300">
                 Outstanding amount: <strong>₹{{ outstandingAmount.toFixed(2) }}</strong>
               </p>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Payment Account</label>
+              <select v-model="paymentForm.account" required class="input mt-1">
+                <option value="">Select an account</option>
+                <option v-for="account in activeAccounts" :key="account.id" :value="account.id">
+                  {{ account.name }} ({{ account.type.replace('_', ' ') }}) - ₹{{ account.current_balance.toFixed(2) }}
+                </option>
+              </select>
             </div>
             
             <div>
@@ -246,15 +260,21 @@ import {
   AlertCircle, 
   CheckCircle, 
   TruckIcon,
-  Loader2
+  Loader2,
+  Banknote,
+  Wallet,
+  Smartphone,
+  Building2
 } from 'lucide-vue-next';
 import { 
   vendorService, 
   incomingItemService, 
   paymentService,
+  accountService,
   type Vendor,
   type IncomingItem,
-  type Payment
+  type Payment,
+  type Account
 } from '../services/pocketbase';
 
 const route = useRoute();
@@ -263,14 +283,20 @@ const router = useRouter();
 const vendor = ref<Vendor | null>(null);
 const vendorIncomingItems = ref<IncomingItem[]>([]);
 const vendorPayments = ref<Payment[]>([]);
+const accounts = ref<Account[]>([]);
 const showPaymentModal = ref(false);
 const paymentLoading = ref(false);
 
 const paymentForm = reactive({
+  account: '',
   amount: 0,
   payment_date: new Date().toISOString().split('T')[0],
   reference: '',
   notes: ''
+});
+
+const activeAccounts = computed(() => {
+  return accounts.value.filter(account => account.is_active);
 });
 
 const outstandingAmount = computed(() => {
@@ -293,6 +319,18 @@ const paidDeliveries = computed(() => {
   return vendorIncomingItems.value.filter(item => item.payment_status === 'paid').length;
 });
 
+const getAccountIcon = (type?: Account['type']) => {
+  if (!type) return Wallet;
+  const icons = {
+    bank: Building2,
+    credit_card: CreditCard,
+    cash: Banknote,
+    digital_wallet: Smartphone,
+    other: Wallet
+  };
+  return icons[type] || Wallet;
+};
+
 const goBack = () => {
   try {
     router.back();
@@ -306,10 +344,11 @@ const loadVendorData = async () => {
   const vendorId = route.params.id as string;
   
   try {
-    const [vendorData, allIncoming, allPayments] = await Promise.all([
+    const [vendorData, allIncoming, allPayments, accountsData] = await Promise.all([
       vendorService.getAll(),
       incomingItemService.getAll(),
-      paymentService.getAll()
+      paymentService.getAll(),
+      accountService.getAll()
     ]);
     
     vendor.value = vendorData.find(v => v.id === vendorId) || null;
@@ -319,6 +358,7 @@ const loadVendorData = async () => {
     vendorPayments.value = allPayments
       .filter(payment => payment.vendor === vendorId)
       .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime());
+    accounts.value = accountsData;
       
     if (!vendor.value) {
       router.push('/vendors');
@@ -341,6 +381,7 @@ const savePayment = async () => {
   try {
     await paymentService.create({
       vendor: vendor.value.id!,
+      account: paymentForm.account,
       amount: paymentForm.amount,
       payment_date: paymentForm.payment_date,
       reference: paymentForm.reference,
@@ -353,6 +394,7 @@ const savePayment = async () => {
     
     // Reset form
     Object.assign(paymentForm, {
+      account: '',
       amount: 0,
       payment_date: new Date().toISOString().split('T')[0],
       reference: '',
@@ -386,7 +428,7 @@ const exportLedger = () => {
 const generateLedgerCSV = () => {
   if (!vendor.value) return '';
   
-  const headers = ['Date', 'Type', 'Description', 'Item', 'Quantity', 'Unit Price', 'Amount', 'Payment Status', 'Reference', 'Notes'];
+  const headers = ['Date', 'Type', 'Description', 'Item', 'Quantity', 'Unit Price', 'Amount', 'Payment Status', 'Account', 'Reference', 'Notes'];
   
   const rows: (string | number)[][] = [];
   
@@ -401,6 +443,7 @@ const generateLedgerCSV = () => {
       item.unit_price,
       item.total_amount,
       item.payment_status,
+      '',
       '',
       item.notes || ''
     ]);
@@ -417,6 +460,7 @@ const generateLedgerCSV = () => {
       '',
       -payment.amount, // Negative for payments
       'paid',
+      payment.expand?.account?.name || 'Unknown Account',
       payment.reference || '',
       payment.notes || ''
     ]);
@@ -434,6 +478,7 @@ const generateLedgerCSV = () => {
     '',
     '',
     outstandingAmount.value,
+    '',
     '',
     '',
     `Outstanding Balance as of ${new Date().toISOString().split('T')[0]}`
