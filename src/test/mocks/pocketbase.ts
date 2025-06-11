@@ -82,6 +82,7 @@ export const mockPayment: Payment = {
   id: 'payment-1',
   vendor: 'vendor-1',
   amount: 10000,
+  account: 'account-1',
   payment_date: '2024-01-20',
   reference: 'CHK-001',
   notes: 'Partial payment',

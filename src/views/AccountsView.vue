@@ -60,7 +60,8 @@
               <Edit2 class="h-4 w-4" />
             </button>
             <button @click="toggleAccountStatus(account)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" :title="account.is_active ? 'Deactivate' : 'Activate'">
-              <component :is="account.is_active ? 'EyeOff' : 'Eye'" class="h-4 w-4" />
+              <EyeOff class="h-4 w-4" v-if="account.is_active"></EyeOff>
+              <Eye class="h-4 w-4" v-if="!account.is_active"></Eye>
             </button>
             <button @click="deleteAccount(account.id!)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400" title="Delete">
               <Trash2 class="h-4 w-4" />
