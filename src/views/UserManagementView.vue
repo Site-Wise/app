@@ -220,15 +220,13 @@ import {
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSite } from '../composables/useSite';
-// import { usePermissions } from '../composables/usePermissions';
 import { 
   siteUserService,
   type SiteUser
 } from '../services/pocketbase';
 
 const { t } = useI18n();
-const { currentSite, canManageUsers, changeUserRole } = useSite();
-// const { canManageUsers: hasUserManagementPermission } = usePermissions();
+const { currentSite, canManageUsers, changeUserRole, addUserToSite, removeUserFromSite } = useSite();
 
 const siteUsers = ref<SiteUser[]>([]);
 const showInviteModal = ref(false);
@@ -312,6 +310,7 @@ const inviteUser = async () => {
     closeInviteModal();
   } catch (error) {
     console.error('Error inviting user:', error);
+    alert(t('messages.error'));
   } finally {
     inviteLoading.value = false;
   }
@@ -332,7 +331,7 @@ const saveRoleChange = async () => {
     editingUser.value = null;
   } catch (error) {
     console.error('Error changing user role:', error);
-    alert(t('messages.error'));
+    alert(error instanceof Error ? error.message : t('messages.error'));
   } finally {
     roleLoading.value = false;
   }
@@ -354,11 +353,12 @@ const removeUser = async (siteUser: SiteUser) => {
   }
   
   try {
-    await siteUserService.delete(siteUser.id!);
+    if (!currentSite.value) return;
+    await removeUserFromSite(siteUser.user, currentSite.value.id!);
     await loadSiteUsers();
   } catch (error) {
     console.error('Error removing user:', error);
-    alert(t('messages.error'));
+    alert(error instanceof Error ? error.message : t('messages.error'));
   }
 };
 
