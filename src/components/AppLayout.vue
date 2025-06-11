@@ -20,11 +20,6 @@
         </button>
       </div>
       
-      <!-- Site Selector in Sidebar -->
-      <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-        <SiteSelector />
-      </div>
-      
       <!-- Quick Actions -->
       <div class="p-4 border-b border-gray-200 dark:border-gray-700">
         <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Quick Actions</h3>
