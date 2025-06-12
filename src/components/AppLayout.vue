@@ -7,10 +7,11 @@
     <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0" 
          :class="{ '-translate-x-full': !sidebarOpen, 'translate-x-0': sidebarOpen }">
       <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
-        <div class="flex items-center space-x-2">
-          <HardHat class="h-8 w-8 text-primary-600 dark:text-primary-400" />
-          <span class="text-xl font-bold text-gray-900 dark:text-white">SiteWise</span>
-        </div>
+        <router-link class="flex items-center space-x-2" to="/">
+          <!-- <HardHat class="h-8 w-8 text-primary-600 dark:text-primary-400" /> -->
+          <img src="/logo.png" class="h-12 dark:bg-slate-400 rounded-lg" alt="SiteWise">
+          <!-- <span class="text-xl font-bold text-gray-900 dark:text-white">SiteWise</span> -->
+        </router-link>
         <!-- Close button for mobile -->
         <button
           @click="sidebarOpen = false"
@@ -134,7 +135,7 @@
               
               <div
                 v-if="userMenuOpen"
-                class="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-2 z-50 border border-gray-200 dark:border-gray-700"
+                class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-2 z-50 border border-gray-200 dark:border-gray-700"
               >
                 <!-- Invitations Section -->
                 <div v-if="receivedInvitationsCount > 0" class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
@@ -151,7 +152,7 @@
                     @click="goToInvites"
                     class="w-full text-left text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                   >
-                    View all invitations →
+                    {{ t('users.viewAllInvitations') }}
                   </button>
                 </div>
                 
@@ -162,7 +163,7 @@
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700"
                 >
                   <Users class="inline mr-2 h-4 w-4" />
-                  Manage Users
+                  {{ t('nav.manage_users') }}
                 </button>
                 <button
                   v-if="isOwner"
@@ -170,28 +171,22 @@
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700"
                 >
                   <CreditCard class="inline mr-2 h-4 w-4" />
-                  Subscription
+                  {{ t('subscription.title')}}
                 </button>
                 <button
                   @click="handleLogout"
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                   <LogOut class="inline mr-2 h-4 w-4" />
-                  Sign out
+                  {{ t('nav.logout') }}
                 </button>
 
                 <!-- Mobile Controls Section -->
-                <div class="block md:hidden border-t border-gray-200 dark:border-gray-700 mt-1 pt-2">
-                  <div class="px-3 pb-2">
-                    <!-- Language and Theme side by side -->
-                    <div class="flex items-center space-x-2">
-                      <div class="flex-1 min-w-0">
-                        <LanguageSelector />
-                      </div>
-                      <div class="flex-1 min-w-0">
-                        <ThemeToggle />
-                      </div>
-                    </div>
+                <div class="block md:hidden border-t border-gray-200 dark:border-gray-700 mt-1">
+                  <!-- Language and Theme side by side -->
+                  <div class="flex justify-center items-center space-x-2">
+                    <LanguageSelector />
+                    <ThemeToggle />
                   </div>
                 </div>
               </div>
@@ -255,7 +250,6 @@ import PWAPrompt from './PWAPrompt.vue';
 import SiteSelector from './SiteSelector.vue';
 import LanguageSelector from './LanguageSelector.vue';
 import {
-  HardHat,
   BarChart3,
   Package,
   Users,

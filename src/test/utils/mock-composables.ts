@@ -63,10 +63,10 @@ export const createMockUsePWA = (overrides: any = {}) => ({
   isInstalled: computed(() => overrides.isInstalled ?? false),
   isOnline: computed(() => overrides.isOnline ?? true),
   updateAvailable: computed(() => overrides.updateAvailable ?? false),
-  installApp: vi.fn(),
-  updateApp: vi.fn(),
-  requestNotificationPermission: vi.fn(),
-  showNotification: vi.fn(),
+  installApp: vi.fn().mockResolvedValue(false),
+  updateApp: vi.fn().mockResolvedValue(undefined),
+  requestNotificationPermission: vi.fn().mockResolvedValue(false),
+  showNotification: vi.fn().mockReturnValue(null),
   addToOfflineQueue: vi.fn(),
   initializePWA: vi.fn(),
   ...overrides
@@ -102,22 +102,23 @@ export const createMockUseSubscription = (overrides: any = {}) => ({
   error: computed(() => overrides.error ?? null),
   isReadOnly: computed(() => overrides.isReadOnly ?? false),
   isSubscriptionActive: computed(() => overrides.isSubscriptionActive ?? true),
-  availablePlans: computed(() => overrides.availablePlans ?? []),
   loadSubscription: vi.fn(),
-  loadPlans: vi.fn(),
-  loadUsage: vi.fn(),
-  subscribe: vi.fn(),
-  updateSubscription: vi.fn(),
+  createDefaultSubscription: vi.fn(),
+  createFreeTierSubscription: vi.fn(),
+  checkCreateLimit: vi.fn().mockReturnValue(true),
+  incrementUsage: vi.fn(),
+  decrementUsage: vi.fn(),
+  getAllPlans: vi.fn().mockResolvedValue([]),
+  upgradeSubscription: vi.fn(),
   cancelSubscription: vi.fn(),
-  checkUsageLimit: vi.fn().mockReturnValue(false),
-  formatCurrency: vi.fn().mockReturnValue('$0.00'),
   ...overrides
 })
 
 export const createMockUseTheme = (overrides: any = {}) => ({
   theme: computed(() => overrides.theme ?? 'light'),
-  toggleTheme: vi.fn(),
+  isDark: computed(() => overrides.isDark ?? false),
   setTheme: vi.fn(),
+  initializeTheme: vi.fn(),
   ...overrides
 })
 

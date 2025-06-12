@@ -111,8 +111,19 @@ describe('Data Flow Integration', () => {
     console.log('Rendered content:', wrapper.text())
     
     // Should display item information
-    expect(wrapper.text()).toContain(mockItem.name)
-    expect(wrapper.text()).toContain(mockItem.description)
+    const mockItemLocal = {
+      id: 'item-1',
+      name: 'Steel Rebar',
+      description: 'High-grade steel rebar',
+      unit: 'kg',
+      quantity: 1000,
+      category: 'Steel',
+      site: 'site-1',
+      created: '2024-01-01T00:00:00Z',
+      updated: '2024-01-01T00:00:00Z'
+    }
+    expect(wrapper.text()).toContain(mockItemLocal.name)
+    expect(wrapper.text()).toContain(mockItemLocal.description)
     
     // Should display delivery summary
     expect(wrapper.text()).toContain('Total Delivered')
@@ -136,8 +147,20 @@ describe('Data Flow Integration', () => {
     await new Promise(resolve => setTimeout(resolve, 100))
     
     // Should display vendor information
-    expect(wrapper.text()).toContain(mockVendor.name)
-    expect(wrapper.text()).toContain(mockVendor.contact_person)
+    const mockVendorLocal = {
+      id: 'vendor-1',
+      name: 'Steel Suppliers Inc',
+      contact_person: 'John Doe',
+      email: 'john@steelsuppliers.com',
+      phone: '+1234567890',
+      address: '123 Steel Street',
+      tags: ['Steel', 'Metal'],
+      site: 'site-1',
+      created: '2024-01-01T00:00:00Z',
+      updated: '2024-01-01T00:00:00Z'
+    }
+    expect(wrapper.text()).toContain(mockVendorLocal.name)
+    expect(wrapper.text()).toContain(mockVendorLocal.contact_person)
     
     // Should display financial summary
     expect(wrapper.text()).toContain('Outstanding')
@@ -163,7 +186,17 @@ describe('Data Flow Integration', () => {
     
     // Test that the component can call create function
     const mockCreate = vi.mocked(itemService.create)
-    mockCreate.mockResolvedValue({ ...mockItem, id: 'new-item' })
+    mockCreate.mockResolvedValue({ 
+      id: 'new-item',
+      name: 'Steel Rebar',
+      description: 'High-grade steel rebar',
+      unit: 'kg',
+      quantity: 1000,
+      category: 'Steel',
+      site: 'site-1',
+      created: '2024-01-01T00:00:00Z',
+      updated: '2024-01-01T00:00:00Z'
+    })
     
     // Test that the services are available (integration test)
     expect(itemService.create).toBeDefined()
@@ -190,7 +223,18 @@ describe('Data Flow Integration', () => {
     
     // Test that the component can call create function
     const mockCreate = vi.mocked(vendorService.create)
-    mockCreate.mockResolvedValue({ ...mockVendor, id: 'new-vendor' })
+    mockCreate.mockResolvedValue({ 
+      id: 'new-vendor',
+      name: 'Steel Suppliers Inc',
+      contact_person: 'John Doe',
+      email: 'john@steelsuppliers.com',
+      phone: '+1234567890',
+      address: '123 Steel Street',
+      tags: ['Steel', 'Metal'],
+      site: 'site-1',
+      created: '2024-01-01T00:00:00Z',
+      updated: '2024-01-01T00:00:00Z'
+    })
     
     // Test that the services are available (integration test)
     expect(vendorService.create).toBeDefined()

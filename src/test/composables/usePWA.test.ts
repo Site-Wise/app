@@ -1,12 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { nextTick } from 'vue'
 
 // Mock Vue's onMounted to prevent lifecycle warnings in tests
 vi.mock('vue', async () => {
   const actual = await vi.importActual('vue')
   return {
     ...actual,
-    onMounted: vi.fn((callback: () => void) => {
+    onMounted: vi.fn((_callback: () => void) => {
       // Don't execute onMounted callbacks in tests to avoid warnings
       return
     })

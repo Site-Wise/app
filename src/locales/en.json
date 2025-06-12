@@ -86,6 +86,7 @@
     "users": "Users",
     "settings": "Settings",
     "profile": "Profile",
+    "manage_users": "Manage Users",
     "logout": "Sign out"
   },
   "auth": {
@@ -121,16 +122,13 @@
   "dashboard": {
     "title": "Dashboard",
     "subtitle": "Overview of {siteName} management",
-    "totalItems": "Total Items",
-    "activeVendors": "Active Vendors",
-    "pendingDeliveries": "Pending Deliveries",
+    "totalExpenses": "Total Expenses",
+    "currentMonthExpenses": "Current Month Expenses",
+    "expensePerSqft": "Expense / Sqft",
     "outstandingAmount": "Outstanding Amount",
-    "recentDeliveries": "Recent Deliveries",
-    "recentPayments": "Recent Payments",
-    "paymentStatusOverview": "Payment Status Overview",
+    "paymentsLastSevenDays": "Payments Last 7 Days",
+    "totalPaid": "Total Paid",
     "viewAll": "View all",
-    "noRecentDeliveries": "No recent deliveries",
-    "noRecentPayments": "No recent payments",
     "units": "units",
     "sqft": "sqft"
   },
@@ -365,6 +363,7 @@
     "title": "User Management",
     "subtitle": "Manage site users and their roles",
     "inviteUser": "Invite User",
+    "viewAllInvitations": "View all invitations →",
     "role": "Role",
     "assignedBy": "Assigned By",
     "assignedAt": "Assigned At",

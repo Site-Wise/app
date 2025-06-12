@@ -23,7 +23,7 @@ vi.mock('../../services/pocketbase', () => ({
 
 const mockAuth = {
   isAuthenticated: { value: false },
-  user: { value: null },
+  user: { value: null as any },
   login: vi.fn(),
   logout: vi.fn(),
   register: vi.fn(),
@@ -33,7 +33,7 @@ const mockAuth = {
 const mockSite = {
   hasSiteAccess: { value: false },
   loadUserSites: vi.fn(),
-  currentSite: { value: null },
+  currentSite: { value: null as any },
   userSites: { value: [] },
   isLoading: { value: false },
   isCurrentUserAdmin: { value: false },
@@ -101,7 +101,7 @@ describe('Authentication Flow Integration', () => {
   it('should show site selection when authenticated but no site access', async () => {
     // Mock authenticated state
     mockAuth.isAuthenticated.value = true
-    mockAuth.user.value = { id: 'user-1', name: 'Test User' }
+    mockAuth.user.value = { id: 'user-1', name: 'Test User', email: 'test@example.com', sites: [], created: '2024-01-01T00:00:00Z', updated: '2024-01-01T00:00:00Z' }
     mockSite.hasSiteAccess.value = false
     
     const wrapper = mount(App, {
@@ -124,9 +124,9 @@ describe('Authentication Flow Integration', () => {
   it('should show app layout when authenticated and has site access', async () => {
     // Mock authenticated state with site access
     mockAuth.isAuthenticated.value = true
-    mockAuth.user.value = { id: 'user-1', name: 'Test User' }
+    mockAuth.user.value = { id: 'user-1', name: 'Test User', email: 'test@example.com', sites: [], created: '2024-01-01T00:00:00Z', updated: '2024-01-01T00:00:00Z' }
     mockSite.hasSiteAccess.value = true
-    mockSite.currentSite.value = { id: 'site-1', name: 'Test Site' }
+    mockSite.currentSite.value = { id: 'site-1', name: 'Test Site', description: 'Test Site Description', total_units: 100, total_planned_area: 50000, admin_user: 'user-1', users: ['user-1'], created: '2024-01-01T00:00:00Z', updated: '2024-01-01T00:00:00Z' }
     mockSite.isCurrentUserAdmin.value = true
     
     const wrapper = mount(App, {

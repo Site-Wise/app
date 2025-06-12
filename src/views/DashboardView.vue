@@ -26,11 +26,11 @@
       <div class="card">
         <div class="flex items-center">
           <div class="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
-            <Package class="h-8 w-8 text-primary-600 dark:text-primary-400" />
+            <TrendingUp class="h-8 w-8 text-primary-600 dark:text-primary-400" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.totalItems') }}</p>
-            <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ stats.totalItems }}</p>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.totalExpenses') }}</p>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-white">₹{{ stats.totalExpenses.toLocaleString() }}</p>
           </div>
         </div>
       </div>
@@ -38,11 +38,11 @@
       <div class="card">
         <div class="flex items-center">
           <div class="p-2 bg-secondary-100 dark:bg-secondary-900/30 rounded-lg">
-            <Users class="h-8 w-8 text-secondary-600 dark:text-secondary-400" />
+            <Calendar class="h-8 w-8 text-secondary-600 dark:text-secondary-400" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.activeVendors') }}</p>
-            <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ stats.totalVendors }}</p>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.currentMonthExpenses') }}</p>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-white">₹{{ stats.currentMonthExpenses.toLocaleString() }}</p>
           </div>
         </div>
       </div>
@@ -50,11 +50,11 @@
       <div class="card">
         <div class="flex items-center">
           <div class="p-2 bg-warning-100 dark:bg-warning-900/30 rounded-lg">
-            <TruckIcon class="h-8 w-8 text-warning-600 dark:text-warning-400" />
+            <Calculator class="h-8 w-8 text-warning-600 dark:text-warning-400" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.pendingDeliveries') }}</p>
-            <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ stats.pendingDeliveries }}</p>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.expensePerSqft') }}</p>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-white">₹{{ stats.expensePerSqft }}</p>
           </div>
         </div>
       </div>
@@ -72,75 +72,22 @@
       </div>
     </div>
 
-    <div class="card">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">{{ t('dashboard.paymentStatusOverview') }}</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="text-center p-4 bg-success-50 dark:bg-success-900/20 rounded-lg">
-          <p class="text-2xl font-bold text-success-600 dark:text-success-400">₹{{ paymentStats.paid.toLocaleString() }}</p>
-          <p class="text-sm text-success-700 dark:text-success-300">{{ t('common.paid') }} ({{ paymentStats.paidCount }} deliveries)</p>
-        </div>
-        <div class="text-center p-4 bg-warning-50 dark:bg-warning-900/20 rounded-lg">
-          <p class="text-2xl font-bold text-warning-600 dark:text-warning-400">₹{{ paymentStats.partial.toLocaleString() }}</p>
-          <p class="text-sm text-warning-700 dark:text-warning-300">{{ t('common.partial') }} ({{ paymentStats.partialCount }} deliveries)</p>
-        </div>
-        <div class="text-center p-4 bg-error-50 dark:bg-error-900/20 rounded-lg">
-          <p class="text-2xl font-bold text-error-600 dark:text-error-400">₹{{ paymentStats.pending.toLocaleString() }}</p>
-          <p class="text-sm text-error-700 dark:text-error-300">{{ t('common.pending') }} ({{ paymentStats.pendingCount }} deliveries)</p>
+
+    <!-- Payments Chart -->
+    <div class="card mt-8">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('dashboard.paymentsLastSevenDays') }}</h2>
+        <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
+          <BarChart3 class="h-4 w-4 mr-2" />
+          {{ t('dashboard.totalPaid') }}: ₹{{ weeklyPaymentTotal.toLocaleString() }}
         </div>
       </div>
-    </div>
-
-    <!-- Recent Activities Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-      <!-- Recent Deliveries -->
-      <div class="card">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('dashboard.recentDeliveries') }}</h2>
-          <router-link to="/incoming" class="text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 text-sm font-medium">
-            {{ t('dashboard.viewAll') }}
-          </router-link>
-        </div>
-        <div class="space-y-4">
-          <div v-for="delivery in recentDeliveries" :key="delivery.id" class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div class="flex-1">
-              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ delivery.expand?.item?.name || 'Unknown Item' }}</p>
-              <p class="text-xs text-gray-600 dark:text-gray-400">{{ delivery.expand?.vendor?.name || 'Unknown Vendor' }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(delivery.delivery_date) }}</p>
-            </div>
-            <div class="text-right">
-              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ delivery.quantity }} {{ delivery.expand?.item?.unit || t('dashboard.units') }}</p>
-              <span :class="`status-${delivery.payment_status}`">
-                {{ delivery.payment_status }}
-              </span>
-            </div>
-          </div>
-          <div v-if="recentDeliveries.length === 0" class="text-center py-4 text-gray-500 dark:text-gray-400">
-            {{ t('dashboard.noRecentDeliveries') }}
-          </div>
-        </div>
-      </div>
-
-      <!-- Recent payments -->
-      <div class="card">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('dashboard.recentPayments') }}</h2>
-          <router-link to="/payments" class="text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 text-sm font-medium">
-            {{ t('dashboard.viewAll') }}
-          </router-link>
-        </div>
-        <div class="space-y-4">
-          <div v-for="payment in madePayments" :key="payment.id" class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div class="flex-1">
-              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ payment.expand?.vendor?.name || 'Unknown Vendor' }}</p>
-              <p class="text-xs text-gray-600 dark:text-gray-400">{{ payment.expand?.account?.name }}</p>
-              <p v-if="payment.created" class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(payment.created) }}</p>
-            </div>
-            <div class="text-right">
-              <p class="text-sm font-medium text-gray-900 dark:text-white">₹{{ payment.amount || 'Unknown Amount' }}</p>
-            </div>
-          </div>
-          <div v-if="madePayments.length === 0" class="text-center py-4 text-gray-500 dark:text-gray-400">
-            {{ t('dashboard.noRecentPayments') }}
+      <div class="w-full">
+        <!-- Chart Container -->
+        <div class="relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+          <!-- Chart.js Line Chart -->
+          <div class="h-64">
+            <Line :data="chartData" :options="chartOptions" />
           </div>
         </div>
       </div>
@@ -150,7 +97,30 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, onUnmounted } from 'vue';
-import { Package, Users, TruckIcon, DollarSign, Loader2 } from 'lucide-vue-next';
+import { TrendingUp, Calendar, Calculator, DollarSign, Loader2, BarChart3 } from 'lucide-vue-next';
+import { Line } from 'vue-chartjs';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 import { useSite } from '../composables/useSite';
 import { useI18n } from '../composables/useI18n';
 import { 
@@ -177,11 +147,34 @@ const payments = ref<Payment[]>([]);
 const incomingItems = ref<IncomingItem[]>([]);
 const serviceBookings = ref<ServiceBooking[]>([]);
 
+
 const stats = computed(() => {
-  const totalItems = items.value.length;
-  const totalVendors = vendors.value.length;
-  const pendingDeliveries = incomingItems.value.filter(item => item.payment_status === 'pending').length;
-  const pendingBookings = serviceBookings.value.filter(booking => booking.status === 'scheduled').length;
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+  
+  const totalExpenses = incomingItems.value.reduce((sum, item) => {
+    return sum + item.total_amount;
+  }, 0) + serviceBookings.value.reduce((sum, booking) => {
+    return sum + booking.total_amount;
+  }, 0);
+  
+  const currentMonthExpenses = incomingItems.value
+    .filter(item => {
+      const itemDate = new Date(item.delivery_date);
+      return itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear;
+    })
+    .reduce((sum, item) => sum + item.total_amount, 0) +
+    serviceBookings.value
+      .filter(booking => {
+        const bookingDate = new Date(booking.start_date);
+        return bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
+      })
+      .reduce((sum, booking) => sum + booking.total_amount, 0);
+  
+  const totalSqft = currentSite.value?.total_planned_area || 1;
+  const expensePerSqft = Math.round(totalExpenses / totalSqft);
+  
   const outstandingAmount = incomingItems.value.reduce((sum, item) => {
     return sum + (item.total_amount - item.paid_amount);
   }, 0) + serviceBookings.value.reduce((sum, booking) => {
@@ -189,44 +182,138 @@ const stats = computed(() => {
   }, 0);
 
   return {
-    totalItems,
-    totalVendors,
-    pendingDeliveries,
-    pendingBookings,
+    totalExpenses,
+    currentMonthExpenses,
+    expensePerSqft,
     outstandingAmount
   };
 });
 
-const recentDeliveries = computed(() => 
-  incomingItems.value
-    .sort((a, b) => new Date(b.delivery_date).getTime() - new Date(a.delivery_date).getTime())
-    .slice(0, 5)
-);
+const paymentChartData = computed(() => {
+  const days = [];
+  const today = new Date();
+  
+  // Get last 7 days of payment data
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(today.getDate() - i);
+    const dayStart = new Date(date);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(date);
+    dayEnd.setHours(23, 59, 59, 999);
+    
+    const dayPayments = payments.value.filter(payment => {
+      if (!payment.created) return false;
+      const paymentDate = new Date(payment.created);
+      return paymentDate >= dayStart && paymentDate <= dayEnd;
+    });
+    
+    const amount = dayPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+    
+    days.push({
+      label: date.toLocaleDateString('en-US', { weekday: 'short' }),
+      amount
+    });
+  }
+  
+  return days;
+});
 
-const madePayments = computed(() => 
-  payments.value
-    .sort((a, b) => new Date(b.created!).getTime() - new Date(a.created!).getTime())
-    .slice(0, 5)
-);
-
-const paymentStats = computed(() => {
-  const paidItems = incomingItems.value.filter(item => item.payment_status === 'paid');
-  const partialItems = incomingItems.value.filter(item => item.payment_status === 'partial');
-  const pendingItems = incomingItems.value.filter(item => item.payment_status === 'pending');
-
-  const paid = paidItems.reduce((sum, item) => sum + item.total_amount, 0);
-  const partial = partialItems.reduce((sum, item) => sum + item.paid_amount, 0);
-  const pending = pendingItems.reduce((sum, item) => sum + item.total_amount, 0);
-
-  return { 
-    paid, 
-    partial, 
-    pending,
-    paidCount: paidItems.length,
-    partialCount: partialItems.length,
-    pendingCount: pendingItems.length
+const chartData = computed(() => {
+  return {
+    labels: paymentChartData.value.map(day => day.label),
+    datasets: [
+      {
+        label: 'Daily Payments',
+        data: paymentChartData.value.map(day => day.amount),
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: 'rgb(59, 130, 246)',
+        pointBorderColor: 'white',
+        pointBorderWidth: 2,
+        pointRadius: 6,
+        pointHoverRadius: 8,
+      }
+    ]
   };
 });
+
+const chartOptions = computed(() => {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: 'white',
+        bodyColor: 'white',
+        borderColor: 'rgb(59, 130, 246)',
+        borderWidth: 1,
+        cornerRadius: 8,
+        callbacks: {
+          label: function(context: any) {
+            return `₹${context.parsed.y.toLocaleString()}`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+          drawBorder: false
+        },
+        ticks: {
+          color: 'rgb(107, 114, 128)',
+          font: {
+            size: 12
+          }
+        }
+      },
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+          drawBorder: false
+        },
+        ticks: {
+          color: 'rgb(107, 114, 128)',
+          font: {
+            size: 12
+          },
+          callback: function(value: any) {
+            return '₹' + formatAmount(value);
+          }
+        }
+      }
+    },
+    elements: {
+      point: {
+        hoverBackgroundColor: 'rgb(59, 130, 246)',
+        hoverBorderColor: 'white'
+      }
+    }
+  };
+});
+
+const weeklyPaymentTotal = computed(() => {
+  return paymentChartData.value.reduce((sum, day) => sum + day.amount, 0);
+});
+
+const formatAmount = (amount: number) => {
+  if (amount >= 100000) {
+    return (amount / 100000).toFixed(1) + 'L';
+  } else if (amount >= 1000) {
+    return (amount / 1000).toFixed(1) + 'K';
+  }
+  return amount.toString();
+};
 
 const loadData = async () => {
   loading.value = true;
@@ -251,9 +338,6 @@ const loadData = async () => {
   }
 };
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString();
-};
 
 const handleSiteChange = () => {
   loadData();

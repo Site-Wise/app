@@ -2,6 +2,30 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { computed } from 'vue'
 
+// Mock Chart.js components
+vi.mock('vue-chartjs', () => ({
+  Line: {
+    name: 'Line',
+    template: '<div class="mock-chart">Chart Component</div>',
+    props: ['data', 'options']
+  }
+}))
+
+vi.mock('chart.js', () => ({
+  Chart: {
+    register: vi.fn()
+  },
+  CategoryScale: {},
+  LinearScale: {},
+  PointElement: {},
+  LineElement: {},
+  Title: {},
+  Tooltip: {},
+  Legend: {},
+  Filler: {},
+  registerables: []
+}))
+
 // Mock i18n composable - must be at the top
 vi.mock('../../composables/useI18n', () => ({
   useI18n: () => ({
@@ -9,16 +33,13 @@ vi.mock('../../composables/useI18n', () => ({
       const translations: Record<string, string> = {
         'dashboard.title': 'Dashboard',
         'dashboard.subtitle': 'Overview of {siteName} management',
-        'dashboard.totalItems': 'Total Items',
-        'dashboard.activeVendors': 'Active Vendors',
-        'dashboard.pendingDeliveries': 'Pending Deliveries',
+        'dashboard.totalExpenses': 'Total Expenses',
+        'dashboard.currentMonthExpenses': 'Current Month Expenses',
+        'dashboard.expensePerSqft': 'Expense / Sqft',
         'dashboard.outstandingAmount': 'Outstanding Amount',
-        'dashboard.recentDeliveries': 'Recent Deliveries',
-        'dashboard.recentPayments': 'Recent Payments',
-        'dashboard.paymentStatusOverview': 'Payment Status Overview',
+        'dashboard.paymentsLastSevenDays': 'Payments Last 7 Days',
+        'dashboard.totalPaid': 'Total Paid',
         'dashboard.viewAll': 'View all',
-        'dashboard.noRecentDeliveries': 'No recent deliveries',
-        'dashboard.noRecentPayments': 'No recent payments',
         'dashboard.units': 'units',
         'dashboard.sqft': 'sqft',
         'common.paid': 'Paid',
@@ -84,23 +105,6 @@ vi.mock('../../services/pocketbase', () => ({
       updated: '2024-01-01T00:00:00Z'
     }])
   },
-  quotationService: {
-    getAll: vi.fn().mockResolvedValue([{
-      id: 'quotation-1',
-      vendor: 'vendor-1',
-      item: 'item-1',
-      service: '',
-      quotation_type: 'item',
-      unit_price: 50,
-      minimum_quantity: 100,
-      valid_until: '2024-12-31',
-      notes: 'Bulk discount available',
-      status: 'pending',
-      site: 'site-1',
-      created: '2024-01-01T00:00:00Z',
-      updated: '2024-01-01T00:00:00Z'
-    }])
-  },
   incomingItemService: {
     getAll: vi.fn().mockResolvedValue([{
       id: 'incoming-1',
@@ -114,6 +118,26 @@ vi.mock('../../services/pocketbase', () => ({
       notes: 'Delivered on time',
       payment_status: 'pending',
       paid_amount: 0,
+      site: 'site-1',
+      created: '2024-01-01T00:00:00Z',
+      updated: '2024-01-01T00:00:00Z'
+    }])
+  },
+  serviceBookingService: {
+    getAll: vi.fn().mockResolvedValue([{
+      id: 'booking-1',
+      service: 'service-1',
+      vendor: 'vendor-1',
+      start_date: '2024-01-10',
+      end_date: '2024-01-20',
+      duration: 10,
+      unit_rate: 1000,
+      total_amount: 10000,
+      status: 'completed',
+      completion_photos: [],
+      notes: 'Work completed successfully',
+      payment_status: 'paid',
+      paid_amount: 10000,
       site: 'site-1',
       created: '2024-01-01T00:00:00Z',
       updated: '2024-01-01T00:00:00Z'
@@ -148,7 +172,12 @@ describe('DashboardView', () => {
       global: {
         plugins: [router],
         stubs: {
-          'router-link': true
+          'router-link': true,
+          'Line': {
+            name: 'Line',
+            template: '<div class="mock-chart">Chart Component</div>',
+            props: ['data', 'options']
+          }
         }
       }
     })
@@ -164,19 +193,31 @@ describe('DashboardView', () => {
     expect(wrapper.text()).toContain('50,000 sqft')
   })
 
-  it('should render payment status overview', () => {
-    expect(wrapper.text()).toContain('Payment Status Overview')
-    expect(wrapper.text()).toContain('Paid')
-    expect(wrapper.text()).toContain('Partial')
-    expect(wrapper.text()).toContain('Pending')
+  it('should render expense stats cards', async () => {
+    // Wait for component to mount and data to load
+    await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    expect(wrapper.text()).toContain('Total Expenses')
+    expect(wrapper.text()).toContain('Current Month Expenses')
+    expect(wrapper.text()).toContain('Expense / Sqft')
+    expect(wrapper.text()).toContain('Outstanding Amount')
   })
 
-  it('should render recent deliveries section', () => {
-    expect(wrapper.text()).toContain('Recent Deliveries')
+  it('should display calculated expenses correctly', async () => {
+    // Wait for data to load
+    await wrapper.vm.$nextTick()
+    
+    // Should show total expenses (22500 from incoming items + 10000 from service bookings = 32500)
+    expect(wrapper.text()).toContain('32,500')
+    
+    // Should show outstanding amount (22500 - 0 from unpaid incoming items = 22500)
+    expect(wrapper.text()).toContain('22,500')
   })
 
-  it('should render recent payments section', () => {
-    expect(wrapper.text()).toContain('Recent Payments')
+  it('should render payments chart section', () => {
+    expect(wrapper.text()).toContain('Payments Last 7 Days')
+    expect(wrapper.text()).toContain('Total Paid')
   })
 
   it('should load data on mount', async () => {
@@ -195,5 +236,10 @@ describe('DashboardView', () => {
     
     // Check that the component still exists after the event
     expect(wrapper.exists()).toBe(true)
+  })
+
+  it('should render chart component', () => {
+    // Check that the chart component is rendered
+    expect(wrapper.find('.mock-chart').exists()).toBe(true)
   })
 })
