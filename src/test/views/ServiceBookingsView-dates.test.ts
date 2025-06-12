@@ -97,7 +97,8 @@ describe('ServiceBookingsView - Date Handling', () => {
     await vm.saveBooking()
     
     // Verify that dates are saved correctly (as strings, not converted to ISO)
-    const createCall = vi.mocked(require('../../services/pocketbase').serviceBookingService.create)
+    const { serviceBookingService } = await import('../../services/pocketbase')
+    const createCall = vi.mocked(serviceBookingService.create)
     expect(createCall).toHaveBeenCalledWith(
       expect.objectContaining({
         start_date: '2024-01-15',
@@ -140,7 +141,8 @@ describe('ServiceBookingsView - Date Handling', () => {
     await nextTick()
     
     // Trigger add modal
-    await wrapper.setData({ showAddModal: true })
+    const vm = wrapper.vm as any
+    vm.showAddModal = true
     await nextTick()
     
     // Check that date inputs have correct type
@@ -157,7 +159,8 @@ describe('ServiceBookingsView - Date Handling', () => {
     await nextTick()
     
     // Trigger add modal
-    await wrapper.setData({ showAddModal: true })
+    const vm = wrapper.vm as any
+    vm.showAddModal = true
     await nextTick()
     
     // Find start date input and verify it's required

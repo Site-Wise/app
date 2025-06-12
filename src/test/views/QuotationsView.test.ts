@@ -182,13 +182,12 @@ describe('QuotationsView', () => {
     await addButton.trigger('click')
     
     // Fill form
-    const itemSelect = wrapper.find('select').at(0)
-    const vendorSelect = wrapper.find('select').at(1)
-    const priceInput = wrapper.find('input[type="number"]').at(0)
+    const selects = wrapper.findAll('select')
+    const priceInputs = wrapper.findAll('input[type="number"]')
     
-    if (itemSelect.exists()) await itemSelect.setValue('item-1')
-    if (vendorSelect.exists()) await vendorSelect.setValue('vendor-1')
-    if (priceInput.exists()) await priceInput.setValue('60')
+    if (selects.length > 0) await selects[0].setValue('item-1')
+    if (selects.length > 1) await selects[1].setValue('vendor-1')
+    if (priceInputs.length > 0) await priceInputs[0].setValue('60')
     
     // Submit form
     await wrapper.find('form').trigger('submit')
@@ -217,10 +216,8 @@ describe('QuotationsView', () => {
     // Wait for quotations to load
     await wrapper.vm.$nextTick()
     
-    // Find and click edit button
-    const editButton = wrapper.find('button').filter((btn: any) => 
-      btn.find('[data-lucide="edit-2"]').exists()
-    ).at(0)
+    // Find and click edit button using a more specific selector
+    const editButton = wrapper.find('button[title="Edit"]')
     
     if (editButton.exists()) {
       await editButton.trigger('click')
@@ -240,10 +237,8 @@ describe('QuotationsView', () => {
     // Wait for quotations to load
     await wrapper.vm.$nextTick()
     
-    // Find and click delete button
-    const deleteButton = wrapper.find('button').filter((btn: any) => 
-      btn.find('[data-lucide="trash-2"]').exists()
-    ).at(0)
+    // Find and click delete button using a more specific selector
+    const deleteButton = wrapper.find('button[title="Delete"]')
     
     if (deleteButton.exists()) {
       await deleteButton.trigger('click')

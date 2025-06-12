@@ -36,7 +36,7 @@
           </div>
         </div>
         <div class="mt-2 text-xs text-gray-600 dark:text-gray-400">
-          <p>{{ currentSite.total_units }} units • {{ currentSite.total_planned_area.toLocaleString() }} sqft</p>
+          <p>{{ currentSite.total_units }} units • {{ currentSite.total_planned_area?.toLocaleString() || 0 }} sqft</p>
         </div>
       </div>
       
@@ -46,7 +46,7 @@
           <div class="flex items-center justify-between">
             <div class="flex-1">
               <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ site.name }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">{{ site.total_units }} units • {{ site.total_planned_area.toLocaleString() }} sqft</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ site.total_units }} units • {{ site.total_planned_area?.toLocaleString() || 0 }} sqft</p>
             </div>
             <button
               v-if="site.isOwner"

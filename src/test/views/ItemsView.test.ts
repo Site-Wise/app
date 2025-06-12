@@ -41,6 +41,15 @@ vi.mock('../../composables/useI18n', () => ({
   })
 }))
 
+vi.mock('../../composables/useSubscription', () => ({
+  useSubscription: () => ({
+    checkCreateLimit: vi.fn().mockReturnValue(true),
+    incrementUsage: vi.fn().mockResolvedValue(undefined),
+    decrementUsage: vi.fn().mockResolvedValue(undefined),
+    isReadOnly: { value: false }
+  })
+}))
+
 vi.mock('../../services/pocketbase', () => {
   const mockItem = {
     id: 'item-1',
@@ -67,6 +76,63 @@ vi.mock('../../services/pocketbase', () => {
     },
     incomingItemService: {
       getAll: vi.fn().mockResolvedValue([mockIncomingItem])
+    },
+    getCurrentSiteId: vi.fn().mockReturnValue('site-1'),
+    pb: {
+      collection: vi.fn((name: string) => {
+        if (name === 'site_subscriptions') {
+          return {
+            getFirstListItem: vi.fn().mockResolvedValue({
+              id: 'sub-1',
+              site: 'site-1',
+              subscription_plan: 'plan-free',
+              status: 'active',
+              current_period_start: '2024-01-01T00:00:00.000Z',
+              current_period_end: '2024-02-01T00:00:00.000Z',
+              cancel_at_period_end: false,
+              expand: {
+                subscription_plan: {
+                  id: 'plan-free',
+                  name: 'Free',
+                  price: 0,
+                  currency: 'INR',
+                  features: {
+                    max_items: 10,
+                    max_vendors: 10,
+                    max_incoming_deliveries: 50,
+                    max_service_bookings: 50,
+                    max_payments: 50,
+                    max_sites: 1
+                  },
+                  is_active: true,
+                  is_default: true
+                }
+              }
+            })
+          }
+        } else if (name === 'subscription_usage') {
+          return {
+            getFirstListItem: vi.fn().mockResolvedValue({
+              id: 'usage-1',
+              site: 'site-1',
+              period_start: '2024-01-01T00:00:00.000Z',
+              period_end: '2024-02-01T00:00:00.000Z',
+              items_count: 0,
+              vendors_count: 0,
+              incoming_deliveries_count: 0,
+              service_bookings_count: 0,
+              payments_count: 0
+            }),
+            create: vi.fn().mockResolvedValue({}),
+            update: vi.fn().mockResolvedValue({})
+          }
+        }
+        return {
+          getFirstListItem: vi.fn().mockRejectedValue(new Error('Not found')),
+          create: vi.fn().mockResolvedValue({}),
+          getFullList: vi.fn().mockResolvedValue([])
+        }
+      })
     }
   }
 })
@@ -111,8 +177,15 @@ describe('ItemsView', () => {
   })
 
   it('should show add modal when add button is clicked', async () => {
+    // Wait for data to load and subscription to be ready
+    await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
     const addButton = wrapper.find('button:contains("Add Item")')
+    expect(addButton.exists()).toBe(true)
+    
     await addButton.trigger('click')
+    await wrapper.vm.$nextTick()
     
     expect(wrapper.find('.fixed').exists()).toBe(true)
     expect(wrapper.text()).toContain('Add Item')
@@ -133,14 +206,30 @@ describe('ItemsView', () => {
       updated: '2024-01-01T00:00:00Z'
     })
     
+    // Wait for subscription to be ready
+    await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
     // Open add modal
     const addButton = wrapper.find('button:contains("Add Item")')
     await addButton.trigger('click')
+    await wrapper.vm.$nextTick()
+    
+    // Wait for modal to be fully rendered
+    await new Promise(resolve => setTimeout(resolve, 50))
     
     // Fill form
-    await wrapper.find('input[placeholder="Enter item name"]').setValue('New Item')
-    await wrapper.find('input[placeholder="kg, pcs, m²"]').setValue('kg')
-    await wrapper.find('input[type="number"]').setValue('100')
+    const nameInput = wrapper.find('input[placeholder="Enter item name"]')
+    const unitInput = wrapper.find('input[placeholder="kg, pcs, m²"]')
+    const quantityInput = wrapper.find('input[type="number"]')
+    
+    expect(nameInput.exists()).toBe(true)
+    expect(unitInput.exists()).toBe(true)
+    expect(quantityInput.exists()).toBe(true)
+    
+    await nameInput.setValue('New Item')
+    await unitInput.setValue('kg')
+    await quantityInput.setValue('100')
     
     // Submit form
     await wrapper.find('form').trigger('submit')

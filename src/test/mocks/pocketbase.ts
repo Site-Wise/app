@@ -152,6 +152,11 @@ export const createMockPocketBase = () => {
   collections.set('payments', [mockPayment])
   collections.set('site_users', [mockSiteUser])
   collections.set('site_invitations', [mockSiteInvitation])
+  collections.set('subscription_plans', [
+    { id: 'plan-1', name: 'Free', is_active: true, features: [], price: 0 },
+    { id: 'plan-2', name: 'Pro', is_active: true, features: [], price: 29.99 }
+  ])
+  collections.set('subscriptions', [])
   
   return {
     authStore: {
@@ -202,6 +207,15 @@ export const createMockPocketBase = () => {
         const filteredItems = items.filter((item: any) => item.id !== id)
         collections.set(name, filteredItems)
         return Promise.resolve(true)
+      }),
+      getFirstListItem: vi.fn().mockImplementation((filter: string) => {
+        const items = collections.get(name) || []
+        // Simple filter parsing for testing
+        if (filter.includes('name="Free"')) {
+          const freePlan = items.find((item: any) => item.name === 'Free')
+          return Promise.resolve(freePlan)
+        }
+        return Promise.resolve(items[0])
       }),
       authWithPassword: vi.fn().mockResolvedValue({
         record: mockUser,

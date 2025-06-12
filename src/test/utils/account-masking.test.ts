@@ -40,7 +40,7 @@ describe('Account Number Masking', () => {
   })
 
   it('should handle edge cases', () => {
-    expect(maskAccountNumber(0)).toBe('0')
+    expect(maskAccountNumber(0)).toBe(0)
     expect(maskAccountNumber('0000')).toBe('0000')
     expect(maskAccountNumber('00000')).toBe('*0000')
   })

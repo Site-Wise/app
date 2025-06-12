@@ -158,10 +158,12 @@ import {
   vendorService, 
   paymentService, 
   incomingItemService,
+  serviceBookingService,
   type Item,
   type Vendor,
   type Payment,
-  type IncomingItem
+  type IncomingItem,
+  type ServiceBooking
 } from '../services/pocketbase';
 
 const { t } = useI18n();
@@ -173,19 +175,24 @@ const items = ref<Item[]>([]);
 const vendors = ref<Vendor[]>([]);
 const payments = ref<Payment[]>([]);
 const incomingItems = ref<IncomingItem[]>([]);
+const serviceBookings = ref<ServiceBooking[]>([]);
 
 const stats = computed(() => {
   const totalItems = items.value.length;
   const totalVendors = vendors.value.length;
   const pendingDeliveries = incomingItems.value.filter(item => item.payment_status === 'pending').length;
+  const pendingBookings = serviceBookings.value.filter(booking => booking.status === 'scheduled').length;
   const outstandingAmount = incomingItems.value.reduce((sum, item) => {
     return sum + (item.total_amount - item.paid_amount);
+  }, 0) + serviceBookings.value.reduce((sum, booking) => {
+    return sum + (booking.total_amount - booking.paid_amount);
   }, 0);
 
   return {
     totalItems,
     totalVendors,
     pendingDeliveries,
+    pendingBookings,
     outstandingAmount
   };
 });
@@ -224,17 +231,19 @@ const paymentStats = computed(() => {
 const loadData = async () => {
   loading.value = true;
   try {
-    const [itemsData, vendorsData, paymentsData, incomingData] = await Promise.all([
+    const [itemsData, vendorsData, paymentsData, incomingData, servicesData] = await Promise.all([
       itemService.getAll(),
       vendorService.getAll(),
       paymentService.getAll(),
-      incomingItemService.getAll()
+      incomingItemService.getAll(),
+      serviceBookingService.getAll(),
     ]);
     
     items.value = itemsData;
     vendors.value = vendorsData;
     payments.value = paymentsData;
     incomingItems.value = incomingData;
+    serviceBookings.value = servicesData;
   } catch (error) {
     console.error('Error loading dashboard data:', error);
   } finally {

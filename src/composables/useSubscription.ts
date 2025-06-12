@@ -201,10 +201,18 @@ export function useSubscription() {
 
   const createDefaultSubscription = async (siteId: string): Promise<void> => {
     try {
-      // Get default plan
-      const defaultPlan = await pb.collection('subscription_plans').getFirstListItem(
-        'is_default=true && is_active=true'
-      );
+      // Get default plan (fallback to Free plan if no default is set)
+      let defaultPlan;
+      try {
+        defaultPlan = await pb.collection('subscription_plans').getFirstListItem(
+          'is_default=true && is_active=true'
+        );
+      } catch {
+        // Fallback to Free plan if no default plan is found
+        defaultPlan = await pb.collection('subscription_plans').getFirstListItem(
+          'name="Free" && is_active=true'
+        );
+      }
 
       // Create subscription for new site
       const now = new Date();
@@ -381,9 +389,14 @@ export function useSubscription() {
   };
 
   // Watch for site changes and reload subscription
-  watch(() => getCurrentSiteId(), (newSiteId) => {
+  watch(() => getCurrentSiteId(), async (newSiteId) => {
     if (newSiteId) {
-      loadSubscription();
+      try {
+        await loadSubscription();
+      } catch (err) {
+        // Error is already handled in loadSubscription
+        console.error('Error loading subscription in watcher:', err);
+      }
     } else {
       currentSubscription.value = null;
       currentUsage.value = null;

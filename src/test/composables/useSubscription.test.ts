@@ -6,13 +6,13 @@ import { pb, getCurrentSiteId } from '../../services/pocketbase';
 vi.mock('../../services/pocketbase', () => ({
   pb: {
     collection: vi.fn(() => ({
-      getFirstListItem: vi.fn(),
-      getFullList: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn()
+      getFirstListItem: vi.fn().mockResolvedValue(null),
+      getFullList: vi.fn().mockResolvedValue([]),
+      create: vi.fn().mockResolvedValue({}),
+      update: vi.fn().mockResolvedValue({})
     }))
   },
-  getCurrentSiteId: vi.fn()
+  getCurrentSiteId: vi.fn().mockReturnValue(null) // Return null to prevent automatic loading
 }));
 
 // Mock data
@@ -81,15 +81,26 @@ describe('useSubscription', () => {
 
   describe('loadSubscription', () => {
     it('should load subscription and usage data successfully', async () => {
+      // Setup mock to handle both immediate watcher call and manual call
+      const getFirstListItemMock = vi.fn()
+        .mockResolvedValueOnce(mockSubscription)  // For immediate watcher
+        .mockResolvedValueOnce(mockUsage)         // For immediate watcher
+        .mockResolvedValueOnce(mockSubscription)  // For manual loadSubscription call
+        .mockResolvedValueOnce(mockUsage);        // For manual loadSubscription call
+      
       const mockCollection = vi.fn(() => ({
-        getFirstListItem: vi.fn()
-          .mockResolvedValueOnce(mockSubscription)
-          .mockResolvedValueOnce(mockUsage)
+        getFirstListItem: getFirstListItemMock,
+        getFullList: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue({}),
+        update: vi.fn().mockResolvedValue({})
       }));
       (pb.collection as Mock).mockImplementation(mockCollection);
 
       const { loadSubscription, currentSubscription, currentUsage, isLoading } = useSubscription();
 
+      // Wait for immediate watcher to complete before checking initial state
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       expect(isLoading.value).toBe(false);
 
       await loadSubscription();
@@ -165,14 +176,27 @@ describe('useSubscription', () => {
 
     it('should return true when items limit is exceeded', async () => {
       const exceededUsage = { ...mockUsage, items_count: 1 };
+      
+      // Setup mock to handle both immediate watcher call and manual call
+      const getFirstListItemMock = vi.fn()
+        .mockResolvedValueOnce(mockSubscription)  // For immediate watcher
+        .mockResolvedValueOnce(exceededUsage)     // For immediate watcher
+        .mockResolvedValueOnce(mockSubscription)  // For manual loadSubscription call
+        .mockResolvedValueOnce(exceededUsage);    // For manual loadSubscription call
+      
       const mockCollection = vi.fn(() => ({
-        getFirstListItem: vi.fn()
-          .mockResolvedValueOnce(mockSubscription)
-          .mockResolvedValueOnce(exceededUsage)
+        getFirstListItem: getFirstListItemMock,
+        getFullList: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue({}),
+        update: vi.fn().mockResolvedValue({})
       }));
       (pb.collection as Mock).mockImplementation(mockCollection);
 
       const { loadSubscription, isReadOnly } = useSubscription();
+      
+      // Wait for immediate watcher to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       await loadSubscription();
 
       expect(isReadOnly.value).toBe(true);
@@ -200,15 +224,23 @@ describe('useSubscription', () => {
 
   describe('usageLimits computed', () => {
     it('should calculate usage limits correctly', async () => {
+      // Setup the mock before instantiating the composable
+      const getFirstListItemMock = vi.fn()
+        .mockResolvedValueOnce(mockSubscription)
+        .mockResolvedValueOnce(mockUsage);
+      
       const mockCollection = vi.fn(() => ({
-        getFirstListItem: vi.fn()
-          .mockResolvedValueOnce(mockSubscription)
-          .mockResolvedValueOnce(mockUsage)
+        getFirstListItem: getFirstListItemMock,
+        getFullList: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue({}),
+        update: vi.fn().mockResolvedValue({})
       }));
       (pb.collection as Mock).mockImplementation(mockCollection);
 
-      const { loadSubscription, usageLimits } = useSubscription();
-      await loadSubscription();
+      const { usageLimits } = useSubscription();
+      
+      // Wait for the immediate watcher to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       expect(usageLimits.value).toEqual({
         items: { current: 0, max: 1, exceeded: false },
@@ -221,14 +253,27 @@ describe('useSubscription', () => {
 
     it('should show exceeded status correctly', async () => {
       const exceededUsage = { ...mockUsage, items_count: 1, vendors_count: 1 };
+      
+      // Setup mock to handle both immediate watcher call and manual call
+      const getFirstListItemMock = vi.fn()
+        .mockResolvedValueOnce(mockSubscription)  // For immediate watcher
+        .mockResolvedValueOnce(exceededUsage)     // For immediate watcher
+        .mockResolvedValueOnce(mockSubscription)  // For manual loadSubscription call
+        .mockResolvedValueOnce(exceededUsage);    // For manual loadSubscription call
+      
       const mockCollection = vi.fn(() => ({
-        getFirstListItem: vi.fn()
-          .mockResolvedValueOnce(mockSubscription)
-          .mockResolvedValueOnce(exceededUsage)
+        getFirstListItem: getFirstListItemMock,
+        getFullList: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue({}),
+        update: vi.fn().mockResolvedValue({})
       }));
       (pb.collection as Mock).mockImplementation(mockCollection);
 
       const { loadSubscription, usageLimits } = useSubscription();
+      
+      // Wait for immediate watcher to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       await loadSubscription();
 
       expect(usageLimits.value?.items.exceeded).toBe(true);
@@ -238,14 +283,26 @@ describe('useSubscription', () => {
 
   describe('checkCreateLimit', () => {
     it('should return true when under limit', async () => {
+      // Setup mock to handle both immediate watcher call and manual call
+      const getFirstListItemMock = vi.fn()
+        .mockResolvedValueOnce(mockSubscription)  // For immediate watcher
+        .mockResolvedValueOnce(mockUsage)         // For immediate watcher
+        .mockResolvedValueOnce(mockSubscription)  // For manual loadSubscription call
+        .mockResolvedValueOnce(mockUsage);        // For manual loadSubscription call
+      
       const mockCollection = vi.fn(() => ({
-        getFirstListItem: vi.fn()
-          .mockResolvedValueOnce(mockSubscription)
-          .mockResolvedValueOnce(mockUsage)
+        getFirstListItem: getFirstListItemMock,
+        getFullList: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue({}),
+        update: vi.fn().mockResolvedValue({})
       }));
       (pb.collection as Mock).mockImplementation(mockCollection);
 
       const { loadSubscription, checkCreateLimit } = useSubscription();
+      
+      // Wait for immediate watcher to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       await loadSubscription();
 
       expect(checkCreateLimit('items')).toBe(true);

@@ -38,7 +38,11 @@ describe('useSite', () => {
     
     await loadUserSites()
     
-    expect(userSites.value).toEqual([mockSite])
+    expect(userSites.value).toEqual([{
+      ...mockSite,
+      userRole: 'owner',
+      isOwner: true
+    }])
     expect(siteService.getAll).toHaveBeenCalled()
   })
 
@@ -54,7 +58,11 @@ describe('useSite', () => {
     
     await selectSite('site-1')
     
-    expect(currentSite.value).toEqual(mockSite)
+    expect(currentSite.value).toEqual({
+      ...mockSite,
+      userRole: 'owner',
+      isOwner: true
+    })
     expect(setCurrentSiteId).toHaveBeenCalledWith('site-1')
   })
 
