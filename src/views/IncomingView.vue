@@ -7,7 +7,15 @@
           {{ t('incoming.subtitle') }}
         </p>
       </div>
-      <button @click="showAddModal = true" class="btn-primary">
+      <button 
+        @click="handleAddIncoming" 
+        :disabled="!canCreateIncoming"
+        :class="[
+          canCreateIncoming ? 'btn-primary' : 'btn-disabled',
+          'flex items-center'
+        ]"
+        :title="!canCreateIncoming ? t('subscription.banner.freeTierLimitReached') : ''"
+      >
         <Plus class="mr-2 h-4 w-4" />
         {{ t('incoming.recordDelivery') }}
       </button>
@@ -86,10 +94,28 @@
                 <button @click="viewItem(item)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300" :title="t('common.view')">
                   <Eye class="h-4 w-4" />
                 </button>
-                <button @click="editItem(item)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300" :title="t('common.edit')">
+                <button 
+                  @click="editItem(item)" 
+                  :disabled="!canEditDelete"
+                  :class="[
+                    canEditDelete 
+                      ? 'text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300' 
+                      : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                  ]"
+                  :title="t('common.edit')"
+                >
                   <Edit2 class="h-4 w-4" />
                 </button>
-                <button @click="deleteItem(item.id!)" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300" :title="t('common.delete')">
+                <button 
+                  @click="deleteItem(item.id!)" 
+                  :disabled="!canEditDelete"
+                  :class="[
+                    canEditDelete 
+                      ? 'text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300' 
+                      : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                  ]"
+                  :title="t('common.delete')"
+                >
                   <Trash2 class="h-4 w-4" />
                 </button>
               </div>
@@ -305,9 +331,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
 import { TruckIcon, Plus, Edit2, Trash2, Loader2, Eye, X } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
+import { useSubscription } from '../composables/useSubscription';
 import PhotoGallery from '../components/PhotoGallery.vue';
 import { 
   incomingItemService, 
@@ -325,6 +352,7 @@ interface FileWithPreview {
 }
 
 const { t } = useI18n();
+const { checkCreateLimit, incrementUsage, decrementUsage, isReadOnly } = useSubscription();
 
 const incomingItems = ref<IncomingItem[]>([]);
 const items = ref<Item[]>([]);
@@ -337,6 +365,14 @@ const galleryItem = ref<IncomingItem | null>(null);
 const loading = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 const selectedFiles = ref<FileWithPreview[]>([]);
+
+const canCreateIncoming = computed(() => {
+  return !isReadOnly.value && checkCreateLimit('incoming_deliveries');
+});
+
+const canEditDelete = computed(() => {
+  return !isReadOnly.value;
+});
 
 const form = reactive({
   item: '',
@@ -434,6 +470,14 @@ const handlePhotoDeleted = async (photoIndex: number) => {
   }
 };
 
+const handleAddIncoming = () => {
+  if (!canCreateIncoming.value) {
+    alert(t('subscription.banner.freeTierLimitReached'));
+    return;
+  }
+  showAddModal.value = true;
+};
+
 const saveItem = async () => {
   loading.value = true;
   try {
@@ -447,7 +491,12 @@ const saveItem = async () => {
     if (editingItem.value) {
       savedItem = await incomingItemService.update(editingItem.value.id!, data);
     } else {
+      if (!checkCreateLimit('incoming_deliveries')) {
+        alert(t('subscription.banner.freeTierLimitReached'));
+        return;
+      }
       savedItem = await incomingItemService.create(data);
+      await incrementUsage('incoming_deliveries');
     }
     
     if (selectedFiles.value.length > 0 && savedItem.id) {
@@ -490,9 +539,14 @@ const viewItem = (item: IncomingItem) => {
 };
 
 const deleteItem = async (id: string) => {
+  if (!canEditDelete.value) {
+    alert(t('subscription.banner.freeTierLimitReached'));
+    return;
+  }
   if (confirm(t('messages.confirmDelete', { item: t('incoming.delivery') }))) {
     try {
       await incomingItemService.delete(id);
+      await decrementUsage('incoming_deliveries');
       await loadData();
     } catch (error) {
       console.error('Error deleting incoming item:', error);

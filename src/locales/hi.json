@@ -48,6 +48,7 @@
     "reference": "संदर्भ",
     "balance": "शेष",
     "account": "खाता",
+    "dismiss": "खारिज करें",
     "vendor": "विक्रेता",
     "item": "वस्तु",
     "payment": "भुगतान",
@@ -437,5 +438,77 @@
     "rotateRight": "दाएं घुमाएं",
     "previousPhoto": "पिछली फोटो",
     "nextPhoto": "अगली फोटो"
+  },
+  "subscription": {
+    "title": "सदस्यता",
+    "upgrade": "अपग्रेड",
+    "downgrade": "डाउनग्रेड",
+    "cancel": "सदस्यता रद्द करें",
+    "manage": "सदस्यता प्रबंधित करें",
+    "currentPlan": "वर्तमान योजना",
+    "billing": "बिलिंग",
+    "usage": "उपयोग",
+    "limits": "सीमाएं",
+    "features": "सुविधाएं",
+    "freeTier": "मुफ्त टियर",
+    "basicPlan": "बेसिक प्लान",
+    "proPlan": "प्रो प्लान",
+    "monthly": "मासिक",
+    "yearly": "वार्षिक",
+    "perMonth": "प्रति माह",
+    "perYear": "प्रति वर्ष",
+    "unlimited": "असीमित",
+    "banner": {
+      "freeTierLimitReached": "मुफ्त टियर की सीमा पहुंच गई। आपकी साइट अब केवल पढ़ने के लिए है।",
+      "subscriptionLimitReached": "सदस्यता की सीमा पहुंच गई। आपकी साइट अब केवल पढ़ने के लिए है।",
+      "subscriptionExpired": "आपकी सदस्यता समाप्त हो गई है। आपकी साइट अब केवल पढ़ने के लिए है।"
+    },
+    "limits": {
+      "items": "वस्तुएं: {current}/{max}",
+      "vendors": "विक्रेता: {current}/{max}",
+      "incomingDeliveries": "डिलीवरी: {current}/{max}",
+      "serviceBookings": "सेवा बुकिंग: {current}/{max}",
+      "payments": "भुगतान: {current}/{max}"
+    },
+    "plans": {
+      "free": {
+        "name": "मुफ्त",
+        "description": "छोटी परियोजनाओं के लिए परफेक्ट",
+        "features": [
+          "1 वस्तु",
+          "1 विक्रेता",
+          "प्रति माह 5 डिलीवरी",
+          "प्रति माह 5 सेवा बुकिंग",
+          "प्रति माह 5 भुगतान",
+          "1 साइट"
+        ]
+      },
+      "basic": {
+        "name": "बेसिक",
+        "description": "बढ़ते निर्माण व्यवसायों के लिए",
+        "features": [
+          "असीमित वस्तुएं",
+          "असीमित विक्रेता",
+          "असीमित डिलीवरी",
+          "असीमित सेवा बुकिंग",
+          "असीमित भुगतान",
+          "3 साइट तक"
+        ]
+      }
+    },
+    "payment": {
+      "processing": "भुगतान प्रक्रिया में...",
+      "success": "भुगतान सफल",
+      "failed": "भुगतान असफल",
+      "retry": "भुगतान पुनः प्रयास करें",
+      "securePayment": "Razorpay द्वारा संचालित सुरक्षित भुगतान"
+    },
+    "messages": {
+      "upgradeSuccess": "सफलतापूर्वक {plan} योजना में अपग्रेड किया गया",
+      "cancellationSuccess": "सदस्यता सफलतापूर्वक रद्द की गई",
+      "cancellationFailed": "सदस्यता रद्द करने में असफल",
+      "willCancelAtPeriodEnd": "आपकी सदस्यता वर्तमान बिलिंग अवधि के अंत में रद्द हो जाएगी",
+      "reactivateSuccess": "सदस्यता सफलतापूर्वक पुनः सक्रिय की गई"
+    }
   }
 }

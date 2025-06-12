@@ -251,10 +251,12 @@ const getAccountIcon = (type: Account['type']) => {
   return icons[type] || Wallet;
 };
 
-const maskAccountNumber = (accountNumber: string) => {
-  if (!accountNumber || accountNumber.length <= 4) return accountNumber;
-  const lastFour = accountNumber.slice(-4);
-  const masked = '*'.repeat(accountNumber.length - 4);
+const maskAccountNumber = (accountNumber: string | number) => {
+  if (!accountNumber) return accountNumber;
+  const accountStr = String(accountNumber);
+  if (accountStr.length <= 4) return accountStr;
+  const lastFour = accountStr.slice(-4);
+  const masked = '*'.repeat(accountStr.length - 4);
   return masked + lastFour;
 };
 

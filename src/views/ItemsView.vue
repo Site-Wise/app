@@ -7,7 +7,15 @@
           {{ t('items.subtitle') }}
         </p>
       </div>
-      <button @click="showAddModal = true" class="btn-primary">
+      <button 
+        @click="handleAddItem" 
+        :disabled="!canCreateItem"
+        :class="[
+          canCreateItem ? 'btn-primary' : 'btn-disabled',
+          'flex items-center'
+        ]"
+        :title="!canCreateItem ? t('subscription.banner.freeTierLimitReached') : ''"
+      >
         <Plus class="mr-2 h-4 w-4" />
         {{ t('items.addItem') }}
       </button>
@@ -43,10 +51,28 @@
             </div>
           </div>
           <div class="flex items-center space-x-2" @click.stop>
-            <button @click="editItem(item)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
+            <button 
+              @click="editItem(item)" 
+              :disabled="!canEditDelete"
+              :class="[
+                canEditDelete 
+                  ? 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300' 
+                  : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+                'p-1'
+              ]"
+            >
               <Edit2 class="h-4 w-4" />
             </button>
-            <button @click="deleteItem(item.id!)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400">
+            <button 
+              @click="deleteItem(item.id!)" 
+              :disabled="!canEditDelete"
+              :class="[
+                canEditDelete 
+                  ? 'text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400' 
+                  : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+                'p-1'
+              ]"
+            >
               <Trash2 class="h-4 w-4" />
             </button>
           </div>
@@ -114,10 +140,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { Package, Plus, Edit2, Trash2, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
+import { useSubscription } from '../composables/useSubscription';
 import { 
   itemService, 
   incomingItemService,
@@ -126,6 +153,7 @@ import {
 } from '../services/pocketbase';
 
 const { t } = useI18n();
+const { checkCreateLimit, incrementUsage, decrementUsage, isReadOnly } = useSubscription();
 
 const router = useRouter();
 const items = ref<Item[]>([]);
@@ -133,6 +161,14 @@ const incomingItems = ref<IncomingItem[]>([]);
 const showAddModal = ref(false);
 const editingItem = ref<Item | null>(null);
 const loading = ref(false);
+
+const canCreateItem = computed(() => {
+  return !isReadOnly.value && checkCreateLimit('items');
+});
+
+const canEditDelete = computed(() => {
+  return !isReadOnly.value;
+});
 
 const form = reactive({
   name: '',
@@ -175,13 +211,26 @@ const viewItemDetail = (itemId: string) => {
   router.push(`/items/${itemId}`);
 };
 
+const handleAddItem = () => {
+  if (!canCreateItem.value) {
+    alert(t('subscription.banner.freeTierLimitReached'));
+    return;
+  }
+  showAddModal.value = true;
+};
+
 const saveItem = async () => {
   loading.value = true;
   try {
     if (editingItem.value) {
       await itemService.update(editingItem.value.id!, form);
     } else {
+      if (!checkCreateLimit('items')) {
+        alert(t('subscription.banner.freeTierLimitReached'));
+        return;
+      }
       await itemService.create(form);
+      await incrementUsage('items');
     }
     await loadData();
     closeModal();
@@ -204,9 +253,14 @@ const editItem = (item: Item) => {
 };
 
 const deleteItem = async (id: string) => {
+  if (!canEditDelete.value) {
+    alert(t('subscription.banner.freeTierLimitReached'));
+    return;
+  }
   if (confirm(t('messages.confirmDelete', { item: t('common.item') }))) {
     try {
       await itemService.delete(id);
+      await decrementUsage('items');
       await loadData();
     } catch (error) {
       console.error('Error deleting item:', error);

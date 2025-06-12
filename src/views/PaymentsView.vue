@@ -7,7 +7,15 @@
           {{ t('payments.subtitle') }}
         </p>
       </div>
-      <button @click="showAddModal = true" class="btn-primary">
+      <button 
+        @click="handleAddPayment" 
+        :disabled="!canCreatePayment"
+        :class="[
+          canCreatePayment ? 'btn-primary' : 'btn-disabled',
+          'flex items-center'
+        ]"
+        :title="!canCreatePayment ? t('subscription.banner.freeTierLimitReached') : ''"
+      >
         <Plus class="mr-2 h-4 w-4" />
         {{ t('payments.recordPayment') }}
       </button>
@@ -55,7 +63,15 @@
                 <button @click="viewPayment(payment)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300">
                   <Eye class="h-4 w-4" />
                 </button>
-                <button @click="deletePayment(payment.id!)" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
+                <button 
+                  @click="deletePayment(payment.id!)" 
+                  :disabled="!canEditDelete"
+                  :class="[
+                    canEditDelete 
+                      ? 'text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300' 
+                      : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                  ]"
+                >
                   <Trash2 class="h-4 w-4" />
                 </button>
               </div>
@@ -82,7 +98,15 @@
           </div>
           <div class="text-right">
             <p class="text-lg font-semibold text-gray-900 dark:text-white">₹{{ vendor.outstandingAmount.toFixed(2) }}</p>
-            <button @click="quickPayment(vendor)" class="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300">
+            <button 
+              @click="quickPayment(vendor)" 
+              :disabled="!canCreatePayment"
+              :class="[
+                canCreatePayment 
+                  ? 'text-sm text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300' 
+                  : 'text-sm text-gray-300 dark:text-gray-600 cursor-not-allowed'
+              ]"
+            >
               Pay Now
             </button>
           </div>
@@ -231,18 +255,22 @@ import {
   Building2
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
+import { useSubscription } from '../composables/useSubscription';
 import { 
   paymentService, 
   vendorService,
   accountService,
   incomingItemService,
+  serviceBookingService,
   type Payment, 
   type Vendor,
   type Account,
-  type IncomingItem
+  type IncomingItem,
+  type ServiceBooking
 } from '../services/pocketbase';
 
 const { t } = useI18n();
+const { checkCreateLimit, incrementUsage, isReadOnly } = useSubscription();
 
 interface VendorWithOutstanding extends Vendor {
   outstandingAmount: number;
@@ -253,6 +281,7 @@ const payments = ref<Payment[]>([]);
 const vendors = ref<Vendor[]>([]);
 const accounts = ref<Account[]>([]);
 const incomingItems = ref<IncomingItem[]>([]);
+const serviceBookings = ref<ServiceBooking[]>([]);
 const showAddModal = ref(false);
 const viewingPayment = ref<Payment | null>(null);
 const loading = ref(false);
@@ -269,23 +298,43 @@ const form = reactive({
   service_bookings: [] as string[]
 });
 
+const canCreatePayment = computed(() => {
+  return !isReadOnly.value && checkCreateLimit('payments');
+});
+
+const canEditDelete = computed(() => {
+  return !isReadOnly.value;
+});
+
 const activeAccounts = computed(() => {
   return accounts.value.filter(account => account.is_active);
 });
 
 const vendorsWithOutstanding = computed(() => {
   return vendors.value.map(vendor => {
+    // Calculate outstanding from incoming items
     const vendorItems = incomingItems.value.filter(item => 
       item.vendor === vendor.id && item.payment_status !== 'paid'
     );
-    const outstandingAmount = vendorItems.reduce((sum, item) => 
+    const incomingOutstanding = vendorItems.reduce((sum, item) => 
       sum + (item.total_amount - item.paid_amount), 0
     );
+    
+    // Calculate outstanding from service bookings
+    const vendorBookings = serviceBookings.value.filter(booking => 
+      booking.vendor === vendor.id && booking.payment_status !== 'paid'
+    );
+    const serviceOutstanding = vendorBookings.reduce((sum, booking) => 
+      sum + (booking.total_amount - booking.paid_amount), 0
+    );
+    
+    const outstandingAmount = incomingOutstanding + serviceOutstanding;
+    const pendingItems = vendorItems.length + vendorBookings.length;
     
     return {
       ...vendor,
       outstandingAmount,
-      pendingItems: vendorItems.length
+      pendingItems
     } as VendorWithOutstanding;
   }).filter(vendor => vendor.outstandingAmount > 0);
 });
@@ -304,17 +353,19 @@ const getAccountIcon = (type?: Account['type']) => {
 
 const loadData = async () => {
   try {
-    const [paymentsData, vendorsData, accountsData, incomingData] = await Promise.all([
+    const [paymentsData, vendorsData, accountsData, incomingData, serviceBookingsData] = await Promise.all([
       paymentService.getAll(),
       vendorService.getAll(),
       accountService.getAll(),
-      incomingItemService.getAll()
+      incomingItemService.getAll(),
+      serviceBookingService.getAll()
     ]);
     
     payments.value = paymentsData;
     vendors.value = vendorsData;
     accounts.value = accountsData;
     incomingItems.value = incomingData;
+    serviceBookings.value = serviceBookingsData;
   } catch (error) {
     console.error('Error loading data:', error);
   }
@@ -322,19 +373,43 @@ const loadData = async () => {
 
 const loadVendorOutstanding = () => {
   if (form.vendor) {
+    // Calculate outstanding from incoming items
     const vendorItems = incomingItems.value.filter(item => 
       item.vendor === form.vendor && item.payment_status !== 'paid'
     );
-    vendorOutstanding.value = vendorItems.reduce((sum, item) => 
+    const incomingOutstanding = vendorItems.reduce((sum, item) => 
       sum + (item.total_amount - item.paid_amount), 0
     );
+    
+    // Calculate outstanding from service bookings
+    const vendorBookings = serviceBookings.value.filter(booking => 
+      booking.vendor === form.vendor && booking.payment_status !== 'paid'
+    );
+    const serviceOutstanding = vendorBookings.reduce((sum, booking) => 
+      sum + (booking.total_amount - booking.paid_amount), 0
+    );
+    
+    vendorOutstanding.value = incomingOutstanding + serviceOutstanding;
   }
 };
 
+const handleAddPayment = () => {
+  if (!canCreatePayment.value) {
+    alert(t('subscription.banner.freeTierLimitReached'));
+    return;
+  }
+  showAddModal.value = true;
+};
+
 const savePayment = async () => {
+  if (!checkCreateLimit('payments')) {
+    alert(t('subscription.banner.freeTierLimitReached'));
+    return;
+  }
   loading.value = true;
   try {
     await paymentService.create(form);
+    await incrementUsage('payments');
     await loadData();
     closeModal();
   } catch (error) {
@@ -345,6 +420,10 @@ const savePayment = async () => {
 };
 
 const quickPayment = (vendor: VendorWithOutstanding) => {
+  if (!canCreatePayment.value) {
+    alert(t('subscription.banner.freeTierLimitReached'));
+    return;
+  }
   form.vendor = vendor.id!;
   form.amount = vendor.outstandingAmount;
   loadVendorOutstanding();
@@ -356,12 +435,17 @@ const viewPayment = (payment: Payment) => {
 };
 
 const deletePayment = async (paymentId: string) => {
+  if (!canEditDelete.value) {
+    alert(t('subscription.banner.freeTierLimitReached'));
+    return;
+  }
   if (confirm('Are you sure you want to delete this payment record? This cannot be undone and may affect item payment status.')) {
     try {
       // Note: In a real implementation, you'd also need to reverse the payment status updates
       // For now, we'll just delete the payment record
       console.log('Would delete payment with ID:', paymentId);
       // await paymentService.delete(paymentId);
+      // await decrementUsage('payments');
       // await loadData();
       alert('Payment deletion is not implemented yet. You would need to manually adjust affected items.');
     } catch (error) {

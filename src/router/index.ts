@@ -107,6 +107,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/subscription',
+      name: 'Subscription',
+      component: () => import('../views/SubscriptionView.vue'),
+      meta: { requiresAuth: true, requiresSite: true, ownerOnly: true }
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
       redirect: '/'
@@ -138,6 +144,12 @@ router.beforeEach((to, _from, next) => {
   // Handle site selection requirements
   if (to.meta.requiresSite && !currentSiteId) {
     next('/select-site');
+    return;
+  }
+
+  // Handle owner-only routes
+  if (to.meta.ownerOnly && userRole !== 'owner') {
+    next('/');
     return;
   }
 

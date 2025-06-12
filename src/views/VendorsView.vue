@@ -7,7 +7,15 @@
           {{ t('vendors.subtitle') }}
         </p>
       </div>
-      <button @click="showAddModal = true" class="btn-primary">
+      <button 
+        @click="handleAddVendor" 
+        :disabled="!canCreateVendor"
+        :class="[
+          canCreateVendor ? 'btn-primary' : 'btn-disabled',
+          'flex items-center'
+        ]"
+        :title="!canCreateVendor ? t('subscription.banner.freeTierLimitReached') : ''"
+      >
         <Plus class="mr-2 h-4 w-4" />
         {{ t('vendors.addVendor') }}
       </button>
@@ -57,10 +65,30 @@
             </div>
           </div>
           <div class="flex items-center space-x-2" @click.stop>
-            <button @click="editVendor(vendor)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" title="Edit">
+            <button 
+              @click="editVendor(vendor)" 
+              :disabled="!canEditDelete"
+              :class="[
+                canEditDelete 
+                  ? 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300' 
+                  : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+                'p-1'
+              ]"
+              title="Edit"
+            >
               <Edit2 class="h-4 w-4" />
             </button>
-            <button @click="deleteVendor(vendor.id!)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400" title="Delete">
+            <button 
+              @click="deleteVendor(vendor.id!)" 
+              :disabled="!canEditDelete"
+              :class="[
+                canEditDelete 
+                  ? 'text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400' 
+                  : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+                'p-1'
+              ]"
+              title="Delete"
+            >
               <Trash2 class="h-4 w-4" />
             </button>
           </div>
@@ -151,29 +179,42 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { Users, Plus, Edit2, Trash2, Loader2, User, Mail, Phone, MapPin, X } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
+import { useSubscription } from '../composables/useSubscription';
 import { 
   vendorService, 
   incomingItemService, 
   paymentService,
+  serviceBookingService,
   type Vendor,
   type IncomingItem,
-  type Payment
+  type Payment,
+  type ServiceBooking
 } from '../services/pocketbase';
 
 const { t } = useI18n();
+const { checkCreateLimit, incrementUsage, decrementUsage, isReadOnly } = useSubscription();
 
 const router = useRouter();
 const vendors = ref<Vendor[]>([]);
 const incomingItems = ref<IncomingItem[]>([]);
+const serviceBookings = ref<ServiceBooking[]>([]);
 const payments = ref<Payment[]>([]);
 const showAddModal = ref(false);
 const editingVendor = ref<Vendor | null>(null);
 const loading = ref(false);
 const newTag = ref('');
+
+const canCreateVendor = computed(() => {
+  return !isReadOnly.value && checkCreateLimit('vendors');
+});
+
+const canEditDelete = computed(() => {
+  return !isReadOnly.value;
+});
 
 const form = reactive({
   name: '',
@@ -185,9 +226,17 @@ const form = reactive({
 });
 
 const getVendorOutstanding = (vendorId: string) => {
-  return incomingItems.value
+  // Include incoming items outstanding
+  const incomingOutstanding = incomingItems.value
     .filter(item => item.vendor === vendorId)
     .reduce((sum, item) => sum + (item.total_amount - item.paid_amount), 0);
+  
+  // Include service bookings outstanding
+  const serviceOutstanding = serviceBookings.value
+    .filter(booking => booking.vendor === vendorId)
+    .reduce((sum, booking) => sum + (booking.total_amount - booking.paid_amount), 0);
+    
+  return incomingOutstanding + serviceOutstanding;
 };
 
 const getVendorPaid = (vendorId: string) => {
@@ -206,18 +255,28 @@ const viewVendorDetail = (vendorId: string) => {
 
 const loadData = async () => {
   try {
-    const [vendorsData, incomingData, paymentsData] = await Promise.all([
+    const [vendorsData, incomingData, serviceBookingsData, paymentsData] = await Promise.all([
       vendorService.getAll(),
       incomingItemService.getAll(),
+      serviceBookingService.getAll(),
       paymentService.getAll()
     ]);
     
     vendors.value = vendorsData;
     incomingItems.value = incomingData;
+    serviceBookings.value = serviceBookingsData;
     payments.value = paymentsData;
   } catch (error) {
     console.error('Error loading data:', error);
   }
+};
+
+const handleAddVendor = () => {
+  if (!canCreateVendor.value) {
+    alert(t('subscription.banner.freeTierLimitReached'));
+    return;
+  }
+  showAddModal.value = true;
 };
 
 const saveVendor = async () => {
@@ -226,12 +285,26 @@ const saveVendor = async () => {
     if (editingVendor.value) {
       await vendorService.update(editingVendor.value.id!, form);
     } else {
-      await vendorService.create(form);
+      if (!checkCreateLimit('vendors')) {
+        alert(t('subscription.banner.freeTierLimitReached'));
+        return;
+      }
+      const newVendor = await vendorService.create(form);
+      console.log('Vendor created successfully:', newVendor);
+      
+      try {
+        await incrementUsage('vendors');
+        console.log('Usage incremented successfully for vendors');
+      } catch (usageError) {
+        console.error('Error incrementing usage for vendors:', usageError);
+        // Continue even if usage tracking fails
+      }
     }
     await loadData();
     closeModal();
   } catch (error) {
     console.error('Error saving vendor:', error);
+    alert('Error saving vendor. Please try again.');
   } finally {
     loading.value = false;
   }
@@ -250,9 +323,14 @@ const editVendor = (vendor: Vendor) => {
 };
 
 const deleteVendor = async (id: string) => {
+  if (!canEditDelete.value) {
+    alert(t('subscription.banner.freeTierLimitReached'));
+    return;
+  }
   if (confirm(t('messages.confirmDelete', { vendor: t('common.vendor') }))) {
     try {
       await vendorService.delete(id);
+      await decrementUsage('vendors');
       await loadData();
     } catch (error) {
       console.error('Error deleting vendor:', error);

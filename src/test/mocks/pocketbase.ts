@@ -272,8 +272,63 @@ export const calculatePermissions = vi.fn().mockReturnValue({
   canViewFinancials: true
 })
 
+// Mock additional services
+export const mockItemService = {
+  getAll: vi.fn().mockResolvedValue([mockItem]),
+  getById: vi.fn().mockResolvedValue(mockItem),
+  create: vi.fn().mockResolvedValue(mockItem),
+  update: vi.fn().mockResolvedValue(mockItem),
+  delete: vi.fn().mockResolvedValue(true)
+}
+
+export const mockVendorService = {
+  getAll: vi.fn().mockResolvedValue([mockVendor]),
+  getById: vi.fn().mockResolvedValue(mockVendor),
+  create: vi.fn().mockResolvedValue(mockVendor),
+  update: vi.fn().mockResolvedValue(mockVendor),
+  delete: vi.fn().mockResolvedValue(true)
+}
+
+export const mockIncomingItemService = {
+  getAll: vi.fn().mockResolvedValue([mockIncomingItem]),
+  getById: vi.fn().mockResolvedValue(mockIncomingItem),
+  create: vi.fn().mockResolvedValue(mockIncomingItem),
+  update: vi.fn().mockResolvedValue(mockIncomingItem),
+  delete: vi.fn().mockResolvedValue(true)
+}
+
+export const mockServiceBookingService = {
+  getAll: vi.fn().mockResolvedValue([mockServiceBooking]),
+  getById: vi.fn().mockResolvedValue(mockServiceBooking),
+  create: vi.fn().mockResolvedValue(mockServiceBooking),
+  update: vi.fn().mockResolvedValue(mockServiceBooking),
+  delete: vi.fn().mockResolvedValue(true)
+}
+
+export const mockPaymentService = {
+  getAll: vi.fn().mockResolvedValue([mockPayment]),
+  getById: vi.fn().mockResolvedValue(mockPayment),
+  create: vi.fn().mockResolvedValue(mockPayment),
+  update: vi.fn().mockResolvedValue(mockPayment),
+  delete: vi.fn().mockResolvedValue(true)
+}
+
+export const mockAccountService = {
+  getAll: vi.fn().mockResolvedValue([]),
+  getById: vi.fn().mockResolvedValue(null),
+  create: vi.fn().mockResolvedValue({}),
+  update: vi.fn().mockResolvedValue({}),
+  delete: vi.fn().mockResolvedValue(true)
+}
+
 // Export services
 export const authService = mockAuthService
 export const siteService = mockSiteService
 export const siteUserService = mockSiteUserService
 export const siteInvitationService = mockSiteInvitationService
+export const itemService = mockItemService
+export const vendorService = mockVendorService
+export const incomingItemService = mockIncomingItemService
+export const serviceBookingService = mockServiceBookingService
+export const paymentService = mockPaymentService
+export const accountService = mockAccountService

@@ -564,7 +564,45 @@ export class SiteService {
       assigned_by: user.id
     });
     
+    // Create free tier subscription for new site
+    await this.createFreeTierSubscription(record.id);
+    
     return this.mapRecordToSite(record);
+  }
+
+  private async createFreeTierSubscription(siteId: string): Promise<void> {
+    try {
+      // Get default plan (fallback to Free plan if no default is set)
+      let defaultPlan;
+      try {
+        defaultPlan = await pb.collection('subscription_plans').getFirstListItem(
+          'is_default=true && is_active=true'
+        );
+      } catch {
+        // Fallback to Free plan if no default plan is found
+        defaultPlan = await pb.collection('subscription_plans').getFirstListItem(
+          'name="Free" && is_active=true'
+        );
+      }
+
+      // Create subscription for new site
+      const now = new Date();
+      const periodEnd = new Date(now);
+      periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+      await pb.collection('site_subscriptions').create({
+        site: siteId,
+        subscription_plan: defaultPlan.id,
+        status: 'active',
+        current_period_start: now.toISOString(),
+        current_period_end: periodEnd.toISOString(),
+        cancel_at_period_end: false
+      });
+
+    } catch (err) {
+      console.error('Error creating default subscription:', err);
+      // Don't throw error to prevent site creation from failing
+    }
   }
 
   async update(id: string, data: Partial<Site>): Promise<Site> {

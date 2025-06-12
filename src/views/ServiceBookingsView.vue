@@ -119,11 +119,11 @@
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.startDate') }}</label>
-                <input v-model="form.start_date" type="datetime-local" required class="input mt-1" />
+                <input v-model="form.start_date" type="date" required class="input mt-1" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.endDate') }}</label>
-                <input v-model="form.end_date" type="datetime-local" class="input mt-1" />
+                <input v-model="form.end_date" type="date" class="input mt-1" />
               </div>
             </div>
             
@@ -350,6 +350,14 @@ const saveBooking = async () => {
       data.paid_amount = 0;
     }
     
+    // Ensure dates are in proper format (keep as date strings)
+    if (data.start_date) {
+      data.start_date = data.start_date; // Keep YYYY-MM-DD format
+    }
+    if (data.end_date) {
+      data.end_date = data.end_date; // Keep YYYY-MM-DD format
+    }
+    
     if (editingBooking.value) {
       await serviceBookingService.update(editingBooking.value.id!, data);
     } else {
@@ -366,13 +374,19 @@ const saveBooking = async () => {
   }
 };
 
+const formatDateForInput = (dateString: string) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toISOString().slice(0, 10); // YYYY-MM-DD format
+};
+
 const editBooking = (booking: ServiceBooking) => {
   editingBooking.value = booking;
   Object.assign(form, {
     service: booking.service,
     vendor: booking.vendor,
-    start_date: booking.start_date,
-    end_date: booking.end_date || '',
+    start_date: formatDateForInput(booking.start_date),
+    end_date: formatDateForInput(booking.end_date || ''),
     duration: booking.duration,
     unit_rate: booking.unit_rate,
     total_amount: booking.total_amount,

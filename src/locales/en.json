@@ -48,6 +48,7 @@
     "reference": "Reference",
     "balance": "Balance",
     "account": "Account",
+    "dismiss": "Dismiss",
     "vendor": "Vendor",
     "item": "Item",
     "payment": "Payment",
@@ -78,6 +79,8 @@
     "vendors": "Vendors",
     "accounts": "Accounts",
     "quotations": "Quotations",
+    "services": "Services",
+    "serviceBookings": "Service Bookings",
     "incoming": "Incoming Items",
     "payments": "Payments",
     "users": "Users",
@@ -196,6 +199,7 @@
     "noDeliveryData": "No delivery data to display",
     "noDeliveriesRecorded": "No deliveries recorded",
     "startTracking": "Start tracking by recording a delivery.",
+    "service": "Service",
     "categories": {
       "labor": "Labor",
       "equipment": "Equipment",
@@ -209,6 +213,25 @@
       "job": "Per Job",
       "sqft": "Per Sqft",
       "month": "Monthly"
+    }
+  },
+  "serviceBookings": {
+    "title": "Service Bookings",
+    "subtitle": "Manage and track your service bookings",
+    "bookService": "Book Service",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "duration": "Duration",
+    "rate": "Rate",
+    "unitRate": "Unit Rate",
+    "paymentStatus": "Payment Status",
+    "noBookings": "No service bookings",
+    "startBooking": "Start booking services to track your project progress.",
+    "statuses": {
+      "scheduled": "Scheduled",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
     }
   },
   "vendors": {
@@ -437,7 +460,9 @@
     "enterFullName": "Enter your full name",
     "enterPassword": "Enter your password",
     "createPassword": "Create a password",
-    "unitPrice": "Unit Price"
+    "unitPrice": "Unit Price",
+    "selectService": "Select a service",
+    "serviceNotes": "Service notes"
   },
   "pwa": {
     "installApp": "Install ConstructTrack",
@@ -496,5 +521,99 @@
     "rotateRight": "Rotate Right",
     "previousPhoto": "Previous Photo",
     "nextPhoto": "Next Photo"
+  },
+  "subscription": {
+    "title": "Subscription",
+    "subtitle": "Manage your subscription and billing",
+    "upgrade": "Upgrade",
+    "downgrade": "Downgrade",
+    "cancel": "Cancel Subscription",
+    "cancelPlan": "Cancel Plan",
+    "changePlan": "Change Plan",
+    "choosePlan": "Choose Plan",
+    "selectPlanDescription": "Select the plan that best fits your needs",
+    "manage": "Manage Subscription",
+    "currentPlan": "Current Plan",
+    "activePlan": "Active Plan",
+    "billing": "Billing",
+    "usage": "Usage",
+    "currentUsage": "Current Usage",
+    "limitsTitle": "Limits",
+    "features": "Features",
+    "freeTier": "Free Tier",
+    "basicPlan": "Basic Plan",
+    "proPlan": "Pro Plan",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "month": "Month",
+    "perMonth": "per month",
+    "perYear": "per year",
+    "unlimited": "Unlimited",
+    "billingCycle": "Billing Cycle",
+    "nextBilling": "Next Billing",
+    "current": "current",
+    "max": "max",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "expired": "Expired",
+      "cancelled": "Cancelled"
+    },
+    "banner": {
+      "freeTierLimitReached": "Free tier limits reached. Your site is now read-only.",
+      "subscriptionLimitReached": "Subscription limits reached. Your site is now read-only.",
+      "subscriptionExpired": "Your subscription has expired. Your site is now read-only."
+    },
+    "limits": {
+      "items": "Items",
+      "vendors": "Vendors",
+      "incomingDeliveries": "Deliveries",
+      "incoming_deliveries": "Deliveries",
+      "serviceBookings": "Service Bookings",
+      "service_bookings": "Service Bookings",
+      "payments": "Payments"
+    },
+    "plans": {
+      "free": {
+        "name": "Free",
+        "description": "Perfect for small projects",
+        "features": [
+          "1 Item",
+          "1 Vendor", 
+          "5 Deliveries per month",
+          "5 Service bookings per month",
+          "5 Payments per month",
+          "1 Site"
+        ]
+      },
+      "basic": {
+        "name": "Basic",
+        "description": "For growing construction businesses",
+        "features": [
+          "Unlimited Items",
+          "Unlimited Vendors",
+          "Unlimited Deliveries",
+          "Unlimited Service bookings", 
+          "Unlimited Payments",
+          "Up to 3 Sites"
+        ]
+      }
+    },
+    "payment": {
+      "processing": "Processing payment...",
+      "success": "Payment successful",
+      "failed": "Payment failed",
+      "retry": "Retry Payment",
+      "securePayment": "Secure payment powered by Razorpay"
+    },
+    "messages": {
+      "upgradeSuccess": "Successfully upgraded to {plan} plan",
+      "cancellationSuccess": "Subscription cancelled successfully",
+      "cancellationFailed": "Failed to cancel subscription",
+      "willCancelAtPeriodEnd": "Your subscription will cancel at the end of the current billing period",
+      "reactivateSuccess": "Subscription reactivated successfully"
+    },
+    "cancelNote": "Your subscription will remain active until {date}. You can reactivate anytime before then.",
+    "confirmCancelButton": "Cancel Subscription"
   }
 }

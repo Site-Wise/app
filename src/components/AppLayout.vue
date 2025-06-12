@@ -165,6 +165,14 @@
                   Manage Users
                 </button>
                 <button
+                  v-if="isOwner"
+                  @click="goToSubscription"
+                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700"
+                >
+                  <CreditCard class="inline mr-2 h-4 w-4" />
+                  Subscription
+                </button>
+                <button
                   @click="handleLogout"
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
@@ -260,13 +268,15 @@ import {
   Plus,
   X,
   DollarSign,
-  Mail
+  Mail,
+  Wrench,
+  Calendar
 } from 'lucide-vue-next';
 
 const route = useRoute();
 const router = useRouter();
 const { user, logout } = useAuth();
-const { hasSiteAccess, canManageUsers } = useSite();
+const { hasSiteAccess, canManageUsers, currentUserRole } = useSite();
 const { t } = useI18n();
 const { receivedInvitationsCount, loadReceivedInvitations } = useInvitations();
 
@@ -281,6 +291,8 @@ const navigation = computed(() => [
   { name: 'Vendors', nameKey: 'nav.vendors', to: '/vendors', icon: Users, current: route.name === 'Vendors' },
   { name: 'Accounts', nameKey: 'nav.accounts', to: '/accounts', icon: CreditCard, current: route.name === 'Accounts' },
   { name: 'Quotations', nameKey: 'nav.quotations', to: '/quotations', icon: FileText, current: route.name === 'Quotations' },
+  { name: 'Services', nameKey: 'nav.services', to: '/services', icon: Wrench, current: route.name === 'Services' },
+  { name: 'Service Bookings', nameKey: 'nav.serviceBookings', to: '/service-bookings', icon: Calendar, current: route.name === 'ServiceBookings' },
   { name: 'Incoming Items', nameKey: 'nav.incoming', to: '/incoming', icon: TruckIcon, current: route.name === 'Incoming' },
   { name: 'Payments', nameKey: 'nav.payments', to: '/payments', icon: CreditCard, current: route.name === 'Payments' },
 ]);
@@ -302,6 +314,8 @@ const userInitials = computed(() => {
     .toUpperCase()
     .slice(0, 2);
 });
+
+const isOwner = computed(() => currentUserRole.value === 'owner');
 
 const quickAction = (type: string) => {
   if (!hasSiteAccess.value) {
@@ -351,6 +365,11 @@ const goToInvites = () => {
 const goToUserManagement = () => {
   userMenuOpen.value = false;
   router.push('/users');
+};
+
+const goToSubscription = () => {
+  userMenuOpen.value = false;
+  router.push('/subscription');
 };
 
 onMounted(() => {
