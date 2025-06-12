@@ -1,6 +1,6 @@
 {
-  "name": "ConstructTrack - Construction Site Management",
-  "short_name": "ConstructTrack",
+  "name": "SiteWise - Construction Site Management",
+  "short_name": "SiteWise",
   "description": "A comprehensive construction site management application for tracking items, vendors, deliveries, and payments",
   "start_url": "/",
   "display": "standalone",

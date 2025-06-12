@@ -1,6 +1,6 @@
-const CACHE_NAME = 'constructtrack-v1.0.0';
-const STATIC_CACHE = 'constructtrack-static-v1.0.0';
-const DYNAMIC_CACHE = 'constructtrack-dynamic-v1.0.0';
+const CACHE_NAME = 'SiteWise-v1.0.0';
+const STATIC_CACHE = 'SiteWise-static-v1.0.0';
+const DYNAMIC_CACHE = 'SiteWise-dynamic-v1.0.0';
 
 // Files to cache immediately
 const STATIC_ASSETS = [
@@ -280,7 +280,7 @@ self.addEventListener('push', (event) => {
   };
   
   event.waitUntil(
-    self.registration.showNotification('ConstructTrack', options)
+    self.registration.showNotification('SiteWise', options)
   );
 });
 

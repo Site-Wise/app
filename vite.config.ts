@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'ConstructTrack - Construction Site Management',
-        short_name: 'ConstructTrack',
+        name: 'SiteWise - Construction Site Management',
+        short_name: 'SiteWise',
         description: 'A comprehensive construction site management application for tracking items, vendors, deliveries, and payments',
         theme_color: '#2563eb',
         background_color: '#ffffff',

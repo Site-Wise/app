@@ -7,13 +7,13 @@ vi.mock('../../composables/useI18n', () => ({
   useI18n: () => ({
     t: (key: string, params?: any) => {
       const translations: Record<string, string> = {
-        'auth.loginTitle': 'Sign in to ConstructTrack',
+        'auth.loginTitle': 'Sign in to SiteWise',
         'auth.loginSubtitle': 'Manage your construction site efficiently',
         'auth.email': 'Email address',
         'auth.password': 'Password',
         'auth.signIn': 'Sign in',
         'auth.signingIn': 'Signing in...',
-        'auth.newToApp': 'New to ConstructTrack?',
+        'auth.newToApp': 'New to SiteWise?',
         'auth.createNewAccount': 'Create new account',
         'auth.registerTitle': 'Create Account',
         'auth.fullName': 'Full Name',
@@ -89,7 +89,7 @@ describe('LoginComponent', () => {
 
   describe('Component Rendering', () => {
     it('renders the login form correctly', () => {
-      expect(wrapper.find('h2').text()).toBe('Sign in to ConstructTrack')
+      expect(wrapper.find('h2').text()).toBe('Sign in to SiteWise')
       expect(wrapper.find('p').text()).toBe('Manage your construction site efficiently')
       expect(wrapper.find('input[type="email"]').exists()).toBe(true)
       expect(wrapper.find('input[type="password"]').exists()).toBe(true)

@@ -1,4 +1,4 @@
-# ConstructTrack - Construction Site Management App
+# SiteWise - Construction Site Management App
 
 A comprehensive construction site management application built with Vue 3, TypeScript, TailwindCSS, and PocketBase.
 
@@ -53,7 +53,7 @@ A comprehensive construction site management application built with Vue 3, TypeS
 ### Environment Variables
 
 - `VITE_POCKETBASE_URL`: URL of your PocketBase server (default: http://127.0.0.1:8090)
-- `VITE_APP_NAME`: Application name (default: ConstructTrack)
+- `VITE_APP_NAME`: Application name (default: SiteWise)
 - `VITE_APP_ENV`: Environment (development/production)
 
 ### PocketBase Setup

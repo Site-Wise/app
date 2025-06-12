@@ -9,7 +9,7 @@
       <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center space-x-2">
           <HardHat class="h-8 w-8 text-primary-600 dark:text-primary-400" />
-          <span class="text-xl font-bold text-gray-900 dark:text-white">ConstructTrack</span>
+          <span class="text-xl font-bold text-gray-900 dark:text-white">SiteWise</span>
         </div>
         <!-- Close button for mobile -->
         <button
