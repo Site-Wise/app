@@ -142,7 +142,10 @@ describe('VendorsView', () => {
       email: 'john@vendor.com',
       phone: '123-456-7890',
       address: '123 Test St',
-      tags: ['Steel', 'Concrete']
+      tags: ['Steel', 'Concrete'],
+      site: 'site-1',
+      created: '2024-01-01T00:00:00Z',
+      updated: '2024-01-01T00:00:00Z'
     })
     
     // Open add modal
@@ -220,7 +223,10 @@ describe('VendorsView', () => {
       email: 'john@vendor.com',
       phone: '123-456-7890',
       address: '123 Test St',
-      tags: ['Steel', 'Concrete']
+      tags: ['Steel', 'Concrete'],
+      site: 'site-1',
+      created: '2024-01-01T00:00:00Z',
+      updated: '2024-01-01T00:00:00Z'
     })
     
     // Wait for vendors to load

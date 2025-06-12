@@ -127,7 +127,10 @@ describe('ItemsView', () => {
       description: 'Test Description',
       quantity: 100,
       unit: 'kg',
-      category: 'Test Category'
+      category: 'Test Category',
+      site: 'site-1',
+      created: '2024-01-01T00:00:00Z',
+      updated: '2024-01-01T00:00:00Z'
     })
     
     // Open add modal
@@ -160,7 +163,10 @@ describe('ItemsView', () => {
       description: 'Test Description',
       quantity: 100,
       unit: 'kg',
-      category: 'Test Category'
+      category: 'Test Category',
+      site: 'site-1',
+      created: '2024-01-01T00:00:00Z',
+      updated: '2024-01-01T00:00:00Z'
     })
     
     // Wait for items to load

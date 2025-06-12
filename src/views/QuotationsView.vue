@@ -2,14 +2,14 @@
   <div>
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Quotations</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('quotations.title') }}</h1>
         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          Manage price quotes from vendors
+          {{ t('quotations.subtitle') }}
         </p>
       </div>
       <button @click="showAddModal = true" class="btn-primary">
         <Plus class="mr-2 h-4 w-4" />
-        Add Quotation
+        {{ t('quotations.addQuotation') }}
       </button>
     </div>
 
@@ -18,13 +18,13 @@
       <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead class="bg-gray-50 dark:bg-gray-700">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Item</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Vendor</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Unit Price</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Min. Qty</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Valid Until</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.item') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.vendor') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('quotations.unitPrice') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('quotations.minimumQuantity') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('quotations.validUntil') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.status') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.actions') }}</th>
           </tr>
         </thead>
         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -66,8 +66,8 @@
       
       <div v-if="quotations.length === 0" class="text-center py-12">
         <FileText class="mx-auto h-12 w-12 text-gray-400" />
-        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No quotations</h3>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by adding a quotation.</p>
+        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('quotations.noQuotations') }}</h3>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('quotations.getStarted') }}</p>
       </div>
     </div>
 
@@ -76,14 +76,14 @@
       <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
-            {{ editingQuotation ? 'Edit Quotation' : 'Add New Quotation' }}
+            {{ editingQuotation ? t('quotations.editQuotation') : t('quotations.addQuotation') }}
           </h3>
           
           <form @submit.prevent="saveQuotation" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Item</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.item') }}</label>
               <select v-model="form.item" required class="input mt-1">
-                <option value="">Select an item</option>
+                <option value="">{{ t('forms.selectItem') }}</option>
                 <option v-for="item in items" :key="item.id" :value="item.id">
                   {{ item.name }} ({{ item.unit }})
                 </option>
@@ -91,9 +91,9 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Vendor</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.vendor') }}</label>
               <select v-model="form.vendor" required class="input mt-1">
-                <option value="">Select a vendor</option>
+                <option value="">{{ t('forms.selectVendor') }}</option>
                 <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
                   {{ vendor.name }}
                 </option>
@@ -102,42 +102,42 @@
             
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Unit Price</label>
-                <input v-model.number="form.unit_price" type="number" step="0.01" required class="input mt-1" placeholder="0.00" />
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('forms.unitPrice') }}</label>
+                <input v-model.number="form.unit_price" type="number" step="0.01" required class="input mt-1" :placeholder="t('forms.enterAmount')" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Min. Quantity</label>
-                <input v-model.number="form.minimum_quantity" type="number" class="input mt-1" placeholder="Optional" />
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('quotations.minimumQuantity') }}</label>
+                <input v-model.number="form.minimum_quantity" type="number" class="input mt-1" :placeholder="t('forms.optional')" />
               </div>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Valid Until</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('quotations.validUntil') }}</label>
               <input v-model="form.valid_until" type="date" class="input mt-1" />
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.status') }}</label>
               <select v-model="form.status" required class="input mt-1">
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-                <option value="expired">Expired</option>
+                <option value="pending">{{ t('common.pending') }}</option>
+                <option value="approved">{{ t('common.approved') }}</option>
+                <option value="rejected">{{ t('common.rejected') }}</option>
+                <option value="expired">{{ t('common.expired') }}</option>
               </select>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
-              <textarea v-model="form.notes" class="input mt-1" rows="3" placeholder="Additional notes"></textarea>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.notes') }}</label>
+              <textarea v-model="form.notes" class="input mt-1" rows="3" :placeholder="t('quotations.additionalNotes')"></textarea>
             </div>
             
             <div class="flex space-x-3 pt-4">
               <button type="submit" :disabled="loading" class="flex-1 btn-primary">
                 <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-                {{ editingQuotation ? 'Update' : 'Create' }}
+                {{ editingQuotation ? t('common.update') : t('common.create') }}
               </button>
               <button type="button" @click="closeModal" class="flex-1 btn-outline">
-                Cancel
+                {{ t('common.cancel') }}
               </button>
             </div>
           </form>
@@ -158,7 +158,9 @@ import {
   type Item, 
   type Vendor 
 } from '../services/pocketbase';
+import { useI18n } from '../composables/useI18n';
 
+const { t } = useI18n();
 const quotations = ref<Quotation[]>([]);
 const items = ref<Item[]>([]);
 const vendors = ref<Vendor[]>([]);
@@ -245,7 +247,7 @@ const editQuotation = (quotation: Quotation) => {
 };
 
 const deleteQuotation = async (id: string) => {
-  if (confirm('Are you sure you want to delete this quotation?')) {
+  if (confirm(t('messages.confirmDelete', { item: t('common.item') }))) {
     try {
       await quotationService.delete(id);
       await loadData();

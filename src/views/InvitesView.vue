@@ -9,11 +9,11 @@
               <Mail class="h-6 w-6 text-white" />
             </div>
             <h1 class="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-              Invitations
+              {{ t('users.invitations') }}
             </h1>
           </div>
           <p class="text-gray-600 dark:text-gray-400 max-w-2xl">
-            Manage your site invitations and join construction teams
+            {{ t('users.manageInvitations') }}
           </p>
         </div>
         
@@ -25,7 +25,7 @@
                 <Clock class="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p class="text-sm text-gray-600 dark:text-gray-400">Pending</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('common.pending') }}</p>
                 <p class="text-xl font-bold text-gray-900 dark:text-white">{{ receivedInvitations.length }}</p>
               </div>
             </div>
@@ -39,7 +39,7 @@
       <div v-if="isLoading" class="flex items-center justify-center py-12">
         <div class="flex items-center gap-3 text-gray-600 dark:text-gray-400">
           <Loader2 class="h-6 w-6 animate-spin" />
-          <span>Loading invitations...</span>
+          <span>{{ t('users.loadingInvitations') }}</span>
         </div>
       </div>
 
@@ -48,16 +48,16 @@
         <div class="mx-auto w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-3xl flex items-center justify-center mb-6">
           <Mail class="h-16 w-16 text-gray-400" />
         </div>
-        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No invitations</h3>
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">{{ t('users.noInvitations') }}</h3>
         <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-          You don't have any pending invitations at the moment. When someone invites you to join their construction site, it will appear here.
+          {{ t('users.noInvitationsMessage') }}
         </p>
         <button 
           @click="$router.push('/dashboard')" 
           class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105"
         >
           <ArrowLeft class="mr-2 h-4 w-4" />
-          Back to Dashboard
+          {{ t('nav.dashboard') }}
         </button>
       </div>
 
@@ -77,17 +77,17 @@
                 </div>
                 <div>
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    {{ invitation.expand?.site?.name || 'Construction Site' }}
+                    {{ invitation.expand?.site?.name || t('users.constructionSite') }}
                   </h3>
                   <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {{ invitation.expand?.site?.description || 'No description available' }}
+                    {{ invitation.expand?.site?.description || t('users.noDescriptionAvailable') }}
                   </p>
                   <div class="flex items-center gap-4 mt-3">
                     <div class="flex items-center gap-2">
                       <div class="h-6 w-6 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center">
                         <span class="text-white text-xs font-medium">{{ getInviterInitials(invitation.expand?.invited_by?.name) }}</span>
                       </div>
-                      <span class="text-sm text-gray-700 dark:text-gray-300">{{ invitation.expand?.invited_by?.name || 'Unknown' }}</span>
+                      <span class="text-sm text-gray-700 dark:text-gray-300">{{ invitation.expand?.invited_by?.name || t('common.unknown') }}</span>
                     </div>
                   </div>
                 </div>
@@ -112,14 +112,14 @@
                 <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
                   <div class="flex items-center gap-2 mb-1">
                     <Home class="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                    <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Total Units</span>
+                    <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ t('site.totalUnits') }}</span>
                   </div>
                   <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ invitation.expand?.site?.total_units || 0 }}</p>
                 </div>
                 <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
                   <div class="flex items-center gap-2 mb-1">
                     <Square class="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                    <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Area (sq ft)</span>
+                    <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ t('users.areaSqft') }}</span>
                   </div>
                   <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ formatNumber(invitation.expand?.site?.total_planned_area || 0) }}</p>
                 </div>
@@ -127,7 +127,7 @@
 
               <!-- Role Description -->
               <div class="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg p-4">
-                <h4 class="font-medium text-blue-900 dark:text-blue-100 mb-2">Your Role: {{ t(`users.roles.${invitation.role}`) }}</h4>
+                <h4 class="font-medium text-blue-900 dark:text-blue-100 mb-2">{{ t('users.yourRole') }}: {{ t(`users.roles.${invitation.role}`) }}</h4>
                 <p class="text-sm text-blue-700 dark:text-blue-300">{{ getRoleDescription(invitation.role) }}</p>
               </div>
 
@@ -140,7 +140,7 @@
                 >
                   <Loader2 v-if="acceptingInvite === invitation.id" class="h-4 w-4 animate-spin" />
                   <CheckCircle v-else class="h-4 w-4" />
-                  {{ acceptingInvite === invitation.id ? 'Accepting...' : 'Accept' }}
+                  {{ acceptingInvite === invitation.id ? t('users.accepting') : t('users.accept') }}
                 </button>
                 
                 <button 
@@ -150,7 +150,7 @@
                 >
                   <Loader2 v-if="decliningInvite === invitation.id" class="h-4 w-4 animate-spin" />
                   <X v-else class="h-4 w-4" />
-                  {{ decliningInvite === invitation.id ? 'Declining...' : 'Decline' }}
+                  {{ decliningInvite === invitation.id ? t('users.declining') : t('users.decline') }}
                 </button>
               </div>
             </div>
@@ -212,11 +212,11 @@ const getRoleBadgeClass = (role: string) => {
 
 const getRoleDescription = (role: string) => {
   const descriptions = {
-    owner: 'Full access to all features including user management, financial data, and system settings.',
-    supervisor: 'Manage daily operations, add/edit items and vendors, but cannot delete records or manage users.',
-    accountant: 'Read-only access to view financial reports, payments, and export data for accounting purposes.'
+    owner: t('users.roleDescriptions.ownerFull'),
+    supervisor: t('users.roleDescriptions.supervisorFull'),
+    accountant: t('users.roleDescriptions.accountantFull')
   };
-  return descriptions[role as keyof typeof descriptions] || 'Role description not available.';
+  return descriptions[role as keyof typeof descriptions] || t('users.roleDescriptionNotAvailable');
 };
 
 const formatTimeLeft = (expiresAt: string) => {
@@ -224,14 +224,14 @@ const formatTimeLeft = (expiresAt: string) => {
   const expiry = new Date(expiresAt);
   const diffMs = expiry.getTime() - now.getTime();
   
-  if (diffMs <= 0) return 'Expired';
+  if (diffMs <= 0) return t('common.expired');
   
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   
-  if (diffDays > 0) return `${diffDays}d left`;
-  if (diffHours > 0) return `${diffHours}h left`;
-  return 'Expires soon';
+  if (diffDays > 0) return `${diffDays}${t('users.daysLeft')}`;
+  if (diffHours > 0) return `${diffHours}${t('users.hoursLeft')}`;
+  return t('users.expiresSoon');
 };
 
 const formatNumber = (num: number) => {
@@ -242,28 +242,28 @@ const acceptInvitationHandler = async (invitationId: string) => {
   acceptingInvite.value = invitationId;
   try {
     await acceptInvitation(invitationId);
-    alert('Invitation accepted! You can now access the site.');
+    alert(t('users.invitationAccepted'));
     router.push('/dashboard');
   } catch (error) {
     console.error('Error accepting invitation:', error);
-    alert(error instanceof Error ? error.message : 'Failed to accept invitation');
+    alert(error instanceof Error ? error.message : t('users.failedToAcceptInvitation'));
   } finally {
     acceptingInvite.value = null;
   }
 };
 
 const declineInvitation = async (invitationId: string) => {
-  if (!confirm('Are you sure you want to decline this invitation? This action cannot be undone.')) {
+  if (!confirm(t('users.confirmDeclineInvitation'))) {
     return;
   }
   
   decliningInvite.value = invitationId;
   try {
     await rejectInvitation(invitationId);
-    alert('Invitation declined.');
+    alert(t('users.invitationDeclined'));
   } catch (error) {
     console.error('Error declining invitation:', error);
-    alert('Failed to decline invitation');
+    alert(t('users.failedToDeclineInvitation'));
   } finally {
     decliningInvite.value = null;
   }

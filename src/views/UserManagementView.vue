@@ -49,8 +49,8 @@
                 <Clock class="h-5 w-5 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Pending Invitations</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400">{{ pendingInvitations.length }} invitation(s) awaiting response</p>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('users.pendingInvitations') }}</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400">{{ pendingInvitations.length }} {{ t('users.invitationsAwaiting') }}</p>
               </div>
             </div>
             <button @click="showPendingInvites = false" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
@@ -70,7 +70,7 @@
                 <div class="flex items-center gap-2 mt-1">
                   <span :class="getRoleBadgeClass(invitation.role)">{{ t(`users.roles.${invitation.role}`) }}</span>
                   <span :class="isExpired(invitation.expires_at) ? 'text-xs text-red-500 dark:text-red-400' : 'text-xs text-gray-500 dark:text-gray-400'">
-                    • {{ isExpired(invitation.expires_at) ? 'Expired' : `Expires ${formatRelativeTime(invitation.expires_at)}` }}
+                    • {{ isExpired(invitation.expires_at) ? t('common.expired') : `${t('users.expires')} ${formatRelativeTime(invitation.expires_at)}` }}
                   </span>
                 </div>
               </div>
@@ -82,7 +82,7 @@
           
           <div v-if="pendingInvitations.length === 0" class="text-center py-8">
             <CheckCircle class="mx-auto h-12 w-12 text-green-500" />
-            <p class="mt-2 text-gray-600 dark:text-gray-400">No pending invitations</p>
+            <p class="mt-2 text-gray-600 dark:text-gray-400">{{ t('users.noPendingInvitations') }}</p>
           </div>
         </div>
       </div>
@@ -99,8 +99,8 @@
                     <Users class="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Team Members</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ siteUsers.length }} member(s)</p>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('users.teamMembers') }}</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ siteUsers.length }} {{ t('users.members') }}</p>
                   </div>
                 </div>
               </div>
@@ -122,11 +122,11 @@
                   <!-- User Info -->
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-1">
-                      <h4 class="font-medium text-gray-900 dark:text-white truncate">{{ siteUser.expand?.user?.name || 'Unknown User' }}</h4>
+                      <h4 class="font-medium text-gray-900 dark:text-white truncate">{{ siteUser.expand?.user?.name || t('users.unknownUser') }}</h4>
                       <span :class="getRoleBadgeClass(siteUser.role)">{{ t(`users.roles.${siteUser.role}`) }}</span>
                     </div>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 truncate">{{ siteUser.expand?.user?.email || 'No email' }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">Added {{ formatRelativeTime(siteUser.assigned_at) }}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 truncate">{{ siteUser.expand?.user?.email || t('users.noEmail') }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">{{ t('users.added') }} {{ formatRelativeTime(siteUser.assigned_at) }}</p>
                   </div>
                   
                   <!-- Actions -->
@@ -153,7 +153,7 @@
                 <p class="text-gray-600 dark:text-gray-400 mb-4">{{ t('users.getStarted') }}</p>
                 <button v-if="canManageUsers" @click="showInviteModal = true" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                   <UserPlus class="mr-2 h-4 w-4" />
-                  Invite First Member
+                  {{ t('users.inviteFirstMember') }}
                 </button>
               </div>
             </div>
@@ -169,8 +169,8 @@
                 <BarChart3 class="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Role Distribution</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400">Team composition</p>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('users.roleDistribution') }}</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('users.teamComposition') }}</p>
               </div>
             </div>
             
@@ -182,7 +182,7 @@
                   </div>
                   <div>
                     <p class="text-sm font-medium text-blue-700 dark:text-blue-300">{{ t('users.roles.owner') }}</p>
-                    <p class="text-xs text-blue-600 dark:text-blue-400">Full access</p>
+                    <p class="text-xs text-blue-600 dark:text-blue-400">{{ t('users.fullAccess') }}</p>
                   </div>
                 </div>
                 <span class="text-xl font-bold text-blue-900 dark:text-blue-100">{{ roleStats.owners }}</span>
@@ -195,7 +195,7 @@
                   </div>
                   <div>
                     <p class="text-sm font-medium text-green-700 dark:text-green-300">{{ t('users.roles.supervisor') }}</p>
-                    <p class="text-xs text-green-600 dark:text-green-400">No delete access</p>
+                    <p class="text-xs text-green-600 dark:text-green-400">{{ t('users.noDeleteAccess') }}</p>
                   </div>
                 </div>
                 <span class="text-xl font-bold text-green-900 dark:text-green-100">{{ roleStats.supervisors }}</span>
@@ -208,7 +208,7 @@
                   </div>
                   <div>
                     <p class="text-sm font-medium text-amber-700 dark:text-amber-300">{{ t('users.roles.accountant') }}</p>
-                    <p class="text-xs text-amber-600 dark:text-amber-400">Read-only access</p>
+                    <p class="text-xs text-amber-600 dark:text-amber-400">{{ t('users.readOnlyAccess') }}</p>
                   </div>
                 </div>
                 <span class="text-xl font-bold text-amber-900 dark:text-amber-100">{{ roleStats.accountants }}</span>
@@ -222,7 +222,7 @@
               <div class="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
                 <Zap class="h-5 w-5 text-gray-600 dark:text-gray-400" />
               </div>
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Quick Actions</h3>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('users.quickActions') }}</h3>
             </div>
             
             <div class="space-y-3">
@@ -231,8 +231,8 @@
                   <UserPlus class="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <p class="font-medium text-gray-900 dark:text-white">Invite Member</p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">Create in-app invitation</p>
+                  <p class="font-medium text-gray-900 dark:text-white">{{ t('users.inviteMember') }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('users.createInAppInvitation') }}</p>
                 </div>
               </button>
               
@@ -244,8 +244,8 @@
                   </span>
                 </div>
                 <div>
-                  <p class="font-medium text-gray-900 dark:text-white">Pending Invites</p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ pendingInvitations.length }} awaiting response</p>
+                  <p class="font-medium text-gray-900 dark:text-white">{{ t('users.pendingInvites') }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ pendingInvitations.length }} {{ t('users.awaitingResponse') }}</p>
                 </div>
               </button>
             </div>
@@ -264,20 +264,20 @@
             </div>
             <div>
               <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ t('users.inviteUser') }}</h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Create an invitation to join this site</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('users.createInvitationDescription') }}</p>
             </div>
           </div>
           
           <form @submit.prevent="inviteUser" class="space-y-6">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('auth.email') }} (for user identification)</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('auth.email') }} ({{ t('users.forUserIdentification') }})</label>
               <div class="relative">
                 <input 
                   v-model="inviteForm.email" 
                   type="email" 
                   required 
                   class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
-                  placeholder="Enter user's email for identification" 
+:placeholder="t('users.enterUserEmail')" 
                 />
                 <Mail class="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               </div>
@@ -323,7 +323,7 @@
               >
                 <Loader2 v-if="inviteLoading" class="h-4 w-4 animate-spin" />
                 <Send v-else class="h-4 w-4" />
-                {{ inviteLoading ? 'Sending...' : t('users.sendInvite') }}
+                {{ inviteLoading ? t('users.sending') : t('users.sendInvite') }}
               </button>
               <button 
                 type="button" 
@@ -348,7 +348,7 @@
             </div>
             <div>
               <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ t('users.changeRole') }}</h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Update team member permissions</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('users.updateTeamMemberPermissions') }}</p>
             </div>
           </div>
           
@@ -408,7 +408,7 @@
               >
                 <Loader2 v-if="roleLoading" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
-                {{ roleLoading ? 'Updating...' : t('users.updateRole') }}
+                {{ roleLoading ? t('users.updating') : t('users.updateRole') }}
               </button>
               <button 
                 type="button" 
@@ -485,19 +485,19 @@ const availableRoles = [
     value: 'owner',
     icon: Crown,
     iconClass: 'p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg',
-    description: 'Full access to all features and settings'
+    get description() { return t('users.roleDescriptions.ownerDesc') }
   },
   {
     value: 'supervisor',
     icon: Shield,
     iconClass: 'p-2 bg-green-100 dark:bg-green-900/30 rounded-lg',
-    description: 'Manage operations but cannot delete items'
+    get description() { return t('users.roleDescriptions.supervisorDesc') }
   },
   {
     value: 'accountant',
     icon: Calculator,
     iconClass: 'p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg',
-    description: 'Read-only access to financial data'
+    get description() { return t('users.roleDescriptions.accountantDesc') }
   }
 ];
 
@@ -597,14 +597,14 @@ const inviteUser = async () => {
     // Show success message with expiry info
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 7);
-    alert(`Invitation created for ${inviteForm.email}! It will expire on ${expiryDate.toLocaleDateString()}. They will see it in their invitations when they log in.`);
+    alert(t('users.invitationCreated', { email: inviteForm.email, date: expiryDate.toLocaleDateString() }));
     closeInviteModal();
     
     // Reload invitations
     await loadSiteInvitations(currentSite.value.id!);
   } catch (error) {
     console.error('Error sending invitation:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to create invitation';
+    const errorMessage = error instanceof Error ? error.message : t('users.failedToCreateInvitation');
     alert(errorMessage);
   } finally {
     inviteLoading.value = false;
