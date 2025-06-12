@@ -265,7 +265,8 @@
     "noOutstandingAmounts": "कोई बकाया राशि नहीं",
     "paymentFor": "{vendorName} के लिए भुगतान रिकॉर्ड करें",
     "outstandingAmountVendor": "इस विक्रेता के लिए बकाया राशि: {amount}",
-    "paymentDetails": "भुगतान विवरण"
+    "paymentDetails": "भुगतान विवरण",
+    "itemsAffected": "प्रभावित वस्तुएं"
   },
   "site": {
     "selectSite": "साइट चुनें",

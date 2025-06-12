@@ -341,7 +341,8 @@
     "noOutstandingAmounts": "No outstanding amounts",
     "paymentFor": "Record Payment for {vendorName}",
     "outstandingAmountVendor": "Outstanding amount for this vendor: {amount}",
-    "paymentDetails": "Payment Details"
+    "paymentDetails": "Payment Details",
+    "itemsAffected": "Items Affected"
   },
   "site": {
     "selectSite": "Select a Site",
