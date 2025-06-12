@@ -247,7 +247,7 @@ describe('PhotoGallery', () => {
 
       await wrapper.vm.openGallery(0)
 
-      const navButtons = wrapper.findAll('.absolute button').filter(btn => 
+      const navButtons = wrapper.findAll('.absolute button').filter((btn: any) => 
         btn.classes().includes('left-4') || btn.classes().includes('right-4')
       )
       expect(navButtons.length).toBe(0)

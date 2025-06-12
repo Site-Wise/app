@@ -5,6 +5,7 @@ import SubscriptionBanner from '../../components/SubscriptionBanner.vue'
 import { createMockRouter } from '../utils/test-utils'
 
 const mockSubscriptionData = {
+  // State (matching the actual composable)
   currentSubscription: computed(() => null),
   currentUsage: computed(() => null),
   currentPlan: computed(() => ({
@@ -25,25 +26,37 @@ const mockSubscriptionData = {
     created: '2024-01-01T00:00:00Z',
     updated: '2024-01-01T00:00:00Z'
   })),
-  usageLimits: computed(() => null),
+  usageLimits: computed(() => ({
+    items: { current: 0, max: 100, exceeded: false },
+    vendors: { current: 0, max: 25, exceeded: false },
+    incoming_deliveries: { current: 0, max: 100, exceeded: false },
+    service_bookings: { current: 0, max: 50, exceeded: false },
+    payments: { current: 0, max: 200, exceeded: false }
+  })),
   isLoading: computed(() => false),
   error: computed(() => null),
+  
+  // Computed (matching the actual composable)
   isReadOnly: computed(() => false),
   isSubscriptionActive: computed(() => true),
-  loadSubscription: vi.fn(),
-  createDefaultSubscription: vi.fn(),
-  createFreeTierSubscription: vi.fn(),
+  
+  // Methods (matching the actual composable)
+  loadSubscription: vi.fn().mockResolvedValue(undefined),
+  createDefaultSubscription: vi.fn().mockResolvedValue(undefined),
+  createFreeTierSubscription: vi.fn().mockResolvedValue(undefined),
   checkCreateLimit: vi.fn().mockReturnValue(true),
-  incrementUsage: vi.fn(),
-  decrementUsage: vi.fn(),
+  incrementUsage: vi.fn().mockResolvedValue(undefined),
+  decrementUsage: vi.fn().mockResolvedValue(undefined),
   getAllPlans: vi.fn().mockResolvedValue([]),
-  upgradeSubscription: vi.fn(),
-  cancelSubscription: vi.fn()
+  upgradeSubscription: vi.fn().mockResolvedValue(undefined),
+  cancelSubscription: vi.fn().mockResolvedValue(undefined)
 }
 
 // Mock the useSubscription composable
+const mockUseSubscription = vi.fn(() => mockSubscriptionData)
+
 vi.mock('../../composables/useSubscription', () => ({
-  useSubscription: () => mockSubscriptionData
+  useSubscription: mockUseSubscription
 }))
 
 // Mock the useI18n composable
@@ -109,7 +122,7 @@ describe('SubscriptionBanner', () => {
 
     it('should show banner when in read-only mode', async () => {
       // Mock read-only mode
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true)
       })
@@ -502,7 +515,7 @@ describe('SubscriptionBanner', () => {
         isReadOnly: computed(() => true),
         currentPlan: computed(() => ({
           id: 'incomplete-plan',
-          name: undefined,
+          name: 'Incomplete Plan',
           price: 0,
           currency: 'USD',
           features: {
