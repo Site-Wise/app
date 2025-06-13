@@ -4,7 +4,7 @@
       <div>
         <div class="flex items-center justify-center">
           <!-- <HardHat class="h-12 w-12 text-primary-600 dark:text-primary-400" /> -->
-          <img src="/logo.png" class="h-16 dark:bg-slate-400 rounded-lg" alt="SiteWise">
+          <img src="/logo.png" class="h-16" alt="SiteWise">
         </div>
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
           {{ t('auth.loginTitle') }}
@@ -63,10 +63,21 @@
             </div>
           </div>
 
+          <!-- Turnstile Widget -->
+          <TurnstileWidget
+            v-if="turnstileSiteKey"
+            :site-key="turnstileSiteKey"
+            :theme="isDark ? 'dark' : 'light'"
+            @success="handleTurnstileSuccess"
+            @error="handleTurnstileError"
+            @expired="handleTurnstileExpired"
+            ref="loginTurnstileRef"
+          />
+
           <div>
             <button
               type="submit"
-              :disabled="loading"
+              :disabled="loading || !turnstileToken"
               class="w-full btn-primary"
             >
               <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
@@ -153,10 +164,21 @@
             </div>
           </div>
 
+          <!-- Turnstile Widget for Registration -->
+          <TurnstileWidget
+            v-if="turnstileSiteKey"
+            :site-key="turnstileSiteKey"
+            :theme="isDark ? 'dark' : 'light'"
+            @success="handleRegisterTurnstileSuccess"
+            @error="handleTurnstileError"
+            @expired="handleRegisterTurnstileExpired"
+            ref="registerTurnstileRef"
+          />
+
           <div class="flex space-x-3">
             <button
               type="submit"
-              :disabled="registerLoading"
+              :disabled="registerLoading || !registerTurnstileToken"
               class="flex-1 btn-primary"
             >
               <Loader2 v-if="registerLoading" class="mr-2 h-4 w-4 animate-spin" />
@@ -181,16 +203,26 @@ import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { useI18n } from '../composables/useI18n';
+import { useTheme } from '../composables/useTheme';
 import { AlertCircle, Loader2 } from 'lucide-vue-next';
+import TurnstileWidget from '../components/TurnstileWidget.vue';
 
 const router = useRouter();
 const { login, register } = useAuth();
 const { t } = useI18n();
+const { isDark } = useTheme();
 
 const loading = ref(false);
 const registerLoading = ref(false);
 const error = ref('');
 const showRegister = ref(false);
+
+// Turnstile configuration
+const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+const turnstileToken = ref('');
+const registerTurnstileToken = ref('');
+const loginTurnstileRef = ref<InstanceType<typeof TurnstileWidget>>();
+const registerTurnstileRef = ref<InstanceType<typeof TurnstileWidget>>();
 
 const form = reactive({
   email: '',
@@ -204,44 +236,100 @@ const registerForm = reactive({
 });
 
 const handleLogin = async () => {
+  if (!turnstileToken.value && turnstileSiteKey) {
+    error.value = t('auth.turnstileRequired');
+    return;
+  }
+
   loading.value = true;
   error.value = '';
   
   try {
-    const result = await login(form.email, form.password);
+    const result = await login(form.email, form.password, turnstileToken.value);
     if (result.success) {
       router.push('/');
     } else {
       error.value = result.error || t('auth.loginFailed');
+      // Reset Turnstile on failure
+      if (loginTurnstileRef.value) {
+        loginTurnstileRef.value.reset();
+        turnstileToken.value = '';
+      }
     }
   } catch (err: any) {
     error.value = err.message || t('messages.error');
+    // Reset Turnstile on error
+    if (loginTurnstileRef.value) {
+      loginTurnstileRef.value.reset();
+      turnstileToken.value = '';
+    }
   } finally {
     loading.value = false;
   }
 };
 
 const handleRegister = async () => {
+  if (!registerTurnstileToken.value && turnstileSiteKey) {
+    error.value = t('auth.turnstileRequired');
+    return;
+  }
+
   registerLoading.value = true;
   error.value = '';
   
   try {
-    const result = await register(registerForm.email, registerForm.password, registerForm.name);
+    const result = await register(registerForm.email, registerForm.password, registerForm.name, registerTurnstileToken.value);
     if (result.success) {
       showRegister.value = false;
       error.value = '';
-      // Auto-login after registration
+      // Auto-login after registration (without requiring another Turnstile)
       const loginResult = await login(registerForm.email, registerForm.password);
       if (loginResult.success) {
         router.push('/');
       }
     } else {
       error.value = result.error || t('auth.registrationFailed');
+      // Reset Turnstile on failure
+      if (registerTurnstileRef.value) {
+        registerTurnstileRef.value.reset();
+        registerTurnstileToken.value = '';
+      }
     }
   } catch (err: any) {
     error.value = err.message || t('messages.error');
+    // Reset Turnstile on error
+    if (registerTurnstileRef.value) {
+      registerTurnstileRef.value.reset();
+      registerTurnstileToken.value = '';
+    }
   } finally {
     registerLoading.value = false;
   }
+};
+
+// Turnstile event handlers
+const handleTurnstileSuccess = (token: string) => {
+  turnstileToken.value = token;
+  error.value = '';
+};
+
+const handleRegisterTurnstileSuccess = (token: string) => {
+  registerTurnstileToken.value = token;
+  error.value = '';
+};
+
+const handleTurnstileError = () => {
+  console.error('Turnstile error:', error);
+  error.value = t('auth.turnstileError');
+};
+
+const handleTurnstileExpired = () => {
+  turnstileToken.value = '';
+  error.value = t('auth.turnstileExpired');
+};
+
+const handleRegisterTurnstileExpired = () => {
+  registerTurnstileToken.value = '';
+  error.value = t('auth.turnstileExpired');
 };
 </script>

@@ -112,7 +112,10 @@
     "alreadyHaveAccount": "पहले से खाता है?",
     "createNewAccount": "नया खाता बनाएं",
     "createAccount": "खाता बनाएं",
-    "backToLogin": "लॉगिन पर वापस जाएं"
+    "backToLogin": "लॉगिन पर वापस जाएं",
+    "turnstileRequired": "कृपया सुरक्षा सत्यापन पूरा करें",
+    "turnstileError": "सुरक्षा सत्यापन असफल। कृपया फिर से कोशिश करें।",
+    "turnstileExpired": "सुरक्षा सत्यापन समाप्त हो गया। कृपया इसे फिर से पूरा करें।"
   },
   "dashboard": {
     "title": "डैशबोर्ड",
