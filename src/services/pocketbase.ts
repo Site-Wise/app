@@ -333,18 +333,21 @@ export const calculatePermissions = (role: 'owner' | 'supervisor' | 'accountant'
 };
 
 export class AuthService {
-  async login(email: string, password: string) {
-    const authData = await pb.collection('users').authWithPassword(email, password);
+  async login(email: string, password: string, turnstileToken?: string) {
+    const authData = await pb.collection('users').authWithPassword(email, password, {
+      turnstileToken
+    });
     return authData;
   }
 
-  async register(email: string, password: string, name: string) {
+  async register(email: string, password: string, name: string, turnstileToken?: string) {
     const data = {
       email,
       password,
       passwordConfirm: password,
       name,
       sites: [], // Initialize with empty sites array
+      turnstileToken
     };
     return await pb.collection('users').create(data);
   }

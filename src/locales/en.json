@@ -117,7 +117,10 @@
     "alreadyHaveAccount": "Already have an account?",
     "createNewAccount": "Create new account",
     "createAccount": "Create Account",
-    "backToLogin": "Back to login"
+    "backToLogin": "Back to login",
+    "turnstileRequired": "Please complete the security verification",
+    "turnstileError": "Security verification failed. Please try again.",
+    "turnstileExpired": "Security verification expired. Please complete it again."
   },
   "dashboard": {
     "title": "Dashboard",

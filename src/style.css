@@ -25,6 +25,10 @@
     @apply btn bg-secondary-600 dark:bg-secondary-500 text-white hover:bg-secondary-700 dark:hover:bg-secondary-600 focus:ring-secondary-500 dark:focus:ring-secondary-400;
   }
   
+  .btn-disabled {
+    @apply btn bg-gray-600 text-white;
+  }
+  
   .btn-outline {
     @apply btn bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:ring-primary-500 dark:focus:ring-primary-400;
   }

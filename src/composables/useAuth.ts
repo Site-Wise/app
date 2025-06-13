@@ -12,9 +12,9 @@ const updateUser = () => {
 export function useAuth() {
   const isAuthenticated = computed(() => !!user.value && authService.isAuthenticated);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, turnstileToken?: string) => {
     try {
-      const authData = await authService.login(email, password);
+      const authData = await authService.login(email, password, turnstileToken);
       user.value = authData.record as unknown as User;
       return { success: true };
     } catch (error: any) {
@@ -22,9 +22,9 @@ export function useAuth() {
     }
   };
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = async (email: string, password: string, name: string, turnstileToken?: string) => {
     try {
-      await authService.register(email, password, name);
+      await authService.register(email, password, name, turnstileToken);
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };

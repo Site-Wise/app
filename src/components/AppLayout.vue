@@ -7,10 +7,10 @@
     <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0" 
          :class="{ '-translate-x-full': !sidebarOpen, 'translate-x-0': sidebarOpen }">
       <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
-        <router-link class="flex items-center space-x-2" to="/">
-          <!-- <HardHat class="h-8 w-8 text-primary-600 dark:text-primary-400" /> -->
-          <img src="/logo.png" class="h-12 dark:bg-slate-400 rounded-lg" alt="SiteWise">
-          <!-- <span class="text-xl font-bold text-gray-900 dark:text-white">SiteWise</span> -->
+        <router-link class="flex items-center" to="/">
+          <img src="/logo.png" alt="SiteWise Logo" class="h-12 rounded-lg" />
+          <span class="ml-2 text-xl font-bold leading-tight text-gray-900 dark:text-white">Site</span>
+          <span class="text-xl font-bold leading-tight text-blue-600">Wise</span>
         </router-link>
         <!-- Close button for mobile -->
         <button
