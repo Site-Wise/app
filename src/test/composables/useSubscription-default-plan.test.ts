@@ -36,7 +36,7 @@ vi.mock('../../services/pocketbase', () => ({
                 is_default: true
               })
             }
-            throw new Error('Plan not found')
+            return Promise.reject(new Error('Plan not found'))
           })
         }
       } else if (name === 'site_subscriptions') {

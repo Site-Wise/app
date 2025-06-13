@@ -71,12 +71,13 @@ vi.mock('../../services/pocketbase', () => {
     serviceBookingService: {
       getAll: vi.fn().mockResolvedValue([])
     },
-    getCurrentSiteId: vi.fn().mockReturnValue('site-1'),
+    getCurrentSiteId: vi.fn().mockReturnValue(null), // Return null to prevent subscription loading
     pb: {
-      collection: vi.fn(() => ({
+      collection: vi.fn((name: string) => ({
         getFirstListItem: vi.fn().mockRejectedValue(new Error('Not found')),
         create: vi.fn().mockResolvedValue({}),
-        getFullList: vi.fn().mockResolvedValue([])
+        getFullList: vi.fn().mockResolvedValue([]),
+        update: vi.fn().mockResolvedValue({})
       }))
     },
     // Export mock data for use in tests
@@ -85,6 +86,29 @@ vi.mock('../../services/pocketbase', () => {
     mockIncomingItem
   }
 })
+
+// Mock the subscription composable to prevent real network calls
+vi.mock('../../composables/useSubscription', () => ({
+  useSubscription: vi.fn(() => ({
+    currentSubscription: { value: null },
+    currentUsage: { value: null },
+    currentPlan: { value: null },
+    usageLimits: { value: null },
+    isLoading: { value: false },
+    error: { value: null },
+    isReadOnly: { value: false },
+    isSubscriptionActive: { value: false },
+    loadSubscription: vi.fn(),
+    createDefaultSubscription: vi.fn(),
+    createFreeTierSubscription: vi.fn(),
+    checkCreateLimit: vi.fn().mockReturnValue(true),
+    incrementUsage: vi.fn(),
+    decrementUsage: vi.fn(),
+    getAllPlans: vi.fn().mockResolvedValue([]),
+    upgradeSubscription: vi.fn(),
+    cancelSubscription: vi.fn()
+  }))
+}))
 
 describe('Data Flow Integration', () => {
   beforeEach(() => {

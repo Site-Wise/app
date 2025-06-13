@@ -34,7 +34,7 @@ vi.mock('../../services/pocketbase', () => {
           }
           // Return null for site_subscriptions and subscription_usage by default (no subscription exists)
           if (name === 'site_subscriptions' || name === 'subscription_usage') {
-            return Promise.resolve(null)
+            return Promise.reject(new Error('No subscription found'))
           }
           return Promise.resolve(items[0] || null)
         }),
