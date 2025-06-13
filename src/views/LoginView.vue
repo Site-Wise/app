@@ -3,7 +3,8 @@
     <div class="max-w-md w-full space-y-8">
       <div>
         <div class="flex items-center justify-center">
-          <HardHat class="h-12 w-12 text-primary-600 dark:text-primary-400" />
+          <!-- <HardHat class="h-12 w-12 text-primary-600 dark:text-primary-400" /> -->
+          <img src="/logo.png" class="h-16 dark:bg-slate-400 rounded-lg" alt="SiteWise">
         </div>
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
           {{ t('auth.loginTitle') }}
@@ -180,7 +181,7 @@ import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { useI18n } from '../composables/useI18n';
-import { HardHat, AlertCircle, Loader2 } from 'lucide-vue-next';
+import { AlertCircle, Loader2 } from 'lucide-vue-next';
 
 const router = useRouter();
 const { login, register } = useAuth();
