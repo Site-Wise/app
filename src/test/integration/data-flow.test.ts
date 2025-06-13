@@ -73,7 +73,7 @@ vi.mock('../../services/pocketbase', () => {
     },
     getCurrentSiteId: vi.fn().mockReturnValue(null), // Return null to prevent subscription loading
     pb: {
-      collection: vi.fn((name: string) => ({
+      collection: vi.fn((_name: string) => ({
         getFirstListItem: vi.fn().mockRejectedValue(new Error('Not found')),
         create: vi.fn().mockResolvedValue({}),
         getFullList: vi.fn().mockResolvedValue([]),
