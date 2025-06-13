@@ -84,4 +84,7 @@ export default defineConfig({
       }
     })
   ],
+  css: {
+    postcss: './postcss.config.js', // if you're using PostCSS
+  },
 })
