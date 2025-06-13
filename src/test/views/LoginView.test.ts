@@ -20,6 +20,8 @@ vi.mock('../../composables/useI18n', () => ({
         'auth.createAccount': 'Create Account',
         'auth.loginFailed': 'Login failed',
         'auth.registrationFailed': 'Registration failed',
+        'auth.backToLogin': 'Back to Login',
+        'auth.turnstileRequired': 'Please complete the security check',
         'common.cancel': 'Cancel',
         'forms.enterEmail': 'Enter email address',
         'forms.enterPassword': 'Enter your password',
@@ -58,11 +60,30 @@ vi.mock('../../composables/useAuth', () => ({
   })
 }))
 
+// Mock the theme composable
+vi.mock('../../composables/useTheme', () => ({
+  useTheme: () => ({
+    isDark: false
+  })
+}))
+
 // Mock Lucide icons
 vi.mock('lucide-vue-next', () => ({
   HardHat: { template: '<div data-testid="hard-hat-icon"></div>' },
   AlertCircle: { template: '<div data-testid="alert-circle-icon"></div>' },
   Loader2: { template: '<div data-testid="loader-icon"></div>' }
+}))
+
+// Mock TurnstileWidget component
+vi.mock('../components/TurnstileWidget.vue', () => ({
+  default: {
+    template: '<div data-testid="turnstile-widget"></div>',
+    emits: ['success', 'error', 'expired'],
+    props: ['siteKey', 'theme'],
+    methods: {
+      reset: vi.fn()
+    }
+  }
 }))
 
 describe('LoginComponent', () => {
@@ -72,12 +93,16 @@ describe('LoginComponent', () => {
     // Reset all mocks before each test
     vi.clearAllMocks()
     
+    // Mock Turnstile environment variable to disable it for tests
+    vi.stubEnv('VITE_TURNSTILE_SITE_KEY', '')
+    
     wrapper = mount(LoginComponent, {
       global: {
         stubs: {
           HardHat: true,
           AlertCircle: true,
-          Loader2: true
+          Loader2: true,
+          TurnstileWidget: true
         }
       }
     })
@@ -105,15 +130,16 @@ describe('LoginComponent', () => {
       expect(wrapper.find('input[name="name"]').exists()).toBe(false)
     })
 
-    it('shows register form when "Create new account" is clicked', async () => {
+    it('shows register form when "Create Account" tab is clicked', async () => {
       const buttons = wrapper.findAll('button')
       const createAccountBtn = buttons.find(btn => 
-        btn.text() === 'Create new account'
+        btn.text() === 'Create Account'
       )
       
       await createAccountBtn!.trigger('click')
+      await nextTick()
       
-      expect(wrapper.find('h3').text()).toBe('Create Account')
+      expect(wrapper.find('h2').text()).toBe('Create Account')
       expect(wrapper.find('input[name="name"]').exists()).toBe(true)
       expect(wrapper.find('#reg-email').exists()).toBe(true)
       expect(wrapper.find('#reg-password').exists()).toBe(true)
@@ -134,9 +160,10 @@ describe('LoginComponent', () => {
     it('requires all fields for registration', async () => {
       const buttons = wrapper.findAll('button')
       const createAccountBtn = buttons.find(btn => 
-        btn.text() === 'Create new account'
+        btn.text() === 'Create Account'
       )
       await createAccountBtn!.trigger('click')
+      await nextTick()
       
       const nameInput = wrapper.find('#reg-name')
       const emailInput = wrapper.find('#reg-email')
@@ -157,7 +184,7 @@ describe('LoginComponent', () => {
       
       await wrapper.find('form').trigger('submit.prevent')
       
-      expect(mockLogin).toHaveBeenCalledWith('test@example.com', 'password123')
+      expect(mockLogin).toHaveBeenCalledWith('test@example.com', 'password123', '')
     })
 
     it('redirects to home page on successful login', async () => {
@@ -218,9 +245,10 @@ describe('LoginComponent', () => {
       // Show register form for these tests
       const buttons = wrapper.findAll('button')
       const createAccountBtn = buttons.find(btn => 
-        btn.text() === 'Create new account'
+        btn.text() === 'Create Account'
       )
       await createAccountBtn!.trigger('click')
+      await nextTick()
     })
 
     it('calls register with correct data when registration form is submitted', async () => {
@@ -230,10 +258,10 @@ describe('LoginComponent', () => {
       await wrapper.find('#reg-email').setValue('john@example.com')
       await wrapper.find('#reg-password').setValue('password123')
       
-      const registerForms = wrapper.findAll('form')
-      await registerForms[1].trigger('submit.prevent')
+      const registerForm = wrapper.find('form')
+      await registerForm.trigger('submit.prevent')
       
-      expect(mockRegister).toHaveBeenCalledWith('john@example.com', 'password123', 'John Doe')
+      expect(mockRegister).toHaveBeenCalledWith('john@example.com', 'password123', 'John Doe', '')
     })
 
     it('auto-logs in user after successful registration', async () => {
@@ -244,10 +272,7 @@ describe('LoginComponent', () => {
       await wrapper.find('#reg-email').setValue('john@example.com')
       await wrapper.find('#reg-password').setValue('password123')
       
-      const registerForm  = wrapper.findAll('form').filter(form => 
-        form.find('#reg-name').exists()
-      )[0]
-      // await wrapper.find('form').trigger('submit.prevent')
+      const registerForm = wrapper.find('form')
       await registerForm.trigger('submit.prevent')
       
       // wait for all promises to resolve
@@ -264,8 +289,8 @@ describe('LoginComponent', () => {
       await wrapper.find('#reg-email').setValue('existing@example.com')
       await wrapper.find('#reg-password').setValue('password123')
       
-      const registerForms = wrapper.findAll('form')
-      await registerForms[1].trigger('submit.prevent')
+      const registerForm = wrapper.find('form')
+      await registerForm.trigger('submit.prevent')
       
       await nextTick()
       
@@ -279,30 +304,25 @@ describe('LoginComponent', () => {
       await wrapper.find('#reg-email').setValue('john@example.com')
       await wrapper.find('#reg-password').setValue('password123')
       
-      const buttons = wrapper.findAll('button')
-      const createAccountBtn = buttons.find(btn => 
-        btn.text() === 'Create Account'
-      )
+      const registerForm = wrapper.find('form')
+      const submitButton = registerForm.find('button[type="submit"]')
       
-      const registerForm  = wrapper.findAll('form').filter(form => 
-        form.find('#reg-name').exists()
-      )[0]
-      // await wrapper.find('form').trigger('submit.prevent')
       await registerForm.trigger('submit.prevent')
-      await createAccountBtn!.trigger('click')
+      await nextTick()
       
-      expect(createAccountBtn!.attributes('disabled')).toBeDefined()
+      expect(submitButton.attributes('disabled')).toBeDefined()
     })
 
-    it('hides register form when cancel button is clicked', async () => {
+    it('hides register form when back to login button is clicked', async () => {
       const buttons = wrapper.findAll('button')
-      const cancelBtn = buttons.find(btn => 
-        btn.text() === 'Cancel'
+      const backBtn = buttons.find(btn => 
+        btn.text() === 'Back to Login'
       )
       
-      await cancelBtn!.trigger('click')
+      await backBtn!.trigger('click')
+      await nextTick()
       
-      expect(wrapper.find('h3').exists()).toBe(false)
+      expect(wrapper.find('h2').text()).toBe('Sign in to SiteWise')
       expect(wrapper.find('#reg-name').exists()).toBe(false)
     })
 
@@ -313,8 +333,8 @@ describe('LoginComponent', () => {
       await wrapper.find('#reg-email').setValue('john@example.com')
       await wrapper.find('#reg-password').setValue('password123')
       
-      const registerForms = wrapper.findAll('form')
-      await registerForms[1].trigger('submit.prevent')
+      const registerForm = wrapper.find('form')
+      await registerForm.trigger('submit.prevent')
       
       await nextTick()
       
@@ -351,14 +371,14 @@ describe('LoginComponent', () => {
     it('displays generic error message for registration errors without specific message', async () => {
       const buttons = wrapper.findAll('button')
       const createAccountBtn = buttons.find(btn => 
-        btn.text() === 'Create new account'
+        btn.text() === 'Create Account'
       )
       await createAccountBtn!.trigger('click')
       
       mockRegister.mockResolvedValue({ success: false })
       
-      const registerForms = wrapper.findAll('form')
-      await registerForms[1].trigger('submit.prevent')
+      const registerForm = wrapper.find('form')
+      await registerForm.trigger('submit.prevent')
       await nextTick()
       
       expect(wrapper.text()).toContain('Registration failed')

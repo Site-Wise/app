@@ -163,8 +163,9 @@ describe('ItemsView', () => {
   })
 
   it('should render add item button', () => {
-    const addButton = wrapper.find('button:contains("Add Item")')
-    expect(addButton.exists()).toBe(true)
+    const addButton = wrapper.findAll('button').find(btn => btn.text().includes('Add Item'))
+    expect(addButton).toBeDefined()
+    expect(addButton!.exists()).toBe(true)
   })
 
   it('should display items in grid', async () => {
@@ -181,8 +182,8 @@ describe('ItemsView', () => {
     await wrapper.vm.$nextTick()
     await new Promise(resolve => setTimeout(resolve, 100))
     
-    const addButton = wrapper.find('button:contains("Add Item")')
-    expect(addButton.exists()).toBe(true)
+    const addButton = wrapper.findAll('button').find(btn => btn.text().includes('Add Item'))
+    expect(addButton).toBeDefined()
     
     await addButton.trigger('click')
     await wrapper.vm.$nextTick()
@@ -211,7 +212,7 @@ describe('ItemsView', () => {
     await new Promise(resolve => setTimeout(resolve, 100))
     
     // Open add modal
-    const addButton = wrapper.find('button:contains("Add Item")')
+    const addButton = wrapper.findAll('button').find(btn => btn.text().includes('Add Item'))!
     await addButton.trigger('click')
     await wrapper.vm.$nextTick()
     

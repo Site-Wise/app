@@ -157,7 +157,7 @@ describe('AppLayout', () => {
     it('should display app logo and name', () => {
       wrapper = createWrapper()
       
-      expect(wrapper.find('img[alt="SiteWise"]').exists()).toBe(true)
+      expect(wrapper.find('img[alt="SiteWise Logo"]').exists()).toBe(true)
       expect(wrapper.find('img[src="/logo.png"]').exists()).toBe(true)
     })
 

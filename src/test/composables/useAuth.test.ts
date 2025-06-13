@@ -44,7 +44,7 @@ describe('useAuth', () => {
     const result = await login('test@example.com', 'password')
     
     expect(result.success).toBe(true)
-    expect(authService.login).toHaveBeenCalledWith('test@example.com', 'password')
+    expect(authService.login).toHaveBeenCalledWith('test@example.com', 'password', undefined)
   })
 
   it('should handle login failure', async () => {
@@ -68,7 +68,7 @@ describe('useAuth', () => {
     const result = await register('new@example.com', 'password', 'New User')
     
     expect(result.success).toBe(true)
-    expect(authService.register).toHaveBeenCalledWith('new@example.com', 'password', 'New User')
+    expect(authService.register).toHaveBeenCalledWith('new@example.com', 'password', 'New User', undefined)
   })
 
   it('should handle registration failure', async () => {
