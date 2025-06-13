@@ -107,8 +107,6 @@ describe('Data Flow Integration', () => {
     await wrapper.vm.$nextTick()
     await new Promise(resolve => setTimeout(resolve, 100))
     
-    // Debug: log the actual rendered content
-    console.log('Rendered content:', wrapper.text())
     
     // Should display item information
     const mockItemLocal = {

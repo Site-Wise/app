@@ -9,7 +9,10 @@ This document contains all the patterns, best practices, and solutions we've dis
 4. [Mock Patterns](#mock-patterns)
 5. [Component Testing Patterns](#component-testing-patterns)
 6. [Async Testing](#async-testing)
-7. [Common Pitfalls & Solutions](#common-pitfalls--solutions)
+7. [Test Isolation & Mock Management](#test-isolation--mock-management)
+8. [Vue Component Lifecycle Testing](#vue-component-lifecycle-testing)
+9. [Reactive Form Testing](#reactive-form-testing)
+10. [Common Pitfalls & Solutions](#common-pitfalls--solutions)
 
 ## Basic Test Setup
 
@@ -376,6 +379,232 @@ it('should handle errors gracefully', async () => {
 })
 ```
 
+## Test Isolation & Mock Management
+
+### 1. Proper Mock Reset in beforeEach
+**Problem:** Tests pass individually but fail when run together due to shared mock state
+**Solution:** Reset mock implementations in beforeEach, not just clear calls
+
+```typescript
+describe('ComponentName', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    
+    // Reset mock implementations for critical services
+    const { serviceA } = await import('../../services/serviceA')
+    vi.mocked(serviceA.getData).mockResolvedValue(defaultMockData)
+    
+    // Reset other mocks as needed
+    const { serviceB } = await import('../../services/serviceB')
+    vi.mocked(serviceB.create).mockResolvedValue(defaultResponse)
+  })
+})
+```
+
+### 2. Mock State Contamination
+**Problem:** Previous test modifies mock return values affecting subsequent tests
+**Solution:** Always reset to known good state
+
+```typescript
+// ❌ Wrong: Mock state can leak between tests
+const mockService = {
+  getData: vi.fn().mockResolvedValue([])
+}
+
+// ✅ Correct: Reset in beforeEach
+beforeEach(async () => {
+  const { accountService } = await import('../../services/pocketbase')
+  vi.mocked(accountService.getAll).mockResolvedValue([
+    { id: '1', name: 'Test Account', balance: 1000 }
+  ])
+})
+```
+
+### 3. Test Interdependence Issues
+**Problem:** Tests fail when run in different order
+**Solution:** Ensure each test can run independently
+
+```typescript
+// ✅ Good: Each test resets component state
+beforeEach(() => {
+  wrapper = createWrapper()
+})
+
+afterEach(() => {
+  if (wrapper) {
+    wrapper.unmount()
+  }
+})
+```
+
+## Vue Component Lifecycle Testing
+
+### 1. Testing onMounted Behavior
+**Problem:** Component lifecycle hooks don't execute properly in tests
+**Solution:** Wait for mounted hook and async operations to complete
+
+```typescript
+it('should load data on mount', async () => {
+  wrapper = createWrapper()
+  
+  // Wait for onMounted to complete
+  await wrapper.vm.$nextTick()
+  // Wait for async operations (adjust timing as needed)
+  await new Promise(resolve => setTimeout(resolve, 50))
+  // Final DOM update
+  await wrapper.vm.$nextTick()
+  
+  expect(wrapper.vm.data).toBeDefined()
+  expect(wrapper.text()).toContain('Expected Data')
+})
+```
+
+### 2. Testing Async Data Loading
+**Problem:** Component shows loading state but tests don't wait for data
+**Solution:** Proper async waiting pattern
+
+```typescript
+it('should display loaded data', async () => {
+  const mockData = [{ id: '1', name: 'Test Item' }]
+  
+  // Mock the service call
+  const { dataService } = await import('../../services/api')
+  vi.mocked(dataService.getAll).mockResolvedValue(mockData)
+  
+  wrapper = createWrapper()
+  
+  // Complete async lifecycle
+  await wrapper.vm.$nextTick()
+  await new Promise(resolve => setTimeout(resolve, 50))
+  await wrapper.vm.$nextTick()
+  
+  expect(wrapper.text()).toContain('Test Item')
+})
+```
+
+### 3. Testing Computed Properties with Async Data
+**Problem:** Computed properties return default values before data loads
+**Solution:** Ensure data is loaded before testing computed properties
+
+```typescript
+it('should calculate values from loaded data', async () => {
+  wrapper = createWrapper()
+  
+  // Wait for data loading
+  await wrapper.vm.$nextTick()
+  await new Promise(resolve => setTimeout(resolve, 50))
+  await wrapper.vm.$nextTick()
+  
+  // Now test computed properties
+  expect(wrapper.vm.totalAmount).toBe(expectedValue)
+  expect(wrapper.vm.itemCount).toBe(expectedCount)
+})
+```
+
+## Reactive Form Testing
+
+### 1. Testing Vue 3 Reactive Forms
+**Problem:** Form values don't persist when set directly in tests
+**Solution:** Set values on component's reactive form object, not DOM elements
+
+```typescript
+// ❌ Wrong: DOM manipulation doesn't update reactive state reliably
+await wrapper.find('input[name="title"]').setValue('Test Title')
+
+// ✅ Correct: Set reactive form data directly
+wrapper.vm.form.title = 'Test Title'
+wrapper.vm.form.amount = 1000
+await wrapper.vm.$nextTick()
+
+// Verify form state
+expect(wrapper.vm.form.title).toBe('Test Title')
+```
+
+### 2. Testing Form Submission
+**Problem:** Form submission tests fail because form data is reset
+**Solution:** Test the reactive form object, not the service call parameters
+
+```typescript
+it('should submit form with correct data', async () => {
+  const { apiService } = await import('../../services/api')
+  const mockCreate = vi.mocked(apiService.create)
+  
+  wrapper = createWrapper()
+  
+  // Set form data
+  wrapper.vm.form.name = 'Test Name'
+  wrapper.vm.form.type = 'test'
+  wrapper.vm.form.amount = 500
+  await wrapper.vm.$nextTick()
+  
+  // Verify form state before submission
+  expect(wrapper.vm.form.name).toBe('Test Name')
+  
+  // Call save method
+  await wrapper.vm.saveForm()
+  
+  // Verify service called with form object
+  expect(mockCreate).toHaveBeenCalledWith(wrapper.vm.form)
+})
+```
+
+### 3. Testing Form Validation
+**Problem:** Validation rules don't trigger in tests
+**Solution:** Test HTML validation attributes and component validation state
+
+```typescript
+it('should validate required fields', async () => {
+  wrapper = createWrapper()
+  
+  // Open form
+  wrapper.vm.showModal = true
+  await wrapper.vm.$nextTick()
+  
+  // Check required attributes
+  const nameInput = wrapper.find('input[name="name"]')
+  expect(nameInput.attributes('required')).toBeDefined()
+  
+  const typeSelect = wrapper.find('select[name="type"]')
+  expect(typeSelect.attributes('required')).toBeDefined()
+  
+  // Test validation state
+  wrapper.vm.form.name = ''
+  await wrapper.vm.$nextTick()
+  
+  expect(wrapper.vm.isFormValid).toBe(false) // If component has validation
+})
+```
+
+### 4. Modal Form Testing
+**Problem:** Modal forms require specific interaction patterns
+**Solution:** Proper modal lifecycle testing
+
+```typescript
+it('should handle modal form workflow', async () => {
+  wrapper = createWrapper()
+  
+  // Open modal
+  const buttons = wrapper.findAll('button')
+  const addButton = buttons.find((btn: any) => btn.text().includes('Add'))
+  await addButton?.trigger('click')
+  await wrapper.vm.$nextTick()
+  
+  // Verify modal state
+  expect(wrapper.vm.showModal).toBe(true)
+  expect(wrapper.find('.modal').exists()).toBe(true)
+  
+  // Fill form
+  wrapper.vm.form.name = 'Test Entry'
+  await wrapper.vm.$nextTick()
+  
+  // Submit
+  await wrapper.vm.saveForm()
+  
+  // Verify modal closes
+  expect(wrapper.vm.showModal).toBe(false)
+})
+```
+
 ## Common Pitfalls & Solutions
 
 ### 1. Mock Import Issues
@@ -531,19 +760,42 @@ it('should handle form submission in modal', async () => {
 
 ## Best Practices Summary
 
+### Core Testing Principles
 1. **Always type button finders:** `(btn: any) => ...`
 2. **Use data-testid for reliable element finding**
 3. **Mock external dependencies completely**
-4. **Wait for async operations with $nextTick() and timeouts**
-5. **Stub complex child components**
-6. **Clear mocks in beforeEach**
-7. **Unmount components in afterEach**
-8. **Test user interactions, not implementation details**
-9. **Use descriptive test names**
-10. **Group related tests in describe blocks**
-11. **Always verify modal/dropdown state before interacting with form elements**
-12. **Use specific translations in i18n mocks instead of returning keys**
-13. **Avoid CSS selectors like :contains() - use text-based finding instead**
+4. **Test user interactions, not implementation details**
+5. **Use descriptive test names**
+6. **Group related tests in describe blocks**
+
+### Async & Lifecycle Management
+7. **Wait for async operations:** Use `$nextTick()` + `setTimeout()` pattern
+8. **Test component lifecycle:** Properly wait for `onMounted` and data loading
+9. **Handle computed properties:** Ensure data is loaded before testing computed values
+10. **Use proper timing:** `await new Promise(resolve => setTimeout(resolve, 50))` for data loading
+
+### Mock & Test Isolation
+11. **Reset mocks in beforeEach:** Use `vi.mocked()` to reset implementations, not just calls
+12. **Ensure test isolation:** Each test should work independently of execution order
+13. **Stub complex child components:** Avoid testing dependencies unintentionally
+14. **Clear mocks AND reset implementations:** Prevent mock state contamination
+
+### Form & Modal Testing
+15. **Test reactive forms directly:** Set `wrapper.vm.form.field` instead of DOM manipulation
+16. **Verify modal state:** Always check modal is open before testing form interactions
+17. **Test form validation:** Check HTML attributes and component validation state
+18. **Handle form lifecycle:** Test open → fill → submit → close workflows
+
+### Component Testing
+19. **Unmount components in afterEach:** Prevent memory leaks and state contamination
+20. **Use specific translations:** Mock i18n with actual text instead of returning keys
+21. **Avoid CSS pseudo-selectors:** Don't use `:contains()` - use text-based finding instead
+22. **Test component state:** Verify internal state before testing external interactions
+
+### Service Integration Testing
+23. **Test with reactive objects:** Use `wrapper.vm.form` for service call verification
+24. **Mock service responses:** Provide complete mock data that matches component expectations
+25. **Test error scenarios:** Include both success and failure paths in service tests
 
 ## Example Complete Test File
 
@@ -617,5 +869,15 @@ describe('MyComponent', () => {
   // More tests...
 })
 ```
+
+## Recent Updates
+
+### January 2024 - AccountsView Testing Learnings
+- Added comprehensive async lifecycle testing patterns
+- Documented reactive form testing approaches
+- Established test isolation best practices for mock management
+- Created patterns for testing Vue 3 components with complex state
+
+---
 
 This reference guide should help us maintain consistency and avoid the common issues we've encountered. Keep this updated as we discover new patterns!

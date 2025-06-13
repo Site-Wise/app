@@ -361,51 +361,6 @@ describe('PWAPrompt', () => {
     })
   })
 
-  describe('Multiple Prompts Handling', () => {
-    // TODO: Fix multiple prompts tests - requires proper usePWA mocking
-    /*
-    it('should handle install and update prompts simultaneously', async () => {
-      // Mock both install and update available
-      vi.doMock('../../composables/usePWA', () => ({
-        usePWA: () => ({
-          isInstallable: computed(() => true),
-          updateAvailable: computed(() => true), // Enable update
-          isOnline: computed(() => true),
-          installApp: mockInstallApp,
-          updateApp: mockUpdateApp
-        })
-      }))
-      
-      // Re-import the component with new mock
-      const { default: PWAPromptBoth } = await import('../../components/PWAPrompt.vue')
-      wrapper = mount(PWAPromptBoth)
-      
-      expect(wrapper.find('.fixed.bottom-4').exists()).toBe(true) // Install prompt
-      expect(wrapper.find('.fixed.top-4').exists()).toBe(true) // Update prompt
-    })
-
-    it('should handle all three indicators when offline with install and update', async () => {
-      // Mock all three conditions
-      vi.doMock('../../composables/usePWA', () => ({
-        usePWA: () => ({
-          isInstallable: computed(() => true),
-          updateAvailable: computed(() => true), // Enable update
-          isOnline: computed(() => false), // Set offline
-          installApp: mockInstallApp,
-          updateApp: mockUpdateApp
-        })
-      }))
-      
-      // Re-import the component with new mock
-      const { default: PWAPromptAll } = await import('../../components/PWAPrompt.vue')
-      wrapper = mount(PWAPromptAll)
-      
-      expect(wrapper.find('.fixed.bottom-4').exists()).toBe(true) // Install
-      expect(wrapper.find('.bg-blue-50').exists()).toBe(true) // Update
-      expect(wrapper.find('.bg-yellow-50').exists()).toBe(true) // Offline
-    })
-    */
-  })
 
   describe('Dark Mode Support', () => {
     it('should have dark mode classes for install prompt', () => {

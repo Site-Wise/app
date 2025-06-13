@@ -127,8 +127,9 @@ describe('QuotationsView', () => {
   })
 
   it('should render add quotation button', () => {
-    const addButton = wrapper.find('button:contains("Add Quotation")')
-    expect(addButton.exists()).toBe(true)
+    const buttons = wrapper.findAll('button')
+    const addButton = buttons.find((btn: any) => btn.text().includes('Add Quotation'))
+    expect(addButton?.exists()).toBe(true)
   })
 
   it('should display quotations in table', async () => {
@@ -152,8 +153,12 @@ describe('QuotationsView', () => {
   })
 
   it('should show add modal when add button is clicked', async () => {
-    const addButton = wrapper.find('button:contains("Add Quotation")')
-    await addButton.trigger('click')
+    const buttons = wrapper.findAll('button')
+    const addButton = buttons.find((btn: any) => btn.text().includes('Add Quotation'))
+    expect(addButton?.exists()).toBe(true)
+    
+    await addButton?.trigger('click')
+    await wrapper.vm.$nextTick()
     
     expect(wrapper.find('.fixed').exists()).toBe(true)
     expect(wrapper.text()).toContain('Add Quotation')
@@ -178,8 +183,11 @@ describe('QuotationsView', () => {
     })
     
     // Open add modal
-    const addButton = wrapper.find('button:contains("Add Quotation")')
-    await addButton.trigger('click')
+    const buttons = wrapper.findAll('button')
+    const addButton = buttons.find((btn: any) => btn.text().includes('Add Quotation'))
+    expect(addButton?.exists()).toBe(true)
+    await addButton?.trigger('click')
+    await wrapper.vm.$nextTick()
     
     // Fill form
     const selects = wrapper.findAll('select')
