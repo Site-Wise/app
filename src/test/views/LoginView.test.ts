@@ -96,8 +96,8 @@ describe('LoginComponent', () => {
       expect(wrapper.find('button[type="submit"]').text()).toBe('Sign in')
     })
 
-    it('renders the hard hat icon', () => {
-      expect(wrapper.find('[data-testid="hard-hat-icon"]').exists()).toBe(true)
+    it('renders the logo image', () => {
+      expect(wrapper.find('img[alt="SiteWise"]').exists()).toBe(true)
     })
 
     it('does not show register form initially', () => {

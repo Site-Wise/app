@@ -126,12 +126,15 @@ describe('SiteSelector', () => {
     it('should show create site modal when create button is clicked', async () => {
       wrapper = mount(SiteSelector)
       
+      // First open the dropdown
       await wrapper.find('button').trigger('click')
       
-      const createButton = wrapper.find('button:contains("Create New Site")')
-      expect(createButton.exists()).toBe(true)
+      // Find the create button by text content
+      const buttons = wrapper.findAll('button')
+      const createButton = buttons.find((btn: any) => btn.text().includes('Create New Site'))
+      expect(createButton?.exists()).toBe(true)
       
-      await createButton.trigger('click')
+      await createButton?.trigger('click')
       
       expect(wrapper.find('.fixed.inset-0').exists()).toBe(true)
       expect(wrapper.text()).toContain('Create New Site')
@@ -143,8 +146,9 @@ describe('SiteSelector', () => {
       await wrapper.find('button').trigger('click')
       expect(wrapper.vm.dropdownOpen).toBe(true)
       
-      const createButton = wrapper.find('button:contains("Create New Site")')
-      await createButton.trigger('click')
+      const buttons = wrapper.findAll('button')
+      const createButton = buttons.find((btn: any) => btn.text().includes('Create New Site'))
+      await createButton?.trigger('click')
       
       expect(wrapper.vm.dropdownOpen).toBe(false)
       expect(wrapper.vm.showCreateModal).toBe(true)
@@ -155,17 +159,33 @@ describe('SiteSelector', () => {
       
       // Open create modal
       await wrapper.find('button').trigger('click')
-      const createButton = wrapper.find('button:contains("Create New Site")')
-      await createButton.trigger('click')
+      const buttons = wrapper.findAll('button')
+      const createButton = buttons.find((btn: any) => btn.text().includes('Create New Site'))
+      await createButton?.trigger('click')
       
-      // Fill form
-      await wrapper.find('input[placeholder="Enter site name"]').setValue('New Test Site')
-      await wrapper.find('textarea').setValue('A new test site description')
-      await wrapper.find('input[placeholder="0"]').setValue('150')
-      await wrapper.findAll('input[placeholder="0"]')[1].setValue('75000')
+      // Wait for modal to render
+      await wrapper.vm.$nextTick()
+      
+      // Verify modal is visible
+      expect(wrapper.vm.showCreateModal).toBe(true)
+      
+      // Fill form fields
+      const nameInput = wrapper.find('input[placeholder="Enter site name"]')
+      expect(nameInput.exists()).toBe(true)
+      await nameInput.setValue('New Test Site')
+      
+      const descTextarea = wrapper.find('textarea')
+      expect(descTextarea.exists()).toBe(true)
+      await descTextarea.setValue('A new test site description')
+      
+      const numberInputs = wrapper.findAll('input[type="number"]')
+      expect(numberInputs.length).toBeGreaterThanOrEqual(2)
+      await numberInputs[0].setValue('150')
+      await numberInputs[1].setValue('75000')
       
       // Submit form
-      await wrapper.find('form').trigger('submit')
+      const form = wrapper.find('form')
+      if (form.exists()) await form.trigger('submit')
       
       expect(mockCreateSite).toHaveBeenCalledWith({
         name: 'New Test Site',

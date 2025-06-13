@@ -41,7 +41,15 @@ vi.mock('../../composables/useI18n', () => ({
   useI18n: () => ({
     currentLanguage: computed(() => 'en'),
     setLanguage: vi.fn(),
-    t: vi.fn().mockImplementation((key: string) => key),
+    t: vi.fn().mockImplementation((key: string) => {
+      const translations: Record<string, string> = {
+        'nav.manage_users': 'Manage Users',
+        'subscription.title': 'Subscription',
+        'users.viewAllInvitations': 'View All Invitations',
+        'nav.logout': 'Logout'
+      }
+      return translations[key] || key
+    }),
     availableLanguages: [
       { code: 'en', name: 'English', nativeName: 'English' },
       { code: 'hi', name: 'Hindi', nativeName: 'हिंदी' }

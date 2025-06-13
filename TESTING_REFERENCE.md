@@ -146,6 +146,14 @@ const activeItem = menuItems.find((item: any) => item.classes().includes('active
 // Finding by content and classes
 const errorMessage = wrapper.findAll('.error')
   .find((el: any) => el.text().includes('validation failed'))
+
+// Finding buttons by text content (avoid :contains() - it doesn't work)
+// ❌ Wrong:
+const button = wrapper.find('button:contains("Create New Site")')
+
+// ✅ Correct:
+const buttons = wrapper.findAll('button')
+const createButton = buttons.find((btn: any) => btn.text().includes('Create New Site'))
 ```
 
 ## Mock Patterns
@@ -157,7 +165,9 @@ vi.mock('../../composables/useI18n', () => ({
     t: (key: string, params?: any) => {
       const translations: Record<string, string> = {
         'auth.signIn': 'Sign In',
-        'auth.signOut': 'Sign Out'
+        'auth.signOut': 'Sign Out',
+        'nav.manage_users': 'Manage Users',
+        'subscription.title': 'Subscription'
       }
       let result = translations[key] || key
       if (params) {
@@ -379,7 +389,40 @@ vi.mock('../../composables/useAuth', () => ({ /* mock */ }))
 import Component from '../../components/Component.vue'
 ```
 
-### 2. Reactive Data Not Updating
+### 2. Subscription Mocking with PocketBase
+**Problem:** useSubscription tests fail with "getFirstListItem is not a function"
+**Solution:** Use complete PocketBase mock with all required methods
+
+```typescript
+vi.mock('../../services/pocketbase', () => {
+  const collections = new Map()
+  collections.set('subscription_plans', [
+    { id: 'plan-1', name: 'Free', is_active: true, features: {...}, price: 0, currency: 'INR' }
+  ])
+  collections.set('site_subscriptions', [])
+  collections.set('subscription_usage', [])
+  
+  return {
+    pb: {
+      collection: vi.fn((name: string) => ({
+        getFullList: vi.fn().mockImplementation(() => Promise.resolve(collections.get(name) || [])),
+        getFirstListItem: vi.fn().mockImplementation((filter: string) => {
+          const items = collections.get(name) || []
+          if (filter.includes('name="Free"')) {
+            return Promise.resolve(items.find((item: any) => item.name === 'Free'))
+          }
+          return Promise.resolve(items[0] || null)
+        }),
+        create: vi.fn().mockResolvedValue({}),
+        update: vi.fn().mockResolvedValue({})
+      }))
+    },
+    getCurrentSiteId: vi.fn().mockReturnValue(null)
+  }
+})
+```
+
+### 3. Reactive Data Not Updating
 **Problem:** Component doesn't reflect data changes
 **Solution:** Use `await wrapper.vm.$nextTick()` and proper reactivity
 
@@ -397,7 +440,7 @@ it('should update when data changes', async () => {
 })
 ```
 
-### 3. Component Stubbing
+### 4. Component Stubbing
 **Problem:** Child components cause issues in tests
 **Solution:** Stub child components
 
@@ -414,7 +457,7 @@ wrapper = mount(Component, {
 })
 ```
 
-### 4. Event Handling Issues
+### 5. Event Handling Issues
 **Problem:** Events not triggering properly
 **Solution:** Use proper event triggering and waiting
 
@@ -429,7 +472,7 @@ await wrapper.find('input').trigger('input', { target: { value: 'test' } })
 await wrapper.find('form').trigger('submit')
 ```
 
-### 5. Testing Computed Properties
+### 6. Testing Computed Properties
 ```typescript
 it('should compute values correctly', async () => {
   wrapper = mount(Component, {
@@ -446,6 +489,46 @@ it('should compute values correctly', async () => {
 })
 ```
 
+### 7. Modal Testing and Form Interactions
+**Problem:** Forms inside modals not found or values not set
+**Solution:** Ensure modal is open and use proper element finding
+
+```typescript
+it('should handle form submission in modal', async () => {
+  wrapper = mount(Component)
+  
+  // 1. Open modal first
+  await wrapper.find('button').trigger('click')
+  const buttons = wrapper.findAll('button')
+  const openModalButton = buttons.find((btn: any) => btn.text().includes('Create'))
+  await openModalButton?.trigger('click')
+  
+  // 2. Wait for modal to render
+  await wrapper.vm.$nextTick()
+  expect(wrapper.vm.showModal).toBe(true)
+  
+  // 3. Fill form fields with existence checks
+  const nameInput = wrapper.find('input[placeholder="Enter name"]')
+  expect(nameInput.exists()).toBe(true)
+  await nameInput.setValue('Test Value')
+  
+  const numberInputs = wrapper.findAll('input[type="number"]')
+  expect(numberInputs.length).toBeGreaterThanOrEqual(1)
+  await numberInputs[0].setValue('123')
+  
+  // 4. Submit form
+  const form = wrapper.find('form')
+  expect(form.exists()).toBe(true)
+  await form.trigger('submit')
+  
+  // 5. Verify submission
+  expect(mockSubmitFunction).toHaveBeenCalledWith({
+    name: 'Test Value',
+    number: 123
+  })
+})
+```
+
 ## Best Practices Summary
 
 1. **Always type button finders:** `(btn: any) => ...`
@@ -458,6 +541,9 @@ it('should compute values correctly', async () => {
 8. **Test user interactions, not implementation details**
 9. **Use descriptive test names**
 10. **Group related tests in describe blocks**
+11. **Always verify modal/dropdown state before interacting with form elements**
+12. **Use specific translations in i18n mocks instead of returning keys**
+13. **Avoid CSS selectors like :contains() - use text-based finding instead**
 
 ## Example Complete Test File
 

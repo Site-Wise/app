@@ -2,18 +2,64 @@ import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { useSubscription } from '../../composables/useSubscription';
 import { pb, getCurrentSiteId } from '../../services/pocketbase';
 
-// Mock PocketBase
-vi.mock('../../services/pocketbase', () => ({
-  pb: {
-    collection: vi.fn(() => ({
-      getFirstListItem: vi.fn().mockResolvedValue(null),
-      getFullList: vi.fn().mockResolvedValue([]),
-      create: vi.fn().mockResolvedValue({}),
-      update: vi.fn().mockResolvedValue({})
-    }))
-  },
-  getCurrentSiteId: vi.fn().mockReturnValue(null) // Return null to prevent automatic loading
-}));
+// Mock PocketBase - simplified approach
+vi.mock('../../services/pocketbase', () => {
+  const collections = new Map()
+  
+  // Initialize with mock data
+  collections.set('subscription_plans', [
+    { id: 'plan-1', name: 'Free', is_active: true, features: { max_items: 1, max_vendors: 1, max_incoming_deliveries: 5, max_service_bookings: 5, max_payments: 5, max_sites: 1 }, price: 0, currency: 'INR' },
+    { id: 'plan-2', name: 'Pro', is_active: true, features: { max_items: -1, max_vendors: -1, max_incoming_deliveries: -1, max_service_bookings: -1, max_payments: -1, max_sites: 3 }, price: 29.99, currency: 'INR' }
+  ])
+  collections.set('site_subscriptions', [])
+  collections.set('subscription_usage', [])
+  
+  return {
+    pb: {
+      collection: vi.fn((name: string) => ({
+        getFullList: vi.fn().mockImplementation(() => {
+          const items = collections.get(name) || []
+          return Promise.resolve(items)
+        }),
+        getFirstListItem: vi.fn().mockImplementation((filter: string) => {
+          const items = collections.get(name) || []
+          // Simple filter parsing for testing
+          if (filter.includes('name="Free"') || filter.includes("name='Free'")) {
+            const freePlan = items.find((item: any) => item.name === 'Free')
+            return Promise.resolve(freePlan)
+          }
+          if (filter.includes('is_active=true') && name === 'subscription_plans') {
+            const activePlan = items.find((item: any) => item.is_active === true)
+            return Promise.resolve(activePlan)
+          }
+          // Return null for site_subscriptions and subscription_usage by default (no subscription exists)
+          if (name === 'site_subscriptions' || name === 'subscription_usage') {
+            return Promise.resolve(null)
+          }
+          return Promise.resolve(items[0] || null)
+        }),
+        create: vi.fn().mockImplementation((data: any) => {
+          const newItem = { ...data, id: `${name}-${Date.now()}` }
+          const items = collections.get(name) || []
+          items.push(newItem)
+          collections.set(name, items)
+          return Promise.resolve(newItem)
+        }),
+        update: vi.fn().mockImplementation((id: string, data: any) => {
+          const items = collections.get(name) || []
+          const index = items.findIndex((item: any) => item.id === id)
+          if (index !== -1) {
+            items[index] = { ...items[index], ...data }
+            collections.set(name, items)
+            return Promise.resolve(items[index])
+          }
+          throw new Error('Item not found')
+        })
+      }))
+    },
+    getCurrentSiteId: vi.fn().mockReturnValue(null) // Return null to prevent automatic loading
+  }
+});
 
 // Mock data
 const mockFreePlan = {

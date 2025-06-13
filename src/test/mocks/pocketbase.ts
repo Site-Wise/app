@@ -153,10 +153,12 @@ export const createMockPocketBase = () => {
   collections.set('site_users', [mockSiteUser])
   collections.set('site_invitations', [mockSiteInvitation])
   collections.set('subscription_plans', [
-    { id: 'plan-1', name: 'Free', is_active: true, features: [], price: 0 },
-    { id: 'plan-2', name: 'Pro', is_active: true, features: [], price: 29.99 }
+    { id: 'plan-1', name: 'Free', is_active: true, features: { max_items: 1, max_vendors: 1, max_incoming_deliveries: 5, max_service_bookings: 5, max_payments: 5, max_sites: 1 }, price: 0, currency: 'INR' },
+    { id: 'plan-2', name: 'Pro', is_active: true, features: { max_items: -1, max_vendors: -1, max_incoming_deliveries: -1, max_service_bookings: -1, max_payments: -1, max_sites: 3 }, price: 29.99, currency: 'INR' }
   ])
   collections.set('subscriptions', [])
+  collections.set('site_subscriptions', [])
+  collections.set('subscription_usage', [])
   
   return {
     authStore: {
@@ -208,14 +210,22 @@ export const createMockPocketBase = () => {
         collections.set(name, filteredItems)
         return Promise.resolve(true)
       }),
-      getFirstListItem: vi.fn().mockImplementation((filter: string) => {
+      getFirstListItem: vi.fn().mockImplementation((filter: string, _options?: any) => {
         const items = collections.get(name) || []
         // Simple filter parsing for testing
-        if (filter.includes('name="Free"')) {
+        if (filter.includes('name="Free"') || filter.includes("name='Free'")) {
           const freePlan = items.find((item: any) => item.name === 'Free')
           return Promise.resolve(freePlan)
         }
-        return Promise.resolve(items[0])
+        if (filter.includes('is_active=true') && name === 'subscription_plans') {
+          const activePlan = items.find((item: any) => item.is_active === true)
+          return Promise.resolve(activePlan)
+        }
+        // Return null for site_subscriptions and subscription_usage by default (no subscription exists)
+        if (name === 'site_subscriptions' || name === 'subscription_usage') {
+          return Promise.resolve(null)
+        }
+        return Promise.resolve(items[0] || null)
       }),
       authWithPassword: vi.fn().mockResolvedValue({
         record: mockUser,
