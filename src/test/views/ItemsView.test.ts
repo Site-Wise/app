@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, VueWrapper } from '@vue/test-utils'
 
 // All mocks must be at the top before any imports
 vi.mock('../../composables/useI18n', () => ({
@@ -163,7 +163,7 @@ describe('ItemsView', () => {
   })
 
   it('should render add item button', () => {
-    const addButton = wrapper.findAll('button').find(btn => btn.text().includes('Add Item'))
+    const addButton = wrapper.findAll('button').find((btn: VueWrapper<Element>) => btn.text().includes('Add Item'))
     expect(addButton).toBeDefined()
     expect(addButton!.exists()).toBe(true)
   })
@@ -182,7 +182,7 @@ describe('ItemsView', () => {
     await wrapper.vm.$nextTick()
     await new Promise(resolve => setTimeout(resolve, 100))
     
-    const addButton = wrapper.findAll('button').find(btn => btn.text().includes('Add Item'))
+    const addButton = wrapper.findAll('button').find((btn: VueWrapper<Element>) => btn.text().includes('Add Item'))
     expect(addButton).toBeDefined()
     
     await addButton.trigger('click')
@@ -212,7 +212,7 @@ describe('ItemsView', () => {
     await new Promise(resolve => setTimeout(resolve, 100))
     
     // Open add modal
-    const addButton = wrapper.findAll('button').find(btn => btn.text().includes('Add Item'))!
+    const addButton = wrapper.findAll('button').find((btn: VueWrapper<Element>) => btn.text().includes('Add Item'))!
     await addButton.trigger('click')
     await wrapper.vm.$nextTick()
     
