@@ -1,0 +1,96 @@
+name: ❓ Question
+description: Ask a question about SiteWise
+title: "[Question]: "
+labels: ["question", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for your question! Please provide as much context as possible to help us assist you.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please verify these steps before asking
+      options:
+        - label: I have searched existing issues and discussions
+          required: true
+        - label: I have checked the documentation and user guide
+          required: true
+        - label: I have looked at the FAQ section
+          required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Question Category
+      description: What is your question about?
+      options:
+        - Installation and Setup
+        - Configuration
+        - Using Features
+        - Troubleshooting
+        - Best Practices
+        - Performance
+        - Security
+        - Mobile App
+        - API/Integrations
+        - Contributing
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like to know?
+      placeholder: Please ask your question clearly and provide context...
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and Background
+      description: Provide relevant background information
+      placeholder: |
+        - What are you trying to accomplish?
+        - What have you tried so far?
+        - What specific part are you struggling with?
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Information
+      description: Relevant technical details (if applicable)
+      placeholder: |
+        - SiteWise version
+        - Operating system
+        - Browser
+        - Self-hosted or using hosted version
+        - Any relevant configuration
+
+  - type: textarea
+    id: attempts
+    attributes:
+      label: What Have You Tried?
+      description: What steps have you already taken to solve this?
+      placeholder: |
+        - Documentation sections you've read
+        - Solutions you've attempted
+        - Error messages you've encountered
+
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Additional Information
+      description: Anything else that might be relevant
+      placeholder: |
+        - Screenshots (if helpful)
+        - Error logs
+        - Related issues or discussions
+        - Urgency of the question

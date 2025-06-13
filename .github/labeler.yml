@@ -1,0 +1,128 @@
+# Pull request labeler configuration
+# See https://github.com/actions/labeler
+
+# Frontend changes
+frontend:
+  - changed-files:
+    - any-glob-to-any-file: 
+      - 'src/**/*.vue'
+      - 'src/**/*.ts'
+      - 'src/**/*.js'
+      - 'src/components/**/*'
+      - 'src/views/**/*'
+      - 'src/composables/**/*'
+
+# Styling changes
+styling:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/**/*.css'
+      - 'tailwind.config.js'
+      - 'postcss.config.js'
+
+# Testing changes
+testing:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/test/**/*'
+      - '**/*.test.ts'
+      - '**/*.test.js'
+      - 'vitest.config.ts'
+      - 'src/test/**/*'
+
+# Documentation changes
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '*.md'
+      - 'docs/**/*'
+      - '.github/**/*.md'
+
+# Configuration changes
+config:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '*.config.js'
+      - '*.config.ts'
+      - 'tsconfig*.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.env*'
+
+# Build and CI changes
+ci:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/workflows/**/*'
+      - '.github/actions/**/*'
+      - 'Dockerfile'
+      - 'docker-compose*.yml'
+
+# Dependencies
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'npm-shrinkwrap.json'
+
+# Security related
+security:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'SECURITY.md'
+      - '.github/workflows/security.yml'
+
+# Mobile/PWA changes
+mobile:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'public/manifest.json'
+      - 'public/sw.js'
+      - 'src/composables/usePWA.ts'
+
+# Internationalization
+i18n:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/locales/**/*'
+      - 'src/composables/useI18n.ts'
+
+# Database/Schema changes
+database:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'pocketbase-schema.md'
+      - 'pocketbase-api-rules.md'
+
+# User Interface
+ui:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/components/**/*'
+      - 'src/views/**/*'
+
+# Authentication
+auth:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/composables/useAuth.ts'
+      - 'src/views/LoginView.vue'
+      - 'src/router/index.ts'
+
+# Performance
+performance:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'vite.config.ts'
+      - 'src/**/*.lazy.ts'
+
+# Accessibility
+accessibility:
+  - changed-files:
+    - any-glob-to-any-file: 
+      - 'src/**/*.vue'
+    - all-globs-to-all-files:
+      - 'aria-*'
+      - 'role='
+      - 'tabindex'

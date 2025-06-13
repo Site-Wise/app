@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/site-wise/app/blob/main/DOCUMENTATION.md
+    about: Read the technical documentation
+  - name: 👥 User Guide
+    url: https://github.com/site-wise/app/blob/main/USER_GUIDE.md
+    about: Learn how to use SiteWise
+  - name: 🔒 Security Issues
+    url: mailto:security@sitewise.in
+    about: Report sensitive security vulnerabilities privately
+  - name: 💬 Discussions
+    url: https://github.com/site-wise/app/discussions
+    about: Ask questions and discuss with the community
+  - name: 🌐 Website
+    url: https://sitewise.in
+    about: Visit the official SiteWise website

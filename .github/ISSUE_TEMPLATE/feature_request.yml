@@ -1,0 +1,172 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a new feature! Please provide as much detail as possible.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please verify these steps before submitting
+      options:
+        - label: I have searched existing issues to ensure this feature hasn't been requested
+          required: true
+        - label: I have checked the roadmap and documentation
+          required: true
+        - label: This feature would benefit the broader SiteWise community
+          required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Feature Summary
+      description: A clear and concise description of the feature you'd like to see
+      placeholder: Describe the feature in one or two sentences...
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem would this feature solve?
+      placeholder: |
+        Is your feature request related to a problem? Please describe.
+        e.g., "I'm always frustrated when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see
+      placeholder: |
+        Describe how you envision this feature working.
+        Include details about:
+        - User interface changes
+        - New functionality
+        - User workflow
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: Which area of SiteWise would this feature affect?
+      options:
+        - Items Management
+        - Services Management
+        - Vendor Management
+        - Financial Management
+        - User Management
+        - Dashboard/Analytics
+        - Mobile Experience
+        - API/Integrations
+        - Security
+        - Performance
+        - Accessibility
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: user-type
+    attributes:
+      label: Primary User Type
+      description: Which user role would benefit most from this feature?
+      options:
+        - Site Owner
+        - Supervisor
+        - Accountant
+        - All Users
+        - Administrators
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority Level
+      description: How important is this feature to you?
+      options:
+        - Low - Nice to have
+        - Medium - Would improve workflow
+        - High - Significant impact on productivity
+        - Critical - Blocking current work
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Use Cases
+      description: Describe specific scenarios where this feature would be used
+      placeholder: |
+        1. When a user needs to...
+        2. During the process of...
+        3. To improve...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions?
+      placeholder: |
+        Describe any alternative solutions or features you've considered.
+        Why would the proposed solution be better?
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Mockups/Wireframes
+      description: |
+        If you have any mockups, wireframes, or examples from other apps, please share them.
+        You can paste images directly into this field.
+      placeholder: Drag and drop images here or click to upload...
+
+  - type: textarea
+    id: technical-considerations
+    attributes:
+      label: Technical Considerations
+      description: |
+        Do you have any thoughts on how this might be implemented?
+        Any potential challenges or considerations?
+      placeholder: |
+        - Database changes needed
+        - UI/UX considerations
+        - Performance implications
+        - Third-party integrations
+
+  - type: checkboxes
+    id: implementation
+    attributes:
+      label: Implementation Willingness
+      description: Would you be willing to help implement this feature?
+      options:
+        - label: I'd like to implement this feature myself
+        - label: I can help with testing and feedback
+        - label: I can help with documentation
+        - label: I can provide design/mockups
+        - label: I can only report the feature request
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: |
+        Add any other context, examples, or screenshots about the feature request.
+        - Similar features in other apps
+        - Industry standards or best practices
+        - Regulatory requirements
+      placeholder: Any additional information...

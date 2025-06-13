@@ -1,0 +1,117 @@
+name: 🔒 Security Issue
+description: Report a security vulnerability (use for non-sensitive issues only)
+title: "[Security]: "
+labels: ["security", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **IMPORTANT**: Only use this template for **non-sensitive** security issues that can be discussed publicly.
+        
+        For sensitive security vulnerabilities, please email security@sitewise.in directly.
+        See our [Security Policy](../SECURITY.md) for more information.
+
+  - type: checkboxes
+    id: security-checklist
+    attributes:
+      label: Security Checklist
+      description: Please confirm these items before submitting
+      options:
+        - label: This is NOT a sensitive security vulnerability that could be exploited
+          required: true
+        - label: I have read the Security Policy
+          required: true
+        - label: This issue can be discussed publicly without risk
+          required: true
+
+  - type: dropdown
+    id: security-type
+    attributes:
+      label: Security Issue Type
+      description: What type of security issue is this?
+      options:
+        - Security Best Practices
+        - Dependency Vulnerability (public)
+        - Configuration Issue
+        - Documentation Security Gap
+        - Security Feature Request
+        - Other (specify below)
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Issue Description
+      description: Describe the security issue or concern
+      placeholder: |
+        Provide a clear description of the security issue.
+        Remember: only include information that is safe to discuss publicly.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity Assessment
+      description: How would you rate the severity of this issue?
+      options:
+        - Low - Minor security enhancement
+        - Medium - Security improvement needed
+        - High - Significant security concern
+        - Critical - Major security issue (consider private disclosure)
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Potential Impact
+      description: What could happen if this issue is not addressed?
+      placeholder: Describe the potential security impact...
+    validations:
+      required: true
+
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Suggested Mitigation
+      description: Do you have suggestions for addressing this issue?
+      placeholder: |
+        - Recommended fixes or improvements
+        - Security best practices to implement
+        - Configuration changes needed
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Details
+      description: Relevant environment information (avoid sensitive details)
+      placeholder: |
+        - SiteWise version
+        - Deployment type (self-hosted, etc.)
+        - Browser/OS (if relevant)
+        - General configuration details
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Any relevant security advisories, CVEs, or documentation
+      placeholder: |
+        - CVE numbers
+        - Security advisory links
+        - OWASP guidelines
+        - Industry best practices
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other information about this security issue
+      placeholder: |
+        - How you discovered this issue
+        - Steps you've already taken
+        - Related security concerns
