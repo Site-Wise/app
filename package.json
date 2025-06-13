@@ -1,7 +1,7 @@
 {
-  "name": "construction-tracker",
+  "name": "site-wise",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,6 +13,7 @@
     "test:watch": "vitest --watch"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.1.10",
     "chart.js": "^4.4.9",
     "lucide-vue-next": "^0.515.0",
     "pocketbase": "^0.26.1",
@@ -28,9 +29,9 @@
     "@vitest/ui": "^3.2.3",
     "@vue/test-utils": "^2.4.1",
     "autoprefixer": "^10.4.16",
+    "happy-dom": "^18.0.1",
     "postcss": "^8.5.5",
     "tailwindcss": "^4.1.10",
-    "happy-dom": "^18.0.1",
     "typescript": "^5.5.3",
     "vite": "^6.3.5",
     "vite-plugin-pwa": "^1.0.0",
