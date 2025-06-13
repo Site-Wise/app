@@ -53,7 +53,7 @@ const mockSubscriptionData = {
 }
 
 // Mock the useSubscription composable
-const mockUseSubscription = vi.fn(() => mockSubscriptionData)
+const mockUseSubscription = vi.fn().mockReturnValue(mockSubscriptionData)
 
 vi.mock('../../composables/useSubscription', () => ({
   useSubscription: mockUseSubscription
@@ -133,7 +133,7 @@ describe('SubscriptionBanner', () => {
     })
 
     it('should hide banner when dismissed and not persistent', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true)
       })
@@ -149,7 +149,7 @@ describe('SubscriptionBanner', () => {
     })
 
     it('should show banner even when dismissed if persistent', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true)
       })
@@ -165,7 +165,7 @@ describe('SubscriptionBanner', () => {
 
   describe('Banner Messages', () => {
     it('should show subscription expired message when inactive', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isSubscriptionActive: computed(() => false)
       })
@@ -176,7 +176,7 @@ describe('SubscriptionBanner', () => {
     })
 
     it('should show free tier limit message for free plan in read-only', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true),
         currentPlan: computed(() => ({
@@ -205,7 +205,7 @@ describe('SubscriptionBanner', () => {
     })
 
     it('should show subscription limit message for paid plan in read-only', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true),
         currentPlan: computed(() => ({
@@ -244,7 +244,7 @@ describe('SubscriptionBanner', () => {
         payments: { current: 300, max: 200, exceeded: true }
       }
 
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true),
         usageLimits: computed(() => mockUsageLimits)
@@ -269,7 +269,7 @@ describe('SubscriptionBanner', () => {
         payments: { current: 100, max: 200, exceeded: false }
       }
 
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true),
         usageLimits: computed(() => mockUsageLimits)
@@ -284,7 +284,7 @@ describe('SubscriptionBanner', () => {
     })
 
     it('should handle null usage limits gracefully', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true),
         usageLimits: computed(() => null)
@@ -298,7 +298,7 @@ describe('SubscriptionBanner', () => {
 
   describe('Banner Structure and Styling', () => {
     it('should have correct amber styling', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true)
       })
@@ -312,7 +312,7 @@ describe('SubscriptionBanner', () => {
     })
 
     it('should display warning icon', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true)
       })
@@ -324,7 +324,7 @@ describe('SubscriptionBanner', () => {
     })
 
     it('should have responsive max-width container', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true)
       })
@@ -346,7 +346,7 @@ describe('SubscriptionBanner', () => {
     })
 
     it('should hide upgrade button when upgrade is pending', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true)
       })
@@ -370,7 +370,7 @@ describe('SubscriptionBanner', () => {
 
   describe('Dismiss Functionality', () => {
     it('should show dismiss button when canDismiss is true', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true)
       })
@@ -382,7 +382,7 @@ describe('SubscriptionBanner', () => {
     })
 
     it('should not show dismiss button when canDismiss is false', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true)
       })
@@ -394,7 +394,7 @@ describe('SubscriptionBanner', () => {
     })
 
     it('should dismiss banner when dismiss button is clicked', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true)
       })
@@ -408,7 +408,7 @@ describe('SubscriptionBanner', () => {
     })
 
     it('should have correct dismiss button styling', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true)
       })
@@ -423,7 +423,7 @@ describe('SubscriptionBanner', () => {
 
   describe('Exposed Methods', () => {
     it('should expose resetDismissed method', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true)
       })
@@ -439,7 +439,7 @@ describe('SubscriptionBanner', () => {
 
   describe('Accessibility', () => {
     it('should have proper ARIA label for dismiss button', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true)
       })
@@ -451,7 +451,7 @@ describe('SubscriptionBanner', () => {
     })
 
     it('should have proper semantic structure', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true)
       })
@@ -469,7 +469,7 @@ describe('SubscriptionBanner', () => {
 
   describe('Props Handling', () => {
     it('should use default prop values', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true)
       })
@@ -481,7 +481,7 @@ describe('SubscriptionBanner', () => {
     })
 
     it('should respect custom prop values', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true)
       })
@@ -498,7 +498,7 @@ describe('SubscriptionBanner', () => {
 
   describe('Edge Cases', () => {
     it('should handle missing current plan gracefully', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true),
         currentPlan: computed(() => null)
@@ -510,7 +510,7 @@ describe('SubscriptionBanner', () => {
     })
 
     it('should handle plan without name gracefully', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true),
         currentPlan: computed(() => ({
@@ -547,7 +547,7 @@ describe('SubscriptionBanner', () => {
         payments: { current: 100, max: 200, exceeded: false }
       }
 
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true),
         usageLimits: computed(() => mockUsageLimits)
@@ -564,7 +564,7 @@ describe('SubscriptionBanner', () => {
 
   describe('Component State', () => {
     it('should properly track dismissed state', async () => {
-      vi.mocked(await import('../../composables/useSubscription')).useSubscription = () => ({
+      mockUseSubscription.mockReturnValue({
         ...mockSubscriptionData,
         isReadOnly: computed(() => true)
       })
