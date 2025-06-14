@@ -95,9 +95,9 @@ This Code of Conduct applies within all community spaces, and also applies when 
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the community leaders responsible for enforcement at:
 
-**Primary Contact**: [conduct@sitewise.app] (replace with actual email)
+**Primary Contact**: [conduct@sitewise.in]
 
-**Alternative Contact**: [maintainer-email@domain.com] (replace with actual email)
+**Alternative Contact**: [maintainer@sitewise.in]
 
 ### What to Include
 
@@ -153,7 +153,7 @@ Community leaders will follow these Community Impact Guidelines in determining t
 
 If you believe you have been unfairly sanctioned under this Code of Conduct, you may appeal by:
 
-1. **Submitting an Appeal**: Email [appeals@sitewise.app] within 30 days
+1. **Submitting an Appeal**: Email [appeals@sitewise.in] within 30 days
 2. **Include Information**: Explain why you believe the action was unfair
 3. **Review Process**: A different set of maintainers will review your appeal
 4. **Decision**: The appeals team will make a final decision within 14 days
@@ -223,9 +223,9 @@ We believe in recognizing positive contributions to our community. We may highli
 
 ## Contact Information
 
-* **Code of Conduct Team**: [conduct@sitewise.app]
-* **Project Maintainers**: [maintainers@sitewise.app]
-* **Security Issues**: [security@sitewise.app]
+* **Code of Conduct Team**: [conduct@sitewise.in]
+* **Project Maintainers**: [maintainers@sitewise.in]
+* **Security Issues**: [security@sitewise.in]
 
 ## Attribution
 

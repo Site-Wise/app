@@ -19,7 +19,7 @@ We take the security of SiteWise seriously. If you discover a security vulnerabi
 
 Instead, please report security vulnerabilities by:
 
-1. **Email**: Send details to [security@sitewise.app] (replace with your actual security email)
+1. **Email**: Send details to [security@sitewise.in] (replace with your actual security email)
 2. **Subject Line**: Use "SECURITY: [Brief Description]"
 3. **Include**: 
    - Detailed description of the vulnerability
@@ -171,7 +171,7 @@ We recommend using these tools during development:
 
 For security-related inquiries:
 
-- **Security Email**: [security@sitewise.app] (replace with actual email)
+- **Security Email**: [security@sitewise.in]
 - **Response Time**: Within 24 hours
 - **PGP Key**: [Link to PGP key if available]
 

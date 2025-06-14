@@ -111,10 +111,10 @@ npm run dev
 
 🎉 **That's it!** Visit `http://localhost:5173` to see SiteWise in action.
 
-### 🐳 **Docker Deployment**
+### 🐳 **Docker Deployment (TODO)**
 
 ```bash
-# Quick start with Docker (TODO)
+# Quick start with Docker
 docker pull sitewise/app:latest
 docker run -p 8080:8080 sitewise/app:latest
 
@@ -178,7 +178,7 @@ graph TB
 
 ---
 
-## 🎮 **Try the Demo**
+<!-- ## 🎮 **Try the Demo**
 
 Experience SiteWise with our interactive demo:
 
@@ -194,7 +194,7 @@ Experience SiteWise with our interactive demo:
 - Multiple user roles to explore
 
 ---
-
+ -->
 ## 📚 **Documentation**
 
 | Document | Description |
@@ -209,8 +209,8 @@ Experience SiteWise with our interactive demo:
 
 ## 🚀 **Deployment Options**
 
-### ☁️ **Cloud Platforms**
-
+### ☁️ **Cloud Platforms (TODO)**
+<!-- 
 <table>
 <tr>
 <td align="center">
@@ -234,9 +234,9 @@ Experience SiteWise with our interactive demo:
   <a href="#railway-deployment">Deploy Guide</a>
 </td>
 </tr>
-</table>
+</table> -->
 
-### 🏠 **Self-Hosted**
+### 🏠 **Self-Hosted (TODO)**
 
 Perfect for organizations requiring complete data control:
 
@@ -254,7 +254,7 @@ SiteWise speaks your language:
 |----------|--------|------------|
 | 🇺🇸 English | ✅ Complete | Core Team |
 | 🇮🇳 Hindi | ✅ Complete | Core Team |
-| 🇪🇸 Spanish | 🔄 In Progress | [Contribute](CONTRIBUTING.md) |
+| 🇪🇸 Spanish | 📝 Planned | [Contribute](CONTRIBUTING.md) |
 | 🇫🇷 French | 📝 Planned | [Contribute](CONTRIBUTING.md) |
 | 🇩🇪 German | 📝 Planned | [Contribute](CONTRIBUTING.md) |
 
@@ -336,20 +336,20 @@ See our [Security Policy](SECURITY.md) for more details.
 
 ## 📈 **Roadmap**
 
-### 🎯 **Current Focus (Q1 2024)**
+### 🎯 **Current Focus (Q3 2025)**
 - [ ] Advanced reporting and analytics dashboard
 - [ ] Mobile app for iOS and Android
 - [ ] API for third-party integrations
 - [ ] Enhanced photo management with AI tagging
 
-### 🚀 **Upcoming Features (Q2-Q3 2024)**
+### 🚀 **Upcoming Features (Q4 2025)**
 - [ ] Real-time collaboration tools
 - [ ] Advanced workflow automation
-- [ ] Integration with accounting software (QuickBooks, Xero)
+- [ ] Integration with accounting software (Tally)
 - [ ] Project timeline and Gantt charts
 - [ ] Budget forecasting and variance analysis
 
-### 🔮 **Future Vision (2024+)**
+### 🔮 **Future Vision (2026+)**
 - [ ] AI-powered cost estimation
 - [ ] IoT device integration for equipment tracking
 - [ ] Blockchain-based contract management
@@ -376,7 +376,7 @@ Join our vibrant community of construction professionals and developers:
 <td align="center">
   <a href="https://discord.gg/YOUR_INVITE_LINK">
     <img src="https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png" width="32" height="32"><br>
-    <strong>Discord Server</strong>
+    <strong>Discord Server (TODO)</strong>
   </a>
 </td>
 <td align="center">
@@ -385,12 +385,12 @@ Join our vibrant community of construction professionals and developers:
     <strong>Twitter</strong>
   </a>
 </td>
-<td align="center">
+<!-- <td align="center">
   <a href="https://linkedin.com/company/sitewise">
     <img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" width="32" height="32"><br>
     <strong>LinkedIn</strong>
   </a>
-</td>
+</td> -->
 </tr>
 </table>
 
@@ -403,13 +403,13 @@ Join our vibrant community of construction professionals and developers:
 
 ---
 
-## 🏆 **Recognition**
+## 🏆 **Recognition (TO HAPPEN!)**
 
 SiteWise has been recognized by:
 
-- 🥇 **Open Source Construction Software of the Year 2024** - BuildTech Awards
+<!-- - 🥇 **Open Source Construction Software of the Year 2024** - BuildTech Awards
 - 🌟 **Top 10 Construction Management Tools** - ConstructionDive
-- 🚀 **Most Promising Startup** - TechCrunch Construction Summit
+- 🚀 **Most Promising Startup** - TechCrunch Construction Summit -->
 
 ---
 
@@ -434,7 +434,7 @@ SiteWise is proudly open source and available under the [MIT License](LICENSE).
 
 ```
 MIT License - see the LICENSE file for details.
-Copyright (c) 2024 SiteWise
+Copyright (c) 2025 SiteWise
 ```
 
 ---
