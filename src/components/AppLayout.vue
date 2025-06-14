@@ -66,39 +66,13 @@
             <!-- Quick action buttons in header for desktop -->
             <div class="hidden md:flex items-center space-x-2">
               <button
-                @click="quickAction('item')"
+                v-for="action in fabActions"
+                :key="action.type"
+                @click="quickAction(action.type)"
                 class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
               >
-                <Package class="mr-1 h-4 w-4" />
-                Add Item
-              </button>
-              <button
-                @click="quickAction('vendor')"
-                class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
-              >
-                <Users class="mr-1 h-4 w-4" />
-                Add Vendor
-              </button>
-              <button
-                @click="quickAction('account')"
-                class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
-              >
-                <CreditCard class="mr-1 h-4 w-4" />
-                Add Account
-              </button>
-              <button
-                @click="quickAction('delivery')"
-                class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
-              >
-                <TruckIcon class="mr-1 h-4 w-4" />
-                Record Delivery
-              </button>
-              <button
-                @click="quickAction('payment')"
-                class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
-              >
-                <DollarSign class="mr-1 h-4 w-4" />
-                Record Payment
+                <component :is="action.icon" class="mr-1 h-4 w-4" />
+                <span class="text-sm font-medium">{{ t(action.labelKey) }}</span>
               </button>
             </div>
           </div>
@@ -282,19 +256,17 @@ const userMenuRef = ref<HTMLElement | null>(null);
 const navigation = computed(() => [
   { name: 'Dashboard', nameKey: 'nav.dashboard', to: '/', icon: BarChart3, current: route.name === 'Dashboard' },
   { name: 'Items', nameKey: 'nav.items', to: '/items', icon: Package, current: route.name === 'Items' },
-  { name: 'Vendors', nameKey: 'nav.vendors', to: '/vendors', icon: Users, current: route.name === 'Vendors' },
-  { name: 'Accounts', nameKey: 'nav.accounts', to: '/accounts', icon: CreditCard, current: route.name === 'Accounts' },
-  { name: 'Quotations', nameKey: 'nav.quotations', to: '/quotations', icon: FileText, current: route.name === 'Quotations' },
   { name: 'Services', nameKey: 'nav.services', to: '/services', icon: Wrench, current: route.name === 'Services' },
-  { name: 'Service Bookings', nameKey: 'nav.serviceBookings', to: '/service-bookings', icon: Calendar, current: route.name === 'ServiceBookings' },
+  { name: 'Vendors', nameKey: 'nav.vendors', to: '/vendors', icon: Users, current: route.name === 'Vendors' },
+  { name: 'Quotations', nameKey: 'nav.quotations', to: '/quotations', icon: FileText, current: route.name === 'Quotations' },
   { name: 'Incoming Items', nameKey: 'nav.incoming', to: '/incoming', icon: TruckIcon, current: route.name === 'Incoming' },
+  { name: 'Service Bookings', nameKey: 'nav.serviceBookings', to: '/service-bookings', icon: Calendar, current: route.name === 'ServiceBookings' },
+  { name: 'Accounts', nameKey: 'nav.accounts', to: '/accounts', icon: CreditCard, current: route.name === 'Accounts' },
   { name: 'Payments', nameKey: 'nav.payments', to: '/payments', icon: CreditCard, current: route.name === 'Payments' },
 ]);
 
 const fabActions = [
-  { type: 'item', labelKey: 'quickActions.addItem', icon: Package },
-  { type: 'vendor', labelKey: 'quickActions.addVendor', icon: Users },
-  { type: 'account', labelKey: 'quickActions.addAccount', icon: CreditCard },
+  { type: 'serviceBooking', labelKey: 'quickActions.recordServiceBooking', icon: Calendar },
   { type: 'delivery', labelKey: 'quickActions.recordDelivery', icon: TruckIcon },
   { type: 'payment', labelKey: 'quickActions.recordPayment', icon: DollarSign },
 ];
@@ -325,6 +297,7 @@ const quickAction = (type: string) => {
     item: '/items',
     vendor: '/vendors',
     account: '/accounts',
+    serviceBooking: '/service-bookings',
     delivery: '/incoming',
     payment: '/payments'
   };

@@ -395,6 +395,7 @@
     "addItem": "Add Item",
     "addVendor": "Add Vendor",
     "addAccount": "Add Account",
+    "recordServiceBooking": "Record Service Booking",
     "recordDelivery": "Record Delivery",
     "recordPayment": "Record Payment"
   },
