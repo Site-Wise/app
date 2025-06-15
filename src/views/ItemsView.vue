@@ -145,6 +145,7 @@ import { useRouter } from 'vue-router';
 import { Package, Plus, Edit2, Trash2, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
+import { useToast } from '../composables/useToast';
 import { 
   itemService, 
   incomingItemService,
@@ -154,6 +155,7 @@ import {
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly, refreshUsage } = useSubscription();
+const { success, error } = useToast();
 
 const router = useRouter();
 const items = ref<Item[]>([]);
@@ -213,7 +215,7 @@ const viewItemDetail = (itemId: string) => {
 
 const handleAddItem = () => {
   if (!canCreateItem.value) {
-    alert(t('subscription.banner.freeTierLimitReached'));
+    error(t('subscription.banner.freeTierLimitReached'));
     return;
   }
   showAddModal.value = true;
@@ -224,18 +226,21 @@ const saveItem = async () => {
   try {
     if (editingItem.value) {
       await itemService.update(editingItem.value.id!, form);
+      success(t('messages.updateSuccess', { item: t('common.item') }));
     } else {
       if (!checkCreateLimit('items')) {
-        alert(t('subscription.banner.freeTierLimitReached'));
+        error(t('subscription.banner.freeTierLimitReached'));
         return;
       }
       await itemService.create(form);
+      success(t('messages.createSuccess', { item: t('common.item') }));
       // Usage is automatically incremented by PocketBase hooks
     }
     await loadData();
     closeModal();
-  } catch (error) {
-    console.error('Error saving item:', error);
+  } catch (err) {
+    console.error('Error saving item:', err);
+    error(t('messages.error'));
   } finally {
     loading.value = false;
   }
@@ -254,17 +259,19 @@ const editItem = (item: Item) => {
 
 const deleteItem = async (id: string) => {
   if (!canEditDelete.value) {
-    alert(t('subscription.banner.freeTierLimitReached'));
+    error(t('subscription.banner.freeTierLimitReached'));
     return;
   }
   if (confirm(t('messages.confirmDelete', { item: t('common.item') }))) {
     try {
       await itemService.delete(id);
+      success(t('messages.deleteSuccess', { item: t('common.item') }));
       await loadData();
       // Usage is automatically decremented by PocketBase hooks
       await refreshUsage();
-    } catch (error) {
-      console.error('Error deleting item:', error);
+    } catch (err) {
+      console.error('Error deleting item:', err);
+      error(t('messages.error'));
     }
   }
 };

@@ -335,6 +335,7 @@ import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
 import { TruckIcon, Plus, Edit2, Trash2, Loader2, Eye, X } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
+import { useToast } from '../composables/useToast';
 import PhotoGallery from '../components/PhotoGallery.vue';
 import { 
   incomingItemService, 
@@ -353,6 +354,7 @@ interface FileWithPreview {
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly, refreshUsage } = useSubscription();
+const { success, error } = useToast();
 
 const incomingItems = ref<IncomingItem[]>([]);
 const items = ref<Item[]>([]);
@@ -464,15 +466,15 @@ const handlePhotoDeleted = async (photoIndex: number) => {
     
     // Reload data to ensure consistency
     await loadData();
-  } catch (error) {
-    console.error('Error deleting photo:', error);
-    alert(t('messages.error'));
+  } catch (err) {
+    console.error('Error deleting photo:', err);
+    error(t('messages.error'));
   }
 };
 
 const handleAddIncoming = () => {
   if (!canCreateIncoming.value) {
-    alert(t('subscription.banner.freeTierLimitReached'));
+    error(t('subscription.banner.freeTierLimitReached'));
     return;
   }
   showAddModal.value = true;
@@ -490,12 +492,14 @@ const saveItem = async () => {
     
     if (editingItem.value) {
       savedItem = await incomingItemService.update(editingItem.value.id!, data);
+      success(t('messages.updateSuccess', { item: t('incoming.delivery') }));
     } else {
       if (!checkCreateLimit('incoming_deliveries')) {
-        alert(t('subscription.banner.freeTierLimitReached'));
+        error(t('subscription.banner.freeTierLimitReached'));
         return;
       }
       savedItem = await incomingItemService.create(data);
+      success(t('messages.createSuccess', { item: t('incoming.delivery') }));
       // Usage is automatically incremented by PocketBase hooks
     }
     
@@ -510,9 +514,9 @@ const saveItem = async () => {
     
     await loadData();
     closeModal();
-  } catch (error) {
-    console.error('Error saving incoming item:', error);
-    alert(t('messages.error'));
+  } catch (err) {
+    console.error('Error saving incoming item:', err);
+    error(t('messages.error'));
   } finally {
     loading.value = false;
   }
@@ -540,18 +544,19 @@ const viewItem = (item: IncomingItem) => {
 
 const deleteItem = async (id: string) => {
   if (!canEditDelete.value) {
-    alert(t('subscription.banner.freeTierLimitReached'));
+    error(t('subscription.banner.freeTierLimitReached'));
     return;
   }
   if (confirm(t('messages.confirmDelete', { item: t('incoming.delivery') }))) {
     try {
       await incomingItemService.delete(id);
+      success(t('messages.deleteSuccess', { item: t('incoming.delivery') }));
       await loadData();
       // Usage is automatically decremented by PocketBase hooks
       await refreshUsage();
-    } catch (error) {
-      console.error('Error deleting incoming item:', error);
-      alert(t('messages.error'));
+    } catch (err) {
+      console.error('Error deleting incoming item:', err);
+      error(t('messages.error'));
     }
   }
 };

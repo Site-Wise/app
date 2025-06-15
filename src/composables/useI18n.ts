@@ -446,7 +446,7 @@ export function useI18n() {
     document.documentElement.lang = lang;
   };
 
-  const t = (key: string, _values?: Record<string, unknown>): string => {
+  const t = (key: string, values?: Record<string, unknown>): string => {
     const keys = key.split('.');
     let value: any = translations[currentLanguage.value];
     
@@ -457,6 +457,13 @@ export function useI18n() {
         console.warn(`Translation key not found: ${key} for language: ${currentLanguage.value}`);
         return key; // Return the key if translation is not found
       }
+    }
+    
+    if (typeof value === 'string' && values) {
+      // Replace placeholders in the format {key} with values
+      return value.replace(/\{(\w+)\}/g, (match, key) => {
+        return values[key] !== undefined ? String(values[key]) : match;
+      });
     }
     
     return typeof value === 'string' ? value : key;

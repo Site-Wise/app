@@ -184,6 +184,7 @@ import { useRouter } from 'vue-router';
 import { Users, Plus, Edit2, Trash2, Loader2, User, Mail, Phone, MapPin, X } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
+import { useToast } from '../composables/useToast';
 import { 
   vendorService, 
   incomingItemService, 
@@ -197,6 +198,7 @@ import {
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly, refreshUsage } = useSubscription();
+const { success, error } = useToast();
 
 const router = useRouter();
 const vendors = ref<Vendor[]>([]);
@@ -273,7 +275,7 @@ const loadData = async () => {
 
 const handleAddVendor = () => {
   if (!canCreateVendor.value) {
-    alert(t('subscription.banner.freeTierLimitReached'));
+    error(t('subscription.banner.freeTierLimitReached'));
     return;
   }
   showAddModal.value = true;
@@ -284,19 +286,21 @@ const saveVendor = async () => {
   try {
     if (editingVendor.value) {
       await vendorService.update(editingVendor.value.id!, form);
+      success(t('messages.updateSuccess', { item: t('common.vendor') }));
     } else {
       if (!checkCreateLimit('vendors')) {
-        alert(t('subscription.banner.freeTierLimitReached'));
+        error(t('subscription.banner.freeTierLimitReached'));
         return;
       }
       await vendorService.create(form);
+      success(t('messages.createSuccess', { item: t('common.vendor') }));
       // Usage is automatically incremented by PocketBase hooks
     }
     await loadData();
     closeModal();
-  } catch (error) {
-    console.error('Error saving vendor:', error);
-    alert('Error saving vendor. Please try again.');
+  } catch (err) {
+    console.error('Error saving vendor:', err);
+    error(t('messages.error'));
   } finally {
     loading.value = false;
   }
@@ -316,17 +320,19 @@ const editVendor = (vendor: Vendor) => {
 
 const deleteVendor = async (id: string) => {
   if (!canEditDelete.value) {
-    alert(t('subscription.banner.freeTierLimitReached'));
+    error(t('subscription.banner.freeTierLimitReached'));
     return;
   }
-  if (confirm(t('messages.confirmDelete', { vendor: t('common.vendor') }))) {
+  if (confirm(t('messages.confirmDelete', { item: t('common.vendor') }))) {
     try {
       await vendorService.delete(id);
+      success(t('messages.deleteSuccess', { item: t('common.vendor') }));
       await loadData();
       // Usage is automatically decremented by PocketBase hooks
       await refreshUsage();
-    } catch (error) {
-      console.error('Error deleting vendor:', error);
+    } catch (err) {
+      console.error('Error deleting vendor:', err);
+      error(t('messages.error'));
     }
   }
 };
