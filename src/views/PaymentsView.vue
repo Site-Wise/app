@@ -256,6 +256,7 @@ import {
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
+import { useToast } from '../composables/useToast';
 import { 
   paymentService, 
   vendorService,
@@ -271,6 +272,7 @@ import {
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
+const { success, error } = useToast();
 
 interface VendorWithOutstanding extends Vendor {
   outstandingAmount: number;
@@ -395,7 +397,7 @@ const loadVendorOutstanding = () => {
 
 const handleAddPayment = () => {
   if (!canCreatePayment.value) {
-    alert(t('subscription.banner.freeTierLimitReached'));
+    error(t('subscription.banner.freeTierLimitReached'));
     return;
   }
   showAddModal.value = true;
@@ -403,17 +405,19 @@ const handleAddPayment = () => {
 
 const savePayment = async () => {
   if (!checkCreateLimit('payments')) {
-    alert(t('subscription.banner.freeTierLimitReached'));
+    error(t('subscription.banner.freeTierLimitReached'));
     return;
   }
   loading.value = true;
   try {
     await paymentService.create(form);
+    success(t('messages.createSuccess', { item: t('common.payment') }));
     // Usage is automatically incremented by PocketBase hooks
     await loadData();
     closeModal();
-  } catch (error) {
-    console.error('Error saving payment:', error);
+  } catch (err) {
+    console.error('Error saving payment:', err);
+    error(t('messages.error'));
   } finally {
     loading.value = false;
   }
@@ -421,7 +425,7 @@ const savePayment = async () => {
 
 const quickPayment = (vendor: VendorWithOutstanding) => {
   if (!canCreatePayment.value) {
-    alert(t('subscription.banner.freeTierLimitReached'));
+    error(t('subscription.banner.freeTierLimitReached'));
     return;
   }
   form.vendor = vendor.id!;
