@@ -153,7 +153,7 @@ import {
 } from '../services/pocketbase';
 
 const { t } = useI18n();
-const { checkCreateLimit, incrementUsage, decrementUsage, isReadOnly } = useSubscription();
+const { checkCreateLimit, isReadOnly, refreshUsage } = useSubscription();
 
 const router = useRouter();
 const items = ref<Item[]>([]);
@@ -230,7 +230,7 @@ const saveItem = async () => {
         return;
       }
       await itemService.create(form);
-      await incrementUsage('items');
+      // Usage is automatically incremented by PocketBase hooks
     }
     await loadData();
     closeModal();
@@ -260,8 +260,9 @@ const deleteItem = async (id: string) => {
   if (confirm(t('messages.confirmDelete', { item: t('common.item') }))) {
     try {
       await itemService.delete(id);
-      await decrementUsage('items');
       await loadData();
+      // Usage is automatically decremented by PocketBase hooks
+      await refreshUsage();
     } catch (error) {
       console.error('Error deleting item:', error);
     }

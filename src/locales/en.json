@@ -619,6 +619,28 @@
       "reactivateSuccess": "Subscription reactivated successfully"
     },
     "cancelNote": "Your subscription will remain active until {date}. You can reactivate anytime before then.",
-    "confirmCancelButton": "Cancel Subscription"
+    "confirmCancelButton": "Cancel Subscription",
+    "reactivate": "Reactivate",
+    "resubscribe": "Resubscribe", 
+    "subscribe": "Subscribe",
+    "switchPlan": "Switch Plan",
+    "switchToFree": "Switch to Free",
+    "free": "Free",
+    "planType": "Plan Type",
+    "freeForever": "Free Forever",
+    "cancellationScheduled": "Subscription will end on {date}",
+    "cancellationNote": "You can reactivate your subscription anytime before the end date.",
+    "upgradeError": "Failed to upgrade subscription",
+    "reactivateError": "Failed to reactivate subscription",
+    "reactivateSuccess": "Subscription reactivated successfully",
+    "loading": "Loading subscription...",
+    "loadingPlans": "Loading plans...",
+    "upgrading": "Processing...",
+    "cancelling": "Cancelling...",
+    "limitExceeded": "Limit exceeded",
+    "noSubscription": "No active subscription",
+    "getStarted": "Get Started",
+    "cancelSubscription": "Cancel Subscription",
+    "confirmCancel": "Are you sure you want to cancel your subscription?"
   }
 }

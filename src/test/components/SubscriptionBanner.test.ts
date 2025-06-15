@@ -42,8 +42,6 @@ vi.mock('../../composables/useSubscription', () => ({
     createDefaultSubscription: vi.fn().mockResolvedValue(undefined),
     createFreeTierSubscription: vi.fn().mockResolvedValue(undefined),
     checkCreateLimit: vi.fn().mockReturnValue(true),
-    incrementUsage: vi.fn().mockResolvedValue(undefined),
-    decrementUsage: vi.fn().mockResolvedValue(undefined),
     getAllPlans: vi.fn().mockResolvedValue([]),
     upgradeSubscription: vi.fn().mockResolvedValue(undefined),
     cancelSubscription: vi.fn().mockResolvedValue(undefined)
@@ -147,11 +145,18 @@ describe('SubscriptionBanner', () => {
       createDefaultSubscription: vi.fn().mockResolvedValue(undefined),
       createFreeTierSubscription: vi.fn().mockResolvedValue(undefined),
       checkCreateLimit: vi.fn().mockReturnValue(true),
-      incrementUsage: vi.fn().mockResolvedValue(undefined),
-      decrementUsage: vi.fn().mockResolvedValue(undefined),
+      refreshUsage: vi.fn().mockResolvedValue(undefined),
+      isUnlimited: vi.fn().mockReturnValue(false),
       getAllPlans: vi.fn().mockResolvedValue([]),
       upgradeSubscription: vi.fn().mockResolvedValue(undefined),
-      cancelSubscription: vi.fn().mockResolvedValue(undefined)
+      cancelSubscription: vi.fn().mockResolvedValue(undefined),
+      reactivateSubscription: vi.fn().mockResolvedValue(undefined),
+      isSubscriptionCancelled: computed(() => false),
+      canReactivateSubscription: computed(() => false),
+      subscriptionStatus: computed(() => 'active'),
+      initializeRazorpayCheckout: vi.fn().mockResolvedValue(undefined),
+      createRazorpayOrder: vi.fn().mockResolvedValue({}),
+      handlePaymentSuccess: vi.fn().mockResolvedValue(undefined)
     })
 
     wrapper = createWrapper()
@@ -200,11 +205,18 @@ describe('SubscriptionBanner', () => {
       createDefaultSubscription: vi.fn().mockResolvedValue(undefined),
       createFreeTierSubscription: vi.fn().mockResolvedValue(undefined),
       checkCreateLimit: vi.fn().mockReturnValue(true),
-      incrementUsage: vi.fn().mockResolvedValue(undefined),
-      decrementUsage: vi.fn().mockResolvedValue(undefined),
+      refreshUsage: vi.fn().mockResolvedValue(undefined),
+      isUnlimited: vi.fn().mockReturnValue(false),
       getAllPlans: vi.fn().mockResolvedValue([]),
       upgradeSubscription: vi.fn().mockResolvedValue(undefined),
-      cancelSubscription: vi.fn().mockResolvedValue(undefined)
+      cancelSubscription: vi.fn().mockResolvedValue(undefined),
+      reactivateSubscription: vi.fn().mockResolvedValue(undefined),
+      isSubscriptionCancelled: computed(() => false),
+      canReactivateSubscription: computed(() => false),
+      subscriptionStatus: computed(() => 'active'),
+      initializeRazorpayCheckout: vi.fn().mockResolvedValue(undefined),
+      createRazorpayOrder: vi.fn().mockResolvedValue({}),
+      handlePaymentSuccess: vi.fn().mockResolvedValue(undefined)
     })
 
     wrapper = createWrapper()

@@ -24,13 +24,14 @@ export interface SiteSubscription {
   id?: string;
   site: string;
   subscription_plan: string;
-  status: 'active' | 'cancelled' | 'expired' | 'past_due';
+  status: 'active' | 'cancelled' | 'expired' | 'past_due' | 'pending_payment';
   current_period_start: string;
   current_period_end: string;
   razorpay_subscription_id?: string;
   razorpay_customer_id?: string;
   cancel_at_period_end: boolean;
   cancelled_at?: string;
+  reactivated_at?: string;
   trial_end?: string;
   created?: string;
   updated?: string;
@@ -57,7 +58,7 @@ export interface SubscriptionUsage {
 export interface PaymentTransaction {
   id?: string;
   site_subscription: string;
-  razorpay_payment_id: string;
+  razorpay_payment_id?: string;
   razorpay_order_id: string;
   amount: number;
   currency: string;
@@ -66,6 +67,36 @@ export interface PaymentTransaction {
   failure_reason?: string;
   created?: string;
   updated?: string;
+}
+
+export interface RazorpayCheckoutOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  handler: (response: any) => void;
+  prefill?: {
+    name?: string;
+    email?: string;
+    contact?: string;
+  };
+  theme?: {
+    color?: string;
+  };
+  modal?: {
+    ondismiss?: () => void;
+  };
+}
+
+declare global {
+  interface Window {
+    Razorpay: new (options: RazorpayCheckoutOptions) => {
+      open(): void;
+      close(): void;
+    };
+  }
 }
 
 export interface UsageLimits {
@@ -95,16 +126,48 @@ export function useSubscription() {
     
     // Check if any limit is exceeded
     return (
-      (plan.features.max_items !== -1 && usage.items_count >= plan.features.max_items) ||
-      (plan.features.max_vendors !== -1 && usage.vendors_count >= plan.features.max_vendors) ||
-      (plan.features.max_incoming_deliveries !== -1 && usage.incoming_deliveries_count >= plan.features.max_incoming_deliveries) ||
-      (plan.features.max_service_bookings !== -1 && usage.service_bookings_count >= plan.features.max_service_bookings) ||
-      (plan.features.max_payments !== -1 && usage.payments_count >= plan.features.max_payments)
+      (!isUnlimited(plan.features.max_items) && usage.items_count >= plan.features.max_items) ||
+      (!isUnlimited(plan.features.max_vendors) && usage.vendors_count >= plan.features.max_vendors) ||
+      (!isUnlimited(plan.features.max_incoming_deliveries) && usage.incoming_deliveries_count >= plan.features.max_incoming_deliveries) ||
+      (!isUnlimited(plan.features.max_service_bookings) && usage.service_bookings_count >= plan.features.max_service_bookings) ||
+      (!isUnlimited(plan.features.max_payments) && usage.payments_count >= plan.features.max_payments)
     );
   });
 
   const isSubscriptionActive = computed(() => {
     return currentSubscription.value?.status === 'active';
+  });
+
+  const isSubscriptionCancelled = computed(() => {
+    return currentSubscription.value?.cancel_at_period_end === true;
+  });
+
+  const canReactivateSubscription = computed(() => {
+    const sub = currentSubscription.value;
+    if (!sub) return false;
+    
+    // Can reactivate if cancelled but period hasn't ended yet
+    return sub.cancel_at_period_end && 
+           sub.status === 'active' && 
+           new Date() < new Date(sub.current_period_end);
+  });
+
+  const subscriptionStatus = computed(() => {
+    const sub = currentSubscription.value;
+    if (!sub) return null;
+    
+    const now = new Date();
+    const periodEnd = new Date(sub.current_period_end);
+    
+    if (sub.status === 'expired' || (sub.status === 'cancelled' && now > periodEnd)) {
+      return 'expired';
+    }
+    
+    if (sub.cancel_at_period_end && sub.status === 'active') {
+      return 'cancelled_pending';
+    }
+    
+    return sub.status;
   });
 
   const currentPlan = computed(() => {
@@ -123,27 +186,27 @@ export function useSubscription() {
       items: {
         current: usage.items_count,
         max: plan.features.max_items,
-        exceeded: plan.features.max_items !== -1 && usage.items_count >= plan.features.max_items
+        exceeded: !isUnlimited(plan.features.max_items) && usage.items_count >= plan.features.max_items
       },
       vendors: {
         current: usage.vendors_count,
         max: plan.features.max_vendors,
-        exceeded: plan.features.max_vendors !== -1 && usage.vendors_count >= plan.features.max_vendors
+        exceeded: !isUnlimited(plan.features.max_vendors) && usage.vendors_count >= plan.features.max_vendors
       },
       incoming_deliveries: {
         current: usage.incoming_deliveries_count,
         max: plan.features.max_incoming_deliveries,
-        exceeded: plan.features.max_incoming_deliveries !== -1 && usage.incoming_deliveries_count >= plan.features.max_incoming_deliveries
+        exceeded: !isUnlimited(plan.features.max_incoming_deliveries) && usage.incoming_deliveries_count >= plan.features.max_incoming_deliveries
       },
       service_bookings: {
         current: usage.service_bookings_count,
         max: plan.features.max_service_bookings,
-        exceeded: plan.features.max_service_bookings !== -1 && usage.service_bookings_count >= plan.features.max_service_bookings
+        exceeded: !isUnlimited(plan.features.max_service_bookings) && usage.service_bookings_count >= plan.features.max_service_bookings
       },
       payments: {
         current: usage.payments_count,
         max: plan.features.max_payments,
-        exceeded: plan.features.max_payments !== -1 && usage.payments_count >= plan.features.max_payments
+        exceeded: !isUnlimited(plan.features.max_payments) && usage.payments_count >= plan.features.max_payments
       }
     };
   });
@@ -249,92 +312,39 @@ export function useSubscription() {
     
     switch (type) {
       case 'items':
-        return plan.features.max_items === -1 || usage.items_count < plan.features.max_items;
+        return isUnlimited(plan.features.max_items) || usage.items_count < plan.features.max_items;
       case 'vendors':
-        return plan.features.max_vendors === -1 || usage.vendors_count < plan.features.max_vendors;
+        return isUnlimited(plan.features.max_vendors) || usage.vendors_count < plan.features.max_vendors;
       case 'incoming_deliveries':
-        return plan.features.max_incoming_deliveries === -1 || usage.incoming_deliveries_count < plan.features.max_incoming_deliveries;
+        return isUnlimited(plan.features.max_incoming_deliveries) || usage.incoming_deliveries_count < plan.features.max_incoming_deliveries;
       case 'service_bookings':
-        return plan.features.max_service_bookings === -1 || usage.service_bookings_count < plan.features.max_service_bookings;
+        return isUnlimited(plan.features.max_service_bookings) || usage.service_bookings_count < plan.features.max_service_bookings;
       case 'payments':
-        return plan.features.max_payments === -1 || usage.payments_count < plan.features.max_payments;
+        return isUnlimited(plan.features.max_payments) || usage.payments_count < plan.features.max_payments;
       default:
         return false;
     }
   };
 
-  const incrementUsage = async (type: 'items' | 'vendors' | 'incoming_deliveries' | 'service_bookings' | 'payments'): Promise<void> => {
-    console.log('incrementUsage called for type:', type);
-    console.log('currentUsage.value:', currentUsage.value);
-    console.log('currentSubscription.value:', currentSubscription.value);
-    
-    if (!currentUsage.value) {
-      console.error('No current usage found when trying to increment');
-      return;
-    }
-
-    const updates: Partial<SubscriptionUsage> = {};
-    
-    switch (type) {
-      case 'items':
-        updates.items_count = currentUsage.value.items_count + 1;
-        break;
-      case 'vendors':
-        updates.vendors_count = currentUsage.value.vendors_count + 1;
-        break;
-      case 'incoming_deliveries':
-        updates.incoming_deliveries_count = currentUsage.value.incoming_deliveries_count + 1;
-        break;
-      case 'service_bookings':
-        updates.service_bookings_count = currentUsage.value.service_bookings_count + 1;
-        break;
-      case 'payments':
-        updates.payments_count = currentUsage.value.payments_count + 1;
-        break;
-    }
-
-    console.log('Updates to apply:', updates);
-
-    try {
-      const updated = await pb.collection('subscription_usage').update(currentUsage.value.id!, updates);
-      console.log('Usage updated in database:', updated);
-      currentUsage.value = updated as unknown as SubscriptionUsage;
-      console.log('Local usage state updated:', currentUsage.value);
-    } catch (err) {
-      console.error('Error incrementing usage:', err);
-      throw err;
-    }
+  const isUnlimited = (limit: number): boolean => {
+    return limit === -1 || limit === 0; // Support both -1 and 0 for unlimited
   };
 
-  const decrementUsage = async (type: 'items' | 'vendors' | 'incoming_deliveries' | 'service_bookings' | 'payments'): Promise<void> => {
-    if (!currentUsage.value) return;
-
-    const updates: Partial<SubscriptionUsage> = {};
+  // Usage is now tracked automatically by PocketBase hooks
+  // These methods are kept for backwards compatibility but will be deprecated
+  const refreshUsage = async (): Promise<void> => {
+    if (!siteId || !currentSubscription.value) return;
     
-    switch (type) {
-      case 'items':
-        updates.items_count = Math.max(0, currentUsage.value.items_count - 1);
-        break;
-      case 'vendors':
-        updates.vendors_count = Math.max(0, currentUsage.value.vendors_count - 1);
-        break;
-      case 'incoming_deliveries':
-        updates.incoming_deliveries_count = Math.max(0, currentUsage.value.incoming_deliveries_count - 1);
-        break;
-      case 'service_bookings':
-        updates.service_bookings_count = Math.max(0, currentUsage.value.service_bookings_count - 1);
-        break;
-      case 'payments':
-        updates.payments_count = Math.max(0, currentUsage.value.payments_count - 1);
-        break;
-    }
-
     try {
-      const updated = await pb.collection('subscription_usage').update(currentUsage.value.id!, updates);
-      currentUsage.value = updated as unknown as SubscriptionUsage;
+      const periodStart = new Date(currentSubscription.value.current_period_start);
+      const periodEnd = new Date(currentSubscription.value.current_period_end);
+      
+      const usage = await pb.collection('subscription_usage').getFirstListItem(
+        `site="${siteId}" && period_start="${periodStart.toISOString()}" && period_end="${periodEnd.toISOString()}"`
+      );
+      currentUsage.value = usage as unknown as SubscriptionUsage;
     } catch (err) {
-      console.error('Error decrementing usage:', err);
-      throw err;
+      console.error('Error refreshing usage:', err);
     }
   };
 
@@ -357,15 +367,47 @@ export function useSubscription() {
     }
 
     try {
-      await pb.collection('site_subscriptions').update(currentSubscription.value.id!, {
+      const updateData: any = {
         subscription_plan: planId,
         status: 'active'
-      });
+      };
+      
+      // If subscription was cancelled, reactivate it
+      if (currentSubscription.value.cancel_at_period_end) {
+        updateData.cancel_at_period_end = false;
+        updateData.cancelled_at = null;
+        updateData.reactivated_at = new Date().toISOString();
+      }
+      
+      await pb.collection('site_subscriptions').update(currentSubscription.value.id!, updateData);
       
       // Reload subscription to get updated data
       await loadSubscription();
     } catch (err) {
       console.error('Error upgrading subscription:', err);
+      throw err;
+    }
+  };
+
+  const reactivateSubscription = async (): Promise<void> => {
+    if (!currentSubscription.value) {
+      throw new Error('No current subscription found');
+    }
+
+    if (!canReactivateSubscription.value) {
+      throw new Error('Subscription cannot be reactivated');
+    }
+
+    try {
+      await pb.collection('site_subscriptions').update(currentSubscription.value.id!, {
+        cancel_at_period_end: false,
+        cancelled_at: null,
+        reactivated_at: new Date().toISOString()
+      });
+      
+      await loadSubscription();
+    } catch (err) {
+      console.error('Error reactivating subscription:', err);
       throw err;
     }
   };
@@ -376,14 +418,212 @@ export function useSubscription() {
     }
 
     try {
+      // Cancel at period end to allow completion of current billing cycle
       await pb.collection('site_subscriptions').update(currentSubscription.value.id!, {
         cancel_at_period_end: true,
         cancelled_at: new Date().toISOString()
       });
       
+      // If there's a Razorpay subscription, cancel it too
+      if (currentSubscription.value.razorpay_subscription_id) {
+        await cancelRazorpaySubscription(currentSubscription.value.razorpay_subscription_id);
+      }
+      
       await loadSubscription();
     } catch (err) {
       console.error('Error cancelling subscription:', err);
+      throw err;
+    }
+  };
+
+  const cancelRazorpaySubscription = async (subscriptionId: string): Promise<void> => {
+    try {
+      // Call CF Worker to cancel Razorpay subscription
+      const response = await fetch('/api/razorpay/cancel-subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ subscription_id: subscriptionId })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to cancel Razorpay subscription');
+      }
+    } catch (err) {
+      console.error('Error cancelling Razorpay subscription:', err);
+      // Don't throw here as we want local cancellation to succeed even if Razorpay fails
+    }
+  };
+
+  // Razorpay Integration Methods
+  const createRazorpayOrder = async (planId: string): Promise<{ order_id: string; amount: number; currency: string }> => {
+    try {
+      // Get plan details
+      const plan = await pb.collection('subscription_plans').getOne(planId);
+      
+      // Call CF Worker to create Razorpay order
+      const response = await fetch('/api/razorpay/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: plan.price * 100, // Razorpay expects amount in paise
+          currency: plan.currency || 'INR',
+          receipt: `subscription_${Date.now()}`,
+          notes: {
+            site_id: siteId,
+            plan_id: planId
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create Razorpay order');
+      }
+      
+      const orderData = await response.json();
+      return {
+        order_id: orderData.id,
+        amount: orderData.amount,
+        currency: orderData.currency
+      };
+    } catch (err) {
+      console.error('Error creating Razorpay order:', err);
+      throw err;
+    }
+  };
+
+  const initializeRazorpayCheckout = async (planId: string): Promise<void> => {
+    try {
+      // Load Razorpay script if not already loaded
+      if (!window.Razorpay) {
+        await loadRazorpayScript();
+      }
+      
+      // Create order
+      const { order_id, amount, currency } = await createRazorpayOrder(planId);
+      
+      // Get plan details for display
+      const plan = await pb.collection('subscription_plans').getOne(planId);
+      
+      const options: RazorpayCheckoutOptions = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || '',
+        amount,
+        currency,
+        name: 'SiteWise',
+        description: `Subscription to ${plan.name} plan`,
+        order_id,
+        handler: async (response: any) => {
+          await handlePaymentSuccess(response, planId);
+        },
+        prefill: {
+          name: pb.authStore.model?.name || '',
+          email: pb.authStore.model?.email || ''
+        },
+        theme: {
+          color: '#f97316' // Orange theme color
+        },
+        modal: {
+          ondismiss: () => {
+            console.log('Payment cancelled by user');
+          }
+        }
+      };
+      
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      console.error('Error initializing Razorpay checkout:', err);
+      throw err;
+    }
+  };
+
+  const loadRazorpayScript = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (window.Razorpay) {
+        resolve();
+        return;
+      }
+      
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load Razorpay script'));
+      document.head.appendChild(script);
+    });
+  };
+
+  const handlePaymentSuccess = async (response: any, planId: string): Promise<void> => {
+    try {
+      // Verify payment with CF Worker
+      const verificationResponse = await fetch('/api/razorpay/verify-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_signature: response.razorpay_signature
+        })
+      });
+      
+      if (!verificationResponse.ok) {
+        throw new Error('Payment verification failed');
+      }
+      
+      // Update subscription in database
+      await upgradeSubscriptionWithPayment(planId, response);
+    } catch (err) {
+      console.error('Error handling payment success:', err);
+      throw err;
+    }
+  };
+
+  const upgradeSubscriptionWithPayment = async (planId: string, paymentResponse: any): Promise<void> => {
+    if (!currentSubscription.value) {
+      throw new Error('No current subscription found');
+    }
+
+    try {
+      // Create payment transaction record
+      await pb.collection('payment_transactions').create({
+        site_subscription: currentSubscription.value.id,
+        razorpay_payment_id: paymentResponse.razorpay_payment_id,
+        razorpay_order_id: paymentResponse.razorpay_order_id,
+        amount: paymentResponse.amount || 0,
+        currency: 'INR',
+        status: 'successful'
+      });
+      
+      // Update subscription
+      const updateData: any = {
+        subscription_plan: planId,
+        status: 'active'
+      };
+      
+      // If subscription was cancelled, reactivate it
+      if (currentSubscription.value.cancel_at_period_end) {
+        updateData.cancel_at_period_end = false;
+        updateData.cancelled_at = null;
+        updateData.reactivated_at = new Date().toISOString();
+      }
+      
+      // Extend period if upgrading from free or reactivating
+      const now = new Date();
+      const periodEnd = new Date(now);
+      periodEnd.setMonth(periodEnd.getMonth() + 1);
+      updateData.current_period_start = now.toISOString();
+      updateData.current_period_end = periodEnd.toISOString();
+      
+      await pb.collection('site_subscriptions').update(currentSubscription.value.id!, updateData);
+      
+      // Reload subscription to get updated data
+      await loadSubscription();
+    } catch (err) {
+      console.error('Error upgrading subscription with payment:', err);
       throw err;
     }
   };
@@ -415,16 +655,27 @@ export function useSubscription() {
     // Computed
     isReadOnly,
     isSubscriptionActive,
+    isSubscriptionCancelled,
+    canReactivateSubscription,
+    subscriptionStatus,
     
     // Methods
     loadSubscription,
     createDefaultSubscription,
     createFreeTierSubscription,
     checkCreateLimit,
-    incrementUsage,
-    decrementUsage,
+    refreshUsage,
     getAllPlans,
     upgradeSubscription,
-    cancelSubscription
+    cancelSubscription,
+    reactivateSubscription,
+    
+    // Payment Methods
+    initializeRazorpayCheckout,
+    createRazorpayOrder,
+    handlePaymentSuccess,
+    
+    // Utility Methods
+    isUnlimited
   };
 }

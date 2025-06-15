@@ -196,7 +196,7 @@ import {
 } from '../services/pocketbase';
 
 const { t } = useI18n();
-const { checkCreateLimit, incrementUsage, decrementUsage, isReadOnly } = useSubscription();
+const { checkCreateLimit, isReadOnly, refreshUsage } = useSubscription();
 
 const router = useRouter();
 const vendors = ref<Vendor[]>([]);
@@ -289,16 +289,8 @@ const saveVendor = async () => {
         alert(t('subscription.banner.freeTierLimitReached'));
         return;
       }
-      const newVendor = await vendorService.create(form);
-      console.log('Vendor created successfully:', newVendor);
-      
-      try {
-        await incrementUsage('vendors');
-        console.log('Usage incremented successfully for vendors');
-      } catch (usageError) {
-        console.error('Error incrementing usage for vendors:', usageError);
-        // Continue even if usage tracking fails
-      }
+      await vendorService.create(form);
+      // Usage is automatically incremented by PocketBase hooks
     }
     await loadData();
     closeModal();
@@ -330,8 +322,9 @@ const deleteVendor = async (id: string) => {
   if (confirm(t('messages.confirmDelete', { vendor: t('common.vendor') }))) {
     try {
       await vendorService.delete(id);
-      await decrementUsage('vendors');
       await loadData();
+      // Usage is automatically decremented by PocketBase hooks
+      await refreshUsage();
     } catch (error) {
       console.error('Error deleting vendor:', error);
     }

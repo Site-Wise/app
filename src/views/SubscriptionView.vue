@@ -34,8 +34,8 @@
               </div>
             </div>
             <div v-if="currentSubscription" class="text-right">
-              <span :class="getStatusBadgeClass(currentSubscription.status)">
-                {{ t(`subscription.status.${currentSubscription.status}`) }}
+              <span :class="getStatusBadgeClass(currentSubscription?.status)">
+                {{ t(`subscription.status.${currentSubscription?.status}`) }}
               </span>
             </div>
           </div>
@@ -57,37 +57,70 @@
             <div>
               <div class="flex items-center justify-between mb-4">
                 <h4 class="text-xl font-bold text-gray-900 dark:text-white">{{ currentPlan.name }}</h4>
-                <div class="text-right">
+                <div v-if="!isCurrentPlanFree()" class="text-right">
                   <span class="text-2xl font-bold text-orange-600 dark:text-orange-400">
                     {{ formatCurrency(currentPlan.price, currentPlan.currency) }}
                   </span>
                   <span class="text-sm text-gray-500 dark:text-gray-400">/{{ t('subscription.month') }}</span>
                 </div>
+                <div v-else class="text-right">
+                  <span class="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {{ t('subscription.free') }}
+                  </span>
+                </div>
               </div>
               
               <div class="space-y-3">
-                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <!-- Show billing info only for paid plans -->
+                <div v-if="!isCurrentPlanFree()" class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('subscription.nextBilling') }}</span>
                   <span class="font-medium text-gray-900 dark:text-white">
-                    {{ formatDate(currentSubscription.current_period_end) }}
+                    {{ formatDate(currentSubscription?.current_period_end || '') }}
                   </span>
                 </div>
-                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div v-if="!isCurrentPlanFree()" class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('subscription.billingCycle') }}</span>
                   <span class="font-medium text-gray-900 dark:text-white">{{ t('subscription.monthly') }}</span>
                 </div>
-                <div v-if="currentSubscription.cancel_at_period_end" class="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                
+                <!-- Free plan info -->
+                <div v-if="isCurrentPlanFree()" class="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <span class="text-sm text-green-600 dark:text-green-400">{{ t('subscription.planType') }}</span>
+                  <span class="font-medium text-green-700 dark:text-green-300">{{ t('subscription.freeForever') }}</span>
+                </div>
+                
+                <div v-if="currentSubscription?.cancel_at_period_end" class="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
                   <span class="text-sm text-red-600 dark:text-red-400">{{ t('subscription.cancelledOn') }}</span>
                   <span class="font-medium text-red-700 dark:text-red-300">
-                    {{ formatDate(currentSubscription.cancelled_at!) }}
+                    {{ formatDate(currentSubscription?.cancelled_at || '') }}
                   </span>
                 </div>
+              </div>
+
+              <!-- Subscription Status Messages -->
+              <div v-if="subscriptionStatus === 'cancelled_pending'" class="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <div class="flex items-center gap-2">
+                  <AlertTriangle class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <span class="text-sm font-medium text-amber-800 dark:text-amber-200">
+                    {{ t('subscription.cancellationScheduled', { date: formatDate(currentSubscription?.current_period_end || '') }) }}
+                  </span>
+                </div>
+                <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                  {{ t('subscription.cancellationNote') }}
+                </p>
               </div>
 
               <!-- Plan Actions -->
               <div class="mt-6 flex gap-3">
                 <button 
-                  v-if="!currentSubscription.cancel_at_period_end && !currentPlan.is_default"
+                  v-if="canReactivateSubscription"
+                  @click="confirmReactivate"
+                  class="flex-1 px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors"
+                >
+                  {{ t('subscription.reactivate') }}
+                </button>
+                <button 
+                  v-else-if="!isSubscriptionCancelled && !isCurrentPlanFree()"
                   @click="showCancelModal = true"
                   class="flex-1 px-4 py-2 border border-red-300 text-red-700 hover:bg-red-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                 >
@@ -97,7 +130,7 @@
                   @click="showUpgradeModal = true"
                   class="btn-primary flex-1"
                 >
-                  {{ currentPlan.is_default ? t('subscription.upgrade') : t('subscription.changePlan') }}
+                  {{ getActionButtonText() }}
                 </button>
               </div>
             </div>
@@ -184,10 +217,15 @@
                   <div class="text-center">
                     <h4 class="text-lg font-bold text-gray-900 dark:text-white">{{ plan.name }}</h4>
                     <div class="mt-2">
-                      <span class="text-3xl font-bold text-orange-600 dark:text-orange-400">
-                        {{ formatCurrency(plan.price, plan.currency) }}
+                      <span v-if="plan.price === 0 || plan.is_default" class="text-3xl font-bold text-green-600 dark:text-green-400">
+                        {{ t('subscription.free') }}
                       </span>
-                      <span class="text-gray-500 dark:text-gray-400">/{{ t('subscription.month') }}</span>
+                      <div v-else>
+                        <span class="text-3xl font-bold text-orange-600 dark:text-orange-400">
+                          {{ formatCurrency(plan.price, plan.currency) }}
+                        </span>
+                        <span class="text-gray-500 dark:text-gray-400">/{{ t('subscription.month') }}</span>
+                      </div>
                     </div>
                   </div>
                   
@@ -230,7 +268,7 @@
                     :disabled="upgrading"
                     class="w-full mt-6 btn-primary"
                   >
-                    {{ upgrading ? t('subscription.upgrading') : (plan.price > (currentPlan?.price || 0) ? t('subscription.upgrade') : t('subscription.downgrade')) }}
+                    {{ upgrading ? t('subscription.upgrading') : getUpgradeButtonText(plan) }}
                   </button>
                 </div>
               </div>
@@ -302,9 +340,14 @@ const {
   usageLimits,
   isLoading,
   error,
+  subscriptionStatus,
+  isSubscriptionCancelled,
+  canReactivateSubscription,
   getAllPlans,
   upgradeSubscription,
-  cancelSubscription
+  cancelSubscription,
+  reactivateSubscription,
+  initializeRazorpayCheckout
 } = useSubscription();
 
 const showUpgradeModal = ref(false);
@@ -314,14 +357,16 @@ const plansLoading = ref(false);
 const upgrading = ref(false);
 const cancelling = ref(false);
 
-const getStatusBadgeClass = (status: string) => {
+const getStatusBadgeClass = (status: string | undefined) => {
+  if (!status) return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300';
+  
   const classes = {
     active: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300',
     cancelled: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300',
     expired: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300',
     past_due: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
   };
-  return classes[status as keyof typeof classes] || 'status-badge';
+  return classes[status as keyof typeof classes] || 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300';
 };
 
 const formatCurrency = (amount: number, currency: string) => {
@@ -364,13 +409,70 @@ const upgradeToPlan = async (plan: SubscriptionPlan) => {
   
   upgrading.value = true;
   try {
-    await upgradeSubscription(plan.id);
-    showUpgradeModal.value = false;
+    // For free plans, upgrade immediately
+    if (plan.price === 0) {
+      await upgradeSubscription(plan.id);
+      showUpgradeModal.value = false;
+    } else {
+      // For paid plans, use Razorpay checkout
+      showUpgradeModal.value = false;
+      await initializeRazorpayCheckout(plan.id);
+    }
   } catch (err) {
     console.error('Error upgrading subscription:', err);
     alert(err instanceof Error ? err.message : t('subscription.upgradeError'));
   } finally {
     upgrading.value = false;
+  }
+};
+
+const confirmReactivate = async () => {
+  try {
+    await reactivateSubscription();
+    alert(t('subscription.reactivateSuccess'));
+  } catch (err) {
+    console.error('Error reactivating subscription:', err);
+    alert(err instanceof Error ? err.message : t('subscription.reactivateError'));
+  }
+};
+
+const isCurrentPlanFree = () => {
+  return currentPlan.value?.price === 0 || currentPlan.value?.is_default;
+};
+
+const getActionButtonText = () => {
+  if (isSubscriptionCancelled.value) {
+    return t('subscription.resubscribe');
+  }
+  
+  return isCurrentPlanFree() ? t('subscription.upgrade') : t('subscription.changePlan');
+};
+
+const getUpgradeButtonText = (plan: SubscriptionPlan) => {
+  const isPlanFree = plan.price === 0 || plan.is_default;
+  const currentPlanIsFree = isCurrentPlanFree();
+  
+  if (isSubscriptionCancelled.value) {
+    return isPlanFree ? t('subscription.reactivate') : t('subscription.subscribe');
+  }
+  
+  // If switching to a free plan, show "Switch to Free"
+  if (isPlanFree && !currentPlanIsFree) {
+    return t('subscription.switchToFree');
+  }
+  
+  // If switching from free plan to paid plan
+  if (!isPlanFree && currentPlanIsFree) {
+    return t('subscription.subscribe');
+  }
+  
+  const currentPrice = currentPlan.value?.price || 0;
+  if (plan.price > currentPrice) {
+    return t('subscription.upgrade');
+  } else if (plan.price < currentPrice) {
+    return t('subscription.downgrade');
+  } else {
+    return t('subscription.switchPlan');
   }
 };
 

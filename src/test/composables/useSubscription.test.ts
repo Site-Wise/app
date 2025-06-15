@@ -391,79 +391,41 @@ describe('useSubscription', () => {
     });
   });
 
-  describe('incrementUsage', () => {
-    it('should increment usage count', async () => {
-      const mockUpdate = vi.fn().mockResolvedValue({ ...mockUsage, items_count: 1 });
-      const mockCollection = vi.fn((name: string) => {
-        if (name === 'subscription_usage') {
-          return {
-            getFirstListItem: vi.fn().mockResolvedValue(mockUsage),
-            update: mockUpdate
-          };
-        }
-        return {
-          getFirstListItem: vi.fn().mockResolvedValue(mockSubscription)
-        };
-      });
+  describe('refreshUsage', () => {
+    it('should refresh usage from server', async () => {
+      const updatedUsage = { ...mockUsage, items_count: 5 };
+      const mockGetFirstListItem = vi.fn()
+        .mockResolvedValueOnce(mockSubscription)
+        .mockResolvedValueOnce(mockUsage)
+        .mockResolvedValueOnce(updatedUsage);
+      
+      const mockCollection = vi.fn(() => ({
+        getFirstListItem: mockGetFirstListItem
+      }));
       (pb.collection as Mock).mockImplementation(mockCollection);
 
-      const { loadSubscription, incrementUsage, currentUsage } = useSubscription();
+      const { loadSubscription, refreshUsage, currentUsage } = useSubscription();
       await loadSubscription();
 
-      await incrementUsage('items');
+      await refreshUsage();
 
-      expect(mockUpdate).toHaveBeenCalledWith('usage_1', { items_count: 1 });
-      expect(currentUsage.value?.items_count).toBe(1);
+      expect(currentUsage.value?.items_count).toBe(5);
     });
   });
 
-  describe('decrementUsage', () => {
-    it('should decrement usage count', async () => {
-      const initialUsage = { ...mockUsage, items_count: 1 };
-      const mockUpdate = vi.fn().mockResolvedValue({ ...initialUsage, items_count: 0 });
-      const mockCollection = vi.fn((name: string) => {
-        if (name === 'subscription_usage') {
-          return {
-            getFirstListItem: vi.fn().mockResolvedValue(initialUsage),
-            update: mockUpdate
-          };
-        }
-        return {
-          getFirstListItem: vi.fn().mockResolvedValue(mockSubscription)
-        };
-      });
+  describe('isUnlimited', () => {
+    it('should correctly identify unlimited values', async () => {
+      const mockCollection = vi.fn(() => ({
+        getFirstListItem: vi.fn().mockResolvedValue(mockSubscription)
+      }));
       (pb.collection as Mock).mockImplementation(mockCollection);
 
-      const { loadSubscription, decrementUsage, currentUsage } = useSubscription();
-      await loadSubscription();
+      const { isUnlimited } = useSubscription();
 
-      await decrementUsage('items');
-
-      expect(mockUpdate).toHaveBeenCalledWith('usage_1', { items_count: 0 });
-      expect(currentUsage.value?.items_count).toBe(0);
-    });
-
-    it('should not go below zero', async () => {
-      const mockUpdate = vi.fn().mockResolvedValue(mockUsage);
-      const mockCollection = vi.fn((name: string) => {
-        if (name === 'subscription_usage') {
-          return {
-            getFirstListItem: vi.fn().mockResolvedValue(mockUsage),
-            update: mockUpdate
-          };
-        }
-        return {
-          getFirstListItem: vi.fn().mockResolvedValue(mockSubscription)
-        };
-      });
-      (pb.collection as Mock).mockImplementation(mockCollection);
-
-      const { loadSubscription, decrementUsage } = useSubscription();
-      await loadSubscription();
-
-      await decrementUsage('items');
-
-      expect(mockUpdate).toHaveBeenCalledWith('usage_1', { items_count: 0 });
+      expect(isUnlimited(-1)).toBe(true);
+      expect(isUnlimited(0)).toBe(true);
+      expect(isUnlimited(10)).toBe(false);
+      expect(isUnlimited(100)).toBe(false);
     });
   });
 

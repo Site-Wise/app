@@ -352,7 +352,7 @@ interface FileWithPreview {
 }
 
 const { t } = useI18n();
-const { checkCreateLimit, incrementUsage, decrementUsage, isReadOnly } = useSubscription();
+const { checkCreateLimit, isReadOnly, refreshUsage } = useSubscription();
 
 const incomingItems = ref<IncomingItem[]>([]);
 const items = ref<Item[]>([]);
@@ -496,7 +496,7 @@ const saveItem = async () => {
         return;
       }
       savedItem = await incomingItemService.create(data);
-      await incrementUsage('incoming_deliveries');
+      // Usage is automatically incremented by PocketBase hooks
     }
     
     if (selectedFiles.value.length > 0 && savedItem.id) {
@@ -546,8 +546,9 @@ const deleteItem = async (id: string) => {
   if (confirm(t('messages.confirmDelete', { item: t('incoming.delivery') }))) {
     try {
       await incomingItemService.delete(id);
-      await decrementUsage('incoming_deliveries');
       await loadData();
+      // Usage is automatically decremented by PocketBase hooks
+      await refreshUsage();
     } catch (error) {
       console.error('Error deleting incoming item:', error);
       alert(t('messages.error'));

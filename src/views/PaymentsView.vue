@@ -270,7 +270,7 @@ import {
 } from '../services/pocketbase';
 
 const { t } = useI18n();
-const { checkCreateLimit, incrementUsage, isReadOnly } = useSubscription();
+const { checkCreateLimit, isReadOnly } = useSubscription();
 
 interface VendorWithOutstanding extends Vendor {
   outstandingAmount: number;
@@ -409,7 +409,7 @@ const savePayment = async () => {
   loading.value = true;
   try {
     await paymentService.create(form);
-    await incrementUsage('payments');
+    // Usage is automatically incremented by PocketBase hooks
     await loadData();
     closeModal();
   } catch (error) {
@@ -445,7 +445,7 @@ const deletePayment = async (paymentId: string) => {
       // For now, we'll just delete the payment record
       console.log('Would delete payment with ID:', paymentId);
       // await paymentService.delete(paymentId);
-      // await decrementUsage('payments');
+      // Usage is automatically decremented by PocketBase hooks
       // await loadData();
       alert('Payment deletion is not implemented yet. You would need to manually adjust affected items.');
     } catch (error) {
