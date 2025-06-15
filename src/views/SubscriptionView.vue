@@ -5,10 +5,10 @@
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <div class="flex-1">
           <div class="flex items-center gap-3 mb-2">
-            <div class="p-2 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl">
+            <div class="p-2 bg-gradient-to-r from-orange-500 to-pink-600 rounded-xl">
               <CreditCard class="h-6 w-6 text-white" />
             </div>
-            <h1 class="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+            <h1 class="text-3xl font-bold bg-gray-900 dark:bg-gray-300 bg-clip-text text-transparent">
               {{ t('subscription.title') }}
             </h1>
           </div>
@@ -22,11 +22,11 @@
     <div class="max-w-7xl mx-auto space-y-8">
       <!-- Current Subscription Card -->
       <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
-        <div class="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-6 border-b border-gray-200 dark:border-gray-700">
+        <div class="bg-gradient-to-r from-orange-50 to-pink-50 dark:from-orange-900/20 dark:to-pink-900/20 p-6 border-b border-gray-200 dark:border-gray-700">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <Package class="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <div class="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                <Package class="h-5 w-5 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('subscription.currentPlan') }}</h3>
@@ -58,7 +58,7 @@
               <div class="flex items-center justify-between mb-4">
                 <h4 class="text-xl font-bold text-gray-900 dark:text-white">{{ currentPlan.name }}</h4>
                 <div class="text-right">
-                  <span class="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  <span class="text-2xl font-bold text-orange-600 dark:text-orange-400">
                     {{ formatCurrency(currentPlan.price, currentPlan.currency) }}
                   </span>
                   <span class="text-sm text-gray-500 dark:text-gray-400">/{{ t('subscription.month') }}</span>
@@ -95,10 +95,7 @@
                 </button>
                 <button 
                   @click="showUpgradeModal = true"
-                  :class="[
-                    'px-4 py-2 bg-purple-600 text-white hover:bg-purple-700 rounded-lg transition-colors',
-                    currentPlan.is_default ? 'flex-1' : 'flex-1'
-                  ]"
+                  class="btn-primary flex-1"
                 >
                   {{ currentPlan.is_default ? t('subscription.upgrade') : t('subscription.changePlan') }}
                 </button>
@@ -122,7 +119,7 @@
                     <div 
                       :class="[
                         'h-2 rounded-full transition-all duration-300',
-                        limit.exceeded ? 'bg-red-500' : 'bg-purple-500'
+                        limit.exceeded ? 'bg-red-500' : 'bg-orange-500'
                       ]"
                       :style="{ width: getUsagePercentage(limit) + '%' }"
                     ></div>
@@ -142,7 +139,7 @@
           <p class="text-gray-600 dark:text-gray-400">{{ t('subscription.noSubscription') }}</p>
           <button 
             @click="showUpgradeModal = true"
-            class="mt-3 px-4 py-2 bg-purple-600 text-white hover:bg-purple-700 rounded-lg transition-colors"
+            class="btn-primary"
           >
             {{ t('subscription.getStarted') }}
           </button>
@@ -175,11 +172,11 @@
                 <div :class="[
                   'p-6 border-2 rounded-xl transition-all duration-200 cursor-pointer',
                   plan.id === currentPlan?.id 
-                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' 
-                    : 'border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500'
+                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' 
+                    : 'border-gray-200 dark:border-gray-600 hover:border-orange-300 dark:hover:border-orange-500'
                 ]" @click="selectPlan(plan)">
                   <div v-if="plan.id === currentPlan?.id" class="absolute top-4 right-4">
-                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">
                       {{ t('subscription.current') }}
                     </span>
                   </div>
@@ -187,7 +184,7 @@
                   <div class="text-center">
                     <h4 class="text-lg font-bold text-gray-900 dark:text-white">{{ plan.name }}</h4>
                     <div class="mt-2">
-                      <span class="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                      <span class="text-3xl font-bold text-orange-600 dark:text-orange-400">
                         {{ formatCurrency(plan.price, plan.currency) }}
                       </span>
                       <span class="text-gray-500 dark:text-gray-400">/{{ t('subscription.month') }}</span>
@@ -231,7 +228,7 @@
                     v-if="plan.id !== currentPlan?.id"
                     @click.stop="upgradeToPlan(plan)"
                     :disabled="upgrading"
-                    class="w-full mt-6 px-4 py-2 bg-purple-600 text-white hover:bg-purple-700 disabled:bg-gray-400 rounded-lg transition-colors"
+                    class="w-full mt-6 btn-primary"
                   >
                     {{ upgrading ? t('subscription.upgrading') : (plan.price > (currentPlan?.price || 0) ? t('subscription.upgrade') : t('subscription.downgrade')) }}
                   </button>

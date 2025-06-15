@@ -308,22 +308,20 @@ describe('AppLayout', () => {
     it('should render quick action buttons on desktop', () => {
       wrapper = createWrapper()
       
-      expect(wrapper.text()).toContain('Add Item')
-      expect(wrapper.text()).toContain('Add Vendor')
-      expect(wrapper.text()).toContain('Add Account')
-      expect(wrapper.text()).toContain('Record Delivery')
-      expect(wrapper.text()).toContain('Record Payment')
+      expect(wrapper.text()).toContain('quickActions.recordServiceBooking')
+      expect(wrapper.text()).toContain('quickActions.recordDelivery')
+      expect(wrapper.text()).toContain('quickActions.recordPayment')
     })
 
     it('should navigate to correct route when quick action is clicked', async () => {
       wrapper = createWrapper()
       
-      const addItemButtons = wrapper.findAll('button')
-      const addItemButton = addItemButtons.find((btn: any) => btn.text().includes('Add Item'))
-      expect(addItemButton).toBeDefined()
+      const allButtons = wrapper.findAll('button')
+      const recordServiceBookingButton = allButtons.find((btn: any) => btn.text().includes('quickActions.recordServiceBooking'))
+      expect(recordServiceBookingButton).toBeDefined()
       
-      if (addItemButton) {
-        await addItemButton.trigger('click')
+      if (recordServiceBookingButton) {
+        await recordServiceBookingButton.trigger('click')
         // Test that the component handles the click without errors
         expect(true).toBe(true)
       }
@@ -332,9 +330,9 @@ describe('AppLayout', () => {
     it('should show alert when no site access for quick actions', async () => {
       wrapper = createWrapper()
       
-      const addItemButtons = wrapper.findAll('button')
-      const addItemButton = addItemButtons.find((btn: any) => btn.text().includes('Add Item'))
-      expect(addItemButton).toBeDefined()
+      const allButtons = wrapper.findAll('button')
+      const recordServiceBookingButton = allButtons.find((btn: any) => btn.text().includes('quickActions.recordServiceBooking'))
+      expect(recordServiceBookingButton).toBeDefined()
       
       // Test passes if component renders without errors
       expect(true).toBe(true)

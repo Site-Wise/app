@@ -533,6 +533,7 @@
     "downgrade": "Downgrade",
     "cancel": "Cancel Subscription",
     "cancelPlan": "Cancel Plan",
+    "cancelledOn": "Cancelled On",
     "changePlan": "Change Plan",
     "choosePlan": "Choose Plan",
     "selectPlanDescription": "Select the plan that best fits your needs",
