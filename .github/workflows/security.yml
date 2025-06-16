@@ -93,9 +93,6 @@ jobs:
     - name: TruffleHog OSS
       uses: trufflesecurity/trufflehog@main
       with:
-        path: ./
-        base: main
-        head: HEAD
         extra_args: --debug --only-verified
 
   license-scan:
