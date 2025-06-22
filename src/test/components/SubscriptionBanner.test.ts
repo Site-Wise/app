@@ -28,11 +28,11 @@ vi.mock('../../composables/useSubscription', () => ({
       updated: '2024-01-01T00:00:00Z'
     })),
     usageLimits: computed(() => ({
-      items: { current: 0, max: 100, exceeded: false },
-      vendors: { current: 0, max: 25, exceeded: false },
-      incoming_deliveries: { current: 0, max: 100, exceeded: false },
-      service_bookings: { current: 0, max: 50, exceeded: false },
-      payments: { current: 0, max: 200, exceeded: false }
+      items: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
+      vendors: { current: 0, max: 25, exceeded: false, disabled: false, unlimited: false },
+      incoming_deliveries: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
+      service_bookings: { current: 0, max: 50, exceeded: false, disabled: false, unlimited: false },
+      payments: { current: 0, max: 200, exceeded: false, disabled: false, unlimited: false }
     })),
     isLoading: computed(() => false),
     error: computed(() => null),
@@ -131,11 +131,11 @@ describe('SubscriptionBanner', () => {
         updated: '2024-01-01T00:00:00Z'
       })),
       usageLimits: computed(() => ({
-        items: { current: 0, max: 100, exceeded: false },
-        vendors: { current: 0, max: 25, exceeded: false },
-        incoming_deliveries: { current: 0, max: 100, exceeded: false },
-        service_bookings: { current: 0, max: 50, exceeded: false },
-        payments: { current: 0, max: 200, exceeded: false }
+        items: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
+        vendors: { current: 0, max: 25, exceeded: false, disabled: false, unlimited: false },
+        incoming_deliveries: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
+        service_bookings: { current: 0, max: 50, exceeded: false, disabled: false, unlimited: false },
+        payments: { current: 0, max: 200, exceeded: false, disabled: false, unlimited: false }
       })),
       isLoading: computed(() => false),
       error: computed(() => null),
@@ -156,7 +156,9 @@ describe('SubscriptionBanner', () => {
       subscriptionStatus: computed(() => 'active'),
       initializeRazorpayCheckout: vi.fn().mockResolvedValue(undefined),
       createRazorpayOrder: vi.fn().mockResolvedValue({}),
-      handlePaymentSuccess: vi.fn().mockResolvedValue(undefined)
+      handlePaymentSuccess: vi.fn().mockResolvedValue(undefined),
+      isDisabled: vi.fn().mockReturnValue(false),
+      isLimited: vi.fn().mockReturnValue(true)
     })
 
     wrapper = createWrapper()
@@ -191,11 +193,11 @@ describe('SubscriptionBanner', () => {
         updated: '2024-01-01T00:00:00Z'
       })),
       usageLimits: computed(() => ({
-        items: { current: 0, max: 100, exceeded: false },
-        vendors: { current: 0, max: 25, exceeded: false },
-        incoming_deliveries: { current: 0, max: 100, exceeded: false },
-        service_bookings: { current: 0, max: 50, exceeded: false },
-        payments: { current: 0, max: 200, exceeded: false }
+        items: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
+        vendors: { current: 0, max: 25, exceeded: false, disabled: false, unlimited: false },
+        incoming_deliveries: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
+        service_bookings: { current: 0, max: 50, exceeded: false, disabled: false, unlimited: false },
+        payments: { current: 0, max: 200, exceeded: false, disabled: false, unlimited: false }
       })),
       isLoading: computed(() => false),
       error: computed(() => null),
@@ -216,7 +218,9 @@ describe('SubscriptionBanner', () => {
       subscriptionStatus: computed(() => 'active'),
       initializeRazorpayCheckout: vi.fn().mockResolvedValue(undefined),
       createRazorpayOrder: vi.fn().mockResolvedValue({}),
-      handlePaymentSuccess: vi.fn().mockResolvedValue(undefined)
+      handlePaymentSuccess: vi.fn().mockResolvedValue(undefined),
+      isDisabled: vi.fn().mockReturnValue(false),
+      isLimited: vi.fn().mockReturnValue(true)
     })
 
     wrapper = createWrapper()
