@@ -16,7 +16,7 @@
     
     <div
       v-if="dropdownOpen"
-      class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-64 overflow-y-auto"
+      class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[60] max-h-64 overflow-y-auto"
       role="menu"
     >
       <div class="py-2">

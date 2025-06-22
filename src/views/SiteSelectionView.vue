@@ -18,7 +18,73 @@
           <Loader2 class="h-8 w-8 animate-spin text-gray-400" />
         </div>
         
-        <div v-else-if="userSites.length === 0" class="text-center py-8">
+        <!-- Pending Invitations Section -->
+        <div v-else-if="receivedInvitations.length > 0" class="space-y-4">
+          <div class="text-center mb-6">
+            <Mail class="mx-auto h-12 w-12 text-blue-500" />
+            <h3 class="mt-2 text-lg font-medium text-gray-900 dark:text-white">You have site invitations</h3>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Accept or reject invitations to join construction sites</p>
+          </div>
+          
+          <div class="space-y-3">
+            <div v-for="invitation in receivedInvitations" :key="invitation.id" 
+                 class="p-4 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <h4 class="text-base font-medium text-gray-900 dark:text-white">{{ invitation.expand?.site?.name || 'Unknown Site' }}</h4>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Role: <span class="font-medium capitalize">{{ invitation.role }}</span>
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Invited by {{ invitation.expand?.invited_by?.name || 'Unknown' }}
+                  </p>
+                </div>
+                <div class="flex space-x-2 ml-4">
+                  <button 
+                    @click="handleAcceptInvitation(invitation.id!)"
+                    :disabled="processingInvitation === invitation.id"
+                    class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Loader2 v-if="processingInvitation === invitation.id" class="h-4 w-4 animate-spin" />
+                    <Check v-else class="h-4 w-4" />
+                  </button>
+                  <button 
+                    @click="handleRejectInvitation(invitation.id!)"
+                    :disabled="processingInvitation === invitation.id"
+                    class="px-3 py-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Loader2 v-if="processingInvitation === invitation.id" class="h-4 w-4 animate-spin" />
+                    <X v-else class="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Show existing sites if any -->
+          <div v-if="userSites.length > 0" class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">
+            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Your existing sites</h3>
+            <div class="space-y-3">
+              <div v-for="site in userSites" :key="site.id" 
+                   @click="selectSite(site.id!)"
+                   class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <div class="flex items-center justify-between">
+                  <div class="flex-1">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ site.name }}</h3>
+                    <p v-if="site.description" class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ site.description }}</p>
+                    <div class="mt-2 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                      <span>{{ site.total_units }} units</span>
+                      <span>{{ site.total_planned_area.toLocaleString() }} sqft</span>
+                    </div>
+                  </div>
+                  <ChevronRight class="h-5 w-5 text-gray-400" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div v-else-if="userSites.length === 0 && receivedInvitations.length === 0" class="text-center py-8">
           <Building class="mx-auto h-12 w-12 text-gray-400" />
           <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No sites available</h3>
           <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Create your first construction site to get started.</p>
@@ -102,14 +168,17 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { HardHat, Building, Plus, ChevronRight, Loader2 } from 'lucide-vue-next';
+import { HardHat, Building, Plus, ChevronRight, Loader2, Mail, Check, X } from 'lucide-vue-next';
 import { useSite } from '../composables/useSite';
+import { useInvitations } from '../composables/useInvitations';
 
 const router = useRouter();
 const { userSites, isLoading, loadUserSites, selectSite: selectSiteAction, createSite } = useSite();
+const { receivedInvitations, loadReceivedInvitations, acceptInvitation, rejectInvitation } = useInvitations();
 
 const showCreateModal = ref(false);
 const createLoading = ref(false);
+const processingInvitation = ref<string | null>(null);
 
 const createForm = reactive({
   name: '',
@@ -146,7 +215,45 @@ const closeCreateModal = () => {
   });
 };
 
-onMounted(() => {
-  loadUserSites();
+const handleAcceptInvitation = async (invitationId: string) => {
+  processingInvitation.value = invitationId;
+  try {
+    await acceptInvitation(invitationId);
+    // Reload sites after accepting invitation
+    await loadUserSites();
+    
+    // If this was the only invitation and user now has one site, auto-select it
+    if (userSites.value.length === 1 && receivedInvitations.value.length === 0) {
+      await selectSite(userSites.value[0].id!);
+    }
+  } catch (error) {
+    console.error('Error accepting invitation:', error);
+  } finally {
+    processingInvitation.value = null;
+  }
+};
+
+const handleRejectInvitation = async (invitationId: string) => {
+  processingInvitation.value = invitationId;
+  try {
+    await rejectInvitation(invitationId);
+  } catch (error) {
+    console.error('Error rejecting invitation:', error);
+  } finally {
+    processingInvitation.value = null;
+  }
+};
+
+onMounted(async () => {
+  // Load both sites and invitations
+  await Promise.all([
+    loadUserSites(),
+    loadReceivedInvitations()
+  ]);
+  
+  // Only auto-select if user has exactly one site and no pending invitations
+  if (userSites.value.length === 1 && receivedInvitations.value.length === 0) {
+    await selectSite(userSites.value[0].id!);
+  }
 });
 </script>

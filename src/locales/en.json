@@ -393,10 +393,37 @@
     "userNotFound": "No user found with email {email}",
     "userAlreadyAssigned": "User is already assigned to this site",
     "userAssignedSuccessfully": "User {email} has been assigned the role of {role}",
+    "invitations": "Invitations",
+    "manageInvitations": "Manage your site invitations and accept or decline them",
+    "loadingInvitations": "Loading invitations...",
+    "noInvitations": "No pending invitations",
+    "noInvitationsMessage": "You don't have any pending invitations at the moment. When someone invites you to join their construction site, it will appear here.",
+    "constructionSite": "Construction Site",
+    "noDescriptionAvailable": "No description available",
+    "areaSqft": "Area (sqft)",
+    "yourRole": "Your Role",
+    "accept": "Accept",
+    "decline": "Decline",
+    "accepting": "Accepting...",
+    "declining": "Declining...",
+    "daysLeft": " days left",
+    "hoursLeft": " hours left",
+    "expiresSoon": "Expires soon",
+    "invitationAccepted": "Invitation accepted successfully! Redirecting to dashboard...",
+    "invitationDeclined": "Invitation declined successfully.",
+    "failedToAcceptInvitation": "Failed to accept invitation. Please try again.",
+    "failedToDeclineInvitation": "Failed to decline invitation. Please try again.",
+    "confirmDeclineInvitation": "Are you sure you want to decline this invitation? You won't be able to access this site unless invited again.",
+    "roleDescriptionNotAvailable": "Role description not available.",
     "roles": {
       "owner": "Owner",
       "supervisor": "Supervisor",
       "accountant": "Accountant"
+    },
+    "roleDescriptions": {
+      "ownerFull": "Full administrative access to the site. Can manage users, settings, and all site operations.",
+      "supervisorFull": "Can manage day-to-day operations, track deliveries, and oversee construction activities.",
+      "accountantFull": "Can manage payments, accounts, and financial aspects of the construction project."
     }
   },
   "quickActions": {

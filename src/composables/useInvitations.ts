@@ -112,15 +112,8 @@ export function useInvitations() {
       throw new Error('You are already a member of this site');
     }
 
-    // Add user to site with the invited role
-    await siteUserService.assignRole({
-      site: invitation.site,
-      user: user.id,
-      role: invitation.role,
-      assigned_by: invitation.invited_by
-    });
-
-    // Update invitation status
+    // Update invitation status to accepted
+    // The PocketBase hook will automatically create the site_user record
     await siteInvitationService.updateStatus(invitationId, 'accepted');
 
     // Refresh invitations

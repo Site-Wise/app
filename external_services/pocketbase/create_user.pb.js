@@ -1,6 +1,6 @@
-onRecordCreateExecute((e) => {
+onRecordCreateRequest((e) => {
   const turnstileSecretKey = process.env.TURNSTILE_SECRET_KEY
-  const turnstileToken = e.requestInfo().query['turnstileToken'] // Assuming the token is sent in the 'turnstile' field
+  const turnstileToken = e.requestInfo().body['turnstileToken'] // Assuming the token is sent in the 'turnstile' field
   const remoteIP = e.requestInfo().headers["X-Real-IP"] || e.requestInfo().headers["X-Forwarded-For"]
 
   if (!turnstileToken) {

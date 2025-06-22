@@ -117,7 +117,7 @@
               
               <div
                 v-if="userMenuOpen"
-                class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-64 overflow-y-auto"
+                class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50"
                 role="menu"
               >
                 <!-- Invitations Section -->
@@ -140,7 +140,7 @@
                 </div>
                 
                 <!-- User Menu Items -->
-                <div class="py-2">
+                <div class="py-2 max-h-60 overflow-y-auto">
                   <button
                     @click="goToProfile"
                     class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300"
