@@ -4,7 +4,7 @@
       <div>
         <div class="flex items-center justify-center">
           <!-- <HardHat class="h-12 w-12 text-primary-600 dark:text-primary-400" /> -->
-          <img src="/logo.png" class="h-16" alt="SiteWise">
+          <img src="/logo.webp" class="h-16" alt="SiteWise">
           <span class="ml-2 text-xl font-bold leading-tight text-gray-900 dark:text-white">Site</span>
           <span class="text-xl font-bold leading-tight text-blue-600">Wise</span>
         </div>

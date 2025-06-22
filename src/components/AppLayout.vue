@@ -8,7 +8,7 @@
          :class="{ '-translate-x-full': !sidebarOpen, 'translate-x-0': sidebarOpen }">
       <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
         <router-link class="flex items-center" to="/">
-          <img src="/logo.png" alt="SiteWise Logo" class="h-12 rounded-lg" />
+          <img src="/logo.webp" alt="SiteWise Logo" class="h-12 rounded-lg" />
           <span class="ml-2 text-xl font-bold leading-tight text-gray-900 dark:text-white">Site</span>
           <span class="text-xl font-bold leading-tight text-blue-600">Wise</span>
         </router-link>

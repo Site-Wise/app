@@ -158,7 +158,7 @@ describe('AppLayout', () => {
       wrapper = createWrapper()
       
       expect(wrapper.find('img[alt="SiteWise Logo"]').exists()).toBe(true)
-      expect(wrapper.find('img[src="/logo.png"]').exists()).toBe(true)
+      expect(wrapper.find('img[src="/logo.webp"]').exists()).toBe(true)
     })
 
     it('should render user avatar with initials', () => {
