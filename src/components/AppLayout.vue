@@ -132,6 +132,13 @@
                 
                 <!-- User Menu Items -->
                 <button
+                  @click="goToProfile"
+                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700"
+                >
+                  <User class="inline mr-2 h-4 w-4" />
+                  {{ t('nav.profile') }}
+                </button>
+                <button
                   v-if="canManageUsers"
                   @click="goToUserManagement"
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700"
@@ -227,6 +234,7 @@ import {
   BarChart3,
   Package,
   Users,
+  User,
   FileText,
   TruckIcon,
   CreditCard,
@@ -327,6 +335,11 @@ const handleClickOutside = (event: Event) => {
 const goToInvites = () => {
   userMenuOpen.value = false;
   router.push('/invites');
+};
+
+const goToProfile = () => {
+  userMenuOpen.value = false;
+  router.push('/profile');
 };
 
 const goToUserManagement = () => {

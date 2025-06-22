@@ -22,9 +22,17 @@ export function useAuth() {
     }
   };
 
-  const register = async (email: string, password: string, name: string, turnstileToken?: string) => {
+  const register = async (
+    email: string, 
+    password: string, 
+    name: string, 
+    turnstileToken?: string,
+    phone?: string,
+    countryCode?: string,
+    couponCode?: string
+  ) => {
     try {
-      await authService.register(email, password, name, turnstileToken);
+      await authService.register(email, password, name, turnstileToken, phone, countryCode, couponCode);
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };

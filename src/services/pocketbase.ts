@@ -12,6 +12,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  phone?: string;
   avatar?: string;
   sites: string[]; // Array of site IDs the user has access to
   created: string;
@@ -340,12 +341,22 @@ export class AuthService {
     return authData;
   }
 
-  async register(email: string, password: string, name: string, turnstileToken?: string) {
+  async register(
+    email: string, 
+    password: string, 
+    name: string, 
+    turnstileToken?: string,
+    phone?: string,
+    countryCode?: string,
+    couponCode?: string
+  ) {
     const data = {
       email,
       password,
       passwordConfirm: password,
       name,
+      phone: phone ? `${countryCode}${phone}` : undefined,
+      couponCode,
       sites: [], // Initialize with empty sites array
       turnstileToken
     };
@@ -363,13 +374,14 @@ export class AuthService {
   }
 
   get currentUser(): User | null {
-    const model = pb.authStore.model;
+    const model = pb.authStore.record;
     if (!model || !this.isAuthenticated) return null;
     
     return {
       id: model.id,
       email: model.email || '',
       name: model.name || '',
+      phone: model.phone,
       avatar: model.avatar,
       sites: model.sites || [],
       created: model.created || '',
@@ -513,6 +525,7 @@ export class SiteUserService {
       id: record.id,
       email: record.email,
       name: record.name,
+      phone: record.phone,
       avatar: record.avatar,
       sites: record.sites || [],
       created: record.created,
@@ -736,6 +749,7 @@ export class SiteService {
       id: record.id,
       email: record.email,
       name: record.name,
+      phone: record.phone,
       avatar: record.avatar,
       sites: record.sites || [],
       created: record.created,
@@ -1727,6 +1741,7 @@ export class SiteInvitationService {
       id: record.id,
       email: record.email,
       name: record.name,
+      phone: record.phone,
       avatar: record.avatar,
       sites: record.sites || [],
       created: record.created,

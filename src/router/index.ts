@@ -107,6 +107,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('../views/ProfileView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/subscription',
       name: 'Subscription',
       component: () => import('../views/SubscriptionView.vue'),

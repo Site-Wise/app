@@ -167,6 +167,48 @@
             </div>
 
             <div>
+              <label for="reg-phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('auth.phoneNumber') }}
+              </label>
+              <div class="mt-1 flex">
+                <select
+                  id="country-code"
+                  v-model="registerForm.countryCode"
+                  disabled
+                  class="input rounded-r-none w-20 bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
+                >
+                  <option value="+91">+91</option>
+                </select>
+                <input
+                  id="reg-phone"
+                  v-model="registerForm.phone"
+                  name="phone"
+                  type="tel"
+                  autocomplete="tel"
+                  required
+                  class="input rounded-l-none flex-1"
+                  :placeholder="t('forms.enterPhoneNumber')"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="reg-coupon" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('auth.couponCode') }} <span class="text-gray-500 dark:text-gray-400">({{ t('forms.optional') }})</span>
+              </label>
+              <div class="mt-1">
+                <input
+                  id="reg-coupon"
+                  v-model="registerForm.couponCode"
+                  name="couponCode"
+                  type="text"
+                  class="input"
+                  :placeholder="t('forms.enterCouponCode')"
+                />
+              </div>
+            </div>
+
+            <div>
               <label for="reg-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {{ t('auth.password') }}
               </label>
@@ -252,6 +294,9 @@ const form = reactive({
 const registerForm = reactive({
   name: '',
   email: '',
+  phone: '',
+  countryCode: '+91',
+  couponCode: '',
   password: ''
 });
 
@@ -298,7 +343,15 @@ const handleRegister = async () => {
   error.value = '';
   
   try {
-    const result = await register(registerForm.email, registerForm.password, registerForm.name, registerTurnstileToken.value);
+    const result = await register(
+      registerForm.email, 
+      registerForm.password, 
+      registerForm.name, 
+      registerTurnstileToken.value,
+      registerForm.phone,
+      registerForm.countryCode,
+      registerForm.couponCode
+    );
     if (result.success) {
       activeTab.value = 'login';
       error.value = '';
