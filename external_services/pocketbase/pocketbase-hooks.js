@@ -1,0 +1,342 @@
+/**
+ * PocketBase Hooks for Automatic Usage Tracking
+ * 
+ * Place these hooks in your PocketBase pb_hooks directory.
+ * These hooks automatically update subscription usage when records are created/deleted.
+ * 
+ * Usage is tracked securely on the server side, preventing client manipulation.
+ */
+
+// Hook for Items collection
+onAfterCreate((e) => {
+  if (e.record.tableName() !== 'items') return;
+  
+  const record = e.record;
+  const siteId = record.get('site');
+  
+  updateUsageCount(siteId, 'items_count', 1);
+}, 'items');
+
+onAfterDelete((e) => {
+  if (e.record.tableName() !== 'items') return;
+  
+  const record = e.record;
+  const siteId = record.get('site');
+  
+  updateUsageCount(siteId, 'items_count', -1);
+}, 'items');
+
+// Hook for Vendors collection
+onAfterCreate((e) => {
+  if (e.record.tableName() !== 'vendors') return;
+  
+  const record = e.record;
+  const siteId = record.get('site');
+  
+  updateUsageCount(siteId, 'vendors_count', 1);
+}, 'vendors');
+
+onAfterDelete((e) => {
+  if (e.record.tableName() !== 'vendors') return;
+  
+  const record = e.record;
+  const siteId = record.get('site');
+  
+  updateUsageCount(siteId, 'vendors_count', -1);
+}, 'vendors');
+
+// Hook for Incoming Deliveries collection
+onAfterCreate((e) => {
+  if (e.record.tableName() !== 'incoming_deliveries') return;
+  
+  const record = e.record;
+  const siteId = record.get('site');
+  
+  updateUsageCount(siteId, 'incoming_deliveries_count', 1);
+}, 'incoming_deliveries');
+
+onAfterDelete((e) => {
+  if (e.record.tableName() !== 'incoming_deliveries') return;
+  
+  const record = e.record;
+  const siteId = record.get('site');
+  
+  updateUsageCount(siteId, 'incoming_deliveries_count', -1);
+}, 'incoming_deliveries');
+
+// Hook for Service Bookings collection
+onAfterCreate((e) => {
+  if (e.record.tableName() !== 'service_bookings') return;
+  
+  const record = e.record;
+  const siteId = record.get('site');
+  
+  updateUsageCount(siteId, 'service_bookings_count', 1);
+}, 'service_bookings');
+
+onAfterDelete((e) => {
+  if (e.record.tableName() !== 'service_bookings') return;
+  
+  const record = e.record;
+  const siteId = record.get('site');
+  
+  updateUsageCount(siteId, 'service_bookings_count', -1);
+}, 'service_bookings');
+
+// Hook for Payments collection
+onAfterCreate((e) => {
+  if (e.record.tableName() !== 'payments') return;
+  
+  const record = e.record;
+  const siteId = record.get('site');
+  
+  updateUsageCount(siteId, 'payments_count', 1);
+}, 'payments');
+
+onAfterDelete((e) => {
+  if (e.record.tableName() !== 'payments') return;
+  
+  const record = e.record;
+  const siteId = record.get('site');
+  
+  updateUsageCount(siteId, 'payments_count', -1);
+}, 'payments');
+
+/**
+ * Updates usage count for a specific site and metric
+ * @param {string} siteId - The site ID
+ * @param {string} metric - The usage metric to update (e.g., 'items_count')
+ * @param {number} change - The change amount (+1 for create, -1 for delete)
+ */
+function updateUsageCount(siteId, metric, change) {
+  try {
+    // Get current subscription for the site
+    const subscription = $app.dao().findFirstRecordByFilter(
+      'site_subscriptions',
+      `site = "${siteId}" && status = "active"`
+    );
+    
+    if (!subscription) {
+      console.warn(`No active subscription found for site: ${siteId}`);
+      return;
+    }
+    
+    // Calculate current billing period
+    const periodStart = new Date(subscription.get('current_period_start'));
+    const periodEnd = new Date(subscription.get('current_period_end'));
+    
+    // Find or create usage record for current period
+    let usage;
+    try {
+      usage = $app.dao().findFirstRecordByFilter(
+        'subscription_usage',
+        `site = "${siteId}" && period_start = "${periodStart.toISOString()}" && period_end = "${periodEnd.toISOString()}"`
+      );
+    } catch (e) {
+      // Create new usage record if it doesn't exist
+      const usageCollection = $app.dao().findCollectionByNameOrId('subscription_usage');
+      usage = new Record(usageCollection);
+      usage.set('site', siteId);
+      usage.set('period_start', periodStart.toISOString());
+      usage.set('period_end', periodEnd.toISOString());
+      usage.set('items_count', 0);
+      usage.set('vendors_count', 0);
+      usage.set('incoming_deliveries_count', 0);
+      usage.set('service_bookings_count', 0);
+      usage.set('payments_count', 0);
+    }
+    
+    // Update the specific metric
+    const currentCount = usage.get(metric) || 0;
+    const newCount = Math.max(0, currentCount + change); // Ensure count doesn't go below 0
+    usage.set(metric, newCount);
+    
+    // Save the usage record
+    $app.dao().saveRecord(usage);
+    
+    console.log(`Updated ${metric} for site ${siteId}: ${currentCount} -> ${newCount}`);
+    
+  } catch (err) {
+    console.error(`Error updating usage count for site ${siteId}:`, err);
+  }
+}
+
+/**
+ * Hook to validate creation limits before allowing new records
+ * This runs before the record is created, allowing us to block creation if limits are exceeded
+ */
+onBeforeCreate((e) => {
+  const record = e.record;
+  const tableName = record.tableName();
+  
+  // Map table names to usage metrics
+  const usageMapping = {
+    'items': 'items_count',
+    'vendors': 'vendors_count', 
+    'incoming_deliveries': 'incoming_deliveries_count',
+    'service_bookings': 'service_bookings_count',
+    'payments': 'payments_count'
+  };
+  
+  const usageMetric = usageMapping[tableName];
+  if (!usageMetric) return; // Not a tracked collection
+  
+  const siteId = record.get('site');
+  if (!siteId) return; // No site association
+  
+  // Check if creation is allowed
+  if (!canCreateRecord(siteId, usageMetric)) {
+    throw new BadRequestError(`Subscription limit exceeded for ${tableName}. Please upgrade your plan.`);
+  }
+}, 'items', 'vendors', 'incoming_deliveries', 'service_bookings', 'payments');
+
+/**
+ * Checks if a new record can be created based on subscription limits
+ * @param {string} siteId - The site ID
+ * @param {string} usageMetric - The usage metric to check
+ * @returns {boolean} - True if creation is allowed, false otherwise
+ */
+function canCreateRecord(siteId, usageMetric) {
+  try {
+    // Get current subscription for the site
+    const subscription = $app.dao().findFirstRecordByFilter(
+      'site_subscriptions',
+      `site = "${siteId}" && status = "active"`
+    );
+    
+    if (!subscription) {
+      console.warn(`No active subscription found for site: ${siteId}`);
+      return false; // No subscription = no creation allowed
+    }
+    
+    // Get subscription plan
+    const planId = subscription.get('subscription_plan');
+    const plan = $app.dao().findRecordById('subscription_plans', planId);
+    
+    if (!plan) {
+      console.warn(`No plan found for subscription: ${subscription.getId()}`);
+      return false;
+    }
+    
+    // Get plan features
+    const features = plan.get('features');
+    if (!features) return true; // No features defined = unlimited
+    
+    // Map usage metric to plan feature
+    const featureMapping = {
+      'items_count': 'max_items',
+      'vendors_count': 'max_vendors',
+      'incoming_deliveries_count': 'max_incoming_deliveries',
+      'service_bookings_count': 'max_service_bookings',
+      'payments_count': 'max_payments'
+    };
+    
+    const featureKey = featureMapping[usageMetric];
+    if (!featureKey) return true;
+    
+    const maxAllowed = features[featureKey];
+    
+    // Check if unlimited (support both -1 and 0)
+    if (maxAllowed === -1 || maxAllowed === 0) {
+      return true; // Unlimited
+    }
+    
+    // Get current usage
+    const periodStart = new Date(subscription.get('current_period_start'));
+    const periodEnd = new Date(subscription.get('current_period_end'));
+    
+    let usage;
+    try {
+      usage = $app.dao().findFirstRecordByFilter(
+        'subscription_usage',
+        `site = "${siteId}" && period_start = "${periodStart.toISOString()}" && period_end = "${periodEnd.toISOString()}"`
+      );
+    } catch (e) {
+      // No usage record yet = allow creation
+      return true;
+    }
+    
+    const currentCount = usage.get(usageMetric) || 0;
+    
+    // Allow creation if under limit
+    return currentCount < maxAllowed;
+    
+  } catch (err) {
+    console.error(`Error checking creation limits for site ${siteId}:`, err);
+    return false; // Error = block creation for safety
+  }
+}
+
+/**
+ * Hook to handle subscription period transitions
+ * This creates new usage records when a subscription period changes
+ */
+onAfterUpdate((e) => {
+  if (e.record.tableName() !== 'site_subscriptions') return;
+  
+  const record = e.record;
+  const oldRecord = e.record.originalCopy();
+  
+  // Check if period_end has changed (new billing cycle)
+  const oldPeriodEnd = oldRecord.get('current_period_end');
+  const newPeriodEnd = record.get('current_period_end');
+  
+  if (oldPeriodEnd !== newPeriodEnd) {
+    const siteId = record.get('site');
+    const periodStart = new Date(record.get('current_period_start'));
+    const periodEnd = new Date(newPeriodEnd);
+    
+    // Create new usage record for the new period
+    try {
+      const usageCollection = $app.dao().findCollectionByNameOrId('subscription_usage');
+      const usage = new Record(usageCollection);
+      usage.set('site', siteId);
+      usage.set('period_start', periodStart.toISOString());
+      usage.set('period_end', periodEnd.toISOString());
+      usage.set('items_count', 0);
+      usage.set('vendors_count', 0);
+      usage.set('incoming_deliveries_count', 0);
+      usage.set('service_bookings_count', 0);
+      usage.set('payments_count', 0);
+      
+      $app.dao().saveRecord(usage);
+      console.log(`Created new usage record for site ${siteId} for period ${periodStart.toISOString()} - ${periodEnd.toISOString()}`);
+    } catch (err) {
+      console.error(`Error creating new usage record for site ${siteId}:`, err);
+    }
+  }
+}, 'site_subscriptions');
+
+/**
+ * Utility function to get current usage for a site and period
+ * This can be called from anywhere in your PocketBase hooks
+ */
+function getCurrentUsage(siteId) {
+  try {
+    const subscription = $app.dao().findFirstRecordByFilter(
+      'site_subscriptions',
+      `site = "${siteId}" && status = "active"`
+    );
+    
+    if (!subscription) return null;
+    
+    const periodStart = new Date(subscription.get('current_period_start'));
+    const periodEnd = new Date(subscription.get('current_period_end'));
+    
+    const usage = $app.dao().findFirstRecordByFilter(
+      'subscription_usage',
+      `site = "${siteId}" && period_start = "${periodStart.toISOString()}" && period_end = "${periodEnd.toISOString()}"`
+    );
+    
+    return {
+      items_count: usage.get('items_count') || 0,
+      vendors_count: usage.get('vendors_count') || 0,
+      incoming_deliveries_count: usage.get('incoming_deliveries_count') || 0,
+      service_bookings_count: usage.get('service_bookings_count') || 0,
+      payments_count: usage.get('payments_count') || 0
+    };
+  } catch (err) {
+    console.error(`Error getting current usage for site ${siteId}:`, err);
+    return null;
+  }
+}
