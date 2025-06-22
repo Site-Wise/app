@@ -8,9 +8,10 @@ export default defineConfig({
     globals: true,
     environment: 'happy-dom',
     setupFiles: ['./src/test/setup.ts'],
+    passWithNoTests: true,
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
       exclude: [
         'node_modules/',
         'src/test/',
@@ -20,7 +21,9 @@ export default defineConfig({
         'coverage/',
         'public/',
         'dev-dist/'
-      ]
+      ],
+      all: true,
+      reportsDirectory: './coverage'
     }
   },
   resolve: {

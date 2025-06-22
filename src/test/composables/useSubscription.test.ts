@@ -615,11 +615,20 @@ describe('useSubscription', () => {
         const limitedSubscription = createMockSubscriptionWithPlan(limitedPlan);
         const underLimitUsage = { ...mockUsage, items_count: 5, vendors_count: 2 };
 
-        const mockCollection = vi.fn(() => ({
-          getFirstListItem: vi.fn()
-            .mockResolvedValueOnce(limitedSubscription)
-            .mockResolvedValueOnce(underLimitUsage)
-        }));
+        const mockCollection = vi.fn((collectionName: string) => {
+          if (collectionName === 'site_subscriptions') {
+            return {
+              getFirstListItem: vi.fn().mockResolvedValue(limitedSubscription)
+            };
+          } else if (collectionName === 'subscription_usage') {
+            return {
+              getFirstListItem: vi.fn().mockResolvedValue(underLimitUsage)
+            };
+          }
+          return {
+            getFirstListItem: vi.fn()
+          };
+        });
         (pb.collection as Mock).mockImplementation(mockCollection);
 
         const { loadSubscription, checkCreateLimit, usageLimits } = useSubscription();
@@ -647,11 +656,20 @@ describe('useSubscription', () => {
         const limitedSubscription = createMockSubscriptionWithPlan(limitedPlan);
         const atLimitUsage = { ...mockUsage, items_count: 10, vendors_count: 5 };
 
-        const mockCollection = vi.fn(() => ({
-          getFirstListItem: vi.fn()
-            .mockResolvedValueOnce(limitedSubscription)
-            .mockResolvedValueOnce(atLimitUsage)
-        }));
+        const mockCollection = vi.fn((collectionName: string) => {
+          if (collectionName === 'site_subscriptions') {
+            return {
+              getFirstListItem: vi.fn().mockResolvedValue(limitedSubscription)
+            };
+          } else if (collectionName === 'subscription_usage') {
+            return {
+              getFirstListItem: vi.fn().mockResolvedValue(atLimitUsage)
+            };
+          }
+          return {
+            getFirstListItem: vi.fn()
+          };
+        });
         (pb.collection as Mock).mockImplementation(mockCollection);
 
         const { loadSubscription, checkCreateLimit, usageLimits } = useSubscription();
@@ -676,11 +694,20 @@ describe('useSubscription', () => {
         const limitedSubscription = createMockSubscriptionWithPlan(limitedPlan);
         const overLimitUsage = { ...mockUsage, items_count: 15, vendors_count: 8 };
 
-        const mockCollection = vi.fn(() => ({
-          getFirstListItem: vi.fn()
-            .mockResolvedValueOnce(limitedSubscription)
-            .mockResolvedValueOnce(overLimitUsage)
-        }));
+        const mockCollection = vi.fn((collectionName: string) => {
+          if (collectionName === 'site_subscriptions') {
+            return {
+              getFirstListItem: vi.fn().mockResolvedValue(limitedSubscription)
+            };
+          } else if (collectionName === 'subscription_usage') {
+            return {
+              getFirstListItem: vi.fn().mockResolvedValue(overLimitUsage)
+            };
+          }
+          return {
+            getFirstListItem: vi.fn()
+          };
+        });
         (pb.collection as Mock).mockImplementation(mockCollection);
 
         const { loadSubscription, checkCreateLimit, usageLimits } = useSubscription();
@@ -714,11 +741,20 @@ describe('useSubscription', () => {
           incoming_deliveries_count: 5 
         };
 
-        const mockCollection = vi.fn(() => ({
-          getFirstListItem: vi.fn()
-            .mockResolvedValueOnce(mixedSubscription)
-            .mockResolvedValueOnce(mixedUsage)
-        }));
+        const mockCollection = vi.fn((collectionName: string) => {
+          if (collectionName === 'site_subscriptions') {
+            return {
+              getFirstListItem: vi.fn().mockResolvedValue(mixedSubscription)
+            };
+          } else if (collectionName === 'subscription_usage') {
+            return {
+              getFirstListItem: vi.fn().mockResolvedValue(mixedUsage)
+            };
+          }
+          return {
+            getFirstListItem: vi.fn()
+          };
+        });
         (pb.collection as Mock).mockImplementation(mockCollection);
 
         const { loadSubscription, checkCreateLimit, usageLimits } = useSubscription();
@@ -770,11 +806,20 @@ describe('useSubscription', () => {
           payments_count: 1500
         };
 
-        const mockCollection = vi.fn(() => ({
-          getFirstListItem: vi.fn()
-            .mockResolvedValueOnce(unlimitedSubscription)
-            .mockResolvedValueOnce(highUsage)
-        }));
+        const mockCollection = vi.fn((collectionName: string) => {
+          if (collectionName === 'site_subscriptions') {
+            return {
+              getFirstListItem: vi.fn().mockResolvedValue(unlimitedSubscription)
+            };
+          } else if (collectionName === 'subscription_usage') {
+            return {
+              getFirstListItem: vi.fn().mockResolvedValue(highUsage)
+            };
+          }
+          return {
+            getFirstListItem: vi.fn()
+          };
+        });
         (pb.collection as Mock).mockImplementation(mockCollection);
 
         const { loadSubscription, isReadOnly } = useSubscription();
@@ -800,11 +845,20 @@ describe('useSubscription', () => {
           incoming_deliveries_count: 500  // unlimited, so OK
         };
 
-        const mockCollection = vi.fn(() => ({
-          getFirstListItem: vi.fn()
-            .mockResolvedValueOnce(mixedSubscription)
-            .mockResolvedValueOnce(exceedingUsage)
-        }));
+        const mockCollection = vi.fn((collectionName: string) => {
+          if (collectionName === 'site_subscriptions') {
+            return {
+              getFirstListItem: vi.fn().mockResolvedValue(mixedSubscription)
+            };
+          } else if (collectionName === 'subscription_usage') {
+            return {
+              getFirstListItem: vi.fn().mockResolvedValue(exceedingUsage)
+            };
+          }
+          return {
+            getFirstListItem: vi.fn()
+          };
+        });
         (pb.collection as Mock).mockImplementation(mockCollection);
 
         const { loadSubscription, isReadOnly } = useSubscription();

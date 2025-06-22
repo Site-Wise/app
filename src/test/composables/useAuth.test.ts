@@ -68,7 +68,7 @@ describe('useAuth', () => {
     const result = await register('new@example.com', 'password', 'New User')
     
     expect(result.success).toBe(true)
-    expect(authService.register).toHaveBeenCalledWith('new@example.com', 'password', 'New User', undefined)
+    expect(authService.register).toHaveBeenCalledWith('new@example.com', 'password', 'New User', undefined, undefined, undefined, undefined)
   })
 
   it('should handle registration failure', async () => {

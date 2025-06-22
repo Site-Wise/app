@@ -316,7 +316,7 @@ export function useSubscription() {
     if (!currentSubscription.value || !currentUsage.value) return false;
     
     const plan = currentSubscription.value.expand?.subscription_plan;
-    if (!plan) return false;
+    if (!plan || !plan.features) return false;
 
     const usage = currentUsage.value;
     

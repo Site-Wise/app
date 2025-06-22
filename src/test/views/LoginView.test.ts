@@ -261,7 +261,7 @@ describe('LoginComponent', () => {
       const registerForm = wrapper.find('form')
       await registerForm.trigger('submit.prevent')
       
-      expect(mockRegister).toHaveBeenCalledWith('john@example.com', 'password123', 'John Doe', '')
+      expect(mockRegister).toHaveBeenCalledWith('john@example.com', 'password123', 'John Doe', '', '', '+91', '')
     })
 
     it('auto-logs in user after successful registration', async () => {

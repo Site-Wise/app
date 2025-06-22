@@ -164,6 +164,7 @@ export const createMockPocketBase = () => {
     authStore: {
       isValid: true,
       model: mockUser,
+      record: mockUser,
       clear: vi.fn(),
     },
     collection: vi.fn((name: string) => ({

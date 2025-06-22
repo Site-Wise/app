@@ -69,6 +69,15 @@ vi.mock('../../services/pocketbase', () => {
   }
   
   return {
+    pb: {
+      collection: vi.fn().mockReturnValue({
+        getFirstListItem: vi.fn(),
+        getFullList: vi.fn(),
+        create: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn()
+      })
+    },
     vendorService: {
       getAll: vi.fn().mockResolvedValue([mockVendor]),
       create: vi.fn(),
