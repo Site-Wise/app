@@ -89,27 +89,36 @@
             <!-- Theme Toggle -->
             <ThemeToggle class="hidden md:block" />
             
-            <div class="relative" ref="userMenuRef">
+            <div class="relative inline-block" ref="userMenuRef">
               <button
                 @click="userMenuOpen = !userMenuOpen"
-                class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-800"
+                class="flex items-center justify-between p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation w-full md:w-auto"
+                :class="{ 'bg-gray-100 dark:bg-gray-700': userMenuOpen }"
+                :aria-expanded="userMenuOpen"
+                aria-haspopup="true"
               >
-                <div class="relative">
-                  <div class="h-8 w-8 rounded-full bg-primary-600 dark:bg-primary-500 flex items-center justify-center">
-                    <span class="text-white font-medium">{{ userInitials }}</span>
+                <div class="flex items-center">
+                  <div class="relative">
+                    <div class="h-8 w-8 rounded-full bg-primary-600 dark:bg-primary-500 flex items-center justify-center">
+                      <span class="text-white font-medium">{{ userInitials }}</span>
+                    </div>
+                    <!-- Invitation Badge -->
+                    <div v-if="receivedInvitationsCount > 0" class="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full flex items-center justify-center">
+                      <span class="text-xs font-bold text-white">{{ receivedInvitationsCount > 9 ? '9+' : receivedInvitationsCount }}</span>
+                    </div>
                   </div>
-                  <!-- Invitation Badge -->
-                  <div v-if="receivedInvitationsCount > 0" class="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full flex items-center justify-center">
-                    <span class="text-xs font-bold text-white">{{ receivedInvitationsCount > 9 ? '9+' : receivedInvitationsCount }}</span>
-                  </div>
+                  <span class="ml-2 text-gray-700 dark:text-gray-300 font-medium text-sm">{{ user?.name }}</span>
                 </div>
-                <span class="ml-2 text-gray-700 dark:text-gray-300">{{ user?.name }}</span>
-                <ChevronDown class="ml-1 h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <ChevronDown 
+                  class="h-3 w-3 ml-1 md:ml-2 transition-transform duration-200" 
+                  :class="{ 'rotate-180': userMenuOpen }"
+                />
               </button>
               
               <div
                 v-if="userMenuOpen"
-                class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-2 z-50 border border-gray-200 dark:border-gray-700"
+                class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-64 overflow-y-auto"
+                role="menu"
               >
                 <!-- Invitations Section -->
                 <div v-if="receivedInvitationsCount > 0" class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
@@ -131,36 +140,50 @@
                 </div>
                 
                 <!-- User Menu Items -->
-                <button
-                  @click="goToProfile"
-                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700"
-                >
-                  <User class="inline mr-2 h-4 w-4" />
-                  {{ t('nav.profile') }}
-                </button>
-                <button
-                  v-if="canManageUsers"
-                  @click="goToUserManagement"
-                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700"
-                >
-                  <Users class="inline mr-2 h-4 w-4" />
-                  {{ t('nav.manage_users') }}
-                </button>
-                <button
-                  v-if="isOwner"
-                  @click="goToSubscription"
-                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700"
-                >
-                  <CreditCard class="inline mr-2 h-4 w-4" />
-                  {{ t('subscription.title')}}
-                </button>
-                <button
-                  @click="handleLogout"
-                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  <LogOut class="inline mr-2 h-4 w-4" />
-                  {{ t('nav.logout') }}
-                </button>
+                <div class="py-2">
+                  <button
+                    @click="goToProfile"
+                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300"
+                    role="menuitem"
+                  >
+                    <User class="mr-3 h-4 w-4 md:h-5 md:w-5" />
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium text-sm truncate">{{ t('nav.profile') }}</div>
+                    </div>
+                  </button>
+                  <button
+                    v-if="canManageUsers"
+                    @click="goToUserManagement"
+                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300"
+                    role="menuitem"
+                  >
+                    <Users class="mr-3 h-4 w-4 md:h-5 md:w-5" />
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium text-sm truncate">{{ t('nav.manage_users') }}</div>
+                    </div>
+                  </button>
+                  <button
+                    v-if="isOwner"
+                    @click="goToSubscription"
+                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300"
+                    role="menuitem"
+                  >
+                    <CreditCard class="mr-3 h-4 w-4 md:h-5 md:w-5" />
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium text-sm truncate">{{ t('subscription.title') }}</div>
+                    </div>
+                  </button>
+                  <button
+                    @click="handleLogout"
+                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300"
+                    role="menuitem"
+                  >
+                    <LogOut class="mr-3 h-4 w-4 md:h-5 md:w-5" />
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium text-sm truncate">{{ t('nav.logout') }}</div>
+                    </div>
+                  </button>
+                </div>
 
                 <!-- Mobile Controls Section -->
                 <div class="block md:hidden border-t border-gray-200 dark:border-gray-700 mt-1">
