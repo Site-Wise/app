@@ -572,53 +572,11 @@ export class SiteService {
 
     const record = await pb.collection('sites').create(siteData);
     
-    // Create site_user record with owner role
-    await siteUserService.assignRole({
-      site: record.id,
-      user: user.id,
-      role: 'owner',
-      assigned_by: user.id
-    });
-    
-    // Create free tier subscription for new site
-    await this.createFreeTierSubscription(record.id);
+    // Note: site_user record creation and subscription setup are now handled
+    // by PocketBase hooks (see external_services/pocketbase/site-creation-hook.js)
+    // This ensures atomicity and prevents orphaned sites if client fails
     
     return this.mapRecordToSite(record);
-  }
-
-  private async createFreeTierSubscription(siteId: string): Promise<void> {
-    try {
-      // Get default plan (fallback to Free plan if no default is set)
-      let defaultPlan;
-      try {
-        defaultPlan = await pb.collection('subscription_plans').getFirstListItem(
-          'is_default=true && is_active=true'
-        );
-      } catch {
-        // Fallback to Free plan if no default plan is found
-        defaultPlan = await pb.collection('subscription_plans').getFirstListItem(
-          'name="Free" && is_active=true'
-        );
-      }
-
-      // Create subscription for new site
-      const now = new Date();
-      const periodEnd = new Date(now);
-      periodEnd.setMonth(periodEnd.getMonth() + 1);
-
-      await pb.collection('site_subscriptions').create({
-        site: siteId,
-        subscription_plan: defaultPlan.id,
-        status: 'active',
-        current_period_start: now.toISOString(),
-        current_period_end: periodEnd.toISOString(),
-        cancel_at_period_end: false
-      });
-
-    } catch (err) {
-      console.error('Error creating default subscription:', err);
-      // Don't throw error to prevent site creation from failing
-    }
   }
 
   async update(id: string, data: Partial<Site>): Promise<Site> {

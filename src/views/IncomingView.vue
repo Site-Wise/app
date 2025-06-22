@@ -353,7 +353,7 @@ interface FileWithPreview {
 }
 
 const { t } = useI18n();
-const { checkCreateLimit, isReadOnly, refreshUsage } = useSubscription();
+const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
 
 const incomingItems = ref<IncomingItem[]>([]);
@@ -553,7 +553,6 @@ const deleteItem = async (id: string) => {
       success(t('messages.deleteSuccess', { item: t('incoming.delivery') }));
       await loadData();
       // Usage is automatically decremented by PocketBase hooks
-      await refreshUsage();
     } catch (err) {
       console.error('Error deleting incoming item:', err);
       error(t('messages.error'));

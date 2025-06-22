@@ -197,7 +197,7 @@ import {
 } from '../services/pocketbase';
 
 const { t } = useI18n();
-const { checkCreateLimit, isReadOnly, refreshUsage } = useSubscription();
+const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
 
 const router = useRouter();
@@ -329,7 +329,6 @@ const deleteVendor = async (id: string) => {
       success(t('messages.deleteSuccess', { item: t('common.vendor') }));
       await loadData();
       // Usage is automatically decremented by PocketBase hooks
-      await refreshUsage();
     } catch (err) {
       console.error('Error deleting vendor:', err);
       error(t('messages.error'));

@@ -391,27 +391,6 @@ describe('useSubscription', () => {
     });
   });
 
-  describe('refreshUsage', () => {
-    it('should refresh usage from server', async () => {
-      const updatedUsage = { ...mockUsage, items_count: 5 };
-      const mockGetFirstListItem = vi.fn()
-        .mockResolvedValueOnce(mockSubscription)
-        .mockResolvedValueOnce(mockUsage)
-        .mockResolvedValueOnce(updatedUsage);
-      
-      const mockCollection = vi.fn(() => ({
-        getFirstListItem: mockGetFirstListItem
-      }));
-      (pb.collection as Mock).mockImplementation(mockCollection);
-
-      const { loadSubscription, refreshUsage, currentUsage } = useSubscription();
-      await loadSubscription();
-
-      await refreshUsage();
-
-      expect(currentUsage.value?.items_count).toBe(5);
-    });
-  });
 
   describe('limit utility functions', () => {
     it('should correctly identify unlimited values', async () => {

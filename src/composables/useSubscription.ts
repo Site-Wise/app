@@ -353,23 +353,6 @@ export function useSubscription() {
     return limit > 0;
   };
 
-  // Usage is now tracked automatically by PocketBase hooks
-  // These methods are kept for backwards compatibility but will be deprecated
-  const refreshUsage = async (): Promise<void> => {
-    if (!siteId || !currentSubscription.value) return;
-    
-    try {
-      const periodStart = new Date(currentSubscription.value.current_period_start);
-      const periodEnd = new Date(currentSubscription.value.current_period_end);
-      
-      const usage = await pb.collection('subscription_usage').getFirstListItem(
-        `site="${siteId}" && period_start="${periodStart.toISOString()}" && period_end="${periodEnd.toISOString()}"`
-      );
-      currentUsage.value = usage as unknown as SubscriptionUsage;
-    } catch (err) {
-      console.error('Error refreshing usage:', err);
-    }
-  };
 
   const getAllPlans = async (): Promise<SubscriptionPlan[]> => {
     try {
@@ -687,7 +670,6 @@ export function useSubscription() {
     createDefaultSubscription,
     createFreeTierSubscription,
     checkCreateLimit,
-    refreshUsage,
     getAllPlans,
     upgradeSubscription,
     cancelSubscription,
