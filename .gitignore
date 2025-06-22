@@ -26,3 +26,14 @@ dist-ssr
 .clocignore
 *.tsbuildinfo
 coverage
+
+# Tauri
+src-tauri/target
+src-tauri/Cargo.lock
+src-tauri/gen
+*.app
+*.dmg
+*.deb
+*.AppImage
+*.msi
+*.exe

@@ -2,11 +2,15 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Check if building for Tauri
+const isTauri = process.env.TAURI_PLATFORM !== undefined
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     vue(),
-    VitePWA({
+    // Only include PWA plugin when not building for Tauri
+    ...(isTauri ? [] : [VitePWA({
       registerType: 'prompt',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       disable: false,
@@ -83,8 +87,23 @@ export default defineConfig({
       devOptions: {
         enabled: false // Disable in development to avoid the error
       }
-    })
+    })])
   ],
+  // Ensure proper configuration for both environments
+  clearScreen: false,
+  server: {
+    port: 5173,
+    strictPort: true,
+    watch: {
+      ignored: ["**/src-tauri/**"]
+    }
+  },
+  envPrefix: ['VITE_', 'TAURI_'],
+  build: {
+    rollupOptions: {
+      external: isTauri ? [] : ['@tauri-apps/api/tauri']
+    }
+  },
   css: {
     postcss: './postcss.config.js', // if you're using PostCSS
   },

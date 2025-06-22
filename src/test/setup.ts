@@ -73,3 +73,20 @@ window.confirm = vi.fn(() => true)
 
 // Mock URL.createObjectURL
 window.URL.createObjectURL = vi.fn(() => 'mock-url')
+
+// Mock Tauri API
+vi.mock('@tauri-apps/api/tauri', () => ({
+  invoke: vi.fn()
+}))
+
+// Mock window.Notification
+Object.defineProperty(window, 'Notification', {
+  writable: true,
+  value: vi.fn().mockImplementation(() => ({
+    close: vi.fn()
+  }))
+})
+
+// Add requestPermission as a static method
+window.Notification.requestPermission = vi.fn().mockResolvedValue('granted')
+window.Notification.permission = 'default'
