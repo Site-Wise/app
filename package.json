@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^2.5.0",
-    "chart.js": "^4.4.9",
+    "chart.js": "^4.5.0",
     "lucide-vue-next": "^0.515.0",
     "pocketbase": "^0.26.1",
     "vue": "^3.4.38",
