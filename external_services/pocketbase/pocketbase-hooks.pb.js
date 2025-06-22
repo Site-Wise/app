@@ -12,252 +12,114 @@
 
 // Hook for Site creation - automatically assign creator as owner
 onRecordAfterCreateSuccess((e) => {
-  if (e.record.tableName() !== 'sites') return;
+  if (e.record.tableName() !== 'sites') return
 
-  const site = e.record;
-  const creatorId = site.get('admin_user');
+  const site = e.record
+  const siteId = site.get('id')
+  const creatorId = site.get('admin_user')
 
   if (!creatorId) {
-    e.app.logger().error('Cannot determine creator for site:', site.get('id'));
-    return;
+    e.app.logger().error('Cannot determine creator for site:', siteId)
+    return
   }
 
   try {
     // Create site_user record to assign creator as owner
-    const siteUserCollection = e.app.findCollectionByNameOrId('site_users');
-    const siteUser = new Record(siteUserCollection);
-    siteUser.set('site', site.get('id'));
-    siteUser.set('user', creatorId);
-    siteUser.set('assigned_by', creatorId);
-    siteUser.set('role', 'owner');
-    siteUser.set('is_active', true);
+    const siteUserCollection = e.app.findCollectionByNameOrId('site_users')
+    const siteUser = new Record(siteUserCollection)
+    siteUser.set('site', siteId)
+    siteUser.set('user', creatorId)
+    siteUser.set('assigned_by', creatorId)
+    siteUser.set('role', 'owner')
+    siteUser.set('is_active', true)
 
-    e.app.save(siteUser);
-    e.app.logger().info(`Assigned user ${creatorId} as owner of site ${site.get('id')}`);
+    e.app.save(siteUser)
+    e.app.logger().info(`Assigned user ${creatorId} as owner of site ${siteId}`)
 
+    createFreeTierSubscription(siteId, e.app)
   } catch (err) {
-    e.app.logger().error(`Error assigning owner to site ${site.get('id')}:`, err);
+    e.app.logger().error(`Error assigning owner to site ${siteId}:`, err)
   }
 
   e.next()
-}, 'sites');
+}, 'sites')
 
 // Hook for Site deletion - cleanup related records
 onRecordAfterDeleteSuccess((e) => {
-  if (e.record.tableName() !== 'sites') return;
+  if (e.record.tableName() !== 'sites') return
 
-  const siteId = e.record.getId();
+  const siteId = e.record.getId()
 
   try {
     // Clean up site_users
-    const siteUsers = e.app.findRecordsByFilter('site_users', `site = "${siteId}"`);
+    const siteUsers = e.app.findRecordsByFilter('site_users', `site = "${siteId}"`)
     siteUsers.forEach(siteUser => {
-      e.app.deleteRecord(siteUser);
-    });
+      e.app.deleteRecord(siteUser)
+    })
 
     // Clean up site_subscriptions
-    const subscriptions = e.app.findRecordsByFilter('site_subscriptions', `site = "${siteId}"`);
+    const subscriptions = e.app.findRecordsByFilter('site_subscriptions', `site = "${siteId}"`)
     subscriptions.forEach(subscription => {
-      e.app.deleteRecord(subscription);
-    });
+      e.app.deleteRecord(subscription)
+    })
 
     // Clean up subscription_usage
-    const usageRecords = e.app.findRecordsByFilter('subscription_usage', `site = "${siteId}"`);
+    const usageRecords = e.app.findRecordsByFilter('subscription_usage', `site = "${siteId}"`)
     usageRecords.forEach(usage => {
-      e.app.deleteRecord(usage);
-    });
+      e.app.deleteRecord(usage)
+    })
 
-    e.app.logger().info(`Cleaned up related records for deleted site ${siteId}`);
+    e.app.logger().info(`Cleaned up related records for deleted site ${siteId}`)
 
   } catch (err) {
-    e.app.logger().error(`Error cleaning up records for deleted site ${siteId}:`, err);
+    e.app.logger().error(`Error cleaning up records for deleted site ${siteId}:`, err)
   }
 
   e.next()
-}, 'sites');
+}, 'sites')
 
 // Hook for Items collection
 onRecordAfterCreateSuccess((e) => {
-  if (e.record.tableName() !== 'items') return;
-
-  const record = e.record;
-  const siteId = record.get('site');
-
-  updateUsageCount(siteId, 'items_count', 1, e.app);
-
-  e.next()
-}, 'items');
-
-onRecordAfterDeleteSuccess((e) => {
-  if (e.record.tableName() !== 'items') return;
-
-  const record = e.record;
-  const siteId = record.get('site');
-
-  updateUsageCount(siteId, 'items_count', -1, e.app);
-
-  e.next()
-}, 'items');
-
-// Hook for Vendors collection
-onRecordAfterCreateSuccess((e) => {
-  if (e.record.tableName() !== 'vendors') return;
-
-  const record = e.record;
-  const siteId = record.get('site');
-
-  updateUsageCount(siteId, 'vendors_count', 1, e.app);
-
-  e.next()
-}, 'vendors');
-
-onRecordAfterDeleteSuccess((e) => {
-  if (e.record.tableName() !== 'vendors') return;
-
-  const record = e.record;
-  const siteId = record.get('site');
-
-  updateUsageCount(siteId, 'vendors_count', -1, e.app);
-
-  e.next()
-}, 'vendors');
-
-// Hook for Incoming Deliveries collection
-onRecordAfterCreateSuccess((e) => {
-  if (e.record.tableName() !== 'incoming_deliveries') return;
-
-  const record = e.record;
-  const siteId = record.get('site');
-
-  updateUsageCount(siteId, 'incoming_deliveries_count', 1, e.app);
-
-  e.next()
-}, 'incoming_deliveries');
-
-onRecordAfterDeleteSuccess((e) => {
-  if (e.record.tableName() !== 'incoming_deliveries') return;
-
-  const record = e.record;
-  const siteId = record.get('site');
-
-  updateUsageCount(siteId, 'incoming_deliveries_count', -1, e.app);
-
-  e.next()
-}, 'incoming_deliveries');
-
-// Hook for Service Bookings collection
-onRecordAfterCreateSuccess((e) => {
-  if (e.record.tableName() !== 'service_bookings') return;
-
-  const record = e.record;
-  const siteId = record.get('site');
-
-  updateUsageCount(siteId, 'service_bookings_count', 1, e.app);
-
-  e.next()
-}, 'service_bookings');
-
-onRecordAfterDeleteSuccess((e) => {
-  if (e.record.tableName() !== 'service_bookings') return;
-
-  const record = e.record;
-  const siteId = record.get('site');
-
-  updateUsageCount(siteId, 'service_bookings_count', -1, e.app);
-
-  e.next()
-}, 'service_bookings');
-
-// Hook for Payments collection
-onRecordAfterCreateSuccess((e) => {
-  if (e.record.tableName() !== 'payments') return;
-
-  const record = e.record;
-  const siteId = record.get('site');
-
-  updateUsageCount(siteId, 'payments_count', 1, e.app);
-
-  e.next()
-}, 'payments');
-
-onRecordAfterDeleteSuccess((e) => {
-  if (e.record.tableName() !== 'payments') return;
-
-  const record = e.record;
-  const siteId = record.get('site');
-
-  updateUsageCount(siteId, 'payments_count', -1, e.app);
-
-  e.next()
-}, 'payments');
-
-/**
- * Updates usage count for a specific site and metric
- * @param {string} siteId - The site ID
- * @param {string} metric - The usage metric to update (e.g., 'items_count')
- * @param {number} change - The change amount (+1 for create, -1 for delete)
- */
-function updateUsageCount(siteId, metric, change, app) {
-  try {
-    // Get current subscription for the site
-    const subscription = app.findFirstRecordByFilter(
-      'site_subscriptions',
-      `site = "${siteId}" && status = "active"`
-    );
-
-    if (!subscription) {
-      console.warn(`No active subscription found for site: ${siteId}`);
-      return;
-    }
-
-    // Calculate current billing period
-    const periodStart = new Date(subscription.get('current_period_start'));
-    const periodEnd = new Date(subscription.get('current_period_end'));
-
-    // Find or create usage record for current period
-    let usage;
-    try {
-      usage = app.findFirstRecordByFilter(
-        'subscription_usage',
-        `site = "${siteId}" && period_start = "${periodStart.toISOString()}" && period_end = "${periodEnd.toISOString()}"`
-      );
-    } catch (e) {
-      // Create new usage record if it doesn't exist
-      const usageCollection = app.findCollectionByNameOrId('subscription_usage');
-      usage = new Record(usageCollection);
-      usage.set('site', siteId);
-      usage.set('period_start', periodStart.toISOString());
-      usage.set('period_end', periodEnd.toISOString());
-      usage.set('items_count', 0);
-      usage.set('vendors_count', 0);
-      usage.set('incoming_deliveries_count', 0);
-      usage.set('service_bookings_count', 0);
-      usage.set('payments_count', 0);
-    }
-
-    // Update the specific metric
-    const currentCount = usage.get(metric) || 0;
-    const newCount = Math.max(0, currentCount + change); // Ensure count doesn't go below 0
-    usage.set(metric, newCount);
-
-    // Save the usage record
-    app.saveRecord(usage);
-
-    e.app.logger().info(`Updated ${metric} for site ${siteId}: ${currentCount} -> ${newCount}`);
-
-  } catch (err) {
-    e.app.logger().error(`Error updating usage count for site ${siteId}:`, err);
+  const usageMapping = {
+    'items': 'items_count',
+    'vendors': 'vendors_count',
+    'incoming_deliveries': 'incoming_deliveries_count',
+    'service_bookings': 'service_bookings_count',
+    'payments': 'payments_count'
   }
-}
+
+  const record = e.record
+  const tableName = e.record.tableName()
+  const siteId = record.get('site')
+
+  updateUsageCount(siteId, usageMapping[tableName], 1, e.app)
+
+  e.next()
+}, 'items', 'vendors', 'incoming_deliveries', 'service_bookings', 'payments')
+
+onRecordAfterDeleteSuccess((e) => {
+  const usageMapping = {
+    'items': 'items_count',
+    'vendors': 'vendors_count',
+    'incoming_deliveries': 'incoming_deliveries_count',
+    'service_bookings': 'service_bookings_count',
+    'payments': 'payments_count'
+  }
+
+  const record = e.record
+  const tableName = e.record.tableName()
+  const siteId = record.get('site')
+
+  updateUsageCount(siteId, usageMapping[tableName], -1, e.app)
+
+  e.next()
+}, 'items', 'vendors', 'incoming_deliveries', 'service_bookings', 'payments')
 
 /**
  * Hook to validate creation limits before allowing new records
  * This runs before the record is created, allowing us to block creation if limits are exceeded
  */
 onRecordCreate((e) => {
-  const record = e.record;
-  const tableName = record.tableName();
-
   // Map table names to usage metrics
   const usageMapping = {
     'items': 'items_count',
@@ -265,26 +127,195 @@ onRecordCreate((e) => {
     'incoming_deliveries': 'incoming_deliveries_count',
     'service_bookings': 'service_bookings_count',
     'payments': 'payments_count'
-  };
+  }
 
-  const usageMetric = usageMapping[tableName];
-  if (!usageMetric) return; // Not a tracked collection
+  const record = e.record
+  const tableName = record.tableName()
+  const usageMetric = usageMapping[tableName]
 
-  const siteId = record.get('site');
-  if (!siteId) return; // No site association
+  const siteId = record.get('site')
+  if (!siteId) return // No site association
 
   // Check if creation is allowed
   if (!canCreateRecord(siteId, usageMetric, e.app)) {
-    throw new BadRequestError(`Subscription limit exceeded for ${tableName}. Please upgrade your plan.`);
+    throw new BadRequestError(`Subscription limit exceeded for ${tableName}. Please upgrade your plan.`)
   }
 
   e.next()
-}, 'items', 'vendors', 'incoming_deliveries', 'service_bookings', 'payments');
+}, 'items', 'vendors', 'incoming_deliveries', 'service_bookings', 'payments')
+
+/**
+ * Hook to handle subscription period transitions
+ * This creates new usage records when a subscription period changes
+ */
+onRecordAfterUpdateSuccess((e) => {
+  if (e.record.tableName() !== 'site_subscriptions') return
+
+  const record = e.record
+  const oldRecord = e.record.originalCopy()
+
+  // Check if period_end has changed (new billing cycle)
+  const oldPeriodEnd = oldRecord.get('current_period_end')
+  const newPeriodEnd = record.get('current_period_end')
+
+  if (oldPeriodEnd !== newPeriodEnd) {
+    const siteId = record.get('site')
+    const periodStart = new Date(record.get('current_period_start'))
+    const periodEnd = new Date(newPeriodEnd)
+
+    // Create new usage record for the new period
+    try {
+      const usageCollection = e.app.findCollectionByNameOrId('subscription_usage')
+      const usage = new Record(usageCollection)
+      usage.set('site', siteId)
+      usage.set('period_start', periodStart.toISOString())
+      usage.set('period_end', periodEnd.toISOString())
+      usage.set('items_count', 0)
+      usage.set('vendors_count', 0)
+      usage.set('incoming_deliveries_count', 0)
+      usage.set('service_bookings_count', 0)
+      usage.set('payments_count', 0)
+
+      e.app.saveRecord(usage)
+      e.app.logger().info(`Created new usage record for site ${siteId} for period ${periodStart.toISOString()} - ${periodEnd.toISOString()}`)
+    } catch (err) {
+      e.app.logger().error(`Error creating new usage record for site ${siteId}:`, err)
+    }
+  }
+
+  e.next()
+}, 'site_subscriptions')
+
+/**
+ * Utility function to get current usage for a site and period
+ * This can be called from anywhere in your PocketBase hooks
+ * @param {string} siteId
+ * @param {core.App} app
+ */
+function getCurrentUsage(siteId, app) {
+  try {
+    const subscription = app.findFirstRecordByFilter(
+      'site_subscriptions',
+      `site = "${siteId}" && status = "active"`
+    )
+
+    if (!subscription) return null
+
+    const periodStart = new Date(subscription.get('current_period_start'))
+    const periodEnd = new Date(subscription.get('current_period_end'))
+
+    const usage = app.findFirstRecordByFilter(
+      'subscription_usage',
+      `site = "${siteId}" && period_start = "${periodStart.toISOString()}" && period_end = "${periodEnd.toISOString()}"`
+    )
+
+    return {
+      items_count: usage.get('items_count') || 0,
+      vendors_count: usage.get('vendors_count') || 0,
+      incoming_deliveries_count: usage.get('incoming_deliveries_count') || 0,
+      service_bookings_count: usage.get('service_bookings_count') || 0,
+      payments_count: usage.get('payments_count') || 0
+    }
+  } catch (err) {
+    e.app.logger().error(`Error getting current usage for site ${siteId}:`, err)
+    return null
+  }
+}
+
+/**
+ * Creates a free tier subscription for a new site
+ * @param {string} siteId - The site ID
+ * @param {core.App} app
+ */
+function createFreeTierSubscription(siteId, app) {
+  try {
+    // Get default plan (fallback to Free plan if no default is set)
+    let defaultPlan
+
+    try {
+      defaultPlan = app.findFirstRecordByFilter(
+        'subscription_plans',
+        'is_default=true && is_active=true'
+      )
+    } catch (e) {
+      // Fallback to Free plan if no default plan is found
+      try {
+        defaultPlan = app.findFirstRecordByFilter(
+          'subscription_plans',
+          'name="Free" && is_active=true'
+        )
+      } catch (e2) {
+        e.app.logger().error('No default or Free plan found')
+        return
+      }
+    }
+
+    if (!defaultPlan) {
+      e.app.logger().error('No subscription plan available for new site')
+      return
+    }
+
+    // Create subscription for new site
+    const now = new Date()
+    const periodEnd = new Date(now)
+    periodEnd.setMonth(periodEnd.getMonth() + 1)
+
+    const subscriptionCollection = app.findCollectionByNameOrId('site_subscriptions')
+    const subscription = new Record(subscriptionCollection)
+
+    subscription.set('site', siteId)
+    subscription.set('subscription_plan', defaultPlan.getId())
+    subscription.set('status', 'active')
+    subscription.set('current_period_start', now.toISOString())
+    subscription.set('current_period_end', periodEnd.toISOString())
+    subscription.set('cancel_at_period_end', false)
+
+    app.saveRecord(subscription)
+
+    e.app.logger().info(`Created ${defaultPlan.get('name')} subscription for site ${siteId}`)
+
+    // Initialize usage tracking for the new subscription
+    // initializeUsageTracking(siteId, now, periodEnd, app)
+  } catch (err) {
+    e.app.logger().error(`Error creating subscription for site ${siteId}: ${err.message}`)
+    // Don't throw - we don't want to fail site creation due to subscription issues
+  }
+}
+
+/**
+ * Initializes usage tracking for a new subscription
+ * @param {string} siteId - The site ID
+ * @param {Date} periodStart - Start of the billing period
+ * @param {Date} periodEnd - End of the billing period
+ * @param {core.App} app
+ */
+function initializeUsageTracking(siteId, periodStart, periodEnd, app) {
+  try {
+    const usageCollection = app.findCollectionByNameOrId('subscription_usage')
+    const usage = new Record(usageCollection)
+
+    usage.set('site', siteId)
+    usage.set('period_start', periodStart.toISOString())
+    usage.set('period_end', periodEnd.toISOString())
+    usage.set('items_count', 0)
+    usage.set('vendors_count', 0)
+    usage.set('incoming_deliveries_count', 0)
+    usage.set('service_bookings_count', 0)
+    usage.set('payments_count', 0)
+
+    app.save(usage)
+
+    e.app.logger().info(`Initialized usage tracking for site ${siteId}`)
+  } catch (err) {
+    e.app.logger().error(`Error initializing usage tracking for site ${siteId}: ${err.message}`)
+  }
+}
 
 /**
  * Checks if a new record can be created based on subscription limits
  * @param {string} siteId - The site ID
  * @param {string} usageMetric - The usage metric to check
+ * @param {core.App} app
  * @returns {boolean} - True if creation is allowed, false otherwise
  */
 function canCreateRecord(siteId, usageMetric, app) {
@@ -293,25 +324,25 @@ function canCreateRecord(siteId, usageMetric, app) {
     const subscription = app.findFirstRecordByFilter(
       'site_subscriptions',
       `site = "${siteId}" && status = "active"`
-    );
+    )
 
     if (!subscription) {
-      console.warn(`No active subscription found for site: ${siteId}`);
-      return false; // No subscription = no creation allowed
+      app.logger().error(`No active subscription found for site: ${siteId}`)
+      return false // No subscription = no creation allowed
     }
 
     // Get subscription plan
-    const planId = subscription.get('subscription_plan');
-    const plan = app.findRecordById('subscription_plans', planId);
+    const planId = subscription.get('subscription_plan')
+    const plan = app.findRecordById('subscription_plans', planId)
 
     if (!plan) {
-      console.warn(`No plan found for subscription: ${subscription.getId()}`);
-      return false;
+      app.logger().error(`No plan found for subscription: ${subscription.getId()}`)
+      return false
     }
 
     // Get plan features
-    const features = plan.get('features');
-    if (!features) return true; // No features defined = unlimited
+    const features = plan.get('features')
+    if (!features) return true // No features defined = unlimited
 
     // Map usage metric to plan feature
     const featureMapping = {
@@ -320,120 +351,104 @@ function canCreateRecord(siteId, usageMetric, app) {
       'incoming_deliveries_count': 'max_incoming_deliveries',
       'service_bookings_count': 'max_service_bookings',
       'payments_count': 'max_payments'
-    };
+    }
 
-    const featureKey = featureMapping[usageMetric];
-    if (!featureKey) return true;
+    const featureKey = featureMapping[usageMetric]
+    if (!featureKey) return true
 
-    const maxAllowed = features[featureKey];
+    const maxAllowed = features[featureKey]
 
     // Check if unlimited (-1) or disabled (0)
     if (maxAllowed === -1) {
-      return true; // Unlimited
+      return true // Unlimited
     }
 
     if (maxAllowed === 0) {
-      return false; // Disabled feature
+      return false // Disabled feature
     }
 
     // Get current usage
-    const periodStart = new Date(subscription.get('current_period_start'));
-    const periodEnd = new Date(subscription.get('current_period_end'));
+    const periodStart = new Date(subscription.get('current_period_start'))
+    const periodEnd = new Date(subscription.get('current_period_end'))
 
-    let usage;
+    let usage
     try {
       usage = app.findFirstRecordByFilter(
         'subscription_usage',
         `site = "${siteId}" && period_start = "${periodStart.toISOString()}" && period_end = "${periodEnd.toISOString()}"`
-      );
+      )
     } catch (e) {
       // No usage record yet = allow creation
-      return true;
+      return true
     }
 
-    const currentCount = usage.get(usageMetric) || 0;
+    const currentCount = usage.get(usageMetric) || 0
 
     // Allow creation if under limit
-    return currentCount < maxAllowed;
+    return currentCount < maxAllowed
 
   } catch (err) {
-    e.app.logger().error(`Error checking creation limits for site ${siteId}:`, err);
-    return false; // Error = block creation for safety
+    e.app.logger().error(`Error checking creation limits for site ${siteId}:`, err)
+    return false // Error = block creation for safety
   }
 }
 
 /**
- * Hook to handle subscription period transitions
- * This creates new usage records when a subscription period changes
- */
-onRecordAfterUpdateSuccess((e) => {
-  if (e.record.tableName() !== 'site_subscriptions') return;
-
-  const record = e.record;
-  const oldRecord = e.record.originalCopy();
-
-  // Check if period_end has changed (new billing cycle)
-  const oldPeriodEnd = oldRecord.get('current_period_end');
-  const newPeriodEnd = record.get('current_period_end');
-
-  if (oldPeriodEnd !== newPeriodEnd) {
-    const siteId = record.get('site');
-    const periodStart = new Date(record.get('current_period_start'));
-    const periodEnd = new Date(newPeriodEnd);
-
-    // Create new usage record for the new period
-    try {
-      const usageCollection = e.app.findCollectionByNameOrId('subscription_usage');
-      const usage = new Record(usageCollection);
-      usage.set('site', siteId);
-      usage.set('period_start', periodStart.toISOString());
-      usage.set('period_end', periodEnd.toISOString());
-      usage.set('items_count', 0);
-      usage.set('vendors_count', 0);
-      usage.set('incoming_deliveries_count', 0);
-      usage.set('service_bookings_count', 0);
-      usage.set('payments_count', 0);
-
-      e.app.saveRecord(usage);
-      e.app.logger().info(`Created new usage record for site ${siteId} for period ${periodStart.toISOString()} - ${periodEnd.toISOString()}`);
-    } catch (err) {
-      e.app.logger().error(`Error creating new usage record for site ${siteId}:`, err);
-    }
-  }
-
-  e.next()
-}, 'site_subscriptions');
-
-/**
- * Utility function to get current usage for a site and period
- * This can be called from anywhere in your PocketBase hooks
- */
-function getCurrentUsage(siteId, app) {
+ * Updates usage count for a specific site and metric
+ * @param {string} siteId - The site ID
+ * @param {string} metric - The usage metric to update (e.g., 'items_count')
+ * @param {number} change - The change amount (+1 for create, -1 for delete)
+ * @param {core.App} app
+*/
+function updateUsageCount(siteId, metric, change, app) {
   try {
+    // Get current subscription for the site
     const subscription = app.findFirstRecordByFilter(
       'site_subscriptions',
       `site = "${siteId}" && status = "active"`
-    );
+    )
 
-    if (!subscription) return null;
+    if (!subscription) {
+      app.logger().error(`No active subscription found for site: ${siteId}`)
+      return
+    }
 
-    const periodStart = new Date(subscription.get('current_period_start'));
-    const periodEnd = new Date(subscription.get('current_period_end'));
+    // Calculate current billing period
+    const periodStart = new Date(subscription.get('current_period_start'))
+    const periodEnd = new Date(subscription.get('current_period_end'))
 
-    const usage = app.findFirstRecordByFilter(
-      'subscription_usage',
-      `site = "${siteId}" && period_start = "${periodStart.toISOString()}" && period_end = "${periodEnd.toISOString()}"`
-    );
+    // Find or create usage record for current period
+    let usage
+    try {
+      usage = app.findFirstRecordByFilter(
+        'subscription_usage',
+        `site = "${siteId}" && period_start = "${periodStart.toISOString()}" && period_end = "${periodEnd.toISOString()}"`
+      )
+    } catch (e) {
+      // Create new usage record if it doesn't exist
+      const usageCollection = app.findCollectionByNameOrId('subscription_usage')
+      usage = new Record(usageCollection)
+      usage.set('site', siteId)
+      usage.set('period_start', periodStart.toISOString())
+      usage.set('period_end', periodEnd.toISOString())
+      usage.set('items_count', 0)
+      usage.set('vendors_count', 0)
+      usage.set('incoming_deliveries_count', 0)
+      usage.set('service_bookings_count', 0)
+      usage.set('payments_count', 0)
+    }
 
-    return {
-      items_count: usage.get('items_count') || 0,
-      vendors_count: usage.get('vendors_count') || 0,
-      incoming_deliveries_count: usage.get('incoming_deliveries_count') || 0,
-      service_bookings_count: usage.get('service_bookings_count') || 0,
-      payments_count: usage.get('payments_count') || 0
-    };
+    // Update the specific metric
+    const currentCount = usage.get(metric) || 0
+    const newCount = Math.max(0, currentCount + change) // Ensure count doesn't go below 0
+    usage.set(metric, newCount)
+
+    // Save the usage record
+    app.saveRecord(usage)
+
+    e.app.logger().info(`Updated ${metric} for site ${siteId}: ${currentCount} -> ${newCount}`)
+
   } catch (err) {
-    e.app.logger().error(`Error getting current usage for site ${siteId}:`, err);
-    return null;
+    e.app.logger().error(`Error updating usage count for site ${siteId}:`, err)
   }
 }
