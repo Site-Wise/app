@@ -145,19 +145,31 @@
                       {{ t(`subscription.limits.${key}`) }}
                     </span>
                     <span class="text-sm text-gray-600 dark:text-gray-400">
-                      {{ limit.current }} / {{ limit.max === -1 ? '∞' : limit.max }}
+                      <template v-if="limit.disabled">
+                        {{ t('subscription.featureDisabled') }}
+                      </template>
+                      <template v-else-if="limit.unlimited">
+                        {{ limit.current }} / {{ t('subscription.unlimited') }}
+                      </template>
+                      <template v-else>
+                        {{ limit.current }} / {{ limit.max }}
+                      </template>
                     </span>
                   </div>
-                  <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div v-if="!limit.disabled" class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div 
                       :class="[
                         'h-2 rounded-full transition-all duration-300',
-                        limit.exceeded ? 'bg-red-500' : 'bg-orange-500'
+                        limit.exceeded ? 'bg-red-500' : limit.unlimited ? 'bg-green-500' : 'bg-orange-500'
                       ]"
                       :style="{ width: getUsagePercentage(limit) + '%' }"
                     ></div>
                   </div>
-                  <div v-if="limit.exceeded" class="flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
+                  <div v-if="limit.disabled" class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                    <X class="h-3 w-3" />
+                    {{ t('subscription.featureNotAvailable') }}
+                  </div>
+                  <div v-else-if="limit.exceeded" class="flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
                     <AlertTriangle class="h-3 w-3" />
                     {{ t('subscription.limitExceeded') }}
                   </div>
@@ -233,31 +245,31 @@
                     <div class="flex items-center justify-between text-sm">
                       <span class="text-gray-600 dark:text-gray-400">{{ t('subscription.limits.items') }}</span>
                       <span class="font-medium text-gray-900 dark:text-white">
-                        {{ plan.features.max_items === -1 ? t('subscription.unlimited') : plan.features.max_items }}
+                        {{ formatPlanLimit(plan.features.max_items) }}
                       </span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
                       <span class="text-gray-600 dark:text-gray-400">{{ t('subscription.limits.vendors') }}</span>
                       <span class="font-medium text-gray-900 dark:text-white">
-                        {{ plan.features.max_vendors === -1 ? t('subscription.unlimited') : plan.features.max_vendors }}
+                        {{ formatPlanLimit(plan.features.max_vendors) }}
                       </span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
                       <span class="text-gray-600 dark:text-gray-400">{{ t('subscription.limits.incoming_deliveries') }}</span>
                       <span class="font-medium text-gray-900 dark:text-white">
-                        {{ plan.features.max_incoming_deliveries === -1 ? t('subscription.unlimited') : plan.features.max_incoming_deliveries }}
+                        {{ formatPlanLimit(plan.features.max_incoming_deliveries) }}
                       </span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
                       <span class="text-gray-600 dark:text-gray-400">{{ t('subscription.limits.service_bookings') }}</span>
                       <span class="font-medium text-gray-900 dark:text-white">
-                        {{ plan.features.max_service_bookings === -1 ? t('subscription.unlimited') : plan.features.max_service_bookings }}
+                        {{ formatPlanLimit(plan.features.max_service_bookings) }}
                       </span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
                       <span class="text-gray-600 dark:text-gray-400">{{ t('subscription.limits.payments') }}</span>
                       <span class="font-medium text-gray-900 dark:text-white">
-                        {{ plan.features.max_payments === -1 ? t('subscription.unlimited') : plan.features.max_payments }}
+                        {{ formatPlanLimit(plan.features.max_payments) }}
                       </span>
                     </div>
                   </div>
@@ -384,9 +396,16 @@ const formatDate = (dateString: string) => {
   });
 };
 
-const getUsagePercentage = (limit: { current: number; max: number }) => {
-  if (limit.max === -1) return Math.min((limit.current / 100) * 100, 100);
+const getUsagePercentage = (limit: { current: number; max: number; disabled: boolean; unlimited: boolean }) => {
+  if (limit.disabled) return 0; // No progress bar for disabled features
+  if (limit.unlimited) return Math.min((limit.current / 100) * 100, 100); // Show some progress for unlimited
   return Math.min((limit.current / limit.max) * 100, 100);
+};
+
+const formatPlanLimit = (limit: number): string => {
+  if (limit === -1) return t('subscription.unlimited');
+  if (limit === 0) return t('subscription.disabled');
+  return limit.toString();
 };
 
 const loadPlans = async () => {

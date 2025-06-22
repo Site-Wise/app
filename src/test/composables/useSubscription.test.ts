@@ -289,11 +289,11 @@ describe('useSubscription', () => {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       expect(usageLimits.value).toEqual({
-        items: { current: 0, max: 1, exceeded: false },
-        vendors: { current: 0, max: 1, exceeded: false },
-        incoming_deliveries: { current: 0, max: 5, exceeded: false },
-        service_bookings: { current: 0, max: 5, exceeded: false },
-        payments: { current: 0, max: 5, exceeded: false }
+        items: { current: 0, max: 1, unlimited: false, disabled: false, exceeded: false },
+        vendors: { current: 0, max: 1, unlimited: false, disabled: false, exceeded: false },
+        incoming_deliveries: { current: 0, max: 5, unlimited: false, disabled: false, exceeded: false },
+        service_bookings: { current: 0, max: 5, unlimited: false, disabled: false, exceeded: false },
+        payments: { current: 0, max: 5, unlimited: false, disabled: false, exceeded: false }
       });
     });
 
@@ -413,7 +413,7 @@ describe('useSubscription', () => {
     });
   });
 
-  describe('isUnlimited', () => {
+  describe('limit utility functions', () => {
     it('should correctly identify unlimited values', async () => {
       const mockCollection = vi.fn(() => ({
         getFirstListItem: vi.fn().mockResolvedValue(mockSubscription)
@@ -423,9 +423,395 @@ describe('useSubscription', () => {
       const { isUnlimited } = useSubscription();
 
       expect(isUnlimited(-1)).toBe(true);
-      expect(isUnlimited(0)).toBe(true);
+      expect(isUnlimited(0)).toBe(false);
       expect(isUnlimited(10)).toBe(false);
       expect(isUnlimited(100)).toBe(false);
+    });
+
+    it('should correctly identify disabled values', async () => {
+      const mockCollection = vi.fn(() => ({
+        getFirstListItem: vi.fn().mockResolvedValue(mockSubscription)
+      }));
+      (pb.collection as Mock).mockImplementation(mockCollection);
+
+      const { isDisabled } = useSubscription();
+
+      expect(isDisabled(-1)).toBe(false);
+      expect(isDisabled(0)).toBe(true);
+      expect(isDisabled(10)).toBe(false);
+      expect(isDisabled(100)).toBe(false);
+    });
+
+    it('should correctly identify limited values', async () => {
+      const mockCollection = vi.fn(() => ({
+        getFirstListItem: vi.fn().mockResolvedValue(mockSubscription)
+      }));
+      (pb.collection as Mock).mockImplementation(mockCollection);
+
+      const { isLimited } = useSubscription();
+
+      expect(isLimited(-1)).toBe(false);
+      expect(isLimited(0)).toBe(false);
+      expect(isLimited(10)).toBe(true);
+      expect(isLimited(100)).toBe(true);
+    });
+  });
+
+  describe('subscription limit behavior (-1, 0, positive)', () => {
+    const createMockPlanWithLimits = (limits: any) => ({
+      id: 'plan_test',
+      name: 'Test Plan',
+      price: 0,
+      currency: 'INR',
+      features: limits,
+      is_active: true
+    });
+
+    const createMockSubscriptionWithPlan = (plan: any) => ({
+      id: 'sub_test',
+      site: 'site_1',
+      subscription_plan: 'plan_test',
+      status: 'active',
+      current_period_start: '2024-01-01T00:00:00.000Z',
+      current_period_end: '2024-02-01T00:00:00.000Z',
+      cancel_at_period_end: false,
+      expand: { subscription_plan: plan }
+    });
+
+    describe('unlimited limits (-1)', () => {
+      it('should allow creation when limits are unlimited (-1)', async () => {
+        const unlimitedPlan = createMockPlanWithLimits({
+          max_items: -1,
+          max_vendors: -1,
+          max_incoming_deliveries: -1,
+          max_service_bookings: -1,
+          max_payments: -1,
+          max_sites: -1
+        });
+        const unlimitedSubscription = createMockSubscriptionWithPlan(unlimitedPlan);
+        const highUsage = { ...mockUsage, items_count: 1000, vendors_count: 500 };
+
+        const mockCollection = vi.fn(() => ({
+          getFirstListItem: vi.fn()
+            .mockResolvedValueOnce(unlimitedSubscription)
+            .mockResolvedValueOnce(highUsage)
+        }));
+        (pb.collection as Mock).mockImplementation(mockCollection);
+
+        const { loadSubscription, checkCreateLimit, usageLimits } = useSubscription();
+        await loadSubscription();
+
+        expect(checkCreateLimit('items')).toBe(true);
+        expect(checkCreateLimit('vendors')).toBe(true);
+        expect(checkCreateLimit('incoming_deliveries')).toBe(true);
+        expect(checkCreateLimit('service_bookings')).toBe(true);
+        expect(checkCreateLimit('payments')).toBe(true);
+
+        expect(usageLimits.value?.items.unlimited).toBe(true);
+        expect(usageLimits.value?.items.disabled).toBe(false);
+        expect(usageLimits.value?.items.exceeded).toBe(false);
+      });
+
+      it('should show correct usage display for unlimited features', async () => {
+        const unlimitedPlan = createMockPlanWithLimits({
+          max_items: -1,
+          max_vendors: -1,
+          max_incoming_deliveries: -1,
+          max_service_bookings: -1,
+          max_payments: -1,
+          max_sites: -1
+        });
+        const unlimitedSubscription = createMockSubscriptionWithPlan(unlimitedPlan);
+
+        const mockCollection = vi.fn(() => ({
+          getFirstListItem: vi.fn()
+            .mockResolvedValueOnce(unlimitedSubscription)
+            .mockResolvedValueOnce(mockUsage)
+        }));
+        (pb.collection as Mock).mockImplementation(mockCollection);
+
+        const { loadSubscription, usageLimits } = useSubscription();
+        await loadSubscription();
+
+        expect(usageLimits.value?.items.unlimited).toBe(true);
+        expect(usageLimits.value?.items.max).toBe(-1);
+        expect(usageLimits.value?.vendors.unlimited).toBe(true);
+        expect(usageLimits.value?.vendors.max).toBe(-1);
+      });
+    });
+
+    describe('disabled limits (0)', () => {
+      it('should prevent creation when limits are disabled (0)', async () => {
+        const disabledPlan = createMockPlanWithLimits({
+          max_items: 0,
+          max_vendors: 0,
+          max_incoming_deliveries: 0,
+          max_service_bookings: 0,
+          max_payments: 0,
+          max_sites: 1
+        });
+        const disabledSubscription = createMockSubscriptionWithPlan(disabledPlan);
+
+        const mockCollection = vi.fn(() => ({
+          getFirstListItem: vi.fn()
+            .mockResolvedValueOnce(disabledSubscription)
+            .mockResolvedValueOnce(mockUsage)
+        }));
+        (pb.collection as Mock).mockImplementation(mockCollection);
+
+        const { loadSubscription, checkCreateLimit, usageLimits } = useSubscription();
+        await loadSubscription();
+
+        expect(checkCreateLimit('items')).toBe(false);
+        expect(checkCreateLimit('vendors')).toBe(false);
+        expect(checkCreateLimit('incoming_deliveries')).toBe(false);
+        expect(checkCreateLimit('service_bookings')).toBe(false);
+        expect(checkCreateLimit('payments')).toBe(false);
+
+        expect(usageLimits.value?.items.disabled).toBe(true);
+        expect(usageLimits.value?.items.unlimited).toBe(false);
+        expect(usageLimits.value?.vendors.disabled).toBe(true);
+        expect(usageLimits.value?.vendors.unlimited).toBe(false);
+      });
+
+      it('should show correct usage display for disabled features', async () => {
+        const disabledPlan = createMockPlanWithLimits({
+          max_items: 0,
+          max_vendors: 0,
+          max_incoming_deliveries: 0,
+          max_service_bookings: 0,
+          max_payments: 0,
+          max_sites: 1
+        });
+        const disabledSubscription = createMockSubscriptionWithPlan(disabledPlan);
+
+        const mockCollection = vi.fn(() => ({
+          getFirstListItem: vi.fn()
+            .mockResolvedValueOnce(disabledSubscription)
+            .mockResolvedValueOnce(mockUsage)
+        }));
+        (pb.collection as Mock).mockImplementation(mockCollection);
+
+        const { loadSubscription, usageLimits } = useSubscription();
+        await loadSubscription();
+
+        expect(usageLimits.value?.items.disabled).toBe(true);
+        expect(usageLimits.value?.items.max).toBe(0);
+        expect(usageLimits.value?.vendors.disabled).toBe(true);
+        expect(usageLimits.value?.vendors.max).toBe(0);
+      });
+    });
+
+    describe('limited values (positive numbers)', () => {
+      it('should allow creation when under positive limits', async () => {
+        const limitedPlan = createMockPlanWithLimits({
+          max_items: 10,
+          max_vendors: 5,
+          max_incoming_deliveries: 20,
+          max_service_bookings: 15,
+          max_payments: 25,
+          max_sites: 3
+        });
+        const limitedSubscription = createMockSubscriptionWithPlan(limitedPlan);
+        const underLimitUsage = { ...mockUsage, items_count: 5, vendors_count: 2 };
+
+        const mockCollection = vi.fn(() => ({
+          getFirstListItem: vi.fn()
+            .mockResolvedValueOnce(limitedSubscription)
+            .mockResolvedValueOnce(underLimitUsage)
+        }));
+        (pb.collection as Mock).mockImplementation(mockCollection);
+
+        const { loadSubscription, checkCreateLimit, usageLimits } = useSubscription();
+        await loadSubscription();
+
+        expect(checkCreateLimit('items')).toBe(true);
+        expect(checkCreateLimit('vendors')).toBe(true);
+
+        expect(usageLimits.value?.items.disabled).toBe(false);
+        expect(usageLimits.value?.items.unlimited).toBe(false);
+        expect(usageLimits.value?.items.exceeded).toBe(false);
+        expect(usageLimits.value?.items.max).toBe(10);
+        expect(usageLimits.value?.items.current).toBe(5);
+      });
+
+      it('should prevent creation when at positive limits', async () => {
+        const limitedPlan = createMockPlanWithLimits({
+          max_items: 10,
+          max_vendors: 5,
+          max_incoming_deliveries: 20,
+          max_service_bookings: 15,
+          max_payments: 25,
+          max_sites: 3
+        });
+        const limitedSubscription = createMockSubscriptionWithPlan(limitedPlan);
+        const atLimitUsage = { ...mockUsage, items_count: 10, vendors_count: 5 };
+
+        const mockCollection = vi.fn(() => ({
+          getFirstListItem: vi.fn()
+            .mockResolvedValueOnce(limitedSubscription)
+            .mockResolvedValueOnce(atLimitUsage)
+        }));
+        (pb.collection as Mock).mockImplementation(mockCollection);
+
+        const { loadSubscription, checkCreateLimit, usageLimits } = useSubscription();
+        await loadSubscription();
+
+        expect(checkCreateLimit('items')).toBe(false);
+        expect(checkCreateLimit('vendors')).toBe(false);
+
+        expect(usageLimits.value?.items.exceeded).toBe(true);
+        expect(usageLimits.value?.vendors.exceeded).toBe(true);
+      });
+
+      it('should prevent creation when exceeding positive limits', async () => {
+        const limitedPlan = createMockPlanWithLimits({
+          max_items: 10,
+          max_vendors: 5,
+          max_incoming_deliveries: 20,
+          max_service_bookings: 15,
+          max_payments: 25,
+          max_sites: 3
+        });
+        const limitedSubscription = createMockSubscriptionWithPlan(limitedPlan);
+        const overLimitUsage = { ...mockUsage, items_count: 15, vendors_count: 8 };
+
+        const mockCollection = vi.fn(() => ({
+          getFirstListItem: vi.fn()
+            .mockResolvedValueOnce(limitedSubscription)
+            .mockResolvedValueOnce(overLimitUsage)
+        }));
+        (pb.collection as Mock).mockImplementation(mockCollection);
+
+        const { loadSubscription, checkCreateLimit, usageLimits } = useSubscription();
+        await loadSubscription();
+
+        expect(checkCreateLimit('items')).toBe(false);
+        expect(checkCreateLimit('vendors')).toBe(false);
+
+        expect(usageLimits.value?.items.exceeded).toBe(true);
+        expect(usageLimits.value?.vendors.exceeded).toBe(true);
+        expect(usageLimits.value?.items.current).toBe(15);
+        expect(usageLimits.value?.vendors.current).toBe(8);
+      });
+    });
+
+    describe('mixed limit scenarios', () => {
+      it('should handle mixed limit types in same plan', async () => {
+        const mixedPlan = createMockPlanWithLimits({
+          max_items: -1,        // unlimited
+          max_vendors: 0,       // disabled
+          max_incoming_deliveries: 10,  // limited
+          max_service_bookings: -1,     // unlimited
+          max_payments: 0,      // disabled
+          max_sites: 3          // limited
+        });
+        const mixedSubscription = createMockSubscriptionWithPlan(mixedPlan);
+        const mixedUsage = { 
+          ...mockUsage, 
+          items_count: 100, 
+          vendors_count: 0, 
+          incoming_deliveries_count: 5 
+        };
+
+        const mockCollection = vi.fn(() => ({
+          getFirstListItem: vi.fn()
+            .mockResolvedValueOnce(mixedSubscription)
+            .mockResolvedValueOnce(mixedUsage)
+        }));
+        (pb.collection as Mock).mockImplementation(mockCollection);
+
+        const { loadSubscription, checkCreateLimit, usageLimits } = useSubscription();
+        await loadSubscription();
+
+        // Unlimited feature should allow creation
+        expect(checkCreateLimit('items')).toBe(true);
+        expect(usageLimits.value?.items.unlimited).toBe(true);
+        expect(usageLimits.value?.items.disabled).toBe(false);
+
+        // Disabled feature should prevent creation
+        expect(checkCreateLimit('vendors')).toBe(false);
+        expect(usageLimits.value?.vendors.disabled).toBe(true);
+        expect(usageLimits.value?.vendors.unlimited).toBe(false);
+
+        // Limited feature under limit should allow creation
+        expect(checkCreateLimit('incoming_deliveries')).toBe(true);
+        expect(usageLimits.value?.incoming_deliveries.disabled).toBe(false);
+        expect(usageLimits.value?.incoming_deliveries.unlimited).toBe(false);
+        expect(usageLimits.value?.incoming_deliveries.exceeded).toBe(false);
+
+        // Unlimited service bookings should allow creation
+        expect(checkCreateLimit('service_bookings')).toBe(true);
+        expect(usageLimits.value?.service_bookings.unlimited).toBe(true);
+
+        // Disabled payments should prevent creation
+        expect(checkCreateLimit('payments')).toBe(false);
+        expect(usageLimits.value?.payments.disabled).toBe(true);
+      });
+    });
+
+    describe('isReadOnly behavior with new limits', () => {
+      it('should not be read-only for unlimited features with high usage', async () => {
+        const unlimitedPlan = createMockPlanWithLimits({
+          max_items: -1,
+          max_vendors: -1,
+          max_incoming_deliveries: -1,
+          max_service_bookings: -1,
+          max_payments: -1,
+          max_sites: -1
+        });
+        const unlimitedSubscription = createMockSubscriptionWithPlan(unlimitedPlan);
+        const highUsage = { 
+          ...mockUsage, 
+          items_count: 1000, 
+          vendors_count: 500,
+          incoming_deliveries_count: 2000,
+          service_bookings_count: 800,
+          payments_count: 1500
+        };
+
+        const mockCollection = vi.fn(() => ({
+          getFirstListItem: vi.fn()
+            .mockResolvedValueOnce(unlimitedSubscription)
+            .mockResolvedValueOnce(highUsage)
+        }));
+        (pb.collection as Mock).mockImplementation(mockCollection);
+
+        const { loadSubscription, isReadOnly } = useSubscription();
+        await loadSubscription();
+
+        expect(isReadOnly.value).toBe(false);
+      });
+
+      it('should be read-only when any limited feature exceeds', async () => {
+        const mixedPlan = createMockPlanWithLimits({
+          max_items: -1,        // unlimited
+          max_vendors: 10,      // limited - will exceed
+          max_incoming_deliveries: -1,  // unlimited
+          max_service_bookings: 0,      // disabled
+          max_payments: -1,     // unlimited
+          max_sites: 3
+        });
+        const mixedSubscription = createMockSubscriptionWithPlan(mixedPlan);
+        const exceedingUsage = { 
+          ...mockUsage, 
+          items_count: 1000,    // unlimited, so OK
+          vendors_count: 15,    // exceeds limit of 10
+          incoming_deliveries_count: 500  // unlimited, so OK
+        };
+
+        const mockCollection = vi.fn(() => ({
+          getFirstListItem: vi.fn()
+            .mockResolvedValueOnce(mixedSubscription)
+            .mockResolvedValueOnce(exceedingUsage)
+        }));
+        (pb.collection as Mock).mockImplementation(mockCollection);
+
+        const { loadSubscription, isReadOnly } = useSubscription();
+        await loadSubscription();
+
+        expect(isReadOnly.value).toBe(true);
+      });
     });
   });
 

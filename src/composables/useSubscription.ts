@@ -100,11 +100,11 @@ declare global {
 }
 
 export interface UsageLimits {
-  items: { current: number; max: number; exceeded: boolean };
-  vendors: { current: number; max: number; exceeded: boolean };
-  incoming_deliveries: { current: number; max: number; exceeded: boolean };
-  service_bookings: { current: number; max: number; exceeded: boolean };
-  payments: { current: number; max: number; exceeded: boolean };
+  items: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
+  vendors: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
+  incoming_deliveries: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
+  service_bookings: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
+  payments: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
 }
 
 const currentSubscription = ref<SiteSubscription | null>(null);
@@ -124,13 +124,13 @@ export function useSubscription() {
 
     const usage = currentUsage.value;
     
-    // Check if any limit is exceeded
+    // Check if any limit is exceeded or if any feature is disabled
     return (
-      (!isUnlimited(plan.features.max_items) && usage.items_count >= plan.features.max_items) ||
-      (!isUnlimited(plan.features.max_vendors) && usage.vendors_count >= plan.features.max_vendors) ||
-      (!isUnlimited(plan.features.max_incoming_deliveries) && usage.incoming_deliveries_count >= plan.features.max_incoming_deliveries) ||
-      (!isUnlimited(plan.features.max_service_bookings) && usage.service_bookings_count >= plan.features.max_service_bookings) ||
-      (!isUnlimited(plan.features.max_payments) && usage.payments_count >= plan.features.max_payments)
+      (isLimited(plan.features.max_items) && usage.items_count >= plan.features.max_items) ||
+      (isLimited(plan.features.max_vendors) && usage.vendors_count >= plan.features.max_vendors) ||
+      (isLimited(plan.features.max_incoming_deliveries) && usage.incoming_deliveries_count >= plan.features.max_incoming_deliveries) ||
+      (isLimited(plan.features.max_service_bookings) && usage.service_bookings_count >= plan.features.max_service_bookings) ||
+      (isLimited(plan.features.max_payments) && usage.payments_count >= plan.features.max_payments)
     );
   });
 
@@ -186,27 +186,37 @@ export function useSubscription() {
       items: {
         current: usage.items_count,
         max: plan.features.max_items,
-        exceeded: !isUnlimited(plan.features.max_items) && usage.items_count >= plan.features.max_items
+        unlimited: isUnlimited(plan.features.max_items),
+        disabled: isDisabled(plan.features.max_items),
+        exceeded: isLimited(plan.features.max_items) && usage.items_count >= plan.features.max_items
       },
       vendors: {
         current: usage.vendors_count,
         max: plan.features.max_vendors,
-        exceeded: !isUnlimited(plan.features.max_vendors) && usage.vendors_count >= plan.features.max_vendors
+        unlimited: isUnlimited(plan.features.max_vendors),
+        disabled: isDisabled(plan.features.max_vendors),
+        exceeded: isLimited(plan.features.max_vendors) && usage.vendors_count >= plan.features.max_vendors
       },
       incoming_deliveries: {
         current: usage.incoming_deliveries_count,
         max: plan.features.max_incoming_deliveries,
-        exceeded: !isUnlimited(plan.features.max_incoming_deliveries) && usage.incoming_deliveries_count >= plan.features.max_incoming_deliveries
+        unlimited: isUnlimited(plan.features.max_incoming_deliveries),
+        disabled: isDisabled(plan.features.max_incoming_deliveries),
+        exceeded: isLimited(plan.features.max_incoming_deliveries) && usage.incoming_deliveries_count >= plan.features.max_incoming_deliveries
       },
       service_bookings: {
         current: usage.service_bookings_count,
         max: plan.features.max_service_bookings,
-        exceeded: !isUnlimited(plan.features.max_service_bookings) && usage.service_bookings_count >= plan.features.max_service_bookings
+        unlimited: isUnlimited(plan.features.max_service_bookings),
+        disabled: isDisabled(plan.features.max_service_bookings),
+        exceeded: isLimited(plan.features.max_service_bookings) && usage.service_bookings_count >= plan.features.max_service_bookings
       },
       payments: {
         current: usage.payments_count,
         max: plan.features.max_payments,
-        exceeded: !isUnlimited(plan.features.max_payments) && usage.payments_count >= plan.features.max_payments
+        unlimited: isUnlimited(plan.features.max_payments),
+        disabled: isDisabled(plan.features.max_payments),
+        exceeded: isLimited(plan.features.max_payments) && usage.payments_count >= plan.features.max_payments
       }
     };
   });
@@ -312,14 +322,19 @@ export function useSubscription() {
     
     switch (type) {
       case 'items':
+        if (isDisabled(plan.features.max_items)) return false;
         return isUnlimited(plan.features.max_items) || usage.items_count < plan.features.max_items;
       case 'vendors':
+        if (isDisabled(plan.features.max_vendors)) return false;
         return isUnlimited(plan.features.max_vendors) || usage.vendors_count < plan.features.max_vendors;
       case 'incoming_deliveries':
+        if (isDisabled(plan.features.max_incoming_deliveries)) return false;
         return isUnlimited(plan.features.max_incoming_deliveries) || usage.incoming_deliveries_count < plan.features.max_incoming_deliveries;
       case 'service_bookings':
+        if (isDisabled(plan.features.max_service_bookings)) return false;
         return isUnlimited(plan.features.max_service_bookings) || usage.service_bookings_count < plan.features.max_service_bookings;
       case 'payments':
+        if (isDisabled(plan.features.max_payments)) return false;
         return isUnlimited(plan.features.max_payments) || usage.payments_count < plan.features.max_payments;
       default:
         return false;
@@ -327,7 +342,15 @@ export function useSubscription() {
   };
 
   const isUnlimited = (limit: number): boolean => {
-    return limit === -1 || limit === 0; // Support both -1 and 0 for unlimited
+    return limit === -1;
+  };
+
+  const isDisabled = (limit: number): boolean => {
+    return limit === 0;
+  };
+
+  const isLimited = (limit: number): boolean => {
+    return limit > 0;
   };
 
   // Usage is now tracked automatically by PocketBase hooks
@@ -676,6 +699,8 @@ export function useSubscription() {
     handlePaymentSuccess,
     
     // Utility Methods
-    isUnlimited
+    isUnlimited,
+    isDisabled,
+    isLimited
   };
 }

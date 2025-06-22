@@ -472,6 +472,9 @@
     "perMonth": "प्रति माह",
     "perYear": "प्रति वर्ष",
     "unlimited": "असीमित",
+    "disabled": "अक्षम",
+    "featureDisabled": "सुविधा अक्षम",
+    "featureNotAvailable": "इस योजना में सुविधा उपलब्ध नहीं है",
     "banner": {
       "freeTierLimitReached": "मुफ्त टियर की सीमा पहुंच गई। आपकी साइट अब केवल पढ़ने के लिए है।",
       "subscriptionLimitReached": "सदस्यता की सीमा पहुंच गई। आपकी साइट अब केवल पढ़ने के लिए है।",

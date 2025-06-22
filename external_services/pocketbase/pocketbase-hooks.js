@@ -236,9 +236,13 @@ function canCreateRecord(siteId, usageMetric) {
     
     const maxAllowed = features[featureKey];
     
-    // Check if unlimited (support both -1 and 0)
-    if (maxAllowed === -1 || maxAllowed === 0) {
+    // Check if unlimited (-1) or disabled (0)
+    if (maxAllowed === -1) {
       return true; // Unlimited
+    }
+    
+    if (maxAllowed === 0) {
+      return false; // Disabled feature
     }
     
     // Get current usage
