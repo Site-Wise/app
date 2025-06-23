@@ -7,7 +7,7 @@
           {{ t('services.subtitle') }}
         </p>
       </div>
-      <button @click="showAddModal = true" class="btn-primary" v-if="canCreate">
+      <button @click="showAddModal = true" class="btn-primary hidden md:flex items-center" v-if="canCreate">
         <Plus class="mr-2 h-4 w-4" />
         {{ t('services.addService') }}
       </button>

@@ -12,7 +12,7 @@
         :disabled="!canCreateItem"
         :class="[
           canCreateItem ? 'btn-primary' : 'btn-disabled',
-          'flex items-center'
+          'hidden md:flex items-center'
         ]"
         :title="!canCreateItem ? t('subscription.banner.freeTierLimitReached') : ''"
       >

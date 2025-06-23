@@ -12,7 +12,7 @@
         :disabled="!canCreateVendor"
         :class="[
           canCreateVendor ? 'btn-primary' : 'btn-disabled',
-          'flex items-center'
+          'hidden md:flex items-center'
         ]"
         :title="!canCreateVendor ? t('subscription.banner.freeTierLimitReached') : ''"
       >

@@ -12,7 +12,7 @@
         :disabled="!canCreatePayment"
         :class="[
           canCreatePayment ? 'btn-primary' : 'btn-disabled',
-          'flex items-center'
+          'hidden md:flex items-center'
         ]"
         :title="!canCreatePayment ? t('subscription.banner.freeTierLimitReached') : ''"
       >

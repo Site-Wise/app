@@ -73,6 +73,19 @@
     "items": "items",
     "unknown": "Unknown"
   },
+  "search": {
+    "placeholder": "Search...",
+    "items": "Search items by name or description...",
+    "accounts": "Search accounts by name or number...",
+    "quotations": "Search quotations by item, vendor, or service...",
+    "serviceBookings": "Search bookings by service or vendor...",
+    "incoming": "Search deliveries by item, vendor, or notes...",
+    "vendors": "Search vendors by name, contact, or email...",
+    "services": "Search services by name or description...",
+    "payments": "Search payments by vendor or account...",
+    "noResults": "No results found",
+    "resultsCount": "{count} results found"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "items": "Items",

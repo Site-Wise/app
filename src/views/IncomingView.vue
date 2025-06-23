@@ -1,6 +1,7 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-8">
+    <!-- Desktop Header with Add Button -->
+    <div class="hidden md:flex items-center justify-between mb-8">
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('incoming.title') }}</h1>
         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
@@ -12,13 +13,41 @@
         :disabled="!canCreateIncoming"
         :class="[
           canCreateIncoming ? 'btn-primary' : 'btn-disabled',
-          'flex items-center'
+          'hidden md:flex items-center'
         ]"
         :title="!canCreateIncoming ? t('subscription.banner.freeTierLimitReached') : ''"
       >
         <Plus class="mr-2 h-4 w-4" />
         {{ t('incoming.recordDelivery') }}
       </button>
+    </div>
+
+    <!-- Mobile Header with Search -->
+    <div class="md:hidden mb-6">
+      <div class="mb-4">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('incoming.title') }}</h1>
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          {{ t('incoming.subtitle') }}
+        </p>
+      </div>
+      
+      <!-- Mobile Search Box -->
+      <div class="relative">
+        <input
+          type="text"
+          :placeholder="t('search.incoming')"
+          v-model="searchQuery"
+          class="w-full px-4 py-3 pl-10 pr-10 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+        />
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <div v-if="searchLoading" class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+          <Loader2 class="h-4 w-4 animate-spin text-gray-400" />
+        </div>
+      </div>
     </div>
 
     <!-- Incoming Items Table -->
@@ -432,11 +461,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed, watch } from 'vue';
 import { TruckIcon, Plus, Edit2, Trash2, Loader2, Eye, X } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
+import { useIncomingSearch } from '../composables/useSearch';
 import PhotoGallery from '../components/PhotoGallery.vue';
 import FileUploadComponent from '../components/FileUploadComponent.vue';
 import { 
@@ -458,7 +488,15 @@ const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
 
-const incomingItems = ref<IncomingItem[]>([]);
+// Search functionality
+const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useIncomingSearch();
+
+// Display items: use search results if searching, otherwise all items
+const incomingItems = computed(() => {
+  return searchQuery.value.trim() ? searchResults.value : allIncomingItems.value
+});
+
+const allIncomingItems = ref<IncomingItem[]>([]);
 const items = ref<Item[]>([]);
 const vendors = ref<Vendor[]>([]);
 const showAddModal = ref(false);
@@ -467,6 +505,9 @@ const viewingItem = ref<IncomingItem | null>(null);
 const showPhotoGallery = ref(false);
 const galleryItem = ref<IncomingItem | null>(null);
 const loading = ref(false);
+
+// Combined loading state for UI
+const isLoading = computed(() => searchLoading.value);
 const fileInput = ref<HTMLInputElement | null>(null);
 const selectedFiles = ref<FileWithPreview[]>([]);
 const selectedFilesForUpload = ref<File[]>([]);
@@ -501,11 +542,14 @@ const loadData = async () => {
     ]);
     
     // Sort incoming items by delivery date descending (newest first)
-    incomingItems.value = incomingData.sort((a, b) => 
+    allIncomingItems.value = incomingData.sort((a, b) => 
       new Date(b.delivery_date).getTime() - new Date(a.delivery_date).getTime()
     );
     items.value = itemsData;
     vendors.value = vendorsData;
+    
+    // Load all items for search functionality
+    loadAll();
   } catch (error) {
     console.error('Error loading data:', error);
   }

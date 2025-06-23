@@ -1,6 +1,7 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-8">
+    <!-- Desktop Header with Add Button -->
+    <div class="hidden md:flex items-center justify-between mb-8">
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('quotations.title') }}</h1>
         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
@@ -11,6 +12,34 @@
         <Plus class="mr-2 h-4 w-4" />
         {{ t('quotations.addQuotation') }}
       </button>
+    </div>
+
+    <!-- Mobile Header with Search -->
+    <div class="md:hidden mb-6">
+      <div class="mb-4">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('quotations.title') }}</h1>
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          {{ t('quotations.subtitle') }}
+        </p>
+      </div>
+      
+      <!-- Mobile Search Box -->
+      <div class="relative">
+        <input
+          type="text"
+          :placeholder="t('search.quotations')"
+          v-model="searchQuery"
+          class="w-full px-4 py-3 pl-10 pr-10 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+        />
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <div v-if="searchLoading" class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+          <Loader2 class="h-4 w-4 animate-spin text-gray-400" />
+        </div>
+      </div>
     </div>
 
     <!-- Quotations Table -->
@@ -148,7 +177,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
 import { FileText, Plus, Edit2, Trash2, Loader2 } from 'lucide-vue-next';
 import { 
   quotationService, 
@@ -159,9 +188,18 @@ import {
   type Vendor 
 } from '../services/pocketbase';
 import { useI18n } from '../composables/useI18n';
+import { useQuotationSearch } from '../composables/useSearch';
 
 const { t } = useI18n();
-const quotations = ref<Quotation[]>([]);
+// Search functionality
+const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useQuotationSearch();
+
+// Display items: use search results if searching, otherwise all items
+const quotations = computed(() => {
+  return searchQuery.value.trim() ? searchResults.value : allQuotations.value
+});
+
+const allQuotations = ref<Quotation[]>([]);
 const items = ref<Item[]>([]);
 const vendors = ref<Vendor[]>([]);
 const showAddModal = ref(false);
@@ -186,9 +224,12 @@ const loadData = async () => {
       vendorService.getAll()
     ]);
     
-    quotations.value = quotationsData;
+    allQuotations.value = quotationsData;
     items.value = itemsData;
     vendors.value = vendorsData;
+    
+    // Load all items for search functionality
+    loadAll();
   } catch (error) {
     console.error('Error loading data:', error);
   }
