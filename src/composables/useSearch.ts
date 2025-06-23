@@ -1,6 +1,5 @@
 import { ref, computed, watch } from 'vue'
 import { pb, getCurrentSiteId } from '../services/pocketbase'
-import type { RecordModel } from 'pocketbase'
 import type { 
   IncomingItem, 
   ServiceBooking, 
@@ -19,19 +18,19 @@ export interface SearchOptions {
   additionalFilter?: string
 }
 
-export interface SearchResult<T = RecordModel> {
+export interface SearchResult<T = any> {
   items: T[]
   loading: boolean
   error: string | null
   query: string
 }
 
-export function useSearch<T extends RecordModel = RecordModel>(options: SearchOptions) {
+export function useSearch<T = any>(options: SearchOptions) {
   const searchQuery = ref('')
   const loading = ref(false)
   const error = ref<string | null>(null)
   const results = ref<T[]>([])
-  const debounceTimer = ref<number | null>(null)
+  const debounceTimer = ref<ReturnType<typeof setTimeout> | null>(null)
 
   // Debounced search
   const debouncedSearch = computed(() => {

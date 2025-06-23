@@ -461,7 +461,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, computed, watch } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
 import { TruckIcon, Plus, Edit2, Trash2, Loader2, Eye, X } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
@@ -506,8 +506,6 @@ const showPhotoGallery = ref(false);
 const galleryItem = ref<IncomingItem | null>(null);
 const loading = ref(false);
 
-// Combined loading state for UI
-const isLoading = computed(() => searchLoading.value);
 const fileInput = ref<HTMLInputElement | null>(null);
 const selectedFiles = ref<FileWithPreview[]>([]);
 const selectedFilesForUpload = ref<File[]>([]);

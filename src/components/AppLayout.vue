@@ -313,16 +313,6 @@ const userInitials = computed(() => {
 
 const isOwner = computed(() => currentUserRole.value === 'owner');
 
-// Determine active FAB action based on current route
-const activeFabAction = computed(() => {
-  const routeToActionMap = {
-    '/service-bookings': 'serviceBooking',
-    '/incoming': 'delivery',
-    '/payments': 'payment'
-  };
-
-  return routeToActionMap[route.path as keyof typeof routeToActionMap] || null;
-});
 
 // Conceptual FAB action for current route (complete object like baseFabActions elements)
 const currentRouteFabAction = computed(() => {
@@ -351,10 +341,6 @@ const currentRouteFabAction = computed(() => {
   };
 });
 
-// Check if a specific action is the active one
-const isActionActive = (actionType: string) => {
-  return activeFabAction.value === actionType;
-};
 
 const quickAction = (type: string) => {
   if (!hasSiteAccess.value) {
