@@ -34,12 +34,16 @@ export interface Site {
   description?: string;
   total_units: number;
   total_planned_area: number; // in sqft
+  /** @deprecated Use SiteUser table with role='owner' instead */
   admin_user: string; // User ID of the admin
+  /** @deprecated Use SiteUser table for user associations instead */
   users: string[]; // Array of user IDs with access to this site
   created?: string;
   updated?: string;
   expand?: {
+    /** @deprecated Use SiteUser table with role='owner' instead */
     admin_user?: User;
+    /** @deprecated Use SiteUser table for user associations instead */
     users?: User[];
   };
 }
@@ -110,7 +114,9 @@ export interface Item {
   name: string;
   description?: string;
   unit: string;
+  /** @deprecated Stock quantity field - use delivery history for actual inventory tracking */
   quantity: number;
+  /** @deprecated Inconsistent with Services tags implementation - use proper tagging system if categorization needed */
   category?: string;
   site: string; // Site ID
   created?: string;
@@ -121,11 +127,13 @@ export interface Service {
   id?: string;
   name: string;
   description?: string;
+  /** @deprecated Use unified Tag system instead - will be replaced with proper tag relationships */
   category: 'labor' | 'equipment' | 'professional' | 'transport' | 'other';
   service_type: string; // e.g., 'Plumber', 'Electrician', 'Tractor', 'Digger'
   unit: string; // e.g., 'hour', 'day', 'job', 'sqft'
   standard_rate?: number; // Standard hourly/daily rate
   is_active: boolean;
+  /** @deprecated JSON array prevents proper filtering/autocomplete - use unified Tag system instead */
   tags: string[]; // e.g., ['electrical', 'maintenance', 'emergency']
   site: string; // Site ID
   created?: string;
@@ -139,10 +147,49 @@ export interface Vendor {
   email?: string;
   phone?: string;
   address?: string;
+  /** @deprecated JSON array prevents proper filtering/autocomplete - use unified Tag system instead */
   tags: string[];
   site: string; // Site ID
   created?: string;
   updated?: string;
+}
+
+// ========================================
+// FUTURE: Unified Tag System Interfaces
+// ========================================
+
+export interface Tag {
+  id?: string;
+  name: string;
+  description?: string;
+  color?: string; // For UI categorization
+  type: 'service_category' | 'specialty' | 'item_category' | 'custom';
+  site: string; // Site-specific tags
+  usage_count: number; // For popularity-based autocomplete
+  created?: string;
+  updated?: string;
+}
+
+// Future: Enhanced entity interfaces with tag relationships
+export interface ServiceWithTags extends Omit<Service, 'tags' | 'category'> {
+  tag_ids: string[]; // Array of Tag IDs
+  expand?: {
+    tag_ids?: Tag[]; // Expanded tags via PocketBase relations
+  };
+}
+
+export interface VendorWithTags extends Omit<Vendor, 'tags'> {
+  tag_ids: string[]; // Array of Tag IDs
+  expand?: {
+    tag_ids?: Tag[]; // Expanded tags via PocketBase relations
+  };
+}
+
+export interface ItemWithTags extends Omit<Item, 'category'> {
+  tag_ids: string[]; // Array of Tag IDs
+  expand?: {
+    tag_ids?: Tag[]; // Expanded tags via PocketBase relations
+  };
 }
 
 export interface Quotation {
