@@ -283,6 +283,8 @@ describe('FileUploadComponent', () => {
       
       await uploadArea.trigger('drop', dropEvent)
       await nextTick()
+      // Wait for FileReader to complete
+      await new Promise(resolve => setTimeout(resolve, 50))
       
       expect(wrapper.vm.isDragOver).toBe(false)
       expect(wrapper.vm.previews).toHaveLength(1)
@@ -333,6 +335,8 @@ describe('FileUploadComponent', () => {
       
       await fileInput.trigger('change')
       await nextTick()
+      // Wait for FileReader to complete
+      await new Promise(resolve => setTimeout(resolve, 50))
       
       expect(wrapper.vm.error).toBe('')
       expect(wrapper.vm.previews).toHaveLength(1)
@@ -367,13 +371,15 @@ describe('FileUploadComponent', () => {
       
       await fileInput.trigger('change')
       await nextTick()
+      // Wait for FileReader to complete
+      await new Promise(resolve => setTimeout(resolve, 50))
       
       const previewGrid = wrapper.find('.preview-grid')
       expect(previewGrid.exists()).toBe(true)
       
       const imagePreview = wrapper.find('.preview-image')
       expect(imagePreview.exists()).toBe(true)
-      expect(imagePreview.attributes('src')).toBe('data:image/jpeg;base64,mockbase64')
+      expect(imagePreview.attributes('src')).toBe(`data:image/jpeg;base64,mockbase64-${mockFiles[0].name}`)
     })
 
     it('should display file icon for non-image files', async () => {
@@ -404,6 +410,8 @@ describe('FileUploadComponent', () => {
       
       await fileInput.trigger('change')
       await nextTick()
+      // Wait for FileReader to complete
+      await new Promise(resolve => setTimeout(resolve, 50))
       
       const removeButton = wrapper.find('.remove-button')
       expect(removeButton.exists()).toBe(true)
@@ -446,6 +454,8 @@ describe('FileUploadComponent', () => {
       
       await fileInput.trigger('change')
       await nextTick()
+      // Wait for FileReader to complete
+      await new Promise(resolve => setTimeout(resolve, 50))
       
       const filesSelectedEvents = wrapper.emitted('files-selected')
       expect(filesSelectedEvents).toBeTruthy()
@@ -464,6 +474,8 @@ describe('FileUploadComponent', () => {
       
       await fileInput.trigger('change')
       await nextTick()
+      // Wait for FileReader to complete
+      await new Promise(resolve => setTimeout(resolve, 50))
       
       const modelValueEvents = wrapper.emitted('update:modelValue')
       expect(modelValueEvents).toBeTruthy()
@@ -545,6 +557,8 @@ describe('FileUploadComponent', () => {
       
       await fileInput.trigger('change')
       await nextTick()
+      // Wait for FileReader to complete
+      await new Promise(resolve => setTimeout(resolve, 50))
       
       const removeButton = wrapper.find('.remove-button')
       expect(removeButton.attributes('aria-label')).toBe('Remove file')

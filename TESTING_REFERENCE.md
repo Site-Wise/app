@@ -379,6 +379,84 @@ it('should handle errors gracefully', async () => {
 })
 ```
 
+### 4. Testing FileReader and File Operations
+**Problem:** File upload components use `FileReader.readAsDataURL()` which is asynchronous, but tests expect immediate results
+**Solution:** Mock FileReader properly and wait for async operations to complete
+
+```typescript
+beforeEach(() => {
+  // Mock FileReader for file upload tests
+  Object.defineProperty(global, 'FileReader', {
+    writable: true,
+    value: vi.fn(() => {
+      const instance = {
+        readAsDataURL: vi.fn().mockImplementation(function(this: any, file: File) {
+          // Simulate async behavior with setTimeout
+          setTimeout(() => {
+            if (this.onload) {
+              this.onload({ 
+                target: { 
+                  result: `data:${file.type};base64,mockbase64-${file.name}` 
+                } 
+              })
+            }
+          }, 5)
+        }),
+        result: '',
+        onload: null
+      }
+      return instance
+    })
+  })
+})
+
+it('should process file uploads correctly', async () => {
+  wrapper = createWrapper()
+  
+  const fileInput = wrapper.find('input[type="file"]')
+  Object.defineProperty(fileInput.element, 'files', {
+    value: [mockFile],
+    writable: false
+  })
+  
+  await fileInput.trigger('change')
+  await nextTick()
+  
+  // CRITICAL: Wait for FileReader async operation to complete
+  await new Promise(resolve => setTimeout(resolve, 50))
+  
+  // Now test the results
+  expect(wrapper.vm.previews).toHaveLength(1)
+  expect(wrapper.emitted('files-selected')).toBeTruthy()
+})
+
+it('should handle drag and drop file operations', async () => {
+  wrapper = createWrapper()
+  
+  const uploadArea = wrapper.find('.file-upload-component')
+  const dropEvent = {
+    preventDefault: vi.fn(),
+    dataTransfer: { files: [mockFile] }
+  }
+  
+  await uploadArea.trigger('drop', dropEvent)
+  await nextTick()
+  
+  // CRITICAL: Wait for FileReader to process the dropped file
+  await new Promise(resolve => setTimeout(resolve, 50))
+  
+  expect(wrapper.vm.previews).toHaveLength(1)
+  expect(wrapper.vm.isDragOver).toBe(false)
+})
+```
+
+**Key Points for File Testing:**
+- Always mock `FileReader` in `beforeEach` with proper async simulation
+- Use `setTimeout` in the mock to simulate real FileReader behavior
+- Wait for FileReader operations with `await new Promise(resolve => setTimeout(resolve, 50))` 
+- Test both file input changes and drag/drop operations
+- Verify both component state (`previews`) and events (`files-selected`, `update:modelValue`)
+
 ## Test Isolation & Mock Management
 
 ### 1. Proper Mock Reset in beforeEach
@@ -773,6 +851,8 @@ it('should handle form submission in modal', async () => {
 8. **Test component lifecycle:** Properly wait for `onMounted` and data loading
 9. **Handle computed properties:** Ensure data is loaded before testing computed values
 10. **Use proper timing:** `await new Promise(resolve => setTimeout(resolve, 50))` for data loading
+11. **Mock FileReader correctly:** Use proper async simulation for file upload testing
+12. **Wait for FileReader operations:** Always add timing delays after file operations
 
 ### Mock & Test Isolation
 11. **Reset mocks in beforeEach:** Use `vi.mocked()` to reset implementations, not just calls
@@ -871,6 +951,12 @@ describe('MyComponent', () => {
 ```
 
 ## Recent Updates
+
+### January 2024 - FileUpload Component Testing Learnings
+- **FileReader Async Testing:** Added comprehensive patterns for testing file upload components
+- **Async File Operations:** Documented proper timing for FileReader mock operations
+- **File Testing Best Practices:** Established patterns for drag/drop and file input testing
+- **Critical Timing Fix:** Discovered 50ms delay requirement for FileReader async operations
 
 ### January 2024 - AccountsView Testing Learnings
 - Added comprehensive async lifecycle testing patterns
