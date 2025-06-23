@@ -2,22 +2,104 @@
 
 Welcome to SiteWise - your complete construction site management solution! This guide will help you get started and make the most of all the features available in the application.
 
+## Key Features Overview
+
+SiteWise provides comprehensive construction site management with these powerful features:
+
+### 🏗️ **Multi-Site Management**
+- Manage multiple construction sites from a single dashboard
+- Site-based data isolation for security and organization
+- Role-based access control (Owner, Supervisor, Accountant)
+- Site invitation and user management system
+
+### 📦 **Item & Inventory Management**
+- Track construction items with quantities and categories
+- Monitor delivery history and price trends
+- Stock quantity tracking with average pricing
+- Comprehensive item details with photo support
+
+### 🛠️ **Service Management**
+- Manage construction services (Labor, Equipment, Professional, Transport)
+- Service booking and scheduling system
+- Rate management with standard pricing
+- Service category organization with tagging
+
+### 👥 **Vendor Management**
+- Comprehensive vendor contact database
+- Vendor specialties and capability tracking
+- Financial relationship management
+- Outstanding payment tracking
+
+### 💰 **Financial Management**
+- Multiple payment account support (Bank, Credit Card, Cash, Digital Wallet)
+- Real-time balance tracking and calculations
+- Payment status management (Pending, Partial, Paid)
+- Financial reporting and expense tracking
+
+### 📝 **Quotation System**
+- Price quote management from vendors
+- Support for both item and service quotations
+- Quotation validity tracking
+- Approval workflow management
+
+### 🚚 **Delivery Tracking**
+- Record incoming item deliveries with photos
+- Delivery documentation and receipt management
+- Payment status integration
+- Vendor delivery history
+
+### 💳 **Payment Management**
+- Record payments to vendors with account tracking
+- Automatic payment allocation to outstanding items/services
+- Payment reference and note management
+- Account balance updates
+
+### 📊 **Dashboard & Analytics**
+- Real-time site overview with key metrics
+- Expense tracking per square foot
+- Outstanding amount monitoring
+- Payment trend analysis
+
+### 🔐 **Security & Permissions**
+- JWT-based authentication
+- Site-based data isolation
+- Role-based access control
+- Secure API with PocketBase backend
+
+### 💼 **Subscription Management**
+- Free tier with basic functionality
+- Paid plans with unlimited features
+- Usage tracking and limit enforcement
+- Payment integration
+
+### 🌐 **Progressive Web App (PWA)**
+- Offline capability
+- Mobile-responsive design
+- App installation support
+- Push notifications
+
+### 🌍 **Internationalization**
+- Multi-language support (English, Hindi)
+- Localized user interface
+- Currency and date formatting
+
 ## Table of Contents
 
-1. [Getting Started](#getting-started)
-2. [Dashboard Overview](#dashboard-overview)
-3. [Managing Sites](#managing-sites)
-4. [Items Management](#items-management)
-5. [Services Management](#services-management)
-6. [Vendor Management](#vendor-management)
-7. [Financial Management](#financial-management)
-8. [Recording Deliveries](#recording-deliveries)
-9. [Service Bookings](#service-bookings)
-10. [Payment Tracking](#payment-tracking)
-11. [User Management](#user-management)
-12. [Subscription Management](#subscription-management)
-13. [Reports and Analytics](#reports-and-analytics)
-14. [Mobile App Features](#mobile-app-features)
+1. [Key Features Overview](#key-features-overview)
+2. [Getting Started](#getting-started)
+3. [Dashboard Overview](#dashboard-overview)
+4. [Managing Sites](#managing-sites)
+5. [Items Management](#items-management)
+6. [Services Management](#services-management)
+7. [Vendor Management](#vendor-management)
+8. [Financial Management](#financial-management)
+9. [Recording Deliveries](#recording-deliveries)
+10. [Service Bookings](#service-bookings)
+11. [Payment Tracking](#payment-tracking)
+12. [User Management](#user-management)
+13. [Subscription Management](#subscription-management)
+14. [Reports and Analytics](#reports-and-analytics)
+15. [Mobile App Features](#mobile-app-features)
 
 ---
 
