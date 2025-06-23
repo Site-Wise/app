@@ -16,7 +16,8 @@
     <!-- Service Bookings Table -->
     <div class="card overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-gray-50 dark:bg-gray-700">
+        <!-- Desktop Headers -->
+        <thead class="bg-gray-50 dark:bg-gray-700 hidden lg:table-header-group">
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('services.service') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.vendor') }}</th>
@@ -29,41 +30,51 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.actions') }}</th>
           </tr>
         </thead>
+        
+        <!-- Mobile Headers -->
+        <thead class="bg-gray-50 dark:bg-gray-700 lg:hidden">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('services.service') }}</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('services.details') }}</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.actions') }}</th>
+          </tr>
+        </thead>
         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           <tr v-for="booking in serviceBookings" :key="booking.id">
-            <td class="px-6 py-4 whitespace-nowrap">
+            <!-- Desktop Row -->
+            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="text-sm font-medium text-gray-900 dark:text-white">{{ booking.expand?.service?.name || 'Unknown Service' }}</div>
               <div class="text-sm text-gray-500 dark:text-gray-400">{{ booking.expand?.service?.service_type || 'Unknown Type' }}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="text-sm text-gray-900 dark:text-white">{{ booking.expand?.vendor?.name || 'Unknown Vendor' }}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
               {{ formatDate(booking.start_date) }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
               {{ booking.duration }} {{ booking.expand?.service?.unit || 'units' }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
               ₹{{ booking.unit_rate.toFixed(2) }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="text-sm text-gray-900 dark:text-white">₹{{ booking.total_amount.toFixed(2) }}</div>
               <div v-if="booking.paid_amount > 0" class="text-xs text-green-600 dark:text-green-400">
                 {{ t('serviceBookings.paid') }}: ₹{{ booking.paid_amount.toFixed(2) }}
               </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <span :class="`status-${booking.status === 'scheduled' ? 'pending' : booking.status === 'completed' ? 'paid' : 'partial'}`">
                 {{ t(`serviceBookings.statuses.${booking.status}`) }}
               </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <span :class="`status-${booking.payment_status}`">
                 {{ t(`common.${booking.payment_status}`) }}
               </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium hidden lg:table-cell">
               <div class="flex items-center space-x-2">
                 <button @click="viewBooking(booking)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300" :title="t('common.view')">
                   <Eye class="h-4 w-4" />
@@ -74,6 +85,87 @@
                 <button @click="deleteBooking(booking.id!)" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300" :title="t('common.delete')" v-if="canDelete">
                   <Trash2 class="h-4 w-4" />
                 </button>
+              </div>
+            </td>
+
+            <!-- Mobile Row -->
+            <td class="px-4 py-4 lg:hidden">
+              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ booking.expand?.service?.name || 'Unknown Service' }}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ booking.expand?.vendor?.name || 'Unknown Vendor' }}</div>
+              <div class="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">
+                {{ formatDate(booking.start_date) }}
+              </div>
+            </td>
+            <td class="px-4 py-4 lg:hidden">
+              <div class="text-right">
+                <div :class="[
+                  'text-sm font-semibold',
+                  booking.payment_status === 'paid' 
+                    ? 'text-green-600 dark:text-green-400' 
+                    : booking.payment_status === 'partial'
+                    ? 'text-yellow-600 dark:text-yellow-400'
+                    : 'text-red-600 dark:text-red-400'
+                ]">
+                  ₹{{ booking.total_amount.toFixed(2) }}
+                </div>
+                <div class="mt-1">
+                  <span :class="`text-xs status-${booking.status === 'scheduled' ? 'pending' : booking.status === 'completed' ? 'paid' : 'partial'}`">
+                    {{ t(`serviceBookings.statuses.${booking.status}`) }}
+                  </span>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-4 lg:hidden">
+              <div class="relative flex items-center justify-end">
+                <button 
+                  @click="toggleMobileMenu(booking.id!)"
+                  class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  :title="t('common.actions')"
+                >
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                  </svg>
+                </button>
+                
+                <!-- Mobile Actions Menu -->
+                <Transition
+                  enter-active-class="transition duration-200 ease-out"
+                  enter-from-class="transform scale-95 opacity-0"
+                  enter-to-class="transform scale-100 opacity-100"
+                  leave-active-class="transition duration-150 ease-in"
+                  leave-from-class="transform scale-100 opacity-100"
+                  leave-to-class="transform scale-95 opacity-0"
+                >
+                  <div 
+                    v-if="openMobileMenuId === booking.id"
+                    class="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-20 min-w-[120px] origin-top-right"
+                    @click.stop
+                  >
+                    <button 
+                      @click="viewBooking(booking); closeMobileMenu()"
+                      class="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                    >
+                      <Eye class="h-4 w-4 mr-2" />
+                      {{ t('common.view') }}
+                    </button>
+                    <button 
+                      @click="editBooking(booking); closeMobileMenu()"
+                      v-if="canUpdate"
+                      class="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                    >
+                      <Edit2 class="h-4 w-4 mr-2" />
+                      {{ t('common.edit') }}
+                    </button>
+                    <button 
+                      @click="deleteBooking(booking.id!); closeMobileMenu()"
+                      v-if="canDelete"
+                      class="w-full flex items-center px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
+                    >
+                      <Trash2 class="h-4 w-4 mr-2" />
+                      {{ t('common.delete') }}
+                    </button>
+                  </div>
+                </Transition>
               </div>
             </td>
           </tr>
@@ -295,6 +387,7 @@ const showAddModal = ref(false);
 const editingBooking = ref<ServiceBooking | null>(null);
 const viewingBooking = ref<ServiceBooking | null>(null);
 const loading = ref(false);
+const openMobileMenuId = ref<string | null>(null);
 
 const form = reactive({
   service: '',
@@ -421,6 +514,14 @@ const formatDateTime = (dateString: string) => {
   return new Date(dateString).toLocaleString();
 };
 
+const toggleMobileMenu = (bookingId: string) => {
+  openMobileMenuId.value = openMobileMenuId.value === bookingId ? null : bookingId;
+};
+
+const closeMobileMenu = () => {
+  openMobileMenuId.value = null;
+};
+
 const closeModal = () => {
   showAddModal.value = false;
   editingBooking.value = null;
@@ -449,14 +550,23 @@ const handleSiteChange = () => {
   loadData();
 };
 
+const handleClickOutside = (event: Event) => {
+  const target = event.target as Element;
+  if (!target.closest('.relative')) {
+    closeMobileMenu();
+  }
+};
+
 onMounted(() => {
   loadData();
   window.addEventListener('show-add-modal', handleQuickAction);
   window.addEventListener('site-changed', handleSiteChange);
+  document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
   window.removeEventListener('site-changed', handleSiteChange);
+  document.removeEventListener('click', handleClickOutside);
 });
 </script>

@@ -24,7 +24,8 @@
     <!-- Payments Table -->
     <div class="card overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-gray-50 dark:bg-gray-700">
+        <!-- Desktop Headers -->
+        <thead class="bg-gray-50 dark:bg-gray-700 hidden lg:table-header-group">
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.vendor') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.account') }}</th>
@@ -35,32 +36,42 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.actions') }}</th>
           </tr>
         </thead>
+        
+        <!-- Mobile Headers -->
+        <thead class="bg-gray-50 dark:bg-gray-700 lg:hidden">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.vendor') }}</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.account') }}</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.actions') }}</th>
+          </tr>
+        </thead>
         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           <tr v-for="payment in payments" :key="payment.id">
-            <td class="px-6 py-4 whitespace-nowrap">
+            <!-- Desktop Row -->
+            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="text-sm font-medium text-gray-900 dark:text-white">{{ payment.expand?.vendor?.name || t('common.unknown') + ' ' + t('common.vendor') }}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="flex items-center">
                 <component :is="getAccountIcon(payment.expand?.account?.type)" class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
                 <div class="text-sm text-gray-900 dark:text-white">{{ payment.expand?.account?.name || t('common.unknown') + ' ' + t('common.account') }}</div>
               </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="text-sm font-medium text-gray-900 dark:text-white">₹{{ payment.amount.toFixed(2) }}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
               {{ formatDate(payment.payment_date) }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
               {{ payment.reference || '-' }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
               {{ payment.incoming_items?.length || 0 }} {{ t('common.items') }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium hidden lg:table-cell">
               <div class="flex items-center space-x-2">
-                <button @click="viewPayment(payment)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300">
+                <button @click="viewPayment(payment)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300" :title="t('common.view')">
                   <Eye class="h-4 w-4" />
                 </button>
                 <button 
@@ -71,9 +82,77 @@
                       ? 'text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300' 
                       : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
                   ]"
+                  :title="t('common.delete')"
                 >
                   <Trash2 class="h-4 w-4" />
                 </button>
+              </div>
+            </td>
+
+            <!-- Mobile Row -->
+            <td class="px-4 py-4 lg:hidden">
+              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ payment.expand?.vendor?.name || t('common.unknown') + ' ' + t('common.vendor') }}</div>
+              <div class="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">
+                {{ formatDate(payment.payment_date) }}
+              </div>
+            </td>
+            <td class="px-4 py-4 lg:hidden">
+              <div class="text-right">
+                <div class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{ payment.amount.toFixed(2) }}</div>
+                <div class="flex items-center justify-end mt-1">
+                  <component :is="getAccountIcon(payment.expand?.account?.type)" class="mr-1 h-3 w-3 text-gray-500 dark:text-gray-400" />
+                  <div class="text-xs text-gray-500 dark:text-gray-400">{{ payment.expand?.account?.name || t('common.unknown') }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-4 lg:hidden">
+              <div class="relative flex items-center justify-end">
+                <button 
+                  @click="toggleMobileMenu(payment.id!)"
+                  class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  :title="t('common.actions')"
+                >
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                  </svg>
+                </button>
+                
+                <!-- Mobile Actions Menu -->
+                <Transition
+                  enter-active-class="transition duration-200 ease-out"
+                  enter-from-class="transform scale-95 opacity-0"
+                  enter-to-class="transform scale-100 opacity-100"
+                  leave-active-class="transition duration-150 ease-in"
+                  leave-from-class="transform scale-100 opacity-100"
+                  leave-to-class="transform scale-95 opacity-0"
+                >
+                  <div 
+                    v-if="openMobileMenuId === payment.id"
+                    class="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-20 min-w-[120px] origin-top-right"
+                    @click.stop
+                  >
+                    <button 
+                      @click="viewPayment(payment); closeMobileMenu()"
+                      class="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                    >
+                      <Eye class="h-4 w-4 mr-2" />
+                      {{ t('common.view') }}
+                    </button>
+                    <button 
+                      @click="deletePayment(payment.id!); closeMobileMenu()"
+                      :disabled="!canEditDelete"
+                      :class="[
+                        canEditDelete 
+                          ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20' 
+                          : 'text-gray-400 dark:text-gray-600 cursor-not-allowed',
+                        'w-full flex items-center px-3 py-2 text-sm transition-colors duration-150'
+                      ]"
+                    >
+                      <Trash2 class="h-4 w-4 mr-2" />
+                      {{ t('common.delete') }}
+                    </button>
+                  </div>
+                </Transition>
               </div>
             </td>
           </tr>
@@ -91,12 +170,12 @@
     <div class="mt-8 card">
       <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Outstanding Amounts by Vendor</h2>
       <div class="space-y-4">
-        <div v-for="vendor in vendorsWithOutstanding" :key="vendor.id" class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <div>
+        <div v-for="vendor in vendorsWithOutstanding" :key="vendor.id" class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div class="mb-3 sm:mb-0">
             <h3 class="font-medium text-gray-900 dark:text-white">{{ vendor.name }}</h3>
             <p class="text-sm text-gray-600 dark:text-gray-400">{{ vendor.pendingItems }} pending deliveries</p>
           </div>
-          <div class="text-right">
+          <div class="flex items-center justify-between sm:block sm:text-right">
             <p class="text-lg font-semibold text-gray-900 dark:text-white">₹{{ vendor.outstandingAmount.toFixed(2) }}</p>
             <button 
               @click="quickPayment(vendor)" 
@@ -104,7 +183,8 @@
               :class="[
                 canCreatePayment 
                   ? 'text-sm text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300' 
-                  : 'text-sm text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                  : 'text-sm text-gray-300 dark:text-gray-600 cursor-not-allowed',
+                'ml-3 sm:ml-0'
               ]"
             >
               Pay Now
@@ -288,6 +368,7 @@ const showAddModal = ref(false);
 const viewingPayment = ref<Payment | null>(null);
 const loading = ref(false);
 const vendorOutstanding = ref(0);
+const openMobileMenuId = ref<string | null>(null);
 
 const form = reactive({
   vendor: '',
@@ -462,6 +543,14 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
 };
 
+const toggleMobileMenu = (paymentId: string) => {
+  openMobileMenuId.value = openMobileMenuId.value === paymentId ? null : paymentId;
+};
+
+const closeMobileMenu = () => {
+  openMobileMenuId.value = null;
+};
+
 const closeModal = () => {
   showAddModal.value = false;
   Object.assign(form, {
@@ -484,14 +573,23 @@ const handleSiteChange = () => {
   loadData();
 };
 
+const handleClickOutside = (event: Event) => {
+  const target = event.target as Element;
+  if (!target.closest('.relative')) {
+    closeMobileMenu();
+  }
+};
+
 onMounted(() => {
   loadData();
   window.addEventListener('show-add-modal', handleQuickAction);
   window.addEventListener('site-changed', handleSiteChange);
+  document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
   window.removeEventListener('site-changed', handleSiteChange);
+  document.removeEventListener('click', handleClickOutside);
 });
 </script>

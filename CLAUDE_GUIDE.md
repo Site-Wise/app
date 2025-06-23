@@ -145,6 +145,50 @@ const { t } = useI18n()
 - [ ] Responsive grid layouts
 - [ ] Dark mode support
 
+#### Mobile Table Design Pattern (IncomingView Example)
+For complex data tables, implement responsive design:
+```vue
+<!-- Desktop Headers -->
+<thead class="hidden lg:table-header-group">
+  <!-- Full desktop headers -->
+</thead>
+
+<!-- Mobile Headers -->
+<thead class="lg:hidden">
+  <!-- Simplified mobile headers -->
+</thead>
+
+<!-- Table Body with Responsive Cells -->
+<tbody>
+  <tr v-for="item in items">
+    <!-- Desktop cells with "hidden lg:table-cell" -->
+    <td class="hidden lg:table-cell">...</td>
+    
+    <!-- Mobile cells with "lg:hidden" -->
+    <td class="lg:hidden">
+      <!-- Condensed mobile layout -->
+    </td>
+  </tr>
+</tbody>
+```
+
+Mobile Action Menu Pattern:
+```vue
+<!-- Mobile Actions with Dropdown -->
+<div class="relative">
+  <button @click="toggleMobileMenu(item.id)">
+    <!-- Three dots icon -->
+  </button>
+  
+  <Transition>
+    <div v-if="openMenuId === item.id" 
+         class="absolute right-0 top-full mt-1">
+      <!-- Action buttons -->
+    </div>
+  </Transition>
+</div>
+```
+
 ### 6. Platform Considerations
 
 #### Tauri (Desktop)
@@ -234,6 +278,13 @@ const handleFilesSelected = (files: File[]) => {
 
 ### Issue: Camera not working on mobile
 **Solution**: Use `capture="environment"` attribute
+
+### Issue: Complex table views not mobile-friendly
+**Solution**: Implement responsive table design with:
+- Separate desktop and mobile table headers
+- Mobile-specific row layouts with essential info visible
+- Collapsible action menus for mobile
+- Touch-friendly tap targets (min 44x44px)
 
 ## Before Committing
 1. Run type check: `npx vue-tsc --noEmit`
