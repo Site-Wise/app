@@ -697,5 +697,16 @@
     "getStarted": "शुरुआत करें",
     "cancelSubscription": "सदस्यता रद्द करें",
     "confirmCancel": "क्या आप वाकई अपनी सदस्यता रद्द करना चाहते हैं?"
+  },
+  "fileUpload": {
+    "takePhoto": "फोटो लें",
+    "chooseFiles": "फाइलें चुनें",
+    "clickOrDrag": "फाइल चुनने के लिए क्लिक करें या यहाँ खींचें और छोड़ें",
+    "tapToSelect": "फाइल चुनने के लिए टैप करें",
+    "dragDropHint": "या फाइलें यहाँ खींचें और छोड़ें",
+    "maxSize": "अधिकतम फाइल आकार: {size}",
+    "fileTooLarge": "{name} बहुत बड़ी है। अधिकतम आकार {size} है",
+    "invalidFileType": "{name} का फाइल प्रकार अमान्य है",
+    "removeFile": "फाइल हटाएं"
   }
 }

@@ -696,5 +696,16 @@
     "getStarted": "Get Started",
     "cancelSubscription": "Cancel Subscription",
     "confirmCancel": "Are you sure you want to cancel your subscription?"
+  },
+  "fileUpload": {
+    "takePhoto": "Take Photo",
+    "chooseFiles": "Choose Files",
+    "clickOrDrag": "Click to select files or drag and drop here",
+    "tapToSelect": "Tap to select files",
+    "dragDropHint": "or drag and drop files here",
+    "maxSize": "Maximum file size: {size}",
+    "fileTooLarge": "{name} is too large. Maximum size is {size}",
+    "invalidFileType": "{name} has an invalid file type",
+    "removeFile": "Remove file"
   }
 }

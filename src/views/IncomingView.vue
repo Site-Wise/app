@@ -196,23 +196,14 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('incoming.photos') }}</label>
-              <input 
-                type="file" 
-                multiple 
-                accept="image/*" 
-                @change="handleFileUpload" 
-                class="input mt-1"
-                ref="fileInput"
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('incoming.photos') }}</label>
+              <FileUploadComponent
+                v-model="selectedFilesForUpload"
+                accept-types="image/*"
+                :multiple="true"
+                :allow-camera="true"
+                @files-selected="handleFilesSelected"
               />
-              <div v-if="selectedFiles.length > 0" class="mt-2 grid grid-cols-3 gap-2">
-                <div v-for="(file, index) in selectedFiles" :key="index" class="relative">
-                  <img :src="file.preview" :alt="`${t('incoming.photos')} ${index + 1}`" class="w-full h-20 object-cover rounded" />
-                  <button type="button" @click="removeFile(index)" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                    ×
-                  </button>
-                </div>
-              </div>
               <div v-if="editingItem && editingItem.photos && editingItem.photos.length > 0" class="mt-2">
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">{{ t('incoming.existingPhotos') }}</p>
                 <PhotoGallery 
@@ -337,6 +328,7 @@ import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import PhotoGallery from '../components/PhotoGallery.vue';
+import FileUploadComponent from '../components/FileUploadComponent.vue';
 import { 
   incomingItemService, 
   itemService, 
@@ -367,6 +359,7 @@ const galleryItem = ref<IncomingItem | null>(null);
 const loading = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 const selectedFiles = ref<FileWithPreview[]>([]);
+const selectedFilesForUpload = ref<File[]>([]);
 
 const canCreateIncoming = computed(() => {
   return !isReadOnly.value && checkCreateLimit('incoming_deliveries');
@@ -408,36 +401,26 @@ const calculateTotal = () => {
   form.total_amount = form.quantity * form.unit_price;
 };
 
-const handleFileUpload = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const files = target.files;
-  if (files) {
-    selectedFiles.value = [];
-    Array.from(files).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result;
-        if (typeof result === 'string') {
-          selectedFiles.value.push({
-            file,
-            preview: result
-          });
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-};
-
-const removeFile = (index: number) => {
-  selectedFiles.value.splice(index, 1);
-  if (fileInput.value) {
-    fileInput.value.value = '';
-  }
+const handleFilesSelected = (files: File[]) => {
+  selectedFiles.value = [];
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result;
+      if (typeof result === 'string') {
+        selectedFiles.value.push({
+          file,
+          preview: result
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  });
 };
 
 const getPhotoUrl = (itemId: string, filename: string) => {
-  return `${pb.baseUrl}/api/files/incoming_items/${itemId}/${filename}`;
+  // Using direct URL construction as pb.files.getUrl is deprecated
+  return `${import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090'}/api/files/incoming_items/${itemId}/${filename}`;
 };
 
 const viewPhotos = (item: IncomingItem) => {
@@ -568,6 +551,7 @@ const closeModal = () => {
   showAddModal.value = false;
   editingItem.value = null;
   selectedFiles.value = [];
+  selectedFilesForUpload.value = [];
   if (fileInput.value) {
     fileInput.value.value = '';
   }

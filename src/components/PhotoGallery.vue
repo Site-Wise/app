@@ -171,7 +171,6 @@ import {
   Loader2
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
-import { pb } from '../services/pocketbase';
 
 interface Props {
   photos: string[];
@@ -211,7 +210,8 @@ const zoomStyle = computed(() => {
 
 const getPhotoUrl = (filename: string) => {
   if (!props.itemId) return filename;
-  return `${pb.baseUrl}/api/files/incoming_items/${props.itemId}/${filename}`;
+  // Using direct URL construction as pb.files.getUrl is deprecated
+  return `${import.meta.env.VITE_POCKETBASE_URL}/api/files/incoming_items/${props.itemId}/${filename}`;
 };
 
 const openGallery = (index: number) => {
