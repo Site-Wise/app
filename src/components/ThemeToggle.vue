@@ -5,12 +5,14 @@
       class="flex items-center justify-between p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation w-full md:w-auto md:min-w-[40px]"
       :class="{ 'bg-gray-100 dark:bg-gray-700': dropdownOpen }"
       :aria-expanded="dropdownOpen"
-      aria-haspopup="true"
+      aria-haspopup="menu"
+      :aria-label="t('theme.toggleTheme')"
     >
-      <component :is="currentIcon" class="h-4 w-4 md:h-5 md:w-5" />
+      <component :is="currentIcon" class="h-4 w-4 md:h-5 md:w-5" :aria-hidden="true" />
       <ChevronDown 
         class="h-3 w-3 ml-1 md:ml-2 transition-transform duration-200" 
         :class="{ 'rotate-180': dropdownOpen }"
+        :aria-hidden="true"
       />
     </button>
     

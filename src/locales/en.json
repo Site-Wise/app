@@ -87,7 +87,12 @@
     "settings": "Settings",
     "profile": "Profile",
     "manage_users": "Manage Users",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "openSidebar": "Open navigation menu",
+    "closeSidebar": "Close navigation menu",
+    "mainNavigation": "Main navigation",
+    "userMenu": "User menu",
+    "quickActions": "Quick actions menu"
   },
   "auth": {
     "signIn": "Sign in",
@@ -536,7 +541,11 @@
   "theme": {
     "light": "Light",
     "dark": "Dark",
-    "system": "System"
+    "system": "System",
+    "toggleTheme": "Toggle theme"
+  },
+  "language": {
+    "selectLanguage": "Select language"
   },
   "time": {
     "today": "Today",
@@ -575,7 +584,9 @@
     "rotateLeft": "Rotate Left",
     "rotateRight": "Rotate Right",
     "previousPhoto": "Previous Photo",
-    "nextPhoto": "Next Photo"
+    "nextPhoto": "Next Photo",
+    "closeGallery": "Close gallery",
+    "galleryModal": "Photo gallery"
   },
   "subscription": {
     "title": "Subscription",
@@ -697,6 +708,9 @@
     "cancelSubscription": "Cancel Subscription",
     "confirmCancel": "Are you sure you want to cancel your subscription?"
   },
+  "sites": {
+    "selectSite": "Select site"
+  },
   "fileUpload": {
     "takePhoto": "Take Photo",
     "chooseFiles": "Choose Files",
@@ -706,6 +720,8 @@
     "maxSize": "Maximum file size: {size}",
     "fileTooLarge": "{name} is too large. Maximum size is {size}",
     "invalidFileType": "{name} has an invalid file type",
-    "removeFile": "Remove file"
+    "removeFile": "Remove file",
+    "dropZone": "File upload area",
+    "previewOf": "Preview of {filename}"
   }
 }

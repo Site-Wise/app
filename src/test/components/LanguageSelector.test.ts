@@ -13,7 +13,8 @@ vi.mock('../../composables/useI18n', () => ({
     availableLanguages: [
       { code: 'en', name: 'English', nativeName: 'English' },
       { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' }
-    ]
+    ],
+    t: (key: string) => key // Simple mock that returns the key
   })
 }))
 
@@ -58,7 +59,7 @@ describe('LanguageSelector', () => {
       
       const button = wrapper.find('button')
       expect(button.attributes('aria-expanded')).toBe('false')
-      expect(button.attributes('aria-haspopup')).toBe('true')
+      expect(button.attributes('aria-haspopup')).toBe('menu')
     })
   })
 

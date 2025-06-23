@@ -16,12 +16,13 @@
         <button
           @click="sidebarOpen = false"
           class="lg:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+          :aria-label="t('nav.closeSidebar')"
         >
           <X class="h-5 w-5" />
         </button>
       </div>
       
-      <nav class="mt-4 px-4">
+      <nav class="mt-4 px-4" role="navigation" :aria-label="t('nav.mainNavigation')">
         <div class="space-y-2">
           <router-link
             v-for="item in navigation"
@@ -30,8 +31,9 @@
             class="flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200"
             :class="item.current ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'"
             @click="sidebarOpen = false"
+            :aria-current="item.current ? 'page' : undefined"
           >
-            <component :is="item.icon" class="mr-3 h-5 w-5" />
+            <component :is="item.icon" class="mr-3 h-5 w-5" :aria-hidden="true" />
             {{ t(item.nameKey) }}
           </router-link>
         </div>
@@ -54,6 +56,8 @@
             <button
               @click="sidebarOpen = !sidebarOpen"
               class="lg:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+              :aria-label="t('nav.openSidebar')"
+              :aria-expanded="sidebarOpen"
             >
               <Menu class="h-6 w-6" />
             </button>
@@ -70,8 +74,9 @@
                 :key="action.type"
                 @click="quickAction(action.type)"
                 class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
+                :aria-label="t(action.labelKey)"
               >
-                <component :is="action.icon" class="mr-1 h-4 w-4" />
+                <component :is="action.icon" class="mr-1 h-4 w-4" :aria-hidden="true" />
                 <span class="text-sm font-medium">{{ t(action.labelKey) }}</span>
               </button>
             </div>
@@ -95,7 +100,8 @@
                 class="flex items-center justify-between p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation w-full md:w-auto"
                 :class="{ 'bg-gray-100 dark:bg-gray-700': userMenuOpen }"
                 :aria-expanded="userMenuOpen"
-                aria-haspopup="true"
+                aria-haspopup="menu"
+                :aria-label="t('nav.userMenu')"
               >
                 <div class="flex items-center">
                   <div class="relative">
@@ -228,6 +234,9 @@
         @click="fabMenuOpen = !fabMenuOpen"
         class="w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-110 flex items-center justify-center"
         :class="{ 'rotate-45': fabMenuOpen }"
+        :aria-label="t('nav.quickActions')"
+        :aria-expanded="fabMenuOpen"
+        aria-haspopup="menu"
       >
         <Plus class="h-6 w-6" />
       </button>

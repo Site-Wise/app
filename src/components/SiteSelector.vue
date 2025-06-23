@@ -4,6 +4,9 @@
       @click="dropdownOpen = !dropdownOpen"
       class="flex items-center space-x-2 px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
       :class="{ 'ring-2 ring-primary-500': dropdownOpen }"
+      :aria-expanded="dropdownOpen"
+      aria-haspopup="menu"
+      :aria-label="t('sites.selectSite')"
     >
       <Building class="h-4 w-4 text-gray-500 dark:text-gray-400" />
       <span class="text-gray-900 dark:text-gray-100 font-medium">
@@ -227,8 +230,10 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import { Building, ChevronDown, Check, Plus, Settings, Loader2, Save } from 'lucide-vue-next';
 import { useSite } from '../composables/useSite';
+import { useI18n } from '../composables/useI18n';
 
 const { currentSite, userSites, selectSite: selectSiteAction, createSite, updateSite, isCurrentUserAdmin } = useSite();
+const { t } = useI18n();
 
 // Type for sites with additional ownership information
 interface SiteWithOwnership {

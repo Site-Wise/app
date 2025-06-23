@@ -87,7 +87,12 @@
     "settings": "सेटिंग्स",
     "profile": "प्रोफाइल",
     "manage_users": "उपयोगकर्ता प्रबंधन",
-    "logout": "साइन आउट"
+    "logout": "साइन आउट",
+    "openSidebar": "नेवीगेशन मेनू खोलें",
+    "closeSidebar": "नेवीगेशन मेनू बंद करें",
+    "mainNavigation": "मुख्य नेवीगेशन",
+    "userMenu": "उपयोगकर्ता मेनू",
+    "quickActions": "त्वरित कार्य मेनू"
   },
   "auth": {
     "signIn": "साइन इन",
@@ -536,7 +541,11 @@
   "theme": {
     "light": "हल्का",
     "dark": "गहरा",
-    "system": "सिस्टम"
+    "system": "सिस्टम",
+    "toggleTheme": "थीम टॉगल करें"
+  },
+  "language": {
+    "selectLanguage": "भाषा चुनें"
   },
   "time": {
     "today": "आज",
@@ -575,7 +584,9 @@
     "rotateLeft": "बाएं घुमाएं",
     "rotateRight": "दाएं घुमाएं",
     "previousPhoto": "पिछली फोटो",
-    "nextPhoto": "अगली फोटो"
+    "nextPhoto": "अगली फोटो",
+    "closeGallery": "गैलरी बंद करें",
+    "galleryModal": "फोटो गैलरी"
   },
   "subscription": {
     "title": "सदस्यता",
@@ -698,6 +709,9 @@
     "cancelSubscription": "सदस्यता रद्द करें",
     "confirmCancel": "क्या आप वाकई अपनी सदस्यता रद्द करना चाहते हैं?"
   },
+  "sites": {
+    "selectSite": "साइट चुनें"
+  },
   "fileUpload": {
     "takePhoto": "फोटो लें",
     "chooseFiles": "फाइलें चुनें",
@@ -707,6 +721,8 @@
     "maxSize": "अधिकतम फाइल आकार: {size}",
     "fileTooLarge": "{name} बहुत बड़ी है। अधिकतम आकार {size} है",
     "invalidFileType": "{name} का फाइल प्रकार अमान्य है",
-    "removeFile": "फाइल हटाएं"
+    "removeFile": "फाइल हटाएं",
+    "dropZone": "फाइल अपलोड क्षेत्र",
+    "previewOf": "{filename} का पूर्वावलोकन"
   }
 }

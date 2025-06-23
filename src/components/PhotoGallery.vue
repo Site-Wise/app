@@ -42,11 +42,15 @@
       @click="closeGallery"
       @keydown.escape="closeGallery"
       tabindex="0"
+      role="dialog"
+      :aria-label="t('photos.galleryModal')"
+      aria-modal="true"
     >
       <!-- Close Button -->
       <button 
         @click="closeGallery"
         class="absolute top-4 right-4 z-60 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2 transition-all duration-200"
+        :aria-label="t('photos.closeGallery')"
       >
         <X class="h-6 w-6" />
       </button>
@@ -63,6 +67,7 @@
         class="absolute left-4 top-1/2 transform -translate-y-1/2 z-60 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-3 transition-all duration-200"
         :disabled="currentPhotoIndex === 0"
         :class="{ 'opacity-50 cursor-not-allowed': currentPhotoIndex === 0 }"
+        :aria-label="t('photos.previousPhoto')"
       >
         <ChevronLeft class="h-6 w-6" />
       </button>
@@ -73,6 +78,7 @@
         class="absolute right-4 top-1/2 transform -translate-y-1/2 z-60 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-3 transition-all duration-200"
         :disabled="currentPhotoIndex === photos.length - 1"
         :class="{ 'opacity-50 cursor-not-allowed': currentPhotoIndex === photos.length - 1 }"
+        :aria-label="t('photos.nextPhoto')"
       >
         <ChevronRight class="h-6 w-6" />
       </button>

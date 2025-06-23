@@ -18,7 +18,7 @@
       
       <div class="card">
         <!-- Tab Navigation -->
-        <div class="flex border-b border-gray-200 dark:border-gray-700">
+        <div class="flex border-b border-gray-200 dark:border-gray-700" role="tablist" aria-label="Authentication options">
           <button
             @click="activeTab = 'login'"
             :class="[
@@ -27,6 +27,10 @@
                 ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             ]"
+            role="tab"
+            :aria-selected="activeTab === 'login'"
+            :tabindex="activeTab === 'login' ? 0 : -1"
+            aria-controls="login-panel"
           >
             {{ t('auth.signIn') }}
           </button>
@@ -38,13 +42,17 @@
                 ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             ]"
+            role="tab"
+            :aria-selected="activeTab === 'register'"
+            :tabindex="activeTab === 'register' ? 0 : -1"
+            aria-controls="register-panel"
           >
             {{ t('auth.createAccount') }}
           </button>
         </div>
 
         <!-- Login Form -->
-        <div v-if="activeTab === 'login'" class="mt-6">
+        <div v-if="activeTab === 'login'" class="mt-6" role="tabpanel" id="login-panel" aria-labelledby="login-tab">
           <form @submit.prevent="handleLogin" class="space-y-6">
             <div v-if="error" class="rounded-md bg-error-50 dark:bg-error-900/30 p-4">
               <div class="flex">
@@ -118,7 +126,7 @@
         </div>
 
         <!-- Register Form -->
-        <div v-if="activeTab === 'register'" class="mt-6">
+        <div v-if="activeTab === 'register'" class="mt-6" role="tabpanel" id="register-panel" aria-labelledby="register-tab">
           <form @submit.prevent="handleRegister" class="space-y-6">
             <div v-if="error" class="rounded-md bg-error-50 dark:bg-error-900/30 p-4">
               <div class="flex">

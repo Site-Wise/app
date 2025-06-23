@@ -4,7 +4,12 @@
            :class="{ 'drag-over': isDragOver }"
            @drop="handleDrop"
            @dragover.prevent="isDragOver = true"
-           @dragleave.prevent="isDragOver = false">
+           @dragleave.prevent="isDragOver = false"
+           :aria-label="t('fileUpload.dropZone')"
+           role="button"
+           tabindex="0"
+           @keydown.enter="fileInput?.click()"
+           @keydown.space.prevent="fileInput?.click()">
     
     <input
       type="file"
@@ -32,7 +37,7 @@
       <div v-for="(file, index) in previews" :key="file.id" class="preview-item group">
         <img v-if="file.type.startsWith('image/')" 
              :src="file.preview" 
-             :alt="file.name" 
+             :alt="t('fileUpload.previewOf', { filename: file.name })" 
              class="preview-image" />
         <div v-else class="file-preview">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12">
