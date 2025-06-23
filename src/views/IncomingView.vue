@@ -24,7 +24,8 @@
     <!-- Incoming Items Table -->
     <div class="card overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-gray-50 dark:bg-gray-700">
+        <!-- Desktop Headers -->
+        <thead class="bg-gray-50 dark:bg-gray-700 hidden lg:table-header-group">
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.item') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.vendor') }}</th>
@@ -37,36 +38,47 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.actions') }}</th>
           </tr>
         </thead>
+        
+        <!-- Mobile Headers -->
+        <thead class="bg-gray-50 dark:bg-gray-700 lg:hidden">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.item') }}</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('incoming.details') }}</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.actions') }}</th>
+          </tr>
+        </thead>
+        
         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           <tr v-for="item in incomingItems" :key="item.id">
-            <td class="px-6 py-4 whitespace-nowrap">
+            <!-- Desktop Row -->
+            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="text-sm font-medium text-gray-900 dark:text-white">{{ item.expand?.item?.name || 'Unknown Item' }}</div>
               <div class="text-sm text-gray-500 dark:text-gray-400">{{ item.expand?.item?.unit || 'units' }}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="text-sm text-gray-900 dark:text-white">{{ item.expand?.vendor?.name || 'Unknown Vendor' }}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
               {{ item.quantity }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
               ₹{{ item.unit_price.toFixed(2) }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="text-sm text-gray-900 dark:text-white">₹{{ item.total_amount.toFixed(2) }}</div>
               <div v-if="item.paid_amount > 0" class="text-xs text-green-600 dark:text-green-400">
                 {{ t('incoming.paid') }}: ₹{{ item.paid_amount.toFixed(2) }}
               </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <span :class="`status-${item.payment_status}`">
                 {{ t(`common.${item.payment_status}`) }}
               </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
               {{ formatDate(item.delivery_date) }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div v-if="item.photos && item.photos.length > 0" class="flex items-center space-x-2">
                 <div class="flex -space-x-2">
                   <img 
@@ -89,7 +101,7 @@
                 {{ t('incoming.noPhotos') }}
               </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium hidden lg:table-cell">
               <div class="flex items-center space-x-2">
                 <button @click="viewItem(item)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300" :title="t('common.view')">
                   <Eye class="h-4 w-4" />
@@ -118,6 +130,104 @@
                 >
                   <Trash2 class="h-4 w-4" />
                 </button>
+              </div>
+            </td>
+
+            <!-- Mobile Row -->
+            <td class="px-4 py-4 lg:hidden">
+              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ item.expand?.item?.name || 'Unknown Item' }}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ item.expand?.vendor?.name || 'Unknown Vendor' }}</div>
+              <div class="flex justify-end mt-2">
+                <div class="text-xs font-medium text-blue-600 dark:text-blue-400">
+                  {{ formatDate(item.delivery_date) }}
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-4 lg:hidden">
+              <div class="space-y-2 text-xs">
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-500 dark:text-gray-400">{{ t('common.quantity') }}:</span>
+                  <span class="font-medium text-gray-900 dark:text-white">{{ item.quantity }} {{ item.expand?.item?.unit || 'units' }}</span>
+                </div>
+                <div class="flex justify-between items-start">
+                  <span class="text-gray-500 dark:text-gray-400">{{ t('common.total') }}:</span>
+                  <div class="text-right">
+                    <div :class="[
+                      'font-semibold',
+                      item.payment_status === 'paid' 
+                        ? 'text-green-600 dark:text-green-400' 
+                        : 'text-red-600 dark:text-red-400'
+                    ]">
+                      ₹{{ item.total_amount.toFixed(2) }}
+                    </div>
+                    <div v-if="item.paid_amount > 0 && item.paid_amount < item.total_amount" class="text-xs font-medium text-red-600 dark:text-red-400 mt-0.5">
+                      {{ t('incoming.pending') }}: ₹{{ (item.total_amount - item.paid_amount).toFixed(2) }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-4 lg:hidden">
+              <div class="relative flex items-center justify-end">
+                <button 
+                  @click="toggleMobileMenu(item.id!)"
+                  class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  :title="t('common.actions')"
+                >
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                  </svg>
+                </button>
+                
+                <!-- Mobile Actions Menu -->
+                <Transition
+                  enter-active-class="transition duration-200 ease-out"
+                  enter-from-class="transform scale-95 opacity-0"
+                  enter-to-class="transform scale-100 opacity-100"
+                  leave-active-class="transition duration-150 ease-in"
+                  leave-from-class="transform scale-100 opacity-100"
+                  leave-to-class="transform scale-95 opacity-0"
+                >
+                  <div 
+                    v-if="openMobileMenuId === item.id"
+                    class="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-20 min-w-[120px] origin-top-right"
+                    @click.stop
+                  >
+                  <button 
+                    @click="viewItem(item); closeMobileMenu()"
+                    class="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                  >
+                    <Eye class="h-4 w-4 mr-2" />
+                    {{ t('common.view') }}
+                  </button>
+                  <button 
+                    @click="editItem(item); closeMobileMenu()"
+                    :disabled="!canEditDelete"
+                    :class="[
+                      canEditDelete 
+                        ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' 
+                        : 'text-gray-400 dark:text-gray-600 cursor-not-allowed',
+                      'w-full flex items-center px-3 py-2 text-sm transition-colors duration-150'
+                    ]"
+                  >
+                    <Edit2 class="h-4 w-4 mr-2" />
+                    {{ t('common.edit') }}
+                  </button>
+                  <button 
+                    @click="deleteItem(item.id!); closeMobileMenu()"
+                    :disabled="!canEditDelete"
+                    :class="[
+                      canEditDelete 
+                        ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20' 
+                        : 'text-gray-400 dark:text-gray-600 cursor-not-allowed',
+                      'w-full flex items-center px-3 py-2 text-sm transition-colors duration-150'
+                    ]"
+                  >
+                    <Trash2 class="h-4 w-4 mr-2" />
+                    {{ t('common.delete') }}
+                  </button>
+                  </div>
+                </Transition>
               </div>
             </td>
           </tr>
@@ -360,6 +470,7 @@ const loading = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 const selectedFiles = ref<FileWithPreview[]>([]);
 const selectedFilesForUpload = ref<File[]>([]);
+const openMobileMenuId = ref<string | null>(null);
 
 const canCreateIncoming = computed(() => {
   return !isReadOnly.value && checkCreateLimit('incoming_deliveries');
@@ -389,7 +500,10 @@ const loadData = async () => {
       vendorService.getAll()
     ]);
     
-    incomingItems.value = incomingData;
+    // Sort incoming items by delivery date descending (newest first)
+    incomingItems.value = incomingData.sort((a, b) => 
+      new Date(b.delivery_date).getTime() - new Date(a.delivery_date).getTime()
+    );
     items.value = itemsData;
     vendors.value = vendorsData;
   } catch (error) {
@@ -547,6 +661,14 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
 };
 
+const toggleMobileMenu = (itemId: string) => {
+  openMobileMenuId.value = openMobileMenuId.value === itemId ? null : itemId;
+};
+
+const closeMobileMenu = () => {
+  openMobileMenuId.value = null;
+};
+
 const closeModal = () => {
   showAddModal.value = false;
   editingItem.value = null;
@@ -576,14 +698,23 @@ const handleSiteChange = () => {
   loadData();
 };
 
+const handleClickOutside = (event: Event) => {
+  const target = event.target as Element;
+  if (!target.closest('.relative')) {
+    closeMobileMenu();
+  }
+};
+
 onMounted(() => {
   loadData();
   window.addEventListener('show-add-modal', handleQuickAction);
   window.addEventListener('site-changed', handleSiteChange);
+  document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
   window.removeEventListener('site-changed', handleSiteChange);
+  document.removeEventListener('click', handleClickOutside);
 });
 </script>
