@@ -341,7 +341,7 @@ export const calculatePermissions = (role: 'owner' | 'supervisor' | 'accountant'
         canExport: true,
         canViewFinancials: true
       };
-    
+
     case 'supervisor':
       return {
         canCreate: true,
@@ -353,7 +353,7 @@ export const calculatePermissions = (role: 'owner' | 'supervisor' | 'accountant'
         canExport: true,
         canViewFinancials: true
       };
-    
+
     case 'accountant':
       return {
         canCreate: false,
@@ -365,7 +365,7 @@ export const calculatePermissions = (role: 'owner' | 'supervisor' | 'accountant'
         canExport: true, // Can export financial reports
         canViewFinancials: true
       };
-    
+
     default:
       return {
         canCreate: false,
@@ -389,9 +389,9 @@ export class AuthService {
   }
 
   async register(
-    email: string, 
-    password: string, 
-    name: string, 
+    email: string,
+    password: string,
+    name: string,
     turnstileToken?: string,
     phone?: string,
     countryCode?: string,
@@ -423,7 +423,7 @@ export class AuthService {
   get currentUser(): User | null {
     const model = pb.authStore.record;
     if (!model || !this.isAuthenticated) return null;
-    
+
     return {
       id: model.id,
       email: model.email || '',
@@ -618,11 +618,11 @@ export class SiteService {
     };
 
     const record = await pb.collection('sites').create(siteData);
-    
+
     // Note: site_user record creation and subscription setup are now handled
     // by PocketBase hooks (see external_services/pocketbase/site-creation-hook.js)
     // This ensures atomicity and prevents orphaned sites if client fails
-    
+
     return this.mapRecordToSite(record);
   }
 
@@ -657,7 +657,7 @@ export class SiteService {
     // Update user's sites array
     const userRecord = await pb.collection('users').getOne(userId);
     const currentSites = userRecord.sites || [];
-    
+
     if (!currentSites.includes(siteId)) {
       await pb.collection('users').update(userId, {
         sites: [...currentSites, siteId]
@@ -667,7 +667,7 @@ export class SiteService {
     // Update site's users array
     const siteRecord = await pb.collection('sites').getOne(siteId);
     const currentUsers = siteRecord.users || [];
-    
+
     if (!currentUsers.includes(userId)) {
       await pb.collection('sites').update(siteId, {
         users: [...currentUsers, userId]
@@ -697,7 +697,7 @@ export class SiteService {
     // Update user's sites array
     const userRecord = await pb.collection('users').getOne(userId);
     const currentSites = userRecord.sites || [];
-    
+
     await pb.collection('users').update(userId, {
       sites: currentSites.filter((id: string) => id !== siteId)
     });
@@ -705,7 +705,7 @@ export class SiteService {
     // Update site's users array
     const siteRecord = await pb.collection('sites').getOne(siteId);
     const currentUsers = siteRecord.users || [];
-    
+
     await pb.collection('sites').update(siteId, {
       users: currentUsers.filter((id: string) => id !== userId)
     });
@@ -830,8 +830,8 @@ export class AccountService {
     const account = await this.getById(id);
     if (!account) throw new Error('Account not found');
 
-    const newBalance = operation === 'add' 
-      ? account.current_balance + amount 
+    const newBalance = operation === 'add'
+      ? account.current_balance + amount
       : account.current_balance - amount;
 
     return this.update(id, { current_balance: newBalance });
@@ -844,13 +844,13 @@ export class AccountService {
     // Get all payments for this account
     const payments = await paymentService.getAll();
     const accountPayments = payments.filter(payment => payment.account === id);
-    
+
     // Calculate total payments made from this account
     const totalPayments = accountPayments.reduce((sum, payment) => sum + payment.amount, 0);
-    
+
     // Recalculate current balance: opening balance - total payments
     const newBalance = account.opening_balance - totalPayments;
-    
+
     return this.update(id, { current_balance: newBalance });
   }
 
@@ -1485,14 +1485,14 @@ export class PaymentService {
       ...data,
       site: siteId
     });
-    
+
     // Update account balance (subtract payment amount)
     await accountService.updateBalance(data.account, data.amount, 'subtract');
-    
+
     // Update payment status of related incoming items and service bookings
     await this.updateIncomingItemsPaymentStatus(data.vendor, data.amount);
     await this.updateServiceBookingsPaymentStatus(data.vendor, data.amount);
-    
+
     return this.mapRecordToPayment(record);
   }
 
@@ -1507,21 +1507,21 @@ export class PaymentService {
       });
 
     let remainingAmount = paymentAmount;
-    
+
     for (const item of incomingItems) {
       if (remainingAmount <= 0) break;
-      
+
       const outstandingAmount = item.total_amount - item.paid_amount;
       const paymentForItem = Math.min(remainingAmount, outstandingAmount);
-      
+
       const newPaidAmount = item.paid_amount + paymentForItem;
       const newStatus = newPaidAmount >= item.total_amount ? 'paid' : 'partial';
-      
+
       await pb.collection('incoming_items').update(item.id, {
         paid_amount: newPaidAmount,
         payment_status: newStatus
       });
-      
+
       remainingAmount -= paymentForItem;
     }
   }
@@ -1537,21 +1537,21 @@ export class PaymentService {
       });
 
     let remainingAmount = paymentAmount;
-    
+
     for (const booking of serviceBookings) {
       if (remainingAmount <= 0) break;
-      
+
       const outstandingAmount = booking.total_amount - booking.paid_amount;
       const paymentForBooking = Math.min(remainingAmount, outstandingAmount);
-      
+
       const newPaidAmount = booking.paid_amount + paymentForBooking;
       const newStatus = newPaidAmount >= booking.total_amount ? 'paid' : 'partial';
-      
+
       await pb.collection('service_bookings').update(booking.id, {
         paid_amount: newPaidAmount,
         payment_status: newStatus
       });
-      
+
       remainingAmount -= paymentForBooking;
     }
   }
@@ -1573,7 +1573,7 @@ export class PaymentService {
       expand: record.expand ? {
         vendor: record.expand.vendor ? this.mapRecordToVendor(record.expand.vendor) : undefined,
         account: record.expand.account ? this.mapRecordToAccount(record.expand.account) : undefined,
-        incoming_items: record.expand.incoming_items ? 
+        incoming_items: record.expand.incoming_items ?
           record.expand.incoming_items.map((item: RecordModel) => this.mapRecordToIncomingItem(item)) : undefined,
         service_bookings: record.expand.service_bookings ?
           record.expand.service_bookings.map((booking: RecordModel) => this.mapRecordToServiceBooking(booking)) : undefined
