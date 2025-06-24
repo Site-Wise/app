@@ -16,7 +16,7 @@ onRecordAfterUpdateSuccess((e) => {
     const users = e.app.findRecordsByFilter('users', `email = "${userEmail}"`)
 
     if (!users || users.length === 0) {
-      e.app.logger().error(`No user found with email ${userEmail} for invitation ${invitation.getId()}`)
+      e.app.logger().error(`No user found with email ${userEmail} for invitation ${invitation.get('id')}`)
       return
     }
 
@@ -27,14 +27,14 @@ onRecordAfterUpdateSuccess((e) => {
     try {
       existingSiteUser = e.app.findFirstRecordByFilter(
         'site_users',
-        `site = "${invitation.get('site')}" && user = "${user.getId()}"`
+        `site = "${invitation.get('site')}" && user = "${user.get('id')}"`
       )
     } catch (err) {
       // No existing record found, which is expected
     }
 
     if (existingSiteUser) {
-      e.app.logger().info(`User ${user.getId()} already has access to site ${invitation.get('site')}`)
+      e.app.logger().info(`User ${user.get('id')} already has access to site ${invitation.get('site')}`)
       return
     }
 
@@ -42,7 +42,7 @@ onRecordAfterUpdateSuccess((e) => {
     const siteUserCollection = e.app.findCollectionByNameOrId('site_users')
     const siteUserRecord = new Record(siteUserCollection)
     siteUserRecord.set('site', invitation.get('site'))
-    siteUserRecord.set('user', user.getId())
+    siteUserRecord.set('user', user.get('id'))
     siteUserRecord.set('role', invitation.get('role'))
     siteUserRecord.set('assigned_by', invitation.get('invited_by'))
     siteUserRecord.set('is_active', true)
@@ -53,10 +53,10 @@ onRecordAfterUpdateSuccess((e) => {
     invitation.set('accepted_at', new Date().toISOString())
     e.app.save(invitation)
 
-    e.app.logger().info(`Granted ${invitation.get('role')} permissions to user ${user.getId()} for site ${invitation.get('site')}`)
+    e.app.logger().info(`Granted ${invitation.get('role')} permissions to user ${user.get('id')} for site ${invitation.get('site')}`)
 
   } catch (error) {
-    e.app.logger().error(`Error processing accepted invitation ${invitation.getId()}:`, error)
+    e.app.logger().error(`Error processing accepted invitation ${invitation.get('id')}:`, error)
     // Don't throw - we don't want to fail the invitation update
   }
 
