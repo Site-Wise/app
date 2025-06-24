@@ -165,7 +165,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { Package, Plus, Edit2, Trash2, Loader2, Tag } from 'lucide-vue-next';
+import { Package, Plus, Edit2, Trash2, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';

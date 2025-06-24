@@ -143,7 +143,7 @@ const showTypeSelection = ref(false)
 const selectedType = ref<Tag['type']>(props.tagType)
 const loading = ref(false)
 
-const tagTypes = [
+const tagTypes: Array<{ value: Tag['type'], label: string }> = [
   { value: 'custom', label: 'tags.types.custom' },
   { value: 'item_category', label: 'tags.types.itemCategory' },
   { value: 'service_category', label: 'tags.types.serviceCategory' },
