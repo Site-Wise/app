@@ -233,6 +233,31 @@
               </div>
             </div>
 
+            <div>
+              <label for="reg-confirm-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('auth.confirmPassword') }}
+              </label>
+              <div class="mt-1">
+                <input
+                  id="reg-confirm-password"
+                  v-model="registerForm.confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  required
+                  class="input"
+                  :class="[
+                    registerForm.confirmPassword && !passwordsMatch
+                      ? 'border-error-500 focus:border-error-500 focus:ring-error-500 dark:border-error-500'
+                      : ''
+                  ]"
+                  :placeholder="t('forms.confirmPassword')"
+                />
+              </div>
+              <div v-if="registerForm.confirmPassword && !passwordsMatch" class="mt-1 text-sm text-error-600 dark:text-error-400">
+                {{ t('auth.passwordsDoNotMatch') }}
+              </div>
+            </div>
+
             <!-- Turnstile Widget for Registration -->
             <TurnstileWidget
               v-if="turnstileSiteKey"
@@ -247,7 +272,7 @@
             <div class="flex space-x-3">
               <button
                 type="submit"
-                :disabled="registerLoading || !registerTurnstileToken"
+                :disabled="registerLoading || !registerTurnstileToken || !passwordsMatch"
                 class="flex-1 btn-primary"
               >
                 <Loader2 v-if="registerLoading" class="mr-2 h-4 w-4 animate-spin" />
@@ -269,7 +294,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { useI18n } from '../composables/useI18n';
@@ -305,7 +330,13 @@ const registerForm = reactive({
   phone: '',
   countryCode: '+91',
   couponCode: '',
-  password: ''
+  password: '',
+  confirmPassword: ''
+});
+
+// Password validation
+const passwordsMatch = computed(() => {
+  return registerForm.password === registerForm.confirmPassword;
 });
 
 const handleLogin = async () => {
@@ -344,6 +375,12 @@ const handleLogin = async () => {
 const handleRegister = async () => {
   if (!registerTurnstileToken.value && turnstileSiteKey) {
     error.value = t('auth.turnstileRequired');
+    return;
+  }
+
+  // Validate passwords match
+  if (!passwordsMatch.value) {
+    error.value = t('auth.passwordsDoNotMatch');
     return;
   }
 

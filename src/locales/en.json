@@ -535,6 +535,7 @@
     "confirmNewPassword": "Confirm new password",
     "enterPassword": "Enter your password",
     "createPassword": "Create a password",
+    "confirmPassword": "Confirm your password",
     "unitPrice": "Unit Price",
     "selectService": "Select a service",
     "serviceNotes": "Service notes"
