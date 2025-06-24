@@ -11,8 +11,9 @@ vi.mock('../../composables/useI18n', () => ({
         'vendors.addVendor': 'Add Vendor',
         'vendors.editVendor': 'Edit Vendor',
         'vendors.deleteVendor': 'Delete Vendor',
-        'vendors.companyName': 'Company Name',
+        'vendors.companyName': 'Company Name (Optional)',
         'vendors.contactPerson': 'Contact Person',
+        'vendors.paymentDetails': 'Payment Details',
         'vendors.specialties': 'Specialties',
         'vendors.outstanding': 'Outstanding',
         'vendors.totalPaid': 'Total Paid',
@@ -22,8 +23,9 @@ vi.mock('../../composables/useI18n', () => ({
         'common.email': 'Email',
         'common.phone': 'Phone',
         'common.address': 'Address',
-        'forms.enterCompanyName': 'Enter company name',
+        'forms.enterCompanyName': 'Enter company name (optional)',
         'forms.enterContactPerson': 'Enter contact person',
+        'forms.enterPaymentDetails': 'Enter bank details, UPI ID, or payment instructions',
         'forms.enterEmail': 'Enter email address',
         'forms.enterPhone': 'Enter phone number',
         'forms.enterAddress': 'Enter address',
@@ -84,6 +86,7 @@ vi.mock('../../services/pocketbase', () => {
     email: 'john@vendor.com',
     phone: '123-456-7890',
     address: '123 Test St',
+    payment_details: 'Bank: HDFC Bank\nAccount: 123456789\nIFSC: HDFC0001234',
     tags: ['tag-1', 'tag-2'],
     site: 'site-1'
   }
@@ -302,6 +305,7 @@ describe('VendorsView', () => {
       email: 'john@vendor.com',
       phone: '123-456-7890',
       address: '123 Test St',
+      payment_details: 'Bank: HDFC Bank\nAccount: 123456789\nIFSC: HDFC0001234',
       tags: ['tag-1', 'tag-2']
     }
     
@@ -475,8 +479,16 @@ describe('VendorsView', () => {
     await addButton.trigger('click')
     await wrapper.vm.$nextTick()
     
-    // Check that required fields have required attribute
-    const nameInput = wrapper.find('input[placeholder="Enter company name"]')
-    expect(nameInput.attributes('required')).toBeDefined()
+    // Check that form fields exist with correct placeholders
+    const contactPersonInput = wrapper.find('input[placeholder="Enter contact person"]')
+    expect(contactPersonInput.exists()).toBe(true)
+    
+    const companyNameInput = wrapper.find('input[placeholder="Enter company name (optional)"]')
+    expect(companyNameInput.exists()).toBe(true)
+    // Company name should not be required since it's optional
+    expect(companyNameInput.attributes('required')).toBeUndefined()
+    
+    const paymentDetailsTextarea = wrapper.find('textarea[placeholder="Enter bank details, UPI ID, or payment instructions"]')
+    expect(paymentDetailsTextarea.exists()).toBe(true)
   })
 })

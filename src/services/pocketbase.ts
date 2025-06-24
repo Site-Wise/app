@@ -138,11 +138,12 @@ export interface Service {
 
 export interface Vendor {
   id?: string;
-  name: string;
+  name?: string;
   contact_person?: string;
   email?: string;
   phone?: string;
   address?: string;
+  payment_details?: string;
   tags?: string[]; // Array of Tag IDs for categorization (replaces tags)
   site: string; // Site ID
   created?: string;

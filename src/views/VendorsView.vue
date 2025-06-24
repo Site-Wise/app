@@ -26,12 +26,11 @@
       <div v-for="vendor in vendors" :key="vendor.id" class="card hover:shadow-md transition-shadow duration-200 cursor-pointer" @click="viewVendorDetail(vendor.id!)">
         <div class="flex items-start justify-between">
           <div class="flex-1">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ vendor.name }}</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ vendor.contact_person || vendor.name || 'Unnamed Vendor' }}</h3>
+            <div v-if="vendor.name && vendor.contact_person" class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              {{ vendor.name }}
+            </div>
             <div class="mt-2 space-y-1">
-              <div v-if="vendor.contact_person" class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <User class="mr-2 h-4 w-4" />
-                {{ vendor.contact_person }}
-              </div>
               <div v-if="vendor.email" class="flex items-center text-sm text-gray-600 dark:text-gray-400">
                 <Mail class="mr-2 h-4 w-4" />
                 {{ vendor.email }}
@@ -122,13 +121,18 @@
           
           <form @submit.prevent="saveVendor" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.companyName') }}</label>
-              <input v-model="form.name" type="text" required class="input mt-1" :placeholder="t('forms.enterCompanyName')" />
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.contactPerson') }}</label>
+              <input v-model="form.contact_person" type="text" class="input mt-1" :placeholder="t('forms.enterContactPerson')" />
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.contactPerson') }}</label>
-              <input v-model="form.contact_person" type="text" class="input mt-1" :placeholder="t('forms.enterContactPerson')" />
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.companyName') }}</label>
+              <input v-model="form.name" type="text" class="input mt-1" :placeholder="t('forms.enterCompanyName')" />
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.paymentDetails') }}</label>
+              <textarea v-model="form.payment_details" class="input mt-1" rows="2" :placeholder="t('forms.enterPaymentDetails')"></textarea>
             </div>
             
             <div>
@@ -214,8 +218,9 @@ const canEditDelete = computed(() => {
 });
 
 const form = reactive({
-  name: '',
   contact_person: '',
+  name: '',
+  payment_details: '',
   email: '',
   phone: '',
   address: '',
@@ -288,6 +293,12 @@ const handleAddVendor = () => {
 };
 
 const saveVendor = async () => {
+  // Validation: require either contact_person or name
+  if (!form.contact_person.trim() && !form.name.trim()) {
+    error('Please provide either a contact person or company name');
+    return;
+  }
+  
   loading.value = true;
   try {
     if (editingVendor.value) {
@@ -315,8 +326,9 @@ const saveVendor = async () => {
 const editVendor = (vendor: Vendor) => {
   editingVendor.value = vendor;
   Object.assign(form, {
-    name: vendor.name,
     contact_person: vendor.contact_person || '',
+    name: vendor.name || '',
+    payment_details: vendor.payment_details || '',
     email: vendor.email || '',
     phone: vendor.phone || '',
     address: vendor.address || '',
@@ -347,8 +359,9 @@ const closeModal = () => {
   showAddModal.value = false;
   editingVendor.value = null;
   Object.assign(form, {
-    name: '',
     contact_person: '',
+    name: '',
+    payment_details: '',
     email: '',
     phone: '',
     address: '',
