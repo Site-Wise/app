@@ -58,10 +58,18 @@
               </div>
             </div>
             
-            <div v-if="vendor.tags && vendor.tags.length > 0" class="mt-4 flex flex-wrap gap-1">
-              <span v-for="tag in vendor.tags" :key="tag" class="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300 text-xs rounded-full">
-                {{ tag }}
-              </span>
+            <!-- Tags -->
+            <div v-if="vendorTags.get(vendor.id!)?.length" class="mt-4">
+              <div class="flex flex-wrap gap-1">
+                <span
+                  v-for="tag in vendorTags.get(vendor.id!)"
+                  :key="tag.id"
+                  class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium text-white"
+                  :style="{ backgroundColor: tag.color }"
+                >
+                  {{ tag.name }}
+                </span>
+              </div>
             </div>
           </div>
           <div class="flex items-center space-x-2" @click.stop>
@@ -138,29 +146,13 @@
               <textarea v-model="form.address" class="input mt-1" rows="2" :placeholder="t('forms.enterAddress')"></textarea>
             </div>
             
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('vendors.specialties') }}</label>
-              <div class="flex flex-wrap gap-2 mb-2">
-                <span v-for="(tag, index) in form.tags" :key="index" class="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300 text-xs rounded-full flex items-center">
-                  {{ tag }}
-                  <button type="button" @click="removeTag(index)" class="ml-1 text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200">
-                    <X class="h-3 w-3" />
-                  </button>
-                </span>
-              </div>
-              <div class="flex">
-                <input 
-                  v-model="newTag" 
-                  type="text" 
-                  class="input flex-1" 
-                  :placeholder="t('vendors.addSpecialty')"
-                  @keydown.enter.prevent="addTag"
-                />
-                <button type="button" @click="addTag" class="ml-2 btn-outline">
-                  <Plus class="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+            <!-- Tags -->
+            <TagSelector
+              v-model="form.tags"
+              :label="t('tags.vendorTags')"
+              tag-type="specialty"
+              :placeholder="t('tags.searchVendorTags')"
+            />
             
             <div class="flex space-x-3 pt-4">
               <button type="submit" :disabled="loading" class="flex-1 btn-primary">
@@ -181,19 +173,22 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { Users, Plus, Edit2, Trash2, Loader2, User, Mail, Phone, MapPin, X } from 'lucide-vue-next';
+import { Users, Plus, Edit2, Trash2, Loader2, User, Mail, Phone, MapPin } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
+import TagSelector from '../components/TagSelector.vue';
 import { 
   vendorService, 
   incomingItemService, 
   paymentService,
   serviceBookingService,
+  tagService,
   type Vendor,
   type IncomingItem,
   type Payment,
-  type ServiceBooking
+  type ServiceBooking,
+  type Tag as TagType
 } from '../services/pocketbase';
 
 const { t } = useI18n();
@@ -205,10 +200,10 @@ const vendors = ref<Vendor[]>([]);
 const incomingItems = ref<IncomingItem[]>([]);
 const serviceBookings = ref<ServiceBooking[]>([]);
 const payments = ref<Payment[]>([]);
+const vendorTags = ref<Map<string, TagType[]>>(new Map());
 const showAddModal = ref(false);
 const editingVendor = ref<Vendor | null>(null);
 const loading = ref(false);
-const newTag = ref('');
 
 const canCreateVendor = computed(() => {
   return !isReadOnly.value && checkCreateLimit('vendors');
@@ -257,17 +252,28 @@ const viewVendorDetail = (vendorId: string) => {
 
 const loadData = async () => {
   try {
-    const [vendorsData, incomingData, serviceBookingsData, paymentsData] = await Promise.all([
+    const [vendorsData, incomingData, serviceBookingsData, paymentsData, allTags] = await Promise.all([
       vendorService.getAll(),
       incomingItemService.getAll(),
       serviceBookingService.getAll(),
-      paymentService.getAll()
+      paymentService.getAll(),
+      tagService.getAll()
     ]);
     
     vendors.value = vendorsData;
     incomingItems.value = incomingData;
     serviceBookings.value = serviceBookingsData;
     payments.value = paymentsData;
+    
+    // Map tags for each vendor
+    const tagMap = new Map<string, TagType[]>();
+    for (const vendor of vendorsData) {
+      if (vendor.tags && vendor.tags.length > 0) {
+        const vendorTagObjects = allTags.filter(tag => vendor.tags!.includes(tag.id!));
+        tagMap.set(vendor.id!, vendorTagObjects);
+      }
+    }
+    vendorTags.value = tagMap;
   } catch (error) {
     console.error('Error loading data:', error);
   }
@@ -314,7 +320,7 @@ const editVendor = (vendor: Vendor) => {
     email: vendor.email || '',
     phone: vendor.phone || '',
     address: vendor.address || '',
-    tags: [...vendor.tags]
+    tags: vendor.tags ? [...vendor.tags] : []
   });
 };
 
@@ -336,16 +342,6 @@ const deleteVendor = async (id: string) => {
   }
 };
 
-const addTag = () => {
-  if (newTag.value.trim() && !form.tags.includes(newTag.value.trim())) {
-    form.tags.push(newTag.value.trim());
-    newTag.value = '';
-  }
-};
-
-const removeTag = (index: number) => {
-  form.tags.splice(index, 1);
-};
 
 const closeModal = () => {
   showAddModal.value = false;
@@ -358,7 +354,6 @@ const closeModal = () => {
     address: '',
     tags: []
   });
-  newTag.value = '';
 };
 
 const handleQuickAction = () => {

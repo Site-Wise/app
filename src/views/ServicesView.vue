@@ -54,10 +54,18 @@
               {{ service.description }}
             </div>
 
-            <div v-if="service.tags && service.tags.length > 0" class="mt-4 flex flex-wrap gap-1">
-              <span v-for="tag in service.tags" :key="tag" class="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300 text-xs rounded-full">
-                {{ tag }}
-              </span>
+            <!-- Tags -->
+            <div v-if="serviceTags.get(service.id!)?.length" class="mt-4">
+              <div class="flex flex-wrap gap-1">
+                <span
+                  v-for="tag in serviceTags.get(service.id!)"
+                  :key="tag.id"
+                  class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium text-white"
+                  :style="{ backgroundColor: tag.color }"
+                >
+                  {{ tag.name }}
+                </span>
+              </div>
             </div>
 
             <!-- Service Summary -->
@@ -202,29 +210,13 @@
               <textarea v-model="form.description" class="input mt-1" rows="3" :placeholder="t('forms.enterServiceDescription')"></textarea>
             </div>
             
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('common.tags') }}</label>
-              <div class="flex flex-wrap gap-2 mb-2">
-                <span v-for="(tag, index) in form.tags" :key="index" class="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300 text-xs rounded-full flex items-center">
-                  {{ tag }}
-                  <button type="button" @click="removeTag(index)" class="ml-1 text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200">
-                    <X class="h-3 w-3" />
-                  </button>
-                </span>
-              </div>
-              <div class="flex">
-                <input 
-                  v-model="newTag" 
-                  type="text" 
-                  class="input flex-1" 
-                  :placeholder="t('services.addTag')"
-                  @keydown.enter.prevent="addTag"
-                />
-                <button type="button" @click="addTag" class="ml-2 btn-outline">
-                  <Plus class="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+            <!-- Tags -->
+            <TagSelector
+              v-model="form.tags"
+              :label="t('tags.serviceTags')"
+              tag-type="service_category"
+              :placeholder="t('tags.searchServiceTags')"
+            />
             
             <div class="flex items-center">
               <input v-model="form.is_active" type="checkbox" id="is_active" class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500" />
@@ -257,8 +249,7 @@ import {
   Trash2, 
   Loader2, 
   Eye, 
-  EyeOff, 
-  X,
+  EyeOff,
   Users,
   Truck,
   Calendar,
@@ -268,11 +259,14 @@ import {
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { usePermissions } from '../composables/usePermissions';
+import TagSelector from '../components/TagSelector.vue';
 import { 
   serviceService, 
   serviceBookingService,
+  tagService,
   type Service,
-  type ServiceBooking
+  type ServiceBooking,
+  type Tag as TagType
 } from '../services/pocketbase';
 
 const { t } = useI18n();
@@ -281,10 +275,10 @@ const router = useRouter();
 
 const services = ref<Service[]>([]);
 const serviceBookings = ref<ServiceBooking[]>([]);
+const serviceTags = ref<Map<string, TagType[]>>(new Map());
 const showAddModal = ref(false);
 const editingService = ref<Service | null>(null);
 const loading = ref(false);
-const newTag = ref('');
 
 const form = reactive({
   name: '',
@@ -344,13 +338,24 @@ const viewServiceDetail = (serviceId: string) => {
 
 const loadData = async () => {
   try {
-    const [servicesData, bookingsData] = await Promise.all([
+    const [servicesData, bookingsData, allTags] = await Promise.all([
       serviceService.getAll(),
-      serviceBookingService.getAll()
+      serviceBookingService.getAll(),
+      tagService.getAll()
     ]);
     
     services.value = servicesData;
     serviceBookings.value = bookingsData;
+    
+    // Map tags for each service
+    const tagMap = new Map<string, TagType[]>();
+    for (const service of servicesData) {
+      if (service.tags && service.tags.length > 0) {
+        const serviceTagObjects = allTags.filter(tag => service.tags!.includes(tag.id!));
+        tagMap.set(service.id!, serviceTagObjects);
+      }
+    }
+    serviceTags.value = tagMap;
   } catch (error) {
     console.error('Error loading data:', error);
   }
@@ -383,7 +388,7 @@ const editService = (service: Service) => {
     unit: service.unit,
     standard_rate: service.standard_rate || 0,
     description: service.description || '',
-    tags: [...service.tags],
+    tags: service.tags ? [...service.tags] : [],
     is_active: service.is_active
   });
 };
@@ -410,16 +415,6 @@ const deleteService = async (id: string) => {
   }
 };
 
-const addTag = () => {
-  if (newTag.value.trim() && !form.tags.includes(newTag.value.trim())) {
-    form.tags.push(newTag.value.trim());
-    newTag.value = '';
-  }
-};
-
-const removeTag = (index: number) => {
-  form.tags.splice(index, 1);
-};
 
 const closeModal = () => {
   showAddModal.value = false;
@@ -434,7 +429,6 @@ const closeModal = () => {
     tags: [],
     is_active: true
   });
-  newTag.value = '';
 };
 
 const handleQuickAction = () => {

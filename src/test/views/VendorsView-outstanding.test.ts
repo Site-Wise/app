@@ -14,7 +14,8 @@ vi.mock('../../services/pocketbase', async () => {
         {
           id: 'vendor-1',
           name: 'Test Vendor',
-          site: 'site-1'
+          site: 'site-1',
+          tags: [] // Empty tags array to prevent issues
         }
       ])
     },
@@ -42,6 +43,9 @@ vi.mock('../../services/pocketbase', async () => {
     },
     paymentService: {
       getAll: vi.fn().mockResolvedValue([])
+    },
+    tagService: {
+      getAll: vi.fn().mockResolvedValue([]) // Empty tags array
     }
   }
 })
@@ -59,6 +63,21 @@ vi.mock('../../composables/useSubscription', () => ({
     decrementUsage: vi.fn(),
     isReadOnly: { value: false }
   })
+}))
+
+vi.mock('../../composables/useToast', () => ({
+  useToast: () => ({
+    success: vi.fn(),
+    error: vi.fn()
+  })
+}))
+
+vi.mock('../../components/TagSelector.vue', () => ({
+  default: {
+    name: 'TagSelector',
+    template: '<div>TagSelector Mock</div>',
+    props: ['modelValue', 'label', 'tagType', 'placeholder']
+  }
 }))
 
 vi.mock('vue-router', () => ({
