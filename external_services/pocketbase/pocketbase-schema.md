@@ -73,8 +73,6 @@ Construction materials and supplies:
 - `name` (string, required)
 - `description` (text, optional)
 - `unit` (string, required) - kg, pcs, m², etc.
-- `quantity` (number, required) - **@deprecated** Use delivery history for tracking
-- `category` (string, optional) - **@deprecated** Use unified tag system
 - `site` (relation to sites, required)
 - `created` (datetime, auto)
 - `updated` (datetime, auto)

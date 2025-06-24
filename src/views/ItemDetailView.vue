@@ -41,14 +41,6 @@
             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Unit:</span>
             <p class="text-gray-900 dark:text-white">{{ item.unit }}</p>
           </div>
-          <div>
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Stock Quantity:</span>
-            <p class="text-gray-900 dark:text-white">{{ item.quantity }} {{ item.unit }}</p>
-          </div>
-          <div v-if="item.category">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Category:</span>
-            <span class="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300 text-xs rounded-full">{{ item.category }}</span>
-          </div>
         </div>
       </div>
 

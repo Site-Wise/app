@@ -31,10 +31,7 @@
             <div class="mt-3 flex items-center space-x-4">
               <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
                 <Package class="mr-1 h-4 w-4" />
-                {{ item.quantity }} {{ item.unit }}
-              </div>
-              <div v-if="item.category" class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-xs text-gray-600 dark:text-gray-300">
-                {{ item.category }}
+                {{ item.unit }}
               </div>
             </div>
             
@@ -107,20 +104,9 @@
               <textarea v-model="form.description" class="input mt-1" rows="3" :placeholder="t('forms.enterDescription')"></textarea>
             </div>
             
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.quantity') }}</label>
-                <input v-model.number="form.quantity" type="number" required class="input mt-1" :placeholder="t('forms.enterQuantity')" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.unit') }}</label>
-                <input v-model="form.unit" type="text" required class="input mt-1" :placeholder="t('forms.enterUnit')" />
-              </div>
-            </div>
-            
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.category') }}</label>
-              <input v-model="form.category" type="text" class="input mt-1" :placeholder="t('forms.enterCategory')" />
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.unit') }}</label>
+              <input v-model="form.unit" type="text" required class="input mt-1" :placeholder="t('forms.enterUnit')" />
             </div>
             
             <div class="flex space-x-3 pt-4">
@@ -175,9 +161,7 @@ const canEditDelete = computed(() => {
 const form = reactive({
   name: '',
   description: '',
-  quantity: 0,
-  unit: '',
-  category: ''
+  unit: ''
 });
 
 const loadData = async () => {
@@ -251,9 +235,7 @@ const editItem = (item: Item) => {
   Object.assign(form, {
     name: item.name,
     description: item.description || '',
-    quantity: item.quantity,
-    unit: item.unit,
-    category: item.category || ''
+    unit: item.unit
   });
 };
 
@@ -281,9 +263,7 @@ const closeModal = () => {
   Object.assign(form, {
     name: '',
     description: '',
-    quantity: 0,
-    unit: '',
-    category: ''
+    unit: ''
   });
 };
 

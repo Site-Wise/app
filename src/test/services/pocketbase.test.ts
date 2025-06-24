@@ -160,9 +160,7 @@ describe('PocketBase Services', () => {
       const newItemData = {
         name: 'Concrete',
         description: 'High-grade concrete',
-        unit: 'm³',
-        quantity: 100,
-        category: 'Concrete'
+        unit: 'm³'
       }
       
       const result = await itemService.create(newItemData)
@@ -171,9 +169,9 @@ describe('PocketBase Services', () => {
     })
 
     it('should update an item', async () => {
-      const updateData = { quantity: 1500 }
+      const updateData = { name: 'Concrete-22' }
       const result = await itemService.update('item-1', updateData)
-      expect(result.quantity).toBe(updateData.quantity)
+      expect(result.name).toBe(updateData.name)
     })
 
     it('should delete an item', async () => {

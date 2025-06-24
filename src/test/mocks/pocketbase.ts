@@ -27,8 +27,6 @@ export const mockItem: Item = {
   name: 'Steel Rebar',
   description: 'High-grade steel rebar',
   unit: 'kg',
-  quantity: 1000,
-  category: 'Steel',
   site: 'site-1',
   created: '2024-01-01T00:00:00Z',
   updated: '2024-01-01T00:00:00Z'

@@ -74,7 +74,6 @@ module.exports = {
         item.set('name', itemData.name)
         item.set('unit', itemData.unit)
         item.set('description', `Standard construction material: ${itemData.name}`)
-        item.set('quantity', 0) // Initial quantity is 0
         item.set('site', siteId)
 
         $app.save(item)

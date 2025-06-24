@@ -57,7 +57,8 @@ vi.mock('../../services/pocketbase', () => {
     description: 'Test Description',
     quantity: 100,
     unit: 'kg',
-    category: 'Test Category'
+    category: 'Test Category',
+    site: 'site-1'
   }
   
   const mockIncomingItem = {
@@ -174,7 +175,7 @@ describe('ItemsView', () => {
     
     expect(wrapper.text()).toContain('Test Item')
     expect(wrapper.text()).toContain('Test Description')
-    expect(wrapper.text()).toContain('100 kg')
+    expect(wrapper.text()).toContain('kg')
   })
 
   it('should show add modal when add button is clicked', async () => {
@@ -219,18 +220,19 @@ describe('ItemsView', () => {
     // Wait for modal to be fully rendered
     await new Promise(resolve => setTimeout(resolve, 50))
     
-    // Fill form
-    const nameInput = wrapper.find('input[placeholder="Enter item name"]')
-    const unitInput = wrapper.find('input[placeholder="kg, pcs, m²"]')
-    const quantityInput = wrapper.find('input[type="number"]')
+    // Check modal is visible
+    expect(wrapper.vm.showAddModal).toBe(true)
+    
+    // Fill form - find inputs by their v-model bindings
+    const nameInput = wrapper.find('input[type="text"][required]')
+    const unitInputs = wrapper.findAll('input[type="text"][required]')
+    const unitInput = unitInputs[unitInputs.length - 1] // Last required text input is unit
     
     expect(nameInput.exists()).toBe(true)
     expect(unitInput.exists()).toBe(true)
-    expect(quantityInput.exists()).toBe(true)
     
     await nameInput.setValue('New Item')
     await unitInput.setValue('kg')
-    await quantityInput.setValue('100')
     
     // Submit form
     await wrapper.find('form').trigger('submit')
@@ -238,9 +240,7 @@ describe('ItemsView', () => {
     expect(mockCreate).toHaveBeenCalledWith({
       name: 'New Item',
       description: '',
-      quantity: 100,
-      unit: 'kg',
-      category: ''
+      unit: 'kg'
     })
   })
 

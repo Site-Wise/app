@@ -114,10 +114,6 @@ export interface Item {
   name: string;
   description?: string;
   unit: string;
-  /** @deprecated Stock quantity field - use delivery history for actual inventory tracking */
-  quantity: number;
-  /** @deprecated Inconsistent with Services tags implementation - use proper tagging system if categorization needed */
-  category?: string;
   site: string; // Site ID
   created?: string;
   updated?: string;
@@ -931,8 +927,6 @@ export class ItemService {
       name: record.name,
       description: record.description,
       unit: record.unit,
-      quantity: record.quantity,
-      category: record.category,
       site: record.site,
       created: record.created,
       updated: record.updated
@@ -1187,8 +1181,6 @@ export class QuotationService {
       name: record.name,
       description: record.description,
       unit: record.unit,
-      quantity: record.quantity,
-      category: record.category,
       site: record.site,
       created: record.created,
       updated: record.updated
@@ -1318,8 +1310,6 @@ export class IncomingItemService {
       name: record.name,
       description: record.description,
       unit: record.unit,
-      quantity: record.quantity,
-      category: record.category,
       site: record.site,
       created: record.created,
       updated: record.updated
@@ -1663,8 +1653,6 @@ export class PaymentService {
       name: record.name,
       description: record.description,
       unit: record.unit,
-      quantity: record.quantity,
-      category: record.category,
       site: record.site,
       created: record.created,
       updated: record.updated

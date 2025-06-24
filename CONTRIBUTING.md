@@ -382,7 +382,6 @@ describe('ItemCard', () => {
     const item = {
       id: '1',
       name: 'Cement',
-      quantity: 100,
       unit: 'kg'
     };
 
@@ -391,7 +390,7 @@ describe('ItemCard', () => {
     });
 
     expect(wrapper.text()).toContain('Cement');
-    expect(wrapper.text()).toContain('100 kg');
+    expect(wrapper.text()).toContain('kg');
   });
 });
 ```
