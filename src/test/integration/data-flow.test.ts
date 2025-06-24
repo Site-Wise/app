@@ -5,6 +5,16 @@ import VendorsView from '../../views/VendorsView.vue'
 import { createMockRouter } from '../utils/test-utils'
 // import { mockItem, mockVendor, mockIncomingItem } from '../../services/pocketbase'
 
+// Mock TagSelector component
+vi.mock('../../components/TagSelector.vue', () => ({
+  default: {
+    name: 'TagSelector',
+    template: '<div class="tag-selector-mock"></div>',
+    props: ['modelValue', 'label', 'tagType', 'placeholder'],
+    emits: ['update:modelValue', 'tagsChanged']
+  }
+}))
+
 // Mock the services
 vi.mock('../../services/pocketbase', () => {
   const mockItem = {
@@ -12,6 +22,7 @@ vi.mock('../../services/pocketbase', () => {
     name: 'Steel Rebar',
     description: 'High-grade steel rebar',
     unit: 'kg',
+    tags: ['tag-1', 'tag-2'],
     site: 'site-1',
     created: '2024-01-01T00:00:00Z',
     updated: '2024-01-01T00:00:00Z'
@@ -68,6 +79,14 @@ vi.mock('../../services/pocketbase', () => {
     },
     serviceBookingService: {
       getAll: vi.fn().mockResolvedValue([])
+    },
+    tagService: {
+      getAll: vi.fn().mockResolvedValue([
+        { id: 'tag-1', name: 'Construction', color: '#ef4444', type: 'item_category', site: 'site-1', usage_count: 5 },
+        { id: 'tag-2', name: 'Material', color: '#22c55e', type: 'item_category', site: 'site-1', usage_count: 3 }
+      ]),
+      findOrCreate: vi.fn(),
+      incrementUsage: vi.fn()
     },
     getCurrentSiteId: vi.fn().mockReturnValue(null), // Return null to prevent subscription loading
     pb: {

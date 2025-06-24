@@ -18,8 +18,8 @@ This document tracks features, UI elements, and database schema items that are d
 - **Status**: 🟡 DEPRECATED
 - **Location**: Site interface, database schema
 - **Reason**: User-site relationships are properly handled through SiteUser table with roles
-- **Date Deprecated**: 2024-01-23
-- **Removal Target**: v2.0.0
+- **Date Deprecated**: 2025-06-23
+- **Removal Target**: v0.2.0
 - **Migration**: Use SiteUser table to query users with 'owner' role for a site
 - **Impact**:
   - Remove `admin_user` field from Site interface
@@ -30,8 +30,8 @@ This document tracks features, UI elements, and database schema items that are d
 - **Status**: 🟡 DEPRECATED
 - **Location**: Site interface, database schema
 - **Reason**: User-site relationships are properly handled through SiteUser table with roles
-- **Date Deprecated**: 2024-01-23
-- **Removal Target**: v2.0.0
+- **Date Deprecated**: 2025-06-23
+- **Removal Target**: v0.2.0
 - **Migration**: Use SiteUser table to query all users associated with a site
 - **Impact**:
   - Remove `users` field from Site interface
@@ -44,8 +44,8 @@ This document tracks features, UI elements, and database schema items that are d
 - **Status**: 🟡 DEPRECATED
 - **Location**: Service interface, database schema
 - **Reason**: JSON array storage prevents proper filtering, searching, and autocomplete functionality
-- **Date Deprecated**: 2024-01-23
-- **Removal Target**: v2.0.0
+- **Date Deprecated**: 2025-06-23
+- **Removal Target**: v0.2.0
 - **Migration**: Replace with relational Tag system (Service → ServiceTag ← Tag)
 - **Impact**:
   - Replace `tags: string[]` with proper relationship table
@@ -57,8 +57,8 @@ This document tracks features, UI elements, and database schema items that are d
 - **Status**: 🟡 DEPRECATED
 - **Location**: Service interface, database schema
 - **Reason**: Should be unified with Tag system for consistent filtering across all entities
-- **Date Deprecated**: 2024-01-23
-- **Removal Target**: v2.0.0
+- **Date Deprecated**: 2025-06-23
+- **Removal Target**: v0.2.0
 - **Migration**: Convert categories to Tags in unified system
 - **Impact**:
   - Replace hardcoded enum with flexible tag relationships
@@ -69,8 +69,8 @@ This document tracks features, UI elements, and database schema items that are d
 - **Status**: 🟡 DEPRECATED
 - **Location**: Vendor interface, database schema  
 - **Reason**: JSON array storage prevents proper filtering and autocomplete - should use unified Tag system
-- **Date Deprecated**: 2024-01-23
-- **Removal Target**: v2.0.0
+- **Date Deprecated**: 2025-06-23
+- **Removal Target**: v0.2.0
 - **Migration**: Replace with relational Tag system (Vendor → VendorTag ← Tag)
 - **Impact**:
   - Replace `tags: string[]` with proper relationship table
@@ -81,11 +81,11 @@ This document tracks features, UI elements, and database schema items that are d
 ### Items Management
 
 #### Stock Quantity Field (item.quantity)
-- **Status**: 🟡 DEPRECATED
+- **Status**: ⚫ REMOVED
 - **Location**: Item creation/editing forms
 - **Reason**: Field serves no practical purpose in construction site management context - actual inventory is tracked through delivery history
-- **Date Deprecated**: 2024-01-23
-- **Removal Target**: v2.0.0
+- **Date Deprecated**: 2025-06-23
+- **Removal Target**: v0.2.0
 - **Migration**: Remove field from forms, keep database column for data integrity
 - **Impact**: 
   - Remove quantity input from `ItemsView.vue` creation form (lines 112-114)
@@ -95,11 +95,11 @@ This document tracks features, UI elements, and database schema items that are d
   - **Note**: Keep delivery quantity calculations and "Total Delivered" statistics
 
 #### Category Field (item.category)
-- **Status**: 🟡 DEPRECATED
+- **Status**: ⚫ REMOVED
 - **Location**: Item creation/editing forms, item display components
 - **Reason**: Inconsistent implementation - Services use proper tags system, Items use simple string field
-- **Date Deprecated**: 2024-01-23
-- **Removal Target**: v2.0.0
+- **Date Deprecated**: 2025-06-23
+- **Removal Target**: v0.2.0
 - **Migration**: If categorization needed, implement tags system similar to Services
 - **Impact**:
   - Remove category input from `ItemsView.vue` creation form (lines 122-124)
@@ -118,7 +118,7 @@ This document tracks features, UI elements, and database schema items that are d
 - **Table**: `sites`
 - **Column**: `admin_user` (relation to users)
 - **Reason**: User-site relationships are properly managed through `site_users` table
-- **Date Deprecated**: 2024-01-23
+- **Date Deprecated**: 2025-06-23
 - **Removal Target**: v3.0.0
 - **Migration**: Use `site_users` table with role='owner' instead
 - **Dependencies**: Site creation logic, ownership checks, UI components
@@ -128,7 +128,7 @@ This document tracks features, UI elements, and database schema items that are d
 - **Table**: `sites`
 - **Column**: `users` (JSON array of user IDs)
 - **Reason**: User-site relationships are properly managed through `site_users` table
-- **Date Deprecated**: 2024-01-23
+- **Date Deprecated**: 2025-06-23
 - **Removal Target**: v3.0.0
 - **Migration**: Use `site_users` table for all user associations
 - **Dependencies**: Site user management, permissions, UI components
@@ -140,7 +140,7 @@ This document tracks features, UI elements, and database schema items that are d
 - **Table**: `services`
 - **Column**: `tags` (JSON array)
 - **Reason**: JSON array prevents proper relationships, filtering, and autocomplete functionality
-- **Date Deprecated**: 2024-01-23
+- **Date Deprecated**: 2025-06-23
 - **Removal Target**: v3.0.0
 - **Migration**: Replace with `tags` table + `tag_ids` relation field
 - **Dependencies**: Service forms, filtering, search functionality
@@ -150,7 +150,7 @@ This document tracks features, UI elements, and database schema items that are d
 - **Table**: `services`
 - **Column**: `category` (enum)
 - **Reason**: Should be unified with relational Tag system for consistent filtering
-- **Date Deprecated**: 2024-01-23
+- **Date Deprecated**: 2025-06-23
 - **Removal Target**: v3.0.0
 - **Migration**: Convert enum values to Tags in unified system
 - **Dependencies**: Service forms, category filtering, UI components
@@ -162,7 +162,7 @@ This document tracks features, UI elements, and database schema items that are d
 - **Table**: `vendors`
 - **Column**: `tags` (JSON array)
 - **Reason**: JSON array prevents proper relationships, filtering, and autocomplete functionality
-- **Date Deprecated**: 2024-01-23
+- **Date Deprecated**: 2025-06-23
 - **Removal Target**: v3.0.0
 - **Migration**: Replace with `tags` table + `tag_ids` relation field
 - **Dependencies**: Vendor forms, tag filtering, search functionality
@@ -170,11 +170,11 @@ This document tracks features, UI elements, and database schema items that are d
 ### Items Table
 
 #### quantity Column
-- **Status**: 🟡 DEPRECATED
+- **Status**: ⚫ REMOVED
 - **Table**: `items`
 - **Column**: `quantity` (integer)
 - **Reason**: Not relevant for construction material tracking workflow - actual inventory tracked through deliveries
-- **Date Deprecated**: 2024-01-23
+- **Date Deprecated**: 2025-06-23
 - **Removal Target**: v3.0.0 (allow buffer time for data migration)
 - **Migration**: 
   - Phase 1: Remove from UI (current)
@@ -187,11 +187,11 @@ This document tracks features, UI elements, and database schema items that are d
   - Test data
 
 #### category Column
-- **Status**: 🟡 DEPRECATED
+- **Status**: ⚫ REMOVED
 - **Table**: `items`
 - **Column**: `category` (string)
 - **Reason**: Inconsistent with Services tags implementation - should use proper tagging system
-- **Date Deprecated**: 2024-01-23
+- **Date Deprecated**: 2025-06-23
 - **Removal Target**: v3.0.0
 - **Migration**: 
   - Phase 1: Remove from UI (current)
@@ -307,5 +307,5 @@ When removing deprecated items, ensure:
 
 ---
 
-*Last Updated: 2024-01-23*
-*Next Review: 2024-02-23*
+*Last Updated: 2025-06-23*
+*Next Review: 2025-02-23*

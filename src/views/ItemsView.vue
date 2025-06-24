@@ -34,6 +34,20 @@
                 {{ item.unit }}
               </div>
             </div>
+
+            <!-- Tags -->
+            <div v-if="itemTags.get(item.id!)?.length" class="mt-3">
+              <div class="flex flex-wrap gap-1">
+                <span
+                  v-for="tag in itemTags.get(item.id!)"
+                  :key="tag.id"
+                  class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium text-white"
+                  :style="{ backgroundColor: tag.color }"
+                >
+                  {{ tag.name }}
+                </span>
+              </div>
+            </div>
             
             <!-- Delivery Summary -->
             <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
@@ -108,6 +122,14 @@
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.unit') }}</label>
               <input v-model="form.unit" type="text" required class="input mt-1" :placeholder="t('forms.enterUnit')" />
             </div>
+
+            <!-- Tags -->
+            <TagSelector
+              v-model="form.tags"
+              :label="t('tags.itemTags')"
+              tag-type="item_category"
+              :placeholder="t('tags.searchItemTags')"
+            />
             
             <div class="flex space-x-3 pt-4">
               <button type="submit" :disabled="loading" class="flex-1 btn-primary">
@@ -128,15 +150,18 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { Package, Plus, Edit2, Trash2, Loader2 } from 'lucide-vue-next';
+import { Package, Plus, Edit2, Trash2, Loader2, Tag } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
+import TagSelector from '../components/TagSelector.vue';
 import { 
   itemService, 
   incomingItemService,
+  tagService,
   type Item,
-  type IncomingItem
+  type IncomingItem,
+  type Tag as TagType
 } from '../services/pocketbase';
 
 const { t } = useI18n();
@@ -146,6 +171,7 @@ const { success, error } = useToast();
 const router = useRouter();
 const items = ref<Item[]>([]);
 const incomingItems = ref<IncomingItem[]>([]);
+const itemTags = ref<Map<string, TagType[]>>(new Map());
 const showAddModal = ref(false);
 const editingItem = ref<Item | null>(null);
 const loading = ref(false);
@@ -161,17 +187,29 @@ const canEditDelete = computed(() => {
 const form = reactive({
   name: '',
   description: '',
-  unit: ''
+  unit: '',
+  tags: [] as string[]
 });
 
 const loadData = async () => {
   try {
-    const [itemsData, incomingData] = await Promise.all([
+    const [itemsData, incomingData, allTags] = await Promise.all([
       itemService.getAll(),
-      incomingItemService.getAll()
+      incomingItemService.getAll(),
+      tagService.getAll()
     ]);
     items.value = itemsData;
     incomingItems.value = incomingData;
+    
+    // Map tags for each item
+    const tagMap = new Map<string, TagType[]>();
+    for (const item of itemsData) {
+      if (item.tags && item.tags.length > 0) {
+        const itemTagObjects = allTags.filter(tag => item.tags!.includes(tag.id!));
+        tagMap.set(item.id!, itemTagObjects);
+      }
+    }
+    itemTags.value = tagMap;
   } catch (error) {
     console.error('Error loading data:', error);
   }
@@ -235,7 +273,8 @@ const editItem = (item: Item) => {
   Object.assign(form, {
     name: item.name,
     description: item.description || '',
-    unit: item.unit
+    unit: item.unit,
+    tags: item.tags || []
   });
 };
 
@@ -263,7 +302,8 @@ const closeModal = () => {
   Object.assign(form, {
     name: '',
     description: '',
-    unit: ''
+    unit: '',
+    tags: []
   });
 };
 

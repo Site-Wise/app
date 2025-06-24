@@ -465,6 +465,22 @@
     "recordDelivery": "डिलीवरी रिकॉर्ड करें",
     "recordPayment": "भुगतान रिकॉर्ड करें"
   },
+  "tags": {
+    "selectTags": "टैग चुनें",
+    "searchOrCreateTag": "टैग खोजें या नया बनाएं",
+    "searchItemTags": "आइटम टैग खोजें...",
+    "itemTags": "आइटम टैग",
+    "createTag": "'{name}' बनाएं",
+    "created": "टैग '{name}' सफलतापूर्वक बनाया गया",
+    "noTagsFound": "कोई टैग नहीं मिला",
+    "selectType": "टैग प्रकार चुनें",
+    "types": {
+      "custom": "कस्टम",
+      "itemCategory": "आइटम श्रेणी",
+      "serviceCategory": "सेवा श्रेणी",
+      "specialty": "विशेषता"
+    }
+  },
   "messages": {
     "confirmDelete": "क्या आप वाकई इस {item} को हटाना चाहते हैं?",
     "deleteSuccess": "{item} सफलतापूर्वक हटा दिया गया",

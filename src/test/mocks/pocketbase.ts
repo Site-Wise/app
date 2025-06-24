@@ -27,6 +27,7 @@ export const mockItem: Item = {
   name: 'Steel Rebar',
   description: 'High-grade steel rebar',
   unit: 'kg',
+  tags: ['tag-1', 'tag-2'],
   site: 'site-1',
   created: '2024-01-01T00:00:00Z',
   updated: '2024-01-01T00:00:00Z'
@@ -344,6 +345,20 @@ export const mockAccountService = {
   delete: vi.fn().mockResolvedValue(true)
 }
 
+export const mockTagService = {
+  getAll: vi.fn().mockResolvedValue([
+    { id: 'tag-1', name: 'Construction', color: '#ef4444', type: 'item_category', site: 'site-1', usage_count: 5 },
+    { id: 'tag-2', name: 'Material', color: '#22c55e', type: 'item_category', site: 'site-1', usage_count: 3 }
+  ]),
+  getBySite: vi.fn().mockResolvedValue([]),
+  getByName: vi.fn().mockResolvedValue(null),
+  create: vi.fn().mockResolvedValue({ id: 'tag-new', name: 'New Tag', color: '#3b82f6', type: 'custom', site: 'site-1', usage_count: 1 }),
+  findOrCreate: vi.fn().mockResolvedValue({ id: 'tag-new', name: 'New Tag', color: '#3b82f6', type: 'custom', site: 'site-1', usage_count: 1 }),
+  update: vi.fn().mockResolvedValue({}),
+  delete: vi.fn().mockResolvedValue(true),
+  incrementUsage: vi.fn().mockResolvedValue(undefined)
+}
+
 // Export services
 export const authService = mockAuthService
 export const siteService = mockSiteService
@@ -355,3 +370,4 @@ export const incomingItemService = mockIncomingItemService
 export const serviceBookingService = mockServiceBookingService
 export const paymentService = mockPaymentService
 export const accountService = mockAccountService
+export const tagService = mockTagService

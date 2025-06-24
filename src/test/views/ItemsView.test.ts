@@ -28,7 +28,9 @@ vi.mock('../../composables/useI18n', () => ({
         'common.update': 'Update',
         'common.create': 'Create',
         'common.cancel': 'Cancel',
-        'messages.confirmDelete': 'Are you sure you want to delete this {item}?'
+        'messages.confirmDelete': 'Are you sure you want to delete this {item}?',
+        'tags.itemTags': 'Item Tags',
+        'tags.searchItemTags': 'Search item tags...'
       }
       let result = translations[key] || key
       if (params) {
@@ -55,9 +57,8 @@ vi.mock('../../services/pocketbase', () => {
     id: 'item-1',
     name: 'Test Item',
     description: 'Test Description',
-    quantity: 100,
     unit: 'kg',
-    category: 'Test Category',
+    tags: ['tag-1', 'tag-2'],
     site: 'site-1'
   }
   
@@ -68,6 +69,11 @@ vi.mock('../../services/pocketbase', () => {
     total_amount: 1000
   }
   
+  const mockTags = [
+    { id: 'tag-1', name: 'Construction', color: '#ef4444', type: 'item_category', site: 'site-1', usage_count: 5 },
+    { id: 'tag-2', name: 'Material', color: '#22c55e', type: 'item_category', site: 'site-1', usage_count: 3 }
+  ]
+  
   return {
     itemService: {
       getAll: vi.fn().mockResolvedValue([mockItem]),
@@ -77,6 +83,11 @@ vi.mock('../../services/pocketbase', () => {
     },
     incomingItemService: {
       getAll: vi.fn().mockResolvedValue([mockIncomingItem])
+    },
+    tagService: {
+      getAll: vi.fn().mockResolvedValue(mockTags),
+      findOrCreate: vi.fn().mockResolvedValue(mockTags[0]),
+      incrementUsage: vi.fn().mockResolvedValue(undefined)
     },
     getCurrentSiteId: vi.fn().mockReturnValue('site-1'),
     pb: {
@@ -137,6 +148,16 @@ vi.mock('../../services/pocketbase', () => {
     }
   }
 })
+
+// Mock TagSelector component
+vi.mock('../../components/TagSelector.vue', () => ({
+  default: {
+    name: 'TagSelector',
+    template: '<div class="tag-selector-mock"><input data-testid="tag-input" /></div>',
+    props: ['modelValue', 'label', 'tagType', 'placeholder'],
+    emits: ['update:modelValue', 'tagsChanged']
+  }
+}))
 
 // Import dependencies after all mocks
 import ItemsView from '../../views/ItemsView.vue'
@@ -200,9 +221,8 @@ describe('ItemsView', () => {
       id: 'item-1',
       name: 'Test Item',
       description: 'Test Description',
-      quantity: 100,
       unit: 'kg',
-      category: 'Test Category',
+      tags: [],
       site: 'site-1',
       created: '2024-01-01T00:00:00Z',
       updated: '2024-01-01T00:00:00Z'
@@ -240,7 +260,8 @@ describe('ItemsView', () => {
     expect(mockCreate).toHaveBeenCalledWith({
       name: 'New Item',
       description: '',
-      unit: 'kg'
+      unit: 'kg',
+      tags: []
     })
   })
 
@@ -251,9 +272,8 @@ describe('ItemsView', () => {
       id: 'item-1',
       name: 'Test Item',
       description: 'Test Description',
-      quantity: 100,
       unit: 'kg',
-      category: 'Test Category',
+      tags: ['tag-1'],
       site: 'site-1',
       created: '2024-01-01T00:00:00Z',
       updated: '2024-01-01T00:00:00Z'
@@ -337,5 +357,30 @@ describe('ItemsView', () => {
     await wrapper.vm.$nextTick()
     
     expect(itemService.getAll).toHaveBeenCalled()
+  })
+
+  it('should display item tags', async () => {
+    // Wait for data to load
+    await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    // Tags should be displayed in the item card
+    expect(wrapper.text()).toContain('Construction')
+    expect(wrapper.text()).toContain('Material')
+  })
+
+  it('should include TagSelector in form', async () => {
+    // Wait for subscription to be ready
+    await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    // Open add modal
+    const addButton = wrapper.findAll('button').find((btn: any) => btn.text().includes('Add Item'))!
+    await addButton.trigger('click')
+    await wrapper.vm.$nextTick()
+    
+    // Check that TagSelector component is present
+    expect(wrapper.find('.tag-selector-mock').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="tag-input"]').exists()).toBe(true)
   })
 })

@@ -465,6 +465,22 @@
     "recordDelivery": "Record Delivery",
     "recordPayment": "Record Payment"
   },
+  "tags": {
+    "selectTags": "Select Tags",
+    "searchOrCreateTag": "Search or create a new tag",
+    "searchItemTags": "Search item tags...",
+    "itemTags": "Item Tags",
+    "createTag": "Create '{name}'",
+    "created": "Tag '{name}' created successfully",
+    "noTagsFound": "No tags found",
+    "selectType": "Select tag type",
+    "types": {
+      "custom": "Custom",
+      "itemCategory": "Item Category",
+      "serviceCategory": "Service Category",
+      "specialty": "Specialty"
+    }
+  },
   "messages": {
     "confirmDelete": "Are you sure you want to delete this {item}?",
     "deleteSuccess": "{item} deleted successfully",

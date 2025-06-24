@@ -114,6 +114,7 @@ export interface Item {
   name: string;
   description?: string;
   unit: string;
+  tags?: string[]; // Array of Tag IDs for categorization
   site: string; // Site ID
   created?: string;
   updated?: string;
@@ -129,8 +130,7 @@ export interface Service {
   unit: string; // e.g., 'hour', 'day', 'job', 'sqft'
   standard_rate?: number; // Standard hourly/daily rate
   is_active: boolean;
-  /** @deprecated JSON array prevents proper filtering/autocomplete - use unified Tag system instead */
-  tags: string[]; // e.g., ['electrical', 'maintenance', 'emergency']
+  tags?: string[]; // Array of Tag IDs for categorization (replaces tags and category)
   site: string; // Site ID
   created?: string;
   updated?: string;
@@ -143,22 +143,44 @@ export interface Vendor {
   email?: string;
   phone?: string;
   address?: string;
-  /** @deprecated JSON array prevents proper filtering/autocomplete - use unified Tag system instead */
-  tags: string[];
+  tags?: string[]; // Array of Tag IDs for categorization (replaces tags)
   site: string; // Site ID
   created?: string;
   updated?: string;
 }
 
 // ========================================
-// FUTURE: Unified Tag System Interfaces
+// UNIFIED TAG SYSTEM
 // ========================================
+
+// Tailwind-based color palette for tags (20 colors that work well in both light and dark modes)
+export const TAG_COLOR_PALETTE = [
+  '#ef4444', // red-500
+  '#f97316', // orange-500
+  '#f59e0b', // amber-500
+  '#eab308', // yellow-500
+  '#84cc16', // lime-500
+  '#22c55e', // green-500
+  '#10b981', // emerald-500
+  '#14b8a6', // teal-500
+  '#06b6d4', // cyan-500
+  '#0ea5e9', // sky-500
+  '#3b82f6', // blue-500
+  '#6366f1', // indigo-500
+  '#8b5cf6', // violet-500
+  '#a855f7', // purple-500
+  '#d946ef', // fuchsia-500
+  '#ec4899', // pink-500
+  '#64748b', // slate-500
+  '#71717a', // zinc-500
+  '#78716c', // stone-500
+  '#737373', // neutral-500
+];
 
 export interface Tag {
   id?: string;
   name: string;
-  description?: string;
-  color?: string; // For UI categorization
+  color: string; // Hex color code (required for UI categorization)
   type: 'service_category' | 'specialty' | 'item_category' | 'custom';
   site: string; // Site-specific tags
   usage_count: number; // For popularity-based autocomplete
@@ -168,23 +190,23 @@ export interface Tag {
 
 // Future: Enhanced entity interfaces with tag relationships
 export interface ServiceWithTags extends Omit<Service, 'tags' | 'category'> {
-  tag_ids: string[]; // Array of Tag IDs
+  tags: string[]; // Array of Tag IDs
   expand?: {
-    tag_ids?: Tag[]; // Expanded tags via PocketBase relations
+    tags?: Tag[]; // Expanded tags via PocketBase relations
   };
 }
 
 export interface VendorWithTags extends Omit<Vendor, 'tags'> {
-  tag_ids: string[]; // Array of Tag IDs
+  tags: string[]; // Array of Tag IDs
   expand?: {
-    tag_ids?: Tag[]; // Expanded tags via PocketBase relations
+    tags?: Tag[]; // Expanded tags via PocketBase relations
   };
 }
 
 export interface ItemWithTags extends Omit<Item, 'category'> {
-  tag_ids: string[]; // Array of Tag IDs
+  tags: string[]; // Array of Tag IDs
   expand?: {
-    tag_ids?: Tag[]; // Expanded tags via PocketBase relations
+    tags?: Tag[]; // Expanded tags via PocketBase relations
   };
 }
 
@@ -927,6 +949,7 @@ export class ItemService {
       name: record.name,
       description: record.description,
       unit: record.unit,
+      tags: record.tags || [],
       site: record.site,
       created: record.created,
       updated: record.updated
@@ -1181,6 +1204,7 @@ export class QuotationService {
       name: record.name,
       description: record.description,
       unit: record.unit,
+      tags: record.tags || [],
       site: record.site,
       created: record.created,
       updated: record.updated
@@ -1310,6 +1334,7 @@ export class IncomingItemService {
       name: record.name,
       description: record.description,
       unit: record.unit,
+      tags: record.tags || [],
       site: record.site,
       created: record.created,
       updated: record.updated
@@ -1653,7 +1678,142 @@ export class PaymentService {
       name: record.name,
       description: record.description,
       unit: record.unit,
+      tags: record.tags || [],
       site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+}
+
+export class TagService {
+  async getAll(): Promise<Tag[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('tags').getFullList({
+      filter: `site="${siteId}"`,
+      sort: '-usage_count,name'
+    });
+    return records.map(record => this.mapRecordToTag(record));
+  }
+
+  async getBySite(siteId: string): Promise<Tag[]> {
+    const records = await pb.collection('tags').getFullList({
+      filter: `site="${siteId}"`,
+      sort: '-usage_count,name'
+    });
+    return records.map(record => this.mapRecordToTag(record));
+  }
+
+  async getByName(name: string, siteId?: string): Promise<Tag | null> {
+    const currentSiteId = siteId || getCurrentSiteId();
+    if (!currentSiteId) throw new Error('No site selected');
+
+    try {
+      const record = await pb.collection('tags').getFirstListItem(
+        `name="${name}" && site="${currentSiteId}"`
+      );
+      return this.mapRecordToTag(record);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async create(name: string, type: Tag['type'] = 'custom'): Promise<Tag> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create tags');
+    }
+
+    // Get existing tags to choose a unique color
+    const existingTags = await this.getBySite(siteId);
+    const color = this.getRandomColor(existingTags);
+
+    const record = await pb.collection('tags').create({
+      name: name.trim(),
+      color,
+      type,
+      site: siteId,
+      usage_count: 0
+    });
+
+    return this.mapRecordToTag(record);
+  }
+
+  async findOrCreate(name: string, type: Tag['type'] = 'custom'): Promise<Tag> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    // Try to find existing tag first
+    const existingTag = await this.getByName(name, siteId);
+    if (existingTag) {
+      // Increment usage count
+      await this.incrementUsage(existingTag.id!);
+      return { ...existingTag, usage_count: existingTag.usage_count + 1 };
+    }
+
+    // Create new tag if not found
+    return await this.create(name, type);
+  }
+
+  async update(id: string, data: Partial<Tag>): Promise<Tag> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canUpdate) {
+      throw new Error('Permission denied: Cannot update tags');
+    }
+
+    const record = await pb.collection('tags').update(id, data);
+    return this.mapRecordToTag(record);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canDelete) {
+      throw new Error('Permission denied: Cannot delete tags');
+    }
+
+    await pb.collection('tags').delete(id);
+    return true;
+  }
+
+  async incrementUsage(id: string): Promise<void> {
+    const tag = await pb.collection('tags').getOne(id);
+    await pb.collection('tags').update(id, {
+      usage_count: (tag.usage_count || 0) + 1
+    });
+  }
+
+  private getRandomColor(existingTags: Tag[]): string {
+    const usedColors = existingTags.map(tag => tag.color);
+    const availableColors = TAG_COLOR_PALETTE.filter(color => !usedColors.includes(color));
+    
+    if (availableColors.length > 0) {
+      // Use an unused color
+      return availableColors[Math.floor(Math.random() * availableColors.length)];
+    } else {
+      // All colors are used, pick a random one from the palette
+      return TAG_COLOR_PALETTE[Math.floor(Math.random() * TAG_COLOR_PALETTE.length)];
+    }
+  }
+
+  private mapRecordToTag(record: RecordModel): Tag {
+    return {
+      id: record.id,
+      name: record.name,
+      color: record.color,
+      type: record.type,
+      site: record.site,
+      usage_count: record.usage_count || 0,
       created: record.created,
       updated: record.updated
     };
@@ -1755,3 +1915,4 @@ export const quotationService = new QuotationService();
 export const incomingItemService = new IncomingItemService();
 export const serviceBookingService = new ServiceBookingService();
 export const paymentService = new PaymentService();
+export const tagService = new TagService();
