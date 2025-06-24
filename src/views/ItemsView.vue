@@ -31,7 +31,7 @@
             <div class="mt-3 flex items-center space-x-4">
               <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
                 <Package class="mr-1 h-4 w-4" />
-                {{ item.unit }}
+                {{ getUnitDisplay(item.unit) }}
               </div>
             </div>
 
@@ -53,7 +53,7 @@
             <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div class="flex justify-between items-center mb-2">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.totalDelivered') }}</span>
-                <span class="text-sm font-semibold text-blue-600 dark:text-blue-400">{{ getItemDeliveredQuantity(item.id!) }} {{ item.unit }}</span>
+                <span class="text-sm font-semibold text-blue-600 dark:text-blue-400">{{ getItemDeliveredQuantity(item.id!) }} {{ getUnitDisplay(item.unit) }}</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.avgPrice') }}</span>
@@ -120,7 +120,22 @@
             
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.unit') }}</label>
-              <input v-model="form.unit" type="text" required class="input mt-1" :placeholder="t('forms.enterUnit')" />
+              <select v-model="form.unit" required class="input mt-1">
+                <option value="">{{ t('forms.selectUnit') }}</option>
+                <option value="pcs">{{ t('units.pcs') }} (pcs)</option>
+                <option value="pkt">{{ t('units.pkt') }} (pkt)</option>
+                <option value="each">{{ t('units.each') }} (each)</option>
+                <option value="ft">{{ t('units.ft') }} (ft)</option>
+                <option value="m2">{{ t('units.m2') }} (m²)</option>
+                <option value="m3">{{ t('units.m3') }} (m³)</option>
+                <option value="kg">{{ t('units.kg') }} (kg)</option>
+                <option value="ton">{{ t('units.ton') }} (ton)</option>
+                <option value="bag">{{ t('units.bag') }} (bag)</option>
+                <option value="box">{{ t('units.box') }} (box)</option>
+                <option value="sqft">{{ t('units.sqft') }} (sqft)</option>
+                <option value="ft3">{{ t('units.ft3') }} (ft³)</option>
+                <option value="l">{{ t('units.l') }} (l)</option>
+              </select>
             </div>
 
             <!-- Tags -->
@@ -229,6 +244,19 @@ const getItemAveragePrice = (itemId: string) => {
   const totalQuantity = itemDeliveries.reduce((sum, delivery) => sum + delivery.quantity, 0);
   
   return totalQuantity > 0 ? totalValue / totalQuantity : 0;
+};
+
+const getUnitDisplay = (unitKey: string) => {
+  // If translation exists, show "Translation (key)", otherwise just show the key
+  const translationKey = `units.${unitKey}`;
+  const translation = t(translationKey);
+  
+  // If translation is the same as the key, it means translation doesn't exist
+  if (translation === translationKey) {
+    return unitKey;
+  }
+  
+  return `${translation} (${unitKey})`;
 };
 
 const viewItemDetail = (itemId: string) => {

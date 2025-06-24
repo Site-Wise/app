@@ -3,7 +3,8 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-8">
       <div class="flex items-center space-x-4">
-        <button @click="$router.back()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        <button @click="$router.back()"
+          class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
           <ArrowLeft class="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
         <div>
@@ -39,7 +40,7 @@
           </div>
           <div>
             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Unit:</span>
-            <p class="text-gray-900 dark:text-white">{{ item.unit }}</p>
+            <p class="text-gray-900 dark:text-white">{{ t(`units.${item.unit}`) !== `units.${item.unit}` ? `${t(`units.${item.unit}`)} (${item.unit})` : item.unit }}</p>
           </div>
         </div>
       </div>
@@ -66,7 +67,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-sm font-medium text-green-700 dark:text-green-300">Total Delivered</p>
-                <p class="text-2xl font-bold text-green-900 dark:text-green-100">{{ totalDeliveredQuantity }} {{ item.unit }}</p>
+                <p class="text-2xl font-bold text-green-900 dark:text-green-100">{{ totalDeliveredQuantity }} {{ t(`units.${item.unit}`) !== `units.${item.unit}` ? `${t(`units.${item.unit}`)} (${item.unit})` : item.unit }}</p>
               </div>
             </div>
           </div>
@@ -78,7 +79,8 @@
               </div>
               <div class="ml-4">
                 <p class="text-sm font-medium text-yellow-700 dark:text-yellow-300">Avg. Unit Price</p>
-                <p class="text-2xl font-bold text-yellow-900 dark:text-yellow-100">₹{{ averageUnitPrice.toFixed(2) }}</p>
+                <p class="text-2xl font-bold text-yellow-900 dark:text-yellow-100">₹{{ averageUnitPrice.toFixed(2) }}
+                </p>
               </div>
             </div>
           </div>
@@ -125,18 +127,32 @@
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Delivery History</h2>
         <span class="text-sm text-gray-500 dark:text-gray-400">{{ itemDeliveries.length }} deliveries</span>
       </div>
-      
+
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Vendor</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Quantity</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Unit Price</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Amount</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Payment Status</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Date</th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Vendor</th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Quantity</th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Unit Price</th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Total Amount</th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Payment Status</th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Actions</th>
             </tr>
           </thead>
           <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -148,7 +164,7 @@
                 {{ delivery.expand?.vendor?.name || 'Unknown Vendor' }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                {{ delivery.quantity }} {{ item.unit }}
+                {{ delivery.quantity }} {{ t(`units.${item.unit}`) !== `units.${item.unit}` ? `${t(`units.${item.unit}`)} (${item.unit})` : item.unit }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                 ₹{{ delivery.unit_price.toFixed(2) }}
@@ -162,14 +178,15 @@
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button @click="viewDelivery(delivery)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300">
+                <button @click="viewDelivery(delivery)"
+                  class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300">
                   <Eye class="h-4 w-4" />
                 </button>
               </td>
             </tr>
           </tbody>
         </table>
-        
+
         <div v-if="itemDeliveries.length === 0" class="text-center py-12">
           <TruckIcon class="mx-auto h-12 w-12 text-gray-400" />
           <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No deliveries recorded</h3>
@@ -178,7 +195,7 @@
       </div>
     </div>
   </div>
-  
+
   <div v-else class="flex items-center justify-center min-h-96">
     <Loader2 class="h-8 w-8 animate-spin text-gray-400" />
   </div>
@@ -186,19 +203,20 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick } from 'vue';
+import { useI18n } from '../composables/useI18n';
 import { useRoute, useRouter } from 'vue-router';
-import { 
-  ArrowLeft, 
-  Download, 
-  TruckIcon, 
-  Package, 
-  DollarSign, 
+import {
+  ArrowLeft,
+  Download,
+  TruckIcon,
+  Package,
+  DollarSign,
   BarChart3,
   Eye,
   Loader2
 } from 'lucide-vue-next';
-import { 
-  itemService, 
+import {
+  itemService,
   incomingItemService,
   type Item,
   type IncomingItem
@@ -206,6 +224,7 @@ import {
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 const item = ref<Item | null>(null);
 const itemDeliveries = ref<IncomingItem[]>([]);
@@ -234,23 +253,23 @@ const maxPrice = computed(() => {
 
 const loadItemData = async () => {
   const itemId = route.params.id as string;
-  
+
   try {
     const [allItems, allDeliveries] = await Promise.all([
       itemService.getAll(),
       incomingItemService.getAll()
     ]);
-    
+
     item.value = allItems.find(i => i.id === itemId) || null;
     itemDeliveries.value = allDeliveries
       .filter(delivery => delivery.item === itemId)
       .sort((a, b) => new Date(a.delivery_date).getTime() - new Date(b.delivery_date).getTime());
-      
+
     if (!item.value) {
       router.push('/items');
       return;
     }
-    
+
     // Draw chart after data is loaded
     await nextTick();
     drawPriceChart();
@@ -262,126 +281,133 @@ const loadItemData = async () => {
 
 const drawPriceChart = () => {
   if (!chartCanvas.value || itemDeliveries.value.length === 0) return;
-  
+
   const canvas = chartCanvas.value;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
-  
+
   // Set canvas size
   const rect = canvas.getBoundingClientRect();
   canvas.width = rect.width * window.devicePixelRatio;
   canvas.height = rect.height * window.devicePixelRatio;
   ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-  
+
   const width = rect.width;
   const height = rect.height;
   const padding = 60;
-  
+
   // Clear canvas
   ctx.clearRect(0, 0, width, height);
-  
+
   // Prepare data
   const data = itemDeliveries.value.map(delivery => ({
     date: new Date(delivery.delivery_date),
     price: delivery.unit_price,
     vendor: delivery.expand?.vendor?.name || 'Unknown'
   }));
-  
+
   if (data.length === 0) return;
-  
+
   // Calculate scales
   const minPriceValue = Math.min(...data.map(d => d.price));
   const maxPriceValue = Math.max(...data.map(d => d.price));
   const priceRange = maxPriceValue - minPriceValue;
   const adjustedMinPrice = minPriceValue - priceRange * 0.1;
   const adjustedMaxPrice = maxPriceValue + priceRange * 0.1;
-  
+
   const chartWidth = width - 2 * padding;
   const chartHeight = height - 2 * padding;
-  
+
   // Draw axes
   ctx.strokeStyle = '#e5e7eb';
   ctx.lineWidth = 1;
-  
+
   // Y-axis
   ctx.beginPath();
   ctx.moveTo(padding, padding);
   ctx.lineTo(padding, height - padding);
   ctx.stroke();
-  
+
   // X-axis
   ctx.beginPath();
   ctx.moveTo(padding, height - padding);
   ctx.lineTo(width - padding, height - padding);
   ctx.stroke();
-  
+
   // Draw grid lines and labels
   ctx.fillStyle = '#6b7280';
   ctx.font = '12px Inter, sans-serif';
   ctx.textAlign = 'right';
-  
+
   // Y-axis labels (prices)
   const priceSteps = 5;
   for (let i = 0; i <= priceSteps; i++) {
     const price = adjustedMinPrice + (adjustedMaxPrice - adjustedMinPrice) * (i / priceSteps);
     const y = height - padding - (i / priceSteps) * chartHeight;
-    
+
     // Grid line
     ctx.strokeStyle = '#f3f4f6';
     ctx.beginPath();
     ctx.moveTo(padding, y);
     ctx.lineTo(width - padding, y);
     ctx.stroke();
-    
+
     // Label
     ctx.fillText(`₹${price.toFixed(0)}`, padding - 10, y + 4);
   }
-  
+
   // X-axis labels (dates)
   ctx.textAlign = 'center';
   const dateSteps = Math.min(data.length, 6);
   for (let i = 0; i < dateSteps; i++) {
-    const dataIndex = Math.floor((data.length - 1) * (i / (dateSteps - 1)));
-    const date = data[dataIndex].date;
-    const x = padding + (dataIndex / (data.length - 1)) * chartWidth;
+    let dataIndex;
+    if (dateSteps === 1) {
+      dataIndex = 0; // Only one data point
+    } else {
+      dataIndex = Math.floor((data.length - 1) * (i / (dateSteps - 1)));
+      dataIndex = Math.min(dataIndex, data.length - 1); // Bounds check
+    }
     
+    const date = data[dataIndex].date;
+    const x = padding + (dataIndex / Math.max(data.length - 1, 1)) * chartWidth;
+
     ctx.fillText(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), x, height - padding + 20);
   }
-  
+
   // Draw line chart
   if (data.length > 1) {
     ctx.strokeStyle = '#3b82f6';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    
+
     data.forEach((point, index) => {
-      const x = padding + (index / (data.length - 1)) * chartWidth;
-      const y = height - padding - ((point.price - adjustedMinPrice) / (adjustedMaxPrice - adjustedMinPrice)) * chartHeight;
-      
+      const x = padding + (index / Math.max(data.length - 1, 1)) * chartWidth;
+      const y = height - padding - ((point.price - adjustedMinPrice) / Math.max(adjustedMaxPrice - adjustedMinPrice, 1)) * chartHeight;
+
       if (index === 0) {
         ctx.moveTo(x, y);
       } else {
         ctx.lineTo(x, y);
       }
     });
-    
+
     ctx.stroke();
   }
-  
+
   // Draw data points
   data.forEach((point, index) => {
-    const x = padding + (index / (data.length - 1)) * chartWidth;
-    const y = height - padding - ((point.price - adjustedMinPrice) / (adjustedMaxPrice - adjustedMinPrice)) * chartHeight;
-    
+    const x = padding + (index / Math.max(data.length - 1, 1)) * chartWidth;
+    const y = height - padding - ((point.price - adjustedMinPrice) / Math.max(adjustedMaxPrice - adjustedMinPrice, 1)) * chartHeight;
+
     // Point
     ctx.fillStyle = '#3b82f6';
     ctx.beginPath();
     ctx.arc(x, y, 4, 0, 2 * Math.PI);
     ctx.fill();
-    
+
     // Hover effect would go here in a more advanced implementation
   });
-  
+
   // Chart title
   ctx.fillStyle = '#1f2937';
   ctx.font = 'bold 14px Inter, sans-serif';
@@ -399,10 +425,10 @@ const viewDelivery = (_delivery: IncomingItem) => {
 
 const exportItemReport = () => {
   if (!item.value) return;
-  
+
   // Create CSV content
   const csvContent = generateItemReportCSV();
-  
+
   // Create and download file
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
@@ -417,9 +443,9 @@ const exportItemReport = () => {
 
 const generateItemReportCSV = () => {
   if (!item.value) return '';
-  
+
   const headers = ['Date', 'Vendor', 'Quantity', 'Unit Price', 'Total Amount', 'Payment Status', 'Notes'];
-  
+
   const rows = itemDeliveries.value.map(delivery => [
     delivery.delivery_date,
     delivery.expand?.vendor?.name || 'Unknown Vendor',
@@ -429,7 +455,7 @@ const generateItemReportCSV = () => {
     delivery.payment_status,
     delivery.notes || ''
   ]);
-  
+
   // Add summary row
   rows.push([
     '',
@@ -440,11 +466,11 @@ const generateItemReportCSV = () => {
     '',
     `Report generated on ${new Date().toISOString().split('T')[0]}`
   ]);
-  
+
   // Convert to CSV
   const csvRows = [headers, ...rows];
-  return csvRows.map(row => 
-    row.map(field => 
+  return csvRows.map(row =>
+    row.map(field =>
       typeof field === 'string' && field.includes(',') ? `"${field}"` : field
     ).join(',')
   ).join('\n');
@@ -456,13 +482,13 @@ const formatDate = (dateString: string) => {
 
 onMounted(() => {
   loadItemData();
-  
+
   // Redraw chart on window resize
   const handleResize = () => {
     setTimeout(drawPriceChart, 100);
   };
   window.addEventListener('resize', handleResize);
-  
+
   // Cleanup
   return () => {
     window.removeEventListener('resize', handleResize);

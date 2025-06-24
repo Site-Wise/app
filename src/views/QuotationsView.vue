@@ -60,7 +60,7 @@
           <tr v-for="quotation in quotations" :key="quotation.id">
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="text-sm font-medium text-gray-900 dark:text-white">{{ quotation.expand?.item?.name }}</div>
-              <div class="text-sm text-gray-500 dark:text-gray-400">{{ quotation.expand?.item?.unit }}</div>
+              <div class="text-sm text-gray-500 dark:text-gray-400">{{ getUnitDisplay(quotation.expand?.item?.unit || 'units') }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="text-sm text-gray-900 dark:text-white">{{ quotation.expand?.vendor?.name }}</div>
@@ -114,7 +114,7 @@
               <select v-model="form.item" required class="input mt-1">
                 <option value="">{{ t('forms.selectItem') }}</option>
                 <option v-for="item in items" :key="item.id" :value="item.id">
-                  {{ item.name }} ({{ item.unit }})
+                  {{ item.name }} ({{ getUnitDisplay(item.unit) }})
                 </option>
               </select>
             </div>
@@ -296,6 +296,19 @@ const deleteQuotation = async (id: string) => {
       console.error('Error deleting quotation:', error);
     }
   }
+};
+
+const getUnitDisplay = (unitKey: string) => {
+  // If translation exists, show "Translation (key)", otherwise just show the key
+  const translationKey = `units.${unitKey}`;
+  const translation = t(translationKey);
+  
+  // If translation is the same as the key, it means translation doesn't exist
+  if (translation === translationKey) {
+    return unitKey;
+  }
+  
+  return `${translation} (${unitKey})`;
 };
 
 const formatDate = (dateString: string) => {

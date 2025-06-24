@@ -37,3 +37,6 @@ src-tauri/gen
 *.AppImage
 *.msi
 *.exe
+
+# working file
+TODO.md

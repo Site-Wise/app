@@ -82,7 +82,7 @@
             <!-- Desktop Row -->
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="text-sm font-medium text-gray-900 dark:text-white">{{ item.expand?.item?.name || 'Unknown Item' }}</div>
-              <div class="text-sm text-gray-500 dark:text-gray-400">{{ item.expand?.item?.unit || 'units' }}</div>
+              <div class="text-sm text-gray-500 dark:text-gray-400">{{ getUnitDisplay(item.expand?.item?.unit || 'units') }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="text-sm text-gray-900 dark:text-white">{{ item.expand?.vendor?.name || 'Unknown Vendor' }}</div>
@@ -176,7 +176,7 @@
               <div class="space-y-2 text-xs">
                 <div class="flex justify-between items-center">
                   <span class="text-gray-500 dark:text-gray-400">{{ t('common.quantity') }}:</span>
-                  <span class="font-medium text-gray-900 dark:text-white">{{ item.quantity }} {{ item.expand?.item?.unit || 'units' }}</span>
+                  <span class="font-medium text-gray-900 dark:text-white">{{ item.quantity }} {{ getUnitDisplay(item.expand?.item?.unit || 'units') }}</span>
                 </div>
                 <div class="flex justify-between items-start">
                   <span class="text-gray-500 dark:text-gray-400">{{ t('common.total') }}:</span>
@@ -284,7 +284,7 @@
               <select v-model="form.item" required class="input mt-1">
                 <option value="">{{ t('forms.selectItem') }}</option>
                 <option v-for="item in items" :key="item.id" :value="item.id">
-                  {{ item.name }} ({{ item.unit }})
+                  {{ item.name }} ({{ getUnitDisplay(item.unit) }})
                 </option>
               </select>
             </div>
@@ -397,7 +397,7 @@
               </div>
               <div>
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('common.quantity') }}:</span>
-                <span class="ml-2 text-gray-900 dark:text-white">{{ viewingItem.quantity }} {{ viewingItem.expand?.item?.unit || 'units' }}</span>
+                <span class="ml-2 text-gray-900 dark:text-white">{{ viewingItem.quantity }} {{ getUnitDisplay(viewingItem.expand?.item?.unit || 'units') }}</span>
               </div>
               <div>
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('common.total') }}:</span>
@@ -577,6 +577,19 @@ const handleFilesSelected = (files: File[]) => {
 const getPhotoUrl = (itemId: string, filename: string) => {
   // Using direct URL construction as pb.files.getUrl is deprecated
   return `${import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090'}/api/files/incoming_items/${itemId}/${filename}`;
+};
+
+const getUnitDisplay = (unitKey: string) => {
+  // If translation exists, show "Translation (key)", otherwise just show the key
+  const translationKey = `units.${unitKey}`;
+  const translation = t(translationKey);
+  
+  // If translation is the same as the key, it means translation doesn't exist
+  if (translation === translationKey) {
+    return unitKey;
+  }
+  
+  return `${translation} (${unitKey})`;
 };
 
 const viewPhotos = (item: IncomingItem) => {

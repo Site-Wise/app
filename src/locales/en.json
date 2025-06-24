@@ -755,5 +755,20 @@
     "removeFile": "Remove file",
     "dropZone": "File upload area",
     "previewOf": "Preview of {filename}"
+  },
+  "units": {
+    "pcs": "Pieces",
+    "pkt": "Packet",
+    "each": "Number",
+    "ft": "Running Feet",
+    "m2": "Square Meter",
+    "m3": "Cubic Meter",
+    "kg": "Kilogram",
+    "ton": "Tonne",
+    "bag": "Bag",
+    "box": "Box",
+    "sqft": "Square Foot",
+    "ft3": "Cubic Foot",
+    "l": "Litre"
   }
 }
