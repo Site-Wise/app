@@ -298,6 +298,25 @@ export interface Payment {
   };
 }
 
+export interface AccountTransaction {
+  id?: string;
+  account: string; // Account ID
+  type: 'credit' | 'debit';
+  amount: number;
+  transaction_date: string;
+  description: string;
+  reference?: string;
+  notes?: string;
+  vendor?: string; // Vendor ID (optional, for payment-related transactions)
+  site: string; // Site ID
+  created?: string;
+  updated?: string;
+  expand?: {
+    account?: Account;
+    vendor?: Vendor;
+  };
+}
+
 // Site context management
 let currentSiteId: string | null = null;
 let currentUserRole: 'owner' | 'supervisor' | 'accountant' | null = null;
@@ -846,13 +865,9 @@ export class AccountService {
   }
 
   async updateBalance(id: string, amount: number, operation: 'add' | 'subtract'): Promise<Account> {
-    const account = await this.getById(id);
-    if (!account) throw new Error('Account not found');
-
-    const newBalance = operation === 'add'
-      ? account.current_balance + amount
-      : account.current_balance - amount;
-
+    // Deprecated: Use AccountTransactionService instead
+    // This method is kept for backward compatibility but calculates balance from transactions
+    const newBalance = await accountTransactionService.calculateAccountBalance(id);
     return this.update(id, { current_balance: newBalance });
   }
 
@@ -860,16 +875,9 @@ export class AccountService {
     const account = await this.getById(id);
     if (!account) throw new Error('Account not found');
 
-    // Get all payments for this account
-    const payments = await paymentService.getAll();
-    const accountPayments = payments.filter(payment => payment.account === id);
-
-    // Calculate total payments made from this account
-    const totalPayments = accountPayments.reduce((sum, payment) => sum + payment.amount, 0);
-
-    // Recalculate current balance: opening balance - total payments
-    const newBalance = account.opening_balance - totalPayments;
-
+    // Calculate balance from account transactions instead of payments
+    const newBalance = await accountTransactionService.calculateAccountBalance(id);
+    
     return this.update(id, { current_balance: newBalance });
   }
 
@@ -1502,8 +1510,18 @@ export class PaymentService {
       site: siteId
     });
 
-    // Update account balance (subtract payment amount)
-    await accountService.updateBalance(data.account, data.amount, 'subtract');
+    // Create corresponding debit transaction
+    const vendorName = await this.getVendorName(data.vendor);
+    await accountTransactionService.create({
+      account: data.account,
+      type: 'debit',
+      amount: data.amount,
+      transaction_date: data.payment_date,
+      description: `Payment to ${vendorName}`,
+      reference: data.reference,
+      notes: data.notes,
+      vendor: data.vendor
+    });
 
     // Update payment status of related incoming items and service bookings
     await this.updateIncomingItemsPaymentStatus(data.vendor, data.amount);
@@ -1539,6 +1557,15 @@ export class PaymentService {
       });
 
       remainingAmount -= paymentForItem;
+    }
+  }
+
+  private async getVendorName(vendorId: string): Promise<string> {
+    try {
+      const vendor = await pb.collection('vendors').getOne(vendorId);
+      return vendor.name || 'Unknown Vendor';
+    } catch (error) {
+      return 'Unknown Vendor';
     }
   }
 
@@ -1821,6 +1848,180 @@ export class TagService {
   }
 }
 
+export class AccountTransactionService {
+  async getAll(): Promise<AccountTransaction[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('account_transactions').getFullList({
+      filter: `site="${siteId}"`,
+      expand: 'account,vendor',
+      sort: '-transaction_date'
+    });
+    return records.map(record => this.mapRecordToAccountTransaction(record));
+  }
+
+  async getByAccount(accountId: string): Promise<AccountTransaction[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('account_transactions').getFullList({
+      filter: `site="${siteId}" && account="${accountId}"`,
+      expand: 'account,vendor',
+      sort: '-transaction_date'
+    });
+    return records.map(record => this.mapRecordToAccountTransaction(record));
+  }
+
+  async create(data: Omit<AccountTransaction, 'id' | 'site' | 'created' | 'updated'>): Promise<AccountTransaction> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create transactions');
+    }
+
+    const record = await pb.collection('account_transactions').create({
+      ...data,
+      site: siteId
+    });
+
+    // Update account balance after creating transaction
+    await this.updateAccountBalance(data.account);
+
+    return this.mapRecordToAccountTransaction(record);
+  }
+
+  async update(id: string, data: Partial<AccountTransaction>): Promise<AccountTransaction> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canUpdate) {
+      throw new Error('Permission denied: Cannot update transactions');
+    }
+
+    const record = await pb.collection('account_transactions').update(id, data);
+    
+    // Update account balance after updating transaction
+    if (record.account) {
+      await this.updateAccountBalance(record.account);
+    }
+
+    return this.mapRecordToAccountTransaction(record);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canDelete) {
+      throw new Error('Permission denied: Cannot delete transactions');
+    }
+
+    // Get the transaction to know which account to update
+    const transaction = await pb.collection('account_transactions').getOne(id);
+    
+    await pb.collection('account_transactions').delete(id);
+    
+    // Update account balance after deleting transaction
+    if (transaction.account) {
+      await this.updateAccountBalance(transaction.account);
+    }
+
+    return true;
+  }
+
+  async calculateAccountBalance(accountId: string): Promise<number> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    // Get the account to get opening balance
+    const account = await pb.collection('accounts').getOne(accountId);
+    
+    // Get all transactions for this account
+    const transactions = await pb.collection('account_transactions').getFullList({
+      filter: `account="${accountId}" && site="${siteId}"`
+    });
+
+    // Calculate balance: opening balance + credits - debits
+    let balance = account.opening_balance || 0;
+    
+    for (const transaction of transactions) {
+      if (transaction.type === 'credit') {
+        balance += transaction.amount;
+      } else {
+        balance -= transaction.amount;
+      }
+    }
+
+    return balance;
+  }
+
+  private async updateAccountBalance(accountId: string): Promise<void> {
+    const newBalance = await this.calculateAccountBalance(accountId);
+    
+    await pb.collection('accounts').update(accountId, {
+      current_balance: newBalance
+    });
+  }
+
+  private mapRecordToAccountTransaction(record: RecordModel): AccountTransaction {
+    return {
+      id: record.id,
+      account: record.account,
+      type: record.type,
+      amount: record.amount,
+      transaction_date: record.transaction_date,
+      description: record.description,
+      reference: record.reference,
+      notes: record.notes,
+      vendor: record.vendor,
+      site: record.site,
+      created: record.created,
+      updated: record.updated,
+      expand: record.expand ? {
+        account: record.expand.account ? this.mapRecordToAccount(record.expand.account) : undefined,
+        vendor: record.expand.vendor ? this.mapRecordToVendor(record.expand.vendor) : undefined
+      } : undefined
+    };
+  }
+
+  private mapRecordToAccount(record: RecordModel): Account {
+    return {
+      id: record.id,
+      name: record.name,
+      type: record.type,
+      account_number: record.account_number,
+      bank_name: record.bank_name,
+      description: record.description,
+      is_active: record.is_active,
+      opening_balance: record.opening_balance,
+      current_balance: record.current_balance,
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+
+  private mapRecordToVendor(record: RecordModel): Vendor {
+    return {
+      id: record.id,
+      name: record.name,
+      contact_person: record.contact_person,
+      email: record.email,
+      phone: record.phone,
+      address: record.address,
+      tags: record.tags || [],
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+}
+
 export class SiteInvitationService {
   async getAll(): Promise<SiteInvitation[]> {
     const records = await pb.collection('site_invitations').getFullList({
@@ -1917,3 +2118,4 @@ export const incomingItemService = new IncomingItemService();
 export const serviceBookingService = new ServiceBookingService();
 export const paymentService = new PaymentService();
 export const tagService = new TagService();
+export const accountTransactionService = new AccountTransactionService();

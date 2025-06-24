@@ -30,7 +30,7 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.vendor') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.account') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.amount') }}</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('payments.paymentDate') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.date') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.reference') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('payments.itemsAffected') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.actions') }}</th>
@@ -61,13 +61,13 @@
               <div class="text-sm font-medium text-gray-900 dark:text-white">₹{{ payment.amount.toFixed(2) }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
-              {{ formatDate(payment.payment_date) }}
+              {{ formatDate(payment.transaction_date) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
               {{ payment.reference || '-' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
-              {{ payment.incoming_items?.length || 0 }} {{ t('common.items') }}
+              {{ getRelatedItemsCount(payment) }} {{ t('common.items') }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium hidden lg:table-cell">
               <div class="flex items-center space-x-2">
@@ -93,7 +93,7 @@
             <td class="px-4 py-4 lg:hidden">
               <div class="text-sm font-medium text-gray-900 dark:text-white">{{ payment.expand?.vendor?.name || t('common.unknown') + ' ' + t('common.vendor') }}</div>
               <div class="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">
-                {{ formatDate(payment.payment_date) }}
+                {{ formatDate(payment.transaction_date) }}
               </div>
             </td>
             <td class="px-4 py-4 lg:hidden">
@@ -238,7 +238,7 @@
             
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.paymentDate') }}</label>
-              <input v-model="form.payment_date" type="date" required class="input mt-1" />
+              <input v-model="form.transaction_date" type="date" required class="input mt-1" />
             </div>
             
             <div>
@@ -289,7 +289,7 @@
             </div>
             <div>
               <span class="font-medium text-gray-700 dark:text-gray-300">Payment Date:</span>
-              <span class="ml-2 text-gray-900 dark:text-white">{{ formatDate(viewingPayment.payment_date) }}</span>
+              <span class="ml-2 text-gray-900 dark:text-white">{{ formatDate(viewingPayment.transaction_date) }}</span>
             </div>
             <div v-if="viewingPayment.reference">
               <span class="font-medium text-gray-700 dark:text-gray-300">Reference:</span>
@@ -323,6 +323,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { 
   CreditCard, 
   Plus, 
@@ -339,17 +340,19 @@ import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { 
   paymentService, 
+  accountTransactionService,
   vendorService,
   accountService,
   incomingItemService,
   serviceBookingService,
-  type Payment, 
+  type AccountTransaction, 
   type Vendor,
   type Account,
   type IncomingItem,
   type ServiceBooking
 } from '../services/pocketbase';
 
+const route = useRoute();
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
@@ -359,13 +362,13 @@ interface VendorWithOutstanding extends Vendor {
   pendingItems: number;
 }
 
-const payments = ref<Payment[]>([]);
+const payments = ref<AccountTransaction[]>([]);
 const vendors = ref<Vendor[]>([]);
 const accounts = ref<Account[]>([]);
 const incomingItems = ref<IncomingItem[]>([]);
 const serviceBookings = ref<ServiceBooking[]>([]);
 const showAddModal = ref(false);
-const viewingPayment = ref<Payment | null>(null);
+const viewingPayment = ref<AccountTransaction | null>(null);
 const loading = ref(false);
 const vendorOutstanding = ref(0);
 const openMobileMenuId = ref<string | null>(null);
@@ -374,9 +377,10 @@ const form = reactive({
   vendor: '',
   account: '',
   amount: 0,
-  payment_date: new Date().toISOString().split('T')[0],
+  transaction_date: new Date().toISOString().split('T')[0],
   reference: '',
   notes: '',
+  description: '',
   incoming_items: [] as string[],
   service_bookings: [] as string[]
 });
@@ -434,17 +438,26 @@ const getAccountIcon = (type?: Account['type']) => {
   return icons[type] || Wallet;
 };
 
+const getRelatedItemsCount = (transaction: AccountTransaction) => {
+  // For now, return 0 since we don't have direct relationship
+  // In the future, this could be calculated based on vendor and date range
+  return 0;
+};
+
 const loadData = async () => {
   try {
-    const [paymentsData, vendorsData, accountsData, incomingData, serviceBookingsData] = await Promise.all([
-      paymentService.getAll(),
+    const [transactionsData, vendorsData, accountsData, incomingData, serviceBookingsData] = await Promise.all([
+      accountTransactionService.getAll(),
       vendorService.getAll(),
       accountService.getAll(),
       incomingItemService.getAll(),
       serviceBookingService.getAll()
     ]);
     
-    payments.value = paymentsData;
+    // Filter to show only debit transactions with vendors (payments)
+    payments.value = transactionsData.filter(transaction => 
+      transaction.type === 'debit' && transaction.vendor
+    );
     vendors.value = vendorsData;
     accounts.value = accountsData;
     incomingItems.value = incomingData;
@@ -491,7 +504,19 @@ const savePayment = async () => {
   }
   loading.value = true;
   try {
-    await paymentService.create(form);
+    // Map form to payment format for backward compatibility
+    const paymentData = {
+      vendor: form.vendor,
+      account: form.account,
+      amount: form.amount,
+      payment_date: form.transaction_date,
+      reference: form.reference,
+      notes: form.notes,
+      incoming_items: form.incoming_items,
+      service_bookings: form.service_bookings
+    };
+    
+    await paymentService.create(paymentData);
     success(t('messages.createSuccess', { item: t('common.payment') }));
     // Usage is automatically incremented by PocketBase hooks
     await loadData();
@@ -557,10 +582,12 @@ const closeModal = () => {
     vendor: '',
     account: '',
     amount: 0,
-    payment_date: new Date().toISOString().split('T')[0],
+    transaction_date: new Date().toISOString().split('T')[0],
     reference: '',
     notes: '',
-    incoming_items: []
+    description: '',
+    incoming_items: [],
+    service_bookings: []
   });
   vendorOutstanding.value = 0;
 };
@@ -580,8 +607,18 @@ const handleClickOutside = (event: Event) => {
   }
 };
 
-onMounted(() => {
-  loadData();
+onMounted(async () => {
+  await loadData();
+  
+  // Check for paymentId query parameter and auto-open payment modal
+  const paymentId = route.query.paymentId as string;
+  if (paymentId) {
+    const payment = payments.value.find(p => p.id === paymentId);
+    if (payment) {
+      viewingPayment.value = payment;
+    }
+  }
+  
   window.addEventListener('show-add-modal', handleQuickAction);
   window.addEventListener('site-changed', handleSiteChange);
   document.addEventListener('click', handleClickOutside);

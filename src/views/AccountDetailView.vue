@@ -25,6 +25,10 @@
           <Download class="mr-2 h-4 w-4" />
           Export Statement
         </button>
+        <button @click="showCreditModal = true" class="btn-outline">
+          <Plus class="mr-2 h-4 w-4" />
+          Add Credit Entry
+        </button>
         <button @click="editAccount" class="btn-primary">
           <Edit2 class="mr-2 h-4 w-4" />
           Edit Account
@@ -145,35 +149,44 @@
           <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Description</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Vendor</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Balance</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Reference</th>
             </tr>
           </thead>
           <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             <tr v-for="transaction in filteredTransactions" :key="transaction.id">
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                {{ formatDate(transaction.payment_date) }}
+                {{ formatDate(transaction.transaction_date) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900 dark:text-white">Payment to {{ transaction.expand?.vendor?.name || 'Unknown Vendor' }}</div>
+                <span :class="[
+                  'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                  transaction.type === 'credit' 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' 
+                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                ]">
+                  {{ transaction.type === 'credit' ? 'Credit' : 'Debit' }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="text-sm font-medium text-gray-900 dark:text-white">{{ transaction.description }}</div>
                 <div v-if="transaction.notes" class="text-sm text-gray-500 dark:text-gray-400">{{ transaction.notes }}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                {{ transaction.expand?.vendor?.name || 'Unknown Vendor' }}
+                <div v-if="transaction.reference" class="text-sm text-gray-500 dark:text-gray-400">Ref: {{ transaction.reference }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span class="text-sm font-medium text-red-600 dark:text-red-400">
-                  -₹{{ transaction.amount.toFixed(2) }}
+                <span :class="[
+                  'text-sm font-medium',
+                  transaction.type === 'credit' 
+                    ? 'text-green-600 dark:text-green-400' 
+                    : 'text-red-600 dark:text-red-400'
+                ]">
+                  {{ transaction.type === 'credit' ? '+' : '-' }}₹{{ transaction.amount.toFixed(2) }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                ₹{{ transaction.running_balance?.toFixed(2) || '0.00' }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                {{ transaction.reference || '-' }}
+                ₹{{ (transaction as any).running_balance?.toFixed(2) || '0.00' }}
               </td>
             </tr>
           </tbody>
@@ -243,6 +256,55 @@
         </div>
       </div>
     </div>
+
+    <!-- Credit Entry Modal -->
+    <div v-if="showCreditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <div class="mt-3">
+          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Add Credit Entry</h3>
+          
+          <form @submit.prevent="saveCreditEntry" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Amount</label>
+              <input v-model.number="creditForm.amount" type="number" min="0" step="0.01" required class="input mt-1" />
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+              <input v-model="creditForm.description" type="text" required class="input mt-1" 
+                     placeholder="e.g., Bank deposit, Refund, Correction" />
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reference</label>
+              <input v-model="creditForm.reference" type="text" class="input mt-1" 
+                     placeholder="e.g., Transaction ID, Check number" />
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Date</label>
+              <input v-model="creditForm.transaction_date" type="date" required class="input mt-1" />
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+              <textarea v-model="creditForm.notes" class="input mt-1" rows="2" 
+                        placeholder="Additional details about this credit entry"></textarea>
+            </div>
+            
+            <div class="flex space-x-3 pt-4">
+              <button type="submit" :disabled="creditLoading" class="flex-1 btn-primary">
+                <Loader2 v-if="creditLoading" class="mr-2 h-4 w-4 animate-spin" />
+                Add Credit Entry
+              </button>
+              <button type="button" @click="showCreditModal = false" class="flex-1 btn-outline">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
   
   <div v-else class="flex items-center justify-center min-h-96">
@@ -266,22 +328,25 @@ import {
   Banknote,
   Smartphone,
   Building2,
-  CreditCard
+  CreditCard,
+  Plus
 } from 'lucide-vue-next';
 import { 
   accountService, 
-  paymentService,
+  accountTransactionService,
   type Account,
-  type Payment
+  type AccountTransaction
 } from '../services/pocketbase';
 
 const route = useRoute();
 const router = useRouter();
 
 const account = ref<Account | null>(null);
-const accountTransactions = ref<Payment[]>([]);
+const accountTransactions = ref<AccountTransaction[]>([]);
 const showEditModal = ref(false);
+const showCreditModal = ref(false);
 const editLoading = ref(false);
+const creditLoading = ref(false);
 const recalculating = ref(false);
 const filterPeriod = ref('all');
 
@@ -294,8 +359,18 @@ const editForm = reactive({
   is_active: true
 });
 
+const creditForm = reactive({
+  amount: 0,
+  description: '',
+  reference: '',
+  notes: '',
+  transaction_date: new Date().toISOString().split('T')[0]
+});
+
 const totalPayments = computed(() => {
-  return accountTransactions.value.reduce((sum, payment) => sum + payment.amount, 0);
+  return accountTransactions.value
+    .filter(transaction => transaction.type === 'debit')
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
 });
 
 const thisMonthTransactions = computed(() => {
@@ -304,7 +379,7 @@ const thisMonthTransactions = computed(() => {
   const thisYear = now.getFullYear();
   
   return accountTransactions.value.filter(transaction => {
-    const transactionDate = new Date(transaction.payment_date);
+    const transactionDate = new Date(transaction.transaction_date);
     return transactionDate.getMonth() === thisMonth && transactionDate.getFullYear() === thisYear;
   }).length;
 });
@@ -334,7 +409,7 @@ const filteredTransactions = computed(() => {
     }
     
     filtered = filtered.filter(transaction => 
-      new Date(transaction.payment_date) >= filterDate
+      new Date(transaction.transaction_date) >= filterDate
     );
   }
   
@@ -343,13 +418,17 @@ const filteredTransactions = computed(() => {
   
   // Sort by date (oldest first) for balance calculation
   const sortedTransactions = filtered.sort((a, b) => 
-    new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime()
+    new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()
   );
   
   // Calculate running balance
   sortedTransactions.forEach(transaction => {
-    runningBalance -= transaction.amount;
-    transaction.running_balance = runningBalance;
+    if (transaction.type === 'credit') {
+      runningBalance += transaction.amount;
+    } else {
+      runningBalance -= transaction.amount;
+    }
+    (transaction as any).running_balance = runningBalance;
   });
   
   // Return in reverse order (newest first) for display
@@ -390,20 +469,18 @@ const loadAccountData = async () => {
   console.log('Loading account data for ID:', accountId);
   
   try {
-    const [accountData, allPayments] = await Promise.all([
+    const [accountData, transactions] = await Promise.all([
       accountService.getById(accountId),
-      paymentService.getAll()
+      accountTransactionService.getByAccount(accountId)
     ]);
     
     console.log('Account data loaded:', accountData);
-    console.log('All payments:', allPayments);
+    console.log('Account transactions:', transactions);
     
     account.value = accountData;
-    accountTransactions.value = allPayments
-      .filter(payment => payment.account === accountId)
-      .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime());
-      
-    console.log('Account transactions:', accountTransactions.value);
+    accountTransactions.value = transactions.sort((a, b) => 
+      new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime()
+    );
       
     if (!account.value) {
       console.error('Account not found, redirecting to accounts list');
@@ -450,7 +527,12 @@ const recalculateBalance = async () => {
   
   recalculating.value = true;
   try {
-    await accountService.recalculateBalance(account.value.id!);
+    // Calculate balance using account transaction service
+    const newBalance = await accountTransactionService.calculateAccountBalance(account.value.id!);
+    
+    // Update the account balance
+    await accountService.update(account.value.id!, { current_balance: newBalance });
+    
     await loadAccountData();
   } catch (error) {
     console.error('Error recalculating balance:', error);
@@ -480,14 +562,14 @@ const exportStatement = () => {
 const generateStatementCSV = () => {
   if (!account.value) return '';
   
-  const headers = ['Date', 'Description', 'Vendor', 'Amount', 'Balance', 'Reference', 'Notes'];
+  const headers = ['Date', 'Type', 'Description', 'Amount', 'Balance', 'Reference', 'Notes'];
   
   const rows = filteredTransactions.value.map(transaction => [
-    transaction.payment_date,
-    `Payment to ${transaction.expand?.vendor?.name || 'Unknown Vendor'}`,
-    transaction.expand?.vendor?.name || 'Unknown Vendor',
-    -transaction.amount, // Negative for payments
-    transaction.running_balance || 0,
+    transaction.transaction_date,
+    transaction.type === 'credit' ? 'Credit' : 'Debit',
+    transaction.description,
+    transaction.type === 'credit' ? transaction.amount : -transaction.amount,
+    (transaction as any).running_balance || 0,
     transaction.reference || '',
     transaction.notes || ''
   ]);
@@ -495,8 +577,8 @@ const generateStatementCSV = () => {
   // Add summary row
   rows.push([
     '',
-    'ACCOUNT SUMMARY',
     '',
+    'ACCOUNT SUMMARY',
     '',
     account.value.current_balance,
     '',
@@ -510,6 +592,39 @@ const generateStatementCSV = () => {
       typeof field === 'string' && field.includes(',') ? `"${field}"` : field
     ).join(',')
   ).join('\n');
+};
+
+const saveCreditEntry = async () => {
+  if (!account.value) return;
+  
+  creditLoading.value = true;
+  try {
+    await accountTransactionService.create({
+      account: account.value.id!,
+      type: 'credit',
+      amount: creditForm.amount,
+      transaction_date: creditForm.transaction_date,
+      description: creditForm.description,
+      reference: creditForm.reference,
+      notes: creditForm.notes
+    });
+    
+    // Reset form
+    Object.assign(creditForm, {
+      amount: 0,
+      description: '',
+      reference: '',
+      notes: '',
+      transaction_date: new Date().toISOString().split('T')[0]
+    });
+    
+    showCreditModal.value = false;
+    await loadAccountData();
+  } catch (error) {
+    console.error('Error saving credit entry:', error);
+  } finally {
+    creditLoading.value = false;
+  }
 };
 
 const formatDate = (dateString: string) => {
