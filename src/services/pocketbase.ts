@@ -317,6 +317,68 @@ export interface AccountTransaction {
   };
 }
 
+export interface VendorReturn {
+  id?: string;
+  vendor: string; // Vendor ID
+  return_date: string;
+  reason: 'damaged' | 'wrong_item' | 'excess_delivery' | 'quality_issue' | 'specification_mismatch' | 'other';
+  status: 'initiated' | 'approved' | 'rejected' | 'completed' | 'refunded';
+  notes?: string;
+  photos?: string[]; // Array of photo filenames
+  approval_notes?: string;
+  approved_by?: string; // User ID who approved/rejected
+  approved_at?: string;
+  total_return_amount: number; // Total amount to be refunded
+  actual_refund_amount?: number; // Actual refunded amount (might be different due to deductions)
+  completion_date?: string;
+  site: string; // Site ID
+  created?: string;
+  updated?: string;
+  expand?: {
+    vendor?: Vendor;
+    approved_by?: User;
+  };
+}
+
+export interface VendorReturnItem {
+  id?: string;
+  vendor_return: string; // VendorReturn ID
+  incoming_item: string; // IncomingItem ID being returned
+  quantity_returned: number;
+  return_rate: number; // Rate per unit for return calculation
+  return_amount: number; // quantity_returned * return_rate
+  condition: 'unopened' | 'opened' | 'damaged' | 'used';
+  item_notes?: string;
+  created?: string;
+  updated?: string;
+  expand?: {
+    vendor_return?: VendorReturn;
+    incoming_item?: IncomingItem;
+  };
+}
+
+export interface VendorRefund {
+  id?: string;
+  vendor_return: string; // VendorReturn ID
+  vendor: string; // Vendor ID
+  account: string; // Account ID for refund processing
+  refund_amount: number;
+  refund_date: string;
+  refund_method: 'cash' | 'bank_transfer' | 'cheque' | 'adjustment' | 'other';
+  reference?: string; // Transaction reference
+  notes?: string;
+  processed_by?: string; // User ID who processed the refund
+  site: string; // Site ID
+  created?: string;
+  updated?: string;
+  expand?: {
+    vendor_return?: VendorReturn;
+    vendor?: Vendor;
+    account?: Account;
+    processed_by?: User;
+  };
+}
+
 // Site context management
 let currentSiteId: string | null = null;
 let currentUserRole: 'owner' | 'supervisor' | 'accountant' | null = null;
@@ -2105,6 +2167,441 @@ export class SiteInvitationService {
   }
 }
 
+export class VendorReturnService {
+  async getAll(): Promise<VendorReturn[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('vendor_returns').getFullList({
+      filter: `site="${siteId}"`,
+      expand: 'vendor,approved_by',
+      sort: '-return_date'
+    });
+    return records.map(record => this.mapRecordToVendorReturn(record));
+  }
+
+  async getById(id: string): Promise<VendorReturn | null> {
+    try {
+      const record = await pb.collection('vendor_returns').getOne(id, {
+        expand: 'vendor,approved_by'
+      });
+      return this.mapRecordToVendorReturn(record);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async getByVendor(vendorId: string): Promise<VendorReturn[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('vendor_returns').getFullList({
+      filter: `site="${siteId}" && vendor="${vendorId}"`,
+      expand: 'vendor,approved_by',
+      sort: '-return_date'
+    });
+    return records.map(record => this.mapRecordToVendorReturn(record));
+  }
+
+  async create(data: Omit<VendorReturn, 'id' | 'site' | 'created' | 'updated'>): Promise<VendorReturn> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create vendor returns');
+    }
+
+    const record = await pb.collection('vendor_returns').create({
+      ...data,
+      site: siteId
+    });
+    return this.mapRecordToVendorReturn(record);
+  }
+
+  async update(id: string, data: Partial<VendorReturn>): Promise<VendorReturn> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canUpdate) {
+      throw new Error('Permission denied: Cannot update vendor returns');
+    }
+
+    const record = await pb.collection('vendor_returns').update(id, data);
+    return this.mapRecordToVendorReturn(record);
+  }
+
+  async approve(id: string, approvalNotes?: string): Promise<VendorReturn> {
+    const user = authService.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    return this.update(id, {
+      status: 'approved',
+      approved_by: user.id,
+      approved_at: new Date().toISOString(),
+      approval_notes: approvalNotes
+    });
+  }
+
+  async reject(id: string, rejectionNotes: string): Promise<VendorReturn> {
+    const user = authService.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    return this.update(id, {
+      status: 'rejected',
+      approved_by: user.id,
+      approved_at: new Date().toISOString(),
+      approval_notes: rejectionNotes
+    });
+  }
+
+  async complete(id: string): Promise<VendorReturn> {
+    // Get the return and its items to adjust inventory
+    const vendorReturn = await this.getById(id);
+    if (!vendorReturn) throw new Error('Return not found');
+
+    // Get return items to adjust quantities
+    const returnItems = await vendorReturnItemService.getByReturn(id);
+    
+    // For each return item, we could implement inventory adjustments here
+    // In a real system, this would update available quantities or create adjustment records
+    // For now, we'll just complete the return
+    
+    return this.update(id, {
+      status: 'completed',
+      completion_date: new Date().toISOString()
+    });
+  }
+
+  async uploadPhoto(returnId: string, file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append('photos', file);
+    const record = await pb.collection('vendor_returns').update(returnId, formData);
+    return record.photos[record.photos.length - 1];
+  }
+
+  private mapRecordToVendorReturn(record: RecordModel): VendorReturn {
+    return {
+      id: record.id,
+      vendor: record.vendor,
+      return_date: record.return_date,
+      reason: record.reason,
+      status: record.status,
+      notes: record.notes,
+      photos: record.photos,
+      approval_notes: record.approval_notes,
+      approved_by: record.approved_by,
+      approved_at: record.approved_at,
+      total_return_amount: record.total_return_amount,
+      actual_refund_amount: record.actual_refund_amount,
+      completion_date: record.completion_date,
+      site: record.site,
+      created: record.created,
+      updated: record.updated,
+      expand: record.expand ? {
+        vendor: record.expand.vendor ? this.mapRecordToVendor(record.expand.vendor) : undefined,
+        approved_by: record.expand.approved_by ? this.mapRecordToUser(record.expand.approved_by) : undefined
+      } : undefined
+    };
+  }
+
+  private mapRecordToVendor(record: RecordModel): Vendor {
+    return {
+      id: record.id,
+      name: record.name,
+      contact_person: record.contact_person,
+      email: record.email,
+      phone: record.phone,
+      address: record.address,
+      tags: record.tags || [],
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+
+  private mapRecordToUser(record: RecordModel): User {
+    return {
+      id: record.id,
+      email: record.email,
+      name: record.name,
+      phone: record.phone,
+      avatar: record.avatar,
+      sites: record.sites || [],
+      created: record.created,
+      updated: record.updated
+    };
+  }
+}
+
+export class VendorReturnItemService {
+  async getByReturn(vendorReturnId: string): Promise<VendorReturnItem[]> {
+    const records = await pb.collection('vendor_return_items').getFullList({
+      filter: `vendor_return="${vendorReturnId}"`,
+      expand: 'incoming_item,incoming_item.item,incoming_item.vendor'
+    });
+    return records.map(record => this.mapRecordToVendorReturnItem(record));
+  }
+
+  async create(data: Omit<VendorReturnItem, 'id' | 'created' | 'updated'>): Promise<VendorReturnItem> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create return items');
+    }
+
+    const record = await pb.collection('vendor_return_items').create(data);
+    return this.mapRecordToVendorReturnItem(record);
+  }
+
+  async update(id: string, data: Partial<VendorReturnItem>): Promise<VendorReturnItem> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canUpdate) {
+      throw new Error('Permission denied: Cannot update return items');
+    }
+
+    const record = await pb.collection('vendor_return_items').update(id, data);
+    return this.mapRecordToVendorReturnItem(record);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canDelete) {
+      throw new Error('Permission denied: Cannot delete return items');
+    }
+
+    await pb.collection('vendor_return_items').delete(id);
+    return true;
+  }
+
+  private mapRecordToVendorReturnItem(record: RecordModel): VendorReturnItem {
+    return {
+      id: record.id,
+      vendor_return: record.vendor_return,
+      incoming_item: record.incoming_item,
+      quantity_returned: record.quantity_returned,
+      return_rate: record.return_rate,
+      return_amount: record.return_amount,
+      condition: record.condition,
+      item_notes: record.item_notes,
+      created: record.created,
+      updated: record.updated,
+      expand: record.expand ? {
+        vendor_return: record.expand.vendor_return ? this.mapRecordToVendorReturn(record.expand.vendor_return) : undefined,
+        incoming_item: record.expand.incoming_item ? this.mapRecordToIncomingItem(record.expand.incoming_item) : undefined
+      } : undefined
+    };
+  }
+
+  private mapRecordToVendorReturn(record: RecordModel): VendorReturn {
+    return {
+      id: record.id,
+      vendor: record.vendor,
+      return_date: record.return_date,
+      reason: record.reason,
+      status: record.status,
+      notes: record.notes,
+      photos: record.photos,
+      approval_notes: record.approval_notes,
+      approved_by: record.approved_by,
+      approved_at: record.approved_at,
+      total_return_amount: record.total_return_amount,
+      actual_refund_amount: record.actual_refund_amount,
+      completion_date: record.completion_date,
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+
+  private mapRecordToIncomingItem(record: RecordModel): IncomingItem {
+    return {
+      id: record.id,
+      item: record.item,
+      vendor: record.vendor,
+      quantity: record.quantity,
+      unit_price: record.unit_price,
+      total_amount: record.total_amount,
+      delivery_date: record.delivery_date,
+      photos: record.photos,
+      notes: record.notes,
+      payment_status: record.payment_status,
+      paid_amount: record.paid_amount,
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+}
+
+export class VendorRefundService {
+  async getAll(): Promise<VendorRefund[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('vendor_refunds').getFullList({
+      filter: `site="${siteId}"`,
+      expand: 'vendor_return,vendor,account,processed_by',
+      sort: '-refund_date'
+    });
+    return records.map(record => this.mapRecordToVendorRefund(record));
+  }
+
+  async getByReturn(vendorReturnId: string): Promise<VendorRefund[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('vendor_refunds').getFullList({
+      filter: `site="${siteId}" && vendor_return="${vendorReturnId}"`,
+      expand: 'vendor,account,processed_by'
+    });
+    return records.map(record => this.mapRecordToVendorRefund(record));
+  }
+
+  async create(data: Omit<VendorRefund, 'id' | 'site' | 'created' | 'updated'>): Promise<VendorRefund> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create refunds');
+    }
+
+    const user = authService.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    // Create the refund record
+    const record = await pb.collection('vendor_refunds').create({
+      ...data,
+      processed_by: user.id,
+      site: siteId
+    });
+
+    // Create corresponding credit transaction
+    const vendorName = await this.getVendorName(data.vendor);
+    await accountTransactionService.create({
+      account: data.account,
+      type: 'credit',
+      amount: data.refund_amount,
+      transaction_date: data.refund_date,
+      description: `Refund to ${vendorName}`,
+      reference: data.reference,
+      notes: data.notes,
+      vendor: data.vendor
+    });
+
+    // Update the vendor return status
+    await vendorReturnService.update(data.vendor_return, {
+      status: 'refunded',
+      actual_refund_amount: data.refund_amount
+    });
+
+    return this.mapRecordToVendorRefund(record);
+  }
+
+  private async getVendorName(vendorId: string): Promise<string> {
+    try {
+      const vendor = await pb.collection('vendors').getOne(vendorId);
+      return vendor.name || vendor.contact_person || 'Unknown Vendor';
+    } catch (error) {
+      return 'Unknown Vendor';
+    }
+  }
+
+  private mapRecordToVendorRefund(record: RecordModel): VendorRefund {
+    return {
+      id: record.id,
+      vendor_return: record.vendor_return,
+      vendor: record.vendor,
+      account: record.account,
+      refund_amount: record.refund_amount,
+      refund_date: record.refund_date,
+      refund_method: record.refund_method,
+      reference: record.reference,
+      notes: record.notes,
+      processed_by: record.processed_by,
+      site: record.site,
+      created: record.created,
+      updated: record.updated,
+      expand: record.expand ? {
+        vendor_return: record.expand.vendor_return ? this.mapRecordToVendorReturn(record.expand.vendor_return) : undefined,
+        vendor: record.expand.vendor ? this.mapRecordToVendor(record.expand.vendor) : undefined,
+        account: record.expand.account ? this.mapRecordToAccount(record.expand.account) : undefined,
+        processed_by: record.expand.processed_by ? this.mapRecordToUser(record.expand.processed_by) : undefined
+      } : undefined
+    };
+  }
+
+  private mapRecordToVendorReturn(record: RecordModel): VendorReturn {
+    return {
+      id: record.id,
+      vendor: record.vendor,
+      return_date: record.return_date,
+      reason: record.reason,
+      status: record.status,
+      notes: record.notes,
+      photos: record.photos,
+      approval_notes: record.approval_notes,
+      approved_by: record.approved_by,
+      approved_at: record.approved_at,
+      total_return_amount: record.total_return_amount,
+      actual_refund_amount: record.actual_refund_amount,
+      completion_date: record.completion_date,
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+
+  private mapRecordToVendor(record: RecordModel): Vendor {
+    return {
+      id: record.id,
+      name: record.name,
+      contact_person: record.contact_person,
+      email: record.email,
+      phone: record.phone,
+      address: record.address,
+      tags: record.tags || [],
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+
+  private mapRecordToAccount(record: RecordModel): Account {
+    return {
+      id: record.id,
+      name: record.name,
+      type: record.type,
+      account_number: record.account_number,
+      bank_name: record.bank_name,
+      description: record.description,
+      is_active: record.is_active,
+      opening_balance: record.opening_balance,
+      current_balance: record.current_balance,
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+
+  private mapRecordToUser(record: RecordModel): User {
+    return {
+      id: record.id,
+      email: record.email,
+      name: record.name,
+      phone: record.phone,
+      avatar: record.avatar,
+      sites: record.sites || [],
+      created: record.created,
+      updated: record.updated
+    };
+  }
+}
+
 export const authService = new AuthService();
 export const siteService = new SiteService();
 export const siteUserService = new SiteUserService();
@@ -2119,3 +2616,6 @@ export const serviceBookingService = new ServiceBookingService();
 export const paymentService = new PaymentService();
 export const tagService = new TagService();
 export const accountTransactionService = new AccountTransactionService();
+export const vendorReturnService = new VendorReturnService();
+export const vendorReturnItemService = new VendorReturnItemService();
+export const vendorRefundService = new VendorRefundService();

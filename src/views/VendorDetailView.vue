@@ -19,6 +19,10 @@
           <Download class="mr-2 h-4 w-4" />
           Export Ledger
         </button>
+        <button @click="createReturn" class="btn-outline">
+          <RotateCcw class="mr-2 h-4 w-4" />
+          Create Return
+        </button>
         <button @click="recordPayment" class="btn-primary">
           <CreditCard class="mr-2 h-4 w-4" />
           Record Payment
@@ -145,7 +149,7 @@
     </div>
 
     <!-- Transaction History -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
     <!-- Deliveries -->
     <div class="card">
       <div class="flex items-center justify-between mb-4">
@@ -209,6 +213,46 @@
 
         <div v-if="vendorPayments.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
           No payments recorded
+        </div>
+      </div>
+    </div>
+
+    <!-- Returns -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Returns</h2>
+        <span class="text-sm text-gray-500 dark:text-gray-400">{{ vendorReturns.length }} returns</span>
+      </div>
+      <div class="space-y-3 max-h-96 overflow-y-auto">
+        <div v-for="returnItem in vendorReturns.slice(0, 10)" :key="returnItem.id"
+          class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <h4 class="font-medium text-gray-900 dark:text-white">
+                Return #{{ returnItem.id?.slice(-6) }}
+              </h4>
+              <p class="text-sm text-gray-600 dark:text-gray-400">{{ formatDate(returnItem.return_date) }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ t(`vendors.returnReasons.${returnItem.reason}`) }}
+              </p>
+            </div>
+            <span :class="getReturnStatusClass(returnItem.status)">
+              {{ t(`vendors.returnStatuses.${returnItem.status}`) }}
+            </span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-600 dark:text-gray-400">Return Amount</span>
+            <div class="text-right">
+              <p class="font-medium text-gray-900 dark:text-white">₹{{ returnItem.total_return_amount.toFixed(2) }}</p>
+              <p v-if="returnItem.actual_refund_amount && returnItem.actual_refund_amount > 0" class="text-green-600 dark:text-green-400">
+                Refunded: ₹{{ returnItem.actual_refund_amount.toFixed(2) }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="vendorReturns.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+          No returns recorded
         </div>
       </div>
     </div>
@@ -298,7 +342,8 @@ import {
   Banknote,
   Wallet,
   Smartphone,
-  Building2
+  Building2,
+  RotateCcw
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import {
@@ -307,11 +352,13 @@ import {
   paymentService,
   accountService,
   tagService,
+  vendorReturnService,
   type Vendor,
   type IncomingItem,
   type Payment,
   type Account,
-  type Tag as TagType
+  type Tag as TagType,
+  type VendorReturn
 } from '../services/pocketbase';
 
 const route = useRoute();
@@ -321,6 +368,7 @@ const { t } = useI18n();
 const vendor = ref<Vendor | null>(null);
 const vendorIncomingItems = ref<IncomingItem[]>([]);
 const vendorPayments = ref<Payment[]>([]);
+const vendorReturns = ref<VendorReturn[]>([]);
 const accounts = ref<Account[]>([]);
 const vendorTags = ref<TagType[]>([]);
 const showPaymentModal = ref(false);
@@ -383,10 +431,11 @@ const loadVendorData = async () => {
   const vendorId = route.params.id as string;
 
   try {
-    const [vendorData, allIncoming, allPayments, accountsData, allTags] = await Promise.all([
+    const [vendorData, allIncoming, allPayments, allReturns, accountsData, allTags] = await Promise.all([
       vendorService.getAll(),
       incomingItemService.getAll(),
       paymentService.getAll(),
+      vendorReturnService.getByVendor(vendorId),
       accountService.getAll(),
       tagService.getAll()
     ]);
@@ -398,6 +447,7 @@ const loadVendorData = async () => {
     vendorPayments.value = allPayments
       .filter(payment => payment.vendor === vendorId)
       .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime());
+    vendorReturns.value = allReturns;
     accounts.value = accountsData;
 
     // Map tags for the vendor
@@ -543,6 +593,24 @@ const generateLedgerCSV = () => {
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
+};
+
+const getReturnStatusClass = (status: string) => {
+  const classes = {
+    initiated: 'status-pending',
+    approved: 'status-approved', 
+    rejected: 'status-rejected',
+    completed: 'status-completed',
+    refunded: 'status-paid'
+  };
+  return classes[status as keyof typeof classes] || 'status-pending';
+};
+
+const createReturn = () => {
+  router.push({
+    path: '/vendor-returns',
+    query: { vendor: vendor.value?.id }
+  });
 };
 
 onMounted(() => {
