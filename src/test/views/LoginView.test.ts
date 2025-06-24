@@ -254,29 +254,42 @@ describe('LoginComponent', () => {
     it('calls register with correct data when registration form is submitted', async () => {
       mockRegister.mockResolvedValue({ success: true })
       
+      // Fill all required form fields
       await wrapper.find('#reg-name').setValue('John Doe')
       await wrapper.find('#reg-email').setValue('john@example.com')
+      await wrapper.find('#reg-phone').setValue('9876543210')
       await wrapper.find('#reg-password').setValue('password123')
+      await wrapper.find('#reg-confirm-password').setValue('password123')
+      
+      await nextTick()
       
       const registerForm = wrapper.find('form')
       await registerForm.trigger('submit.prevent')
       
-      expect(mockRegister).toHaveBeenCalledWith('john@example.com', 'password123', 'John Doe', '', '', '+91', '')
+      await nextTick()
+      
+      expect(mockRegister).toHaveBeenCalledWith('john@example.com', 'password123', 'John Doe', '', '9876543210', '+91', '')
     })
 
     it('auto-logs in user after successful registration', async () => {
       mockRegister.mockResolvedValue({ success: true })
       mockLogin.mockResolvedValue({ success: true })
       
+      // Fill all required form fields
       await wrapper.find('#reg-name').setValue('John Doe')
       await wrapper.find('#reg-email').setValue('john@example.com')
+      await wrapper.find('#reg-phone').setValue('9876543210')
       await wrapper.find('#reg-password').setValue('password123')
+      await wrapper.find('#reg-confirm-password').setValue('password123')
+      
+      await nextTick()
       
       const registerForm = wrapper.find('form')
       await registerForm.trigger('submit.prevent')
       
       // wait for all promises to resolve
       await new Promise(resolve => setTimeout(resolve, 0))
+      await nextTick()
       
       expect(mockLogin).toHaveBeenCalledWith('john@example.com', 'password123')
       expect(mockPush).toHaveBeenCalledWith('/')
@@ -285,13 +298,20 @@ describe('LoginComponent', () => {
     it('displays error message on registration failure', async () => {
       mockRegister.mockResolvedValue({ success: false, error: 'Email already exists' })
       
+      // Fill all required form fields
       await wrapper.find('#reg-name').setValue('John Doe')
       await wrapper.find('#reg-email').setValue('existing@example.com')
+      await wrapper.find('#reg-phone').setValue('9876543210')
       await wrapper.find('#reg-password').setValue('password123')
+      await wrapper.find('#reg-confirm-password').setValue('password123')
+      
+      await nextTick()
       
       const registerForm = wrapper.find('form')
       await registerForm.trigger('submit.prevent')
       
+      await nextTick()
+      await new Promise(resolve => setTimeout(resolve, 0))
       await nextTick()
       
       expect(wrapper.text()).toContain('Email already exists')
@@ -329,13 +349,20 @@ describe('LoginComponent', () => {
     it('handles registration exceptions', async () => {
       mockRegister.mockRejectedValue(new Error('Server error'))
       
+      // Fill all required form fields
       await wrapper.find('#reg-name').setValue('John Doe')
       await wrapper.find('#reg-email').setValue('john@example.com')
+      await wrapper.find('#reg-phone').setValue('9876543210')
       await wrapper.find('#reg-password').setValue('password123')
+      await wrapper.find('#reg-confirm-password').setValue('password123')
+      
+      await nextTick()
       
       const registerForm = wrapper.find('form')
       await registerForm.trigger('submit.prevent')
       
+      await nextTick()
+      await new Promise(resolve => setTimeout(resolve, 0))
       await nextTick()
       
       expect(wrapper.text()).toContain('Server error')

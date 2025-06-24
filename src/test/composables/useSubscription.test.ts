@@ -123,6 +123,8 @@ describe('useSubscription', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (getCurrentSiteId as Mock).mockReturnValue('site_1');
+    // Mock console.error to prevent test failures
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   describe('loadSubscription', () => {

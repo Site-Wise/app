@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import PaymentsView from '../../views/PaymentsView.vue'
+import { createMockRouter } from '../utils/test-utils'
 
 // Mock the services
 vi.mock('../../services/pocketbase', async () => {
@@ -53,6 +54,9 @@ vi.mock('../../services/pocketbase', async () => {
         }
       ])
     },
+    accountTransactionService: {
+      getAll: vi.fn().mockResolvedValue([])
+    },
     getCurrentSiteId: vi.fn().mockReturnValue('site-1')
   }
 })
@@ -72,12 +76,23 @@ vi.mock('../../composables/useSubscription', () => ({
 }))
 
 describe('PaymentsView - Outstanding Calculations', () => {
+  let router: any
+
   beforeEach(() => {
     vi.clearAllMocks()
+    router = createMockRouter()
   })
 
+  const createWrapper = () => {
+    return mount(PaymentsView, {
+      global: {
+        plugins: [router]
+      }
+    })
+  }
+
   it('should calculate vendor outstanding amounts including service bookings', async () => {
-    const wrapper = mount(PaymentsView)
+    const wrapper = createWrapper()
     await nextTick()
     
     // Wait for component to load data
@@ -104,7 +119,7 @@ describe('PaymentsView - Outstanding Calculations', () => {
   })
 
   it('should calculate pending items count including service bookings', async () => {
-    const wrapper = mount(PaymentsView)
+    const wrapper = createWrapper()
     await nextTick()
     
     // Wait for component to load data
@@ -118,7 +133,7 @@ describe('PaymentsView - Outstanding Calculations', () => {
   })
 
   it('should update vendor outstanding when vendor is selected', async () => {
-    const wrapper = mount(PaymentsView)
+    const wrapper = createWrapper()
     await nextTick()
     
     // Wait for component to load data
@@ -173,7 +188,7 @@ describe('PaymentsView - Outstanding Calculations', () => {
         }
       ])
     
-    const wrapper = mount(PaymentsView)
+    const wrapper = createWrapper()
     await nextTick()
     
     const vm = wrapper.vm as any
@@ -184,7 +199,7 @@ describe('PaymentsView - Outstanding Calculations', () => {
   })
 
   it('should handle vendors with only incoming items outstanding', async () => {
-    const wrapper = mount(PaymentsView)
+    const wrapper = createWrapper()
     await nextTick()
     
     // Wait for component to load data
@@ -203,7 +218,7 @@ describe('PaymentsView - Outstanding Calculations', () => {
   })
 
   it('should handle vendors with only service bookings outstanding', async () => {
-    const wrapper = mount(PaymentsView)
+    const wrapper = createWrapper()
     await nextTick()
     
     // Wait for component to load data
@@ -223,12 +238,12 @@ describe('PaymentsView - Outstanding Calculations', () => {
   })
 
   it('should load all required data including service bookings', async () => {
-    mount(PaymentsView)
+    createWrapper()
     await nextTick()
     
     // Verify all services were called
-    const { paymentService, vendorService, accountService, incomingItemService, serviceBookingService } = await import('../../services/pocketbase')
-    expect(paymentService.getAll).toHaveBeenCalled()
+    const { accountTransactionService, vendorService, accountService, incomingItemService, serviceBookingService } = await import('../../services/pocketbase')
+    expect(accountTransactionService.getAll).toHaveBeenCalled()
     expect(vendorService.getAll).toHaveBeenCalled()
     expect(accountService.getAll).toHaveBeenCalled()
     expect(incomingItemService.getAll).toHaveBeenCalled()
@@ -236,7 +251,7 @@ describe('PaymentsView - Outstanding Calculations', () => {
   })
 
   it('should show correct outstanding amount in payment form', async () => {
-    const wrapper = mount(PaymentsView)
+    const wrapper = createWrapper()
     await nextTick()
     
     // Wait for component to load data

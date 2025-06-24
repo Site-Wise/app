@@ -245,14 +245,13 @@ describe('ItemsView', () => {
     
     // Fill form - find inputs by their v-model bindings
     const nameInput = wrapper.find('input[type="text"][required]')
-    const unitInputs = wrapper.findAll('input[type="text"][required]')
-    const unitInput = unitInputs[unitInputs.length - 1] // Last required text input is unit
+    const unitSelect = wrapper.find('select[required]')
     
     expect(nameInput.exists()).toBe(true)
-    expect(unitInput.exists()).toBe(true)
+    expect(unitSelect.exists()).toBe(true)
     
     await nameInput.setValue('New Item')
-    await unitInput.setValue('kg')
+    await unitSelect.setValue('kg')
     
     // Submit form
     await wrapper.find('form').trigger('submit')

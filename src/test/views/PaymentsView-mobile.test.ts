@@ -99,6 +99,52 @@ vi.mock('../../services/pocketbase', () => ({
     ]),
     create: vi.fn().mockResolvedValue({ id: 'new-payment' })
   },
+  accountTransactionService: {
+    getAll: vi.fn().mockResolvedValue([
+      {
+        id: 'payment-1',
+        type: 'debit',
+        amount: 5000.00,
+        transaction_date: '2024-01-20',
+        reference: 'CHQ-001',
+        description: 'Payment for steel',
+        vendor: 'vendor-1',
+        account: 'account-1',
+        expand: {
+          vendor: { id: 'vendor-1', name: 'ABC Steel Co.' },
+          account: { id: 'account-1', name: 'Main Bank', type: 'bank' }
+        }
+      },
+      {
+        id: 'payment-2',
+        type: 'debit',
+        amount: 10000.00,
+        transaction_date: '2024-01-15',
+        reference: 'UPI-12345',
+        description: 'Full payment',
+        vendor: 'vendor-2',
+        account: 'account-2',
+        expand: {
+          vendor: { id: 'vendor-2', name: 'XYZ Cement Ltd.' },
+          account: { id: 'account-2', name: 'Digital Wallet', type: 'digital_wallet' }
+        }
+      },
+      {
+        id: 'payment-3',
+        type: 'debit',
+        amount: 2500.00,
+        transaction_date: '2024-01-10',
+        reference: '',
+        description: '',
+        vendor: 'vendor-3',
+        account: 'account-3',
+        expand: {
+          vendor: { id: 'vendor-3', name: 'Local Bricks' },
+          account: { id: 'account-3', name: 'Cash', type: 'cash' }
+        }
+      }
+    ])
+  },
   vendorService: {
     getAll: vi.fn().mockResolvedValue([])
   },
@@ -398,15 +444,17 @@ describe('PaymentsView - Mobile Responsive Design', () => {
   describe('Mobile Performance and Error Handling', () => {
     it('should handle missing expand data gracefully', async () => {
       // Mock data with missing expand properties
-      const { paymentService } = await import('../../services/pocketbase')
-      vi.mocked(paymentService.getAll).mockResolvedValueOnce([
+      const { accountTransactionService } = await import('../../services/pocketbase')
+      vi.mocked(accountTransactionService.getAll).mockResolvedValueOnce([
         {
           id: 'incomplete-1',
+          type: 'debit',
           amount: 1000.00,
-          payment_date: '2024-01-25',
+          transaction_date: '2024-01-25',
           reference: '',
-          notes: '',
-          incoming_items: [],
+          description: '',
+          vendor: 'unknown-vendor',
+          account: 'unknown-account',
           expand: undefined // Missing expand data
         }
       ])
@@ -424,8 +472,8 @@ describe('PaymentsView - Mobile Responsive Design', () => {
 
     it('should handle empty state properly in mobile view', async () => {
       // Mock empty data
-      const { paymentService } = await import('../../services/pocketbase')
-      vi.mocked(paymentService.getAll).mockResolvedValueOnce([])
+      const { accountTransactionService } = await import('../../services/pocketbase')
+      vi.mocked(accountTransactionService.getAll).mockResolvedValueOnce([])
       
       wrapper = createWrapper()
       
