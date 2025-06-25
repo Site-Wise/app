@@ -91,7 +91,7 @@ const router = createRouter({
     {
       path: '/incoming',
       name: 'Incoming',
-      component: () => import('../views/IncomingView.vue'),
+      component: () => import('../views/DeliveryView.vue'),
       meta: { requiresAuth: true, requiresSite: true, permission: 'canRead' }
     },
     {

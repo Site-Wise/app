@@ -359,6 +359,17 @@ export const mockTagService = {
   incrementUsage: vi.fn().mockResolvedValue(undefined)
 }
 
+// PocketBase instance
+export const pb = {
+  collection: vi.fn(() => ({
+    getFullList: vi.fn().mockResolvedValue([]),
+    getOne: vi.fn().mockResolvedValue({}),
+    create: vi.fn().mockResolvedValue({}),
+    update: vi.fn().mockResolvedValue({}),
+    delete: vi.fn().mockResolvedValue({})
+  }))
+}
+
 // Export services
 export const authService = mockAuthService
 export const siteService = mockSiteService

@@ -1,3 +1,8 @@
+<!--
+  @deprecated This component is deprecated. Use DeliveryView.vue instead.
+  IncomingView will be removed in a future version.
+  Migration: Replace usage with DeliveryView which supports multi-item deliveries.
+-->
 <template>
   <div>
     <!-- Desktop Header with Add Button -->

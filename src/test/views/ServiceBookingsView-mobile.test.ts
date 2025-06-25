@@ -119,6 +119,16 @@ vi.mock('../../services/pocketbase', () => ({
     update: vi.fn().mockResolvedValue(true),
     delete: vi.fn().mockResolvedValue(true)
   },
+  getCurrentSiteId: vi.fn().mockReturnValue('test-site-id'),
+  pb: {
+    collection: vi.fn(() => ({
+      getFullList: vi.fn().mockResolvedValue([]),
+      getOne: vi.fn().mockResolvedValue({}),
+      create: vi.fn().mockResolvedValue({}),
+      update: vi.fn().mockResolvedValue({}),
+      delete: vi.fn().mockResolvedValue({})
+    }))
+  },
   serviceService: {
     getAll: vi.fn().mockResolvedValue([])
   },

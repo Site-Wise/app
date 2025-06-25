@@ -232,6 +232,9 @@ export interface Quotation {
   };
 }
 
+// Deprecated: Use Delivery and DeliveryItem instead
+// Keeping for backward compatibility during migration
+/** @deprecated Use Delivery and DeliveryItem instead */
 export interface IncomingItem {
   id?: string;
   item: string;
@@ -276,6 +279,42 @@ export interface ServiceBooking {
   };
 }
 
+// New multi-item delivery interfaces
+export interface Delivery {
+  id?: string;
+  vendor: string;
+  delivery_date: string;
+  delivery_reference?: string; // Invoice/delivery note number
+  photos?: string[];
+  notes?: string;
+  total_amount: number; // Sum of all items
+  payment_status: 'pending' | 'partial' | 'paid';
+  paid_amount: number;
+  site: string; // Site ID
+  created?: string;
+  updated?: string;
+  expand?: {
+    vendor?: Vendor;
+    delivery_items?: DeliveryItem[];
+  };
+}
+
+export interface DeliveryItem {
+  id?: string;
+  delivery: string; // Delivery ID
+  item: string; // Item ID
+  quantity: number;
+  unit_price: number;
+  total_amount: number; // quantity * unit_price
+  notes?: string; // Item-specific notes
+  created?: string;
+  updated?: string;
+  expand?: {
+    delivery?: Delivery;
+    item?: Item;
+  };
+}
+
 export interface Payment {
   id?: string;
   vendor: string;
@@ -284,7 +323,8 @@ export interface Payment {
   payment_date: string;
   reference?: string;
   notes?: string;
-  incoming_items: string[];
+  incoming_items: string[]; // @deprecated Use deliveries instead
+  deliveries?: string[]; // New field for multi-item deliveries
   service_bookings: string[]; // New field for service payments
   site: string; // Site ID
   created?: string;
@@ -293,7 +333,8 @@ export interface Payment {
   expand?: {
     vendor?: Vendor;
     account?: Account;
-    incoming_items?: IncomingItem[];
+    incoming_items?: IncomingItem[]; // @deprecated
+    deliveries?: Delivery[]; // New expansion
     service_bookings?: ServiceBooking[];
   };
 }
@@ -971,7 +1012,7 @@ export class AccountService {
     return true;
   }
 
-  async updateBalance(id: string, amount: number, operation: 'add' | 'subtract'): Promise<Account> {
+  async updateBalance(id: string, _amount: number, _operation: 'add' | 'subtract'): Promise<Account> {
     // Deprecated: Use AccountTransactionService instead
     // This method is kept for backward compatibility but calculates balance from transactions
     const newBalance = await accountTransactionService.calculateAccountBalance(id);
@@ -2395,12 +2436,10 @@ export class VendorReturnService {
     const vendorReturn = await this.getById(id);
     if (!vendorReturn) throw new Error('Return not found');
 
-    // Get return items to adjust quantities
-    const returnItems = await vendorReturnItemService.getByReturn(id);
-    
     // For each return item, we could implement inventory adjustments here
     // In a real system, this would update available quantities or create adjustment records
     // For now, we'll just complete the return
+    // TODO: Implement inventory adjustments using vendorReturnItemService.getByReturn(id)
     
     return this.update(id, {
       status: 'completed',
@@ -2853,7 +2892,7 @@ class VendorCreditNoteService {
   async update(id: string, data: Partial<VendorCreditNote>): Promise<VendorCreditNote> {
     const userRole = getCurrentUserRole();
     const permissions = calculatePermissions(userRole);
-    if (!permissions.canEdit) {
+    if (!permissions.canUpdate) {
       throw new Error('Permission denied: Cannot update credit notes');
     }
 
@@ -3015,6 +3054,7 @@ class CreditNoteUsageService {
           reference: record.expand.payment_transaction.reference,
           notes: record.expand.payment_transaction.notes,
           incoming_items: record.expand.payment_transaction.incoming_items || [],
+          deliveries: record.expand.payment_transaction.deliveries || [],
           service_bookings: record.expand.payment_transaction.service_bookings || [],
           site: record.expand.payment_transaction.site,
           created: record.expand.payment_transaction.created,
@@ -3059,6 +3099,260 @@ class CreditNoteUsageService {
   }
 }
 
+export class DeliveryService {
+  async getAll(): Promise<Delivery[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('deliveries').getFullList({
+      filter: `site="${siteId}"`,
+      expand: 'vendor,delivery_items,delivery_items.item',
+      sort: '-delivery_date'
+    });
+    return records.map(record => this.mapRecordToDelivery(record));
+  }
+
+  async getById(id: string): Promise<Delivery> {
+    const record = await pb.collection('deliveries').getOne(id, {
+      expand: 'vendor,delivery_items,delivery_items.item'
+    });
+    return this.mapRecordToDelivery(record);
+  }
+
+  async create(data: Omit<Delivery, 'id' | 'site' | 'created' | 'updated'>): Promise<Delivery> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create deliveries');
+    }
+
+    const record = await pb.collection('deliveries').create({
+      ...data,
+      site: siteId
+    });
+    return this.mapRecordToDelivery(record);
+  }
+
+  async update(id: string, data: Partial<Delivery>): Promise<Delivery> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canUpdate) {
+      throw new Error('Permission denied: Cannot update deliveries');
+    }
+
+    const record = await pb.collection('deliveries').update(id, data);
+    return this.mapRecordToDelivery(record);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canDelete) {
+      throw new Error('Permission denied: Cannot delete deliveries');
+    }
+
+    await pb.collection('deliveries').delete(id);
+    return true;
+  }
+
+  async uploadPhoto(deliveryId: string, file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append('photos', file);
+    const record = await pb.collection('deliveries').update(deliveryId, formData);
+    return record.photos[record.photos.length - 1];
+  }
+
+  private mapRecordToDelivery(record: RecordModel): Delivery {
+    return {
+      id: record.id,
+      vendor: record.vendor,
+      delivery_date: record.delivery_date,
+      delivery_reference: record.delivery_reference,
+      photos: record.photos || [],
+      notes: record.notes,
+      total_amount: record.total_amount,
+      payment_status: record.payment_status,
+      paid_amount: record.paid_amount,
+      site: record.site,
+      created: record.created,
+      updated: record.updated,
+      expand: record.expand ? {
+        vendor: record.expand.vendor ? this.mapRecordToVendor(record.expand.vendor) : undefined,
+        delivery_items: record.expand.delivery_items ? 
+          record.expand.delivery_items.map((item: RecordModel) => this.mapRecordToDeliveryItem(item)) : undefined
+      } : undefined
+    };
+  }
+
+  private mapRecordToVendor(record: RecordModel): Vendor {
+    return {
+      id: record.id,
+      name: record.name,
+      contact_person: record.contact_person,
+      email: record.email,
+      phone: record.phone,
+      address: record.address,
+      tags: record.tags || [],
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+
+  private mapRecordToDeliveryItem(record: RecordModel): DeliveryItem {
+    return {
+      id: record.id,
+      delivery: record.delivery,
+      item: record.item,
+      quantity: record.quantity,
+      unit_price: record.unit_price,
+      total_amount: record.total_amount,
+      notes: record.notes,
+      created: record.created,
+      updated: record.updated,
+      expand: record.expand ? {
+        delivery: record.expand.delivery ? this.mapRecordToDelivery(record.expand.delivery) : undefined,
+        item: record.expand.item ? this.mapRecordToItem(record.expand.item) : undefined
+      } : undefined
+    };
+  }
+
+  private mapRecordToItem(record: RecordModel): Item {
+    return {
+      id: record.id,
+      name: record.name,
+      description: record.description,
+      unit: record.unit,
+      tags: record.tags || [],
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+}
+
+export class DeliveryItemService {
+  async getByDelivery(deliveryId: string): Promise<DeliveryItem[]> {
+    const records = await pb.collection('delivery_items').getFullList({
+      filter: `delivery="${deliveryId}"`,
+      expand: 'delivery,item'
+    });
+    return records.map(record => this.mapRecordToDeliveryItem(record));
+  }
+
+  async create(data: Omit<DeliveryItem, 'id' | 'created' | 'updated'>): Promise<DeliveryItem> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create delivery items');
+    }
+
+    const record = await pb.collection('delivery_items').create(data);
+    return this.mapRecordToDeliveryItem(record);
+  }
+
+  async update(id: string, data: Partial<DeliveryItem>): Promise<DeliveryItem> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canUpdate) {
+      throw new Error('Permission denied: Cannot update delivery items');
+    }
+
+    const record = await pb.collection('delivery_items').update(id, data);
+    return this.mapRecordToDeliveryItem(record);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canDelete) {
+      throw new Error('Permission denied: Cannot delete delivery items');
+    }
+
+    await pb.collection('delivery_items').delete(id);
+    return true;
+  }
+
+  async createMultiple(deliveryId: string, items: Array<{
+    item: string;
+    quantity: number;
+    unit_price: number;
+    notes?: string;
+  }>): Promise<DeliveryItem[]> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create delivery items');
+    }
+
+    const createdItems: DeliveryItem[] = [];
+    for (const itemData of items) {
+      const total_amount = itemData.quantity * itemData.unit_price;
+      const record = await pb.collection('delivery_items').create({
+        delivery: deliveryId,
+        item: itemData.item,
+        quantity: itemData.quantity,
+        unit_price: itemData.unit_price,
+        total_amount,
+        notes: itemData.notes
+      });
+      createdItems.push(this.mapRecordToDeliveryItem(record));
+    }
+    return createdItems;
+  }
+
+  private mapRecordToDeliveryItem(record: RecordModel): DeliveryItem {
+    return {
+      id: record.id,
+      delivery: record.delivery,
+      item: record.item,
+      quantity: record.quantity,
+      unit_price: record.unit_price,
+      total_amount: record.total_amount,
+      notes: record.notes,
+      created: record.created,
+      updated: record.updated,
+      expand: record.expand ? {
+        delivery: record.expand.delivery ? this.mapRecordToDelivery(record.expand.delivery) : undefined,
+        item: record.expand.item ? this.mapRecordToItem(record.expand.item) : undefined
+      } : undefined
+    };
+  }
+
+  private mapRecordToDelivery(record: RecordModel): Delivery {
+    return {
+      id: record.id,
+      vendor: record.vendor,
+      delivery_date: record.delivery_date,
+      delivery_reference: record.delivery_reference,
+      photos: record.photos || [],
+      notes: record.notes,
+      total_amount: record.total_amount,
+      payment_status: record.payment_status,
+      paid_amount: record.paid_amount,
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+
+  private mapRecordToItem(record: RecordModel): Item {
+    return {
+      id: record.id,
+      name: record.name,
+      description: record.description,
+      unit: record.unit,
+      tags: record.tags || [],
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+}
+
 export const authService = new AuthService();
 export const siteService = new SiteService();
 export const siteUserService = new SiteUserService();
@@ -3078,3 +3372,5 @@ export const vendorReturnItemService = new VendorReturnItemService();
 export const vendorRefundService = new VendorRefundService();
 export const vendorCreditNoteService = new VendorCreditNoteService();
 export const creditNoteUsageService = new CreditNoteUsageService();
+export const deliveryService = new DeliveryService();
+export const deliveryItemService = new DeliveryItemService();

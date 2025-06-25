@@ -61,6 +61,7 @@ vi.mock('../../composables/useToast', () => ({
 
 // Mock PocketBase services
 vi.mock('../../services/pocketbase', () => ({
+  getCurrentSiteId: vi.fn().mockReturnValue('site-1'),
   incomingItemService: {
     getAll: vi.fn().mockResolvedValue([
       {
@@ -121,6 +122,7 @@ vi.mock('../../services/pocketbase', () => ({
   },
   pb: {
     collection: vi.fn().mockReturnValue({
+      getFullList: vi.fn().mockResolvedValue([]),
       update: vi.fn().mockResolvedValue(true)
     })
   }
@@ -433,10 +435,11 @@ describe('IncomingView - Mobile Responsive Design', () => {
       const dropdown = actionCell.find('.absolute')
       const menuButtons = dropdown.findAll('button')
       
-      expect(menuButtons.length).toBe(3)
+      expect(menuButtons.length).toBe(4)
       expect(menuButtons[0].text()).toContain('View')
       expect(menuButtons[1].text()).toContain('Edit')
-      expect(menuButtons[2].text()).toContain('Delete')
+      expect(menuButtons[2].text()).toContain('returns.createReturn')
+      expect(menuButtons[3].text()).toContain('Delete')
     })
 
     it('should close menu when clicking outside', async () => {
@@ -618,7 +621,8 @@ describe('IncomingView - Mobile Responsive Design', () => {
       
       expect(menuButtons[0].text()).toBe('View')
       expect(menuButtons[1].text()).toBe('Edit') 
-      expect(menuButtons[2].text()).toBe('Delete')
+      expect(menuButtons[2].text()).toBe('returns.createReturn')
+      expect(menuButtons[3].text()).toBe('Delete')
     })
   })
 

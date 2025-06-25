@@ -2,6 +2,7 @@ import { ref, computed, watch } from 'vue'
 import { pb, getCurrentSiteId } from '../services/pocketbase'
 import type { 
   IncomingItem, 
+  Delivery,
   ServiceBooking, 
   Account, 
   Quotation, 
@@ -140,6 +141,11 @@ export const searchConfigs = {
     searchFields: ['item', 'vendor', 'notes'],
     expand: 'vendor'
   },
+  deliveries: {
+    collection: 'deliveries' as const,
+    searchFields: ['expand.vendor.name', 'delivery_reference', 'notes'],
+    expand: 'vendor,delivery_items,delivery_items.item'
+  },
   service_bookings: {
     collection: 'service_bookings' as const,
     searchFields: ['expand.service.name', 'expand.vendor.name', 'notes'],
@@ -175,6 +181,7 @@ export const searchConfigs = {
 
 // Type-safe search hooks for specific collections
 export const useIncomingSearch = () => useSearch<IncomingItem>(searchConfigs.incoming_items)
+export const useDeliverySearch = () => useSearch<Delivery>(searchConfigs.deliveries)
 export const useServiceBookingSearch = () => useSearch<ServiceBooking>(searchConfigs.service_bookings)
 export const useAccountSearch = () => useSearch<Account>(searchConfigs.accounts)
 export const useQuotationSearch = () => useSearch<Quotation>(searchConfigs.quotations)
