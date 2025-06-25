@@ -343,6 +343,57 @@
       "other": "अन्य"
     }
   },
+  "returns": {
+    "createReturn": "वापसी बनाएं",
+    "createReturnSubtitle": "डिलीवर की गई वस्तुओं की वापसी प्रक्रिया करें",
+    "selectItems": "वस्तुएं चुनें",
+    "returnDetails": "वापसी विवरण",
+    "refundType": "धन वापसी प्रकार",
+    "confirmReturn": "वापसी की पुष्टि करें",
+    "processReturn": "वापसी प्रक्रिया करें",
+    "noItemsAvailable": "वापसी के लिए कोई वस्तु उपलब्ध नहीं",
+    "quantityToReturn": "वापस करने की मात्रा",
+    "reason": "वापसी का कारण",
+    "selectReason": "कारण चुनें",
+    "evidencePhotos": "साक्ष्य फोटो (वैकल्पिक)",
+    "photosHelp": "क्षतिग्रस्त या गलत वस्तुओं की फोटो साक्ष्य के रूप में अपलोड करें",
+    "notesPlaceholder": "वस्तु(ओं) की समस्या का वर्णन करें...",
+    "returnSummary": "वापसी सारांश",
+    "totalAmount": "कुल वापसी राशि",
+    "refundAccount": "धन वापसी खाता",
+    "selectAccount": "धन वापसी के लिए खाता चुनें",
+    "monetaryAmount": "नकद धन वापसी",
+    "creditAmount": "क्रेडिट नोट राशि",
+    "splitRefundDetails": "विभाजित धन वापसी विवरण",
+    "confirmationWarning": "वापसी प्रक्रिया की पुष्टि",
+    "confirmationDescription": "यह क्रिया तुरंत वापसी प्रक्रिया करेगी और धन वापसी बनाएगी। इसे पूर्ववत नहीं किया जा सकता।",
+    "itemsToReturn": "वापस करने की वस्तुएं",
+    "returnProcessedSuccess": "वापसी सफलतापूर्वक प्रक्रिया की गई",
+    "returnProcessedError": "वापसी प्रक्रिया करने में त्रुटि। कृपया पुनः प्रयास करें।",
+    "returnCreatedSuccess": "वापसी सफलतापूर्वक बनाई गई",
+    "steps": {
+      "selectItems": "वस्तुएं चुनें",
+      "details": "विवरण",
+      "refundType": "धन वापसी प्रकार",
+      "confirm": "पुष्टि करें"
+    },
+    "reasons": {
+      "damaged": "क्षतिग्रस्त",
+      "wrong_item": "गलत वस्तु",
+      "excess_delivery": "अतिरिक्त डिलीवरी",
+      "quality_issue": "गुणवत्ता की समस्या",
+      "specification_mismatch": "विनिर्देश मेल नहीं खाता",
+      "other": "अन्य"
+    },
+    "refundTypes": {
+      "monetary": "नकद धन वापसी",
+      "credit": "क्रेडिट नोट",
+      "split": "विभाजित धन वापसी",
+      "monetaryDesc": "पूरी राशि आपके खाते की शेष राशि में वापस करें",
+      "creditDesc": "इस विक्रेता से भविष्य की खरीदारी के लिए क्रेडिट नोट जारी करें",
+      "splitDesc": "नकद धन वापसी और क्रेडिट नोट का संयोजन"
+    }
+  },
   "accounts": {
     "title": "खाते",
     "subtitle": "भुगतान खातों का प्रबंधन करें और शेष राशि ट्रैक करें",
@@ -831,6 +882,12 @@
     "box": "बॉक्स",
     "sqft": "वर्ग फुट",
     "ft3": "घन फुट",
-    "l": "लीटर"
+    "l": "लीटर",
+    "pieces": "नग",
+    "tons": "टन",
+    "liters": "लीटर",
+    "meters": "मीटर",
+    "feet": "फीट",
+    "units": "इकाई"
   }
 }

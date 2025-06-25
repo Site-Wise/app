@@ -343,6 +343,57 @@
       "other": "Other"
     }
   },
+  "returns": {
+    "createReturn": "Create Return",
+    "createReturnSubtitle": "Process a return for delivered items",
+    "selectItems": "Select Items",
+    "returnDetails": "Return Details",
+    "refundType": "Refund Type",
+    "confirmReturn": "Confirm Return",
+    "processReturn": "Process Return",
+    "noItemsAvailable": "No items available for return",
+    "quantityToReturn": "Quantity to Return",
+    "reason": "Return Reason",
+    "selectReason": "Select a reason",
+    "evidencePhotos": "Evidence Photos (Optional)",
+    "photosHelp": "Upload photos of damaged or incorrect items as evidence",
+    "notesPlaceholder": "Describe the issue with the item(s)...",
+    "returnSummary": "Return Summary",
+    "totalAmount": "Total Return Amount",
+    "refundAccount": "Refund Account",
+    "selectAccount": "Select an account for refund",
+    "monetaryAmount": "Monetary Refund",
+    "creditAmount": "Credit Note Amount",
+    "splitRefundDetails": "Split Refund Breakdown",
+    "confirmationWarning": "Confirm Return Processing",
+    "confirmationDescription": "This action will immediately process the return and create the refund. This cannot be undone.",
+    "itemsToReturn": "Items to Return",
+    "returnProcessedSuccess": "Return processed successfully",
+    "returnProcessedError": "Error processing return. Please try again.",
+    "returnCreatedSuccess": "Return created successfully",
+    "steps": {
+      "selectItems": "Select Items",
+      "details": "Details",
+      "refundType": "Refund Type",
+      "confirm": "Confirm"
+    },
+    "reasons": {
+      "damaged": "Damaged",
+      "wrong_item": "Wrong Item",
+      "excess_delivery": "Excess Delivery",
+      "quality_issue": "Quality Issue",
+      "specification_mismatch": "Specification Mismatch",
+      "other": "Other"
+    },
+    "refundTypes": {
+      "monetary": "Monetary Refund",
+      "credit": "Credit Note",
+      "split": "Split Refund",
+      "monetaryDesc": "Refund the full amount to your account balance",
+      "creditDesc": "Issue a credit note for future purchases from this vendor",
+      "splitDesc": "Combine monetary refund and credit note"
+    }
+  },
   "accounts": {
     "title": "Accounts",
     "subtitle": "Manage payment accounts and track balances",
@@ -830,6 +881,12 @@
     "box": "Box",
     "sqft": "Square Foot",
     "ft3": "Cubic Foot",
-    "l": "Litre"
+    "l": "Litre",
+    "pieces": "Pieces",
+    "tons": "Tonnes",
+    "liters": "Litres",
+    "meters": "Meters",
+    "feet": "Feet",
+    "units": "Units"
   }
 }

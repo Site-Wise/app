@@ -148,6 +148,18 @@
                   <Edit2 class="h-4 w-4" />
                 </button>
                 <button 
+                  @click="createReturn(item)" 
+                  :disabled="!canCreateReturn(item)"
+                  :class="[
+                    canCreateReturn(item)
+                      ? 'text-orange-600 dark:text-orange-400 hover:text-orange-900 dark:hover:text-orange-300' 
+                      : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                  ]"
+                  :title="t('returns.createReturn')"
+                >
+                  <RotateCcw class="h-4 w-4" />
+                </button>
+                <button 
                   @click="deleteItem(item.id!)" 
                   :disabled="!canEditDelete"
                   :class="[
@@ -241,6 +253,19 @@
                   >
                     <Edit2 class="h-4 w-4 mr-2" />
                     {{ t('common.edit') }}
+                  </button>
+                  <button 
+                    @click="createReturn(item); closeMobileMenu()"
+                    :disabled="!canCreateReturn(item)"
+                    :class="[
+                      canCreateReturn(item)
+                        ? 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20' 
+                        : 'text-gray-400 dark:text-gray-600 cursor-not-allowed',
+                      'w-full flex items-center px-3 py-2 text-sm transition-colors duration-150'
+                    ]"
+                  >
+                    <RotateCcw class="h-4 w-4 mr-2" />
+                    {{ t('returns.createReturn') }}
                   </button>
                   <button 
                     @click="deleteItem(item.id!); closeMobileMenu()"
@@ -457,18 +482,28 @@
         </div>
       </div>
     </div>
+
+    <!-- Return Modal -->
+    <SimpleReturnModal
+      v-if="showReturnModal"
+      :incoming-items="allIncomingItems"
+      :preselected-item-id="selectedItemForReturn?.id"
+      @close="closeReturnModal"
+      @success="handleReturnSuccess"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
-import { TruckIcon, Plus, Edit2, Trash2, Loader2, Eye, X } from 'lucide-vue-next';
+import { TruckIcon, Plus, Edit2, Trash2, Loader2, Eye, X, RotateCcw } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useIncomingSearch } from '../composables/useSearch';
 import PhotoGallery from '../components/PhotoGallery.vue';
 import FileUploadComponent from '../components/FileUploadComponent.vue';
+import SimpleReturnModal from '../components/returns/SimpleReturnModal.vue';
 import { 
   incomingItemService, 
   itemService, 
@@ -476,7 +511,8 @@ import {
   pb,
   type IncomingItem, 
   type Item, 
-  type Vendor 
+  type Vendor,
+  type VendorReturn 
 } from '../services/pocketbase';
 
 interface FileWithPreview {
@@ -504,6 +540,8 @@ const editingItem = ref<IncomingItem | null>(null);
 const viewingItem = ref<IncomingItem | null>(null);
 const showPhotoGallery = ref(false);
 const galleryItem = ref<IncomingItem | null>(null);
+const showReturnModal = ref(false);
+const selectedItemForReturn = ref<IncomingItem | null>(null);
 const loading = ref(false);
 
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -518,6 +556,11 @@ const canCreateIncoming = computed(() => {
 const canEditDelete = computed(() => {
   return !isReadOnly.value;
 });
+
+const canCreateReturn = (item: IncomingItem) => {
+  // Can create returns for items that have been delivered and have some payment
+  return !isReadOnly.value && item.payment_status !== 'pending' && item.total_amount > 0;
+};
 
 const form = reactive({
   item: '',
@@ -722,6 +765,23 @@ const toggleMobileMenu = (itemId: string) => {
 
 const closeMobileMenu = () => {
   openMobileMenuId.value = null;
+};
+
+const createReturn = (item: IncomingItem) => {
+  selectedItemForReturn.value = item;
+  showReturnModal.value = true;
+};
+
+const closeReturnModal = () => {
+  showReturnModal.value = false;
+  selectedItemForReturn.value = null;
+};
+
+const handleReturnSuccess = async (returnData: VendorReturn) => {
+  success(t('returns.returnCreatedSuccess'));
+  closeReturnModal();
+  // Refresh the data to show updated status
+  await loadData();
 };
 
 const closeModal = () => {
