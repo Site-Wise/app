@@ -95,10 +95,6 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresSite: true, permission: 'canRead' }
     },
     {
-      path: '/incoming',
-      redirect: '/deliveries'
-    },
-    {
       path: '/payments',
       name: 'Payments',
       component: () => import('../views/PaymentsView.vue'),

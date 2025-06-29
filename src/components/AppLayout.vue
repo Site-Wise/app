@@ -267,7 +267,7 @@ const navigation = computed(() => [
   { name: 'Items', nameKey: 'nav.items', to: '/items', icon: Package, current: route.name === 'Items' },
   { name: 'Services', nameKey: 'nav.services', to: '/services', icon: Wrench, current: route.name === 'Services' },
   { name: 'Vendors', nameKey: 'nav.vendors', to: '/vendors', icon: Users, current: route.name === 'Vendors' },
-  { name: 'Deliveries', nameKey: 'nav.deliveries', to: '/incoming', icon: TruckIcon, current: route.name === 'Incoming' },
+  { name: 'Deliveries', nameKey: 'nav.deliveries', to: '/deliveries', icon: TruckIcon, current: route.name === 'Deliveries' },
   { name: 'Service Bookings', nameKey: 'nav.serviceBookings', to: '/service-bookings', icon: Calendar, current: route.name === 'ServiceBookings' },
   { name: 'Quotations', nameKey: 'nav.quotations', to: '/quotations', icon: FileText, current: route.name === 'Quotations' },
   { name: 'Accounts', nameKey: 'nav.accounts', to: '/accounts', icon: CreditCard, current: route.name === 'Accounts' },
@@ -320,7 +320,7 @@ const isOwner = computed(() => currentUserRole.value === 'owner');
 const currentRouteFabAction = computed(() => {
   const routeToActionConfig = {
     '/service-bookings': { type: 'serviceBooking', labelKey: 'quickActions.recordServiceBooking' },
-    '/incoming': { type: 'delivery', labelKey: 'quickActions.recordDelivery' },
+    '/deliveries': { type: 'delivery', labelKey: 'quickActions.recordDelivery' },
     '/payments': { type: 'payment', labelKey: 'quickActions.recordPayment' },
     '/accounts': { type: 'account', labelKey: 'accounts.addAccount' },
     '/quotations': { type: 'quotation', labelKey: 'quotations.addQuotation' },
@@ -359,7 +359,7 @@ const quickAction = (type: string) => {
     vendor: '/vendors',
     account: '/accounts',
     serviceBooking: '/service-bookings',
-    delivery: '/incoming',
+    delivery: '/deliveries',
     payment: '/payments',
     quotation: '/quotations',
     service: '/services'

@@ -26,7 +26,7 @@ describe('Router', () => {
     expect(routes.find((r: any) => r.path === '/items')).toBeDefined()
     expect(routes.find((r: any) => r.path === '/vendors')).toBeDefined()
     expect(routes.find((r: any) => r.path === '/quotations')).toBeDefined()
-    expect(routes.find((r: any) => r.path === '/incoming')).toBeDefined()
+    expect(routes.find((r: any) => r.path === '/deliveries')).toBeDefined()
     expect(routes.find((r: any) => r.path === '/payments')).toBeDefined()
   })
 
