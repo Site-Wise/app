@@ -89,10 +89,14 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresSite: true, permission: 'canRead' }
     },
     {
-      path: '/incoming',
-      name: 'Incoming',
+      path: '/deliveries',
+      name: 'Deliveries',
       component: () => import('../views/DeliveryView.vue'),
       meta: { requiresAuth: true, requiresSite: true, permission: 'canRead' }
+    },
+    {
+      path: '/incoming',
+      redirect: '/deliveries'
     },
     {
       path: '/payments',

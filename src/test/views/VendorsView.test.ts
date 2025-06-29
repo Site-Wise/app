@@ -91,11 +91,12 @@ vi.mock('../../services/pocketbase', () => {
     site: 'site-1'
   }
   
-  const mockIncomingItem = {
-    id: 'incoming-1',
+  const mockDelivery = {
+    id: 'delivery-1',
     vendor: 'vendor-1',
     total_amount: 1000,
-    paid_amount: 500
+    paid_amount: 500,
+    payment_status: 'partial'
   }
   
   const mockServiceBooking = {
@@ -123,8 +124,8 @@ vi.mock('../../services/pocketbase', () => {
       update: vi.fn().mockResolvedValue(mockVendor),
       delete: vi.fn().mockResolvedValue(true)
     },
-    incomingItemService: {
-      getAll: vi.fn().mockResolvedValue([mockIncomingItem])
+    deliveryService: {
+      getAll: vi.fn().mockResolvedValue([mockDelivery])
     },
     serviceBookingService: {
       getAll: vi.fn().mockResolvedValue([mockServiceBooking])

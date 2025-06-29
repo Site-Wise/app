@@ -317,7 +317,7 @@
       :is-edit="isEditMode"
       :return-data="selectedReturn"
       :vendors="vendors"
-      :incoming-items="incomingItems"
+      :delivery-items="deliveryItems"
       @close="closeReturnModal"
       @save="handleReturnSave"
     />
@@ -363,11 +363,12 @@ import { useI18n } from '../composables/useI18n';
 import {
   vendorReturnService,
   vendorService,
-  incomingItemService,
+  deliveryService,
   accountService,
   type VendorReturn,
   type Vendor,
-  type IncomingItem,
+  type Delivery,
+  type DeliveryItem,
   type Account
 } from '../services/pocketbase';
 import ReturnModal from '../components/returns/ReturnModal.vue';
@@ -380,7 +381,8 @@ const route = useRoute();
 // Data
 const returns = ref<VendorReturn[]>([]);
 const vendors = ref<Vendor[]>([]);
-const incomingItems = ref<IncomingItem[]>([]);
+const deliveries = ref<Delivery[]>([]);
+const deliveryItems = ref<DeliveryItem[]>([]);
 const accounts = ref<Account[]>([]);
 const loading = ref(false);
 
@@ -446,17 +448,34 @@ const totalRefunded = computed(() => {
 const loadData = async () => {
   loading.value = true;
   try {
-    const [returnsData, vendorsData, incomingData, accountsData] = await Promise.all([
+    const [returnsData, vendorsData, deliveriesData, accountsData] = await Promise.all([
       vendorReturnService.getAll(),
       vendorService.getAll(),
-      incomingItemService.getAll(),
+      deliveryService.getAll(),
       accountService.getAll()
     ]);
 
     returns.value = returnsData;
     vendors.value = vendorsData;
-    incomingItems.value = incomingData;
+    deliveries.value = deliveriesData;
     accounts.value = accountsData;
+    
+    // Extract delivery items from deliveries
+    const allDeliveryItems: DeliveryItem[] = [];
+    deliveriesData.forEach(delivery => {
+      if (delivery.expand?.delivery_items) {
+        delivery.expand.delivery_items.forEach(deliveryItem => {
+          allDeliveryItems.push({
+            ...deliveryItem,
+            expand: {
+              ...deliveryItem.expand,
+              delivery: delivery
+            }
+          });
+        });
+      }
+    });
+    deliveryItems.value = allDeliveryItems;
   } catch (error) {
     console.error('Error loading data:', error);
   } finally {

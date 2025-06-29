@@ -1,7 +1,6 @@
 import { ref, computed, watch } from 'vue'
 import { pb, getCurrentSiteId } from '../services/pocketbase'
 import type { 
-  IncomingItem, 
   Delivery,
   ServiceBooking, 
   Account, 
@@ -180,7 +179,6 @@ export const searchConfigs = {
 }
 
 // Type-safe search hooks for specific collections
-export const useIncomingSearch = () => useSearch<IncomingItem>(searchConfigs.incoming_items)
 export const useDeliverySearch = () => useSearch<Delivery>(searchConfigs.deliveries)
 export const useServiceBookingSearch = () => useSearch<ServiceBooking>(searchConfigs.service_bookings)
 export const useAccountSearch = () => useSearch<Account>(searchConfigs.accounts)

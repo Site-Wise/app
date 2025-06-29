@@ -80,8 +80,8 @@
                     </div>
                     
                     <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                      <div>{{ t('common.vendor') }}: {{ item.expand?.vendor?.name || 'Unknown Vendor' }}</div>
-                      <div>{{ t('incoming.deliveryDate') }}: {{ formatDate(item.delivery_date) }}</div>
+                      <div>{{ t('common.vendor') }}: {{ item.expand?.delivery?.expand?.vendor?.name || 'Unknown Vendor' }}</div>
+                      <div>{{ t('incoming.deliveryDate') }}: {{ formatDate(item.expand?.delivery?.delivery_date || '') }}</div>
                       <div>{{ t('common.quantity') }}: {{ item.quantity }} {{ getUnitDisplay(item.expand?.item?.unit || 'units') }}</div>
                       <div>{{ t('common.total') }}: ₹{{ item.total_amount.toFixed(2) }}</div>
                     </div>
@@ -389,13 +389,13 @@ import {
   vendorCreditNoteService,
   accountTransactionService,
   accountService,
-  type IncomingItem,
+  type DeliveryItem,
   type Account,
   type VendorReturn
 } from '../../services/pocketbase';
 
 interface Props {
-  incomingItems: IncomingItem[];
+  deliveryItems: DeliveryItem[];
   preselectedItemId?: string;
 }
 
@@ -438,8 +438,8 @@ const returnForm = reactive({
 
 // Computed properties
 const availableItems = computed(() => {
-  return props.incomingItems.filter(item => 
-    item.payment_status !== 'pending' && item.total_amount > 0
+  return props.deliveryItems.filter(item => 
+    item.expand?.delivery?.payment_status !== 'pending' && item.total_amount > 0
   );
 });
 
@@ -575,7 +575,7 @@ const loadReturnedQuantities = async () => {
   }
 };
 
-const onItemSelectionChange = (item: IncomingItem) => {
+const onItemSelectionChange = (item: DeliveryItem) => {
   if (selectedItems[item.id!]) {
     // Set default return quantity to available quantity when selected
     const availableQuantity = getAvailableQuantity(item.id!);
@@ -617,7 +617,7 @@ const processReturn = async () => {
   try {
     // Create the vendor return record
     const vendorReturn = await vendorReturnService.create({
-      vendor: selectedItemsForReturn.value[0].vendor, // All items should be from same vendor
+      vendor: selectedItemsForReturn.value[0].expand?.delivery?.vendor || '', // All items should be from same vendor
       return_date: new Date().toISOString().split('T')[0],
       reason: returnForm.reason as any,
       status: 'completed', // Process immediately
@@ -633,7 +633,7 @@ const processReturn = async () => {
     for (const item of selectedItemsForReturn.value) {
       await vendorReturnItemService.create({
         vendor_return: vendorReturn.id!,
-        incoming_item: item.id!,
+        delivery_item: item.id!,
         quantity_returned: returnQuantities[item.id!],
         return_rate: item.unit_price,
         return_amount: item.unit_price * returnQuantities[item.id!],

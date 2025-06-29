@@ -81,8 +81,16 @@ vi.mock('../../services/pocketbase', () => {
       update: vi.fn(),
       delete: vi.fn()
     },
-    incomingItemService: {
-      getAll: vi.fn().mockResolvedValue([mockIncomingItem])
+    deliveryService: {
+      getAll: vi.fn().mockResolvedValue([{
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        total_amount: 1000,
+        payment_status: 'pending',
+        paid_amount: 0,
+        site: 'site-1'
+      }])
     },
     tagService: {
       getAll: vi.fn().mockResolvedValue(mockTags),

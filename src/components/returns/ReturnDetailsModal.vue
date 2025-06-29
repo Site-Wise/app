@@ -81,10 +81,10 @@
                   <div class="flex justify-between items-start mb-2">
                     <div>
                       <h5 class="font-medium text-gray-900 dark:text-white">
-                        {{ item.expand?.incoming_item?.expand?.item?.name || 'Unknown Item' }}
+                        {{ item.expand?.delivery_item?.expand?.item?.name || 'Unknown Item' }}
                       </h5>
                       <div class="text-sm text-gray-500 dark:text-gray-400">
-                        Original delivery: {{ formatDate(item.expand?.incoming_item?.delivery_date || '') }}
+                        Original delivery: {{ formatDate(item.expand?.delivery_item?.expand?.delivery?.delivery_date || '') }}
                       </div>
                     </div>
                     <span :class="getConditionClass(item.condition)">
@@ -96,7 +96,7 @@
                     <div>
                       <span class="text-gray-500 dark:text-gray-400">Quantity Returned:</span>
                       <div class="font-medium text-gray-900 dark:text-white">
-                        {{ item.quantity_returned }} {{ item.expand?.incoming_item?.expand?.item?.unit || 'units' }}
+                        {{ item.quantity_returned }} {{ item.expand?.delivery_item?.expand?.item?.unit || 'units' }}
                       </div>
                     </div>
                     <div>
@@ -114,7 +114,7 @@
                     <div>
                       <span class="text-gray-500 dark:text-gray-400">Original Price:</span>
                       <div class="font-medium text-gray-500 dark:text-gray-400">
-                        ₹{{ item.expand?.incoming_item?.unit_price?.toFixed(2) }}
+                        ₹{{ item.expand?.delivery_item?.unit_price?.toFixed(2) }}
                       </div>
                     </div>
                   </div>

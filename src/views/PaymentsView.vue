@@ -342,12 +342,12 @@ import {
   accountTransactionService,
   vendorService,
   accountService,
-  incomingItemService,
+  deliveryService,
   serviceBookingService,
   type AccountTransaction, 
   type Vendor,
   type Account,
-  type IncomingItem,
+  type Delivery,
   type ServiceBooking
 } from '../services/pocketbase';
 
@@ -364,7 +364,7 @@ interface VendorWithOutstanding extends Vendor {
 const payments = ref<AccountTransaction[]>([]);
 const vendors = ref<Vendor[]>([]);
 const accounts = ref<Account[]>([]);
-const incomingItems = ref<IncomingItem[]>([]);
+const deliveries = ref<Delivery[]>([]);
 const serviceBookings = ref<ServiceBooking[]>([]);
 const showAddModal = ref(false);
 const viewingPayment = ref<AccountTransaction | null>(null);
@@ -380,7 +380,7 @@ const form = reactive({
   reference: '',
   notes: '',
   description: '',
-  incoming_items: [] as string[],
+  deliveries: [] as string[],
   service_bookings: [] as string[]
 });
 
@@ -398,12 +398,12 @@ const activeAccounts = computed(() => {
 
 const vendorsWithOutstanding = computed(() => {
   return vendors.value.map(vendor => {
-    // Calculate outstanding from incoming items
-    const vendorItems = incomingItems.value.filter(item => 
-      item.vendor === vendor.id && item.payment_status !== 'paid'
+    // Calculate outstanding from deliveries
+    const vendorDeliveries = deliveries.value.filter(delivery => 
+      delivery.vendor === vendor.id && delivery.payment_status !== 'paid'
     );
-    const incomingOutstanding = vendorItems.reduce((sum, item) => 
-      sum + (item.total_amount - item.paid_amount), 0
+    const deliveryOutstanding = vendorDeliveries.reduce((sum, delivery) => 
+      sum + (delivery.total_amount - delivery.paid_amount), 0
     );
     
     // Calculate outstanding from service bookings
@@ -414,8 +414,8 @@ const vendorsWithOutstanding = computed(() => {
       sum + (booking.total_amount - booking.paid_amount), 0
     );
     
-    const outstandingAmount = incomingOutstanding + serviceOutstanding;
-    const pendingItems = vendorItems.length + vendorBookings.length;
+    const outstandingAmount = deliveryOutstanding + serviceOutstanding;
+    const pendingItems = vendorDeliveries.length + vendorBookings.length;
     
     return {
       ...vendor,
@@ -445,11 +445,11 @@ const getRelatedItemsCount = () => {
 
 const loadData = async () => {
   try {
-    const [transactionsData, vendorsData, accountsData, incomingData, serviceBookingsData] = await Promise.all([
+    const [transactionsData, vendorsData, accountsData, deliveryData, serviceBookingsData] = await Promise.all([
       accountTransactionService.getAll(),
       vendorService.getAll(),
       accountService.getAll(),
-      incomingItemService.getAll(),
+      deliveryService.getAll(),
       serviceBookingService.getAll()
     ]);
     
@@ -459,7 +459,7 @@ const loadData = async () => {
     );
     vendors.value = vendorsData;
     accounts.value = accountsData;
-    incomingItems.value = incomingData;
+    deliveries.value = deliveryData;
     serviceBookings.value = serviceBookingsData;
   } catch (error) {
     console.error('Error loading data:', error);
@@ -468,12 +468,12 @@ const loadData = async () => {
 
 const loadVendorOutstanding = () => {
   if (form.vendor) {
-    // Calculate outstanding from incoming items
-    const vendorItems = incomingItems.value.filter(item => 
-      item.vendor === form.vendor && item.payment_status !== 'paid'
+    // Calculate outstanding from deliveries
+    const vendorDeliveries = deliveries.value.filter(delivery => 
+      delivery.vendor === form.vendor && delivery.payment_status !== 'paid'
     );
-    const incomingOutstanding = vendorItems.reduce((sum, item) => 
-      sum + (item.total_amount - item.paid_amount), 0
+    const deliveryOutstanding = vendorDeliveries.reduce((sum, delivery) => 
+      sum + (delivery.total_amount - delivery.paid_amount), 0
     );
     
     // Calculate outstanding from service bookings
@@ -484,7 +484,7 @@ const loadVendorOutstanding = () => {
       sum + (booking.total_amount - booking.paid_amount), 0
     );
     
-    vendorOutstanding.value = incomingOutstanding + serviceOutstanding;
+    vendorOutstanding.value = deliveryOutstanding + serviceOutstanding;
   }
 };
 
@@ -511,7 +511,7 @@ const savePayment = async () => {
       payment_date: form.transaction_date,
       reference: form.reference,
       notes: form.notes,
-      incoming_items: form.incoming_items,
+      deliveries: form.deliveries,
       service_bookings: form.service_bookings
     };
     
@@ -585,7 +585,7 @@ const closeModal = () => {
     reference: '',
     notes: '',
     description: '',
-    incoming_items: [],
+    deliveries: [],
     service_bookings: []
   });
   vendorOutstanding.value = 0;

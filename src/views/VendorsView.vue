@@ -184,12 +184,12 @@ import { useToast } from '../composables/useToast';
 import TagSelector from '../components/TagSelector.vue';
 import { 
   vendorService, 
-  incomingItemService, 
+  deliveryService, 
   paymentService,
   serviceBookingService,
   tagService,
   type Vendor,
-  type IncomingItem,
+  type Delivery,
   type Payment,
   type ServiceBooking,
   type Tag as TagType
@@ -201,7 +201,7 @@ const { success, error } = useToast();
 
 const router = useRouter();
 const vendors = ref<Vendor[]>([]);
-const incomingItems = ref<IncomingItem[]>([]);
+const deliveries = ref<Delivery[]>([]);
 const serviceBookings = ref<ServiceBooking[]>([]);
 const payments = ref<Payment[]>([]);
 const vendorTags = ref<Map<string, TagType[]>>(new Map());
@@ -229,17 +229,17 @@ const form = reactive({
 });
 
 const getVendorOutstanding = (vendorId: string) => {
-  // Include incoming items outstanding
-  const incomingOutstanding = incomingItems.value
-    .filter(item => item.vendor === vendorId)
-    .reduce((sum, item) => sum + (item.total_amount - item.paid_amount), 0);
+  // Include deliveries outstanding
+  const deliveriesOutstanding = deliveries.value
+    .filter(delivery => delivery.vendor === vendorId)
+    .reduce((sum, delivery) => sum + (delivery.total_amount - delivery.paid_amount), 0);
   
   // Include service bookings outstanding
   const serviceOutstanding = serviceBookings.value
     .filter(booking => booking.vendor === vendorId)
     .reduce((sum, booking) => sum + (booking.total_amount - booking.paid_amount), 0);
     
-  return incomingOutstanding + serviceOutstanding;
+  return deliveriesOutstanding + serviceOutstanding;
 };
 
 const getVendorPaid = (vendorId: string) => {
@@ -258,16 +258,16 @@ const viewVendorDetail = (vendorId: string) => {
 
 const loadData = async () => {
   try {
-    const [vendorsData, incomingData, serviceBookingsData, paymentsData, allTags] = await Promise.all([
+    const [vendorsData, deliveriesData, serviceBookingsData, paymentsData, allTags] = await Promise.all([
       vendorService.getAll(),
-      incomingItemService.getAll(),
+      deliveryService.getAll(),
       serviceBookingService.getAll(),
       paymentService.getAll(),
       tagService.getAll()
     ]);
     
     vendors.value = vendorsData;
-    incomingItems.value = incomingData;
+    deliveries.value = deliveriesData;
     serviceBookings.value = serviceBookingsData;
     payments.value = paymentsData;
     

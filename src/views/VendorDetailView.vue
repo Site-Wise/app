@@ -122,7 +122,7 @@
             </div>
             <div class="ml-4">
               <p class="text-sm font-medium text-blue-700 dark:text-blue-300">Total Deliveries</p>
-              <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ vendorIncomingItems.length }}</p>
+              <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ vendorDeliveries.length }}</p>
             </div>
           </div>
         </div>
@@ -154,32 +154,31 @@
     <div class="card">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Deliveries</h2>
-        <span class="text-sm text-gray-500 dark:text-gray-400">{{ vendorIncomingItems.length }} total</span>
+        <span class="text-sm text-gray-500 dark:text-gray-400">{{ vendorDeliveries.length }} total</span>
       </div>
       <div class="space-y-3 max-h-96 overflow-y-auto">
-        <div v-for="item in vendorIncomingItems.slice(0, 10)" :key="item.id"
+        <div v-for="delivery in vendorDeliveries.slice(0, 10)" :key="delivery.id"
           class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
           <div class="flex justify-between items-start mb-2">
             <div>
-              <h4 class="font-medium text-gray-900 dark:text-white">{{ item.expand?.item?.name || 'Unknown Item' }}</h4>
-              <p class="text-sm text-gray-600 dark:text-gray-400">{{ formatDate(item.delivery_date) }}</p>
+              <h4 class="font-medium text-gray-900 dark:text-white">Delivery #{{ delivery.id?.slice(-6) }}</h4>
+              <p class="text-sm text-gray-600 dark:text-gray-400">{{ formatDate(delivery.delivery_date) }}</p>
             </div>
-            <span :class="`status-${item.payment_status}`">
-              {{ item.payment_status }}
+            <span :class="`status-${delivery.payment_status}`">
+              {{ delivery.payment_status }}
             </span>
           </div>
           <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-600 dark:text-gray-400">{{ item.quantity }} {{ item.expand?.item?.unit || 'units'
-              }}</span>
+            <span class="text-gray-600 dark:text-gray-400">{{ delivery.delivery_reference || 'No reference' }}</span>
             <div class="text-right">
-              <p class="font-medium text-gray-900 dark:text-white">₹{{ item.total_amount.toFixed(2) }}</p>
-              <p v-if="item.paid_amount > 0" class="text-green-600 dark:text-green-400">Paid: ₹{{
-                item.paid_amount.toFixed(2) }}</p>
+              <p class="font-medium text-gray-900 dark:text-white">₹{{ delivery.total_amount.toFixed(2) }}</p>
+              <p v-if="delivery.paid_amount > 0" class="text-green-600 dark:text-green-400">Paid: ₹{{
+                delivery.paid_amount.toFixed(2) }}</p>
             </div>
           </div>
         </div>
 
-        <div v-if="vendorIncomingItems.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+        <div v-if="vendorDeliveries.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
           No deliveries recorded
         </div>
       </div>
@@ -348,13 +347,13 @@ import {
 import { useI18n } from '../composables/useI18n';
 import {
   vendorService,
-  incomingItemService,
+  deliveryService,
   paymentService,
   accountService,
   tagService,
   vendorReturnService,
   type Vendor,
-  type IncomingItem,
+  type Delivery,
   type Payment,
   type Account,
   type Tag as TagType,
@@ -366,7 +365,7 @@ const router = useRouter();
 const { t } = useI18n();
 
 const vendor = ref<Vendor | null>(null);
-const vendorIncomingItems = ref<IncomingItem[]>([]);
+const vendorDeliveries = ref<Delivery[]>([]);
 const vendorPayments = ref<Payment[]>([]);
 const vendorReturns = ref<VendorReturn[]>([]);
 const accounts = ref<Account[]>([]);
@@ -387,7 +386,7 @@ const activeAccounts = computed(() => {
 });
 
 const outstandingAmount = computed(() => {
-  return vendorIncomingItems.value.reduce((sum, item) => sum + (item.total_amount - item.paid_amount), 0);
+  return vendorDeliveries.value.reduce((sum, delivery) => sum + (delivery.total_amount - delivery.paid_amount), 0);
 });
 
 const totalPaid = computed(() => {
@@ -395,15 +394,15 @@ const totalPaid = computed(() => {
 });
 
 const pendingDeliveries = computed(() => {
-  return vendorIncomingItems.value.filter(item => item.payment_status === 'pending').length;
+  return vendorDeliveries.value.filter(delivery => delivery.payment_status === 'pending').length;
 });
 
 const partialDeliveries = computed(() => {
-  return vendorIncomingItems.value.filter(item => item.payment_status === 'partial').length;
+  return vendorDeliveries.value.filter(delivery => delivery.payment_status === 'partial').length;
 });
 
 const paidDeliveries = computed(() => {
-  return vendorIncomingItems.value.filter(item => item.payment_status === 'paid').length;
+  return vendorDeliveries.value.filter(delivery => delivery.payment_status === 'paid').length;
 });
 
 const getAccountIcon = (type?: Account['type']) => {
@@ -431,9 +430,9 @@ const loadVendorData = async () => {
   const vendorId = route.params.id as string;
 
   try {
-    const [vendorData, allIncoming, allPayments, allReturns, accountsData, allTags] = await Promise.all([
+    const [vendorData, allDeliveries, allPayments, allReturns, accountsData, allTags] = await Promise.all([
       vendorService.getAll(),
-      incomingItemService.getAll(),
+      deliveryService.getAll(),
       paymentService.getAll(),
       vendorReturnService.getByVendor(vendorId),
       accountService.getAll(),
@@ -441,8 +440,8 @@ const loadVendorData = async () => {
     ]);
 
     vendor.value = vendorData.find(v => v.id === vendorId) || null;
-    vendorIncomingItems.value = allIncoming
-      .filter(item => item.vendor === vendorId)
+    vendorDeliveries.value = allDeliveries
+      .filter(delivery => delivery.vendor === vendorId)
       .sort((a, b) => new Date(b.delivery_date).getTime() - new Date(a.delivery_date).getTime());
     vendorPayments.value = allPayments
       .filter(payment => payment.vendor === vendorId)
@@ -483,7 +482,7 @@ const savePayment = async () => {
       payment_date: paymentForm.payment_date,
       reference: paymentForm.reference,
       notes: paymentForm.notes,
-      incoming_items: [],
+      deliveries: [],
       service_bookings: [],
     });
 
@@ -531,19 +530,19 @@ const generateLedgerCSV = () => {
   const rows: (string | number)[][] = [];
 
   // Add deliveries
-  vendorIncomingItems.value.forEach(item => {
+  vendorDeliveries.value.forEach(delivery => {
     rows.push([
-      item.delivery_date,
+      delivery.delivery_date,
       'Delivery',
-      `Delivery of ${item.expand?.item?.name || 'Unknown Item'}`,
-      item.expand?.item?.name || 'Unknown Item',
-      item.quantity,
-      item.unit_price,
-      item.total_amount,
-      item.payment_status,
+      `Delivery #${delivery.id?.slice(-6) || 'Unknown'}`,
+      delivery.delivery_reference || 'No reference',
       '',
       '',
-      item.notes || ''
+      delivery.total_amount,
+      delivery.payment_status,
+      '',
+      '',
+      delivery.notes || ''
     ]);
   });
 

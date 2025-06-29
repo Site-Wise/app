@@ -172,10 +172,10 @@ import { useToast } from '../composables/useToast';
 import TagSelector from '../components/TagSelector.vue';
 import { 
   itemService, 
-  incomingItemService,
+  deliveryService,
   tagService,
   type Item,
-  type IncomingItem,
+  type Delivery,
   type Tag as TagType
 } from '../services/pocketbase';
 
@@ -185,7 +185,7 @@ const { success, error } = useToast();
 
 const router = useRouter();
 const items = ref<Item[]>([]);
-const incomingItems = ref<IncomingItem[]>([]);
+const deliveries = ref<Delivery[]>([]);
 const itemTags = ref<Map<string, TagType[]>>(new Map());
 const showAddModal = ref(false);
 const editingItem = ref<Item | null>(null);
@@ -209,13 +209,13 @@ const form = reactive({
 
 const loadData = async () => {
   try {
-    const [itemsData, incomingData, allTags] = await Promise.all([
+    const [itemsData, deliveriesData, allTags] = await Promise.all([
       itemService.getAll(),
-      incomingItemService.getAll(),
+      deliveryService.getAll(),
       tagService.getAll()
     ]);
     items.value = itemsData;
-    incomingItems.value = incomingData;
+    deliveries.value = deliveriesData;
     
     // Map tags for each item
     const tagMap = new Map<string, TagType[]>();
@@ -232,17 +232,33 @@ const loadData = async () => {
 };
 
 const getItemDeliveredQuantity = (itemId: string) => {
-  return incomingItems.value
-    .filter(delivery => delivery.item === itemId)
-    .reduce((sum, delivery) => sum + delivery.quantity, 0);
+  let totalQuantity = 0;
+  deliveries.value.forEach(delivery => {
+    if (delivery.expand?.delivery_items) {
+      delivery.expand.delivery_items.forEach(deliveryItem => {
+        if (deliveryItem.item === itemId) {
+          totalQuantity += deliveryItem.quantity;
+        }
+      });
+    }
+  });
+  return totalQuantity;
 };
 
 const getItemAveragePrice = (itemId: string) => {
-  const itemDeliveries = incomingItems.value.filter(delivery => delivery.item === itemId);
-  if (itemDeliveries.length === 0) return 0;
+  let totalValue = 0;
+  let totalQuantity = 0;
   
-  const totalValue = itemDeliveries.reduce((sum, delivery) => sum + delivery.total_amount, 0);
-  const totalQuantity = itemDeliveries.reduce((sum, delivery) => sum + delivery.quantity, 0);
+  deliveries.value.forEach(delivery => {
+    if (delivery.expand?.delivery_items) {
+      delivery.expand.delivery_items.forEach(deliveryItem => {
+        if (deliveryItem.item === itemId) {
+          totalValue += deliveryItem.total_amount;
+          totalQuantity += deliveryItem.quantity;
+        }
+      });
+    }
+  });
   
   return totalQuantity > 0 ? totalValue / totalQuantity : 0;
 };

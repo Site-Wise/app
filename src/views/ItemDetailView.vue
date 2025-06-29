@@ -156,29 +156,29 @@
             </tr>
           </thead>
           <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            <tr v-for="delivery in itemDeliveries" :key="delivery.id">
+            <tr v-for="deliveryItem in itemDeliveries" :key="deliveryItem.id">
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                {{ formatDate(delivery.delivery_date) }}
+                {{ formatDate(deliveryItem.delivery_date || '') }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                {{ delivery.expand?.vendor?.name || 'Unknown Vendor' }}
+                {{ deliveryItem.expand?.delivery?.expand?.vendor?.name || 'Unknown Vendor' }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                {{ delivery.quantity }} {{ t(`units.${item.unit}`) !== `units.${item.unit}` ? `${t(`units.${item.unit}`)} (${item.unit})` : item.unit }}
+                {{ deliveryItem.quantity }} {{ t(`units.${item.unit}`) !== `units.${item.unit}` ? `${t(`units.${item.unit}`)} (${item.unit})` : item.unit }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                ₹{{ delivery.unit_price.toFixed(2) }}
+                ₹{{ deliveryItem.unit_price.toFixed(2) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                ₹{{ delivery.total_amount.toFixed(2) }}
+                ₹{{ deliveryItem.total_amount.toFixed(2) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span :class="`status-${delivery.payment_status}`">
-                  {{ delivery.payment_status }}
+                <span :class="`status-${deliveryItem.expand?.delivery?.payment_status || 'pending'}`">
+                  {{ deliveryItem.expand?.delivery?.payment_status || 'pending' }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button @click="viewDelivery(delivery)"
+                <button @click="viewDelivery(deliveryItem)"
                   class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300">
                   <Eye class="h-4 w-4" />
                 </button>
@@ -217,27 +217,35 @@ import {
 } from 'lucide-vue-next';
 import {
   itemService,
-  incomingItemService,
+  deliveryService,
   type Item,
-  type IncomingItem
+  type DeliveryItem
 } from '../services/pocketbase';
+
+// Extended DeliveryItem with delivery context
+interface ExtendedDeliveryItem extends DeliveryItem {
+  delivery_date?: string;
+  expand?: DeliveryItem['expand'] & {
+    delivery?: any;
+  };
+}
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 
 const item = ref<Item | null>(null);
-const itemDeliveries = ref<IncomingItem[]>([]);
+const itemDeliveries = ref<ExtendedDeliveryItem[]>([]);
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
 
 const totalDeliveredQuantity = computed(() => {
-  return itemDeliveries.value.reduce((sum, delivery) => sum + delivery.quantity, 0);
+  return itemDeliveries.value.reduce((sum, deliveryItem) => sum + deliveryItem.quantity, 0);
 });
 
 const averageUnitPrice = computed(() => {
   if (itemDeliveries.value.length === 0) return 0;
-  const totalValue = itemDeliveries.value.reduce((sum, delivery) => sum + delivery.total_amount, 0);
-  const totalQuantity = itemDeliveries.value.reduce((sum, delivery) => sum + delivery.quantity, 0);
+  const totalValue = itemDeliveries.value.reduce((sum, deliveryItem) => sum + deliveryItem.total_amount, 0);
+  const totalQuantity = itemDeliveries.value.reduce((sum, deliveryItem) => sum + deliveryItem.quantity, 0);
   return totalQuantity > 0 ? totalValue / totalQuantity : 0;
 });
 
@@ -257,13 +265,33 @@ const loadItemData = async () => {
   try {
     const [allItems, allDeliveries] = await Promise.all([
       itemService.getAll(),
-      incomingItemService.getAll()
+      deliveryService.getAll()
     ]);
 
     item.value = allItems.find(i => i.id === itemId) || null;
-    itemDeliveries.value = allDeliveries
-      .filter(delivery => delivery.item === itemId)
-      .sort((a, b) => new Date(a.delivery_date).getTime() - new Date(b.delivery_date).getTime());
+    
+    // Get delivery items for this specific item from all deliveries
+    const allDeliveryItems: ExtendedDeliveryItem[] = [];
+    allDeliveries.forEach(delivery => {
+      if (delivery.expand?.delivery_items) {
+        delivery.expand.delivery_items.forEach(deliveryItem => {
+          if (deliveryItem.item === itemId) {
+            // Add delivery context to delivery item
+            allDeliveryItems.push({
+              ...deliveryItem,
+              delivery_date: delivery.delivery_date,
+              expand: {
+                ...deliveryItem.expand,
+                delivery: delivery
+              }
+            });
+          }
+        });
+      }
+    });
+    
+    itemDeliveries.value = allDeliveryItems
+      .sort((a, b) => new Date(a.delivery_date || '').getTime() - new Date(b.delivery_date || '').getTime());
 
     if (!item.value) {
       router.push('/items');
@@ -300,10 +328,10 @@ const drawPriceChart = () => {
   ctx.clearRect(0, 0, width, height);
 
   // Prepare data
-  const data = itemDeliveries.value.map(delivery => ({
-    date: new Date(delivery.delivery_date),
-    price: delivery.unit_price,
-    vendor: delivery.expand?.vendor?.name || 'Unknown'
+  const data = itemDeliveries.value.map(deliveryItem => ({
+    date: new Date(deliveryItem.delivery_date || ''),
+    price: deliveryItem.unit_price,
+    vendor: deliveryItem.expand?.delivery?.expand?.vendor?.name || 'Unknown'
   }));
 
   if (data.length === 0) return;
@@ -416,11 +444,11 @@ const drawPriceChart = () => {
 };
 
 const recordDelivery = () => {
-  router.push('/incoming');
+  router.push('/deliveries');
 };
 
-const viewDelivery = (_delivery: IncomingItem) => {
-  router.push('/incoming');
+const viewDelivery = (_deliveryItem: ExtendedDeliveryItem) => {
+  router.push('/deliveries');
 };
 
 const exportItemReport = () => {
@@ -446,14 +474,14 @@ const generateItemReportCSV = () => {
 
   const headers = ['Date', 'Vendor', 'Quantity', 'Unit Price', 'Total Amount', 'Payment Status', 'Notes'];
 
-  const rows = itemDeliveries.value.map(delivery => [
-    delivery.delivery_date,
-    delivery.expand?.vendor?.name || 'Unknown Vendor',
-    delivery.quantity,
-    delivery.unit_price,
-    delivery.total_amount,
-    delivery.payment_status,
-    delivery.notes || ''
+  const rows = itemDeliveries.value.map(deliveryItem => [
+    deliveryItem.delivery_date || '',
+    deliveryItem.expand?.delivery?.expand?.vendor?.name || 'Unknown Vendor',
+    deliveryItem.quantity,
+    deliveryItem.unit_price,
+    deliveryItem.total_amount,
+    deliveryItem.expand?.delivery?.payment_status || 'pending',
+    deliveryItem.notes || ''
   ]);
 
   // Add summary row

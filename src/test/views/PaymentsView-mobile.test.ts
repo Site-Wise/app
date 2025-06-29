@@ -151,7 +151,7 @@ vi.mock('../../services/pocketbase', () => ({
   accountService: {
     getAll: vi.fn().mockResolvedValue([])
   },
-  incomingItemService: {
+  deliveryService: {
     getAll: vi.fn().mockResolvedValue([])
   },
   serviceBookingService: {
@@ -396,17 +396,19 @@ describe('PaymentsView - Mobile Responsive Design', () => {
   describe('Mobile Outstanding Amounts Section', () => {
     it('should display outstanding amounts in responsive layout', async () => {
       // Mock vendors with outstanding amounts
-      const { vendorService, incomingItemService } = await import('../../services/pocketbase')
+      const { vendorService, deliveryService } = await import('../../services/pocketbase')
       vi.mocked(vendorService.getAll).mockResolvedValueOnce([
         { id: 'vendor-1', name: 'ABC Steel Co.' }
       ])
-      vi.mocked(incomingItemService.getAll).mockResolvedValueOnce([
+      vi.mocked(deliveryService.getAll).mockResolvedValueOnce([
         {
-          id: 'item-1',
+          id: 'delivery-1',
           vendor: 'vendor-1',
+          delivery_date: '2024-01-01',
           total_amount: 10000,
           paid_amount: 5000,
-          payment_status: 'partial'
+          payment_status: 'partial',
+          site: 'site-1'
         }
       ])
       

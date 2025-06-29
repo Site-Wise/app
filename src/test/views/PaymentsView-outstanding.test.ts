@@ -32,14 +32,16 @@ vi.mock('../../services/pocketbase', async () => {
         }
       ])
     },
-    incomingItemService: {
+    deliveryService: {
       getAll: vi.fn().mockResolvedValue([
         {
-          id: 'item-1',
+          id: 'delivery-1',
           vendor: 'vendor-1',
+          delivery_date: '2024-01-01',
           total_amount: 1000,
           paid_amount: 300,
-          payment_status: 'partial'
+          payment_status: 'partial',
+          site: 'site-1'
         }
       ])
     },
@@ -102,7 +104,7 @@ describe('PaymentsView - Outstanding Calculations', () => {
     
     // Verify that data is loaded
     expect(vm.vendors).toHaveLength(1)
-    expect(vm.incomingItems).toHaveLength(1)
+    expect(vm.deliveries).toHaveLength(1)
     expect(vm.serviceBookings).toHaveLength(1)
     
     // Check vendorsWithOutstanding computed property
@@ -111,8 +113,8 @@ describe('PaymentsView - Outstanding Calculations', () => {
     expect(vendorsWithOutstanding).toHaveLength(1)
     expect(vendorsWithOutstanding[0].id).toBe('vendor-1')
     
-    // Outstanding should include both incoming items and service bookings
-    // Incoming: 1000 - 300 = 700
+    // Outstanding should include both deliveries and service bookings
+    // Delivery: 1000 - 300 = 700
     // Service: 800 - 200 = 600
     // Total: 1300
     expect(vendorsWithOutstanding[0].outstandingAmount).toBe(1300)
@@ -128,7 +130,7 @@ describe('PaymentsView - Outstanding Calculations', () => {
     const vm = wrapper.vm as any
     const vendorsWithOutstanding = vm.vendorsWithOutstanding
     
-    // Should count both incoming items and service bookings
+    // Should count both deliveries and service bookings
     expect(vendorsWithOutstanding[0].pendingItems).toBe(2)
   })
 
@@ -145,8 +147,8 @@ describe('PaymentsView - Outstanding Calculations', () => {
     vm.form.vendor = 'vendor-1'
     vm.loadVendorOutstanding()
     
-    // Should include both incoming items and service bookings
-    // Incoming: 1000 - 300 = 700
+    // Should include both deliveries and service bookings
+    // Delivery: 1000 - 300 = 700
     // Service: 800 - 200 = 600
     // Total: 1300
     expect(vm.vendorOutstanding).toBe(1300)
@@ -154,20 +156,17 @@ describe('PaymentsView - Outstanding Calculations', () => {
 
   it('should handle vendors with no outstanding amounts', async () => {
     // Mock with fully paid items
-    const { incomingItemService, serviceBookingService } = await import('../../services/pocketbase')
-    vi.mocked(incomingItemService.getAll)
+    const { deliveryService, serviceBookingService } = await import('../../services/pocketbase')
+    vi.mocked(deliveryService.getAll)
       .mockResolvedValue([
         {
-          id: 'item-1',
+          id: 'delivery-1',
           vendor: 'vendor-1',
+          delivery_date: '2024-01-01',
           total_amount: 1000,
           paid_amount: 1000,
           payment_status: 'paid',
-          item: 'item-1',
-          quantity: 10,
-          unit_price: 100,
-          delivery_date: '2024-01-01',
-          site: 'site-1',
+          site: 'site-1'
         }
       ])
     
@@ -209,7 +208,7 @@ describe('PaymentsView - Outstanding Calculations', () => {
     
     // Verify component loads and has expected data structure
     expect(vm.vendors).toBeDefined()
-    expect(vm.incomingItems).toBeDefined()
+    expect(vm.deliveries).toBeDefined()
     expect(vm.serviceBookings).toBeDefined()
     
     // Verify vendorsWithOutstanding computed property exists and works
@@ -242,11 +241,11 @@ describe('PaymentsView - Outstanding Calculations', () => {
     await nextTick()
     
     // Verify all services were called
-    const { accountTransactionService, vendorService, accountService, incomingItemService, serviceBookingService } = await import('../../services/pocketbase')
+    const { accountTransactionService, vendorService, accountService, deliveryService, serviceBookingService } = await import('../../services/pocketbase')
     expect(accountTransactionService.getAll).toHaveBeenCalled()
     expect(vendorService.getAll).toHaveBeenCalled()
     expect(accountService.getAll).toHaveBeenCalled()
-    expect(incomingItemService.getAll).toHaveBeenCalled()
+    expect(deliveryService.getAll).toHaveBeenCalled()
     expect(serviceBookingService.getAll).toHaveBeenCalled()
   })
 

@@ -105,20 +105,17 @@ vi.mock('../../services/pocketbase', () => ({
       updated: '2024-01-01T00:00:00Z'
     }])
   },
-  incomingItemService: {
+  deliveryService: {
     getAll: vi.fn().mockResolvedValue([{
-      id: 'incoming-1',
-      item: 'item-1',
+      id: 'delivery-1',
       vendor: 'vendor-1',
-      quantity: 500,
-      unit_price: 45,
-      total_amount: 22500,
       delivery_date: '2024-01-15',
-      photos: [],
-      notes: 'Delivered on time',
+      total_amount: 22500,
       payment_status: 'pending',
       paid_amount: 0,
       site: 'site-1',
+      photos: [],
+      notes: 'Delivered on time',
       created: '2024-01-01T00:00:00Z',
       updated: '2024-01-01T00:00:00Z'
     }])

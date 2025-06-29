@@ -127,12 +127,12 @@ import {
   itemService, 
   vendorService, 
   paymentService, 
-  incomingItemService,
+  deliveryService,
   serviceBookingService,
   type Item,
   type Vendor,
   type Payment,
-  type IncomingItem,
+  type Delivery,
   type ServiceBooking
 } from '../services/pocketbase';
 
@@ -144,7 +144,7 @@ const loading = ref(true);
 const items = ref<Item[]>([]);
 const vendors = ref<Vendor[]>([]);
 const payments = ref<Payment[]>([]);
-const incomingItems = ref<IncomingItem[]>([]);
+const deliveries = ref<Delivery[]>([]);
 const serviceBookings = ref<ServiceBooking[]>([]);
 
 
@@ -153,18 +153,18 @@ const stats = computed(() => {
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
   
-  const totalExpenses = incomingItems.value.reduce((sum, item) => {
-    return sum + item.total_amount;
+  const totalExpenses = deliveries.value.reduce((sum, delivery) => {
+    return sum + delivery.total_amount;
   }, 0) + serviceBookings.value.reduce((sum, booking) => {
     return sum + booking.total_amount;
   }, 0);
   
-  const currentMonthExpenses = incomingItems.value
-    .filter(item => {
-      const itemDate = new Date(item.delivery_date);
-      return itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear;
+  const currentMonthExpenses = deliveries.value
+    .filter(delivery => {
+      const deliveryDate = new Date(delivery.delivery_date);
+      return deliveryDate.getMonth() === currentMonth && deliveryDate.getFullYear() === currentYear;
     })
-    .reduce((sum, item) => sum + item.total_amount, 0) +
+    .reduce((sum, delivery) => sum + delivery.total_amount, 0) +
     serviceBookings.value
       .filter(booking => {
         const bookingDate = new Date(booking.start_date);
@@ -175,8 +175,8 @@ const stats = computed(() => {
   const totalSqft = currentSite.value?.total_planned_area || 1;
   const expensePerSqft = Math.round(totalExpenses / totalSqft);
   
-  const outstandingAmount = incomingItems.value.reduce((sum, item) => {
-    return sum + (item.total_amount - item.paid_amount);
+  const outstandingAmount = deliveries.value.reduce((sum, delivery) => {
+    return sum + (delivery.total_amount - delivery.paid_amount);
   }, 0) + serviceBookings.value.reduce((sum, booking) => {
     return sum + (booking.total_amount - booking.paid_amount);
   }, 0);
@@ -318,18 +318,18 @@ const formatAmount = (amount: number) => {
 const loadData = async () => {
   loading.value = true;
   try {
-    const [itemsData, vendorsData, paymentsData, incomingData, servicesData] = await Promise.all([
+    const [itemsData, vendorsData, paymentsData, deliveriesData, servicesData] = await Promise.all([
       itemService.getAll(),
       vendorService.getAll(),
       paymentService.getAll(),
-      incomingItemService.getAll(),
+      deliveryService.getAll(),
       serviceBookingService.getAll(),
     ]);
     
     items.value = itemsData;
     vendors.value = vendorsData;
     payments.value = paymentsData;
-    incomingItems.value = incomingData;
+    deliveries.value = deliveriesData;
     serviceBookings.value = servicesData;
   } catch (error) {
     console.error('Error loading dashboard data:', error);

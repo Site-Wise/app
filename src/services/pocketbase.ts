@@ -232,29 +232,6 @@ export interface Quotation {
   };
 }
 
-// Deprecated: Use Delivery and DeliveryItem instead
-// Keeping for backward compatibility during migration
-/** @deprecated Use Delivery and DeliveryItem instead */
-export interface IncomingItem {
-  id?: string;
-  item: string;
-  vendor: string;
-  quantity: number;
-  unit_price: number;
-  total_amount: number;
-  delivery_date: string;
-  photos?: string[];
-  notes?: string;
-  payment_status: 'pending' | 'partial' | 'paid';
-  paid_amount: number;
-  site: string; // Site ID
-  created?: string;
-  updated?: string;
-  expand?: {
-    vendor?: Vendor;
-    item?: Item;
-  };
-}
 
 export interface ServiceBooking {
   id?: string;
@@ -323,8 +300,7 @@ export interface Payment {
   payment_date: string;
   reference?: string;
   notes?: string;
-  incoming_items: string[]; // @deprecated Use deliveries instead
-  deliveries?: string[]; // New field for multi-item deliveries
+  deliveries: string[]; // Multi-item deliveries
   service_bookings: string[]; // New field for service payments
   site: string; // Site ID
   created?: string;
@@ -333,8 +309,7 @@ export interface Payment {
   expand?: {
     vendor?: Vendor;
     account?: Account;
-    incoming_items?: IncomingItem[]; // @deprecated
-    deliveries?: Delivery[]; // New expansion
+    deliveries?: Delivery[];
     service_bookings?: ServiceBooking[];
   };
 }
@@ -389,7 +364,7 @@ export interface VendorReturn {
 export interface VendorReturnItem {
   id?: string;
   vendor_return: string; // VendorReturn ID
-  incoming_item: string; // IncomingItem ID being returned
+  delivery_item: string; // DeliveryItem ID being returned
   quantity_returned: number;
   return_rate: number; // Rate per unit for return calculation
   return_amount: number; // quantity_returned * return_rate
@@ -399,7 +374,7 @@ export interface VendorReturnItem {
   updated?: string;
   expand?: {
     vendor_return?: VendorReturn;
-    incoming_item?: IncomingItem;
+    delivery_item?: DeliveryItem;
   };
 }
 
@@ -451,7 +426,7 @@ export interface CreditNoteUsage {
   used_amount: number;
   used_date: string;
   payment_transaction?: string; // Related Payment ID
-  incoming_item?: string; // IncomingItem ID if used for specific item
+  delivery_item?: string; // DeliveryItem ID if used for specific item
   service_booking?: string; // ServiceBooking ID if used for service
   notes?: string;
   site: string; // Site ID
@@ -460,7 +435,7 @@ export interface CreditNoteUsage {
   expand?: {
     credit_note?: VendorCreditNote;
     payment_transaction?: Payment;
-    incoming_item?: IncomingItem;
+    delivery_item?: DeliveryItem;
     service_booking?: ServiceBooking;
   };
 }
@@ -1386,118 +1361,6 @@ export class QuotationService {
   }
 }
 
-export class IncomingItemService {
-  async getAll(): Promise<IncomingItem[]> {
-    const siteId = getCurrentSiteId();
-    if (!siteId) throw new Error('No site selected');
-
-    const records = await pb.collection('incoming_items').getFullList({
-      filter: `site="${siteId}"`,
-      expand: 'vendor,item'
-    });
-    return records.map(record => this.mapRecordToIncomingItem(record));
-  }
-
-  async create(data: Omit<IncomingItem, 'id' | 'site'>): Promise<IncomingItem> {
-    const siteId = getCurrentSiteId();
-    if (!siteId) throw new Error('No site selected');
-
-    // Check permissions
-    const userRole = getCurrentUserRole();
-    const permissions = calculatePermissions(userRole);
-    if (!permissions.canCreate) {
-      throw new Error('Permission denied: Cannot create incoming items');
-    }
-
-    const record = await pb.collection('incoming_items').create({
-      ...data,
-      site: siteId
-    });
-    return this.mapRecordToIncomingItem(record);
-  }
-
-  async update(id: string, data: Partial<IncomingItem>): Promise<IncomingItem> {
-    // Check permissions
-    const userRole = getCurrentUserRole();
-    const permissions = calculatePermissions(userRole);
-    if (!permissions.canUpdate) {
-      throw new Error('Permission denied: Cannot update incoming items');
-    }
-
-    const record = await pb.collection('incoming_items').update(id, data);
-    return this.mapRecordToIncomingItem(record);
-  }
-
-  async delete(id: string): Promise<boolean> {
-    // Check permissions
-    const userRole = getCurrentUserRole();
-    const permissions = calculatePermissions(userRole);
-    if (!permissions.canDelete) {
-      throw new Error('Permission denied: Cannot delete incoming items');
-    }
-
-    await pb.collection('incoming_items').delete(id);
-    return true;
-  }
-
-  async uploadPhoto(itemId: string, file: File): Promise<string> {
-    const formData = new FormData();
-    formData.append('photos', file);
-    const record = await pb.collection('incoming_items').update(itemId, formData);
-    return record.photos[record.photos.length - 1];
-  }
-
-  private mapRecordToIncomingItem(record: RecordModel): IncomingItem {
-    return {
-      id: record.id,
-      item: record.item,
-      vendor: record.vendor,
-      quantity: record.quantity,
-      unit_price: record.unit_price,
-      total_amount: record.total_amount,
-      delivery_date: record.delivery_date,
-      photos: record.photos,
-      notes: record.notes,
-      payment_status: record.payment_status,
-      paid_amount: record.paid_amount,
-      site: record.site,
-      created: record.created,
-      updated: record.updated,
-      expand: record.expand ? {
-        vendor: record.expand.vendor ? this.mapRecordToVendor(record.expand.vendor) : undefined,
-        item: record.expand.item ? this.mapRecordToItem(record.expand.item) : undefined
-      } : undefined
-    };
-  }
-
-  private mapRecordToVendor(record: RecordModel): Vendor {
-    return {
-      id: record.id,
-      name: record.name,
-      contact_person: record.contact_person,
-      email: record.email,
-      phone: record.phone,
-      address: record.address,
-      tags: record.tags || [],
-      site: record.site,
-      created: record.created,
-      updated: record.updated
-    };
-  }
-
-  private mapRecordToItem(record: RecordModel): Item {
-    return {
-      id: record.id,
-      name: record.name,
-      description: record.description,
-      unit: record.unit,
-      tags: record.tags || [],
-      site: record.site,
-      created: record.created,
-      updated: record.updated
-    };
-  }
-}
 
 export class ServiceBookingService {
   async getAll(): Promise<ServiceBooking[]> {
@@ -1671,42 +1534,12 @@ export class PaymentService {
       vendor: data.vendor
     });
 
-    // Update payment status of related incoming items and service bookings
-    await this.updateIncomingItemsPaymentStatus(data.vendor, data.amount);
+    // Update payment status of related service bookings
     await this.updateServiceBookingsPaymentStatus(data.vendor, data.amount);
 
     return this.mapRecordToPayment(record);
   }
 
-  private async updateIncomingItemsPaymentStatus(vendorId: string, paymentAmount: number) {
-    const siteId = getCurrentSiteId();
-    if (!siteId) return;
-
-    const incomingItems = await pb.collection('incoming_items')
-      .getFullList({
-        filter: `vendor="${vendorId}" && payment_status!="paid" && site="${siteId}"`,
-        sort: 'created'
-      });
-
-    let remainingAmount = paymentAmount;
-
-    for (const item of incomingItems) {
-      if (remainingAmount <= 0) break;
-
-      const outstandingAmount = item.total_amount - item.paid_amount;
-      const paymentForItem = Math.min(remainingAmount, outstandingAmount);
-
-      const newPaidAmount = item.paid_amount + paymentForItem;
-      const newStatus = newPaidAmount >= item.total_amount ? 'paid' : 'partial';
-
-      await pb.collection('incoming_items').update(item.id, {
-        paid_amount: newPaidAmount,
-        payment_status: newStatus
-      });
-
-      remainingAmount -= paymentForItem;
-    }
-  }
 
   private async getVendorName(vendorId: string): Promise<string> {
     try {
@@ -1756,7 +1589,7 @@ export class PaymentService {
       payment_date: record.payment_date,
       reference: record.reference,
       notes: record.notes,
-      incoming_items: record.incoming_items || [],
+      deliveries: record.deliveries || [],
       service_bookings: record.service_bookings || [],
       site: record.site,
       created: record.created,
@@ -1764,8 +1597,8 @@ export class PaymentService {
       expand: record.expand ? {
         vendor: record.expand.vendor ? this.mapRecordToVendor(record.expand.vendor) : undefined,
         account: record.expand.account ? this.mapRecordToAccount(record.expand.account) : undefined,
-        incoming_items: record.expand.incoming_items ?
-          record.expand.incoming_items.map((item: RecordModel) => this.mapRecordToIncomingItem(item)) : undefined,
+        deliveries: record.expand.deliveries ?
+          record.expand.deliveries.map((delivery: RecordModel) => deliveryService.mapRecordToDelivery(delivery)) : undefined,
         service_bookings: record.expand.service_bookings ?
           record.expand.service_bookings.map((booking: RecordModel) => this.mapRecordToServiceBooking(booking)) : undefined
       } : undefined
@@ -1804,28 +1637,6 @@ export class PaymentService {
     };
   }
 
-  private mapRecordToIncomingItem(record: RecordModel): IncomingItem {
-    return {
-      id: record.id,
-      item: record.item,
-      vendor: record.vendor,
-      quantity: record.quantity,
-      unit_price: record.unit_price,
-      total_amount: record.total_amount,
-      delivery_date: record.delivery_date,
-      photos: record.photos,
-      notes: record.notes,
-      payment_status: record.payment_status,
-      paid_amount: record.paid_amount,
-      site: record.site,
-      created: record.created,
-      updated: record.updated,
-      expand: record.expand ? {
-        vendor: record.expand.vendor ? this.mapRecordToVendor(record.expand.vendor) : undefined,
-        item: record.expand.item ? this.mapRecordToItem(record.expand.item) : undefined
-      } : undefined
-    };
-  }
 
   private mapRecordToServiceBooking(record: RecordModel): ServiceBooking {
     return {
@@ -1842,19 +1653,6 @@ export class PaymentService {
       notes: record.notes,
       payment_status: record.payment_status,
       paid_amount: record.paid_amount,
-      site: record.site,
-      created: record.created,
-      updated: record.updated
-    };
-  }
-
-  private mapRecordToItem(record: RecordModel): Item {
-    return {
-      id: record.id,
-      name: record.name,
-      description: record.description,
-      unit: record.unit,
-      tags: record.tags || [],
       site: record.site,
       created: record.created,
       updated: record.updated
@@ -2572,7 +2370,7 @@ export class VendorReturnItemService {
   async getByReturn(vendorReturnId: string): Promise<VendorReturnItem[]> {
     const records = await pb.collection('vendor_return_items').getFullList({
       filter: `vendor_return="${vendorReturnId}"`,
-      expand: 'incoming_item,incoming_item.item,incoming_item.vendor'
+      expand: 'delivery_item,delivery_item.item,delivery_item.delivery,delivery_item.delivery.vendor'
     });
     return records.map(record => this.mapRecordToVendorReturnItem(record));
   }
@@ -2614,7 +2412,7 @@ export class VendorReturnItemService {
     return {
       id: record.id,
       vendor_return: record.vendor_return,
-      incoming_item: record.incoming_item,
+      delivery_item: record.delivery_item,
       quantity_returned: record.quantity_returned,
       return_rate: record.return_rate,
       return_amount: record.return_amount,
@@ -2624,7 +2422,7 @@ export class VendorReturnItemService {
       updated: record.updated,
       expand: record.expand ? {
         vendor_return: record.expand.vendor_return ? this.mapRecordToVendorReturn(record.expand.vendor_return) : undefined,
-        incoming_item: record.expand.incoming_item ? this.mapRecordToIncomingItem(record.expand.incoming_item) : undefined
+        delivery_item: record.expand.delivery_item ? deliveryItemService.mapRecordToDeliveryItem(record.expand.delivery_item) : undefined
       } : undefined
     };
   }
@@ -2650,24 +2448,6 @@ export class VendorReturnItemService {
     };
   }
 
-  private mapRecordToIncomingItem(record: RecordModel): IncomingItem {
-    return {
-      id: record.id,
-      item: record.item,
-      vendor: record.vendor,
-      quantity: record.quantity,
-      unit_price: record.unit_price,
-      total_amount: record.total_amount,
-      delivery_date: record.delivery_date,
-      photos: record.photos,
-      notes: record.notes,
-      payment_status: record.payment_status,
-      paid_amount: record.paid_amount,
-      site: record.site,
-      created: record.created,
-      updated: record.updated
-    };
-  }
 }
 
 export class VendorRefundService {
@@ -3023,7 +2803,7 @@ class CreditNoteUsageService {
       used_amount: record.used_amount,
       used_date: record.used_date,
       payment_transaction: record.payment_transaction,
-      incoming_item: record.incoming_item,
+      delivery_item: record.delivery_item,
       service_booking: record.service_booking,
       notes: record.notes,
       site: record.site,
@@ -3053,29 +2833,13 @@ class CreditNoteUsageService {
           payment_date: record.expand.payment_transaction.payment_date,
           reference: record.expand.payment_transaction.reference,
           notes: record.expand.payment_transaction.notes,
-          incoming_items: record.expand.payment_transaction.incoming_items || [],
           deliveries: record.expand.payment_transaction.deliveries || [],
           service_bookings: record.expand.payment_transaction.service_bookings || [],
           site: record.expand.payment_transaction.site,
           created: record.expand.payment_transaction.created,
           updated: record.expand.payment_transaction.updated
         } : undefined,
-        incoming_item: record.expand.incoming_item ? {
-          id: record.expand.incoming_item.id,
-          item: record.expand.incoming_item.item,
-          vendor: record.expand.incoming_item.vendor,
-          quantity: record.expand.incoming_item.quantity,
-          unit_price: record.expand.incoming_item.unit_price,
-          total_amount: record.expand.incoming_item.total_amount,
-          delivery_date: record.expand.incoming_item.delivery_date,
-          photos: record.expand.incoming_item.photos || [],
-          notes: record.expand.incoming_item.notes,
-          payment_status: record.expand.incoming_item.payment_status,
-          paid_amount: record.expand.incoming_item.paid_amount,
-          site: record.expand.incoming_item.site,
-          created: record.expand.incoming_item.created,
-          updated: record.expand.incoming_item.updated
-        } : undefined,
+        delivery_item: record.expand.delivery_item ? deliveryItemService.mapRecordToDeliveryItem(record.expand.delivery_item) : undefined,
         service_booking: record.expand.service_booking ? {
           id: record.expand.service_booking.id,
           service: record.expand.service_booking.service,
@@ -3193,7 +2957,7 @@ export class DeliveryService {
     return record.photos[record.photos.length - 1];
   }
 
-  private mapRecordToDelivery(record: RecordModel): Delivery {
+  mapRecordToDelivery(record: RecordModel): Delivery {
     return {
       id: record.id,
       vendor: record.vendor,
@@ -3230,7 +2994,7 @@ export class DeliveryService {
     };
   }
 
-  private mapRecordToDeliveryItem(record: RecordModel): DeliveryItem {
+  mapRecordToDeliveryItem(record: RecordModel): DeliveryItem {
     return {
       id: record.id,
       delivery: record.delivery,
@@ -3332,7 +3096,7 @@ export class DeliveryItemService {
     return createdItems;
   }
 
-  private mapRecordToDeliveryItem(record: RecordModel): DeliveryItem {
+  mapRecordToDeliveryItem(record: RecordModel): DeliveryItem {
     return {
       id: record.id,
       delivery: record.delivery,
@@ -3350,7 +3114,7 @@ export class DeliveryItemService {
     };
   }
 
-  private mapRecordToDelivery(record: RecordModel): Delivery {
+  mapRecordToDelivery(record: RecordModel): Delivery {
     return {
       id: record.id,
       vendor: record.vendor,
@@ -3390,7 +3154,6 @@ export const itemService = new ItemService();
 export const serviceService = new ServiceService();
 export const vendorService = new VendorService();
 export const quotationService = new QuotationService();
-export const incomingItemService = new IncomingItemService();
 export const serviceBookingService = new ServiceBookingService();
 export const paymentService = new PaymentService();
 export const tagService = new TagService();

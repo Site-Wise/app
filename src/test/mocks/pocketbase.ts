@@ -1,5 +1,5 @@
 import { vi } from 'vitest'
-import type { User, Site, Item, Vendor, Quotation, IncomingItem, Payment, ServiceBooking, SiteUser, SiteInvitation } from '../../services/pocketbase'
+import type { User, Site, Item, Vendor, Quotation, Delivery, DeliveryItem, Payment, ServiceBooking, SiteUser, SiteInvitation } from '../../services/pocketbase'
 
 export const mockUser: User = {
   id: 'user-1',
@@ -62,14 +62,24 @@ export const mockQuotation: Quotation = {
   updated: '2024-01-01T00:00:00Z'
 }
 
-export const mockIncomingItem: IncomingItem = {
-  id: 'incoming-1',
+export const mockDeliveryItem: DeliveryItem = {
+  id: 'delivery-item-1',
+  delivery: 'delivery-1',
   item: 'item-1',
-  vendor: 'vendor-1',
   quantity: 500,
   unit_price: 45,
   total_amount: 22500,
+  notes: 'Steel rebar delivery',
+  created: '2024-01-01T00:00:00Z',
+  updated: '2024-01-01T00:00:00Z'
+}
+
+export const mockDelivery: Delivery = {
+  id: 'delivery-1',
+  vendor: 'vendor-1',
   delivery_date: '2024-01-15',
+  delivery_reference: 'DEL-001',
+  total_amount: 22500,
   photos: [],
   notes: 'Delivered on time',
   payment_status: 'pending',
@@ -78,6 +88,13 @@ export const mockIncomingItem: IncomingItem = {
   created: '2024-01-01T00:00:00Z',
   updated: '2024-01-01T00:00:00Z'
 }
+
+// Add delivery_items to mockDelivery after it's defined
+Object.assign(mockDelivery, {
+  expand: {
+    delivery_items: [mockDeliveryItem]
+  }
+})
 
 export const mockServiceBooking: ServiceBooking = {
   id: 'booking-1',
@@ -106,7 +123,7 @@ export const mockPayment: Payment = {
   payment_date: '2024-01-20',
   reference: 'CHK-001',
   notes: 'Partial payment',
-  incoming_items: ['incoming-1'],
+  deliveries: ['delivery-1'],
   service_bookings: ['booking-1'],
   site: 'site-1',
   created: '2024-01-01T00:00:00Z',
@@ -147,7 +164,8 @@ export const createMockPocketBase = () => {
   collections.set('items', [mockItem])
   collections.set('vendors', [mockVendor])
   collections.set('quotations', [mockQuotation])
-  collections.set('incoming_items', [mockIncomingItem])
+  collections.set('deliveries', [mockDelivery])
+  collections.set('delivery_items', [mockDeliveryItem])
   collections.set('payments', [mockPayment])
   collections.set('site_users', [mockSiteUser])
   collections.set('site_invitations', [mockSiteInvitation])
@@ -313,11 +331,19 @@ export const mockVendorService = {
   delete: vi.fn().mockResolvedValue(true)
 }
 
-export const mockIncomingItemService = {
-  getAll: vi.fn().mockResolvedValue([mockIncomingItem]),
-  getById: vi.fn().mockResolvedValue(mockIncomingItem),
-  create: vi.fn().mockResolvedValue(mockIncomingItem),
-  update: vi.fn().mockResolvedValue(mockIncomingItem),
+export const mockDeliveryService = {
+  getAll: vi.fn().mockResolvedValue([mockDelivery]),
+  getById: vi.fn().mockResolvedValue(mockDelivery),
+  create: vi.fn().mockResolvedValue(mockDelivery),
+  update: vi.fn().mockResolvedValue(mockDelivery),
+  delete: vi.fn().mockResolvedValue(true)
+}
+
+export const mockDeliveryItemService = {
+  getAll: vi.fn().mockResolvedValue([mockDeliveryItem]),
+  getById: vi.fn().mockResolvedValue(mockDeliveryItem),
+  create: vi.fn().mockResolvedValue(mockDeliveryItem),
+  update: vi.fn().mockResolvedValue(mockDeliveryItem),
   delete: vi.fn().mockResolvedValue(true)
 }
 
@@ -377,7 +403,8 @@ export const siteUserService = mockSiteUserService
 export const siteInvitationService = mockSiteInvitationService
 export const itemService = mockItemService
 export const vendorService = mockVendorService
-export const incomingItemService = mockIncomingItemService
+export const deliveryService = mockDeliveryService
+export const deliveryItemService = mockDeliveryItemService
 export const serviceBookingService = mockServiceBookingService
 export const paymentService = mockPaymentService
 export const accountService = mockAccountService

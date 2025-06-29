@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import VendorsView from '../../views/VendorsView.vue'
-import { vendorService, incomingItemService, serviceBookingService, paymentService } from '../../services/pocketbase'
+import { vendorService, deliveryService, serviceBookingService, paymentService } from '../../services/pocketbase'
 
 // Mock the services
 vi.mock('../../services/pocketbase', async () => {
@@ -19,14 +19,16 @@ vi.mock('../../services/pocketbase', async () => {
         }
       ])
     },
-    incomingItemService: {
+    deliveryService: {
       getAll: vi.fn().mockResolvedValue([
         {
-          id: 'item-1',
+          id: 'delivery-1',
           vendor: 'vendor-1',
+          delivery_date: '2024-01-01',
           total_amount: 1000,
           paid_amount: 300,
-          payment_status: 'partial'
+          payment_status: 'partial',
+          site: 'site-1'
         }
       ])
     },
@@ -102,12 +104,12 @@ describe('VendorsView - Outstanding Calculations', () => {
     const vm = wrapper.vm as any
     
     // Verify data is loaded first
-    expect(vm.incomingItems).toHaveLength(1)
+    expect(vm.deliveries).toHaveLength(1)
     expect(vm.serviceBookings).toHaveLength(1)
     
     // Test the outstanding calculation for vendor-1
     // Should include:
-    // - Incoming item: 1000 - 300 = 700
+    // - Delivery: 1000 - 300 = 700
     // - Service booking: 500 - 0 = 500
     // - Total: 1200
     const outstanding = vm.getVendorOutstanding('vendor-1')
@@ -125,8 +127,8 @@ describe('VendorsView - Outstanding Calculations', () => {
     expect(outstanding).toBe(0)
   })
 
-  it('should handle vendors with only incoming items outstanding', async () => {
-    // Mock service to return only incoming items
+  it('should handle vendors with only deliveries outstanding', async () => {
+    // Mock service to return only deliveries
     vi.mocked(serviceBookingService.getAll)
       .mockResolvedValueOnce([])
     
@@ -137,18 +139,18 @@ describe('VendorsView - Outstanding Calculations', () => {
     const vm = wrapper.vm as any
     
     // Verify data is loaded first
-    expect(vm.incomingItems).toHaveLength(1)
+    expect(vm.deliveries).toHaveLength(1)
     expect(vm.serviceBookings).toHaveLength(0) // Should be empty due to our mock
     
     const outstanding = vm.getVendorOutstanding('vendor-1')
     
-    // Should only include incoming item outstanding: 1000 - 300 = 700
+    // Should only include delivery outstanding: 1000 - 300 = 700
     expect(outstanding).toBe(700)
   })
 
   it('should handle vendors with only service bookings outstanding', async () => {
     // Mock service to return only service bookings
-    vi.mocked(incomingItemService.getAll)
+    vi.mocked(deliveryService.getAll)
       .mockResolvedValueOnce([])
     
     const wrapper = mount(VendorsView)
@@ -158,7 +160,7 @@ describe('VendorsView - Outstanding Calculations', () => {
     const vm = wrapper.vm as any
     
     // Verify data is loaded first
-    expect(vm.incomingItems).toHaveLength(0) // Should be empty due to our mock
+    expect(vm.deliveries).toHaveLength(0) // Should be empty due to our mock
     expect(vm.serviceBookings).toHaveLength(1)
     
     const outstanding = vm.getVendorOutstanding('vendor-1')
@@ -173,26 +175,23 @@ describe('VendorsView - Outstanding Calculations', () => {
     
     // Verify all services were called
     expect(vendorService.getAll).toHaveBeenCalled()
-    expect(incomingItemService.getAll).toHaveBeenCalled()
+    expect(deliveryService.getAll).toHaveBeenCalled()
     expect(serviceBookingService.getAll).toHaveBeenCalled()
     expect(paymentService.getAll).toHaveBeenCalled()
   })
 
   it('should handle paid items and bookings correctly', async () => {
     // Mock with fully paid items
-    vi.mocked(incomingItemService.getAll)
+    vi.mocked(deliveryService.getAll)
       .mockResolvedValue([
         {
-          id: 'item-1',
+          id: 'delivery-1',
           vendor: 'vendor-1',
+          delivery_date: '2024-12-01',
           total_amount: 1000,
           paid_amount: 1000,
           payment_status: 'paid',
-          item: 'item-1',
-          quantity: 10,
-          unit_price: 10,
-          delivery_date: '2024-12-01',
-          site: 'site-1',
+          site: 'site-1'
         }
       ])
     

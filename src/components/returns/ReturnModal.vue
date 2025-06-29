@@ -78,7 +78,7 @@
               >
                 <div class="flex items-center justify-between mb-2">
                   <h4 class="text-sm font-medium text-gray-900 dark:text-white">
-                    {{ item.incoming_item_data?.expand?.item?.name || 'Unknown Item' }}
+                    {{ item.delivery_item_data?.expand?.item?.name || 'Unknown Item' }}
                   </h4>
                   <button 
                     type="button" 
@@ -95,7 +95,7 @@
                       Available Quantity
                     </label>
                     <div class="text-sm text-gray-900 dark:text-white">
-                      {{ item.incoming_item_data?.quantity || 0 }} {{ item.incoming_item_data?.expand?.item?.unit || 'units' }}
+                      {{ item.delivery_item_data?.quantity || 0 }} {{ item.delivery_item_data?.expand?.item?.unit || 'units' }}
                     </div>
                   </div>
 
@@ -107,7 +107,7 @@
                       v-model.number="item.quantity_returned" 
                       type="number" 
                       step="0.01" 
-                      :max="item.incoming_item_data?.quantity || 0"
+                      :max="item.delivery_item_data?.quantity || 0"
                       required 
                       class="input text-sm" 
                       @input="updateReturnAmount(index)"
@@ -223,7 +223,7 @@
       </div>
     </div>
 
-    <!-- Incoming Items Selection Modal -->
+    <!-- Delivery Items Selection Modal -->
     <div v-if="showItemSelection" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-60">
       <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <div class="mt-3">
@@ -236,10 +236,10 @@
 
           <div class="space-y-2 max-h-96 overflow-y-auto">
             <div 
-              v-for="item in availableIncomingItems" 
+              v-for="item in availableDeliveryItems" 
               :key="item.id"
               class="p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-              @click="selectIncomingItem(item)"
+              @click="selectDeliveryItem(item)"
             >
               <div class="flex justify-between items-center">
                 <div>
@@ -247,7 +247,7 @@
                     {{ item.expand?.item?.name || 'Unknown Item' }}
                   </div>
                   <div class="text-xs text-gray-500 dark:text-gray-400">
-                    Delivered: {{ formatDate(item.delivery_date) }}
+                    Delivered: {{ formatDate(item.expand?.delivery?.delivery_date || '') }}
                   </div>
                   <div class="text-xs text-gray-500 dark:text-gray-400">
                     Qty: {{ item.quantity }} {{ item.expand?.item?.unit || 'units' }} @ ₹{{ item.unit_price }}
@@ -259,7 +259,7 @@
               </div>
             </div>
 
-            <div v-if="availableIncomingItems.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+            <div v-if="availableDeliveryItems.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
               No delivered items found for this vendor.
             </div>
           </div>
@@ -278,7 +278,7 @@ import {
   vendorReturnItemService,
   type VendorReturn,
   type Vendor,
-  type IncomingItem
+  type DeliveryItem
 } from '../../services/pocketbase';
 import FileUploadComponent from '../FileUploadComponent.vue';
 
@@ -286,12 +286,12 @@ interface Props {
   isEdit: boolean;
   returnData?: VendorReturn | null;
   vendors: Vendor[];
-  incomingItems: IncomingItem[];
+  deliveryItems: DeliveryItem[];
 }
 
 interface ReturnItemForm {
-  incoming_item: string;
-  incoming_item_data?: IncomingItem;
+  delivery_item: string;
+  delivery_item_data?: DeliveryItem;
   quantity_returned: number;
   return_rate: number;
   return_amount: number;
@@ -326,13 +326,13 @@ const loading = ref(false);
 const showItemSelection = ref(false);
 
 // Computed properties
-const availableIncomingItems = computed(() => {
+const availableDeliveryItems = computed(() => {
   if (!form.vendor) return [];
   
-  return props.incomingItems.filter(item => {
+  return props.deliveryItems.filter(item => {
     // Filter by vendor and exclude already selected items
-    const isVendorMatch = item.vendor === form.vendor;
-    const isNotSelected = !returnItems.value.some(ri => ri.incoming_item === item.id);
+    const isVendorMatch = item.expand?.delivery?.vendor === form.vendor;
+    const isNotSelected = !returnItems.value.some(ri => ri.delivery_item === item.id);
     return isVendorMatch && isNotSelected;
   });
 });
@@ -369,12 +369,12 @@ const removeReturnItem = (index: number) => {
   returnItems.value.splice(index, 1);
 };
 
-const selectIncomingItem = (incomingItem: IncomingItem) => {
+const selectDeliveryItem = (deliveryItem: DeliveryItem) => {
   const returnItem: ReturnItemForm = {
-    incoming_item: incomingItem.id!,
-    incoming_item_data: incomingItem,
+    delivery_item: deliveryItem.id!,
+    delivery_item_data: deliveryItem,
     quantity_returned: 0,
-    return_rate: incomingItem.unit_price,
+    return_rate: deliveryItem.unit_price,
     return_amount: 0,
     condition: '',
     item_notes: ''
@@ -423,7 +423,7 @@ const handleSubmit = async () => {
     for (const item of returnItems.value) {
       await vendorReturnItemService.create({
         vendor_return: vendorReturn.id!,
-        incoming_item: item.incoming_item,
+        delivery_item: item.delivery_item,
         quantity_returned: item.quantity_returned,
         return_rate: item.return_rate,
         return_amount: item.return_amount,
