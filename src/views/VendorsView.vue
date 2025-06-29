@@ -14,7 +14,7 @@
           canCreateVendor ? 'btn-primary' : 'btn-disabled',
           'hidden md:flex items-center'
         ]"
-        :title="!canCreateVendor ? t('subscription.banner.freeTierLimitReached') : ''"
+        :title="!canCreateVendor ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
       >
         <Plus class="mr-2 h-4 w-4" />
         {{ t('vendors.addVendor') }}
@@ -112,7 +112,7 @@
     </div>
 
     <!-- Add/Edit Modal -->
-    <div v-if="showAddModal || editingVendor" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal">
+    <div v-if="showAddModal || editingVendor" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
       <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4" @click.stop>
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
@@ -122,7 +122,7 @@
           <form @submit.prevent="saveVendor" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.contactPerson') }}</label>
-              <input v-model="form.contact_person" type="text" class="input mt-1" :placeholder="t('forms.enterContactPerson')" />
+              <input ref="firstInputRef" v-model="form.contact_person" type="text" class="input mt-1" :placeholder="t('forms.enterContactPerson')" autofocus />
             </div>
             
             <div>
@@ -175,7 +175,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { Users, Plus, Edit2, Trash2, Loader2, Mail, Phone, MapPin } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
@@ -208,6 +208,7 @@ const vendorTags = ref<Map<string, TagType[]>>(new Map());
 const showAddModal = ref(false);
 const editingVendor = ref<Vendor | null>(null);
 const loading = ref(false);
+const firstInputRef = ref<HTMLInputElement>();
 
 const canCreateVendor = computed(() => {
   return !isReadOnly.value && checkCreateLimit('vendors');
@@ -284,12 +285,14 @@ const loadData = async () => {
   }
 };
 
-const handleAddVendor = () => {
+const handleAddVendor = async () => {
   if (!canCreateVendor.value) {
     error(t('subscription.banner.freeTierLimitReached'));
     return;
   }
   showAddModal.value = true;
+  await nextTick();
+  firstInputRef.value?.focus();
 };
 
 const saveVendor = async () => {
@@ -369,22 +372,33 @@ const closeModal = () => {
   });
 };
 
-const handleQuickAction = () => {
+const handleQuickAction = async () => {
   showAddModal.value = true;
+  await nextTick();
+  firstInputRef.value?.focus();
 };
 
 const handleSiteChange = () => {
   loadData();
 };
 
+const handleKeyboardShortcut = (event: KeyboardEvent) => {
+  if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
+    event.preventDefault();
+    handleAddVendor();
+  }
+};
+
 onMounted(() => {
   loadData();
   window.addEventListener('show-add-modal', handleQuickAction);
   window.addEventListener('site-changed', handleSiteChange);
+  window.addEventListener('keydown', handleKeyboardShortcut);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
   window.removeEventListener('site-changed', handleSiteChange);
+  window.removeEventListener('keydown', handleKeyboardShortcut);
 });
 </script>

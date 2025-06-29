@@ -8,7 +8,11 @@
           {{ t('quotations.subtitle') }}
         </p>
       </div>
-      <button @click="showAddModal = true" class="btn-primary">
+      <button 
+        @click="handleAddQuotation" 
+        class="btn-primary"
+        :title="t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
+      >
         <Plus class="mr-2 h-4 w-4" />
         {{ t('quotations.addQuotation') }}
       </button>
@@ -101,7 +105,7 @@
     </div>
 
     <!-- Add/Edit Modal -->
-    <div v-if="showAddModal || editingQuotation" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal">
+    <div v-if="showAddModal || editingQuotation" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
       <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4" @click.stop>
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
@@ -111,7 +115,7 @@
           <form @submit.prevent="saveQuotation" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.item') }}</label>
-              <select v-model="form.item" required class="input mt-1">
+              <select ref="firstInputRef" v-model="form.item" required class="input mt-1" autofocus>
                 <option value="">{{ t('forms.selectItem') }}</option>
                 <option v-for="item in items" :key="item.id" :value="item.id">
                   {{ item.name }} ({{ getUnitDisplay(item.unit) }})
@@ -177,7 +181,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { FileText, Plus, Edit2, Trash2, Loader2 } from 'lucide-vue-next';
 import { 
   quotationService, 
@@ -205,6 +209,7 @@ const vendors = ref<Vendor[]>([]);
 const showAddModal = ref(false);
 const editingQuotation = ref<Quotation | null>(null);
 const loading = ref(false);
+const firstInputRef = ref<HTMLSelectElement>();
 
 const form = reactive({
   vendor: '',
@@ -329,16 +334,31 @@ const closeModal = () => {
   });
 };
 
+const handleAddQuotation = async () => {
+  showAddModal.value = true;
+  await nextTick();
+  firstInputRef.value?.focus();
+};
+
 const handleSiteChange = () => {
   loadData();
+};
+
+const handleKeyboardShortcut = (event: KeyboardEvent) => {
+  if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
+    event.preventDefault();
+    handleAddQuotation();
+  }
 };
 
 onMounted(() => {
   loadData();
   window.addEventListener('site-changed', handleSiteChange);
+  window.addEventListener('keydown', handleKeyboardShortcut);
 });
 
 onUnmounted(() => {
   window.removeEventListener('site-changed', handleSiteChange);
+  window.removeEventListener('keydown', handleKeyboardShortcut);
 });
 </script>

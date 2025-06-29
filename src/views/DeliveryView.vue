@@ -281,7 +281,7 @@
     />
 
     <!-- View Modal -->
-    <div v-if="viewingDelivery" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div v-if="viewingDelivery" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @keydown.esc="viewingDelivery = null" tabindex="-1">
       <div class="relative top-20 mx-auto p-5 border w-full max-w-6xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto">
         <div class="mt-3">
           <div class="flex items-center justify-between mb-4">
@@ -381,6 +381,13 @@
                         <div class="text-xs">
                           {{ t('delivery.oldDataNotice') }}
                         </div>
+                        <div v-if="isDev" class="text-xs mt-4 p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                          <div>Debug Info:</div>
+                          <div>Delivery ID: {{ viewingDelivery.id }}</div>
+                          <div>Has expand: {{ !!viewingDelivery.expand }}</div>
+                          <div>Has delivery_items: {{ !!viewingDelivery.expand?.delivery_items }}</div>
+                          <div>Items count: {{ viewingDelivery.expand?.delivery_items?.length || 0 }}</div>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -450,6 +457,9 @@ const showAddModal = ref(false);
 const editingDelivery = ref<Delivery | null>(null);
 const viewingDelivery = ref<Delivery | null>(null);
 const loadingDeliveryDetails = ref(false);
+
+// Development mode check for debugging
+const isDev = computed(() => import.meta.env.DEV);
 const showPhotoGallery = ref(false);
 const galleryDelivery = ref<Delivery | null>(null);
 const galleryIndex = ref(0);
@@ -499,6 +509,27 @@ const viewDelivery = async (delivery: Delivery) => {
     loadingDeliveryDetails.value = true;
     // Fetch the full delivery with all expanded relationships
     const fullDelivery = await deliveryService.getById(delivery.id!);
+    console.log('Full delivery data:', fullDelivery);
+    console.log('Delivery items:', fullDelivery.expand?.delivery_items);
+    
+    // If no delivery items found, try to fetch them separately as a fallback
+    if (!fullDelivery.expand?.delivery_items || fullDelivery.expand.delivery_items.length === 0) {
+      console.log('No delivery items found in expand, checking database directly...');
+      try {
+        const { deliveryItemService } = await import('../services/pocketbase');
+        const separateItems = await deliveryItemService.getByDelivery(delivery.id!);
+        console.log('Delivery items fetched separately:', separateItems);
+        
+        if (separateItems.length > 0) {
+          // If we found items separately, add them to the delivery object
+          if (!fullDelivery.expand) fullDelivery.expand = {};
+          fullDelivery.expand.delivery_items = separateItems;
+        }
+      } catch (separateErr) {
+        console.error('Failed to fetch delivery items separately:', separateErr);
+      }
+    }
+    
     viewingDelivery.value = fullDelivery;
   } catch (err) {
     console.error('Error loading delivery details:', err);

@@ -71,7 +71,8 @@
     "archived": "Archived",
     "more": "more",
     "items": "items",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "keyboardShortcut": "Keyboard shortcut: {keys}"
   },
   "search": {
     "placeholder": "Search...",

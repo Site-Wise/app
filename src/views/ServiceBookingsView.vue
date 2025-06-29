@@ -209,7 +209,7 @@
     </div>
 
     <!-- Add/Edit Modal -->
-    <div v-if="showAddModal || editingBooking" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal">
+    <div v-if="showAddModal || editingBooking" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
       <div class="relative top-20 mx-auto p-5 border w-full max-w-md m-4 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto" @click.stop>
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
@@ -219,7 +219,7 @@
           <form @submit.prevent="saveBooking" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.service') }}</label>
-              <select v-model="form.service" required class="input mt-1" @change="updateRateFromService">
+              <select v-model="form.service" required class="input mt-1" @change="updateRateFromService" autofocus>
                 <option value="">{{ t('forms.selectService') }}</option>
                 <option v-for="service in activeServices" :key="service.id" :value="service.id">
                   {{ service.name }} ({{ service.service_type }})

@@ -7,7 +7,12 @@
           {{ t('services.subtitle') }}
         </p>
       </div>
-      <button @click="showAddModal = true" class="btn-primary hidden md:flex items-center" v-if="canCreate">
+      <button 
+        @click="handleAddService" 
+        class="btn-primary hidden md:flex items-center" 
+        v-if="canCreate"
+        :title="t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
+      >
         <Plus class="mr-2 h-4 w-4" />
         {{ t('services.addService') }}
       </button>
@@ -157,8 +162,8 @@
     </div>
 
     <!-- Add/Edit Modal -->
-    <div v-if="showAddModal || editingService" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <div v-if="showAddModal || editingService" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700" @click.stop>
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
             {{ editingService ? t('services.editService') : t('services.addService') }}
@@ -167,7 +172,7 @@
           <form @submit.prevent="saveService" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.serviceName') }}</label>
-              <input v-model="form.name" type="text" required class="input mt-1" :placeholder="t('forms.enterServiceName')" />
+              <input ref="nameInputRef" v-model="form.name" type="text" required class="input mt-1" :placeholder="t('forms.enterServiceName')" autofocus />
             </div>
             
             <div>
@@ -240,7 +245,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { 
   Wrench, 
@@ -279,6 +284,7 @@ const serviceTags = ref<Map<string, TagType[]>>(new Map());
 const showAddModal = ref(false);
 const editingService = ref<Service | null>(null);
 const loading = ref(false);
+const nameInputRef = ref<HTMLInputElement>();
 
 const form = reactive({
   name: '',
@@ -431,9 +437,19 @@ const closeModal = () => {
   });
 };
 
-const handleQuickAction = () => {
+const handleAddService = async () => {
   if (canCreate.value) {
     showAddModal.value = true;
+    await nextTick();
+    nameInputRef.value?.focus();
+  }
+};
+
+const handleQuickAction = async () => {
+  if (canCreate.value) {
+    showAddModal.value = true;
+    await nextTick();
+    nameInputRef.value?.focus();
   }
 };
 
@@ -441,14 +457,23 @@ const handleSiteChange = () => {
   loadData();
 };
 
+const handleKeyboardShortcut = (event: KeyboardEvent) => {
+  if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
+    event.preventDefault();
+    handleAddService();
+  }
+};
+
 onMounted(() => {
   loadData();
   window.addEventListener('show-add-modal', handleQuickAction);
   window.addEventListener('site-changed', handleSiteChange);
+  window.addEventListener('keydown', handleKeyboardShortcut);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
   window.removeEventListener('site-changed', handleSiteChange);
+  window.removeEventListener('keydown', handleKeyboardShortcut);
 });
 </script>

@@ -1,5 +1,17 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <!-- Corner Ribbon -->
+    <div class="absolute top-0 right-0 w-36 h-36 overflow-hidden">
+      <a 
+        href="https://bolt.new" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        class="absolute top-5 -right-9 w-48 transform rotate-45 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white text-xs font-semibold py-2 text-center shadow-lg hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200"
+      >
+        Built with Bolt.new
+      </a>
+    </div>
+    
     <div class="max-w-md w-full space-y-8">
       <div>
         <div class="flex items-center justify-center">

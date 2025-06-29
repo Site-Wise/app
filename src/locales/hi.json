@@ -71,7 +71,8 @@
     "archived": "संग्रहीत",
     "more": "और",
     "items": "वस्तुएं",
-    "unknown": "अज्ञात"
+    "unknown": "अज्ञात",
+    "keyboardShortcut": "कीबोर्ड शॉर्टकट: {keys}"
   },
   "search": {
     "placeholder": "खोजें...",

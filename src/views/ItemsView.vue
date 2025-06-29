@@ -14,7 +14,7 @@
           canCreateItem ? 'btn-primary' : 'btn-disabled',
           'hidden md:flex items-center'
         ]"
-        :title="!canCreateItem ? t('subscription.banner.freeTierLimitReached') : ''"
+        :title="!canCreateItem ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
       >
         <Plus class="mr-2 h-4 w-4" />
         {{ t('items.addItem') }}
@@ -100,7 +100,7 @@
     </div>
 
     <!-- Add/Edit Modal -->
-    <div v-if="showAddModal || editingItem" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal">
+    <div v-if="showAddModal || editingItem" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
       <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4" @click.stop>
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
@@ -110,7 +110,7 @@
           <form @submit.prevent="saveItem" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.name') }}</label>
-              <input v-model="form.name" type="text" required class="input mt-1" :placeholder="t('forms.enterItemName')" />
+              <input ref="nameInputRef" v-model="form.name" type="text" required class="input mt-1" :placeholder="t('forms.enterItemName')" autofocus />
             </div>
             
             <div>
@@ -163,7 +163,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { Package, Plus, Edit2, Trash2, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
@@ -190,6 +190,7 @@ const itemTags = ref<Map<string, TagType[]>>(new Map());
 const showAddModal = ref(false);
 const editingItem = ref<Item | null>(null);
 const loading = ref(false);
+const nameInputRef = ref<HTMLInputElement>();
 
 const canCreateItem = computed(() => {
   return !isReadOnly.value && checkCreateLimit('items');
@@ -263,12 +264,14 @@ const viewItemDetail = (itemId: string) => {
   router.push(`/items/${itemId}`);
 };
 
-const handleAddItem = () => {
+const handleAddItem = async () => {
   if (!canCreateItem.value) {
     error(t('subscription.banner.freeTierLimitReached'));
     return;
   }
   showAddModal.value = true;
+  await nextTick();
+  nameInputRef.value?.focus();
 };
 
 const saveItem = async () => {
@@ -335,22 +338,33 @@ const closeModal = () => {
   });
 };
 
-const handleQuickAction = () => {
+const handleQuickAction = async () => {
   showAddModal.value = true;
+  await nextTick();
+  nameInputRef.value?.focus();
 };
 
 const handleSiteChange = () => {
   loadData();
 };
 
+const handleKeyboardShortcut = (event: KeyboardEvent) => {
+  if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
+    event.preventDefault();
+    handleAddItem();
+  }
+};
+
 onMounted(() => {
   loadData();
   window.addEventListener('show-add-modal', handleQuickAction);
   window.addEventListener('site-changed', handleSiteChange);
+  window.addEventListener('keydown', handleKeyboardShortcut);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
   window.removeEventListener('site-changed', handleSiteChange);
+  window.removeEventListener('keydown', handleKeyboardShortcut);
 });
 </script>
