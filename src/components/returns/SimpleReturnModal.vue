@@ -468,17 +468,17 @@ const selectedAccount = computed(() => {
 
 const refundOptions = computed(() => [
   {
-    value: 'monetary',
+    value: 'monetary' as const,
     label: t('returns.refundTypes.monetary'),
     description: t('returns.refundTypes.monetaryDesc')
   },
   {
-    value: 'credit',
+    value: 'credit' as const,
     label: t('returns.refundTypes.credit'),
     description: t('returns.refundTypes.creditDesc')
   },
   {
-    value: 'split',
+    value: 'split' as const,
     label: t('returns.refundTypes.split'),
     description: t('returns.refundTypes.splitDesc')
   }
@@ -496,8 +496,7 @@ const canProceedToNextStep = computed(() => {
     case 1: // Return Details
       return returnForm.reason !== '';
     case 2: // Refund Type
-      return returnForm.refundType !== '' && 
-             (returnForm.refundType === 'credit' || 
+      return (returnForm.refundType === 'credit' || 
               (returnForm.refundType === 'monetary' && returnForm.account !== '') ||
               (returnForm.refundType === 'split' && returnForm.account !== '' && returnForm.monetaryAmount >= 0));
     default:

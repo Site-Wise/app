@@ -200,7 +200,7 @@
             </label>
             <div class="mt-1">
               <FileUploadComponent
-                v-model="form.photos"
+                v-model="uploadedFiles"
                 accept="image/*"
                 multiple
                 :max-files="5"
@@ -277,7 +277,6 @@ import {
   vendorReturnService,
   vendorReturnItemService,
   type VendorReturn,
-  type VendorReturnItem,
   type Vendor,
   type IncomingItem
 } from '../../services/pocketbase';
@@ -312,12 +311,15 @@ const { t } = useI18n();
 const form = reactive({
   vendor: '',
   return_date: new Date().toISOString().split('T')[0],
-  reason: '',
+  reason: '' as '' | 'damaged' | 'wrong_item' | 'excess_delivery' | 'quality_issue' | 'specification_mismatch' | 'other',
   notes: '',
   photos: [] as string[],
   status: 'initiated' as const,
   total_return_amount: 0
 });
+
+// Separate state for file uploads
+const uploadedFiles = ref<File[]>([]);
 
 const returnItems = ref<ReturnItemForm[]>([]);
 const loading = ref(false);
@@ -387,8 +389,10 @@ const updateReturnAmount = (index: number) => {
   item.return_amount = item.quantity_returned * item.return_rate;
 };
 
-const handlePhotosSelected = (photos: string[]) => {
-  form.photos = photos;
+const handlePhotosSelected = (files: File[]) => {
+  // FileUploadComponent emits File[], but we need to store file names or handle uploads
+  // For now, we'll store file names as placeholder
+  form.photos = files.map(file => file.name);
 };
 
 const formatDate = (dateString: string) => {
@@ -397,16 +401,22 @@ const formatDate = (dateString: string) => {
 
 const handleSubmit = async () => {
   if (returnItems.value.length === 0) return;
+  if (!form.reason) return; // Ensure reason is selected
 
   loading.value = true;
   try {
     // Create or update the vendor return
     let vendorReturn: VendorReturn;
     
+    const returnData = {
+      ...form,
+      reason: form.reason as 'damaged' | 'wrong_item' | 'excess_delivery' | 'quality_issue' | 'specification_mismatch' | 'other'
+    };
+    
     if (props.isEdit && props.returnData?.id) {
-      vendorReturn = await vendorReturnService.update(props.returnData.id, form);
+      vendorReturn = await vendorReturnService.update(props.returnData.id, returnData);
     } else {
-      vendorReturn = await vendorReturnService.create(form);
+      vendorReturn = await vendorReturnService.create(returnData);
     }
 
     // Create return items

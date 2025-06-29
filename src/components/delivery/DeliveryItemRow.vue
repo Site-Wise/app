@@ -117,7 +117,7 @@
       <div class="text-red-800 dark:text-red-200 text-sm">
         <div class="font-medium mb-1">{{ t('forms.validationError') }}</div>
         <ul class="list-disc list-inside space-y-1">
-          <li v-for="error in Object.values(errors)" :key="error" v-if="error">{{ error }}</li>
+          <li v-for="(error, key) in Object.values(errors).filter(e => e)" :key="key">{{ error }}</li>
         </ul>
       </div>
     </div>

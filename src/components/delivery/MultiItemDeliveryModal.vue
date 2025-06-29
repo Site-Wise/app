@@ -280,7 +280,6 @@ import {
   vendorService,
   itemService,
   type Delivery,
-  type DeliveryItem,
   type Vendor,
   type Item
 } from '../../services/pocketbase';

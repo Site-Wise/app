@@ -516,8 +516,7 @@ import {
   pb,
   type IncomingItem, 
   type Item, 
-  type Vendor,
-  type VendorReturn 
+  type Vendor
 } from '../services/pocketbase';
 
 interface FileWithPreview {
@@ -782,7 +781,7 @@ const closeReturnModal = () => {
   selectedItemForReturn.value = null;
 };
 
-const handleReturnSuccess = async (returnData: VendorReturn) => {
+const handleReturnSuccess = async () => {
   success(t('returns.returnCreatedSuccess'));
   closeReturnModal();
   // Refresh the data to show updated status

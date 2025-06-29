@@ -67,7 +67,7 @@
               {{ payment.reference || '-' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
-              {{ getRelatedItemsCount(payment) }} {{ t('common.items') }}
+              {{ getRelatedItemsCount() }} {{ t('common.items') }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium hidden lg:table-cell">
               <div class="flex items-center space-x-2">
@@ -299,13 +299,12 @@
               <span class="font-medium text-gray-700 dark:text-gray-300">Notes:</span>
               <p class="ml-2 text-gray-600 dark:text-gray-400">{{ viewingPayment.notes }}</p>
             </div>
-            <div v-if="viewingPayment.expand?.incoming_items && viewingPayment.expand.incoming_items.length > 0">
-              <span class="font-medium text-gray-700 dark:text-gray-300">Items Affected:</span>
-              <div class="ml-2 mt-2 space-y-2">
-                <div v-for="item in viewingPayment.expand.incoming_items" :key="item.id" class="p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                  <p class="text-sm font-medium text-gray-900 dark:text-white">{{ item.expand?.item?.name || 'Unknown Item' }}</p>
-                  <p class="text-xs text-gray-600 dark:text-gray-400">{{ item.expand?.vendor?.name || 'Unknown Vendor' }} - ₹{{ item.total_amount.toFixed(2) }}</p>
-                </div>
+            <!-- Related return info if available -->
+            <div v-if="viewingPayment.expand?.related_return">
+              <span class="font-medium text-gray-700 dark:text-gray-300">Related Return:</span>
+              <div class="ml-2 mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                <p class="text-sm font-medium text-gray-900 dark:text-white">Return Date: {{ formatDate(viewingPayment.expand.related_return.return_date) }}</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400">Amount: ₹{{ viewingPayment.expand.related_return.total_return_amount.toFixed(2) }}</p>
               </div>
             </div>
           </div>
@@ -438,7 +437,7 @@ const getAccountIcon = (type?: Account['type']) => {
   return icons[type] || Wallet;
 };
 
-const getRelatedItemsCount = (transaction: AccountTransaction) => {
+const getRelatedItemsCount = () => {
   // For now, return 0 since we don't have direct relationship
   // In the future, this could be calculated based on vendor and date range
   return 0;
@@ -540,7 +539,7 @@ const quickPayment = (vendor: VendorWithOutstanding) => {
   showAddModal.value = true;
 };
 
-const viewPayment = (payment: Payment) => {
+const viewPayment = (payment: AccountTransaction) => {
   viewingPayment.value = payment;
 };
 
