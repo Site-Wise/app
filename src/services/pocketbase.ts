@@ -2877,38 +2877,28 @@ export class DeliveryService {
   }
 
   async getById(id: string): Promise<Delivery> {
-    console.log('Fetching delivery with ID:', id);
-    
     const record = await pb.collection('deliveries').getOne(id, {
       expand: 'vendor,delivery_items,delivery_items.item'
     });
     
-    console.log('Raw PocketBase delivery record:', record);
-    console.log('Raw delivery_items from PocketBase:', record.expand?.delivery_items);
-    console.log('Request URL that was made:', pb.baseUrl + '/api/collections/deliveries/records/' + id + '?expand=vendor,delivery_items,delivery_items.item');
-    
-    // Additional debug: check if delivery_items relation exists
+    // If delivery_items relation is missing, try a direct query
     if (!record.expand?.delivery_items) {
-      console.warn('No delivery_items found in expand. This could mean:');
-      console.warn('1. No delivery_items records exist for this delivery');
-      console.warn('2. The relationship field name is incorrect');
-      console.warn('3. There\'s a permission issue');
-      
-      // Try a direct query to see if delivery_items exist
       try {
         const directItems = await pb.collection('delivery_items').getFullList({
           filter: `delivery="${id}"`,
           expand: 'item'
         });
-        console.log('Direct query for delivery_items:', directItems);
+        // Add the items to the expand if found
+        if (directItems.length > 0) {
+          record.expand = record.expand || {};
+          record.expand.delivery_items = directItems;
+        }
       } catch (directErr) {
         console.error('Failed direct query for delivery_items:', directErr);
       }
     }
     
-    const mappedDelivery = this.mapRecordToDelivery(record);
-    console.log('Mapped delivery object:', mappedDelivery);
-    return mappedDelivery;
+    return this.mapRecordToDelivery(record);
   }
 
   async create(data: Omit<Delivery, 'id' | 'site' | 'created' | 'updated'>): Promise<Delivery> {

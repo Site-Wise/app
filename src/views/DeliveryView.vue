@@ -509,16 +509,12 @@ const viewDelivery = async (delivery: Delivery) => {
     loadingDeliveryDetails.value = true;
     // Fetch the full delivery with all expanded relationships
     const fullDelivery = await deliveryService.getById(delivery.id!);
-    console.log('Full delivery data:', fullDelivery);
-    console.log('Delivery items:', fullDelivery.expand?.delivery_items);
     
     // If no delivery items found, try to fetch them separately as a fallback
     if (!fullDelivery.expand?.delivery_items || fullDelivery.expand.delivery_items.length === 0) {
-      console.log('No delivery items found in expand, checking database directly...');
       try {
         const { deliveryItemService } = await import('../services/pocketbase');
         const separateItems = await deliveryItemService.getByDelivery(delivery.id!);
-        console.log('Delivery items fetched separately:', separateItems);
         
         if (separateItems.length > 0) {
           // If we found items separately, add them to the delivery object

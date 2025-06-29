@@ -466,7 +466,6 @@ const goBack = () => {
 
 const loadAccountData = async () => {
   const accountId = route.params.id as string;
-  console.log('Loading account data for ID:', accountId);
   
   try {
     const [accountData, transactions] = await Promise.all([
@@ -474,8 +473,6 @@ const loadAccountData = async () => {
       accountTransactionService.getByAccount(accountId)
     ]);
     
-    console.log('Account data loaded:', accountData);
-    console.log('Account transactions:', transactions);
     
     account.value = accountData;
     accountTransactions.value = transactions.sort((a, b) => 
@@ -632,7 +629,6 @@ const formatDate = (dateString: string) => {
 };
 
 onMounted(() => {
-  console.log('AccountDetailView mounted, route params:', route.params);
   loadAccountData();
 });
 </script>

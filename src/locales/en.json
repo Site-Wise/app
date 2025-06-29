@@ -80,7 +80,6 @@
     "accounts": "Search accounts by name or number...",
     "quotations": "Search quotations by item, vendor, or service...",
     "serviceBookings": "Search bookings by service or vendor...",
-    "incoming": "Search deliveries by item, vendor, or notes...",
     "delivery": "Search deliveries by vendor, reference, or notes...",
     "vendors": "Search vendors by name, contact, or email...",
     "services": "Search services by name or description...",
@@ -97,7 +96,6 @@
     "quotations": "Quotations",
     "services": "Services",
     "serviceBookings": "Service Bookings",
-    "incoming": "Incoming Items",
     "deliveries": "Deliveries",
     "payments": "Payments",
     "users": "Users",
@@ -464,27 +462,6 @@
     "noQuotations": "No quotations",
     "getStarted": "Get started by adding a quotation.",
     "additionalNotes": "Additional notes"
-  },
-  "incoming": {
-    "title": "Incoming Items",
-    "subtitle": "Track deliveries and manage receipts",
-    "recordDelivery": "Record Delivery",
-    "editDelivery": "Edit Delivery",
-    "deleteDelivery": "Delete Delivery",
-    "deliveryDate": "Delivery Date",
-    "paymentStatus": "Payment Status",
-    "paidAmount": "Paid Amount",
-    "paid": "Paid",
-    "photos": "Photos",
-    "deliveryNotes": "Delivery notes",
-    "deliveryDetails": "Delivery Details",
-    "details": "Details",
-    "existingPhotos": "Existing photos:",
-    "noDeliveries": "No deliveries recorded",
-    "startTracking": "Start tracking by recording a delivery.",
-    "itemsAffected": "Items Affected",
-    "noPhotos": "No photos",
-    "noPhotosMessage": "No photos attached to this delivery"
   },
   "delivery": {
     "title": "Deliveries",
@@ -858,8 +835,6 @@
     "limits": {
       "items": "Items",
       "vendors": "Vendors",
-      "incomingDeliveries": "Deliveries",
-      "incoming_deliveries": "Deliveries",
       "serviceBookings": "Service Bookings",
       "service_bookings": "Service Bookings",
       "payments": "Payments"

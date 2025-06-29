@@ -304,7 +304,6 @@ const maskAccountNumber = (accountNumber: string | number) => {
 };
 
 const viewAccountDetail = (accountId: string) => {
-  console.log('Navigating to account detail:', accountId);
   try {
     router.push(`/accounts/${accountId}`);
   } catch (error) {

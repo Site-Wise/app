@@ -419,8 +419,8 @@ const loadPlans = async () => {
   }
 };
 
-const selectPlan = (plan: SubscriptionPlan) => {
-  console.log('Selected plan:', plan);
+const selectPlan = (_plan: SubscriptionPlan) => {
+  // Plan selection logic can be implemented here
 };
 
 const upgradeToPlan = async (plan: SubscriptionPlan) => {

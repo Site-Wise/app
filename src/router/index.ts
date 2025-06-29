@@ -137,21 +137,8 @@ router.beforeEach((to, _from, next) => {
   const currentSiteId = getCurrentSiteId();
   const userRole = getCurrentUserRole();
 
-  console.log('Router Guard:', {
-    to: to.path,
-    from: _from.path,
-    isAuthenticated,
-    currentSiteId,
-    userRole,
-    requiresAuth: to.meta.requiresAuth,
-    requiresSite: to.meta.requiresSite,
-    permission: to.meta.permission,
-    timestamp: new Date().toISOString()
-  });
-
   // Handle authentication requirements
   if (to.meta.requiresAuth && !isAuthenticated) {
-    console.log('Redirecting to login - not authenticated');
     next('/login');
     return;
   }
@@ -159,10 +146,8 @@ router.beforeEach((to, _from, next) => {
   // Handle guest-only routes (like login)
   if (to.meta.requiresGuest && isAuthenticated) {
     if (!currentSiteId) {
-      console.log('Redirecting to site selection - authenticated but no site');
       next('/select-site');
     } else {
-      console.log('Redirecting to dashboard - authenticated with site');
       next('/');
     }
     return;
@@ -170,14 +155,12 @@ router.beforeEach((to, _from, next) => {
 
   // Handle site selection requirements
   if (to.meta.requiresSite && !currentSiteId) {
-    console.log('Redirecting to site selection - route requires site');
     next('/select-site');
     return;
   }
 
   // Handle owner-only routes
   if (to.meta.ownerOnly && userRole !== 'owner') {
-    console.log('Redirecting to dashboard - not owner');
     next('/');
     return;
   }
@@ -188,7 +171,6 @@ router.beforeEach((to, _from, next) => {
     const requiredPermission = to.meta.permission as keyof typeof permissions;
     
     if (!permissions[requiredPermission]) {
-      console.log('Redirecting to dashboard - insufficient permissions');
       // Redirect to dashboard if user doesn't have permission
       next('/');
       return;
@@ -196,7 +178,6 @@ router.beforeEach((to, _from, next) => {
   }
 
   // Allow navigation
-  console.log('Navigation allowed');
   next();
 });
 

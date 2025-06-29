@@ -533,7 +533,6 @@ export function useSubscription() {
         },
         modal: {
           ondismiss: () => {
-            console.log('Payment cancelled by user');
           }
         }
       };

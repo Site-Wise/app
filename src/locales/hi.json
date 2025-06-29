@@ -80,7 +80,6 @@
     "accounts": "नाम या नंबर से खाते खोजें...",
     "quotations": "वस्तु, विक्रेता, या सेवा से कोटेशन खोजें...",
     "serviceBookings": "सेवा या विक्रेता से बुकिंग खोजें...",
-    "incoming": "वस्तु, विक्रेता, या नोट्स से डिलीवरी खोजें...",
     "delivery": "विक्रेता, संदर्भ, या नोट्स से डिलीवरी खोजें...",
     "vendors": "नाम, संपर्क, या ईमेल से विक्रेता खोजें...",
     "services": "नाम या विवरण से सेवाएं खोजें...",
@@ -97,7 +96,6 @@
     "quotations": "कोटेशन",
     "services": "सेवाएं",
     "serviceBookings": "सेवा बुकिंग",
-    "incoming": "आने वाली वस्तुएं",
     "deliveries": "डिलीवरी",
     "payments": "भुगतान",
     "users": "उपयोगकर्ता",
@@ -466,27 +464,6 @@
     "noQuotations": "कोई कोटेशन नहीं",
     "getStarted": "कोटेशन जोड़कर शुरुआत करें।",
     "additionalNotes": "अतिरिक्त टिप्पणी"
-  },
-  "incoming": {
-    "title": "आने वाली वस्तुएं",
-    "subtitle": "डिलीवरी ट्रैक करें और रसीदों का प्रबंधन करें",
-    "recordDelivery": "डिलीवरी रिकॉर्ड करें",
-    "editDelivery": "डिलीवरी संपादित करें",
-    "deleteDelivery": "डिलीवरी हटाएं",
-    "deliveryDate": "डिलीवरी दिनांक",
-    "paymentStatus": "भुगतान स्थिति",
-    "paidAmount": "भुगतान की गई राशि",
-    "paid": "भुगतान किया गया",
-    "photos": "फोटो",
-    "deliveryNotes": "डिलीवरी टिप्पणी",
-    "deliveryDetails": "डिलीवरी विवरण",
-    "details": "विवरण",
-    "existingPhotos": "मौजूदा फोटो:",
-    "noDeliveries": "कोई डिलीवरी रिकॉर्ड नहीं",
-    "startTracking": "डिलीवरी रिकॉर्ड करके ट्रैकिंग शुरू करें।",
-    "itemsAffected": "प्रभावित वस्तुएं",
-    "noPhotos": "कोई फोटो नहीं",
-    "noPhotosMessage": "इस डिलीवरी के साथ कोई फोटो संलग्न नहीं"
   },
   "delivery": {
     "title": "डिलीवरी",
@@ -861,8 +838,6 @@
     "limits": {
       "items": "वस्तुएं",
       "vendors": "विक्रेता",
-      "incomingDeliveries": "डिलीवरी",
-      "incoming_deliveries": "डिलीवरी",
       "serviceBookings": "सेवा बुकिंग",
       "service_bookings": "सेवा बुकिंग",
       "payments": "भुगतान"

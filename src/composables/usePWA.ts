@@ -35,12 +35,10 @@ export function usePWA() {
       const choiceResult = await installPrompt.value.userChoice;
       
       if (choiceResult.outcome === 'accepted') {
-        console.log('PWA: User accepted the install prompt');
         isInstallable.value = false;
         installPrompt.value = null;
         return true;
       } else {
-        console.log('PWA: User dismissed the install prompt');
         return false;
       }
     } catch (error) {
@@ -70,8 +68,6 @@ export function usePWA() {
       try {
         const reg = await navigator.serviceWorker.register('/sw.js');
         registration.value = reg;
-        
-        console.log('PWA: Service Worker registered successfully');
 
         // Check for updates
         reg.addEventListener('updatefound', () => {
@@ -80,7 +76,6 @@ export function usePWA() {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                 updateAvailable.value = true;
-                console.log('PWA: New version available');
               }
             });
           }
@@ -160,12 +155,10 @@ export function usePWA() {
       e.preventDefault();
       installPrompt.value = e as BeforeInstallPromptEvent;
       isInstallable.value = true;
-      console.log('PWA: Install prompt available');
     });
 
     // Listen for app installed
     window.addEventListener('appinstalled', () => {
-      console.log('PWA: App was installed');
       isInstalled.value = true;
       isInstallable.value = false;
       installPrompt.value = null;
@@ -174,12 +167,10 @@ export function usePWA() {
     // Listen for online/offline status
     window.addEventListener('online', () => {
       isOnline.value = true;
-      console.log('PWA: App is online');
     });
 
     window.addEventListener('offline', () => {
       isOnline.value = false;
-      console.log('PWA: App is offline');
     });
 
     // Listen for display mode changes
