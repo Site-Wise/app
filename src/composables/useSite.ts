@@ -12,12 +12,14 @@ import {
 const currentSite = ref<Site | null>(null);
 const userSites = ref<Site[]>([]);
 const currentUserRole = ref<'owner' | 'supervisor' | 'accountant' | null>(null);
+const isInitialized = ref(false);
 
 export function useSite() {
   const isLoading = ref(false);
 
   const loadUserSites = async () => {
     isLoading.value = true;
+    isInitialized.value = false;
     try {
       const sites = await siteService.getAll();
       
@@ -64,6 +66,7 @@ export function useSite() {
       console.error('Error loading user sites:', error);
     } finally {
       isLoading.value = false;
+      isInitialized.value = true;
     }
   };
 
@@ -224,6 +227,10 @@ export function useSite() {
     return currentSite.value !== null;
   });
 
+  const isReadyForRouting = computed(() => {
+    return isInitialized.value;
+  });
+
   const isCurrentUserAdmin = computed(() => {
     return currentUserRole.value === 'owner';
   });
@@ -252,6 +259,7 @@ export function useSite() {
     currentUserRole: computed(() => currentUserRole.value),
     isLoading: computed(() => isLoading.value),
     hasSiteAccess,
+    isReadyForRouting,
     isCurrentUserAdmin,
     canManageUsers,
     loadUserSites,

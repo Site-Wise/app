@@ -536,6 +536,194 @@ Existing users can continue using the PWA version without any changes. The nativ
 
 ---
 
+# Critical Fix: Page Reload Redirect Issue
+
+## Problem Description
+**Issue**: When users reload any sub-page (like `/items`, `/services`, etc.), the page would momentarily show the correct content, then automatically redirect to the dashboard (`/`).
+
+**Root Cause**: Race condition in App.vue's conditional rendering logic during site initialization.
+
+## Technical Analysis
+
+### The Problem Sequence
+1. User reloads `/items` page
+2. Router guard correctly allows navigation ("Navigation allowed")
+3. **Problem**: App.vue's reactive logic renders components based on current state:
+   ```vue
+   <SiteSelectionView v-else-if="isAuthenticated && !hasSiteAccess" />
+   ```
+4. During reload, `hasSiteAccess` computed property initially returns `false` because `currentSite.value` is `null`
+5. This causes `SiteSelectionView` to render temporarily
+6. `SiteSelectionView.vue` has auto-redirect logic in `onMounted` that calls `router.push('/')` when user has exactly one site
+7. User gets redirected to dashboard
+
+### The Race Condition
+```typescript
+// In useSite.ts - hasSiteAccess computed property
+const hasSiteAccess = computed(() => {
+  return currentSite.value !== null; // Initially null during reload
+});
+
+// In SiteSelectionView.vue - auto-redirect logic  
+onMounted(async () => {
+  // ...
+  if (userSites.value.length === 1 && receivedInvitations.value.length === 0) {
+    await selectSite(userSites.value[0].id!); // This calls router.push('/')
+  }
+});
+```
+
+## The Solution
+
+### 1. Added Initialization State Tracking
+**File**: `src/composables/useSite.ts`
+
+```typescript
+// Added initialization tracking
+const isInitialized = ref(false);
+
+const loadUserSites = async () => {
+  isLoading.value = true;
+  isInitialized.value = false; // Reset during loading
+  try {
+    // ... existing logic
+  } finally {
+    isLoading.value = false;
+    isInitialized.value = true; // Mark as ready
+  }
+};
+
+// New computed property for safe routing
+const isReadyForRouting = computed(() => {
+  return isInitialized.value;
+});
+```
+
+### 2. Updated App.vue Conditional Rendering
+**File**: `src/App.vue`
+
+```vue
+<template>
+  <div id="app">
+    <router-view v-if="!isAuthenticated" />
+    <!-- CRITICAL: Only show SiteSelectionView when ready for routing -->
+    <SiteSelectionView v-else-if="isAuthenticated && isReadyForRouting && !hasSiteAccess" />
+    <AppLayout v-else-if="isAuthenticated && isReadyForRouting && hasSiteAccess" />
+    <!-- Loading skeleton during initialization -->
+    <div v-else-if="isAuthenticated && !isReadyForRouting" class="loading-skeleton">
+      <!-- Skeleton UI -->
+    </div>
+    <ToastContainer />
+  </div>
+</template>
+```
+
+### 3. Key Changes
+- **Prevents Premature Rendering**: `SiteSelectionView` only renders when `isReadyForRouting` is true
+- **Loading State**: Shows skeleton UI during site initialization to prevent race condition
+- **Proper Sequencing**: Ensures `loadUserSites()` completes before conditional rendering logic activates
+
+## Testing Coverage
+
+### Critical Test Cases Added
+**File**: `src/test/components/App.test.ts`
+
+```typescript
+describe('Critical Reload Behavior - Prevents Dashboard Redirect', () => {
+  it('should NOT show SiteSelectionView during loading phase to prevent auto-redirect', async () => {
+    // CRITICAL: This test ensures the reload redirect bug is fixed
+    // During page reload, this sequence must be maintained:
+    // 1. Show loading skeleton (prevents SiteSelectionView from rendering)
+    // 2. loadUserSites() completes and sets isReadyForRouting = true  
+    // 3. Only then show SiteSelectionView or AppLayout based on actual state
+    
+    mockIsAuthenticated = true
+    mockIsReadyForRouting = false  // Key: not ready yet
+    mockHasSiteAccess = false      // Would normally show SiteSelectionView
+    
+    wrapper = createWrapper()
+    await nextTick()
+    
+    // CRITICAL CHECK: SiteSelectionView must NOT render during loading
+    // If it renders, it will auto-redirect to dashboard via its onMounted logic
+    expect(wrapper.find('[data-testid="site-selection"]').exists()).toBe(false)
+    expect(wrapper.find('.animate-pulse').exists()).toBe(true)
+  })
+})
+```
+
+## Implementation Guidelines
+
+### ⚠️ Critical Rules for Future Development
+
+1. **NEVER modify App.vue conditional rendering without understanding this fix**
+   - The `isReadyForRouting` check is critical for preventing reload redirects
+   - Removing it will reintroduce the bug
+
+2. **NEVER add auto-redirect logic to components that render during loading**
+   - Components that render before `isReadyForRouting = true` must not auto-navigate
+   - Always check initialization state before programmatic navigation
+
+3. **ALWAYS test reload behavior when adding new routing logic**
+   - Test: Navigate to page → Reload → Verify no unexpected redirects
+   - Run the App.test.ts reload behavior tests
+
+### Code Patterns to Avoid
+
+```typescript
+// ❌ WRONG: Auto-redirect without checking ready state
+onMounted(() => {
+  if (someCondition) {
+    router.push('/somewhere') // Can cause reload redirect bug
+  }
+})
+
+// ✅ CORRECT: Check ready state first
+onMounted(() => {
+  if (isReadyForRouting.value && someCondition) {
+    router.push('/somewhere')
+  }
+})
+```
+
+### Safe Patterns
+
+```typescript
+// ✅ Safe conditional rendering
+<Component v-if="isAuthenticated && isReadyForRouting && someCondition" />
+
+// ✅ Safe programmatic navigation
+const handleAction = () => {
+  if (!isReadyForRouting.value) return
+  // Safe to navigate now
+  router.push('/target')
+}
+```
+
+## Verification Steps
+
+To verify the fix is working:
+
+1. **Navigate to any sub-page** (e.g., `/items`)
+2. **Reload the page** (F5 or Ctrl+R)
+3. **Expected**: Page loads correctly without redirecting to dashboard
+4. **Expected**: Loading skeleton shows briefly during initialization
+
+To verify tests are protecting the fix:
+
+```bash
+npm test -- --run src/test/components/App.test.ts
+```
+
+## Related Files
+
+- `src/App.vue` - Main conditional rendering logic
+- `src/composables/useSite.ts` - Site initialization and ready state
+- `src/views/SiteSelectionView.vue` - Auto-redirect logic (still present but safe)
+- `src/test/components/App.test.ts` - Comprehensive reload behavior tests
+
+---
+
 # Vue 3 + TypeScript + Vitest Testing Reference Guide
 
 This document contains all the patterns, best practices, and solutions we've discovered for testing in our Vue 3 + TypeScript + Vitest setup.
