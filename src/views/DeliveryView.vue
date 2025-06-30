@@ -278,6 +278,7 @@
       :editing-delivery="editingDelivery || undefined"
       @close="closeAddModal"
       @saved="handleDeliverySaved"
+      @success="handleDeliveryEditSuccess"
     />
 
     <!-- View Modal -->
@@ -556,9 +557,14 @@ const closeAddModal = () => {
 };
 
 const handleDeliverySaved = () => {
+  // For new deliveries, modal stays open but refreshes the list
+  loadData();
+};
+
+const handleDeliveryEditSuccess = () => {
+  // For edits, close the modal and refresh
   closeAddModal();
   loadData();
-  success(editingDelivery.value ? t('delivery.updateSuccess') : t('delivery.createSuccess'));
 };
 
 const toggleMobileMenu = (deliveryId: string) => {

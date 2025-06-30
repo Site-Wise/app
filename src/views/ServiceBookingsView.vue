@@ -219,7 +219,7 @@
           <form @submit.prevent="saveBooking" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.service') }}</label>
-              <select v-model="form.service" required class="input mt-1" @change="updateRateFromService" autofocus>
+              <select ref="serviceInputRef" v-model="form.service" required class="input mt-1" @change="updateRateFromService" autofocus>
                 <option value="">{{ t('forms.selectService') }}</option>
                 <option v-for="service in activeServices" :key="service.id" :value="service.id">
                   {{ service.name }} ({{ service.service_type }})
@@ -374,7 +374,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { 
   Calendar, 
   Plus, 
@@ -415,6 +415,7 @@ const showAddModal = ref(false);
 const editingBooking = ref<ServiceBooking | null>(null);
 const viewingBooking = ref<ServiceBooking | null>(null);
 const loading = ref(false);
+const serviceInputRef = ref<HTMLInputElement>();
 const openMobileMenuId = ref<string | null>(null);
 
 const form = reactive({
@@ -565,9 +566,11 @@ const closeModal = () => {
   });
 };
 
-const handleQuickAction = () => {
+const handleQuickAction = async () => {
   if (canCreate.value) {
     showAddModal.value = true;
+    await nextTick();
+    serviceInputRef.value?.focus();
   }
 };
 
@@ -582,11 +585,13 @@ const handleClickOutside = (event: Event) => {
   }
 };
 
-const handleKeyboardShortcut = (event: KeyboardEvent) => {
+const handleKeyboardShortcut = async (event: KeyboardEvent) => {
   if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
     event.preventDefault();
     if (canCreate.value) {
       showAddModal.value = true;
+      await nextTick();
+      serviceInputRef.value?.focus();
     }
   }
 };

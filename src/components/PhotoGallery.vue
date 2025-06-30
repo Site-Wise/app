@@ -10,7 +10,7 @@
       >
         <img 
           :src="getPhotoUrl(photo)" 
-          :alt="`${t('incoming.photos')} ${index + 1}`"
+          :alt="`${t('delivery.photos')} ${index + 1}`"
           class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
           loading="lazy"
         />
@@ -31,8 +31,8 @@
     <!-- Empty State -->
     <div v-else class="text-center py-8">
       <Camera class="mx-auto h-12 w-12 text-gray-400" />
-      <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('incoming.noPhotos') }}</h3>
-      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('incoming.noPhotosMessage') }}</p>
+      <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('delivery.noPhotos') }}</h3>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('delivery.noPhotosMessage') }}</p>
     </div>
 
     <!-- Gallery Modal -->
@@ -90,7 +90,7 @@
       >
         <img 
           :src="getPhotoUrl(photos[currentPhotoIndex])" 
-          :alt="`${t('incoming.photos')} ${currentPhotoIndex + 1}`"
+          :alt="`${t('delivery.photos')} ${currentPhotoIndex + 1}`"
           class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
           :class="{ 'cursor-zoom-in': !isZoomed, 'cursor-zoom-out': isZoomed }"
           @click="toggleZoom"
@@ -153,7 +153,7 @@
         >
           <img 
             :src="getPhotoUrl(photo)" 
-            :alt="`${t('incoming.photos')} ${index + 1}`"
+            :alt="`${t('delivery.photos')} ${index + 1}`"
             class="w-full h-full object-cover"
           />
         </div>
@@ -291,7 +291,7 @@ const downloadPhoto = () => {
 };
 
 const deletePhoto = () => {
-  if (confirm(t('messages.confirmDelete', { item: t('incoming.photos') }))) {
+  if (confirm(t('messages.confirmDelete', { item: t('delivery.photos') }))) {
     emit('photoDeleted', currentPhotoIndex.value);
     
     // Adjust current index if needed

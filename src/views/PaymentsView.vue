@@ -207,7 +207,7 @@
           <form @submit.prevent="savePayment" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.vendor') }}</label>
-              <select v-model="form.vendor" required class="input mt-1" @change="loadVendorOutstanding" autofocus>
+              <select ref="vendorInputRef" v-model="form.vendor" required class="input mt-1" @change="loadVendorOutstanding" autofocus>
                 <option value="">{{ t('forms.selectVendor') }}</option>
                 <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
                   {{ vendor.name }}
@@ -370,6 +370,7 @@ const showAddModal = ref(false);
 const viewingPayment = ref<AccountTransaction | null>(null);
 const loading = ref(false);
 const vendorOutstanding = ref(0);
+const vendorInputRef = ref<HTMLInputElement>();
 const openMobileMenuId = ref<string | null>(null);
 
 const form = reactive({
@@ -494,6 +495,7 @@ const handleAddPayment = () => {
     return;
   }
   showAddModal.value = true;
+  vendorInputRef.value?.focus();
 };
 
 const savePayment = async () => {
@@ -537,6 +539,7 @@ const quickPayment = (vendor: VendorWithOutstanding) => {
   form.amount = vendor.outstandingAmount;
   loadVendorOutstanding();
   showAddModal.value = true;
+  vendorInputRef.value?.focus();
 };
 
 const viewPayment = (payment: AccountTransaction) => {
@@ -592,6 +595,7 @@ const closeModal = () => {
 
 const handleQuickAction = () => {
   showAddModal.value = true;
+  vendorInputRef.value?.focus();
 };
 
 const handleSiteChange = () => {
@@ -603,6 +607,7 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
     event.preventDefault();
     if (canCreatePayment.value) {
       showAddModal.value = true;
+      vendorInputRef.value?.focus();
     }
   }
 };

@@ -6,7 +6,7 @@
         <div class="flex items-center justify-between mb-6">
           <div>
             <h3 class="text-lg font-medium text-gray-900 dark:text-white">
-              {{ editingDelivery ? t('incoming.editDelivery') : t('incoming.recordDelivery') }}
+              {{ editingDelivery ? t('delivery.editDelivery') : t('delivery.recordDelivery') }}
             </h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {{ t('delivery.multiItemSubtitle') }}
@@ -57,7 +57,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('common.vendor') }} *</label>
-                <select v-model="deliveryForm.vendor" required class="input" autofocus>
+                <select ref="vendorInputRef" v-model="deliveryForm.vendor" required class="input" >
                   <option value="">{{ t('forms.selectVendor') }}</option>
                   <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
                     {{ vendor.name }}
@@ -66,7 +66,7 @@
               </div>
               
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('incoming.deliveryDate') }} *</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('delivery.deliveryDate') }} *</label>
                 <input v-model="deliveryForm.delivery_date" type="date" required class="input" />
               </div>
             </div>
@@ -82,7 +82,7 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('incoming.paymentStatus') }} *</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('delivery.paymentStatus') }} *</label>
               <select v-model="deliveryForm.payment_status" required class="input">
                 <option value="pending">{{ t('common.pending') }}</option>
                 <option value="partial">{{ t('common.partial') }}</option>
@@ -91,7 +91,7 @@
             </div>
             
             <div v-if="deliveryForm.payment_status !== 'pending'">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('incoming.paidAmount') }}</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('delivery.paidAmount') }}</label>
               <input 
                 v-model.number="deliveryForm.paid_amount" 
                 type="number" 
@@ -112,7 +112,7 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('incoming.photos') }}</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('delivery.photos') }}</label>
               <FileUploadComponent
                 v-model="selectedFilesForUpload"
                 accept-types="image/*"
@@ -187,13 +187,13 @@
               <h5 class="font-medium text-gray-900 dark:text-white mb-3">{{ t('delivery.deliveryInfo') }}</h5>
               <div class="space-y-2 text-sm">
                 <div><strong>{{ t('common.vendor') }}:</strong> {{ getVendorName(deliveryForm.vendor) }}</div>
-                <div><strong>{{ t('incoming.deliveryDate') }}:</strong> {{ formatDate(deliveryForm.delivery_date) }}</div>
+                <div><strong>{{ t('delivery.deliveryDate') }}:</strong> {{ formatDate(deliveryForm.delivery_date) }}</div>
                 <div v-if="deliveryForm.delivery_reference">
                   <strong>{{ t('delivery.deliveryReference') }}:</strong> {{ deliveryForm.delivery_reference }}
                 </div>
-                <div><strong>{{ t('incoming.paymentStatus') }}:</strong> {{ t(`common.${deliveryForm.payment_status}`) }}</div>
+                <div><strong>{{ t('delivery.paymentStatus') }}:</strong> {{ t(`common.${deliveryForm.payment_status}`) }}</div>
                 <div v-if="deliveryForm.paid_amount > 0">
-                  <strong>{{ t('incoming.paidAmount') }}:</strong> ₹{{ deliveryForm.paid_amount.toFixed(2) }}
+                  <strong>{{ t('delivery.paidAmount') }}:</strong> ₹{{ deliveryForm.paid_amount.toFixed(2) }}
                 </div>
                 <div v-if="deliveryForm.notes">
                   <strong>{{ t('common.notes') }}:</strong> {{ deliveryForm.notes }}
@@ -301,6 +301,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   close: [];
   success: [delivery: Delivery];
+  saved: [delivery: Delivery];
 }>();
 
 const { t } = useI18n();
@@ -311,6 +312,7 @@ const currentStep = ref(0);
 const loading = ref(false);
 const vendors = ref<Vendor[]>([]);
 const items = ref<Item[]>([]);
+const vendorInputRef = ref<HTMLInputElement>();
 const selectedFilesForUpload = ref<File[]>([]);
 
 // Steps
@@ -453,13 +455,40 @@ const saveDelivery = async () => {
     }
 
     success(props.editingDelivery ? t('messages.updateSuccess', { item: 'Delivery' }) : t('messages.createSuccess', { item: 'Delivery' }));
-    emit('success', delivery);
+    
+    // If creating a new delivery, reset the form for another entry
+    if (!props.editingDelivery) {
+      resetForm();
+      emit('saved', delivery);
+    } else {
+      emit('success', delivery);
+    }
   } catch (err) {
     console.error('Error saving delivery:', err);
     error(t('messages.error'));
   } finally {
     loading.value = false;
   }
+};
+
+const resetForm = () => {
+  // Reset to step 0
+  currentStep.value = 0;
+  
+  // Reset delivery form but keep vendor and date for convenience
+  deliveryForm.delivery_reference = '';
+  deliveryForm.notes = '';
+  deliveryForm.payment_status = 'pending';
+  deliveryForm.paid_amount = 0;
+  
+  // Clear items and add one empty item
+  deliveryItems.value = [];
+  addNewItem();
+  
+  // Clear selected files
+  selectedFilesForUpload.value = [];
+
+  vendorInputRef.value?.focus();
 };
 
 const loadData = async () => {
@@ -505,5 +534,8 @@ const loadData = async () => {
 };
 
 // Initialize
-onMounted(loadData);
+onMounted(() => {
+  loadData();
+  vendorInputRef.value?.focus();
+});
 </script>

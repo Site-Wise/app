@@ -81,7 +81,7 @@
                     
                     <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                       <div>{{ t('common.vendor') }}: {{ item.expand?.delivery?.expand?.vendor?.name || 'Unknown Vendor' }}</div>
-                      <div>{{ t('incoming.deliveryDate') }}: {{ formatDate(item.expand?.delivery?.delivery_date || '') }}</div>
+                      <div>{{ t('delivery.deliveryDate') }}: {{ formatDate(item.expand?.delivery?.delivery_date || '') }}</div>
                       <div>{{ t('common.quantity') }}: {{ item.quantity }} {{ getUnitDisplay(item.expand?.item?.unit || 'units') }}</div>
                       <div>{{ t('common.total') }}: ₹{{ item.total_amount.toFixed(2) }}</div>
                     </div>
