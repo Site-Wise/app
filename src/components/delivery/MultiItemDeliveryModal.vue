@@ -81,25 +81,6 @@
               />
             </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('delivery.paymentStatus') }} *</label>
-              <select v-model="deliveryForm.payment_status" required class="input">
-                <option value="pending">{{ t('common.pending') }}</option>
-                <option value="partial">{{ t('common.partial') }}</option>
-                <option value="paid">{{ t('common.paid') }}</option>
-              </select>
-            </div>
-            
-            <div v-if="deliveryForm.payment_status !== 'pending'">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('delivery.paidAmount') }}</label>
-              <input 
-                v-model.number="deliveryForm.paid_amount" 
-                type="number" 
-                step="0.01" 
-                class="input" 
-                placeholder="0.00" 
-              />
-            </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('common.notes') }}</label>
@@ -190,10 +171,6 @@
                 <div><strong>{{ t('delivery.deliveryDate') }}:</strong> {{ formatDate(deliveryForm.delivery_date) }}</div>
                 <div v-if="deliveryForm.delivery_reference">
                   <strong>{{ t('delivery.deliveryReference') }}:</strong> {{ deliveryForm.delivery_reference }}
-                </div>
-                <div><strong>{{ t('delivery.paymentStatus') }}:</strong> {{ t(`common.${deliveryForm.payment_status}`) }}</div>
-                <div v-if="deliveryForm.paid_amount > 0">
-                  <strong>{{ t('delivery.paidAmount') }}:</strong> ₹{{ deliveryForm.paid_amount.toFixed(2) }}
                 </div>
                 <div v-if="deliveryForm.notes">
                   <strong>{{ t('common.notes') }}:</strong> {{ deliveryForm.notes }}
@@ -323,14 +300,12 @@ const steps = [
 ];
 
 // Form data
-const deliveryForm = reactive<Omit<Delivery, 'id' | 'site' | 'created' | 'updated' | 'total_amount' | 'expand'>>({
+const deliveryForm = reactive<Omit<Delivery, 'id' | 'site' | 'created' | 'updated' | 'total_amount' | 'expand' | 'payment_status' | 'paid_amount'>>({
   vendor: '',
   delivery_date: new Date().toISOString().split('T')[0],
   delivery_reference: '',
   photos: [],
-  notes: '',
-  payment_status: 'pending',
-  paid_amount: 0
+  notes: ''
 });
 
 const deliveryItems = ref<DeliveryItemForm[]>([]);
@@ -425,7 +400,13 @@ const saveDelivery = async () => {
     const deliveryData = {
       ...deliveryForm,
       total_amount: totalAmount.value
-    };
+    } as Omit<Delivery, 'id' | 'site' | 'created' | 'updated' | 'expand'>;
+    
+    // Only set payment status for new deliveries - existing ones keep their current status
+    if (!props.editingDelivery) {
+      deliveryData.payment_status = 'pending';
+      deliveryData.paid_amount = 0;
+    }
 
     // Create or update delivery
     let delivery: Delivery;
@@ -478,8 +459,6 @@ const resetForm = () => {
   // Reset delivery form but keep vendor and date for convenience
   deliveryForm.delivery_reference = '';
   deliveryForm.notes = '';
-  deliveryForm.payment_status = 'pending';
-  deliveryForm.paid_amount = 0;
   
   // Clear items and add one empty item
   deliveryItems.value = [];
@@ -507,9 +486,7 @@ const loadData = async () => {
         vendor: props.editingDelivery.vendor,
         delivery_date: props.editingDelivery.delivery_date,
         delivery_reference: props.editingDelivery.delivery_reference,
-        notes: props.editingDelivery.notes,
-        payment_status: props.editingDelivery.payment_status,
-        paid_amount: props.editingDelivery.paid_amount
+        notes: props.editingDelivery.notes
       });
 
       // Load delivery items if editing

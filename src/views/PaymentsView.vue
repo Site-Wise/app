@@ -401,22 +401,24 @@ const vendorsWithOutstanding = computed(() => {
   return vendors.value.map(vendor => {
     // Calculate outstanding from deliveries
     const vendorDeliveries = deliveries.value.filter(delivery => 
-      delivery.vendor === vendor.id && delivery.payment_status !== 'paid'
+      delivery.vendor === vendor.id
     );
-    const deliveryOutstanding = vendorDeliveries.reduce((sum, delivery) => 
-      sum + (delivery.total_amount - delivery.paid_amount), 0
-    );
+    const deliveryOutstanding = vendorDeliveries.reduce((sum, delivery) => {
+      const outstanding = delivery.total_amount - delivery.paid_amount;
+      return sum + (outstanding > 0 ? outstanding : 0);
+    }, 0);
     
     // Calculate outstanding from service bookings
     const vendorBookings = serviceBookings.value.filter(booking => 
-      booking.vendor === vendor.id && booking.payment_status !== 'paid'
+      booking.vendor === vendor.id
     );
-    const serviceOutstanding = vendorBookings.reduce((sum, booking) => 
-      sum + (booking.total_amount - booking.paid_amount), 0
-    );
+    const serviceOutstanding = vendorBookings.reduce((sum, booking) => {
+      const outstanding = booking.total_amount - booking.paid_amount;
+      return sum + (outstanding > 0 ? outstanding : 0);
+    }, 0);
     
     const outstandingAmount = deliveryOutstanding + serviceOutstanding;
-    const pendingItems = vendorDeliveries.length + vendorBookings.length;
+    const pendingItems = vendorDeliveries.filter(d => d.payment_status !== 'paid').length + vendorBookings.filter(b => b.payment_status !== 'paid').length;
     
     return {
       ...vendor,
@@ -471,19 +473,21 @@ const loadVendorOutstanding = () => {
   if (form.vendor) {
     // Calculate outstanding from deliveries
     const vendorDeliveries = deliveries.value.filter(delivery => 
-      delivery.vendor === form.vendor && delivery.payment_status !== 'paid'
+      delivery.vendor === form.vendor
     );
-    const deliveryOutstanding = vendorDeliveries.reduce((sum, delivery) => 
-      sum + (delivery.total_amount - delivery.paid_amount), 0
-    );
+    const deliveryOutstanding = vendorDeliveries.reduce((sum, delivery) => {
+      const outstanding = delivery.total_amount - delivery.paid_amount;
+      return sum + (outstanding > 0 ? outstanding : 0);
+    }, 0);
     
     // Calculate outstanding from service bookings
     const vendorBookings = serviceBookings.value.filter(booking => 
-      booking.vendor === form.vendor && booking.payment_status !== 'paid'
+      booking.vendor === form.vendor
     );
-    const serviceOutstanding = vendorBookings.reduce((sum, booking) => 
-      sum + (booking.total_amount - booking.paid_amount), 0
-    );
+    const serviceOutstanding = vendorBookings.reduce((sum, booking) => {
+      const outstanding = booking.total_amount - booking.paid_amount;
+      return sum + (outstanding > 0 ? outstanding : 0);
+    }, 0);
     
     vendorOutstanding.value = deliveryOutstanding + serviceOutstanding;
   }

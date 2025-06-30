@@ -175,10 +175,10 @@
               <input ref="nameInputRef" v-model="form.name" type="text" required class="input mt-1" :placeholder="t('forms.enterServiceName')" autofocus />
             </div>
             
-            <div>
+            <!-- <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.serviceType') }}</label>
               <input v-model="form.service_type" type="text" required class="input mt-1" :placeholder="t('forms.enterServiceType')" />
-            </div>
+            </div> -->
             
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.category') }}</label>

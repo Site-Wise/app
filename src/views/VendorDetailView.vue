@@ -352,12 +352,16 @@ import {
   accountService,
   tagService,
   vendorReturnService,
+  vendorCreditNoteService,
+  accountTransactionService,
   type Vendor,
   type Delivery,
   type Payment,
   type Account,
   type Tag as TagType,
-  type VendorReturn
+  type VendorReturn,
+  type VendorCreditNote,
+  type AccountTransaction
 } from '../services/pocketbase';
 
 const route = useRoute();
@@ -368,6 +372,8 @@ const vendor = ref<Vendor | null>(null);
 const vendorDeliveries = ref<Delivery[]>([]);
 const vendorPayments = ref<Payment[]>([]);
 const vendorReturns = ref<VendorReturn[]>([]);
+const vendorCreditNotes = ref<VendorCreditNote[]>([]);
+const vendorRefunds = ref<AccountTransaction[]>([]);
 const accounts = ref<Account[]>([]);
 const vendorTags = ref<TagType[]>([]);
 const showPaymentModal = ref(false);
@@ -386,7 +392,13 @@ const activeAccounts = computed(() => {
 });
 
 const outstandingAmount = computed(() => {
-  return vendorDeliveries.value.reduce((sum, delivery) => sum + (delivery.total_amount - delivery.paid_amount), 0);
+  const deliveryOutstanding = vendorDeliveries.value.reduce((sum, delivery) => {
+    const outstanding = delivery.total_amount - delivery.paid_amount;
+    return sum + (outstanding > 0 ? outstanding : 0);
+  }, 0);
+  
+  const creditBalance = vendorCreditNotes.value.reduce((sum, note) => sum + note.balance, 0);
+  return deliveryOutstanding - creditBalance; // Outstanding minus available credit
 });
 
 const totalPaid = computed(() => {
@@ -405,6 +417,7 @@ const paidDeliveries = computed(() => {
   return vendorDeliveries.value.filter(delivery => delivery.payment_status === 'paid').length;
 });
 
+
 const getAccountIcon = (type?: Account['type']) => {
   if (!type) return Wallet;
   const icons = {
@@ -416,6 +429,7 @@ const getAccountIcon = (type?: Account['type']) => {
   };
   return icons[type] || Wallet;
 };
+
 
 const goBack = () => {
   try {
@@ -430,11 +444,13 @@ const loadVendorData = async () => {
   const vendorId = route.params.id as string;
 
   try {
-    const [vendorData, allDeliveries, allPayments, allReturns, accountsData, allTags] = await Promise.all([
+    const [vendorData, allDeliveries, allPayments, allReturns, allCreditNotes, allTransactions, accountsData, allTags] = await Promise.all([
       vendorService.getAll(),
       deliveryService.getAll(),
       paymentService.getAll(),
       vendorReturnService.getByVendor(vendorId),
+      vendorCreditNoteService.getByVendor(vendorId),
+      accountTransactionService.getAll(),
       accountService.getAll(),
       tagService.getAll()
     ]);
@@ -447,6 +463,11 @@ const loadVendorData = async () => {
       .filter(payment => payment.vendor === vendorId)
       .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime());
     vendorReturns.value = allReturns;
+    vendorCreditNotes.value = allCreditNotes;
+    // Filter refund transactions (credit transactions with vendor)
+    vendorRefunds.value = allTransactions
+      .filter(transaction => transaction.type === 'credit' && transaction.vendor === vendorId)
+      .sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime());
     accounts.value = accountsData;
 
     // Map tags for the vendor

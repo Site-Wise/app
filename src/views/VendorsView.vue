@@ -232,12 +232,18 @@ const getVendorOutstanding = (vendorId: string) => {
   // Include deliveries outstanding
   const deliveriesOutstanding = deliveries.value
     .filter(delivery => delivery.vendor === vendorId)
-    .reduce((sum, delivery) => sum + (delivery.total_amount - delivery.paid_amount), 0);
+    .reduce((sum, delivery) => {
+      const outstanding = delivery.total_amount - delivery.paid_amount;
+      return sum + (outstanding > 0 ? outstanding : 0);
+    }, 0);
   
   // Include service bookings outstanding
   const serviceOutstanding = serviceBookings.value
     .filter(booking => booking.vendor === vendorId)
-    .reduce((sum, booking) => sum + (booking.total_amount - booking.paid_amount), 0);
+    .reduce((sum, booking) => {
+      const outstanding = booking.total_amount - booking.paid_amount;
+      return sum + (outstanding > 0 ? outstanding : 0);
+    }, 0);
     
   return deliveriesOutstanding + serviceOutstanding;
 };

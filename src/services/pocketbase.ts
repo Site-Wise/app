@@ -1534,8 +1534,9 @@ export class PaymentService {
       vendor: data.vendor
     });
 
-    // Update payment status of related service bookings
+    // Update payment status of related service bookings and deliveries
     await this.updateServiceBookingsPaymentStatus(data.vendor, data.amount);
+    await this.updateDeliveriesPaymentStatus(data.vendor, data.amount);
 
     return this.mapRecordToPayment(record);
   }
@@ -1577,6 +1578,36 @@ export class PaymentService {
       });
 
       remainingAmount -= paymentForBooking;
+    }
+  }
+
+  private async updateDeliveriesPaymentStatus(vendorId: string, paymentAmount: number) {
+    const siteId = getCurrentSiteId();
+    if (!siteId) return;
+
+    const deliveries = await pb.collection('deliveries')
+      .getFullList({
+        filter: `vendor="${vendorId}" && payment_status!="paid" && site="${siteId}"`,
+        sort: 'created'
+      });
+
+    let remainingAmount = paymentAmount;
+
+    for (const delivery of deliveries) {
+      if (remainingAmount <= 0) break;
+
+      const outstandingAmount = delivery.total_amount - delivery.paid_amount;
+      const paymentForDelivery = Math.min(remainingAmount, outstandingAmount);
+
+      const newPaidAmount = delivery.paid_amount + paymentForDelivery;
+      const newStatus = newPaidAmount >= delivery.total_amount ? 'paid' : 'partial';
+
+      await pb.collection('deliveries').update(delivery.id, {
+        paid_amount: newPaidAmount,
+        payment_status: newStatus
+      });
+
+      remainingAmount -= paymentForDelivery;
     }
   }
 
@@ -2187,9 +2218,17 @@ export class VendorReturnService {
       throw new Error('Permission denied: Cannot create vendor returns');
     }
 
+    const user = authService.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    // Auto-approve returns when created (as per user requirement)
     const record = await pb.collection('vendor_returns').create({
       ...data,
-      site: siteId
+      site: siteId,
+      status: 'approved', // Auto-approve returns
+      approved_by: user.id,
+      approved_at: new Date().toISOString(),
+      approval_notes: 'Auto-approved on creation'
     });
     return this.mapRecordToVendorReturn(record);
   }
