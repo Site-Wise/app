@@ -9,6 +9,7 @@
         <select 
           :value="item.item" 
           @change="handleItemChange"
+          @blur="validateItem"
           required 
           class="input"
           :class="{ 'border-red-300': errors.item }"
@@ -35,6 +36,7 @@
         <input 
           :value="item.quantity"
           @input="handleQuantityChange"
+          @blur="validateQuantity"
           type="number" 
           min="0.01"
           step="0.01"
@@ -59,6 +61,7 @@
         <input 
           :value="item.unit_price"
           @input="handleUnitPriceChange"
+          @blur="validateUnitPrice"
           type="number" 
           min="0.01"
           step="0.01"
@@ -224,8 +227,8 @@ const validateUnitPrice = () => {
   }
 };
 
-const calculateTotal = () => {
-  const total = props.item.quantity * props.item.unit_price;
+const calculateTotal = (quantity: number, unit_price: number) => {
+  const total = quantity * unit_price;
   return Math.round(total * 100) / 100; // Round to 2 decimal places
 };
 
@@ -234,7 +237,7 @@ const updateItem = (updates: Partial<DeliveryItemForm>) => {
   
   // Recalculate total if quantity or unit_price changed
   if ('quantity' in updates || 'unit_price' in updates) {
-    updatedItem.total_amount = calculateTotal();
+    updatedItem.total_amount = calculateTotal(updatedItem.quantity, updatedItem.unit_price);
   }
   
   emit('update', props.index, updatedItem);
@@ -243,21 +246,30 @@ const updateItem = (updates: Partial<DeliveryItemForm>) => {
 const handleItemChange = (event: Event) => {
   const target = event.target as HTMLSelectElement;
   updateItem({ item: target.value });
-  validateItem();
+  // Clear error when user makes a selection
+  if (target.value) {
+    errors.item = '';
+  }
 };
 
 const handleQuantityChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   const quantity = parseFloat(target.value) || 0;
   updateItem({ quantity });
-  validateQuantity();
+  // Clear error when user enters a valid value
+  if (quantity > 0) {
+    errors.quantity = '';
+  }
 };
 
 const handleUnitPriceChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   const unit_price = parseFloat(target.value) || 0;
   updateItem({ unit_price });
-  validateUnitPrice();
+  // Clear error when user enters a valid value
+  if (unit_price > 0) {
+    errors.unit_price = '';
+  }
 };
 
 const handleNotesChange = (event: Event) => {

@@ -608,15 +608,24 @@ const handleShowAddModal = () => {
   handleAddDelivery();
 };
 
+const handleKeyboardShortcut = (event: KeyboardEvent) => {
+  if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
+    event.preventDefault();
+    handleAddDelivery();
+  }
+};
+
 onMounted(() => {
   loadData();
   document.addEventListener('click', handleClickOutside);
   window.addEventListener('show-add-modal', handleShowAddModal);
+  window.addEventListener('keydown', handleKeyboardShortcut);
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
   window.removeEventListener('show-add-modal', handleShowAddModal);
+  window.removeEventListener('keydown', handleKeyboardShortcut);
 });
 </script>
 

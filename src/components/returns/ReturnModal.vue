@@ -17,7 +17,7 @@
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ t('common.vendor') }} *
             </label>
-            <select v-model="form.vendor" required class="input mt-1">
+            <select v-model="form.vendor" required class="input mt-1" autofocus>
               <option value="">Select a vendor</option>
               <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
                 {{ vendor.name || vendor.contact_person || 'Unnamed Vendor' }}

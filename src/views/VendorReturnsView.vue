@@ -345,7 +345,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import {
   Plus,
@@ -603,6 +603,13 @@ const exportReturns = () => {
   document.body.removeChild(link);
 };
 
+const handleKeyboardShortcut = (event: KeyboardEvent) => {
+  if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
+    event.preventDefault();
+    openCreateModal();
+  }
+};
+
 onMounted(() => {
   // Pre-select vendor filter if specified in query
   if (route.query.vendor && typeof route.query.vendor === 'string') {
@@ -610,5 +617,10 @@ onMounted(() => {
   }
   
   loadData();
+  window.addEventListener('keydown', handleKeyboardShortcut);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyboardShortcut);
 });
 </script>

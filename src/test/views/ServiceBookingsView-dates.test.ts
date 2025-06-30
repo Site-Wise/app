@@ -88,7 +88,6 @@ describe('ServiceBookingsView - Date Handling', () => {
     vm.form.service = 'service-1'
     vm.form.vendor = 'vendor-1'
     vm.form.start_date = '2024-01-15'
-    vm.form.end_date = '2024-02-15'
     vm.form.duration = 10
     vm.form.unit_rate = 100
     vm.form.status = 'scheduled'
@@ -101,8 +100,7 @@ describe('ServiceBookingsView - Date Handling', () => {
     const createCall = vi.mocked(serviceBookingService.create)
     expect(createCall).toHaveBeenCalledWith(
       expect.objectContaining({
-        start_date: '2024-01-15',
-        end_date: '2024-02-15'
+        start_date: '2024-01-15'
       })
     )
   })
@@ -119,7 +117,6 @@ describe('ServiceBookingsView - Date Handling', () => {
       service: 'service-1',
       vendor: 'vendor-1',
       start_date: '2024-01-15T00:00:00.000Z',
-      end_date: '2024-02-15T00:00:00.000Z',
       duration: 10,
       unit_rate: 100,
       total_amount: 1000,
@@ -133,7 +130,6 @@ describe('ServiceBookingsView - Date Handling', () => {
     
     // Verify form is populated with correctly formatted dates
     expect(vm.form.start_date).toBe('2024-01-15')
-    expect(vm.form.end_date).toBe('2024-02-15')
   })
 
   it('should render date inputs with correct type', async () => {
@@ -149,9 +145,9 @@ describe('ServiceBookingsView - Date Handling', () => {
     const startDateInput = wrapper.find('input[type="date"]')
     expect(startDateInput.exists()).toBe(true)
     
-    // Should have both start and end date inputs
+    // Should have start date input
     const dateInputs = wrapper.findAll('input[type="date"]')
-    expect(dateInputs.length).toBe(2)
+    expect(dateInputs.length).toBe(1)
   })
 
   it('should validate required start date', async () => {

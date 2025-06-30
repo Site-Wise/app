@@ -79,6 +79,19 @@ vi.mock('@tauri-apps/api/tauri', () => ({
   invoke: vi.fn()
 }))
 
+// Mock Tauri Core API (for useNativeNotifications)
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn().mockImplementation((command: string) => {
+    if (command === 'get_platform_info') {
+      return Promise.resolve({ os: 'test', arch: 'test' })
+    }
+    if (command === 'show_notification') {
+      return Promise.resolve()
+    }
+    return Promise.resolve()
+  })
+}))
+
 // Mock window.Notification
 Object.defineProperty(window, 'Notification', {
   writable: true,

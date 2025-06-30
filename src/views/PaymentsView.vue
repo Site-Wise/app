@@ -598,6 +598,15 @@ const handleSiteChange = () => {
   loadData();
 };
 
+const handleKeyboardShortcut = (event: KeyboardEvent) => {
+  if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
+    event.preventDefault();
+    if (canCreatePayment.value) {
+      showAddModal.value = true;
+    }
+  }
+};
+
 const handleClickOutside = (event: Event) => {
   const target = event.target as Element;
   if (!target.closest('.relative')) {
@@ -619,12 +628,14 @@ onMounted(async () => {
   
   window.addEventListener('show-add-modal', handleQuickAction);
   window.addEventListener('site-changed', handleSiteChange);
+  window.addEventListener('keydown', handleKeyboardShortcut);
   document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
   window.removeEventListener('site-changed', handleSiteChange);
+  window.removeEventListener('keydown', handleKeyboardShortcut);
   document.removeEventListener('click', handleClickOutside);
 });
 </script>

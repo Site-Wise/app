@@ -125,7 +125,7 @@
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {{ t('returns.reason') }} *
               </label>
-              <select v-model="returnForm.reason" required class="input">
+              <select v-model="returnForm.reason" required class="input" autofocus>
                 <option value="">{{ t('returns.selectReason') }}</option>
                 <option value="damaged">{{ t('returns.reasons.damaged') }}</option>
                 <option value="wrong_item">{{ t('returns.reasons.wrong_item') }}</option>

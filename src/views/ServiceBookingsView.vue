@@ -237,15 +237,9 @@
               </select>
             </div>
             
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.startDate') }}</label>
-                <input v-model="form.start_date" type="date" required class="input mt-1" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.endDate') }}</label>
-                <input v-model="form.end_date" type="date" class="input mt-1" />
-              </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.startDate') }}</label>
+              <input v-model="form.start_date" type="date" required class="input mt-1" />
             </div>
             
             <div class="grid grid-cols-2 gap-4">
@@ -332,10 +326,6 @@
               <div>
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.startDate') }}:</span>
                 <span class="ml-2 text-gray-900 dark:text-white">{{ formatDateTime(viewingBooking.start_date) }}</span>
-              </div>
-              <div v-if="viewingBooking.end_date">
-                <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.endDate') }}:</span>
-                <span class="ml-2 text-gray-900 dark:text-white">{{ formatDateTime(viewingBooking.end_date) }}</span>
               </div>
               <div>
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.duration') }}:</span>
@@ -431,7 +421,6 @@ const form = reactive({
   service: '',
   vendor: '',
   start_date: '',
-  end_date: '',
   duration: 0,
   unit_rate: 0,
   total_amount: 0,
@@ -488,9 +477,6 @@ const saveBooking = async () => {
     if (data.start_date) {
       data.start_date = data.start_date; // Keep YYYY-MM-DD format
     }
-    if (data.end_date) {
-      data.end_date = data.end_date; // Keep YYYY-MM-DD format
-    }
     
     if (editingBooking.value) {
       await serviceBookingService.update(editingBooking.value.id!, data);
@@ -520,7 +506,6 @@ const editBooking = (booking: ServiceBooking) => {
     service: booking.service,
     vendor: booking.vendor,
     start_date: formatDateForInput(booking.start_date),
-    end_date: formatDateForInput(booking.end_date || ''),
     duration: booking.duration,
     unit_rate: booking.unit_rate,
     total_amount: booking.total_amount,
@@ -570,7 +555,6 @@ const closeModal = () => {
     service: '',
     vendor: '',
     start_date: '',
-    end_date: '',
     duration: 0,
     unit_rate: 0,
     total_amount: 0,
@@ -598,16 +582,27 @@ const handleClickOutside = (event: Event) => {
   }
 };
 
+const handleKeyboardShortcut = (event: KeyboardEvent) => {
+  if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
+    event.preventDefault();
+    if (canCreate.value) {
+      showAddModal.value = true;
+    }
+  }
+};
+
 onMounted(() => {
   loadData();
   window.addEventListener('show-add-modal', handleQuickAction);
   window.addEventListener('site-changed', handleSiteChange);
+  window.addEventListener('keydown', handleKeyboardShortcut);
   document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
   window.removeEventListener('site-changed', handleSiteChange);
+  window.removeEventListener('keydown', handleKeyboardShortcut);
   document.removeEventListener('click', handleClickOutside);
 });
 </script>

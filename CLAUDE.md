@@ -44,11 +44,13 @@ app/
 - `src/composables/useSiteContext.ts` - Site selection context
 
 ### Main Views
-- `src/views/IncomingView.vue` - Incoming deliveries/materials
+- `src/views/DeliveryView.vue` - Delivery management and tracking
 - `src/views/ServiceBookingsView.vue` - Service bookings
 - `src/views/DashboardView.vue` - Main dashboard
 - `src/views/AccountsView.vue` - Financial accounts
 - `src/views/QuotationsView.vue` - Project quotations
+- `src/views/PaymentsView.vue` - Payment tracking and recording
+- `src/views/VendorReturnsView.vue` - Vendor returns and refunds
 
 ### Key Components
 - `src/components/AppLayout.vue` - Main layout wrapper
@@ -99,10 +101,10 @@ interface FileWithPreview {
   preview: string
 }
 
-const form = reactive<IncomingFormData>({
-  item: '',
+const form = reactive<DeliveryFormData>({
   vendor: '',
-  quantity: 0
+  delivery_date: '',
+  items: []
 })
 ```
 
@@ -145,7 +147,7 @@ const { t } = useI18n()
 - [ ] Responsive grid layouts
 - [ ] Dark mode support
 
-#### Mobile Table Design Pattern (IncomingView Example)
+#### Mobile Table Design Pattern (DeliveryView Example)
 For complex data tables, implement responsive design:
 ```vue
 <!-- Desktop Headers -->
@@ -211,6 +213,9 @@ When creating new components:
 6. [ ] Test on mobile devices
 7. [ ] Handle loading/error states
 8. [ ] Add proper ARIA labels
+9. [ ] Implement keyboard shortcuts (Shift+Alt+N for new items)
+10. [ ] Add autofocus to first interactive element in modals
+11. [ ] Handle Esc key for closing modals
 
 ### 8. Common Patterns
 
@@ -252,6 +257,50 @@ const handleFilesSelected = (files: File[]) => {
   await pb.collection('items').update(id, formData)
 }
 ```
+
+#### Keyboard Shortcuts & Accessibility
+All main views implement consistent keyboard shortcuts and accessibility patterns:
+
+```typescript
+// Standard keyboard shortcut pattern for creating new items
+const handleKeyboardShortcut = (event: KeyboardEvent) => {
+  if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
+    event.preventDefault();
+    openCreateModal(); // or equivalent action
+  }
+};
+
+// Lifecycle management
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyboardShortcut);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyboardShortcut);
+});
+```
+
+**Standard Keyboard Shortcuts:**
+- `Shift + Alt + N` - Create new item (universal across all views)
+- `Esc` - Close modals/cancel actions
+
+**Modal Accessibility:**
+```vue
+<!-- All modals should have autofocus on first input -->
+<select v-model="form.vendor" required class="input" autofocus>
+  <option value="">Select vendor...</option>
+</select>
+
+<!-- Modal should handle Esc key -->
+<div @keydown.esc="closeModal" tabindex="-1">
+  <!-- Modal content -->
+</div>
+```
+
+**Touch-Friendly Mobile Patterns:**
+- Minimum 44x44px tap targets
+- Touch-friendly action menus with transitions
+- Proper spacing for mobile interactions
 
 ### 9. Testing Approach
 - Unit tests in `src/test/`
