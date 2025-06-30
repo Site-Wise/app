@@ -2284,13 +2284,13 @@ export class VendorReturnService {
     });
   }
 
-  async getReturnedQuantityForItem(incomingItemId: string): Promise<number> {
+  async getReturnedQuantityForItem(deliveryItemId: string): Promise<number> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
 
-    // Get all return items for this incoming item
+    // Get all return items for this delivery item
     const returnItems = await pb.collection('vendor_return_items').getFullList({
-      filter: `incoming_item="${incomingItemId}"`,
+      filter: `delivery_item="${deliveryItemId}"`,
       expand: 'vendor_return'
     });
 
@@ -2304,14 +2304,14 @@ export class VendorReturnService {
     }, 0);
   }
 
-  async canReturnItem(incomingItemId: string, requestedQuantity: number): Promise<{ canReturn: boolean; availableQuantity: number; message?: string }> {
+  async canReturnItem(deliveryItemId: string, requestedQuantity: number): Promise<{ canReturn: boolean; availableQuantity: number; message?: string }> {
     try {
-      // Get the original incoming item
-      const incomingItem = await pb.collection('incoming_items').getOne(incomingItemId);
-      const originalQuantity = incomingItem.quantity;
+      // Get the original delivery item
+      const deliveryItem = await pb.collection('delivery_items').getOne(deliveryItemId);
+      const originalQuantity = deliveryItem.quantity;
 
       // Get already returned quantity
-      const returnedQuantity = await this.getReturnedQuantityForItem(incomingItemId);
+      const returnedQuantity = await this.getReturnedQuantityForItem(deliveryItemId);
       const availableQuantity = originalQuantity - returnedQuantity;
 
       if (availableQuantity <= 0) {
@@ -2340,6 +2340,65 @@ export class VendorReturnService {
         canReturn: false,
         availableQuantity: 0,
         message: 'Error checking return eligibility'
+      };
+    }
+  }
+
+  async getReturnInfoForDeliveryItem(deliveryItemId: string): Promise<{
+    totalReturned: number;
+    availableForReturn: number;
+    returns: Array<{
+      id: string;
+      returnDate: string;
+      quantityReturned: number;
+      status: string;
+      reason: string;
+    }>;
+  }> {
+    try {
+      // Get the original delivery item
+      const deliveryItem = await pb.collection('delivery_items').getOne(deliveryItemId);
+      const originalQuantity = deliveryItem.quantity;
+
+      // Get all return items for this delivery item
+      const returnItems = await pb.collection('vendor_return_items').getFullList({
+        filter: `delivery_item="${deliveryItemId}"`,
+        expand: 'vendor_return',
+        sort: '-created'
+      });
+
+      let totalReturned = 0;
+      const returns = [];
+
+      for (const item of returnItems) {
+        const returnRecord = item.expand?.vendor_return;
+        if (returnRecord) {
+          // Count quantities for completed/approved returns towards total returned
+          if (returnRecord.status === 'completed' || returnRecord.status === 'approved' || returnRecord.status === 'refunded') {
+            totalReturned += item.quantity_returned;
+          }
+
+          returns.push({
+            id: returnRecord.id,
+            returnDate: returnRecord.return_date,
+            quantityReturned: item.quantity_returned,
+            status: returnRecord.status,
+            reason: returnRecord.reason
+          });
+        }
+      }
+
+      return {
+        totalReturned,
+        availableForReturn: Math.max(0, originalQuantity - totalReturned),
+        returns
+      };
+    } catch (error) {
+      console.error('Error getting return info for delivery item:', error);
+      return {
+        totalReturned: 0,
+        availableForReturn: 0,
+        returns: []
       };
     }
   }

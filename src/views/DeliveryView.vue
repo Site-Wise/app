@@ -372,11 +372,14 @@
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                       {{ t('common.total') }}
                     </th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                      {{ t('returns.returnStatus') }}
+                    </th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                   <tr v-if="!viewingDelivery.expand?.delivery_items || viewingDelivery.expand.delivery_items.length === 0">
-                    <td colspan="4" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                    <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                       <div class="space-y-2">
                         <div>{{ t('delivery.noItemsInDelivery') }}</div>
                         <div class="text-xs">
@@ -408,6 +411,25 @@
                     <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
                       ₹{{ deliveryItem.total_amount.toFixed(2) }}
                     </td>
+                    <td class="px-4 py-3 text-sm">
+                      <div v-if="returnInfo[deliveryItem.id!]" class="space-y-1">
+                        <div v-if="returnInfo[deliveryItem.id!].totalReturned > 0" class="text-red-600 dark:text-red-400 text-xs">
+                          {{ returnInfo[deliveryItem.id!].totalReturned }} returned
+                        </div>
+                        <div v-if="returnInfo[deliveryItem.id!].availableForReturn > 0" class="text-green-600 dark:text-green-400 text-xs">
+                          {{ returnInfo[deliveryItem.id!].availableForReturn }} available
+                        </div>
+                        <div v-if="returnInfo[deliveryItem.id!].returns.length > 0" class="text-blue-600 dark:text-blue-400 text-xs cursor-pointer hover:underline" @click="showReturnDetails(deliveryItem.id!)">
+                          {{ returnInfo[deliveryItem.id!].returns.length }} return(s)
+                        </div>
+                        <div v-if="returnInfo[deliveryItem.id!].totalReturned === 0 && returnInfo[deliveryItem.id!].availableForReturn === deliveryItem.quantity" class="text-gray-500 dark:text-gray-400 text-xs">
+                          No returns
+                        </div>
+                      </div>
+                      <div v-else class="text-gray-400 text-xs">
+                        Loading...
+                      </div>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -438,6 +460,7 @@ import PhotoGallery from '../components/PhotoGallery.vue';
 import MultiItemDeliveryModal from '../components/delivery/MultiItemDeliveryModal.vue';
 import { 
   deliveryService,
+  vendorReturnService,
   type Delivery
 } from '../services/pocketbase';
 
@@ -458,6 +481,19 @@ const showAddModal = ref(false);
 const editingDelivery = ref<Delivery | null>(null);
 const viewingDelivery = ref<Delivery | null>(null);
 const loadingDeliveryDetails = ref(false);
+
+// Return information storage
+const returnInfo = ref<Record<string, {
+  totalReturned: number;
+  availableForReturn: number;
+  returns: Array<{
+    id: string;
+    returnDate: string;
+    quantityReturned: number;
+    status: string;
+    reason: string;
+  }>;
+}>>({});
 
 // Development mode check for debugging
 const isDev = computed(() => import.meta.env.DEV);
@@ -528,6 +564,11 @@ const viewDelivery = async (delivery: Delivery) => {
     }
     
     viewingDelivery.value = fullDelivery;
+    
+    // Load return information for each delivery item
+    if (fullDelivery.expand?.delivery_items) {
+      await loadReturnInfo(fullDelivery.expand.delivery_items);
+    }
   } catch (err) {
     console.error('Error loading delivery details:', err);
     error(t('delivery.loadError'));
@@ -536,6 +577,30 @@ const viewDelivery = async (delivery: Delivery) => {
   } finally {
     loadingDeliveryDetails.value = false;
   }
+};
+
+const loadReturnInfo = async (deliveryItems: any[]) => {
+  try {
+    for (const item of deliveryItems) {
+      if (item.id) {
+        const info = await vendorReturnService.getReturnInfoForDeliveryItem(item.id);
+        returnInfo.value[item.id] = info;
+      }
+    }
+  } catch (err) {
+    console.error('Error loading return information:', err);
+  }
+};
+
+const showReturnDetails = (deliveryItemId: string) => {
+  const info = returnInfo.value[deliveryItemId];
+  if (!info || info.returns.length === 0) return;
+  
+  const returnsList = info.returns.map(ret => 
+    `• ${ret.quantityReturned} units on ${new Date(ret.returnDate).toLocaleDateString()} (${ret.status}) - ${ret.reason}`
+  ).join('\n');
+  
+  alert(`Return Details:\n\n${returnsList}`);
 };
 
 const deleteDelivery = async (delivery: Delivery) => {

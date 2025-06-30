@@ -346,7 +346,7 @@ describe('PaymentsView - Mobile Responsive Design', () => {
       expect(dropdown.exists()).toBe(true)
     })
 
-    it('should display view and delete options in dropdown menu', async () => {
+    it('should display view option in dropdown menu', async () => {
       wrapper = createWrapper()
       
       await wrapper.vm.$nextTick()
@@ -364,9 +364,8 @@ describe('PaymentsView - Mobile Responsive Design', () => {
       const dropdown = actionCell.find('.absolute')
       const menuButtons = dropdown.findAll('button')
       
-      expect(menuButtons.length).toBe(2)
+      expect(menuButtons.length).toBe(1)
       expect(menuButtons[0].text()).toContain('View')
-      expect(menuButtons[1].text()).toContain('Delete')
     })
 
     it('should close menu when clicking outside', async () => {

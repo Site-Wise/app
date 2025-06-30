@@ -74,18 +74,6 @@
                 <button @click="viewPayment(payment)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300" :title="t('common.view')">
                   <Eye class="h-4 w-4" />
                 </button>
-                <button 
-                  @click="deletePayment(payment.id!)" 
-                  :disabled="!canEditDelete"
-                  :class="[
-                    canEditDelete 
-                      ? 'text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300' 
-                      : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                  ]"
-                  :title="t('common.delete')"
-                >
-                  <Trash2 class="h-4 w-4" />
-                </button>
               </div>
             </td>
 
@@ -137,19 +125,6 @@
                     >
                       <Eye class="h-4 w-4 mr-2" />
                       {{ t('common.view') }}
-                    </button>
-                    <button 
-                      @click="deletePayment(payment.id!); closeMobileMenu()"
-                      :disabled="!canEditDelete"
-                      :class="[
-                        canEditDelete 
-                          ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20' 
-                          : 'text-gray-400 dark:text-gray-600 cursor-not-allowed',
-                        'w-full flex items-center px-3 py-2 text-sm transition-colors duration-150'
-                      ]"
-                    >
-                      <Trash2 class="h-4 w-4 mr-2" />
-                      {{ t('common.delete') }}
                     </button>
                   </div>
                 </Transition>
@@ -327,7 +302,6 @@ import {
   CreditCard, 
   Plus, 
   Eye, 
-  Trash2, 
   Loader2,
   Banknote,
   Wallet,
@@ -389,9 +363,6 @@ const canCreatePayment = computed(() => {
   return !isReadOnly.value && checkCreateLimit('payments');
 });
 
-const canEditDelete = computed(() => {
-  return !isReadOnly.value;
-});
 
 const activeAccounts = computed(() => {
   return accounts.value.filter(account => account.is_active);
@@ -550,24 +521,6 @@ const viewPayment = (payment: AccountTransaction) => {
   viewingPayment.value = payment;
 };
 
-const deletePayment = async (paymentId: string) => {
-  if (!canEditDelete.value) {
-    alert(t('subscription.banner.freeTierLimitReached'));
-    return;
-  }
-  if (confirm('Are you sure you want to delete this payment record? This cannot be undone and may affect item payment status.')) {
-    try {
-      // Note: In a real implementation, you'd also need to reverse the payment status updates
-      // For now, we'll just delete the payment record
-      // await paymentService.delete(paymentId);
-      // Usage is automatically decremented by PocketBase hooks
-      // await loadData();
-      alert(`Payment deletion is not implemented yet. You would need to manually adjust affected items. Payment ID: ${paymentId}`);
-    } catch (error) {
-      console.error('Error deleting payment:', error);
-    }
-  }
-};
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
