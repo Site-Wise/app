@@ -149,7 +149,7 @@
                     <Eye class="h-4 w-4" />
                   </button>
                   <button 
-                    v-if="canEditDelete" 
+                    v-if="canEditDelete && delivery.payment_status === 'pending'" 
                     @click="editDelivery(delivery)" 
                     class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                   >
@@ -226,7 +226,7 @@
                       {{ t('common.view') }}
                     </button>
                     <button 
-                      v-if="canEditDelete"
+                      v-if="canEditDelete && delivery.payment_status === 'pending'"
                       @click="editDelivery(delivery); openMobileMenuId = null"
                       class="w-full text-left px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center touch-manipulation"
                     >

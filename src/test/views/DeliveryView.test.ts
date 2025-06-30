@@ -402,7 +402,7 @@ describe('DeliveryView', () => {
     expect(wrapper.text()).toContain('₹2500.00')
   })
 
-  it('should hide delete button for paid and partial deliveries', async () => {
+  it('should hide edit and delete buttons for paid and partial deliveries', async () => {
     // Import the mocked service
     const { deliveryService } = await import('../../services/pocketbase')
     
@@ -505,10 +505,12 @@ describe('DeliveryView', () => {
     const deliveryRows = wrapper.findAll('tbody tr')
     expect(deliveryRows).toHaveLength(3)
     
-    // Find all delete buttons in the entire component
+    // Find all edit and delete buttons in the entire component
+    const allEditButtons = wrapper.findAll('button[class*="text-blue-600"]')
     const allDeleteButtons = wrapper.findAll('button[class*="text-red-600"]')
     
-    // CRITICAL TEST: Only 1 delete button should exist (for pending delivery only)
+    // CRITICAL TEST: Only 1 edit button and 1 delete button should exist (for pending delivery only)
+    expect(allEditButtons).toHaveLength(1)
     expect(allDeleteButtons).toHaveLength(1)
     
     // Verify the payment statuses are displayed correctly
@@ -521,22 +523,21 @@ describe('DeliveryView', () => {
     expect(wrapper.text()).toContain('Paid')
     expect(wrapper.text()).toContain('Partial')
     
-    // Test specific rows to ensure delete button visibility logic
+    // Test specific rows to ensure edit/delete button visibility logic
     const pendingRow = deliveryRows.find(row => row.text().includes('PENDING-001'))
     const paidRow = deliveryRows.find(row => row.text().includes('PAID-002'))
     const partialRow = deliveryRows.find(row => row.text().includes('PARTIAL-003'))
     
-    // PENDING delivery SHOULD have delete button
+    // PENDING delivery SHOULD have both edit and delete buttons
+    expect(pendingRow?.find('button[class*="text-blue-600"]').exists()).toBe(true)
     expect(pendingRow?.find('button[class*="text-red-600"]').exists()).toBe(true)
     
-    // PAID delivery should NOT have delete button (financial integrity protection)
+    // PAID delivery should NOT have edit or delete buttons (financial integrity protection)
+    expect(paidRow?.find('button[class*="text-blue-600"]').exists()).toBe(false)
     expect(paidRow?.find('button[class*="text-red-600"]').exists()).toBe(false)
     
-    // PARTIAL delivery should NOT have delete button (financial integrity protection)  
+    // PARTIAL delivery should NOT have edit or delete buttons (financial integrity protection)  
+    expect(partialRow?.find('button[class*="text-blue-600"]').exists()).toBe(false)
     expect(partialRow?.find('button[class*="text-red-600"]').exists()).toBe(false)
-    
-    // Verify edit buttons still exist for all deliveries (editing allowed, deletion restricted)
-    const allEditButtons = wrapper.findAll('button[class*="text-blue-600"]')
-    expect(allEditButtons.length).toBeGreaterThan(0) // Edit buttons should still be present
   })
 })

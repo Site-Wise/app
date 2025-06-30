@@ -6,7 +6,7 @@ const POCKETBASE_URL = import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:
 export const pb = new PocketBase(POCKETBASE_URL);
 
 // Enable auto cancellation for duplicate requests
-pb.autoCancellation(false);
+pb.autoCancellation(true);
 
 export interface User {
   id: string;
@@ -661,6 +661,45 @@ export class SiteUserService {
       return record.role as 'owner' | 'supervisor' | 'accountant';
     } catch (error) {
       return null;
+    }
+  }
+
+  async getUserRolesForSites(userId: string, siteIds: string[]): Promise<Record<string, 'owner' | 'supervisor' | 'accountant' | null>> {
+    try {
+      if (siteIds.length === 0) {
+        return {};
+      }
+
+      // Create filter for multiple sites
+      const siteFilter = siteIds.map(id => `site="${id}"`).join(' || ');
+      const filter = `user="${userId}" && (${siteFilter}) && is_active=true`;
+      
+      const records = await pb.collection('site_users').getFullList({
+        filter
+      });
+
+      // Build result map
+      const roles: Record<string, 'owner' | 'supervisor' | 'accountant' | null> = {};
+      
+      // Initialize all sites to null
+      siteIds.forEach(siteId => {
+        roles[siteId] = null;
+      });
+
+      // Fill in actual roles
+      records.forEach(record => {
+        roles[record.site] = record.role as 'owner' | 'supervisor' | 'accountant';
+      });
+
+      return roles;
+    } catch (error) {
+      console.error('Error fetching user roles for sites:', error);
+      // Return null for all sites on error
+      const roles: Record<string, 'owner' | 'supervisor' | 'accountant' | null> = {};
+      siteIds.forEach(siteId => {
+        roles[siteId] = null;
+      });
+      return roles;
     }
   }
 

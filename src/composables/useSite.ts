@@ -13,30 +13,48 @@ const currentSite = ref<Site | null>(null);
 const userSites = ref<Site[]>([]);
 const currentUserRole = ref<'owner' | 'supervisor' | 'accountant' | null>(null);
 const isInitialized = ref(false);
+let loadingSitesPromise: Promise<void> | null = null;
+let siteSelectionTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function useSite() {
   const isLoading = ref(false);
 
   const loadUserSites = async () => {
+    // Prevent concurrent calls - return existing promise if already loading
+    if (loadingSitesPromise) {
+      return loadingSitesPromise;
+    }
+
+    loadingSitesPromise = performLoadUserSites();
+    try {
+      await loadingSitesPromise;
+    } finally {
+      loadingSitesPromise = null;
+    }
+  };
+
+  const performLoadUserSites = async () => {
     isLoading.value = true;
     isInitialized.value = false;
     try {
       const sites = await siteService.getAll();
       
-      // Load ownership info for each site
+      // Load ownership info for each site - optimized to reduce N+1 queries
       const authService = await import('../services/pocketbase').then(m => m.authService);
       const user = authService.currentUser;
       if (user) {
-        const sitesWithOwnership = await Promise.all(
-          sites.map(async (site) => {
-            const role = await siteUserService.getUserRoleForSite(user.id, site.id!);
-            return {
-              ...site,
-              userRole: role,
-              isOwner: role === 'owner'
-            };
-          })
-        );
+        // Batch load all user roles for sites to avoid N+1 queries
+        const siteIds = sites.map(site => site.id!).filter(Boolean);
+        const userRoles = await siteUserService.getUserRolesForSites(user.id, siteIds);
+        
+        const sitesWithOwnership = sites.map((site) => {
+          const role = userRoles[site.id!] || null;
+          return {
+            ...site,
+            userRole: role,
+            isOwner: role === 'owner'
+          };
+        });
         userSites.value = sitesWithOwnership;
       } else {
         userSites.value = sites;
@@ -93,14 +111,30 @@ export function useSite() {
   };
 
   const selectSite = async (siteId: string) => {
-    const site = userSites.value.find(s => s.id === siteId);
-    if (site) {
-      currentSite.value = site;
-      setCurrentSiteId(siteId);
-      
-      // Load user role for the selected site
-      await loadUserRoleForCurrentSite();
+    // Clear any pending site selection
+    if (siteSelectionTimer) {
+      clearTimeout(siteSelectionTimer);
     }
+
+    // Debounce site selection to prevent rapid successive calls
+    return new Promise<void>((resolve) => {
+      siteSelectionTimer = setTimeout(async () => {
+        try {
+          const site = userSites.value.find(s => s.id === siteId);
+          if (site) {
+            currentSite.value = site;
+            setCurrentSiteId(siteId);
+            
+            // Load user role for the selected site
+            await loadUserRoleForCurrentSite();
+          }
+          resolve();
+        } catch (error) {
+          console.error('Error selecting site:', error);
+          resolve();
+        }
+      }, 100); // 100ms debounce
+    });
   };
 
   const createSite = async (siteData: Pick<Site, 'name' | 'description' | 'total_units' | 'total_planned_area'>) => {

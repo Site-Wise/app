@@ -484,7 +484,7 @@ const loadData = async () => {
     if (props.editingDelivery) {
       Object.assign(deliveryForm, {
         vendor: props.editingDelivery.vendor,
-        delivery_date: props.editingDelivery.delivery_date,
+        delivery_date: props.editingDelivery.delivery_date.split('T')[0], // Extract date part only
         delivery_reference: props.editingDelivery.delivery_reference,
         notes: props.editingDelivery.notes
       });

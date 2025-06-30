@@ -341,8 +341,18 @@ const loadData = async () => {
 };
 
 
+let siteChangeTimeout: ReturnType<typeof setTimeout> | null = null;
+
 const handleSiteChange = () => {
-  loadData();
+  // Clear any existing timeout to debounce rapid site changes
+  if (siteChangeTimeout) {
+    clearTimeout(siteChangeTimeout);
+  }
+  
+  // Debounce the data reload by 200ms
+  siteChangeTimeout = setTimeout(() => {
+    loadData();
+  }, 200);
 };
 
 onMounted(() => {
@@ -352,5 +362,10 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('site-changed', handleSiteChange);
+  
+  // Clear any pending site change timeout
+  if (siteChangeTimeout) {
+    clearTimeout(siteChangeTimeout);
+  }
 });
 </script>

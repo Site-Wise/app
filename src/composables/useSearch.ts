@@ -142,7 +142,7 @@ export const searchConfigs = {
   },
   deliveries: {
     collection: 'deliveries' as const,
-    searchFields: ['expand.vendor.name', 'delivery_reference', 'notes'],
+    searchFields: ['vendor.name', 'delivery_reference', 'notes'],
     expand: 'vendor,delivery_items,delivery_items.item'
   },
   service_bookings: {

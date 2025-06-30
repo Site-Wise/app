@@ -14,6 +14,13 @@ vi.mock('../../services/pocketbase', () => ({
   },
   siteUserService: {
     getUserRoleForSite: vi.fn().mockResolvedValue('owner'),
+    getUserRolesForSites: vi.fn().mockImplementation(async (userId: string, siteIds: string[]) => {
+      const roles: Record<string, 'owner' | 'supervisor' | 'accountant' | null> = {};
+      siteIds.forEach(siteId => {
+        roles[siteId] = 'owner';
+      });
+      return roles;
+    }),
     getBySite: vi.fn().mockResolvedValue([])
   },
   authService: {
@@ -47,16 +54,17 @@ describe('useSite', () => {
   })
 
   it('should select a site', async () => {
-    const { selectSite, currentSite } = useSite()
-    const { setCurrentSiteId } = await import('../../services/pocketbase')
+    const { selectSite, currentSite, loadUserSites } = useSite()
+    const { setCurrentSiteId, siteService } = await import('../../services/pocketbase')
     
     // Mock the userSites ref to have the site
-    const { loadUserSites } = useSite()
-    const { siteService } = await import('../../services/pocketbase')
     vi.mocked(siteService.getAll).mockResolvedValue([mockSite])
     await loadUserSites()
     
     await selectSite('site-1')
+    
+    // Wait a bit for the debounced selection to complete
+    await new Promise(resolve => setTimeout(resolve, 150))
     
     expect(currentSite.value).toEqual({
       ...mockSite,
