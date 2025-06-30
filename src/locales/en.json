@@ -72,6 +72,8 @@
     "more": "more",
     "items": "items",
     "unknown": "Unknown",
+    "unknownVendor": "Unknown Vendor",
+    "approve": "Approve",
     "keyboardShortcut": "Keyboard shortcut: {keys}"
   },
   "search": {
@@ -84,8 +86,13 @@
     "vendors": "Search vendors by name, contact, or email...",
     "services": "Search services by name or description...",
     "payments": "Search payments by vendor or account...",
+    "returns": "Search returns by vendor, reason, or status...",
     "noResults": "No results found",
     "resultsCount": "{count} results found"
+  },
+  "filters": {
+    "allStatuses": "All Statuses",
+    "allVendors": "All Vendors"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -291,6 +298,18 @@
     "payNow": "Pay Now",
     "addSpecialty": "Add specialty (e.g., Steel, Concrete)",
     "returns": "Returns",
+    "returnsSubtitle": "Manage vendor returns and refunds",
+    "totalReturns": "Total Returns",
+    "pendingApproval": "Pending Approval",
+    "totalRefunded": "Total Refunded",
+    "returnDetails": "Return Details",
+    "reason": "Reason",
+    "refunded": "Refunded",
+    "refund": "Refund",
+    "returnId": "Return ID",
+    "noReturnsFound": "No returns found",
+    "tryAdjustingFilters": "Try adjusting your filters.",
+    "getStartedReturn": "Get started by creating a return.",
     "addReturn": "Add Return",
     "createReturn": "Create Return",
     "editReturn": "Edit Return",

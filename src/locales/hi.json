@@ -72,6 +72,8 @@
     "more": "और",
     "items": "वस्तुएं",
     "unknown": "अज्ञात",
+    "unknownVendor": "अज्ञात विक्रेता",
+    "approve": "स्वीकृत करें",
     "keyboardShortcut": "कीबोर्ड शॉर्टकट: {keys}"
   },
   "search": {
@@ -84,8 +86,13 @@
     "vendors": "नाम, संपर्क, या ईमेल से विक्रेता खोजें...",
     "services": "नाम या विवरण से सेवाएं खोजें...",
     "payments": "विक्रेता या खाते से भुगतान खोजें...",
+    "returns": "विक्रेता, कारण, या स्थिति से वापसी खोजें...",
     "noResults": "कोई परिणाम नहीं मिला",
     "resultsCount": "{count} परिणाम मिले"
+  },
+  "filters": {
+    "allStatuses": "सभी स्थितियां",
+    "allVendors": "सभी विक्रेता"
   },
   "nav": {
     "dashboard": "डैशबोर्ड",
@@ -291,6 +298,18 @@
     "payNow": "अभी भुगतान करें",
     "addSpecialty": "विशेषता जोड़ें (जैसे, स्टील, कंक्रीट)",
     "returns": "वापसी",
+    "returnsSubtitle": "विक्रेता वापसी और धन वापसी का प्रबंधन करें",
+    "totalReturns": "कुल वापसी",
+    "pendingApproval": "अनुमोदन लंबित",
+    "totalRefunded": "कुल धन वापसी",
+    "returnDetails": "वापसी विवरण",
+    "reason": "कारण",
+    "refunded": "धन वापसी",
+    "refund": "धन वापसी",
+    "returnId": "वापसी आईडी",
+    "noReturnsFound": "कोई वापसी नहीं मिली",
+    "tryAdjustingFilters": "अपने फ़िल्टर समायोजित करने का प्रयास करें।",
+    "getStartedReturn": "वापसी बनाकर शुरुआत करें।",
     "addReturn": "वापसी जोड़ें",
     "createReturn": "वापसी बनाएं",
     "editReturn": "वापसी संपादित करें",

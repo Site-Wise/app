@@ -4,7 +4,7 @@
     <div class="flex flex-col md:flex-row md:items-center md:justify-between">
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('vendors.returns') }}</h1>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage vendor returns and refunds</p>
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ t('vendors.returnsSubtitle') }}</p>
       </div>
       <div class="mt-4 md:mt-0 flex space-x-3">
         <button 
@@ -12,7 +12,7 @@
           class="btn-outline"
         >
           <Download class="mr-2 h-4 w-4" />
-          Export
+          {{ t('common.export') }}
         </button>
         <button 
           @click="openCreateModal" 
@@ -31,7 +31,7 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search returns..."
+          :placeholder="t('search.returns')"
           class="input pl-10 w-full"
         />
         <div v-if="loading" class="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -48,7 +48,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Search returns..."
+            :placeholder="t('search.returns')"
             class="input pl-10 w-full max-w-md"
           />
           <div v-if="loading" class="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -59,7 +59,7 @@
       
       <div class="flex space-x-2">
         <select v-model="statusFilter" class="input min-w-0">
-          <option value="">All Statuses</option>
+          <option value="">{{ t('filters.allStatuses') }}</option>
           <option value="initiated">{{ t('vendors.returnStatuses.initiated') }}</option>
           <option value="approved">{{ t('vendors.returnStatuses.approved') }}</option>
           <option value="rejected">{{ t('vendors.returnStatuses.rejected') }}</option>
@@ -68,9 +68,9 @@
         </select>
         
         <select v-model="vendorFilter" class="input min-w-0">
-          <option value="">All Vendors</option>
+          <option value="">{{ t('filters.allVendors') }}</option>
           <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
-            {{ vendor.name || vendor.contact_person || 'Unnamed Vendor' }}
+            {{ vendor.name || vendor.contact_person || t('common.unnamedVendor') }}
           </option>
         </select>
       </div>
@@ -84,7 +84,7 @@
             <RotateCcw class="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-blue-700 dark:text-blue-300">Total Returns</p>
+            <p class="text-sm font-medium text-blue-700 dark:text-blue-300">{{ t('vendors.totalReturns') }}</p>
             <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ returns.length }}</p>
           </div>
         </div>
@@ -96,7 +96,7 @@
             <Clock class="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-yellow-700 dark:text-yellow-300">Pending Approval</p>
+            <p class="text-sm font-medium text-yellow-700 dark:text-yellow-300">{{ t('vendors.pendingApproval') }}</p>
             <p class="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{{ pendingReturns }}</p>
           </div>
         </div>
@@ -108,7 +108,7 @@
             <CheckCircle class="h-6 w-6 text-green-600 dark:text-green-400" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-green-700 dark:text-green-300">Completed</p>
+            <p class="text-sm font-medium text-green-700 dark:text-green-300">{{ t('common.completed') }}</p>
             <p class="text-2xl font-bold text-green-900 dark:text-green-100">{{ completedReturns }}</p>
           </div>
         </div>
@@ -120,7 +120,7 @@
             <DollarSign class="h-6 w-6 text-purple-600 dark:text-purple-400" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-purple-700 dark:text-purple-300">Total Refunded</p>
+            <p class="text-sm font-medium text-purple-700 dark:text-purple-300">{{ t('vendors.totalRefunded') }}</p>
             <p class="text-2xl font-bold text-purple-900 dark:text-purple-100">₹{{ totalRefunded.toFixed(2) }}</p>
           </div>
         </div>
@@ -135,19 +135,19 @@
           <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Return Details
+                {{ t('vendors.returnDetails') }}
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Vendor
+                {{ t('common.vendor') }}
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Amount
+                {{ t('common.amount') }}
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Status
+                {{ t('common.status') }}
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Actions
+                {{ t('common.actions') }}
               </th>
             </tr>
           </thead>
@@ -175,7 +175,7 @@
               </td>
               <td class="px-6 py-4">
                 <div class="text-sm font-medium text-gray-900 dark:text-white">
-                  {{ returnItem.expand?.vendor?.name || returnItem.expand?.vendor?.contact_person || 'Unknown Vendor' }}
+                  {{ returnItem.expand?.vendor?.name || returnItem.expand?.vendor?.contact_person || t('common.unknownVendor') }}
                 </div>
                 <div v-if="returnItem.expand?.vendor?.contact_person && returnItem.expand?.vendor?.name" 
                      class="text-sm text-gray-500 dark:text-gray-400">
@@ -187,7 +187,7 @@
                   ₹{{ returnItem.total_return_amount.toFixed(2) }}
                 </div>
                 <div v-if="returnItem.actual_refund_amount" class="text-sm text-green-600 dark:text-green-400">
-                  Refunded: ₹{{ returnItem.actual_refund_amount.toFixed(2) }}
+                  {{ t('vendors.refunded') }}: ₹{{ returnItem.actual_refund_amount.toFixed(2) }}
                 </div>
               </td>
               <td class="px-6 py-4">
@@ -248,25 +248,25 @@
           
           <div class="space-y-2 text-sm">
             <div class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">Vendor:</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ t('common.vendor') }}:</span>
               <span class="text-gray-900 dark:text-white font-medium">
-                {{ returnItem.expand?.vendor?.name || returnItem.expand?.vendor?.contact_person || 'Unknown Vendor' }}
+                {{ returnItem.expand?.vendor?.name || returnItem.expand?.vendor?.contact_person || t('common.unknownVendor') }}
               </span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">Reason:</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ t('vendors.reason') }}:</span>
               <span class="text-gray-900 dark:text-white">
                 {{ t(`vendors.returnReasons.${returnItem.reason}`) }}
               </span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">Amount:</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ t('common.amount') }}:</span>
               <span class="text-gray-900 dark:text-white font-medium">
                 ₹{{ returnItem.total_return_amount.toFixed(2) }}
               </span>
             </div>
             <div v-if="returnItem.actual_refund_amount" class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">Refunded:</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ t('vendors.refunded') }}:</span>
               <span class="text-green-600 dark:text-green-400 font-medium">
                 ₹{{ returnItem.actual_refund_amount.toFixed(2) }}
               </span>
@@ -279,7 +279,7 @@
               class="btn-outline text-xs py-1 px-2"
             >
               <Eye class="h-3 w-3 mr-1" />
-              View
+              {{ t('common.view') }}
             </button>
             <button 
               v-if="returnItem.status === 'initiated'" 
@@ -287,7 +287,7 @@
               class="btn-primary text-xs py-1 px-2 bg-green-600 hover:bg-green-700"
             >
               <Check class="h-3 w-3 mr-1" />
-              Approve
+              {{ t('common.approve') }}
             </button>
             <button 
               v-if="returnItem.status === 'approved'" 
@@ -295,7 +295,7 @@
               class="btn-primary text-xs py-1 px-2 bg-purple-600 hover:bg-purple-700"
             >
               <DollarSign class="h-3 w-3 mr-1" />
-              Refund
+              {{ t('vendors.refund') }}
             </button>
           </div>
         </div>
@@ -304,9 +304,9 @@
       <!-- Empty State -->
       <div v-if="filteredReturns.length === 0" class="text-center py-12">
         <RotateCcw class="mx-auto h-12 w-12 text-gray-400" />
-        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No returns found</h3>
+        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('vendors.noReturnsFound') }}</h3>
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          {{ searchQuery || statusFilter || vendorFilter ? 'Try adjusting your filters.' : 'Get started by creating a return.' }}
+          {{ searchQuery || statusFilter || vendorFilter ? t('vendors.tryAdjustingFilters') : t('vendors.getStartedReturn') }}
         </p>
       </div>
     </div>
@@ -364,6 +364,7 @@ import {
   vendorReturnService,
   vendorService,
   deliveryService,
+  deliveryItemService,
   accountService,
   type VendorReturn,
   type Vendor,
@@ -462,6 +463,8 @@ const loadData = async () => {
     
     // Extract delivery items from deliveries
     const allDeliveryItems: DeliveryItem[] = [];
+    
+    // Try to extract from expanded delivery data first
     deliveriesData.forEach(delivery => {
       if (delivery.expand?.delivery_items) {
         delivery.expand.delivery_items.forEach(deliveryItem => {
@@ -475,6 +478,27 @@ const loadData = async () => {
         });
       }
     });
+    
+    // If no delivery items found via expand, fetch them directly
+    if (allDeliveryItems.length === 0 && deliveriesData.length > 0) {
+      for (const delivery of deliveriesData) {
+        try {
+          const deliveryItems = await deliveryItemService.getByDelivery(delivery.id!);
+          deliveryItems.forEach((deliveryItem: DeliveryItem) => {
+            allDeliveryItems.push({
+              ...deliveryItem,
+              expand: {
+                ...deliveryItem.expand,
+                delivery: delivery
+              }
+            });
+          });
+        } catch (err) {
+          console.error('Error fetching delivery items for delivery', delivery.id, err);
+        }
+      }
+    }
+    
     deliveryItems.value = allDeliveryItems;
   } catch (error) {
     console.error('Error loading data:', error);
@@ -573,11 +597,19 @@ const handleRefundSave = async () => {
 
 const exportReturns = () => {
   // Create CSV content
-  const headers = ['Return ID', 'Date', 'Vendor', 'Reason', 'Status', 'Return Amount', 'Refund Amount'];
+  const headers = [
+    t('vendors.returnId'), 
+    t('common.date'), 
+    t('common.vendor'), 
+    t('vendors.reason'), 
+    t('common.status'), 
+    t('vendors.returnAmount'), 
+    t('vendors.refundAmount')
+  ];
   const rows = filteredReturns.value.map(returnItem => [
     returnItem.id?.slice(-6) || '',
     returnItem.return_date,
-    returnItem.expand?.vendor?.name || returnItem.expand?.vendor?.contact_person || 'Unknown Vendor',
+    returnItem.expand?.vendor?.name || returnItem.expand?.vendor?.contact_person || t('common.unknownVendor'),
     t(`vendors.returnReasons.${returnItem.reason}`),
     t(`vendors.returnStatuses.${returnItem.status}`),
     returnItem.total_return_amount,
