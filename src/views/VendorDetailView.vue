@@ -14,19 +14,75 @@
           <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ t('vendors.vendorDetails') }}</p>
         </div>
       </div>
-      <div class="flex items-center space-x-3">
-        <button @click="exportLedger" class="btn-outline">
-          <Download class="mr-2 h-4 w-4" />
-          Export Ledger
-        </button>
-        <button @click="createReturn" class="btn-outline">
+      <!-- Desktop Actions -->
+      <div class="hidden md:flex items-center space-x-3">
+        <div class="relative export-dropdown">
+          <button @click="showExportDropdown = !showExportDropdown" class="btn-outline flex items-center">
+            <Download class="mr-2 h-4 w-4" />
+            {{ t('vendors.exportLedger') }}
+            <ChevronDown class="ml-2 h-4 w-4" />
+          </button>
+          
+          <!-- Export Dropdown Menu -->
+          <div v-if="showExportDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+            <div class="py-1">
+              <button @click="exportLedger(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <FileSpreadsheet class="mr-3 h-4 w-4 text-green-600" />
+                {{ t('vendors.exportCsv') }}
+              </button>
+              <button @click="exportLedgerPDF(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <FileText class="mr-3 h-4 w-4 text-red-600" />
+                {{ t('vendors.exportPdf') }}
+              </button>
+            </div>
+          </div>
+        </div>
+        <button @click="createReturn()" class="btn-outline">
           <RotateCcw class="mr-2 h-4 w-4" />
           Create Return
         </button>
-        <button @click="recordPayment" class="btn-primary">
+        <button @click="recordPayment()" class="btn-primary">
           <CreditCard class="mr-2 h-4 w-4" />
           Record Payment
         </button>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div class="md:hidden relative mobile-menu">
+        <button @click="showMobileMenu = !showMobileMenu" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <MoreVertical class="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        </button>
+        
+        <!-- Mobile Dropdown Menu -->
+        <div v-if="showMobileMenu" class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+          <div class="py-1">
+            <!-- Export Options -->
+            <div class="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700">
+              {{ t('vendors.exportLedger') }}
+            </div>
+            <button @click="handleMobileAction('exportCsv')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <FileSpreadsheet class="mr-3 h-5 w-5 text-green-600" />
+              {{ t('vendors.exportCsv') }}
+            </button>
+            <button @click="handleMobileAction('exportPdf')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <FileText class="mr-3 h-5 w-5 text-red-600" />
+              {{ t('vendors.exportPdf') }}
+            </button>
+            
+            <!-- Divider -->
+            <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+            
+            <!-- Other Actions -->
+            <button @click="handleMobileAction('createReturn')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <RotateCcw class="mr-3 h-5 w-5 text-gray-600" />
+              Create Return
+            </button>
+            <button @click="handleMobileAction('recordPayment')" class="flex items-center w-full px-4 py-3 text-sm text-white bg-blue-600 hover:bg-blue-700">
+              <CreditCard class="mr-3 h-5 w-5 text-white" />
+              Record Payment
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -324,8 +380,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { jsPDF } from 'jspdf';
 import {
   ArrowLeft,
   Download,
@@ -342,7 +399,11 @@ import {
   Wallet,
   Smartphone,
   Building2,
-  RotateCcw
+  RotateCcw,
+  FileText,
+  FileSpreadsheet,
+  ChevronDown,
+  MoreVertical
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import {
@@ -378,6 +439,8 @@ const accounts = ref<Account[]>([]);
 const vendorTags = ref<TagType[]>([]);
 const showPaymentModal = ref(false);
 const paymentLoading = ref(false);
+const showExportDropdown = ref(false);
+const showMobileMenu = ref(false);
 
 const paymentForm = reactive({
   account: '',
@@ -543,10 +606,166 @@ const exportLedger = () => {
   document.body.removeChild(link);
 };
 
+const exportLedgerPDF = () => {
+  if (!vendor.value) return;
+  
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.width;
+  const margin = 20;
+  let yPosition = 30;
+  
+  // Header
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Vendor Ledger', margin, yPosition);
+  
+  yPosition += 10;
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Vendor: ${vendor.value.name}`, margin, yPosition);
+  
+  yPosition += 6;
+  if (vendor.value.contact_person) {
+    doc.text(`Contact: ${vendor.value.contact_person}`, margin, yPosition);
+    yPosition += 6;
+  }
+  
+  doc.text(`Generated: ${new Date().toLocaleDateString('en-CA')}`, margin, yPosition);
+  
+  // yPosition += 6;
+  // const outstandingAmount = vendorDeliveries.value.reduce((sum, delivery) => 
+  //   delivery.payment_status === 'pending' ? sum + delivery.total_amount : sum, 0) - 
+  //   vendorPayments.value.reduce((sum, payment) => sum + payment.amount, 0);
+  // doc.text(`Outstanding Balance: ₹${outstandingAmount.toFixed(2)}`, margin, yPosition);
+  
+  yPosition += 15;
+  
+  // Table headers
+  doc.setFont('helvetica', 'bold');
+  const headers = ['Date', 'Description', 'Reference', 'Dues', 'Payments'];
+  const colWidths = [25, 70, 25, 25, 25];
+  let xPos = margin;
+  
+  headers.forEach((header, i) => {
+    doc.text(header, xPos, yPosition);
+    xPos += colWidths[i];
+  });
+  
+  yPosition += 8;
+  doc.line(margin, yPosition, pageWidth - margin, yPosition);
+  yPosition += 5;
+  
+  // Table rows
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  
+  // Combine and sort all transactions
+  const allTransactions: any[] = [];
+  
+  vendorDeliveries.value.forEach(delivery => {
+    // Create description from delivery items
+    let description = '';
+    if (delivery.expand?.delivery_items && delivery.expand.delivery_items.length > 0) {
+      const itemDescriptions = delivery.expand.delivery_items.map(deliveryItem => {
+        const itemName = deliveryItem.expand?.item?.name || 'Unknown Item';
+        return `${itemName} (${deliveryItem.quantity} ${deliveryItem.expand?.item?.unit || 'units'})`;
+      });
+      description = itemDescriptions.join(', ');
+    } else {
+      description = `Delivery #${delivery.id?.slice(-6) || 'Unknown'}`;
+    }
+    
+    allTransactions.push({
+      date: new Date(delivery.delivery_date).toLocaleDateString('en-CA'), // Format as Y-m-d
+      description: description,
+      reference: delivery.delivery_reference || '',
+      dues: delivery.total_amount,
+      payments: 0,
+      type: 'delivery'
+    });
+  });
+  
+  vendorPayments.value.forEach(payment => {
+    allTransactions.push({
+      date: new Date(payment.payment_date).toLocaleDateString('en-CA'), // Format as Y-m-d
+      description: 'Payment received',
+      reference: payment.reference || '',
+      dues: 0,
+      payments: payment.amount,
+      type: 'payment'
+    });
+  });
+  
+  allTransactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  
+  allTransactions.forEach(transaction => {
+    if (yPosition > 260) {
+      doc.addPage();
+      yPosition = 30;
+    }
+    
+    xPos = margin;
+    
+    // Handle multi-line description
+    const description = transaction.description;
+    const maxDescriptionWidth = colWidths[1] - 5; // Description column width minus padding
+    const descriptionLines = doc.splitTextToSize(description, maxDescriptionWidth);
+    const lineHeight = 4;
+    const rowHeight = Math.max(6, descriptionLines.length * lineHeight);
+    
+    // Check if we need a new page for multi-line content
+    if (yPosition + rowHeight > 260) {
+      doc.addPage();
+      yPosition = 30;
+    }
+    
+    // Draw row data
+    const rowData = [
+      transaction.date,
+      '', // Description handled separately for multi-line
+      transaction.reference,
+      transaction.dues ? `₹${transaction.dues.toFixed(2)}` : '',
+      transaction.payments ? `₹${transaction.payments.toFixed(2)}` : ''
+    ];
+    
+    // Draw non-description columns
+    rowData.forEach((data, i) => {
+      if (i !== 1) { // Skip description column
+        doc.text(data, xPos, yPosition);
+      }
+      xPos += colWidths[i];
+    });
+    
+    // Draw multi-line description
+    const descriptionX = margin + colWidths[0];
+    descriptionLines.forEach((line: string, lineIndex: number) => {
+      doc.text(line, descriptionX, yPosition + (lineIndex * lineHeight));
+    });
+    
+    yPosition += rowHeight;
+  });
+  
+  // Summary
+  if (yPosition > 240) {
+    doc.addPage();
+    yPosition = 30;
+  }
+  
+  yPosition += 10;
+  doc.line(margin, yPosition, pageWidth - margin, yPosition);
+  yPosition += 8;
+  
+  // doc.setFont('helvetica', 'bold');
+  // doc.text(`Outstanding Balance: ₹${outstandingAmount.toFixed(2)}`, margin, yPosition);
+  
+  // Save the PDF
+  doc.save(`${vendor.value.name}_ledger_${new Date().toISOString().split('T')[0]}.pdf`);
+};
+
 const generateLedgerCSV = () => {
   if (!vendor.value) return '';
 
-  const headers = ['Date', 'Type', 'Description', 'Item', 'Quantity', 'Unit Price', 'Amount', 'Payment Status', 'Account', 'Reference', 'Notes'];
+  const headers = ['Date', 'Description', 'Reference', 'Dues', 'Payments', 'Notes'];
 
   const rows: (string | number)[][] = [];
 
@@ -554,15 +773,10 @@ const generateLedgerCSV = () => {
   vendorDeliveries.value.forEach(delivery => {
     rows.push([
       delivery.delivery_date,
-      'Delivery',
       `Delivery #${delivery.id?.slice(-6) || 'Unknown'}`,
-      delivery.delivery_reference || 'No reference',
-      '',
-      '',
-      delivery.total_amount,
-      delivery.payment_status,
-      '',
-      '',
+      delivery.delivery_reference || '',
+      delivery.total_amount, // Dues (deliveries owed)
+      '', // Empty payments column
       delivery.notes || ''
     ]);
   });
@@ -571,15 +785,10 @@ const generateLedgerCSV = () => {
   vendorPayments.value.forEach(payment => {
     rows.push([
       payment.payment_date,
-      'Payment',
       'Payment received',
-      '',
-      '',
-      '',
-      -payment.amount, // Negative for payments
-      'paid',
-      payment.expand?.account?.name || 'Unknown Account',
       payment.reference || '',
+      '', // Empty dues column
+      payment.amount, // Payments (credits)
       payment.notes || ''
     ]);
   });
@@ -633,7 +842,56 @@ const createReturn = () => {
   });
 };
 
+// Handle mobile menu actions
+const handleMobileAction = (action: string) => {
+  // Close the menu first
+  showMobileMenu.value = false;
+  
+  // Then execute the action after a small delay to ensure menu closes
+  setTimeout(() => {
+    try {
+      switch (action) {
+        case 'exportCsv':
+          exportLedger();
+          break;
+        case 'exportPdf':
+          exportLedgerPDF();
+          break;
+        case 'createReturn':
+          createReturn();
+          break;
+        case 'recordPayment':
+          recordPayment();
+          break;
+        default:
+          console.warn('Unknown mobile action:', action);
+      }
+    } catch (error) {
+      console.error('Error executing mobile action:', action, error);
+    }
+  }, 100);
+};
+
+// Click outside handler for dropdowns
+const handleClickOutside = (event: Event) => {
+  const exportDropdown = document.querySelector('.export-dropdown');
+  const mobileMenu = document.querySelector('.mobile-menu');
+  
+  if (exportDropdown && !exportDropdown.contains(event.target as Node)) {
+    showExportDropdown.value = false;
+  }
+  
+  if (mobileMenu && !mobileMenu.contains(event.target as Node)) {
+    showMobileMenu.value = false;
+  }
+};
+
 onMounted(() => {
   loadVendorData();
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
 });
 </script>

@@ -292,6 +292,8 @@
     "financialSummary": "Financial Summary",
     "paymentStatusBreakdown": "Payment Status Breakdown",
     "exportLedger": "Export Ledger",
+    "exportCsv": "Export CSV",
+    "exportPdf": "Export PDF",
     "recordPayment": "Record Payment",
     "outstandingAmount": "Outstanding Amount",
     "quickPayment": "Quick Payment",

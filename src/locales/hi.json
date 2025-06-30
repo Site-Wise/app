@@ -292,6 +292,8 @@
     "financialSummary": "वित्तीय सारांश",
     "paymentStatusBreakdown": "भुगतान स्थिति विवरण",
     "exportLedger": "खाता बही निर्यात करें",
+    "exportCsv": "CSV निर्यात करें",
+    "exportPdf": "PDF निर्यात करें",
     "recordPayment": "भुगतान रिकॉर्ड करें",
     "outstandingAmount": "बकाया राशि",
     "quickPayment": "त्वरित भुगतान",

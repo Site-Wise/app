@@ -21,10 +21,16 @@
           <RefreshCw :class="{ 'animate-spin': recalculating }" class="mr-2 h-4 w-4" />
           Recalculate Balance
         </button>
-        <button @click="exportStatement" class="btn-outline">
-          <Download class="mr-2 h-4 w-4" />
-          Export Statement
-        </button>
+        <div class="flex items-center space-x-2">
+          <button @click="exportStatement" class="btn-outline">
+            <Download class="mr-2 h-4 w-4" />
+            Export CSV
+          </button>
+          <button @click="exportStatementPDF" class="btn-outline">
+            <FileText class="mr-2 h-4 w-4" />
+            Export PDF
+          </button>
+        </div>
         <button @click="showCreditModal = true" class="btn-outline">
           <Plus class="mr-2 h-4 w-4" />
           Add Credit Entry
@@ -329,8 +335,10 @@ import {
   Smartphone,
   Building2,
   CreditCard,
-  Plus
+  Plus,
+  FileText
 } from 'lucide-vue-next';
+import { jsPDF } from 'jspdf';
 import { 
   accountService, 
   accountTransactionService,
@@ -556,29 +564,118 @@ const exportStatement = () => {
   document.body.removeChild(link);
 };
 
+const exportStatementPDF = () => {
+  if (!account.value) return;
+  
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.width;
+  const margin = 20;
+  let yPosition = 30;
+  
+  // Header
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Account Statement', margin, yPosition);
+  
+  yPosition += 10;
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Account: ${account.value.name}`, margin, yPosition);
+  
+  yPosition += 6;
+  doc.text(`Type: ${account.value.type.replace('_', ' ').toUpperCase()}`, margin, yPosition);
+  
+  yPosition += 6;
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, margin, yPosition);
+  
+  yPosition += 6;
+  doc.text(`Current Balance: ₹${account.value.current_balance.toFixed(2)}`, margin, yPosition);
+  
+  yPosition += 15;
+  
+  // Table headers
+  doc.setFont('helvetica', 'bold');
+  const headers = ['Date', 'Description', 'Reference', 'Dues', 'Payments', 'Balance'];
+  const colWidths = [25, 50, 25, 20, 20, 25];
+  let xPos = margin;
+  
+  headers.forEach((header, i) => {
+    doc.text(header, xPos, yPosition);
+    xPos += colWidths[i];
+  });
+  
+  yPosition += 8;
+  doc.line(margin, yPosition, pageWidth - margin, yPosition);
+  yPosition += 5;
+  
+  // Table rows
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  
+  filteredTransactions.value.forEach(transaction => {
+    if (yPosition > 260) {
+      doc.addPage();
+      yPosition = 30;
+    }
+    
+    xPos = margin;
+    const rowData = [
+      transaction.transaction_date,
+      transaction.description.substring(0, 25),
+      transaction.reference || '',
+      transaction.type === 'debit' ? `₹${transaction.amount.toFixed(2)}` : '',
+      transaction.type === 'credit' ? `₹${transaction.amount.toFixed(2)}` : '',
+      `₹${((transaction as any).running_balance || 0).toFixed(2)}`
+    ];
+    
+    rowData.forEach((data, i) => {
+      doc.text(data, xPos, yPosition);
+      xPos += colWidths[i];
+    });
+    
+    yPosition += 6;
+  });
+  
+  // Summary
+  if (yPosition > 240) {
+    doc.addPage();
+    yPosition = 30;
+  }
+  
+  yPosition += 10;
+  doc.line(margin, yPosition, pageWidth - margin, yPosition);
+  yPosition += 8;
+  
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Final Balance: ₹${account.value.current_balance.toFixed(2)}`, margin, yPosition);
+  
+  // Save the PDF
+  doc.save(`${account.value.name}_statement_${new Date().toISOString().split('T')[0]}.pdf`);
+};
+
 const generateStatementCSV = () => {
   if (!account.value) return '';
   
-  const headers = ['Date', 'Type', 'Description', 'Amount', 'Balance', 'Reference', 'Notes'];
+  const headers = ['Date', 'Description', 'Reference', 'Dues', 'Payments', 'Balance', 'Notes'];
   
   const rows = filteredTransactions.value.map(transaction => [
     transaction.transaction_date,
-    transaction.type === 'credit' ? 'Credit' : 'Debit',
     transaction.description,
-    transaction.type === 'credit' ? transaction.amount : -transaction.amount,
-    (transaction as any).running_balance || 0,
     transaction.reference || '',
+    transaction.type === 'debit' ? transaction.amount : '', // Dues (debits)
+    transaction.type === 'credit' ? transaction.amount : '', // Payments (credits)
+    (transaction as any).running_balance || 0,
     transaction.notes || ''
   ]);
   
   // Add summary row
   rows.push([
     '',
-    '',
     'ACCOUNT SUMMARY',
     '',
+    '', // Empty dues column
+    '', // Empty payments column
     account.value.current_balance,
-    '',
     `Statement generated on ${new Date().toISOString().split('T')[0]}`
   ]);
   
