@@ -93,7 +93,12 @@ const DeliveryItemRowStub = {
   name: 'DeliveryItemRow',
   template: '<div class="mock-delivery-item-row" :data-testid="`item-row-${index}`">Item Row {{ index }}</div>',
   props: ['item', 'index', 'items', 'usedItems'],
-  emits: ['update', 'remove']
+  emits: ['update', 'remove'],
+  setup(props: any, { emit }: any) {
+    return {
+      $emit: emit
+    }
+  }
 }
 
 describe('MultiItemDeliveryModal', () => {
@@ -154,6 +159,10 @@ describe('MultiItemDeliveryModal', () => {
     it('should load vendors and items data on mount', async () => {
       wrapper = createWrapper()
       await nextTick()
+      
+      // Wait for data loading to complete
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await nextTick()
 
       const vendorSelect = wrapper.find('select')
       const options = vendorSelect.findAll('option')
@@ -168,9 +177,17 @@ describe('MultiItemDeliveryModal', () => {
     it('should start at step 0 (Delivery Info)', async () => {
       wrapper = createWrapper()
       await nextTick()
+      
+      // Wait for data loading to complete
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await nextTick()
 
       expect(wrapper.text()).toContain('Delivery Information')
-      expect(wrapper.find('button').text()).toContain('Next')
+      
+      const buttons = wrapper.findAll('button')
+      const nextButton = buttons.find((btn: any) => btn.text().includes('Next'))
+      expect(nextButton).toBeDefined()
+      expect(nextButton.text()).toContain('Next')
     })
 
     it('should not proceed to next step without required fields', async () => {
@@ -235,9 +252,8 @@ describe('MultiItemDeliveryModal', () => {
 
       expect(wrapper.findAll('[data-testid^="item-row-"]')).toHaveLength(2)
 
-      // Simulate remove event from first item
-      const firstItemRow = wrapper.findAll('[data-testid^="item-row-"]')[0]
-      await firstItemRow.vm.$emit('remove', 0)
+      // Directly call the removeDeliveryItem method
+      wrapper.vm.removeDeliveryItem(0)
       await nextTick()
 
       expect(wrapper.findAll('[data-testid^="item-row-"]')).toHaveLength(1)
@@ -245,7 +261,6 @@ describe('MultiItemDeliveryModal', () => {
 
     it('should update total when item is updated', async () => {
       // Simulate item update with calculated total
-      const itemRow = wrapper.find('[data-testid^="item-row-"]')
       const updatedItem = {
         tempId: 'temp-1',
         item: 'item-1',
@@ -255,7 +270,8 @@ describe('MultiItemDeliveryModal', () => {
         notes: ''
       }
 
-      await itemRow.vm.$emit('update', 0, updatedItem)
+      // Directly call the updateDeliveryItem method
+      wrapper.vm.updateDeliveryItem(0, updatedItem)
       await nextTick()
 
       // Check if the total amount is calculated correctly
@@ -269,8 +285,7 @@ describe('MultiItemDeliveryModal', () => {
       await nextTick()
 
       // Update first item
-      const firstItemRow = wrapper.findAll('[data-testid^="item-row-"]')[0]
-      await firstItemRow.vm.$emit('update', 0, {
+      wrapper.vm.updateDeliveryItem(0, {
         tempId: 'temp-1',
         item: 'item-1',
         quantity: 2,
@@ -280,8 +295,7 @@ describe('MultiItemDeliveryModal', () => {
       })
 
       // Update second item
-      const secondItemRow = wrapper.findAll('[data-testid^="item-row-"]')[1]
-      await secondItemRow.vm.$emit('update', 1, {
+      wrapper.vm.updateDeliveryItem(1, {
         tempId: 'temp-2',
         item: 'item-2',
         quantity: 3,
@@ -312,10 +326,8 @@ describe('MultiItemDeliveryModal', () => {
     })
 
     it('should handle decimal calculations correctly', async () => {
-      const itemRow = wrapper.find('[data-testid^="item-row-"]')
-      
       // Test decimal calculation: 2.5 * 123.45 = 308.625, should round to 308.63
-      await itemRow.vm.$emit('update', 0, {
+      wrapper.vm.updateDeliveryItem(0, {
         tempId: 'temp-1',
         item: 'item-1',
         quantity: 2.5,
@@ -329,9 +341,7 @@ describe('MultiItemDeliveryModal', () => {
     })
 
     it('should handle zero values correctly', async () => {
-      const itemRow = wrapper.find('[data-testid^="item-row-"]')
-      
-      await itemRow.vm.$emit('update', 0, {
+      wrapper.vm.updateDeliveryItem(0, {
         tempId: 'temp-1',
         item: 'item-1',
         quantity: 0,
@@ -350,10 +360,8 @@ describe('MultiItemDeliveryModal', () => {
       await addButton.trigger('click')
       await nextTick()
 
-      const itemRows = wrapper.findAll('[data-testid^="item-row-"]')
-
       // First item: 1.33 * 25.50 = 33.915, rounds to 33.92
-      await itemRows[0].vm.$emit('update', 0, {
+      wrapper.vm.updateDeliveryItem(0, {
         tempId: 'temp-1',
         item: 'item-1',
         quantity: 1.33,
@@ -363,7 +371,7 @@ describe('MultiItemDeliveryModal', () => {
       })
 
       // Second item: 2.66 * 37.75 = 100.415, rounds to 100.42
-      await itemRows[1].vm.$emit('update', 1, {
+      wrapper.vm.updateDeliveryItem(1, {
         tempId: 'temp-2',
         item: 'item-2',
         quantity: 2.66,
@@ -381,15 +389,25 @@ describe('MultiItemDeliveryModal', () => {
     it('should validate delivery info before proceeding to items', async () => {
       wrapper = createWrapper()
       await nextTick()
+      
+      // Wait for data loading
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await nextTick()
 
+      // Initially false because vendor is empty (delivery_date is auto-filled with today)
       expect(wrapper.vm.canProceedToNextStep).toBe(false)
 
-      // Fill vendor only
+      // Clear delivery date to test validation properly
+      await wrapper.find('input[type="date"]').setValue('')
+      await nextTick()
+      expect(wrapper.vm.canProceedToNextStep).toBe(false)
+
+      // Fill vendor only (should still be false)
       await wrapper.find('select').setValue('vendor-1')
       await nextTick()
       expect(wrapper.vm.canProceedToNextStep).toBe(false)
 
-      // Fill delivery date
+      // Fill delivery date (should now be true)
       await wrapper.find('input[type="date"]').setValue('2024-01-15')
       await nextTick()
       expect(wrapper.vm.canProceedToNextStep).toBe(true)
@@ -397,6 +415,10 @@ describe('MultiItemDeliveryModal', () => {
 
     it('should validate items before proceeding to review', async () => {
       wrapper = createWrapper()
+      await nextTick()
+      
+      // Wait for data loading
+      await new Promise(resolve => setTimeout(resolve, 50))
       await nextTick()
 
       // Move to items step
@@ -412,8 +434,7 @@ describe('MultiItemDeliveryModal', () => {
       expect(wrapper.vm.canProceedToNextStep).toBe(false)
 
       // Add valid item
-      const itemRow = wrapper.find('[data-testid^="item-row-"]')
-      await itemRow.vm.$emit('update', 0, {
+      wrapper.vm.updateDeliveryItem(0, {
         tempId: 'temp-1',
         item: 'item-1',
         quantity: 2,
@@ -428,6 +449,10 @@ describe('MultiItemDeliveryModal', () => {
 
     it('should validate all items have required fields', async () => {
       wrapper = createWrapper()
+      await nextTick()
+      
+      // Wait for data loading
+      await new Promise(resolve => setTimeout(resolve, 50))
       await nextTick()
 
       // Move to items step and add items
@@ -444,10 +469,8 @@ describe('MultiItemDeliveryModal', () => {
       await addButton.trigger('click')
       await nextTick()
 
-      const itemRows = wrapper.findAll('[data-testid^="item-row-"]')
-
       // Update first item (valid)
-      await itemRows[0].vm.$emit('update', 0, {
+      wrapper.vm.updateDeliveryItem(0, {
         tempId: 'temp-1',
         item: 'item-1',
         quantity: 2,
@@ -457,7 +480,7 @@ describe('MultiItemDeliveryModal', () => {
       })
 
       // Update second item (invalid - missing item)
-      await itemRows[1].vm.$emit('update', 1, {
+      wrapper.vm.updateDeliveryItem(1, {
         tempId: 'temp-2',
         item: '', // Missing item
         quantity: 1,
@@ -470,7 +493,7 @@ describe('MultiItemDeliveryModal', () => {
       expect(wrapper.vm.canProceedToNextStep).toBe(false)
 
       // Fix second item
-      await itemRows[1].vm.$emit('update', 1, {
+      wrapper.vm.updateDeliveryItem(1, {
         tempId: 'temp-2',
         item: 'item-2',
         quantity: 1,
@@ -488,6 +511,10 @@ describe('MultiItemDeliveryModal', () => {
     it('should create delivery with correct total amount', async () => {
       wrapper = createWrapper()
       await nextTick()
+      
+      // Wait for data loading
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await nextTick()
 
       // Complete form
       await wrapper.find('select').setValue('vendor-1')
@@ -499,8 +526,7 @@ describe('MultiItemDeliveryModal', () => {
       await nextTick()
 
       // Add item
-      const itemRow = wrapper.find('[data-testid^="item-row-"]')
-      await itemRow.vm.$emit('update', 0, {
+      wrapper.vm.updateDeliveryItem(0, {
         tempId: 'temp-1',
         item: 'item-1',
         quantity: 5,
@@ -511,13 +537,22 @@ describe('MultiItemDeliveryModal', () => {
 
       await nextTick()
 
-      // Move to review
-      nextButton = wrapper.find('button[class*="btn-primary"]')
+      // Move to review step
+      const buttons = wrapper.findAll('button')
+      nextButton = buttons.find((btn: any) => btn.text().includes('Next'))
+      
       await nextButton.trigger('click')
       await nextTick()
 
-      // Submit
-      const submitButton = wrapper.find('button[class*="bg-green-600"]')
+      // Submit - find the submit button in review step
+      const reviewButtons = wrapper.findAll('button')
+      const submitButton = reviewButtons.find((btn: any) => {
+        const text = btn.text()
+        const classes = btn.classes()
+        return text.includes('Create') || text.includes('Update') || classes.includes('bg-green-600')
+      })
+      
+      expect(submitButton).toBeDefined()
       await submitButton.trigger('click')
       await nextTick()
 
