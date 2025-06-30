@@ -156,7 +156,7 @@
                     <Edit2 class="h-4 w-4" />
                   </button>
                   <button 
-                    v-if="canEditDelete" 
+                    v-if="canEditDelete && delivery.payment_status === 'pending'" 
                     @click="deleteDelivery(delivery)" 
                     class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                   >
@@ -234,7 +234,7 @@
                       {{ t('common.edit') }}
                     </button>
                     <button 
-                      v-if="canEditDelete"
+                      v-if="canEditDelete && delivery.payment_status === 'pending'"
                       @click="deleteDelivery(delivery); openMobileMenuId = null"
                       class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center touch-manipulation"
                     >
