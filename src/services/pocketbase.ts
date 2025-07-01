@@ -267,6 +267,7 @@ export interface Delivery {
   total_amount: number; // Sum of all items
   payment_status: 'pending' | 'partial' | 'paid';
   paid_amount: number;
+  delivery_items?: string[]; // Array of delivery_item IDs
   site: string; // Site ID
   created?: string;
   updated?: string;
@@ -3018,8 +3019,8 @@ export class DeliveryService {
       expand: 'vendor,delivery_items,delivery_items.item'
     });
     
-    // If delivery_items relation is missing, try a direct query
-    if (!record.expand?.delivery_items) {
+    // Fallback for backward compatibility - remove after migration
+    if (!record.expand?.delivery_items && !record.delivery_items) {
       try {
         const directItems = await pb.collection('delivery_items').getFullList({
           filter: `delivery="${id}"`,
@@ -3095,6 +3096,7 @@ export class DeliveryService {
       total_amount: record.total_amount,
       payment_status: record.payment_status,
       paid_amount: record.paid_amount,
+      delivery_items: record.delivery_items || [],
       site: record.site,
       created: record.created,
       updated: record.updated,
@@ -3170,6 +3172,18 @@ export class DeliveryItemService {
     }
 
     const record = await pb.collection('delivery_items').create(data);
+    
+    // Update the parent delivery with the new item ID
+    try {
+      const delivery = await pb.collection('deliveries').getOne(data.delivery);
+      const existingItemIds = delivery.delivery_items || [];
+      await pb.collection('deliveries').update(data.delivery, {
+        delivery_items: [...existingItemIds, record.id]
+      });
+    } catch (err) {
+      console.error('Failed to update delivery with item ID:', err);
+    }
+    
     return this.mapRecordToDeliveryItem(record);
   }
 
@@ -3191,7 +3205,30 @@ export class DeliveryItemService {
       throw new Error('Permission denied: Cannot delete delivery items');
     }
 
-    await pb.collection('delivery_items').delete(id);
+    // Get the item to find its parent delivery
+    try {
+      const item = await pb.collection('delivery_items').getOne(id);
+      
+      // Delete the item
+      await pb.collection('delivery_items').delete(id);
+      
+      // Update the parent delivery to remove this item ID
+      if (item.delivery) {
+        const delivery = await pb.collection('deliveries').getOne(item.delivery);
+        const updatedItemIds = (delivery.delivery_items || []).filter((itemId: string) => itemId !== id);
+        await pb.collection('deliveries').update(item.delivery, {
+          delivery_items: updatedItemIds
+        });
+      }
+    } catch (err) {
+      console.error('Error deleting delivery item:', err);
+      // If the item was already deleted, just return true
+      if (err instanceof Error && err.message.includes('not found')) {
+        return true;
+      }
+      throw err;
+    }
+    
     return true;
   }
 
@@ -3208,6 +3245,8 @@ export class DeliveryItemService {
     }
 
     const createdItems: DeliveryItem[] = [];
+    const createdItemIds: string[] = [];
+    
     for (const itemData of items) {
       const total_amount = itemData.quantity * itemData.unit_price;
       const record = await pb.collection('delivery_items').create({
@@ -3219,7 +3258,20 @@ export class DeliveryItemService {
         notes: itemData.notes
       });
       createdItems.push(this.mapRecordToDeliveryItem(record));
+      createdItemIds.push(record.id);
     }
+    
+    // Update the parent delivery with the new item IDs
+    try {
+      const delivery = await pb.collection('deliveries').getOne(deliveryId);
+      const existingItemIds = delivery.delivery_items || [];
+      await pb.collection('deliveries').update(deliveryId, {
+        delivery_items: [...existingItemIds, ...createdItemIds]
+      });
+    } catch (err) {
+      console.error('Failed to update delivery with item IDs:', err);
+    }
+    
     return createdItems;
   }
 
