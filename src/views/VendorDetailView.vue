@@ -8,7 +8,7 @@
         </button>
         <div>
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ vendor.contact_person || vendor.name ||
-            'Unnamed Vendor' }}</h1>
+            t('vendors.unnamedVendor') }}</h1>
           <p v-if="vendor.name && vendor.contact_person" class="text-lg text-gray-700 dark:text-gray-300">{{ vendor.name
             }}</p>
           <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ t('vendors.vendorDetails') }}</p>
@@ -39,11 +39,11 @@
         </div>
         <button @click="createReturn()" class="btn-outline">
           <RotateCcw class="mr-2 h-4 w-4" />
-          Create Return
+          {{ t('vendors.createReturn') }}
         </button>
         <button @click="recordPayment()" class="btn-primary">
           <CreditCard class="mr-2 h-4 w-4" />
-          Record Payment
+          {{ t('vendors.recordPayment') }}
         </button>
       </div>
 
@@ -75,11 +75,11 @@
             <!-- Other Actions -->
             <button @click="handleMobileAction('createReturn')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
               <RotateCcw class="mr-3 h-5 w-5 text-gray-600" />
-              Create Return
+              {{ t('vendors.createReturn') }}
             </button>
             <button @click="handleMobileAction('recordPayment')" class="flex items-center w-full px-4 py-3 text-sm text-white bg-blue-600 hover:bg-blue-700">
               <CreditCard class="mr-3 h-5 w-5 text-white" />
-              Record Payment
+              {{ t('vendors.recordPayment') }}
             </button>
           </div>
         </div>
@@ -153,7 +153,7 @@
               <AlertCircle class="h-6 w-6 text-red-600 dark:text-red-400" />
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-red-700 dark:text-red-300">Outstanding Amount</p>
+              <p class="text-sm font-medium text-red-700 dark:text-red-300">{{ t('vendors.outstandingAmount') }}</p>
               <p class="text-2xl font-bold text-red-900 dark:text-red-100">₹{{ outstandingAmount.toFixed(2) }}</p>
             </div>
           </div>
@@ -165,7 +165,7 @@
               <CheckCircle class="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-green-700 dark:text-green-300">Total Paid</p>
+              <p class="text-sm font-medium text-green-700 dark:text-green-300">{{ t('vendors.totalPaid') }}</p>
               <p class="text-2xl font-bold text-green-900 dark:text-green-100">₹{{ totalPaid.toFixed(2) }}</p>
             </div>
           </div>
@@ -177,7 +177,7 @@
               <TruckIcon class="h-6 w-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-blue-700 dark:text-blue-300">Total Deliveries</p>
+              <p class="text-sm font-medium text-blue-700 dark:text-blue-300">{{ t('vendors.totalDeliveries') }}</p>
               <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ vendorDeliveries.length }}</p>
             </div>
           </div>
@@ -186,19 +186,19 @@
 
       <!-- Quick Stats -->
       <div class="mt-6 card">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment Status Breakdown</h3>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">{{ t('vendors.paymentStatusBreakdown') }}</h3>
         <div class="grid grid-cols-3 gap-4">
           <div class="text-center">
             <p class="text-2xl font-bold text-red-600 dark:text-red-400">{{ pendingDeliveries }}</p>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Pending</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('vendors.pending') }}</p>
           </div>
           <div class="text-center">
             <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ partialDeliveries }}</p>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Partial</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('vendors.partial') }}</p>
           </div>
           <div class="text-center">
             <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ paidDeliveries }}</p>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Paid</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('vendors.paid') }}</p>
           </div>
         </div>
       </div>
@@ -209,8 +209,8 @@
     <!-- Deliveries -->
     <div class="card">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Deliveries</h2>
-        <span class="text-sm text-gray-500 dark:text-gray-400">{{ vendorDeliveries.length }} total</span>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('vendors.recentDeliveries') }}</h2>
+        <span class="text-sm text-gray-500 dark:text-gray-400">{{ vendorDeliveries.length }} {{ t('vendors.total') }}</span>
       </div>
       <div class="space-y-3 max-h-96 overflow-y-auto">
         <div v-for="delivery in vendorDeliveries.slice(0, 10)" :key="delivery.id"
@@ -225,17 +225,17 @@
             </span>
           </div>
           <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-600 dark:text-gray-400">{{ delivery.delivery_reference || 'No reference' }}</span>
+            <span class="text-gray-600 dark:text-gray-400">{{ delivery.delivery_reference || t('vendors.noReference') }}</span>
             <div class="text-right">
               <p class="font-medium text-gray-900 dark:text-white">₹{{ delivery.total_amount.toFixed(2) }}</p>
-              <p v-if="delivery.paid_amount > 0" class="text-green-600 dark:text-green-400">Paid: ₹{{
+              <p v-if="delivery.paid_amount > 0" class="text-green-600 dark:text-green-400">{{ t('vendors.paid') }}: ₹{{
                 delivery.paid_amount.toFixed(2) }}</p>
             </div>
           </div>
         </div>
 
         <div v-if="vendorDeliveries.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
-          No deliveries recorded
+          {{ t('vendors.noDeliveriesRecorded') }}
         </div>
       </div>
     </div>
@@ -243,8 +243,8 @@
     <!-- Payments -->
     <div class="card">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Payment History</h2>
-        <span class="text-sm text-gray-500 dark:text-gray-400">{{ vendorPayments.length }} payments</span>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('vendors.paymentHistory') }}</h2>
+        <span class="text-sm text-gray-500 dark:text-gray-400">{{ vendorPayments.length }} {{ t('vendors.payments') }}</span>
       </div>
       <div class="space-y-3 max-h-96 overflow-y-auto">
         <div v-for="payment in vendorPayments.slice(0, 10)" :key="payment.id"
@@ -260,14 +260,14 @@
               </div>
             </div>
             <div class="text-right text-sm">
-              <p v-if="payment.reference" class="text-gray-600 dark:text-gray-400">Ref: {{ payment.reference }}</p>
+              <p v-if="payment.reference" class="text-gray-600 dark:text-gray-400">{{ t('vendors.reference') }}: {{ payment.reference }}</p>
             </div>
           </div>
           <p v-if="payment.notes" class="text-sm text-gray-600 dark:text-gray-400">{{ payment.notes }}</p>
         </div>
 
         <div v-if="vendorPayments.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
-          No payments recorded
+          {{ t('vendors.noPaymentsRecorded') }}
         </div>
       </div>
     </div>
@@ -275,8 +275,8 @@
     <!-- Returns -->
     <div class="card">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Returns</h2>
-        <span class="text-sm text-gray-500 dark:text-gray-400">{{ vendorReturns.length }} returns</span>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('vendors.recentReturns') }}</h2>
+        <span class="text-sm text-gray-500 dark:text-gray-400">{{ vendorReturns.length }} {{ t('vendors.returns') }}</span>
       </div>
       <div class="space-y-3 max-h-96 overflow-y-auto">
         <div v-for="returnItem in vendorReturns.slice(0, 10)" :key="returnItem.id"
@@ -296,18 +296,18 @@
             </span>
           </div>
           <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-600 dark:text-gray-400">Return Amount</span>
+            <span class="text-gray-600 dark:text-gray-400">{{ t('vendors.returnAmount') }}</span>
             <div class="text-right">
               <p class="font-medium text-gray-900 dark:text-white">₹{{ returnItem.total_return_amount.toFixed(2) }}</p>
               <p v-if="returnItem.actual_refund_amount && returnItem.actual_refund_amount > 0" class="text-green-600 dark:text-green-400">
-                Refunded: ₹{{ returnItem.actual_refund_amount.toFixed(2) }}
+                {{ t('vendors.refunded') }}: ₹{{ returnItem.actual_refund_amount.toFixed(2) }}
               </p>
             </div>
           </div>
         </div>
 
         <div v-if="vendorReturns.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
-          No returns recorded
+          {{ t('vendors.noReturnsRecorded') }}
         </div>
       </div>
     </div>
@@ -318,19 +318,19 @@
       <div
         class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Record Payment for {{ vendor?.contact_person || vendor?.name || 'Vendor' }}</h3>
+          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">{{ t('vendors.recordPaymentFor') }} {{ vendor?.contact_person || vendor?.name || t('vendors.vendor') }}</h3>
 
           <form @submit.prevent="savePayment" class="space-y-4">
             <div class="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
               <p class="text-sm text-yellow-800 dark:text-yellow-300">
-                Outstanding amount: <strong>₹{{ outstandingAmount.toFixed(2) }}</strong>
+                {{ t('vendors.outstandingAmount') }}: <strong>₹{{ outstandingAmount.toFixed(2) }}</strong>
               </p>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Payment Account</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.paymentAccount') }}</label>
               <select v-model="paymentForm.account" required class="input mt-1">
-                <option value="">Select an account</option>
+                <option value="">{{ t('vendors.selectAccount') }}</option>
                 <option v-for="account in activeAccounts" :key="account.id" :value="account.id">
                   {{ account.name }} ({{ account.type.replace('_', ' ') }}) - ₹{{ account.current_balance.toFixed(2) }}
                 </option>
@@ -338,34 +338,34 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Amount</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.amount') }}</label>
               <input v-model.number="paymentForm.amount" type="number" step="0.01" required class="input mt-1"
                 placeholder="0.00" />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Payment Date</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.paymentDate') }}</label>
               <input v-model="paymentForm.payment_date" type="date" required class="input mt-1" />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reference</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.reference') }}</label>
               <input v-model="paymentForm.reference" type="text" class="input mt-1"
-                placeholder="Check number, transfer ID, etc." />
+                :placeholder="t('vendors.referencePlaceholder')" />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
-              <textarea v-model="paymentForm.notes" class="input mt-1" rows="3" placeholder="Payment notes"></textarea>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.notes') }}</label>
+              <textarea v-model="paymentForm.notes" class="input mt-1" rows="3" :placeholder="t('vendors.paymentNotesPlaceholder')"></textarea>
             </div>
 
             <div class="flex space-x-3 pt-4">
               <button type="submit" :disabled="paymentLoading" class="flex-1 btn-primary">
                 <Loader2 v-if="paymentLoading" class="mr-2 h-4 w-4 animate-spin" />
-                Record Payment
+                {{ t('vendors.recordPayment') }}
               </button>
               <button type="button" @click="showPaymentModal = false" class="flex-1 btn-outline">
-                Cancel
+                {{ t('vendors.cancel') }}
               </button>
             </div>
           </form>
@@ -599,7 +599,7 @@ const exportLedger = () => {
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
-  link.setAttribute('download', `${vendor.value.name}_ledger_${new Date().toISOString().split('T')[0]}.csv`);
+  link.setAttribute('download', `${vendor.value.name}_${t('vendors.ledger')}_${new Date().toISOString().split('T')[0]}.csv`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
@@ -617,20 +617,20 @@ const exportLedgerPDF = () => {
   // Header
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text('Vendor Ledger', margin, yPosition);
+  doc.text(t('vendors.vendorLedger'), margin, yPosition);
   
   yPosition += 10;
   doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
-  doc.text(`Vendor: ${vendor.value.name}`, margin, yPosition);
+  doc.text(`${t('vendors.vendor')}: ${vendor.value.name}`, margin, yPosition);
   
   yPosition += 6;
   if (vendor.value.contact_person) {
-    doc.text(`Contact: ${vendor.value.contact_person}`, margin, yPosition);
+    doc.text(`${t('vendors.contact')}: ${vendor.value.contact_person}`, margin, yPosition);
     yPosition += 6;
   }
   
-  doc.text(`Generated: ${new Date().toLocaleDateString('en-CA')}`, margin, yPosition);
+  doc.text(`${t('vendors.generated')}: ${new Date().toLocaleDateString('en-CA')}`, margin, yPosition);
   
   // yPosition += 6;
   // const outstandingAmount = vendorDeliveries.value.reduce((sum, delivery) => 
@@ -642,7 +642,7 @@ const exportLedgerPDF = () => {
   
   // Table headers
   doc.setFont("helvetica", "bold");
-  const headers = ['Date', 'Description', 'Reference', 'Dues', 'Payments'];
+  const headers = [t('vendors.date'), t('vendors.description'), t('vendors.reference'), t('vendors.dues'), t('vendors.payments')];
   const colWidths = [25, 70, 25, 25, 25];
   let xPos = margin;
   
@@ -674,9 +674,9 @@ const exportLedgerPDF = () => {
       //   return `${itemName} (${deliveryItem.quantity} ${deliveryItem.expand?.item?.unit || 'units'})`;
       // });
       // description = itemDescriptions.join(', ');
-      description = 'Received: ' + itemNames.join(', ') 
+      description = t('vendors.received') + ': ' + itemNames.join(', ') 
     } else {
-      description = `Delivery #${delivery.id?.slice(-6) || 'Unknown'}`;
+      description = `${t('vendors.delivery')} #${delivery.id?.slice(-6) || t('vendors.unknown')}`;
     }
     
     allTransactions.push({
@@ -692,7 +692,7 @@ const exportLedgerPDF = () => {
   vendorPayments.value.forEach(payment => {
     allTransactions.push({
       date: new Date(payment.payment_date).toLocaleDateString('en-CA'), // Format as Y-m-d
-      description: 'Payment received',
+      description: t('vendors.paymentReceived'),
       reference: payment.reference || '',
       dues: 0,
       payments: payment.amount,
@@ -763,13 +763,13 @@ const exportLedgerPDF = () => {
   // doc.text(`Outstanding Balance: ₹${outstandingAmount.toFixed(2)}`, margin, yPosition);
   
   // Save the PDF
-  doc.save(`${vendor.value.name}_ledger_${new Date().toISOString().split('T')[0]}.pdf`);
+  doc.save(`${vendor.value.name}_${t('vendors.ledger')}_${new Date().toISOString().split('T')[0]}.pdf`);
 };
 
 const generateLedgerCSV = () => {
   if (!vendor.value) return '';
 
-  const headers = ['Date', 'Description', 'Reference', 'Dues', 'Payments', 'Notes'];
+  const headers = [t('vendors.date'), t('vendors.description'), t('vendors.reference'), t('vendors.dues'), t('vendors.payments'), t('vendors.notes')];
 
   const rows: (string | number)[][] = [];
 
@@ -777,7 +777,7 @@ const generateLedgerCSV = () => {
   vendorDeliveries.value.forEach(delivery => {
     rows.push([
       delivery.delivery_date,
-      `Delivery #${delivery.id?.slice(-6) || 'Unknown'}`,
+      `${t('vendors.delivery')} #${delivery.id?.slice(-6) || t('vendors.unknown')}`,
       delivery.delivery_reference || '',
       delivery.total_amount, // Dues (deliveries owed)
       '', // Empty payments column
@@ -789,7 +789,7 @@ const generateLedgerCSV = () => {
   vendorPayments.value.forEach(payment => {
     rows.push([
       payment.payment_date,
-      'Payment done',
+      t('vendors.paymentDone'),
       payment.reference || '',
       '', // Empty dues column
       payment.amount, // Payments (credits)
@@ -803,7 +803,7 @@ const generateLedgerCSV = () => {
   // Add summary row
   rows.push([
     '',
-    'SUMMARY',
+    t('vendors.summary'),
     '',
     '',
     '',
@@ -812,7 +812,7 @@ const generateLedgerCSV = () => {
     '',
     '',
     '',
-    `Outstanding Balance as of ${new Date().toISOString().split('T')[0]}`
+    `${t('vendors.outstandingBalanceAsOf')} ${new Date().toISOString().split('T')[0]}`
   ]);
 
   // Convert to CSV
