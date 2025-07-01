@@ -1,14 +1,27 @@
-const CACHE_NAME = 'SiteWise-v0.1.0';
-const STATIC_CACHE = 'SiteWise-static-v0.1.0';
-const DYNAMIC_CACHE = 'SiteWise-dynamic-v0.1.0';
+const CACHE_NAME = 'SiteWise-v0.3.4';
+const STATIC_CACHE = 'SiteWise-static-v0.3.4';
+const DYNAMIC_CACHE = 'SiteWise-dynamic-v0.3.4';
 
 // Files to cache immediately
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  // Add other critical assets here
+  '/browserconfig.xml',
+  // Favicons and icons that actually exist
+  '/favicon.ico',
+  '/favicon.png',
+  '/favicon-16x16.png',
+  '/favicon-32x32.png',
+  '/apple-touch-icon.png',
+  '/apple-touch-icon-180x180.png',
+  '/android-chrome-192x192.png',
+  '/android-chrome-512x512.png',
+  '/maskable-icon-512x512.png',
+  '/pwa-64x64.png',
+  '/pwa-192x192.png',
+  '/pwa-512x512.png',
+  '/logo.png',
+  '/logo.webp'
 ];
 
 // API endpoints that should be cached
@@ -258,8 +271,8 @@ self.addEventListener('push', (event) => {
   
   const options = {
     body: event.data ? event.data.text() : 'New update available',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
+    icon: '/pwa-192x192.png',
+    badge: '/pwa-64x64.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),

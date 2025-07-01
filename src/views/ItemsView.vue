@@ -71,8 +71,22 @@
                   : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
                 'p-1'
               ]"
+              :title="t('items.editItem')"
             >
               <Edit2 class="h-4 w-4" />
+            </button>
+            <button 
+              @click="cloneItem(item)"
+              :disabled="!canCreateItem"
+              :class="[
+                canCreateItem 
+                  ? 'text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400' 
+                  : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+                'p-1'
+              ]"
+              :title="t('items.cloneItem')"
+            >
+              <Copy class="h-4 w-4" />
             </button>
             <button 
               @click="deleteItem(item.id!)" 
@@ -83,6 +97,7 @@
                   : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
                 'p-1'
               ]"
+              :title="t('items.deleteItem')"
             >
               <Trash2 class="h-4 w-4" />
             </button>
@@ -165,7 +180,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
-import { Package, Plus, Edit2, Trash2, Loader2 } from 'lucide-vue-next';
+import { Package, Plus, Edit2, Trash2, Loader2, Copy } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
@@ -323,6 +338,29 @@ const editItem = (item: Item) => {
     unit: item.unit,
     tags: item.tags || []
   });
+};
+
+const cloneItem = async (item: Item) => {
+  if (!canCreateItem.value) {
+    error(t('subscription.banner.freeTierLimitReached'));
+    return;
+  }
+
+  // Reset editingItem to null so it creates a new item
+  editingItem.value = null;
+  
+  // Pre-fill form with cloned item data, appending "(Copy)" to the name
+  Object.assign(form, {
+    name: `${item.name} (${t('common.copy')})`,
+    description: item.description || '',
+    unit: item.unit,
+    tags: item.tags || []
+  });
+  
+  // Show the modal
+  showAddModal.value = true;
+  await nextTick();
+  nameInputRef.value?.focus();
 };
 
 const deleteItem = async (id: string) => {

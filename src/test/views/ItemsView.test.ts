@@ -10,6 +10,7 @@ vi.mock('../../composables/useI18n', () => ({
         'items.subtitle': 'Manage your construction items and quantities',
         'items.addItem': 'Add Item',
         'items.editItem': 'Edit Item',
+        'items.cloneItem': 'Clone Item',
         'items.deleteItem': 'Delete Item',
         'items.noItems': 'No items',
         'items.getStarted': 'Get started by creating a new item.',
@@ -28,6 +29,7 @@ vi.mock('../../composables/useI18n', () => ({
         'common.update': 'Update',
         'common.create': 'Create',
         'common.cancel': 'Cancel',
+        'common.copy': 'Copy',
         'messages.confirmDelete': 'Are you sure you want to delete this {item}?',
         'tags.itemTags': 'Item Tags',
         'tags.searchItemTags': 'Search item tags...'
@@ -317,6 +319,33 @@ describe('ItemsView', () => {
       expect(window.confirm).toHaveBeenCalled()
       expect(mockDelete).toHaveBeenCalledWith('item-1')
     }
+  })
+
+  it('should handle item cloning', async () => {
+    // Wait for items to load and subscription to be ready
+    await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    // Find and click clone button
+    const cloneButton = wrapper.find('button[title="Clone Item"]')
+    expect(cloneButton.exists()).toBe(true)
+    
+    await cloneButton.trigger('click')
+    await wrapper.vm.$nextTick()
+    
+    // Should show the add modal with pre-filled data
+    expect(wrapper.find('.fixed').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Add Item')
+    
+    // Check if form is pre-filled with cloned data
+    const nameInput = wrapper.find('input[placeholder="Enter item name"]')
+    expect(nameInput.element.value).toBe('Test Item (Copy)')
+    
+    const descriptionTextarea = wrapper.find('textarea')
+    expect(descriptionTextarea.element.value).toBe('Test Description')
+    
+    const unitSelect = wrapper.find('select')
+    expect(unitSelect.element.value).toBe('kg')
   })
 
   it('should navigate to item detail when item is clicked', async () => {

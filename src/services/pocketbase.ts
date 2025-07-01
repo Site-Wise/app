@@ -124,8 +124,8 @@ export interface Service {
   id?: string;
   name: string;
   description?: string;
-  /** @deprecated Use unified Tag system instead - will be replaced with proper tag relationships */
   category: 'labor' | 'equipment' | 'professional' | 'transport' | 'other';
+  /** @deprecated Use unified Tag system instead - will be replaced with proper tag relationships */
   service_type: string; // e.g., 'Plumber', 'Electrician', 'Tractor', 'Digger'
   unit: string; // e.g., 'hour', 'day', 'job', 'sqft'
   standard_rate?: number; // Standard hourly/daily rate

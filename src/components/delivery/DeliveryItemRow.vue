@@ -3,26 +3,15 @@
     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
       <!-- Item Selection -->
       <div class="md:col-span-4">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          {{ t('common.item') }} *
-        </label>
-        <select 
-          :value="item.item" 
-          @change="handleItemChange"
-          @blur="validateItem"
-          required 
-          class="input"
-          :class="{ 'border-red-300': errors.item }"
-        >
-          <option value="">{{ t('forms.selectItem') }}</option>
-          <option 
-            v-for="availableItem in availableItems" 
-            :key="availableItem.id" 
-            :value="availableItem.id"
-          >
-            {{ availableItem.name }} ({{ getUnitDisplay(availableItem.unit) }})
-          </option>
-        </select>
+        <ItemSelector
+          :model-value="item.item"
+          @update:model-value="handleItemChange"
+          @item-selected="handleItemSelected"
+          :items="props.items"
+          :used-items="props.usedItems"
+          :label="t('common.item') + ' *'"
+          :placeholder="t('forms.selectItem')"
+        />
         <div v-if="errors.item" class="text-red-600 dark:text-red-400 text-xs mt-1">
           {{ errors.item }}
         </div>
@@ -132,6 +121,7 @@ import { computed, reactive } from 'vue';
 import { Trash2 } from 'lucide-vue-next';
 import { useI18n } from '../../composables/useI18n';
 import type { Item } from '../../services/pocketbase';
+import ItemSelector from '../ItemSelector.vue';
 
 interface DeliveryItemForm {
   tempId: string;
@@ -165,12 +155,6 @@ const errors = reactive({
 });
 
 // Computed properties
-const availableItems = computed(() => {
-  return props.items.filter(item => 
-    !props.usedItems.includes(item.id!) || item.id === props.item.item
-  );
-});
-
 const selectedItem = computed(() => {
   return props.items.find(item => item.id === props.item.item);
 });
@@ -206,13 +190,6 @@ const getUnitDisplay = (unit: string) => {
   return unitMap[unit] || unit;
 };
 
-const validateItem = () => {
-  errors.item = '';
-  if (!props.item.item) {
-    errors.item = t('forms.selectItem');
-  }
-};
-
 const validateQuantity = () => {
   errors.quantity = '';
   if (props.item.quantity <= 0) {
@@ -243,12 +220,18 @@ const updateItem = (updates: Partial<DeliveryItemForm>) => {
   emit('update', props.index, updatedItem);
 };
 
-const handleItemChange = (event: Event) => {
-  const target = event.target as HTMLSelectElement;
-  updateItem({ item: target.value });
+const handleItemChange = (itemId: string) => {
+  updateItem({ item: itemId });
   // Clear error when user makes a selection
-  if (target.value) {
+  if (itemId) {
     errors.item = '';
+  }
+};
+
+const handleItemSelected = (item: Item | null) => {
+  // Additional logic when item is selected, if needed
+  if (item) {
+    // Could auto-populate unit price based on item history, etc.
   }
 };
 

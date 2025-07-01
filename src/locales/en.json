@@ -22,6 +22,7 @@
     "submit": "Submit",
     "reset": "Reset",
     "clear": "Clear",
+    "copy": "Copy",
     "select": "Select",
     "all": "All",
     "none": "None",
@@ -175,6 +176,7 @@
     "subtitle": "Manage your construction items and quantities",
     "addItem": "Add Item",
     "editItem": "Edit Item",
+    "cloneItem": "Clone Item",
     "deleteItem": "Delete Item",
     "itemName": "Item Name",
     "itemDescription": "Item Description",
@@ -196,7 +198,8 @@
     "recordDelivery": "Record Delivery",
     "noDeliveryData": "No delivery data to display",
     "noDeliveriesRecorded": "No deliveries recorded",
-    "startTracking": "Start tracking by recording a delivery."
+    "startTracking": "Start tracking by recording a delivery.",
+    "noItemsFound": "No items found"
   },
   "services": {
     "title": "Services",
@@ -414,7 +417,8 @@
       "monetaryDesc": "Refund the full amount to your account balance",
       "creditDesc": "Issue a credit note for future purchases from this vendor",
       "splitDesc": "Combine monetary refund and credit note"
-    }
+    },
+    "returnStatus": "Return Status"
   },
   "delivery": {
     "multiItemSubtitle": "Add multiple items to a single delivery",
@@ -719,6 +723,7 @@
     "enterAmount": "Enter amount",
     "selectItem": "Select an item",
     "selectVendor": "Select a vendor",
+    "selectProvider": "Select a service provider",
     "selectAccount": "Select an account",
     "selectDate": "Select date",
     "enterReference": "Check number, transfer ID, etc.",
@@ -741,7 +746,8 @@
     "selectService": "Select a service",
     "quantityRequired": "Quantity must be greater than 0",
     "unitPriceRequired": "Unit price must be greater than 0",
-    "serviceNotes": "Service notes"
+    "serviceNotes": "Service notes",
+    "searchItems": "Search items..."
   },
   "pwa": {
     "installApp": "Install SiteWise",

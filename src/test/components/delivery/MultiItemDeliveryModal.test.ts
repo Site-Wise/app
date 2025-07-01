@@ -42,7 +42,9 @@ vi.mock('../../../composables/useI18n', () => ({
         'delivery.itemsSummary': 'Items Summary',
         'messages.createSuccess': 'Created successfully',
         'messages.updateSuccess': 'Updated successfully',
-        'messages.error': 'An error occurred'
+        'messages.error': 'An error occurred',
+        'forms.searchItems': 'Search items...',
+        'items.noItemsFound': 'No items found'
       }
       return translations[key] || key
     }
@@ -93,12 +95,14 @@ const DeliveryItemRowStub = {
   name: 'DeliveryItemRow',
   template: '<div class="mock-delivery-item-row" :data-testid="`item-row-${index}`">Item Row {{ index }}</div>',
   props: ['item', 'index', 'items', 'usedItems'],
-  emits: ['update', 'remove'],
-  setup(props: any, { emit }: any) {
-    return {
-      $emit: emit
-    }
-  }
+  emits: ['update', 'remove']
+}
+
+const ItemSelectorStub = {
+  name: 'ItemSelector',
+  template: '<div class="mock-item-selector"><input class="item-selector-input" /></div>',
+  props: ['modelValue', 'items', 'usedItems', 'label', 'placeholder'],
+  emits: ['update:modelValue', 'itemSelected']
 }
 
 describe('MultiItemDeliveryModal', () => {
@@ -112,7 +116,8 @@ describe('MultiItemDeliveryModal', () => {
       global: {
         stubs: {
           'FileUploadComponent': FileUploadComponentStub,
-          'DeliveryItemRow': DeliveryItemRowStub
+          'DeliveryItemRow': DeliveryItemRowStub,
+          'ItemSelector': ItemSelectorStub
         }
       },
       attachTo: document.body
@@ -168,8 +173,8 @@ describe('MultiItemDeliveryModal', () => {
       const options = vendorSelect.findAll('option')
       
       expect(options).toHaveLength(3) // 2 vendors + placeholder
-      expect(options[1].text()).toBe('ABC Construction')
-      expect(options[2].text()).toBe('XYZ Suppliers')
+      expect(options[1].text()).toBe('| ABC Construction')
+      expect(options[2].text()).toBe('| XYZ Suppliers')
     })
   })
 

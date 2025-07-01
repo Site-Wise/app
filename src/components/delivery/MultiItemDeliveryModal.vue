@@ -60,7 +60,7 @@
                 <select ref="vendorInputRef" v-model="deliveryForm.vendor" required class="input" >
                   <option value="">{{ t('forms.selectVendor') }}</option>
                   <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
-                    {{ vendor.name }}
+                    {{ vendor.contact_person }} | {{ vendor.name }}
                   </option>
                 </select>
               </div>

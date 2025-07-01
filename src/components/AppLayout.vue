@@ -238,6 +238,7 @@ import {
   FileText,
   TruckIcon,
   CreditCard,
+  BanknoteArrowDown,
   Menu,
   ChevronDown,
   LogOut,
@@ -271,7 +272,7 @@ const navigation = computed(() => [
   { name: 'Service Bookings', nameKey: 'nav.serviceBookings', to: '/service-bookings', icon: Calendar, current: route.name === 'ServiceBookings' },
   { name: 'Quotations', nameKey: 'nav.quotations', to: '/quotations', icon: FileText, current: route.name === 'Quotations' },
   { name: 'Accounts', nameKey: 'nav.accounts', to: '/accounts', icon: CreditCard, current: route.name === 'Accounts' },
-  { name: 'Payments', nameKey: 'nav.payments', to: '/payments', icon: CreditCard, current: route.name === 'Payments' },
+  { name: 'Payments', nameKey: 'nav.payments', to: '/payments', icon: BanknoteArrowDown, current: route.name === 'Payments' },
   { name: 'Vendor Returns', nameKey: 'nav.vendorReturns', to: '/vendor-returns', icon: RotateCcw, current: route.name === 'VendorReturns' },
 ]);
 

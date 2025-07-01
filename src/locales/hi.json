@@ -22,6 +22,7 @@
     "submit": "जमा करें",
     "reset": "रीसेट",
     "clear": "साफ करें",
+    "copy": "कॉपी",
     "select": "चुनें",
     "all": "सभी",
     "none": "कोई नहीं",
@@ -175,6 +176,7 @@
     "subtitle": "अपनी निर्माण वस्तुओं और मात्राओं का प्रबंधन करें",
     "addItem": "वस्तु जोड़ें",
     "editItem": "वस्तु संपादित करें",
+    "cloneItem": "वस्तु क्लोन करें",
     "deleteItem": "वस्तु हटाएं",
     "itemName": "वस्तु का नाम",
     "itemDescription": "वस्तु का विवरण",
@@ -196,7 +198,8 @@
     "recordDelivery": "डिलीवरी रिकॉर्ड करें",
     "noDeliveryData": "प्रदर्शित करने के लिए कोई डिलीवरी डेटा नहीं",
     "noDeliveriesRecorded": "कोई डिलीवरी रिकॉर्ड नहीं",
-    "startTracking": "डिलीवरी रिकॉर्ड करके ट्रैकिंग शुरू करें।"
+    "startTracking": "डिलीवरी रिकॉर्ड करके ट्रैकिंग शुरू करें।",
+    "noItemsFound": "कोई वस्तु नहीं मिली"
   },
   "services": {
     "title": "सेवाएं",
@@ -414,7 +417,8 @@
       "monetaryDesc": "पूरी राशि आपके खाते की शेष राशि में वापस करें",
       "creditDesc": "इस विक्रेता से भविष्य की खरीदारी के लिए क्रेडिट नोट जारी करें",
       "splitDesc": "नकद धन वापसी और क्रेडिट नोट का संयोजन"
-    }
+    },
+    "returnStatus": "वापसी स्थिति"
   },
   "delivery": {
     "multiItemSubtitle": "एक डिलीवरी में कई वस्तुएं जोड़ें",
@@ -716,6 +720,7 @@
     "enterAmount": "राशि दर्ज करें",
     "selectItem": "एक वस्तु चुनें",
     "selectVendor": "एक विक्रेता चुनें",
+    "selectProvider": "सेवा प्रदाता चुनें",
     "selectAccount": "एक खाता चुनें",
     "selectDate": "दिनांक चुनें",
     "enterReference": "चेक नंबर, ट्रांसफर आईडी, आदि।",
@@ -743,7 +748,8 @@
     "selectService": "एक सेवा चुनें",
     "quantityRequired": "मात्रा 0 से अधिक होनी चाहिए",
     "unitPriceRequired": "इकाई मूल्य 0 से अधिक होना चाहिए",
-    "serviceNotes": "सेवा टिप्पणी"
+    "serviceNotes": "सेवा टिप्पणी",
+    "searchItems": "वस्तुएं खोजें..."
   },
   "pwa": {
     "installApp": "SiteWise इंस्टॉल करें",
