@@ -17,7 +17,7 @@ vi.mock('../../composables/useSubscription', () => ({
       features: {
         max_items: 100,
         max_vendors: 25,
-        max_incoming_deliveries: 100,
+        max_deliveries: 100,
         max_service_bookings: 50,
         max_payments: 200,
         max_sites: 1
@@ -30,7 +30,7 @@ vi.mock('../../composables/useSubscription', () => ({
     usageLimits: computed(() => ({
       items: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
       vendors: { current: 0, max: 25, exceeded: false, disabled: false, unlimited: false },
-      incoming_deliveries: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
+      deliveries: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
       service_bookings: { current: 0, max: 50, exceeded: false, disabled: false, unlimited: false },
       payments: { current: 0, max: 200, exceeded: false, disabled: false, unlimited: false }
     })),
@@ -120,7 +120,7 @@ describe('SubscriptionBanner', () => {
         features: {
           max_items: 100,
           max_vendors: 25,
-          max_incoming_deliveries: 100,
+          max_deliveries: 100,
           max_service_bookings: 50,
           max_payments: 200,
           max_sites: 1
@@ -133,7 +133,7 @@ describe('SubscriptionBanner', () => {
       usageLimits: computed(() => ({
         items: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
         vendors: { current: 0, max: 25, exceeded: false, disabled: false, unlimited: false },
-        incoming_deliveries: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
+        deliveries: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
         service_bookings: { current: 0, max: 50, exceeded: false, disabled: false, unlimited: false },
         payments: { current: 0, max: 200, exceeded: false, disabled: false, unlimited: false }
       })),
@@ -181,7 +181,7 @@ describe('SubscriptionBanner', () => {
         features: {
           max_items: 100,
           max_vendors: 25,
-          max_incoming_deliveries: 100,
+          max_deliveries: 100,
           max_service_bookings: 50,
           max_payments: 200,
           max_sites: 1
@@ -194,7 +194,7 @@ describe('SubscriptionBanner', () => {
       usageLimits: computed(() => ({
         items: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
         vendors: { current: 0, max: 25, exceeded: false, disabled: false, unlimited: false },
-        incoming_deliveries: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
+        deliveries: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
         service_bookings: { current: 0, max: 50, exceeded: false, disabled: false, unlimited: false },
         payments: { current: 0, max: 200, exceeded: false, disabled: false, unlimited: false }
       })),

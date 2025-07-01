@@ -29,7 +29,7 @@ const API_CACHE_PATTERNS = [
   /\/api\/collections\/items/,
   /\/api\/collections\/vendors/,
   /\/api\/collections\/quotations/,
-  /\/api\/collections\/incoming_items/,
+  /\/api\/collections\/deliveries/,
   /\/api\/collections\/payments/,
 ];
 

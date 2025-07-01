@@ -4,7 +4,18 @@ import { nextTick } from 'vue'
 import ServiceBookingsView from '../../views/ServiceBookingsView.vue'
 import { setupTestPinia } from '../utils/test-setup'
 
+// Mock SearchBox component
+vi.mock('../../components/SearchBox.vue', () => ({
+  default: {
+    name: 'SearchBox',
+    template: '<input type="text" class="mock-search-box" :placeholder="placeholder" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    props: ['modelValue', 'placeholder', 'searchLoading'],
+    emits: ['update:modelValue']
+  }
+}))
+
 // Mock services with proper Pinia-compatible structure
+
 vi.mock('../../services/pocketbase', () => {
   const mockServiceBookings = [
     {
@@ -132,11 +143,8 @@ describe('ServiceBookingsView - Date Handling', () => {
         status: 'scheduled',
         notes: 'Test booking',
         payment_status: 'pending',
-        paid_amount: 0,
-        expand: {
-          service: { id: 'service-1', name: 'Test Service', category: 'Construction', unit: 'hours', standard_rate: 100, is_active: true },
-          vendor: { id: 'vendor-1', name: 'Test Vendor' }
-        }
+        paid_amount: 0
+        // No expand property
       }
 
       // Mock service to return booking without date
@@ -352,6 +360,22 @@ describe('ServiceBookingsView - Date Handling', () => {
       
       // Form should still be visible (not submitted)
       expect(wrapper.find('form').exists()).toBe(true)
+    })
+  })
+
+  describe('Search Functionality', () => {
+    beforeEach(async () => {
+      wrapper = mount(ServiceBookingsView, {
+        global: { plugins: [pinia] }
+      })
+      await nextTick()
+      await nextTick()
+    })
+
+    it('should display search functionality', () => {
+      const searchInput = wrapper.findComponent({ name: 'SearchBox' })
+      expect(searchInput.exists()).toBe(true)
+      expect(searchInput.props('placeholder')).toContain('Search')
     })
   })
 })

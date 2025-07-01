@@ -5,7 +5,31 @@ import PaymentsView from '../../views/PaymentsView.vue'
 import { createMockRouter } from '../utils/test-utils'
 import { setupTestPinia } from '../utils/test-setup'
 
+// Mock SearchBox component
+vi.mock('../../components/SearchBox.vue', () => ({
+  default: {
+    name: 'SearchBox',
+    template: '<input type="text" class="mock-search-box" :placeholder="placeholder" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    props: ['modelValue', 'placeholder', 'searchLoading'],
+    emits: ['update:modelValue']
+  }
+}))
+
+// Mock useSearch composable for payments
+vi.mock('../../composables/useSearch', () => ({
+  usePaymentSearch: () => {
+    const { ref } = require('vue')
+    return {
+      searchQuery: ref(''),
+      loading: ref(false),
+      results: ref([]),
+      loadAll: vi.fn()
+    }
+  }
+}))
+
 // Mock i18n
+
 vi.mock('../../composables/useI18n', () => ({
   useI18n: () => ({
     t: (key: string, params?: any) => {
@@ -28,7 +52,8 @@ vi.mock('../../composables/useI18n', () => ({
         'common.unknown': 'Unknown',
         'messages.createSuccess': '{item} created successfully',
         'messages.error': 'An error occurred',
-        'subscription.banner.freeTierLimitReached': 'Free tier limit reached'
+        'subscription.banner.freeTierLimitReached': 'Free tier limit reached',
+        'search.payments': 'Search payments by amount, vendor, or item...'
       }
       let result = translations[key] || key
       if (params) {
@@ -494,6 +519,17 @@ describe('PaymentsView - Mobile Responsive Design', () => {
 
       expect(wrapper.text()).toContain('No payments recorded')
       expect(wrapper.text()).toContain('Start tracking by recording a payment.')
+    })
+  })
+
+  describe('Search Functionality', () => {
+    it('should display search functionality', async () => {
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+
+      const searchInput = wrapper.findComponent({ name: 'SearchBox' })
+      expect(searchInput.exists()).toBe(true)
+      expect(searchInput.props('placeholder')).toContain('Search')
     })
   })
 })

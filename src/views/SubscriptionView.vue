@@ -255,9 +255,9 @@
                       </span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                      <span class="text-gray-600 dark:text-gray-400">{{ t('subscription.limits.incoming_deliveries') }}</span>
+                      <span class="text-gray-600 dark:text-gray-400">{{ t('subscription.limits.deliveries') }}</span>
                       <span class="font-medium text-gray-900 dark:text-white">
-                        {{ formatPlanLimit(plan.features.max_incoming_deliveries) }}
+                        {{ formatPlanLimit(plan.features.max_deliveries) }}
                       </span>
                     </div>
                     <div class="flex items-center justify-between text-sm">

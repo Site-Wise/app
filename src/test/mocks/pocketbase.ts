@@ -170,8 +170,8 @@ export const createMockPocketBase = () => {
   collections.set('site_users', [mockSiteUser])
   collections.set('site_invitations', [mockSiteInvitation])
   collections.set('subscription_plans', [
-    { id: 'plan-1', name: 'Free', is_active: true, features: { max_items: 1, max_vendors: 1, max_incoming_deliveries: 5, max_service_bookings: 5, max_payments: 5, max_sites: 1 }, price: 0, currency: 'INR' },
-    { id: 'plan-2', name: 'Pro', is_active: true, features: { max_items: -1, max_vendors: -1, max_incoming_deliveries: -1, max_service_bookings: -1, max_payments: -1, max_sites: 3 }, price: 29.99, currency: 'INR' }
+    { id: 'plan-1', name: 'Free', is_active: true, features: { max_items: 1, max_vendors: 1, max_deliveries: 5, max_service_bookings: 5, max_payments: 5, max_sites: 1 }, price: 0, currency: 'INR' },
+    { id: 'plan-2', name: 'Pro', is_active: true, features: { max_items: -1, max_vendors: -1, max_deliveries: -1, max_service_bookings: -1, max_payments: -1, max_sites: 3 }, price: 29.99, currency: 'INR' }
   ])
   collections.set('subscriptions', [])
   collections.set('site_subscriptions', [])

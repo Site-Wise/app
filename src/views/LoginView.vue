@@ -114,15 +114,17 @@
             </div>
 
             <!-- Turnstile Widget -->
-            <TurnstileWidget
-              v-if="turnstileSiteKey"
-              :site-key="turnstileSiteKey"
-              :theme="isDark ? 'dark' : 'light'"
-              @success="handleTurnstileSuccess"
-              @error="handleTurnstileError"
-              @expired="handleTurnstileExpired"
-              ref="loginTurnstileRef"
-            />
+            <div class="h-[65px]">
+              <TurnstileWidget
+                v-if="turnstileSiteKey"
+                :site-key="turnstileSiteKey"
+                :theme="isDark ? 'dark' : 'light'"
+                @success="handleTurnstileSuccess"
+                @error="handleTurnstileError"
+                @expired="handleTurnstileExpired"
+                ref="loginTurnstileRef"
+              />
+            </div>
 
             <div>
               <button
@@ -271,15 +273,17 @@
             </div>
 
             <!-- Turnstile Widget for Registration -->
-            <TurnstileWidget
-              v-if="turnstileSiteKey"
-              :site-key="turnstileSiteKey"
-              :theme="isDark ? 'dark' : 'light'"
-              @success="handleRegisterTurnstileSuccess"
-              @error="handleTurnstileError"
-              @expired="handleRegisterTurnstileExpired"
-              ref="registerTurnstileRef"
-            />
+            <div class="h-[65px]">
+              <TurnstileWidget
+                v-if="turnstileSiteKey"
+                :site-key="turnstileSiteKey"
+                :theme="isDark ? 'dark' : 'light'"
+                @success="handleRegisterTurnstileSuccess"
+                @error="handleTurnstileError"
+                @expired="handleRegisterTurnstileExpired"
+                ref="registerTurnstileRef"
+              />
+            </div>
 
             <div class="flex space-x-3">
               <button

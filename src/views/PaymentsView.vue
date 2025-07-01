@@ -21,6 +21,15 @@
       </button>
     </div>
 
+    <!-- Search Box -->
+    <div class="mb-6">
+      <SearchBox
+        v-model="searchQuery"
+        :placeholder="t('search.payments')"
+        :search-loading="searchLoading"
+      />
+    </div>
+
     <!-- Payments Table -->
     <div class="card overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -312,6 +321,8 @@ import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
+import { usePaymentSearch } from '../composables/useSearch';
+import SearchBox from '../components/SearchBox.vue';
 import { 
   paymentService, 
   accountTransactionService,
@@ -328,6 +339,9 @@ const route = useRoute();
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
+
+// Search functionality
+const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = usePaymentSearch();
 
 interface VendorWithOutstanding extends Vendor {
   outstandingAmount: number;
@@ -362,7 +376,7 @@ const { data: serviceBookingsData } = useSiteData(
 );
 
 // Computed properties from useSiteData
-const payments = computed(() => paymentsData.value || []);
+const payments = computed(() => searchQuery.value.trim() ? searchResults.value : (paymentsData.value || []));
 const vendors = computed(() => vendorsData.value || []);
 const accounts = computed(() => accountsData.value || []);
 const deliveries = computed(() => deliveriesData.value || []);
@@ -589,7 +603,7 @@ const handleClickOutside = (event: Event) => {
 
 onMounted(async () => {
   // Data loading is handled automatically by useSiteData
-  
+  setTimeout(() => loadAll(), 100);
   // Check for paymentId query parameter and auto-open payment modal
   const paymentId = route.query.paymentId as string;
   if (paymentId) {

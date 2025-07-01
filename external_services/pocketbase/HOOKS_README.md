@@ -86,7 +86,7 @@ Tracks usage and enforces subscription limits:
 **Tracked Collections:**
 - `items` → `items_count`
 - `vendors` → `vendors_count`
-- `incoming_items` → `incoming_deliveries_count`
+- `deliveries` → `deliveries_count`
 - `service_bookings` → `service_bookings_count`
 - `payments` → `payments_count`
 
@@ -216,7 +216,7 @@ No additional environment variables are required. The hooks use PocketBase's bui
 - `subscription_usage` - Usage tracking records
 - `site_invitations` - Site invitations
 - `users` - User accounts
-- Tracked collections: `items`, `vendors`, `incoming_items`, `service_bookings`, `payments`
+- Tracked collections: `items`, `vendors`, `deliveries`, `service_bookings`, `payments`
 
 ### Optional Collections
 - `usage_recalculation_requests` - For manual usage recalculation

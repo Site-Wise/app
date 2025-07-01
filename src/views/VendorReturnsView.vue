@@ -26,34 +26,22 @@
 
     <!-- Mobile Search -->
     <div class="md:hidden">
-      <div class="relative">
-        <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <input
-          v-model="searchQuery"
-          type="text"
-          :placeholder="t('search.returns')"
-          class="input pl-10 w-full"
-        />
-        <div v-if="loading" class="absolute right-3 top-1/2 transform -translate-y-1/2">
-          <Loader2 class="h-4 w-4 animate-spin text-gray-400" />
-        </div>
-      </div>
+      <SearchBox
+        v-model="searchQuery"
+        :placeholder="t('search.returns')"
+        :search-loading="loading"
+      />
     </div>
 
     <!-- Filters -->
     <div class="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
       <div class="flex-1">
-        <div class="hidden md:block relative">
-          <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
+        <div class="hidden md:block">
+          <SearchBox
             v-model="searchQuery"
-            type="text"
             :placeholder="t('search.returns')"
-            class="input pl-10 w-full max-w-md"
+            :search-loading="loading"
           />
-          <div v-if="loading" class="absolute right-3 top-1/2 transform -translate-y-1/2">
-            <Loader2 class="h-4 w-4 animate-spin text-gray-400" />
-          </div>
         </div>
       </div>
       
@@ -361,21 +349,17 @@ import {
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSiteData } from '../composables/useSiteData';
-import {
-  vendorReturnService,
-  vendorService,
-  deliveryService,
-  deliveryItemService,
-  accountService,
-  type VendorReturn,
-  type DeliveryItem
-} from '../services/pocketbase';
+import { useVendorReturnSearch } from '../composables/useSearch';
 import ReturnModal from '../components/returns/ReturnModal.vue';
 import ReturnDetailsModal from '../components/returns/ReturnDetailsModal.vue';
 import RefundModal from '../components/returns/RefundModal.vue';
+import SearchBox from '../components/SearchBox.vue';
 
 const { t } = useI18n();
 const route = useRoute();
+
+// Search functionality
+const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useVendorReturnSearch();
 
 // Use site data management
 const { data: returnsData, reload: reloadReturns } = useSiteData(
@@ -405,7 +389,6 @@ const loading = ref(false);
 
 
 // Search and filters
-const searchQuery = ref('');
 const statusFilter = ref('');
 const vendorFilter = ref('');
 
@@ -419,22 +402,7 @@ const isEditMode = ref(false);
 // Computed properties
 const filteredReturns = computed(() => {
   if (!returns.value) return [];
-  let filtered = returns.value;
-
-  if (searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(returnItem => {
-      const vendorName = returnItem.expand?.vendor?.name?.toLowerCase() || '';
-      const contactPerson = returnItem.expand?.vendor?.contact_person?.toLowerCase() || '';
-      const returnId = returnItem.id?.toLowerCase() || '';
-      const reason = returnItem.reason.toLowerCase();
-      
-      return vendorName.includes(query) || 
-             contactPerson.includes(query) || 
-             returnId.includes(query) ||
-             reason.includes(query);
-    });
-  }
+  let filtered = searchQuery.value.trim() ? searchResults.value : returns.value;
 
   if (statusFilter.value) {
     filtered = filtered.filter(returnItem => returnItem.status === statusFilter.value);
@@ -665,6 +633,7 @@ onMounted(() => {
   // Data loading is handled automatically by useSiteData
   // Load delivery items when deliveries are available
   setTimeout(() => loadDeliveryItems(), 500);
+  setTimeout(() => loadAll(), 100);
   
   window.addEventListener('keydown', handleKeyboardShortcut);
 });

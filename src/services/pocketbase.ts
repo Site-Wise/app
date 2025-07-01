@@ -2896,7 +2896,7 @@ class CreditNoteUsageService {
 
     const records = await pb.collection('credit_note_usage').getFullList({
       filter: `site="${siteId}"`,
-      expand: 'credit_note,payment_transaction,incoming_item,service_booking',
+      expand: 'credit_note,payment_transaction,delivery,service_booking',
       sort: '-created'
     });
     return records.map(record => this.mapRecordToUsage(record));
@@ -2908,7 +2908,7 @@ class CreditNoteUsageService {
 
     const records = await pb.collection('credit_note_usage').getFullList({
       filter: `site="${siteId}" && credit_note="${creditNoteId}"`,
-      expand: 'credit_note,payment_transaction,incoming_item,service_booking',
+      expand: 'credit_note,payment_transaction,delivery,service_booking',
       sort: '-created'
     });
     return records.map(record => this.mapRecordToUsage(record));

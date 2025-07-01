@@ -906,6 +906,7 @@
     "limits": {
       "items": "Items",
       "vendors": "Vendors",
+      "deliveries": "Deliveries",
       "serviceBookings": "Service Bookings",
       "service_bookings": "Service Bookings",
       "payments": "Payments"

@@ -78,7 +78,7 @@
       "name": "Record Delivery",
       "short_name": "Delivery",
       "description": "Record a new delivery",
-      "url": "/incoming?action=add",
+      "url": "/deliveries?action=add",
       "icons": [
         {
           "src": "/icons/shortcut-delivery.png",

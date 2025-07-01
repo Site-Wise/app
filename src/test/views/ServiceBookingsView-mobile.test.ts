@@ -4,7 +4,18 @@ import { nextTick } from 'vue'
 import ServiceBookingsView from '../../views/ServiceBookingsView.vue'
 import { setupTestPinia } from '../utils/test-setup'
 
+// Mock SearchBox component
+vi.mock('../../components/SearchBox.vue', () => ({
+  default: {
+    name: 'SearchBox',
+    template: '<input type="text" class="mock-search-box" :placeholder="placeholder" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    props: ['modelValue', 'placeholder', 'searchLoading'],
+    emits: ['update:modelValue']
+  }
+}))
+
 // Mock services with proper Pinia-compatible structure
+
 vi.mock('../../services/pocketbase', () => {
   const mockServiceBookings = [
     {
@@ -445,6 +456,22 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
       wrapper.vm.closeMobileMenu()
       await nextTick()
       expect(wrapper.vm.openMobileMenuId).toBeNull()
+    })
+  })
+
+  describe('Search Functionality', () => {
+    beforeEach(async () => {
+      wrapper = mount(ServiceBookingsView, {
+        global: { plugins: [pinia] }
+      })
+      await nextTick()
+      await nextTick()
+    })
+
+    it('should display search functionality', () => {
+      const searchInput = wrapper.findComponent({ name: 'SearchBox' })
+      expect(searchInput.exists()).toBe(true)
+      expect(searchInput.props('placeholder')).toContain('Search')
     })
   })
 })

@@ -877,7 +877,6 @@
     "usage": "उपयोग",
     "currentUsage": "वर्तमान उपयोग",
     "limitsTitle": "सीमाएं",
-    "limits": "सीमाएं",
     "features": "सुविधाएं",
     "freeTier": "मुफ्त टियर",
     "basicPlan": "बेसिक प्लान",
@@ -909,6 +908,7 @@
     "limits": {
       "items": "वस्तुएं",
       "vendors": "विक्रेता",
+      "deliveries": "वितरण",
       "serviceBookings": "सेवा बुकिंग",
       "service_bookings": "सेवा बुकिंग",
       "payments": "भुगतान"

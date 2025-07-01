@@ -21,6 +21,15 @@
       </button>
     </div>
 
+    <!-- Search Box -->
+    <div class="mb-6">
+      <SearchBox
+        v-model="searchQuery"
+        :placeholder="t('search.vendors')"
+        :search-loading="searchLoading"
+      />
+    </div>
+
     <!-- Vendors Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div v-for="vendor in vendors" :key="vendor.id" class="card hover:shadow-md transition-shadow duration-200 cursor-pointer" @click="viewVendorDetail(vendor.id!)">
@@ -183,6 +192,8 @@ import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
 import TagSelector from '../components/TagSelector.vue';
+import SearchBox from '../components/SearchBox.vue';
+import { useVendorSearch } from '../composables/useSearch';
 import { 
   vendorService, 
   deliveryService, 
@@ -198,6 +209,10 @@ const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
 
 const router = useRouter();
+
+// Search functionality
+const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useVendorSearch();
+
 // Use site data management
 const { data: vendorsData, reload: reloadVendors } = useSiteData(
   async () => await vendorService.getAll()
@@ -220,7 +235,7 @@ const { data: allTagsData } = useSiteData(
 );
 
 // Computed properties from useSiteData
-const vendors = computed(() => vendorsData.value || []);
+const vendors = computed(() => searchQuery.value.trim() ? searchResults.value : (vendorsData.value || []));
 const deliveries = computed(() => deliveriesData.value || []);
 const serviceBookings = computed(() => serviceBookingsData.value || []);
 const payments = computed(() => paymentsData.value || []);
@@ -415,6 +430,7 @@ onMounted(() => {
   // Data loading is handled automatically by useSiteData
   // Set up watchers for tag updates
   setTimeout(watchForTagUpdates, 100);
+  setTimeout(() => loadAll(), 100);
   window.addEventListener('show-add-modal', handleQuickAction);
   window.addEventListener('keydown', handleKeyboardShortcut);
 });

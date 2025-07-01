@@ -102,10 +102,10 @@ const usageDetails = computed(() => {
     }));
   }
   
-  if (usageLimits.value.incoming_deliveries.exceeded) {
-    exceededLimits.push(t('subscription.limits.incomingDeliveries', { 
-      current: usageLimits.value.incoming_deliveries.current, 
-      max: usageLimits.value.incoming_deliveries.max 
+  if (usageLimits.value.deliveries.exceeded) {
+    exceededLimits.push(t('subscription.limits.deliveries', { 
+      current: usageLimits.value.deliveries.current, 
+      max: usageLimits.value.deliveries.max 
     }));
   }
   

@@ -121,7 +121,7 @@ Price quotes from vendors:
 - `created` (datetime, auto)
 - `updated` (datetime, auto)
 
-### 10. incoming_items
+### 10. Deliveries
 Delivery records:
 - `id` (string, auto-generated)
 - `item` (relation to items, required)
@@ -166,7 +166,7 @@ Payment records to vendors:
 - `payment_date` (date, required)
 - `reference` (string, optional) - Check number, transfer ID, etc.
 - `notes` (text, optional)
-- `incoming_items` (json array, optional) - IDs of items paid for
+- `deliveries` (json array, optional) - IDs of items paid for
 - `service_bookings` (json array, optional) - IDs of services paid for
 - `site` (relation to sites, required)
 - `created` (datetime, auto)
@@ -191,7 +191,7 @@ Example features JSON:
 {
   "max_items": 1,
   "max_vendors": 1, 
-  "max_incoming_deliveries": 5,
+  "max_deliveries": 5,
   "max_service_bookings": 5,
   "max_payments": 5,
   "max_sites": 1
@@ -223,7 +223,7 @@ Fields:
 - `period_end` (datetime, required)
 - `items_count` (number, default: 0)
 - `vendors_count` (number, default: 0)
-- `incoming_deliveries_count` (number, default: 0)
+- `deliveries_count` (number, default: 0)
 - `service_bookings_count` (number, default: 0)
 - `payments_count` (number, default: 0)
 - `created` (datetime, auto)
@@ -274,7 +274,7 @@ Future interfaces will replace JSON tag arrays with proper relations:
   "features": {
     "max_items": 1,
     "max_vendors": 1,
-    "max_incoming_deliveries": 5,
+    "max_deliveries": 5,
     "max_service_bookings": 5,
     "max_payments": 5,
     "max_sites": 1
@@ -293,7 +293,7 @@ Future interfaces will replace JSON tag arrays with proper relations:
   "features": {
     "max_items": -1,
     "max_vendors": -1,
-    "max_incoming_deliveries": -1,
+    "max_deliveries": -1,
     "max_service_bookings": -1,
     "max_payments": -1,
     "max_sites": 3
@@ -349,7 +349,7 @@ Future interfaces will replace JSON tag arrays with proper relations:
 ### Deprecated Fields
 1. **Site.admin_user**: Use site_users table with role='owner'
 2. **Site.users**: Use site_users table for all user associations
-3. **Item.quantity**: Use incoming_items delivery history for tracking
+3. **Item.quantity**: Use delivery history for tracking
 4. **Item.category**: Plan to migrate to unified tag system
 5. **Service.tags**: Plan to migrate to unified tag system
 6. **Vendor.tags**: Plan to migrate to unified tag system

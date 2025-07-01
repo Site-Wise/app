@@ -21,6 +21,15 @@
       </button>
     </div>
 
+    <!-- Search Box -->
+    <div class="mb-6">
+      <SearchBox
+        v-model="searchQuery"
+        :placeholder="t('search.items')"
+        :search-loading="searchLoading"
+      />
+    </div>
+
     <!-- Items Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div v-for="item in items" :key="item.id" class="card hover:shadow-md transition-shadow duration-200 cursor-pointer" @click="viewItemDetail(item.id!)">
@@ -186,6 +195,8 @@ import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
 import TagSelector from '../components/TagSelector.vue';
+import SearchBox from '../components/SearchBox.vue';
+import { useItemSearch } from '../composables/useSearch';
 import { 
   itemService, 
   deliveryService,
@@ -199,6 +210,9 @@ const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
 
 const router = useRouter();
+
+// Search functionality
+const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useItemSearch();
 
 // Use site-aware data loading
 const { data: itemsData, reload: reloadItems } = useSiteData(async () => {
@@ -220,7 +234,7 @@ const { data: itemsData, reload: reloadItems } = useSiteData(async () => {
   return { items, deliveries, itemTags: tagMap };
 });
 
-const items = computed(() => itemsData.value?.items || []);
+const items = computed(() => searchQuery.value.trim() ? searchResults.value : (itemsData.value?.items || []));
 const deliveries = computed(() => itemsData.value?.deliveries || []);
 const itemTags = computed(() => itemsData.value?.itemTags || new Map());
 
@@ -405,6 +419,7 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
 };
 
 onMounted(() => {
+  setTimeout(() => loadAll(), 100);
   window.addEventListener('show-add-modal', handleQuickAction);
   window.addEventListener('keydown', handleKeyboardShortcut);
 });

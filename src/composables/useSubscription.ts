@@ -9,7 +9,7 @@ export interface SubscriptionPlan {
   features: {
     max_items: number;
     max_vendors: number;
-    max_incoming_deliveries: number;
+    max_deliveries: number;
     max_service_bookings: number;
     max_payments: number;
     max_sites: number;
@@ -48,7 +48,7 @@ export interface SubscriptionUsage {
   period_end: string;
   items_count: number;
   vendors_count: number;
-  incoming_deliveries_count: number;
+  deliveries_count: number;
   service_bookings_count: number;
   payments_count: number;
   created?: string;
@@ -102,7 +102,7 @@ declare global {
 export interface UsageLimits {
   items: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
   vendors: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
-  incoming_deliveries: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
+  deliveries: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
   service_bookings: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
   payments: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
 }
@@ -128,7 +128,7 @@ export function useSubscription() {
     return (
       (isLimited(plan.features.max_items) && usage.items_count >= plan.features.max_items) ||
       (isLimited(plan.features.max_vendors) && usage.vendors_count >= plan.features.max_vendors) ||
-      (isLimited(plan.features.max_incoming_deliveries) && usage.incoming_deliveries_count >= plan.features.max_incoming_deliveries) ||
+      (isLimited(plan.features.max_deliveries) && usage.deliveries_count >= plan.features.max_deliveries) ||
       (isLimited(plan.features.max_service_bookings) && usage.service_bookings_count >= plan.features.max_service_bookings) ||
       (isLimited(plan.features.max_payments) && usage.payments_count >= plan.features.max_payments)
     );
@@ -197,12 +197,12 @@ export function useSubscription() {
         disabled: isDisabled(plan.features.max_vendors),
         exceeded: isLimited(plan.features.max_vendors) && usage.vendors_count >= plan.features.max_vendors
       },
-      incoming_deliveries: {
-        current: usage.incoming_deliveries_count,
-        max: plan.features.max_incoming_deliveries,
-        unlimited: isUnlimited(plan.features.max_incoming_deliveries),
-        disabled: isDisabled(plan.features.max_incoming_deliveries),
-        exceeded: isLimited(plan.features.max_incoming_deliveries) && usage.incoming_deliveries_count >= plan.features.max_incoming_deliveries
+      deliveries: {
+        current: usage.deliveries_count,
+        max: plan.features.max_deliveries,
+        unlimited: isUnlimited(plan.features.max_deliveries),
+        disabled: isDisabled(plan.features.max_deliveries),
+        exceeded: isLimited(plan.features.max_deliveries) && usage.deliveries_count >= plan.features.max_deliveries
       },
       service_bookings: {
         current: usage.service_bookings_count,
@@ -302,7 +302,7 @@ export function useSubscription() {
     return createDefaultSubscription(siteId);
   };
 
-  const checkCreateLimit = (type: 'items' | 'vendors' | 'incoming_deliveries' | 'service_bookings' | 'payments'): boolean => {
+  const checkCreateLimit = (type: 'items' | 'vendors' | 'deliveries' | 'service_bookings' | 'payments'): boolean => {
     if (!currentSubscription.value || !currentUsage.value) return false;
     
     const plan = currentSubscription.value.expand?.subscription_plan;
@@ -317,9 +317,9 @@ export function useSubscription() {
       case 'vendors':
         if (isDisabled(plan.features.max_vendors)) return false;
         return isUnlimited(plan.features.max_vendors) || usage.vendors_count < plan.features.max_vendors;
-      case 'incoming_deliveries':
-        if (isDisabled(plan.features.max_incoming_deliveries)) return false;
-        return isUnlimited(plan.features.max_incoming_deliveries) || usage.incoming_deliveries_count < plan.features.max_incoming_deliveries;
+      case 'deliveries':
+        if (isDisabled(plan.features.max_deliveries)) return false;
+        return isUnlimited(plan.features.max_deliveries) || usage.deliveries_count < plan.features.max_deliveries;
       case 'service_bookings':
         if (isDisabled(plan.features.max_service_bookings)) return false;
         return isUnlimited(plan.features.max_service_bookings) || usage.service_bookings_count < plan.features.max_service_bookings;

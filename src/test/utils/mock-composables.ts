@@ -82,7 +82,7 @@ export const createMockUseSubscription = (overrides: any = {}) => ({
     features: {
       max_items: 50,
       max_vendors: 10,
-      max_incoming_deliveries: 20,
+      max_deliveries: 20,
       max_service_bookings: 10,
       max_payments: 30,
       max_sites: 1
@@ -94,7 +94,7 @@ export const createMockUseSubscription = (overrides: any = {}) => ({
   usageLimits: computed(() => overrides.usageLimits ?? {
     items: { current: 5, max: 50, exceeded: false },
     vendors: { current: 2, max: 10, exceeded: false },
-    incoming_deliveries: { current: 3, max: 20, exceeded: false },
+    deliveries: { current: 3, max: 20, exceeded: false },
     service_bookings: { current: 1, max: 10, exceeded: false },
     payments: { current: 4, max: 30, exceeded: false }
   }),

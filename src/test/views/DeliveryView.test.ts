@@ -229,6 +229,16 @@ vi.mock('../../components/PhotoGallery.vue', () => ({
 import DeliveryView from '../../views/DeliveryView.vue'
 import { createMockRouter } from '../utils/test-utils'
 
+// Mock SearchBox component
+vi.mock('../../components/SearchBox.vue', () => ({
+  default: {
+    name: 'SearchBox',
+    template: '<input type="text" class="mock-search-box" :placeholder="placeholder" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    props: ['modelValue', 'placeholder', 'searchLoading'],
+    emits: ['update:modelValue']
+  }
+}))
+
 describe('DeliveryView', () => {
   let wrapper: any
   let pinia: any
@@ -331,15 +341,10 @@ describe('DeliveryView', () => {
   it('should display search functionality', async () => {
     await wrapper.vm.$nextTick()
 
-    // Should have search input
-    const searchInputs = wrapper.findAll('input[type="text"]')
-    expect(searchInputs.length).toBeGreaterThan(0)
-    
-    const searchInput = searchInputs.find((input: any) => 
-      input.attributes('placeholder')?.includes('Search') || 
-      input.attributes('placeholder')?.includes('deliveries')
-    )
-    expect(searchInput).toBeDefined()
+    // Should have search input (mocked component)
+    const searchInput = wrapper.findComponent({ name: 'SearchBox' })
+    expect(searchInput.exists()).toBe(true)
+    expect(searchInput.props('placeholder')).toContain('Search')
   })
 
   it('should show empty state when no deliveries', async () => {

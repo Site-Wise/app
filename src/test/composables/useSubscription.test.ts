@@ -8,8 +8,8 @@ vi.mock('../../services/pocketbase', () => {
   
   // Initialize with mock data
   collections.set('subscription_plans', [
-    { id: 'plan-1', name: 'Free', is_active: true, features: { max_items: 1, max_vendors: 1, max_incoming_deliveries: 5, max_service_bookings: 5, max_payments: 5, max_sites: 1 }, price: 0, currency: 'INR' },
-    { id: 'plan-2', name: 'Pro', is_active: true, features: { max_items: -1, max_vendors: -1, max_incoming_deliveries: -1, max_service_bookings: -1, max_payments: -1, max_sites: 3 }, price: 29.99, currency: 'INR' }
+    { id: 'plan-1', name: 'Free', is_active: true, features: { max_items: 1, max_vendors: 1, max_deliveries: 5, max_service_bookings: 5, max_payments: 5, max_sites: 1 }, price: 0, currency: 'INR' },
+    { id: 'plan-2', name: 'Pro', is_active: true, features: { max_items: -1, max_vendors: -1, max_deliveries: -1, max_service_bookings: -1, max_payments: -1, max_sites: 3 }, price: 29.99, currency: 'INR' }
   ])
   collections.set('site_subscriptions', [])
   collections.set('subscription_usage', [])
@@ -70,7 +70,7 @@ const mockFreePlan = {
   features: {
     max_items: 1,
     max_vendors: 1,
-    max_incoming_deliveries: 5,
+    max_deliveries: 5,
     max_service_bookings: 5,
     max_payments: 5,
     max_sites: 1
@@ -86,7 +86,7 @@ const mockBasicPlan = {
   features: {
     max_items: -1,
     max_vendors: -1,
-    max_incoming_deliveries: -1,
+    max_deliveries: -1,
     max_service_bookings: -1,
     max_payments: -1,
     max_sites: 3
@@ -114,7 +114,7 @@ const mockUsage = {
   period_end: '2024-02-01T00:00:00.000Z',
   items_count: 0,
   vendors_count: 0,
-  incoming_deliveries_count: 0,
+  deliveries_count: 0,
   service_bookings_count: 0,
   payments_count: 0
 };
@@ -283,7 +283,7 @@ describe('useSubscription', () => {
       expect(usageLimits.value).toEqual({
         items: { current: 0, max: 1, unlimited: false, disabled: false, exceeded: false },
         vendors: { current: 0, max: 1, unlimited: false, disabled: false, exceeded: false },
-        incoming_deliveries: { current: 0, max: 5, unlimited: false, disabled: false, exceeded: false },
+        deliveries: { current: 0, max: 5, unlimited: false, disabled: false, exceeded: false },
         service_bookings: { current: 0, max: 5, unlimited: false, disabled: false, exceeded: false },
         payments: { current: 0, max: 5, unlimited: false, disabled: false, exceeded: false }
       });
@@ -454,7 +454,7 @@ describe('useSubscription', () => {
         const unlimitedPlan = createMockPlanWithLimits({
           max_items: -1,
           max_vendors: -1,
-          max_incoming_deliveries: -1,
+          max_deliveries: -1,
           max_service_bookings: -1,
           max_payments: -1,
           max_sites: -1
@@ -474,7 +474,7 @@ describe('useSubscription', () => {
 
         expect(checkCreateLimit('items')).toBe(true);
         expect(checkCreateLimit('vendors')).toBe(true);
-        expect(checkCreateLimit('incoming_deliveries')).toBe(true);
+        expect(checkCreateLimit('deliveries')).toBe(true);
         expect(checkCreateLimit('service_bookings')).toBe(true);
         expect(checkCreateLimit('payments')).toBe(true);
 
@@ -487,7 +487,7 @@ describe('useSubscription', () => {
         const unlimitedPlan = createMockPlanWithLimits({
           max_items: -1,
           max_vendors: -1,
-          max_incoming_deliveries: -1,
+          max_deliveries: -1,
           max_service_bookings: -1,
           max_payments: -1,
           max_sites: -1
@@ -516,7 +516,7 @@ describe('useSubscription', () => {
         const disabledPlan = createMockPlanWithLimits({
           max_items: 0,
           max_vendors: 0,
-          max_incoming_deliveries: 0,
+          max_deliveries: 0,
           max_service_bookings: 0,
           max_payments: 0,
           max_sites: 1
@@ -535,7 +535,7 @@ describe('useSubscription', () => {
 
         expect(checkCreateLimit('items')).toBe(false);
         expect(checkCreateLimit('vendors')).toBe(false);
-        expect(checkCreateLimit('incoming_deliveries')).toBe(false);
+        expect(checkCreateLimit('deliveries')).toBe(false);
         expect(checkCreateLimit('service_bookings')).toBe(false);
         expect(checkCreateLimit('payments')).toBe(false);
 
@@ -549,7 +549,7 @@ describe('useSubscription', () => {
         const disabledPlan = createMockPlanWithLimits({
           max_items: 0,
           max_vendors: 0,
-          max_incoming_deliveries: 0,
+          max_deliveries: 0,
           max_service_bookings: 0,
           max_payments: 0,
           max_sites: 1
@@ -578,7 +578,7 @@ describe('useSubscription', () => {
         const limitedPlan = createMockPlanWithLimits({
           max_items: 10,
           max_vendors: 5,
-          max_incoming_deliveries: 20,
+          max_deliveries: 20,
           max_service_bookings: 15,
           max_payments: 25,
           max_sites: 3
@@ -619,7 +619,7 @@ describe('useSubscription', () => {
         const limitedPlan = createMockPlanWithLimits({
           max_items: 10,
           max_vendors: 5,
-          max_incoming_deliveries: 20,
+          max_deliveries: 20,
           max_service_bookings: 15,
           max_payments: 25,
           max_sites: 3
@@ -657,7 +657,7 @@ describe('useSubscription', () => {
         const limitedPlan = createMockPlanWithLimits({
           max_items: 10,
           max_vendors: 5,
-          max_incoming_deliveries: 20,
+          max_deliveries: 20,
           max_service_bookings: 15,
           max_payments: 25,
           max_sites: 3
@@ -699,7 +699,7 @@ describe('useSubscription', () => {
         const mixedPlan = createMockPlanWithLimits({
           max_items: -1,        // unlimited
           max_vendors: 0,       // disabled
-          max_incoming_deliveries: 10,  // limited
+          max_deliveries: 10,  // limited
           max_service_bookings: -1,     // unlimited
           max_payments: 0,      // disabled
           max_sites: 3          // limited
@@ -709,7 +709,7 @@ describe('useSubscription', () => {
           ...mockUsage, 
           items_count: 100, 
           vendors_count: 0, 
-          incoming_deliveries_count: 5 
+          deliveries_count: 5 
         };
 
         const mockCollection = vi.fn((collectionName: string) => {
@@ -742,10 +742,10 @@ describe('useSubscription', () => {
         expect(usageLimits.value?.vendors.unlimited).toBe(false);
 
         // Limited feature under limit should allow creation
-        expect(checkCreateLimit('incoming_deliveries')).toBe(true);
-        expect(usageLimits.value?.incoming_deliveries.disabled).toBe(false);
-        expect(usageLimits.value?.incoming_deliveries.unlimited).toBe(false);
-        expect(usageLimits.value?.incoming_deliveries.exceeded).toBe(false);
+        expect(checkCreateLimit('deliveries')).toBe(true);
+        expect(usageLimits.value?.deliveries.disabled).toBe(false);
+        expect(usageLimits.value?.deliveries.unlimited).toBe(false);
+        expect(usageLimits.value?.deliveries.exceeded).toBe(false);
 
         // Unlimited service bookings should allow creation
         expect(checkCreateLimit('service_bookings')).toBe(true);
@@ -762,7 +762,7 @@ describe('useSubscription', () => {
         const unlimitedPlan = createMockPlanWithLimits({
           max_items: -1,
           max_vendors: -1,
-          max_incoming_deliveries: -1,
+          max_deliveries: -1,
           max_service_bookings: -1,
           max_payments: -1,
           max_sites: -1
@@ -772,7 +772,7 @@ describe('useSubscription', () => {
           ...mockUsage, 
           items_count: 1000, 
           vendors_count: 500,
-          incoming_deliveries_count: 2000,
+          deliveries_count: 2000,
           service_bookings_count: 800,
           payments_count: 1500
         };
@@ -803,7 +803,7 @@ describe('useSubscription', () => {
         const mixedPlan = createMockPlanWithLimits({
           max_items: -1,        // unlimited
           max_vendors: 10,      // limited - will exceed
-          max_incoming_deliveries: -1,  // unlimited
+          max_deliveries: -1,  // unlimited
           max_service_bookings: 0,      // disabled
           max_payments: -1,     // unlimited
           max_sites: 3
@@ -813,7 +813,7 @@ describe('useSubscription', () => {
           ...mockUsage, 
           items_count: 1000,    // unlimited, so OK
           vendors_count: 15,    // exceeds limit of 10
-          incoming_deliveries_count: 500  // unlimited, so OK
+          deliveries_count: 500  // unlimited, so OK
         };
 
         const mockCollection = vi.fn((collectionName: string) => {

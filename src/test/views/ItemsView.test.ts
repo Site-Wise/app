@@ -33,7 +33,8 @@ vi.mock('../../composables/useI18n', () => ({
         'common.copy': 'Copy',
         'messages.confirmDelete': 'Are you sure you want to delete this {item}?',
         'tags.itemTags': 'Item Tags',
-        'tags.searchItemTags': 'Search item tags...'
+        'tags.searchItemTags': 'Search item tags...',
+        'search.items': 'Search items by name or description...'
       }
       let result = translations[key] || key
       if (params) {
@@ -121,7 +122,7 @@ vi.mock('../../services/pocketbase', () => {
                   features: {
                     max_items: 10,
                     max_vendors: 10,
-                    max_incoming_deliveries: 50,
+                    max_deliveries: 50,
                     max_service_bookings: 50,
                     max_payments: 50,
                     max_sites: 1
@@ -141,7 +142,7 @@ vi.mock('../../services/pocketbase', () => {
               period_end: '2024-02-01T00:00:00.000Z',
               items_count: 0,
               vendors_count: 0,
-              incoming_deliveries_count: 0,
+              deliveries_count: 0,
               service_bookings_count: 0,
               payments_count: 0
             }),
@@ -212,6 +213,29 @@ vi.mock('../../composables/useSite', () => ({
 // Import dependencies after all mocks
 import ItemsView from '../../views/ItemsView.vue'
 import { createMockRouter } from '../utils/test-utils'
+
+// Mock SearchBox component
+vi.mock('../../components/SearchBox.vue', () => ({
+  default: {
+    name: 'SearchBox',
+    template: '<input type="text" class="mock-search-box" :placeholder="placeholder" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    props: ['modelValue', 'placeholder', 'searchLoading'],
+    emits: ['update:modelValue']
+  }
+}))
+
+// Mock useSearch composable for items
+vi.mock('../../composables/useSearch', () => ({
+  useItemSearch: () => {
+    const { ref } = require('vue')
+    return {
+      searchQuery: ref(''),
+      loading: ref(false),
+      results: ref([]),
+      loadAll: vi.fn()
+    }
+  }
+}))
 
 describe('ItemsView', () => {
   let wrapper: any
@@ -440,5 +464,13 @@ describe('ItemsView', () => {
     // Check that TagSelector component is present
     expect(wrapper.find('.tag-selector-mock').exists()).toBe(true)
     expect(wrapper.find('[data-testid="tag-input"]').exists()).toBe(true)
+  })
+
+  it('should display search functionality', async () => {
+    await wrapper.vm.$nextTick()
+
+    const searchInput = wrapper.findComponent({ name: 'SearchBox' })
+    expect(searchInput.exists()).toBe(true)
+    expect(searchInput.props('placeholder')).toContain('Search')
   })
 })

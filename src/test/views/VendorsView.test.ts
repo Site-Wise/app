@@ -20,7 +20,8 @@ vi.mock('../../composables/useI18n', () => ({
         'common.actions': 'Actions',
         'common.view': 'View',
         'common.edit': 'Edit',
-        'common.delete': 'Delete'
+        'common.delete': 'Delete',
+        'search.vendors': 'Search vendors by name, contact person, email, or phone...'
       }
       let result = translations[key] || key
       if (params) {
@@ -117,6 +118,29 @@ vi.mock('vue-router', async (importOriginal) => {
 import VendorsView from '../../views/VendorsView.vue'
 import { createMockRouter } from '../utils/test-utils'
 
+// Mock SearchBox component
+vi.mock('../../components/SearchBox.vue', () => ({
+  default: {
+    name: 'SearchBox',
+    template: '<input type="text" class="mock-search-box" :placeholder="placeholder" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    props: ['modelValue', 'placeholder', 'searchLoading'],
+    emits: ['update:modelValue']
+  }
+}))
+
+// Mock useSearch composable for vendors
+vi.mock('../../composables/useSearch', () => ({
+  useVendorSearch: () => {
+    const { ref } = require('vue')
+    return {
+      searchQuery: ref(''),
+      loading: ref(false),
+      results: ref([]),
+      loadAll: vi.fn()
+    }
+  }
+}))
+
 describe('VendorsView', () => {
   let wrapper: any
   let pinia: any
@@ -212,6 +236,16 @@ describe('VendorsView', () => {
       
       // Test that the component has the canCreateVendor computed property
       expect(typeof wrapper.vm.canCreateVendor).toBe('boolean')
+    })
+  })
+
+  describe('Search Functionality', () => {
+    it('should display search functionality', async () => {
+      await wrapper.vm.$nextTick()
+
+      const searchInput = wrapper.findComponent({ name: 'SearchBox' })
+      expect(searchInput.exists()).toBe(true)
+      expect(searchInput.props('placeholder')).toContain('Search')
     })
   })
 })
