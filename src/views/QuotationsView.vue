@@ -187,9 +187,7 @@ import {
   quotationService, 
   itemService, 
   vendorService,
-  type Quotation, 
-  type Item, 
-  type Vendor 
+  type Quotation 
 } from '../services/pocketbase';
 import { useI18n } from '../composables/useI18n';
 import { useSiteData } from '../composables/useSiteData';
@@ -205,16 +203,16 @@ const quotations = computed(() => {
 });
 
 // Use site data management
-const { data: allQuotationsData, loading: quotationsLoading, reload: reloadQuotations } = useSiteData(
-  async (siteId) => await quotationService.getAll()
+const { data: allQuotationsData, reload: reloadQuotations } = useSiteData(
+  async () => await quotationService.getAll()
 );
 
-const { data: itemsData, loading: itemsLoading } = useSiteData(
-  async (siteId) => await itemService.getAll()
+const { data: itemsData } = useSiteData(
+  async () => await itemService.getAll()
 );
 
-const { data: vendorsData, loading: vendorsLoading } = useSiteData(
-  async (siteId) => await vendorService.getAll()
+const { data: vendorsData } = useSiteData(
+  async () => await vendorService.getAll()
 );
 
 // Computed properties from useSiteData
@@ -225,10 +223,6 @@ const showAddModal = ref(false);
 const editingQuotation = ref<Quotation | null>(null);
 const loading = ref(false);
 
-// Compute overall loading state
-const overallLoading = computed(() => 
-  quotationsLoading.value || itemsLoading.value || vendorsLoading.value
-);
 const firstInputRef = ref<HTMLSelectElement>();
 
 const form = reactive({

@@ -65,22 +65,23 @@
           <div v-if="userSites.length > 0" class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">
             <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Your existing sites</h3>
             <div class="space-y-3">
-              <div v-for="userSite in userSites" :key="userSite.id" 
-                   @click="selectSite(userSite.expand?.site?.id!)"
-                   class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700"
-                   v-if="userSite.expand?.site">
+              <template v-for="userSite in userSites" :key="userSite.id">
+                <div v-if="userSite.expand?.site"
+                     @click="selectSite(userSite.expand?.site?.id!)"
+                     class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700">
                 <div class="flex items-center justify-between">
                   <div class="flex-1">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ userSite.expand.site.name }}</h3>
-                    <p v-if="userSite.expand.site.description" class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ userSite.expand.site.description }}</p>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ userSite.expand?.site?.name }}</h3>
+                    <p v-if="userSite.expand?.site?.description" class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ userSite.expand?.site?.description }}</p>
                     <div class="mt-2 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                      <span>{{ userSite.expand.site.total_units }} units</span>
-                      <span>{{ userSite.expand.site.total_planned_area?.toLocaleString() || 0 }} sqft</span>
+                      <span>{{ userSite.expand?.site?.total_units }} units</span>
+                      <span>{{ userSite.expand?.site?.total_planned_area?.toLocaleString() || 0 }} sqft</span>
                     </div>
                   </div>
                   <ChevronRight class="h-5 w-5 text-gray-400" />
                 </div>
-              </div>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -96,22 +97,23 @@
         </div>
         
         <div v-else class="space-y-4">
-          <div v-for="userSite in userSites" :key="userSite.id" 
-               @click="selectSite(userSite.expand?.site?.id!)"
-               class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700"
-               v-if="userSite.expand?.site">
+          <template v-for="userSite in userSites" :key="userSite.id">
+            <div v-if="userSite.expand?.site"
+                 @click="selectSite(userSite.expand?.site?.id!)"
+                 class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700">
             <div class="flex items-center justify-between">
               <div class="flex-1">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ userSite.expand.site.name }}</h3>
-                <p v-if="userSite.expand.site.description" class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ userSite.expand.site.description }}</p>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ userSite.expand?.site?.name }}</h3>
+                <p v-if="userSite.expand?.site?.description" class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ userSite.expand?.site?.description }}</p>
                 <div class="mt-2 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                  <span>{{ userSite.expand.site.total_units }} units</span>
-                  <span>{{ userSite.expand.site.total_planned_area?.toLocaleString() || 0 }} sqft</span>
+                  <span>{{ userSite.expand?.site?.total_units }} units</span>
+                  <span>{{ userSite.expand?.site?.total_planned_area?.toLocaleString() || 0 }} sqft</span>
                 </div>
               </div>
               <ChevronRight class="h-5 w-5 text-gray-400" />
             </div>
-          </div>
+            </div>
+          </template>
           
           <div class="pt-4 border-t border-gray-200 dark:border-gray-600">
             <button @click="showCreateModal = true" class="w-full btn-outline">

@@ -616,12 +616,12 @@ const exportLedgerPDF = () => {
   
   // Header
   doc.setFontSize(18);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont("helvetica", "bold");
   doc.text('Vendor Ledger', margin, yPosition);
   
   yPosition += 10;
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont("helvetica", "normal");
   doc.text(`Vendor: ${vendor.value.name}`, margin, yPosition);
   
   yPosition += 6;
@@ -641,7 +641,7 @@ const exportLedgerPDF = () => {
   yPosition += 15;
   
   // Table headers
-  doc.setFont('helvetica', 'bold');
+  doc.setFont("helvetica", "bold");
   const headers = ['Date', 'Description', 'Reference', 'Dues', 'Payments'];
   const colWidths = [25, 70, 25, 25, 25];
   let xPos = margin;
@@ -656,7 +656,7 @@ const exportLedgerPDF = () => {
   yPosition += 5;
   
   // Table rows
-  doc.setFont('helvetica', 'normal');
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   
   // Combine and sort all transactions
@@ -666,11 +666,15 @@ const exportLedgerPDF = () => {
     // Create description from delivery items
     let description = '';
     if (delivery.expand?.delivery_items && delivery.expand.delivery_items.length > 0) {
-      const itemDescriptions = delivery.expand.delivery_items.map(deliveryItem => {
-        const itemName = deliveryItem.expand?.item?.name || 'Unknown Item';
-        return `${itemName} (${deliveryItem.quantity} ${deliveryItem.expand?.item?.unit || 'units'})`;
-      });
-      description = itemDescriptions.join(', ');
+      const itemNames = delivery.expand?.delivery_items.map((obj) => 
+        `${obj.expand?.item?.name} (${obj.quantity} ${obj.expand?.item?.unit})`
+      );
+      // const itemDescriptions = delivery.expand.delivery_items.map(deliveryItem => {
+      //   const itemName = deliveryItem.expand?.item?.name || 'Unknown Item';
+      //   return `${itemName} (${deliveryItem.quantity} ${deliveryItem.expand?.item?.unit || 'units'})`;
+      // });
+      // description = itemDescriptions.join(', ');
+      description = 'Received: ' + itemNames.join(', ') 
     } else {
       description = `Delivery #${delivery.id?.slice(-6) || 'Unknown'}`;
     }
@@ -724,8 +728,8 @@ const exportLedgerPDF = () => {
       transaction.date,
       '', // Description handled separately for multi-line
       transaction.reference,
-      transaction.dues ? `₹${transaction.dues.toFixed(2)}` : '',
-      transaction.payments ? `₹${transaction.payments.toFixed(2)}` : ''
+      transaction.dues ? String.fromCharCode(8377) + transaction.dues.toFixed(1) : '',
+      transaction.payments ? String.fromCharCode(8377) + transaction.payments.toFixed(1) : ''
     ];
     
     // Draw non-description columns
@@ -785,7 +789,7 @@ const generateLedgerCSV = () => {
   vendorPayments.value.forEach(payment => {
     rows.push([
       payment.payment_date,
-      'Payment received',
+      'Payment done',
       payment.reference || '',
       '', // Empty dues column
       payment.amount, // Payments (credits)

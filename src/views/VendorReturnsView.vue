@@ -368,10 +368,7 @@ import {
   deliveryItemService,
   accountService,
   type VendorReturn,
-  type Vendor,
-  type Delivery,
-  type DeliveryItem,
-  type Account
+  type DeliveryItem
 } from '../services/pocketbase';
 import ReturnModal from '../components/returns/ReturnModal.vue';
 import ReturnDetailsModal from '../components/returns/ReturnDetailsModal.vue';
@@ -381,20 +378,20 @@ const { t } = useI18n();
 const route = useRoute();
 
 // Use site data management
-const { data: returnsData, loading: returnsLoading, reload: reloadReturns } = useSiteData(
-  async (siteId) => await vendorReturnService.getAll()
+const { data: returnsData, reload: reloadReturns } = useSiteData(
+  async () => await vendorReturnService.getAll()
 );
 
-const { data: vendorsData, loading: vendorsLoading } = useSiteData(
-  async (siteId) => await vendorService.getAll()
+const { data: vendorsData } = useSiteData(
+  async () => await vendorService.getAll()
 );
 
-const { data: deliveriesData, loading: deliveriesLoading } = useSiteData(
-  async (siteId) => await deliveryService.getAll()
+const { data: deliveriesData } = useSiteData(
+  async () => await deliveryService.getAll()
 );
 
-const { data: accountsData, loading: accountsLoading } = useSiteData(
-  async (siteId) => await accountService.getAll()
+const { data: accountsData } = useSiteData(
+  async () => await accountService.getAll()
 );
 
 // Computed properties from useSiteData
@@ -406,10 +403,6 @@ const accounts = computed(() => accountsData.value || []);
 const deliveryItems = ref<DeliveryItem[]>([]);
 const loading = ref(false);
 
-// Compute overall loading state
-const overallLoading = computed(() => 
-  returnsLoading.value || vendorsLoading.value || deliveriesLoading.value || accountsLoading.value
-);
 
 // Search and filters
 const searchQuery = ref('');

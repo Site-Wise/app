@@ -321,9 +321,7 @@ import {
   serviceBookingService,
   type AccountTransaction, 
   type Vendor,
-  type Account,
-  type Delivery,
-  type ServiceBooking
+  type Account
 } from '../services/pocketbase';
 
 const route = useRoute();
@@ -337,8 +335,8 @@ interface VendorWithOutstanding extends Vendor {
 }
 
 // Use site data management
-const { data: paymentsData, loading: paymentsLoading, reload: reloadPayments } = useSiteData(
-  async (siteId) => {
+const { data: paymentsData, reload: reloadPayments } = useSiteData(
+  async () => {
     const transactionsData = await accountTransactionService.getAll();
     // Filter to show only debit transactions with vendors (payments)
     return transactionsData.filter(transaction => 
@@ -347,20 +345,20 @@ const { data: paymentsData, loading: paymentsLoading, reload: reloadPayments } =
   }
 );
 
-const { data: vendorsData, loading: vendorsLoading } = useSiteData(
-  async (siteId) => await vendorService.getAll()
+const { data: vendorsData } = useSiteData(
+  async () => await vendorService.getAll()
 );
 
-const { data: accountsData, loading: accountsLoading } = useSiteData(
-  async (siteId) => await accountService.getAll()
+const { data: accountsData } = useSiteData(
+  async () => await accountService.getAll()
 );
 
-const { data: deliveriesData, loading: deliveriesLoading } = useSiteData(
-  async (siteId) => await deliveryService.getAll()
+const { data: deliveriesData } = useSiteData(
+  async () => await deliveryService.getAll()
 );
 
-const { data: serviceBookingsData, loading: serviceBookingsLoading } = useSiteData(
-  async (siteId) => await serviceBookingService.getAll()
+const { data: serviceBookingsData } = useSiteData(
+  async () => await serviceBookingService.getAll()
 );
 
 // Computed properties from useSiteData
@@ -373,11 +371,6 @@ const showAddModal = ref(false);
 const viewingPayment = ref<AccountTransaction | null>(null);
 const loading = ref(false);
 
-// Compute overall loading state
-const overallLoading = computed(() => 
-  paymentsLoading.value || vendorsLoading.value || accountsLoading.value || 
-  deliveriesLoading.value || serviceBookingsLoading.value
-);
 const vendorOutstanding = ref(0);
 const vendorInputRef = ref<HTMLInputElement>();
 const openMobileMenuId = ref<string | null>(null);

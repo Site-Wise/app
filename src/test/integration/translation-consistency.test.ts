@@ -243,7 +243,20 @@ describe('Translation Consistency', () => {
       console.log(`  ${lang}: ${targetKeys.length} keys (${completeness}% complete, ${missingCount} missing, ${extraCount} extra)`);
     }
 
-    // This test always passes but provides useful information
-    expect(true).toBe(true);
+    // This test verifies translation statistics are meaningful
+    expect(languages.length).toBeGreaterThan(1);
+    expect(referenceKeys.length).toBeGreaterThan(0);
+    
+    // Verify each language has meaningful translation data
+    for (const lang of languages) {
+      if (lang === referenceLanguage) continue;
+      
+      const targetKeys = extractKeys(translations[lang as keyof typeof translations]);
+      expect(targetKeys.length).toBeGreaterThan(0);
+      
+      // Ensure translations are at least 50% complete to be useful
+      const completeness = (targetKeys.length / referenceKeys.length) * 100;
+      expect(completeness).toBeGreaterThan(50);
+    }
   });
 });

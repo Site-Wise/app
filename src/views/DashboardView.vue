@@ -96,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, onUnmounted } from 'vue';
+import { computed } from 'vue';
 import { TrendingUp, Calendar, Calculator, DollarSign, Loader2, BarChart3 } from 'lucide-vue-next';
 import { Line } from 'vue-chartjs';
 import {
@@ -125,16 +125,9 @@ import { useSite } from '../composables/useSite';
 import { useSiteData } from '../composables/useSiteData';
 import { useI18n } from '../composables/useI18n';
 import { 
-  itemService, 
-  vendorService, 
   paymentService, 
   deliveryService,
-  serviceBookingService,
-  type Item,
-  type Vendor,
-  type Payment,
-  type Delivery,
-  type ServiceBooking
+  serviceBookingService
 } from '../services/pocketbase';
 
 const { t } = useI18n();
@@ -142,20 +135,16 @@ const { t } = useI18n();
 const { currentSite } = useSite();
 
 // Use site-aware data loading
-const { data: dashboardData, loading, reload: reloadDashboard } = useSiteData(async (siteId) => {
-  const [items, vendors, payments, deliveries, serviceBookings] = await Promise.all([
-    itemService.getAll(),
-    vendorService.getAll(),
+const { data: dashboardData, loading } = useSiteData(async () => {
+  const [payments, deliveries, serviceBookings] = await Promise.all([
     paymentService.getAll(),
     deliveryService.getAll(),
     serviceBookingService.getAll(),
   ]);
   
-  return { items, vendors, payments, deliveries, serviceBookings };
+  return { payments, deliveries, serviceBookings };
 });
 
-const items = computed(() => dashboardData.value?.items || []);
-const vendors = computed(() => dashboardData.value?.vendors || []);
 const payments = computed(() => dashboardData.value?.payments || []);
 const deliveries = computed(() => dashboardData.value?.deliveries || []);
 const serviceBookings = computed(() => dashboardData.value?.serviceBookings || []);

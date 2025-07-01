@@ -291,17 +291,16 @@ describe('ItemsView - useSiteData Integration', () => {
       }
     })
 
-    // Initially should be loading
+    // Initially data should be empty while loading
     await nextTick()
-    expect(wrapper.vm.itemsLoading).toBe(true)
+    expect(wrapper.vm.items).toEqual([])
 
     // Resolve the items promise
     resolveItems(mockItems)
     await new Promise(resolve => setTimeout(resolve, 50))
     await nextTick()
 
-    // Should no longer be loading
-    expect(wrapper.vm.itemsLoading).toBe(false)
+    // Should have loaded data
     expect(wrapper.vm.items).toEqual(mockItems)
   })
 

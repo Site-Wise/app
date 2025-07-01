@@ -247,7 +247,7 @@ import { useSiteData } from '../composables/useSiteData';
 const { t } = useI18n();
 const router = useRouter();
 // Use site-aware data loading
-const { data: accountsData, loading: dataLoading, reload: reloadAccounts } = useSiteData(async (siteId) => {
+const { data: accountsData, reload: reloadAccounts } = useSiteData(async () => {
   const accounts = await accountService.getAll();
   return accounts;
 });
@@ -260,7 +260,7 @@ const accounts = computed(() => {
   return searchQuery.value.trim() ? searchResults.value : (accountsData.value || [])
 });
 
-const allAccounts = computed(() => accountsData.value || []);
+// Removed unused allAccounts computed property
 const showAddModal = ref(false);
 const editingAccount = ref<Account | null>(null);
 const loading = ref(false);

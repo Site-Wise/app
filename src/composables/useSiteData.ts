@@ -24,7 +24,7 @@ export function useSiteData<T>(
   reload: () => Promise<void>;
 } {
   const siteStore = useSiteStore();
-  const data = ref<T | null>(null);
+  const data = ref(null) as Ref<T | null>;
   const loading = ref(false);
   const error = ref<Error | null>(null);
   let currentLoadId = 0;
@@ -130,7 +130,7 @@ export function useSitePaginatedData<T>(
   reload: () => Promise<void>;
 } {
   const siteStore = useSiteStore();
-  const items = ref<T[]>([]);
+  const items = ref([]) as Ref<T[]>;
   const loading = ref(false);
   const error = ref<Error | null>(null);
   const currentPage = ref(1);

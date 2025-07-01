@@ -37,7 +37,7 @@ export const useSiteStore = defineStore('site', () => {
         sort: '-created'
       })
 
-      userSites.value = fetchedUserSites
+      userSites.value = fetchedUserSites as unknown as SiteUser[]
 
       // Load current site if we have a site ID
       if (currentSiteId.value) {
@@ -77,12 +77,12 @@ export const useSiteStore = defineStore('site', () => {
 
       // Update local state immediately for better UX
       currentSite.value = site
-      currentSiteId.value = site.id
+      currentSiteId.value = site.id || null
       currentUserRole.value = role
 
       // Persist to storage
-      setCurrentSiteId(site.id)
-      setCurrentUserRole(role)
+      setCurrentSiteId(site.id || null)
+      setCurrentUserRole(role as 'owner' | 'supervisor' | 'accountant' | null)
     } catch (error) {
       console.error('Error selecting site:', error)
       // Revert on error
@@ -109,7 +109,7 @@ export const useSiteStore = defineStore('site', () => {
 
       // Reload sites and select the new one
       await loadUserSites()
-      await selectSite(site, 'owner')
+      await selectSite(site as unknown as Site, 'owner')
 
       return site
     } catch (error) {
@@ -124,13 +124,13 @@ export const useSiteStore = defineStore('site', () => {
       
       // Update local state if this is the current site
       if (currentSite.value?.id === id) {
-        currentSite.value = site
+        currentSite.value = site as unknown as Site
       }
 
       // Update in userSites list
       const index = userSites.value.findIndex(us => us.site === id)
       if (index !== -1 && userSites.value[index].expand?.site) {
-        (userSites.value[index].expand.site as Site) = site
+        userSites.value[index].expand!.site = site as unknown as Site
       }
 
       return site
@@ -145,7 +145,7 @@ export const useSiteStore = defineStore('site', () => {
     if (!targetSiteId) return false
 
     const userSite = userSites.value.find(us => us.site === targetSiteId)
-    return userSite?.role === 'owner' || userSite?.role === 'manager'
+    return userSite?.role === 'owner' || userSite?.role === 'supervisor'
   }
 
   function isOwner(siteId?: string): boolean {

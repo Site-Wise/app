@@ -190,9 +190,6 @@ import {
   serviceBookingService,
   tagService,
   type Vendor,
-  type Delivery,
-  type Payment,
-  type ServiceBooking,
   type Tag as TagType
 } from '../services/pocketbase';
 
@@ -202,24 +199,24 @@ const { success, error } = useToast();
 
 const router = useRouter();
 // Use site data management
-const { data: vendorsData, loading: vendorsLoading, reload: reloadVendors } = useSiteData(
-  async (siteId) => await vendorService.getAll()
+const { data: vendorsData, reload: reloadVendors } = useSiteData(
+  async () => await vendorService.getAll()
 );
 
-const { data: deliveriesData, loading: deliveriesLoading } = useSiteData(
-  async (siteId) => await deliveryService.getAll()
+const { data: deliveriesData } = useSiteData(
+  async () => await deliveryService.getAll()
 );
 
-const { data: serviceBookingsData, loading: bookingsLoading } = useSiteData(
-  async (siteId) => await serviceBookingService.getAll()
+const { data: serviceBookingsData } = useSiteData(
+  async () => await serviceBookingService.getAll()
 );
 
-const { data: paymentsData, loading: paymentsLoading } = useSiteData(
-  async (siteId) => await paymentService.getAll()
+const { data: paymentsData } = useSiteData(
+  async () => await paymentService.getAll()
 );
 
-const { data: allTagsData, loading: tagsLoading } = useSiteData(
-  async (siteId) => await tagService.getAll()
+const { data: allTagsData } = useSiteData(
+  async () => await tagService.getAll()
 );
 
 // Computed properties from useSiteData
@@ -232,11 +229,6 @@ const showAddModal = ref(false);
 const editingVendor = ref<Vendor | null>(null);
 const loading = ref(false);
 
-// Compute overall loading state
-const overallLoading = computed(() => 
-  vendorsLoading.value || deliveriesLoading.value || bookingsLoading.value || 
-  paymentsLoading.value || tagsLoading.value
-);
 const firstInputRef = ref<HTMLInputElement>();
 
 const canCreateVendor = computed(() => {

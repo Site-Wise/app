@@ -158,8 +158,7 @@ describe('useSubscription', () => {
       expect(isLoading.value).toBe(false);
     });
 
-    it('should create usage record if it does not exist', async () => {
-      const mockCreate = vi.fn().mockResolvedValue(mockUsage);
+    it('should handle missing usage record gracefully', async () => {
       const mockCollection = vi.fn((name: string) => {
         if (name === 'site_subscriptions') {
           return {
@@ -168,29 +167,20 @@ describe('useSubscription', () => {
         }
         if (name === 'subscription_usage') {
           return {
-            getFirstListItem: vi.fn().mockRejectedValue(new Error('Not found')),
-            create: mockCreate
+            getFirstListItem: vi.fn().mockRejectedValue(new Error('Not found'))
           };
         }
-        return { getFirstListItem: vi.fn(), create: vi.fn() };
+        return { getFirstListItem: vi.fn() };
       });
       (pb.collection as Mock).mockImplementation(mockCollection);
 
-      const { loadSubscription, currentUsage } = useSubscription();
+      const { loadSubscription, currentUsage, currentSubscription } = useSubscription();
 
       await loadSubscription();
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        site: 'site_1',
-        period_start: expect.any(String),
-        period_end: expect.any(String),
-        items_count: 0,
-        vendors_count: 0,
-        incoming_deliveries_count: 0,
-        service_bookings_count: 0,
-        payments_count: 0
-      });
-      expect(currentUsage.value).toEqual(mockUsage);
+      // Usage record is now created by PocketBase hooks, not the composable
+      expect(currentUsage.value).toBeNull();
+      expect(currentSubscription.value).toEqual(mockSubscription);
     });
 
     it('should handle errors gracefully', async () => {

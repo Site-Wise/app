@@ -29,7 +29,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
-      '@tauri-apps/api/tauri': resolve(__dirname, './src/test/mocks/@tauri-apps/api/tauri.ts')
+      '@tauri-apps/api/tauri': resolve(__dirname, './src/test/mocks/@tauri-apps/api/tauri.ts'),
+      'virtual:pwa-register/vue': resolve(__dirname, './src/test/mocks/virtual-pwa-register.ts')
     }
   }
 })

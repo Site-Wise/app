@@ -10,7 +10,6 @@ export function useSite() {
     userSites, 
     currentUserRole, 
     isLoading, 
-    isInitialized,
     isReadyForRouting 
   } = storeToRefs(store);
 

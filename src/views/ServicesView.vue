@@ -284,7 +284,6 @@ import {
   serviceBookingService,
   tagService,
   type Service,
-  type ServiceBooking,
   type Tag as TagType
 } from '../services/pocketbase';
 
@@ -293,16 +292,16 @@ const { canCreate, canUpdate, canDelete } = usePermissions();
 const router = useRouter();
 
 // Use reactive site data management
-const { data: services, loading: servicesLoading, reload: reloadServices } = useSiteData(
-  async (siteId) => await serviceService.getAll()
+const { data: services, loading, reload: reloadServices } = useSiteData(
+  async () => await serviceService.getAll()
 );
 
-const { data: serviceBookings, loading: bookingsLoading } = useSiteData(
-  async (siteId) => await serviceBookingService.getAll()
+const { data: serviceBookings } = useSiteData(
+  async () => await serviceBookingService.getAll()
 );
 
-const { data: allTags, loading: tagsLoading } = useSiteData(
-  async (siteId) => await tagService.getAll()
+const { data: allTags } = useSiteData(
+  async () => await tagService.getAll()
 );
 
 const serviceTags = ref<Map<string, TagType[]>>(new Map());
@@ -311,8 +310,6 @@ const editingService = ref<Service | null>(null);
 const saveLoading = ref(false);
 const nameInputRef = ref<HTMLInputElement>();
 
-// Compute overall loading state
-const loading = computed(() => servicesLoading.value || bookingsLoading.value || tagsLoading.value);
 
 const form = reactive({
   name: '',

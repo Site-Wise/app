@@ -277,10 +277,10 @@ const otherSites = computed(() => {
   return userSites.value
     .filter(userSite => userSite.expand?.site && userSite.expand.site.id !== currentSite.value?.id)
     .map(userSite => ({
-      ...userSite.expand.site,
+      ...userSite.expand!.site!,
       userRole: userSite.role,
       isOwner: userSite.role === 'owner'
-    }));
+    } as SiteWithOwnership));
 });
 
 const selectSite = async (siteId: string) => {

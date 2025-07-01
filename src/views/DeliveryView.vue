@@ -471,7 +471,7 @@ const { success, error } = useToast();
 
 // Use site data management
 const { data: allDeliveriesData, loading: deliveriesLoading, reload: reloadDeliveries } = useSiteData(
-  async (siteId) => {
+  async () => {
     const deliveryData = await deliveryService.getAll();
     // Sort deliveries by delivery date descending (newest first)
     return deliveryData.sort((a, b) => 
@@ -488,7 +488,7 @@ const deliveries = computed(() => {
   return searchQuery.value.trim() ? searchResults.value : (allDeliveriesData.value || [])
 });
 
-const allDeliveries = computed(() => allDeliveriesData.value || []);
+// Removed unused allDeliveries computed property
 const showAddModal = ref(false);
 const editingDelivery = ref<Delivery | null>(null);
 const viewingDelivery = ref<Delivery | null>(null);

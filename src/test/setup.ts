@@ -51,6 +51,14 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 })
 
+// Mock ServiceWorkerRegistration for background sync
+const mockServiceWorkerRegistration = {
+  prototype: {},
+  sync: {
+    register: vi.fn()
+  }
+}
+
 // Mock navigator
 Object.defineProperty(window, 'navigator', {
   value: {
@@ -64,6 +72,12 @@ Object.defineProperty(window, 'navigator', {
       })
     }
   },
+  writable: true,
+})
+
+// Mock ServiceWorkerRegistration
+Object.defineProperty(window, 'ServiceWorkerRegistration', {
+  value: mockServiceWorkerRegistration,
   writable: true,
 })
 
@@ -103,3 +117,11 @@ Object.defineProperty(window, 'Notification', {
 // Add requestPermission as a static method
 window.Notification.requestPermission = vi.fn().mockResolvedValue('granted')
 window.Notification.permission = 'default'
+
+// Mock virtual:pwa-register/vue
+vi.mock('virtual:pwa-register/vue', () => ({
+  useRegisterSW: () => ({
+    needRefresh: { value: false },
+    updateServiceWorker: vi.fn()
+  })
+}))

@@ -393,9 +393,7 @@ import {
   serviceBookingService, 
   serviceService,
   vendorService,
-  type ServiceBooking, 
-  type Service, 
-  type Vendor 
+  type ServiceBooking 
 } from '../services/pocketbase';
 
 const { t } = useI18n();
@@ -410,16 +408,16 @@ const serviceBookings = computed(() => {
 });
 
 // Use site data management
-const { data: allServiceBookingsData, loading: bookingsLoading, reload: reloadBookings } = useSiteData(
-  async (siteId) => await serviceBookingService.getAll()
+const { data: allServiceBookingsData, reload: reloadBookings } = useSiteData(
+  async () => await serviceBookingService.getAll()
 );
 
-const { data: servicesData, loading: servicesLoading } = useSiteData(
-  async (siteId) => await serviceService.getAll()
+const { data: servicesData } = useSiteData(
+  async () => await serviceService.getAll()
 );
 
-const { data: vendorsData, loading: vendorsLoading } = useSiteData(
-  async (siteId) => await vendorService.getAll()
+const { data: vendorsData } = useSiteData(
+  async () => await vendorService.getAll()
 );
 
 // Computed properties from useSiteData
@@ -431,10 +429,6 @@ const editingBooking = ref<ServiceBooking | null>(null);
 const viewingBooking = ref<ServiceBooking | null>(null);
 const loading = ref(false);
 
-// Compute overall loading state
-const overallLoading = computed(() => 
-  bookingsLoading.value || servicesLoading.value || vendorsLoading.value
-);
 const serviceInputRef = ref<HTMLInputElement>();
 const openMobileMenuId = ref<string | null>(null);
 

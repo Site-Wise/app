@@ -162,8 +162,8 @@
             />
             
             <div class="flex space-x-3 pt-4">
-              <button type="submit" :disabled="loading" class="flex-1 btn-primary">
-                <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
+              <button type="submit" :disabled="formLoading" class="flex-1 btn-primary">
+                <Loader2 v-if="formLoading" class="mr-2 h-4 w-4 animate-spin" />
                 {{ editingItem ? t('common.update') : t('common.create') }}
               </button>
               <button type="button" @click="closeModal" class="flex-1 btn-outline">
@@ -191,7 +191,6 @@ import {
   deliveryService,
   tagService,
   type Item,
-  type Delivery,
   type Tag as TagType
 } from '../services/pocketbase';
 
@@ -202,7 +201,7 @@ const { success, error } = useToast();
 const router = useRouter();
 
 // Use site-aware data loading
-const { data: itemsData, loading: itemsLoading, reload: reloadItems } = useSiteData(async (siteId) => {
+const { data: itemsData, reload: reloadItems } = useSiteData(async () => {
   const [items, deliveries, allTags] = await Promise.all([
     itemService.getAll(),
     deliveryService.getAll(),
@@ -227,7 +226,7 @@ const itemTags = computed(() => itemsData.value?.itemTags || new Map());
 
 const showAddModal = ref(false);
 const editingItem = ref<Item | null>(null);
-const loading = ref(false);
+const formLoading = ref(false);
 const nameInputRef = ref<HTMLInputElement>();
 
 const canCreateItem = computed(() => {
@@ -306,7 +305,7 @@ const handleAddItem = async () => {
 };
 
 const saveItem = async () => {
-  loading.value = true;
+  formLoading.value = true;
   try {
     if (editingItem.value) {
       await itemService.update(editingItem.value.id!, form);
@@ -326,7 +325,7 @@ const saveItem = async () => {
     console.error('Error saving item:', err);
     error(t('messages.error'));
   } finally {
-    loading.value = false;
+    formLoading.value = false;
   }
 };
 

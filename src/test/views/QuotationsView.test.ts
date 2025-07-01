@@ -398,19 +398,18 @@ describe('QuotationsView', () => {
   it('should reload data when site changes', async () => {
     // Since useSiteData handles site changes automatically through reactive watchers,
     // we verify that the component properly uses useSiteData which will handle reloading
-    const reloadMock = vi.fn()
-    
-    // Check that useSiteData was called (which means the component is using reactive data)
     const { useSiteData } = await import('../../composables/useSiteData')
-    expect(vi.mocked(useSiteData)).toHaveBeenCalled()
     
-    // In a real scenario, useSiteData internally watches for site changes
-    // and reloads data automatically. We can test this indirectly by verifying
-    // that the component uses the pattern correctly.
+    // Component should call useSiteData for quotations, items, and vendors
+    expect(vi.mocked(useSiteData)).toHaveBeenCalledTimes(3)
+    
+    // Verify the component is properly mounted and using reactive data
     expect(wrapper.vm).toBeDefined()
+    expect(wrapper.exists()).toBe(true)
     
-    // The reload functionality is tested in useSiteData.test.ts
-    // Here we just verify the component uses the pattern
-    expect(true).toBe(true)
+    // The useSiteData composable should provide reactive data loading
+    // This is tested more thoroughly in useSiteData.test.ts
+    const mockCalls = vi.mocked(useSiteData).mock.calls
+    expect(mockCalls.length).toBeGreaterThan(0)
   })
 })
