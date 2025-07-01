@@ -65,16 +65,17 @@
           <div v-if="userSites.length > 0" class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">
             <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Your existing sites</h3>
             <div class="space-y-3">
-              <div v-for="site in userSites" :key="site.id" 
-                   @click="selectSite(site.id!)"
-                   class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700">
+              <div v-for="userSite in userSites" :key="userSite.id" 
+                   @click="selectSite(userSite.expand?.site?.id!)"
+                   class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                   v-if="userSite.expand?.site">
                 <div class="flex items-center justify-between">
                   <div class="flex-1">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ site.name }}</h3>
-                    <p v-if="site.description" class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ site.description }}</p>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ userSite.expand.site.name }}</h3>
+                    <p v-if="userSite.expand.site.description" class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ userSite.expand.site.description }}</p>
                     <div class="mt-2 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                      <span>{{ site.total_units }} units</span>
-                      <span>{{ site.total_planned_area.toLocaleString() }} sqft</span>
+                      <span>{{ userSite.expand.site.total_units }} units</span>
+                      <span>{{ userSite.expand.site.total_planned_area?.toLocaleString() || 0 }} sqft</span>
                     </div>
                   </div>
                   <ChevronRight class="h-5 w-5 text-gray-400" />
@@ -95,16 +96,17 @@
         </div>
         
         <div v-else class="space-y-4">
-          <div v-for="site in userSites" :key="site.id" 
-               @click="selectSite(site.id!)"
-               class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700">
+          <div v-for="userSite in userSites" :key="userSite.id" 
+               @click="selectSite(userSite.expand?.site?.id!)"
+               class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+               v-if="userSite.expand?.site">
             <div class="flex items-center justify-between">
               <div class="flex-1">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ site.name }}</h3>
-                <p v-if="site.description" class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ site.description }}</p>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ userSite.expand.site.name }}</h3>
+                <p v-if="userSite.expand.site.description" class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ userSite.expand.site.description }}</p>
                 <div class="mt-2 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                  <span>{{ site.total_units }} units</span>
-                  <span>{{ site.total_planned_area.toLocaleString() }} sqft</span>
+                  <span>{{ userSite.expand.site.total_units }} units</span>
+                  <span>{{ userSite.expand.site.total_planned_area?.toLocaleString() || 0 }} sqft</span>
                 </div>
               </div>
               <ChevronRight class="h-5 w-5 text-gray-400" />
@@ -166,13 +168,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { HardHat, Building, Plus, ChevronRight, Loader2, Mail, Check, X } from 'lucide-vue-next';
 import { useSite } from '../composables/useSite';
 import { useInvitations } from '../composables/useInvitations';
 
-const router = useRouter();
+let router: ReturnType<typeof useRouter> | null = null;
+
+// Safely initialize router with error handling
+try {
+  router = useRouter();
+} catch (error) {
+  console.warn('Router not available during component initialization:', error);
+}
 const { userSites, isLoading, loadUserSites, selectSite: selectSiteAction, createSite } = useSite();
 const { receivedInvitations, loadReceivedInvitations, acceptInvitation, rejectInvitation } = useInvitations();
 
@@ -189,7 +198,19 @@ const createForm = reactive({
 
 const selectSite = async (siteId: string) => {
   await selectSiteAction(siteId);
-  router.push('/');
+  
+  // Ensure router is available and navigate safely
+  try {
+    if (!router) {
+      router = useRouter();
+    }
+    await nextTick(); // Ensure component is fully mounted
+    router.push('/');
+  } catch (error) {
+    console.error('Navigation failed:', error);
+    // Fallback: force page reload to dashboard
+    window.location.href = '/';
+  }
 };
 
 const handleCreateSite = async () => {
@@ -197,7 +218,18 @@ const handleCreateSite = async () => {
   try {
     await createSite(createForm);
     closeCreateModal();
-    router.push('/');
+    
+    // Safe navigation after site creation
+    try {
+      if (!router) {
+        router = useRouter();
+      }
+      await nextTick();
+      router.push('/');
+    } catch (error) {
+      console.error('Navigation failed after site creation:', error);
+      window.location.href = '/';
+    }
   } catch (error) {
     console.error('Error creating site:', error);
   } finally {
@@ -251,9 +283,15 @@ onMounted(async () => {
     loadReceivedInvitations()
   ]);
   
+  // Wait for component to be fully mounted before auto-navigation
+  await nextTick();
+  
   // Only auto-select if user has exactly one site and no pending invitations
   if (userSites.value.length === 1 && receivedInvitations.value.length === 0) {
-    await selectSite(userSites.value[0].id!);
+    // Add small delay to ensure router is ready
+    setTimeout(async () => {
+      await selectSite(userSites.value[0].expand?.site?.id!);
+    }, 100);
   }
 });
 </script>

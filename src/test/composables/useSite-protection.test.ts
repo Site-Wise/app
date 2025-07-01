@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { setupTestPinia } from '../utils/test-setup'
 
 // Simple validation tests for protection mechanisms
 vi.mock('../../services/pocketbase', () => ({
@@ -25,8 +26,14 @@ vi.mock('../../services/pocketbase', () => ({
 }))
 
 describe('useSite Backend Protection Mechanisms', () => {
+  let pinia: any
+  let siteStore: any
+
   beforeEach(() => {
     vi.clearAllMocks()
+    const { pinia: testPinia, siteStore: testSiteStore } = setupTestPinia()
+    pinia = testPinia
+    siteStore = testSiteStore
   })
 
   describe('Site Selection Debouncing Protection', () => {

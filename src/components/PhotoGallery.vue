@@ -217,7 +217,7 @@ const zoomStyle = computed(() => {
 const getPhotoUrl = (filename: string) => {
   if (!props.itemId) return filename;
   // Using direct URL construction as pb.files.getUrl is deprecated
-  return `${import.meta.env.VITE_POCKETBASE_URL}/api/files/incoming_items/${props.itemId}/${filename}`;
+  return `${import.meta.env.VITE_POCKETBASE_URL}/api/files/delivery_items/${props.itemId}/${filename}`;
 };
 
 const openGallery = (index: number) => {

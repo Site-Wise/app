@@ -192,6 +192,7 @@ import {
   type Vendor 
 } from '../services/pocketbase';
 import { useI18n } from '../composables/useI18n';
+import { useSiteData } from '../composables/useSiteData';
 import { useQuotationSearch } from '../composables/useSearch';
 
 const { t } = useI18n();
@@ -203,12 +204,31 @@ const quotations = computed(() => {
   return searchQuery.value.trim() ? searchResults.value : allQuotations.value
 });
 
-const allQuotations = ref<Quotation[]>([]);
-const items = ref<Item[]>([]);
-const vendors = ref<Vendor[]>([]);
+// Use site data management
+const { data: allQuotationsData, loading: quotationsLoading, reload: reloadQuotations } = useSiteData(
+  async (siteId) => await quotationService.getAll()
+);
+
+const { data: itemsData, loading: itemsLoading } = useSiteData(
+  async (siteId) => await itemService.getAll()
+);
+
+const { data: vendorsData, loading: vendorsLoading } = useSiteData(
+  async (siteId) => await vendorService.getAll()
+);
+
+// Computed properties from useSiteData
+const allQuotations = computed(() => allQuotationsData.value || []);
+const items = computed(() => itemsData.value || []);
+const vendors = computed(() => vendorsData.value || []);
 const showAddModal = ref(false);
 const editingQuotation = ref<Quotation | null>(null);
 const loading = ref(false);
+
+// Compute overall loading state
+const overallLoading = computed(() => 
+  quotationsLoading.value || itemsLoading.value || vendorsLoading.value
+);
 const firstInputRef = ref<HTMLSelectElement>();
 
 const form = reactive({
@@ -221,23 +241,12 @@ const form = reactive({
   status: 'pending' as 'pending' | 'approved' | 'rejected' | 'expired'
 });
 
-const loadData = async () => {
-  try {
-    const [quotationsData, itemsData, vendorsData] = await Promise.all([
-      quotationService.getAll(),
-      itemService.getAll(),
-      vendorService.getAll()
-    ]);
-    
-    allQuotations.value = quotationsData;
-    items.value = itemsData;
-    vendors.value = vendorsData;
-    
-    // Load all items for search functionality
-    loadAll();
-  } catch (error) {
-    console.error('Error loading data:', error);
-  }
+const reloadAllData = async () => {
+  await reloadQuotations();
+  // Other data will be reloaded automatically by useSiteData
+  
+  // Load all items for search functionality
+  loadAll();
 };
 
 const saveQuotation = async () => {
@@ -270,7 +279,7 @@ const saveQuotation = async () => {
     } else {
       await quotationService.create(cleanData as Omit<Quotation, 'id' | 'site'>);
     }
-    await loadData();
+    await reloadAllData();
     closeModal();
   } catch (error) {
     console.error('Error saving quotation:', error);
@@ -296,7 +305,7 @@ const deleteQuotation = async (id: string) => {
   if (confirm(t('messages.confirmDelete', { item: t('common.item') }))) {
     try {
       await quotationService.delete(id);
-      await loadData();
+      await reloadAllData();
     } catch (error) {
       console.error('Error deleting quotation:', error);
     }
@@ -340,9 +349,7 @@ const handleAddQuotation = async () => {
   firstInputRef.value?.focus();
 };
 
-const handleSiteChange = () => {
-  loadData();
-};
+// Site change is handled automatically by useSiteData
 
 const handleKeyboardShortcut = (event: KeyboardEvent) => {
   if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
@@ -352,13 +359,13 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
 };
 
 onMounted(() => {
-  loadData();
-  window.addEventListener('site-changed', handleSiteChange);
+  // Data loading is handled automatically by useSiteData
+  // Initial load all for search functionality
+  setTimeout(() => loadAll(), 100);
   window.addEventListener('keydown', handleKeyboardShortcut);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('site-changed', handleSiteChange);
   window.removeEventListener('keydown', handleKeyboardShortcut);
 });
 </script>

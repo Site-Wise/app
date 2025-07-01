@@ -360,6 +360,7 @@ import {
   Loader2
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
+import { useSiteData } from '../composables/useSiteData';
 import {
   vendorReturnService,
   vendorService,
@@ -379,13 +380,36 @@ import RefundModal from '../components/returns/RefundModal.vue';
 const { t } = useI18n();
 const route = useRoute();
 
-// Data
-const returns = ref<VendorReturn[]>([]);
-const vendors = ref<Vendor[]>([]);
-const deliveries = ref<Delivery[]>([]);
+// Use site data management
+const { data: returnsData, loading: returnsLoading, reload: reloadReturns } = useSiteData(
+  async (siteId) => await vendorReturnService.getAll()
+);
+
+const { data: vendorsData, loading: vendorsLoading } = useSiteData(
+  async (siteId) => await vendorService.getAll()
+);
+
+const { data: deliveriesData, loading: deliveriesLoading } = useSiteData(
+  async (siteId) => await deliveryService.getAll()
+);
+
+const { data: accountsData, loading: accountsLoading } = useSiteData(
+  async (siteId) => await accountService.getAll()
+);
+
+// Computed properties from useSiteData
+const returns = computed(() => returnsData.value || []);
+const vendors = computed(() => vendorsData.value || []);
+const deliveries = computed(() => deliveriesData.value || []);
+const accounts = computed(() => accountsData.value || []);
+
 const deliveryItems = ref<DeliveryItem[]>([]);
-const accounts = ref<Account[]>([]);
 const loading = ref(false);
+
+// Compute overall loading state
+const overallLoading = computed(() => 
+  returnsLoading.value || vendorsLoading.value || deliveriesLoading.value || accountsLoading.value
+);
 
 // Search and filters
 const searchQuery = ref('');
@@ -401,6 +425,7 @@ const isEditMode = ref(false);
 
 // Computed properties
 const filteredReturns = computed(() => {
+  if (!returns.value) return [];
   let filtered = returns.value;
 
   if (searchQuery.value.trim()) {
@@ -430,42 +455,32 @@ const filteredReturns = computed(() => {
 });
 
 const pendingReturns = computed(() => {
-  return returns.value.filter(returnItem => returnItem.status === 'initiated').length;
+  return returns.value?.filter(returnItem => returnItem.status === 'initiated').length || 0;
 });
 
 const completedReturns = computed(() => {
-  return returns.value.filter(returnItem => 
+  return returns.value?.filter(returnItem => 
     returnItem.status === 'completed' || returnItem.status === 'refunded'
-  ).length;
+  ).length || 0;
 });
 
 const totalRefunded = computed(() => {
-  return returns.value.reduce((sum, returnItem) => {
+  return returns.value?.reduce((sum, returnItem) => {
     return sum + (returnItem.actual_refund_amount || 0);
-  }, 0);
+  }, 0) || 0;
 });
 
 // Methods
-const loadData = async () => {
+const loadDeliveryItems = async () => {
+  if (!deliveries.value || deliveries.value.length === 0) return;
+  
   loading.value = true;
   try {
-    const [returnsData, vendorsData, deliveriesData, accountsData] = await Promise.all([
-      vendorReturnService.getAll(),
-      vendorService.getAll(),
-      deliveryService.getAll(),
-      accountService.getAll()
-    ]);
-
-    returns.value = returnsData;
-    vendors.value = vendorsData;
-    deliveries.value = deliveriesData;
-    accounts.value = accountsData;
-    
     // Extract delivery items from deliveries
     const allDeliveryItems: DeliveryItem[] = [];
     
     // Try to extract from expanded delivery data first
-    deliveriesData.forEach(delivery => {
+    deliveries.value.forEach(delivery => {
       if (delivery.expand?.delivery_items) {
         delivery.expand.delivery_items.forEach(deliveryItem => {
           allDeliveryItems.push({
@@ -480,11 +495,11 @@ const loadData = async () => {
     });
     
     // If no delivery items found via expand, fetch them directly
-    if (allDeliveryItems.length === 0 && deliveriesData.length > 0) {
-      for (const delivery of deliveriesData) {
+    if (allDeliveryItems.length === 0 && deliveries.value.length > 0) {
+      for (const delivery of deliveries.value) {
         try {
-          const deliveryItems = await deliveryItemService.getByDelivery(delivery.id!);
-          deliveryItems.forEach((deliveryItem: DeliveryItem) => {
+          const items = await deliveryItemService.getByDelivery(delivery.id!);
+          items.forEach((deliveryItem: DeliveryItem) => {
             allDeliveryItems.push({
               ...deliveryItem,
               expand: {
@@ -501,10 +516,16 @@ const loadData = async () => {
     
     deliveryItems.value = allDeliveryItems;
   } catch (error) {
-    console.error('Error loading data:', error);
+    console.error('Error loading delivery items:', error);
   } finally {
     loading.value = false;
   }
+};
+
+const reloadAllData = async () => {
+  await reloadReturns();
+  // Other data will be reloaded automatically by useSiteData
+  await loadDeliveryItems();
 };
 
 const getStatusClass = (status: string) => {
@@ -566,22 +587,22 @@ const closeRefundModal = () => {
 
 // Event handlers
 const handleReturnSave = async () => {
-  await loadData();
+  await reloadAllData();
   closeReturnModal();
 };
 
 const handleApprove = async () => {
-  await loadData();
+  await reloadAllData();
   closeDetailsModal();
 };
 
 const handleReject = async () => {
-  await loadData();
+  await reloadAllData();
   closeDetailsModal();
 };
 
 const handleComplete = async () => {
-  await loadData();
+  await reloadAllData();
   closeDetailsModal();
 };
 
@@ -591,7 +612,7 @@ const handleRefund = () => {
 };
 
 const handleRefundSave = async () => {
-  await loadData();
+  await reloadAllData();
   closeRefundModal();
 };
 
@@ -648,8 +669,19 @@ onMounted(() => {
     vendorFilter.value = route.query.vendor;
   }
   
-  loadData();
+  // Data loading is handled automatically by useSiteData
+  // Load delivery items when deliveries are available
+  setTimeout(() => loadDeliveryItems(), 500);
+  
   window.addEventListener('keydown', handleKeyboardShortcut);
+});
+
+// Watch for deliveries changes to reload delivery items
+computed(() => {
+  if (deliveries.value && deliveries.value.length > 0) {
+    setTimeout(() => loadDeliveryItems(), 100);
+  }
+  return null;
 });
 
 onUnmounted(() => {

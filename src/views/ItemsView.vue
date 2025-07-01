@@ -184,6 +184,7 @@ import { Package, Plus, Edit2, Trash2, Loader2, Copy } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
+import { useSiteData } from '../composables/useSiteData';
 import TagSelector from '../components/TagSelector.vue';
 import { 
   itemService, 
@@ -199,9 +200,31 @@ const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
 
 const router = useRouter();
-const items = ref<Item[]>([]);
-const deliveries = ref<Delivery[]>([]);
-const itemTags = ref<Map<string, TagType[]>>(new Map());
+
+// Use site-aware data loading
+const { data: itemsData, loading: itemsLoading, reload: reloadItems } = useSiteData(async (siteId) => {
+  const [items, deliveries, allTags] = await Promise.all([
+    itemService.getAll(),
+    deliveryService.getAll(),
+    tagService.getAll()
+  ]);
+  
+  // Map tags for each item
+  const tagMap = new Map<string, TagType[]>();
+  for (const item of items) {
+    if (item.tags && item.tags.length > 0) {
+      const itemTagObjects = allTags.filter(tag => item.tags!.includes(tag.id!));
+      tagMap.set(item.id!, itemTagObjects);
+    }
+  }
+  
+  return { items, deliveries, itemTags: tagMap };
+});
+
+const items = computed(() => itemsData.value?.items || []);
+const deliveries = computed(() => itemsData.value?.deliveries || []);
+const itemTags = computed(() => itemsData.value?.itemTags || new Map());
+
 const showAddModal = ref(false);
 const editingItem = ref<Item | null>(null);
 const loading = ref(false);
@@ -222,29 +245,6 @@ const form = reactive({
   tags: [] as string[]
 });
 
-const loadData = async () => {
-  try {
-    const [itemsData, deliveriesData, allTags] = await Promise.all([
-      itemService.getAll(),
-      deliveryService.getAll(),
-      tagService.getAll()
-    ]);
-    items.value = itemsData;
-    deliveries.value = deliveriesData;
-    
-    // Map tags for each item
-    const tagMap = new Map<string, TagType[]>();
-    for (const item of itemsData) {
-      if (item.tags && item.tags.length > 0) {
-        const itemTagObjects = allTags.filter(tag => item.tags!.includes(tag.id!));
-        tagMap.set(item.id!, itemTagObjects);
-      }
-    }
-    itemTags.value = tagMap;
-  } catch (error) {
-    console.error('Error loading data:', error);
-  }
-};
 
 const getItemDeliveredQuantity = (itemId: string) => {
   let totalQuantity = 0;
@@ -320,7 +320,7 @@ const saveItem = async () => {
       success(t('messages.createSuccess', { item: t('common.item') }));
       // Usage is automatically incremented by PocketBase hooks
     }
-    await loadData();
+    await reloadItems();
     closeModal();
   } catch (err) {
     console.error('Error saving item:', err);
@@ -372,7 +372,7 @@ const deleteItem = async (id: string) => {
     try {
       await itemService.delete(id);
       success(t('messages.deleteSuccess', { item: t('common.item') }));
-      await loadData();
+      await reloadItems();
       // Usage is automatically decremented by PocketBase hooks
     } catch (err) {
       console.error('Error deleting item:', err);
@@ -398,10 +398,6 @@ const handleQuickAction = async () => {
   nameInputRef.value?.focus();
 };
 
-const handleSiteChange = () => {
-  loadData();
-};
-
 const handleKeyboardShortcut = (event: KeyboardEvent) => {
   if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
     event.preventDefault();
@@ -410,15 +406,12 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
 };
 
 onMounted(() => {
-  loadData();
   window.addEventListener('show-add-modal', handleQuickAction);
-  window.addEventListener('site-changed', handleSiteChange);
   window.addEventListener('keydown', handleKeyboardShortcut);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
-  window.removeEventListener('site-changed', handleSiteChange);
   window.removeEventListener('keydown', handleKeyboardShortcut);
 });
 </script>

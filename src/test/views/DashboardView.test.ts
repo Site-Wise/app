@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { computed } from 'vue'
+import { createPinia, setActivePinia } from 'pinia'
+import { setupTestPinia } from '../utils/test-setup'
 
 // Mock Chart.js components
 vi.mock('vue-chartjs', () => ({
@@ -57,117 +58,140 @@ vi.mock('../../composables/useI18n', () => ({
   })
 }))
 
-import DashboardView from '../../views/DashboardView.vue'
-import { createMockRouter } from '../utils/test-utils'
-
-// Mock the composables and services
-vi.mock('../../composables/useSite', () => ({
-  useSite: () => ({
-    currentSite: computed(() => ({
-      id: 'site-1',
-      name: 'Test Construction Site',
-      description: 'A test construction site',
-      total_units: 100,
-      total_planned_area: 50000,
-      admin_user: 'user-1',
-      users: ['user-1'],
-      created: '2024-01-01T00:00:00Z',
-      updated: '2024-01-01T00:00:00Z'
-    }))
+vi.mock('../../composables/useSubscription', () => ({
+  useSubscription: () => ({
+    checkCreateLimit: vi.fn().mockReturnValue(true),
+    isReadOnly: { value: false }
   })
 }))
 
-vi.mock('../../services/pocketbase', () => ({
-  itemService: {
-    getAll: vi.fn().mockResolvedValue([{
-      id: 'item-1',
-      name: 'Steel Rebar',
-      description: 'High-grade steel rebar',
-      unit: 'kg',
-      quantity: 1000,
-      category: 'Steel',
-      site: 'site-1',
-      created: '2024-01-01T00:00:00Z',
-      updated: '2024-01-01T00:00:00Z'
-    }])
-  },
-  vendorService: {
-    getAll: vi.fn().mockResolvedValue([{
-      id: 'vendor-1',
-      name: 'Steel Suppliers Inc',
-      contact_person: 'John Doe',
-      email: 'john@steelsuppliers.com',
-      phone: '+1234567890',
-      address: '123 Steel Street',
-      tags: ['Steel', 'Metal'],
-      site: 'site-1',
-      created: '2024-01-01T00:00:00Z',
-      updated: '2024-01-01T00:00:00Z'
-    }])
-  },
-  deliveryService: {
-    getAll: vi.fn().mockResolvedValue([{
-      id: 'delivery-1',
-      vendor: 'vendor-1',
-      delivery_date: '2024-01-15',
-      total_amount: 22500,
-      payment_status: 'pending',
-      paid_amount: 0,
-      site: 'site-1',
-      photos: [],
-      notes: 'Delivered on time',
-      created: '2024-01-01T00:00:00Z',
-      updated: '2024-01-01T00:00:00Z'
-    }])
-  },
-  serviceBookingService: {
-    getAll: vi.fn().mockResolvedValue([{
-      id: 'booking-1',
-      service: 'service-1',
-      vendor: 'vendor-1',
-      start_date: '2024-01-10',
-      end_date: '2024-01-20',
-      duration: 10,
-      unit_rate: 1000,
-      total_amount: 10000,
-      status: 'completed',
-      completion_photos: [],
-      notes: 'Work completed successfully',
-      payment_status: 'paid',
-      paid_amount: 10000,
-      site: 'site-1',
-      created: '2024-01-01T00:00:00Z',
-      updated: '2024-01-01T00:00:00Z'
-    }])
-  },
-  paymentService: {
-    getAll: vi.fn().mockResolvedValue([{
-      id: 'payment-1',
-      vendor: 'vendor-1',
-      amount: 10000,
-      account: 'account-1',
-      payment_date: '2024-01-20',
-      reference: 'CHK-001',
-      notes: 'Partial payment',
-      incoming_items: ['incoming-1'],
-      service_bookings: ['booking-1'],
-      site: 'site-1',
-      created: '2024-01-01T00:00:00Z',
-      updated: '2024-01-01T00:00:00Z'
-    }])
+// Mock useSite composable
+vi.mock('../../composables/useSite', () => ({
+  useSite: () => {
+    const { ref } = require('vue')
+    return {
+      currentSite: ref({
+        id: 'site-1',
+        name: 'Test Construction Site',
+        description: 'A test construction site',
+        total_units: 100,
+        total_planned_area: 50000,
+        admin_user: 'user-1',
+        users: ['user-1'],
+        created: '2024-01-01T00:00:00Z',
+        updated: '2024-01-01T00:00:00Z'
+      }),
+      currentSiteId: ref('site-1'),
+      userSites: ref([]),
+      currentUserRole: ref('owner'),
+      isLoading: ref(false),
+      isInitialized: ref(true),
+      isReadyForRouting: ref(true)
+    }
   }
 }))
 
+import DashboardView from '../../views/DashboardView.vue'
+import { createMockRouter } from '../utils/test-utils'
+
+// Mock useSiteData composable
+vi.mock('../../composables/useSiteData', () => ({
+  useSiteData: () => {
+    const { ref } = require('vue')
+    return {
+      data: ref({
+        items: [{
+          id: 'item-1',
+          name: 'Steel Rebar',
+          description: 'High-grade steel rebar',
+          unit: 'kg',
+          quantity: 1000,
+          category: 'Steel',
+          site: 'site-1',
+          created: '2024-01-01T00:00:00Z',
+          updated: '2024-01-01T00:00:00Z'
+        }],
+        vendors: [{
+          id: 'vendor-1',
+          name: 'Steel Suppliers Inc',
+          contact_person: 'John Doe',
+          email: 'john@steelsuppliers.com',
+          phone: '+1234567890',
+          address: '123 Steel Street',
+          tags: ['Steel', 'Metal'],
+          site: 'site-1',
+          created: '2024-01-01T00:00:00Z',
+          updated: '2024-01-01T00:00:00Z'
+        }],
+        deliveries: [{
+          id: 'delivery-1',
+          vendor: 'vendor-1',
+          delivery_date: '2024-01-15',
+          total_amount: 22500,
+          payment_status: 'pending',
+          paid_amount: 0,
+          site: 'site-1',
+          photos: [],
+          notes: 'Delivered on time',
+          created: '2024-01-01T00:00:00Z',
+          updated: '2024-01-01T00:00:00Z'
+        }],
+        serviceBookings: [{
+          id: 'booking-1',
+          service: 'service-1',
+          vendor: 'vendor-1',
+          start_date: '2024-01-10',
+          end_date: '2024-01-20',
+          duration: 10,
+          unit_rate: 1000,
+          total_amount: 10000,
+          status: 'completed',
+          completion_photos: [],
+          notes: 'Work completed successfully',
+          payment_status: 'paid',
+          paid_amount: 10000,
+          site: 'site-1',
+          created: '2024-01-01T00:00:00Z',
+          updated: '2024-01-01T00:00:00Z'
+        }],
+        payments: [{
+          id: 'payment-1',
+          vendor: 'vendor-1',
+          amount: 10000,
+          account: 'account-1',
+          payment_date: '2024-01-20',
+          reference: 'CHK-001',
+          notes: 'Partial payment',
+          deliveries: ['delivery-1'],
+          service_bookings: ['booking-1'],
+          site: 'site-1',
+          created: '2024-01-01T00:00:00Z',
+          updated: '2024-01-01T00:00:00Z'
+        }]
+      }),
+      loading: ref(false),
+      reload: vi.fn()
+    }
+  }
+}))
+
+
 describe('DashboardView', () => {
   let wrapper: any
+  let pinia: any
+  let siteStore: any
 
   beforeEach(() => {
     vi.clearAllMocks()
+    const { pinia: testPinia, siteStore: testSiteStore } = setupTestPinia()
+    pinia = testPinia
+    siteStore = testSiteStore
+    
     const router = createMockRouter()
     
     wrapper = mount(DashboardView, {
       global: {
-        plugins: [router],
+        plugins: [router, pinia],
         stubs: {
           'router-link': true,
           'Line': {
@@ -178,6 +202,10 @@ describe('DashboardView', () => {
         }
       }
     })
+  })
+
+  afterEach(() => {
+    wrapper?.unmount()
   })
 
   it('should render dashboard title', () => {
@@ -225,13 +253,13 @@ describe('DashboardView', () => {
     expect(wrapper.exists()).toBe(true)
   })
 
-  it('should handle site change event', async () => {
-    // Trigger site change event
-    window.dispatchEvent(new CustomEvent('site-changed'))
+  it('should handle site change reactively', async () => {
+    // Change site in store using $patch
+    siteStore.$patch({ currentSiteId: 'site-2' })
     
     await wrapper.vm.$nextTick()
     
-    // Check that the component still exists after the event
+    // Check that the component still exists after the site change
     expect(wrapper.exists()).toBe(true)
   })
 

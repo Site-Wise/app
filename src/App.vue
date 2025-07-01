@@ -57,8 +57,9 @@ const { platformInfo } = usePlatform();
 const { requestPermission } = useNativeNotifications();
 
 // Watch for authentication changes to handle login/logout
-watch(() => isAuthenticated.value, async (newValue) => {
-  if (newValue) {
+watch(() => isAuthenticated.value, async (newValue, oldValue) => {
+  // Only load on initial authentication or login (not on app start)
+  if (newValue && !oldValue) {
     await loadUserSites();
     
     // Request notification permission if supported
@@ -69,7 +70,8 @@ watch(() => isAuthenticated.value, async (newValue) => {
 });
 
 onMounted(async () => {
-  if (isAuthenticated.value) {
+  // Only load if authenticated and not already initialized
+  if (isAuthenticated.value && !isReadyForRouting.value) {
     await loadUserSites();
     
     // Request notification permission if supported

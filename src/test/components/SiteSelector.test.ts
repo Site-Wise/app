@@ -3,21 +3,50 @@ import { mount } from '@vue/test-utils'
 import { computed } from 'vue'
 import SiteSelector from '../../components/SiteSelector.vue'
 import { mockSite } from '../mocks/pocketbase'
+import { setupTestPinia } from '../utils/test-setup'
 
 const mockSelectSite = vi.fn()
 const mockCreateSite = vi.fn()
 const mockUpdateSite = vi.fn()
 
+// Mock the pocketbase service
+vi.mock('../../services/pocketbase', () => ({
+  getCurrentSiteId: vi.fn(() => 'site-1'),
+  setCurrentSiteId: vi.fn(),
+  getCurrentUserRole: vi.fn(() => 'owner'),
+  setCurrentUserRole: vi.fn(),
+  pb: {
+    authStore: { isValid: true, model: { id: 'user-1' } },
+    collection: vi.fn(() => ({ getFullList: vi.fn().mockResolvedValue([]) }))
+  }
+}))
+
 // Mock the useSite composable
 vi.mock('../../composables/useSite', () => ({
   useSite: () => ({
     currentSite: computed(() => mockSite),
-    userSites: computed(() => [mockSite, { 
-      ...mockSite, 
-      id: 'site-2', 
-      name: 'Other Site',
-      isOwner: true 
-    }]),
+    userSites: computed(() => [
+      {
+        id: 'usersite-1',
+        site: 'site-1',
+        role: 'owner',
+        expand: {
+          site: mockSite
+        }
+      },
+      {
+        id: 'usersite-2', 
+        site: 'site-2',
+        role: 'owner',
+        expand: {
+          site: {
+            ...mockSite, 
+            id: 'site-2', 
+            name: 'Other Site'
+          }
+        }
+      }
+    ]),
     selectSite: mockSelectSite,
     createSite: mockCreateSite,
     updateSite: mockUpdateSite,
@@ -27,9 +56,16 @@ vi.mock('../../composables/useSite', () => ({
 
 describe('SiteSelector', () => {
   let wrapper: any
+  let pinia: any
+  let siteStore: any
 
   beforeEach(() => {
     vi.clearAllMocks()
+    
+    const { pinia: testPinia, siteStore: testSiteStore } = setupTestPinia()
+    pinia = testPinia
+    siteStore = testSiteStore
+    
     // Mock window.dispatchEvent
     window.dispatchEvent = vi.fn()
     // Mock window.alert
@@ -69,7 +105,11 @@ describe('SiteSelector', () => {
     })
 
     it('should show other sites in dropdown', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = mount(SiteSelector, {
+        global: {
+          plugins: [pinia]
+        }
+      })
       
       await wrapper.find('button').trigger('click')
       
@@ -88,7 +128,11 @@ describe('SiteSelector', () => {
 
   describe('Site Selection', () => {
     it('should call selectSite when other site is clicked', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = mount(SiteSelector, {
+        global: {
+          plugins: [pinia]
+        }
+      })
       
       await wrapper.find('button').trigger('click')
       
@@ -98,9 +142,7 @@ describe('SiteSelector', () => {
         await otherSiteOption.trigger('click')
         
         expect(mockSelectSite).toHaveBeenCalledWith('site-2')
-        expect(window.dispatchEvent).toHaveBeenCalledWith(
-          expect.objectContaining({ type: 'site-changed' })
-        )
+        // No longer check for custom event since Pinia watchers handle site changes
       }
     })
 
@@ -217,7 +259,11 @@ describe('SiteSelector', () => {
     it('should close modal and reset form after successful creation', async () => {
       mockCreateSite.mockResolvedValue(mockSite)
       
-      wrapper = mount(SiteSelector)
+      wrapper = mount(SiteSelector, {
+        global: {
+          plugins: [pinia]
+        }
+      })
       
       // Open modal and submit
       await wrapper.find('button').trigger('click')
@@ -232,9 +278,7 @@ describe('SiteSelector', () => {
       
       expect(wrapper.vm.showCreateModal).toBe(false)
       expect(wrapper.vm.createForm.name).toBe('')
-      expect(window.dispatchEvent).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'site-changed' })
-      )
+      expect(mockCreateSite).toHaveBeenCalled()
     })
 
     it('should cancel modal when cancel button is clicked', async () => {

@@ -239,7 +239,7 @@ export function useSubscription() {
       );
       currentSubscription.value = subscription as unknown as SiteSubscription;
 
-      // Get current usage period
+      // Get current usage period - usage records are managed by PocketBase hooks
       const periodStart = new Date(subscription.current_period_start);
       const periodEnd = new Date(subscription.current_period_end);
 
@@ -250,18 +250,8 @@ export function useSubscription() {
         );
         currentUsage.value = usage as unknown as SubscriptionUsage;
       } catch {
-        // Create new usage record if it doesn't exist
-        const usage = await pb.collection('subscription_usage').create({
-          site: siteId,
-          period_start: periodStart.toISOString(),
-          period_end: periodEnd.toISOString(),
-          items_count: 0,
-          vendors_count: 0,
-          incoming_deliveries_count: 0,
-          service_bookings_count: 0,
-          payments_count: 0
-        });
-        currentUsage.value = usage as unknown as SubscriptionUsage;
+        // Usage record will be created by PocketBase hooks when needed
+        currentUsage.value = null;
       }
 
     } catch (err) {

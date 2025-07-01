@@ -122,6 +122,7 @@ ChartJS.register(
   Filler
 );
 import { useSite } from '../composables/useSite';
+import { useSiteData } from '../composables/useSiteData';
 import { useI18n } from '../composables/useI18n';
 import { 
   itemService, 
@@ -140,12 +141,24 @@ const { t } = useI18n();
 
 const { currentSite } = useSite();
 
-const loading = ref(true);
-const items = ref<Item[]>([]);
-const vendors = ref<Vendor[]>([]);
-const payments = ref<Payment[]>([]);
-const deliveries = ref<Delivery[]>([]);
-const serviceBookings = ref<ServiceBooking[]>([]);
+// Use site-aware data loading
+const { data: dashboardData, loading, reload: reloadDashboard } = useSiteData(async (siteId) => {
+  const [items, vendors, payments, deliveries, serviceBookings] = await Promise.all([
+    itemService.getAll(),
+    vendorService.getAll(),
+    paymentService.getAll(),
+    deliveryService.getAll(),
+    serviceBookingService.getAll(),
+  ]);
+  
+  return { items, vendors, payments, deliveries, serviceBookings };
+});
+
+const items = computed(() => dashboardData.value?.items || []);
+const vendors = computed(() => dashboardData.value?.vendors || []);
+const payments = computed(() => dashboardData.value?.payments || []);
+const deliveries = computed(() => dashboardData.value?.deliveries || []);
+const serviceBookings = computed(() => dashboardData.value?.serviceBookings || []);
 
 
 const stats = computed(() => {
@@ -317,55 +330,6 @@ const formatAmount = (amount: number) => {
   return amount.toString();
 };
 
-const loadData = async () => {
-  loading.value = true;
-  try {
-    const [itemsData, vendorsData, paymentsData, deliveriesData, servicesData] = await Promise.all([
-      itemService.getAll(),
-      vendorService.getAll(),
-      paymentService.getAll(),
-      deliveryService.getAll(),
-      serviceBookingService.getAll(),
-    ]);
-    
-    items.value = itemsData;
-    vendors.value = vendorsData;
-    payments.value = paymentsData;
-    deliveries.value = deliveriesData;
-    serviceBookings.value = servicesData;
-  } catch (error) {
-    console.error('Error loading dashboard data:', error);
-  } finally {
-    loading.value = false;
-  }
-};
 
 
-let siteChangeTimeout: ReturnType<typeof setTimeout> | null = null;
-
-const handleSiteChange = () => {
-  // Clear any existing timeout to debounce rapid site changes
-  if (siteChangeTimeout) {
-    clearTimeout(siteChangeTimeout);
-  }
-  
-  // Debounce the data reload by 200ms
-  siteChangeTimeout = setTimeout(() => {
-    loadData();
-  }, 200);
-};
-
-onMounted(() => {
-  loadData();
-  window.addEventListener('site-changed', handleSiteChange);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('site-changed', handleSiteChange);
-  
-  // Clear any pending site change timeout
-  if (siteChangeTimeout) {
-    clearTimeout(siteChangeTimeout);
-  }
-});
 </script>

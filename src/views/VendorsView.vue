@@ -181,6 +181,7 @@ import { Users, Plus, Edit2, Trash2, Loader2, Mail, Phone, MapPin } from 'lucide
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
+import { useSiteData } from '../composables/useSiteData';
 import TagSelector from '../components/TagSelector.vue';
 import { 
   vendorService, 
@@ -200,14 +201,42 @@ const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
 
 const router = useRouter();
-const vendors = ref<Vendor[]>([]);
-const deliveries = ref<Delivery[]>([]);
-const serviceBookings = ref<ServiceBooking[]>([]);
-const payments = ref<Payment[]>([]);
+// Use site data management
+const { data: vendorsData, loading: vendorsLoading, reload: reloadVendors } = useSiteData(
+  async (siteId) => await vendorService.getAll()
+);
+
+const { data: deliveriesData, loading: deliveriesLoading } = useSiteData(
+  async (siteId) => await deliveryService.getAll()
+);
+
+const { data: serviceBookingsData, loading: bookingsLoading } = useSiteData(
+  async (siteId) => await serviceBookingService.getAll()
+);
+
+const { data: paymentsData, loading: paymentsLoading } = useSiteData(
+  async (siteId) => await paymentService.getAll()
+);
+
+const { data: allTagsData, loading: tagsLoading } = useSiteData(
+  async (siteId) => await tagService.getAll()
+);
+
+// Computed properties from useSiteData
+const vendors = computed(() => vendorsData.value || []);
+const deliveries = computed(() => deliveriesData.value || []);
+const serviceBookings = computed(() => serviceBookingsData.value || []);
+const payments = computed(() => paymentsData.value || []);
 const vendorTags = ref<Map<string, TagType[]>>(new Map());
 const showAddModal = ref(false);
 const editingVendor = ref<Vendor | null>(null);
 const loading = ref(false);
+
+// Compute overall loading state
+const overallLoading = computed(() => 
+  vendorsLoading.value || deliveriesLoading.value || bookingsLoading.value || 
+  paymentsLoading.value || tagsLoading.value
+);
 const firstInputRef = ref<HTMLInputElement>();
 
 const canCreateVendor = computed(() => {
@@ -231,27 +260,27 @@ const form = reactive({
 const getVendorOutstanding = (vendorId: string) => {
   // Include deliveries outstanding
   const deliveriesOutstanding = deliveries.value
-    .filter(delivery => delivery.vendor === vendorId)
-    .reduce((sum, delivery) => {
+    ?.filter(delivery => delivery.vendor === vendorId)
+    ?.reduce((sum, delivery) => {
       const outstanding = delivery.total_amount - delivery.paid_amount;
       return sum + (outstanding > 0 ? outstanding : 0);
-    }, 0);
+    }, 0) || 0;
   
   // Include service bookings outstanding
   const serviceOutstanding = serviceBookings.value
-    .filter(booking => booking.vendor === vendorId)
-    .reduce((sum, booking) => {
+    ?.filter(booking => booking.vendor === vendorId)
+    ?.reduce((sum, booking) => {
       const outstanding = booking.total_amount - booking.paid_amount;
       return sum + (outstanding > 0 ? outstanding : 0);
-    }, 0);
+    }, 0) || 0;
     
   return deliveriesOutstanding + serviceOutstanding;
 };
 
 const getVendorPaid = (vendorId: string) => {
   return payments.value
-    .filter(payment => payment.vendor === vendorId)
-    .reduce((sum, payment) => sum + payment.amount, 0);
+    ?.filter(payment => payment.vendor === vendorId)
+    ?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
 };
 
 const viewVendorDetail = (vendorId: string) => {
@@ -262,33 +291,30 @@ const viewVendorDetail = (vendorId: string) => {
   }
 };
 
-const loadData = async () => {
-  try {
-    const [vendorsData, deliveriesData, serviceBookingsData, paymentsData, allTags] = await Promise.all([
-      vendorService.getAll(),
-      deliveryService.getAll(),
-      serviceBookingService.getAll(),
-      paymentService.getAll(),
-      tagService.getAll()
-    ]);
-    
-    vendors.value = vendorsData;
-    deliveries.value = deliveriesData;
-    serviceBookings.value = serviceBookingsData;
-    payments.value = paymentsData;
-    
-    // Map tags for each vendor
+// Watch for changes in vendors and tags to update tag mapping
+const updateVendorTags = () => {
+  if (vendors.value && allTagsData.value) {
     const tagMap = new Map<string, TagType[]>();
-    for (const vendor of vendorsData) {
+    for (const vendor of vendors.value) {
       if (vendor.tags && vendor.tags.length > 0) {
-        const vendorTagObjects = allTags.filter(tag => vendor.tags!.includes(tag.id!));
+        const vendorTagObjects = allTagsData.value.filter(tag => vendor.tags!.includes(tag.id!));
         tagMap.set(vendor.id!, vendorTagObjects);
       }
     }
     vendorTags.value = tagMap;
-  } catch (error) {
-    console.error('Error loading data:', error);
   }
+};
+
+// Watch for data changes to update tags
+const watchForTagUpdates = () => {
+  if (vendors.value && allTagsData.value) {
+    updateVendorTags();
+  }
+};
+
+const reloadAllData = async () => {
+  await reloadVendors();
+  // Other data will be reloaded automatically by useSiteData
 };
 
 const handleAddVendor = async () => {
@@ -322,7 +348,7 @@ const saveVendor = async () => {
       success(t('messages.createSuccess', { item: t('common.vendor') }));
       // Usage is automatically incremented by PocketBase hooks
     }
-    await loadData();
+    await reloadAllData();
     closeModal();
   } catch (err) {
     console.error('Error saving vendor:', err);
@@ -354,7 +380,7 @@ const deleteVendor = async (id: string) => {
     try {
       await vendorService.delete(id);
       success(t('messages.deleteSuccess', { item: t('common.vendor') }));
-      await loadData();
+      await reloadAllData();
       // Usage is automatically decremented by PocketBase hooks
     } catch (err) {
       console.error('Error deleting vendor:', err);
@@ -384,9 +410,7 @@ const handleQuickAction = async () => {
   firstInputRef.value?.focus();
 };
 
-const handleSiteChange = () => {
-  loadData();
-};
+// Site change is handled automatically by useSiteData
 
 const handleKeyboardShortcut = (event: KeyboardEvent) => {
   if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
@@ -396,15 +420,21 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
 };
 
 onMounted(() => {
-  loadData();
+  // Data loading is handled automatically by useSiteData
+  // Set up watchers for tag updates
+  setTimeout(watchForTagUpdates, 100);
   window.addEventListener('show-add-modal', handleQuickAction);
-  window.addEventListener('site-changed', handleSiteChange);
   window.addEventListener('keydown', handleKeyboardShortcut);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
-  window.removeEventListener('site-changed', handleSiteChange);
   window.removeEventListener('keydown', handleKeyboardShortcut);
+});
+
+// Watch for changes in vendors and tags to update mapping
+computed(() => {
+  watchForTagUpdates();
+  return null;
 });
 </script>

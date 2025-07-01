@@ -106,8 +106,6 @@ export const createMockUseSubscription = (overrides: any = {}) => ({
   createDefaultSubscription: vi.fn(),
   createFreeTierSubscription: vi.fn(),
   checkCreateLimit: vi.fn().mockReturnValue(true),
-  incrementUsage: vi.fn(),
-  decrementUsage: vi.fn(),
   getAllPlans: vi.fn().mockResolvedValue([]),
   upgradeSubscription: vi.fn(),
   cancelSubscription: vi.fn(),

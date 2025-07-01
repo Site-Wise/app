@@ -455,6 +455,7 @@ import { Plus, Edit2, Trash2, Loader2, Eye, X } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
+import { useSiteData } from '../composables/useSiteData';
 import { useDeliverySearch } from '../composables/useSearch';
 import PhotoGallery from '../components/PhotoGallery.vue';
 import MultiItemDeliveryModal from '../components/delivery/MultiItemDeliveryModal.vue';
@@ -468,15 +469,26 @@ const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
 
+// Use site data management
+const { data: allDeliveriesData, loading: deliveriesLoading, reload: reloadDeliveries } = useSiteData(
+  async (siteId) => {
+    const deliveryData = await deliveryService.getAll();
+    // Sort deliveries by delivery date descending (newest first)
+    return deliveryData.sort((a, b) => 
+      new Date(b.delivery_date).getTime() - new Date(a.delivery_date).getTime()
+    );
+  }
+);
+
 // Search functionality
 const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useDeliverySearch();
 
 // Display items: use search results if searching, otherwise all items
 const deliveries = computed(() => {
-  return searchQuery.value.trim() ? searchResults.value : allDeliveries.value
+  return searchQuery.value.trim() ? searchResults.value : (allDeliveriesData.value || [])
 });
 
-const allDeliveries = ref<Delivery[]>([]);
+const allDeliveries = computed(() => allDeliveriesData.value || []);
 const showAddModal = ref(false);
 const editingDelivery = ref<Delivery | null>(null);
 const viewingDelivery = ref<Delivery | null>(null);
@@ -500,7 +512,7 @@ const isDev = computed(() => import.meta.env.DEV);
 const showPhotoGallery = ref(false);
 const galleryDelivery = ref<Delivery | null>(null);
 const galleryIndex = ref(0);
-const loading = ref(false);
+const loading = computed(() => deliveriesLoading.value);
 const openMobileMenuId = ref<string | null>(null);
 
 const canCreateDelivery = computed(() => {
@@ -511,23 +523,14 @@ const canEditDelete = computed(() => {
   return !isReadOnly.value;
 });
 
-const loadData = async () => {
+const reloadAllData = async () => {
   try {
-    loading.value = true;
-    const deliveryData = await deliveryService.getAll();
-    
-    // Sort deliveries by delivery date descending (newest first)
-    allDeliveries.value = deliveryData.sort((a, b) => 
-      new Date(b.delivery_date).getTime() - new Date(a.delivery_date).getTime()
-    );
-    
+    await reloadDeliveries();
     // Load all items for search functionality
     loadAll();
   } catch (err) {
     console.error('Error loading deliveries:', err);
     error(t('delivery.loadError'));
-  } finally {
-    loading.value = false;
   }
 };
 
@@ -609,7 +612,7 @@ const deleteDelivery = async (delivery: Delivery) => {
   try {
     await deliveryService.delete(delivery.id!);
     success(t('delivery.deleteSuccess'));
-    await loadData();
+    await reloadAllData();
   } catch (err) {
     console.error('Error deleting delivery:', err);
     error(t('delivery.deleteError'));
@@ -623,13 +626,13 @@ const closeAddModal = () => {
 
 const handleDeliverySaved = () => {
   // For new deliveries, modal stays open but refreshes the list
-  loadData();
+  reloadAllData();
 };
 
 const handleDeliveryEditSuccess = () => {
   // For edits, close the modal and refresh
   closeAddModal();
-  loadData();
+  reloadAllData();
 };
 
 const toggleMobileMenu = (deliveryId: string) => {
@@ -687,7 +690,9 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
 };
 
 onMounted(() => {
-  loadData();
+  // Data loading is handled automatically by useSiteData
+  // Initial load all for search functionality
+  setTimeout(() => loadAll(), 100);
   document.addEventListener('click', handleClickOutside);
   window.addEventListener('show-add-modal', handleShowAddModal);
   window.addEventListener('keydown', handleKeyboardShortcut);

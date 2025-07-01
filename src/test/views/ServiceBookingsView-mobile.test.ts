@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { setupTestPinia } from '../utils/test-setup'
 import ServiceBookingsView from '../../views/ServiceBookingsView.vue'
 import { createMockRouter } from '../utils/test-utils'
 
@@ -59,8 +60,44 @@ vi.mock('../../composables/usePermissions', () => ({
   })
 }))
 
+// Mock useSiteData composable
+vi.mock('../../composables/useSiteData', () => ({
+  useSiteData: () => ({
+    data: { value: [] },
+    loading: { value: false },
+    reload: vi.fn()
+  })
+}))
+
+// Mock useSite composable  
+vi.mock('../../composables/useSite', () => ({
+  useSite: () => ({
+    currentSiteId: { value: 'site-1' }
+  })
+}))
+
+// Mock useSubscription composable
+vi.mock('../../composables/useSubscription', () => ({
+  useSubscription: () => ({
+    checkCreateLimit: vi.fn().mockReturnValue(true),
+    isReadOnly: { value: false }
+  })
+}))
+
+// Mock useToast composable
+vi.mock('../../composables/useToast', () => ({
+  useToast: () => ({
+    success: vi.fn(),
+    error: vi.fn()
+  })
+}))
+
 // Mock PocketBase services
 vi.mock('../../services/pocketbase', () => ({
+  getCurrentSiteId: vi.fn().mockReturnValue('site-1'),
+  getCurrentUserRole: vi.fn().mockReturnValue('owner'),
+  setCurrentSiteId: vi.fn(),
+  setCurrentUserRole: vi.fn(),
   serviceBookingService: {
     getAll: vi.fn().mockResolvedValue([
       {
@@ -119,7 +156,6 @@ vi.mock('../../services/pocketbase', () => ({
     update: vi.fn().mockResolvedValue(true),
     delete: vi.fn().mockResolvedValue(true)
   },
-  getCurrentSiteId: vi.fn().mockReturnValue('test-site-id'),
   pb: {
     collection: vi.fn(() => ({
       getFullList: vi.fn().mockResolvedValue([]),
@@ -149,9 +185,17 @@ vi.mock('../../components/PhotoGallery.vue', () => ({
 describe('ServiceBookingsView - Mobile Responsive Design', () => {
   let wrapper: any
   let router: any
+  let pinia: any
+  let siteStore: any
 
   beforeEach(() => {
     vi.clearAllMocks()
+    
+    // Setup Pinia
+    const testSetup = setupTestPinia()
+    pinia = testSetup.pinia
+    siteStore = testSetup.siteStore
+    
     router = createMockRouter()
     
     // Mock window.innerWidth for mobile testing
@@ -176,7 +220,7 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
     return mount(ServiceBookingsView, {
       props,
       global: {
-        plugins: [router],
+        plugins: [router, pinia],
         stubs: {
           'Calendar': true,
           'Plus': true,

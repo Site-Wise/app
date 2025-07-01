@@ -242,18 +242,25 @@ import {
 } from '../services/pocketbase';
 import { useI18n } from '../composables/useI18n';
 import { useAccountSearch } from '../composables/useSearch';
+import { useSiteData } from '../composables/useSiteData';
 
 const { t } = useI18n();
 const router = useRouter();
+// Use site-aware data loading
+const { data: accountsData, loading: dataLoading, reload: reloadAccounts } = useSiteData(async (siteId) => {
+  const accounts = await accountService.getAll();
+  return accounts;
+});
+
 // Search functionality
 const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useAccountSearch();
 
-// Display items: use search results if searching, otherwise all items
+// Display items: use search results if searching, otherwise site data
 const accounts = computed(() => {
-  return searchQuery.value.trim() ? searchResults.value : allAccounts.value
+  return searchQuery.value.trim() ? searchResults.value : (accountsData.value || [])
 });
 
-const allAccounts = ref<Account[]>([]);
+const allAccounts = computed(() => accountsData.value || []);
 const showAddModal = ref(false);
 const editingAccount = ref<Account | null>(null);
 const loading = ref(false);
@@ -311,17 +318,6 @@ const viewAccountDetail = (accountId: string) => {
   }
 };
 
-const loadData = async () => {
-  try {
-    const accountsData = await accountService.getAll();
-    allAccounts.value = accountsData;
-    
-    // Load all items for search functionality
-    loadAll();
-  } catch (error) {
-    console.error('Error loading accounts:', error);
-  }
-};
 
 const saveAccount = async () => {
   loading.value = true;
@@ -331,7 +327,7 @@ const saveAccount = async () => {
     } else {
       await accountService.create(form);
     }
-    await loadData();
+    await reloadAccounts();
     closeModal();
   } catch (error) {
     console.error('Error saving account:', error);
@@ -356,7 +352,7 @@ const editAccount = (account: Account) => {
 const toggleAccountStatus = async (account: Account) => {
   try {
     await accountService.update(account.id!, { is_active: !account.is_active });
-    await loadData();
+    await reloadAccounts();
   } catch (error) {
     console.error('Error updating account status:', error);
   }
@@ -366,7 +362,7 @@ const deleteAccount = async (id: string) => {
   if (confirm(t('messages.confirmDelete', { item: t('common.account') }) + ' ' + t('messages.cannotUndo'))) {
     try {
       await accountService.delete(id);
-      await loadData();
+      await reloadAccounts();
     } catch (error) {
       console.error('Error deleting account:', error);
     }
@@ -393,10 +389,6 @@ const handleAddAccount = async () => {
   firstInputRef.value?.focus();
 };
 
-const handleSiteChange = () => {
-  loadData();
-};
-
 const handleKeyboardShortcut = (event: KeyboardEvent) => {
   if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
     event.preventDefault();
@@ -405,13 +397,12 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
 };
 
 onMounted(() => {
-  loadData();
-  window.addEventListener('site-changed', handleSiteChange);
+  // Load search data when accounts data changes
+  loadAll();
   window.addEventListener('keydown', handleKeyboardShortcut);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('site-changed', handleSiteChange);
   window.removeEventListener('keydown', handleKeyboardShortcut);
 });
 </script>

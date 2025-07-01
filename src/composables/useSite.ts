@@ -1,169 +1,37 @@
-import { ref, computed } from 'vue';
-import { 
-  siteService, 
-  siteUserService,
-  getCurrentSiteId, 
-  setCurrentSiteId,
-  // getCurrentUserRole,
-  setCurrentUserRole,
-  type Site 
-} from '../services/pocketbase';
-
-const currentSite = ref<Site | null>(null);
-const userSites = ref<Site[]>([]);
-const currentUserRole = ref<'owner' | 'supervisor' | 'accountant' | null>(null);
-const isInitialized = ref(false);
-let loadingSitesPromise: Promise<void> | null = null;
-let siteSelectionTimer: ReturnType<typeof setTimeout> | null = null;
+import { computed } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useSiteStore } from '../stores/site';
+import { siteService, siteUserService, type Site } from '../services/pocketbase';
 
 export function useSite() {
-  const isLoading = ref(false);
+  const store = useSiteStore();
+  const { 
+    currentSite, 
+    userSites, 
+    currentUserRole, 
+    isLoading, 
+    isInitialized,
+    isReadyForRouting 
+  } = storeToRefs(store);
 
   const loadUserSites = async () => {
-    // Prevent concurrent calls - return existing promise if already loading
-    if (loadingSitesPromise) {
-      return loadingSitesPromise;
-    }
-
-    loadingSitesPromise = performLoadUserSites();
-    try {
-      await loadingSitesPromise;
-    } finally {
-      loadingSitesPromise = null;
-    }
-  };
-
-  const performLoadUserSites = async () => {
-    isLoading.value = true;
-    isInitialized.value = false;
-    try {
-      const sites = await siteService.getAll();
-      
-      // Load ownership info for each site - optimized to reduce N+1 queries
-      const authService = await import('../services/pocketbase').then(m => m.authService);
-      const user = authService.currentUser;
-      if (user) {
-        // Batch load all user roles for sites to avoid N+1 queries
-        const siteIds = sites.map(site => site.id!).filter(Boolean);
-        const userRoles = await siteUserService.getUserRolesForSites(user.id, siteIds);
-        
-        const sitesWithOwnership = sites.map((site) => {
-          const role = userRoles[site.id!] || null;
-          return {
-            ...site,
-            userRole: role,
-            isOwner: role === 'owner'
-          };
-        });
-        userSites.value = sitesWithOwnership;
-      } else {
-        userSites.value = sites;
-      }
-      
-      // If no current site is set but user has sites, set the first one
-      const savedSiteId = getCurrentSiteId();
-
-      if (!savedSiteId && userSites.value.length > 0) {
-        await selectSite(userSites.value[0].id!);
-      } else if (savedSiteId) {
-        // Verify the saved site is still accessible
-        const savedSite = userSites.value.find(site => site.id === savedSiteId);
-        if (savedSite) {
-          currentSite.value = savedSite;
-          // Load user role for this site
-          await loadUserRoleForCurrentSite();
-        } else {
-          // Saved site is no longer accessible, clear it
-          setCurrentSiteId(null);
-          setCurrentUserRole(null);
-          currentSite.value = null;
-          currentUserRole.value = null;
-        }
-      }
-    } catch (error) {
-      console.error('Error loading user sites:', error);
-    } finally {
-      isLoading.value = false;
-      isInitialized.value = true;
-    }
-  };
-
-  const loadUserRoleForCurrentSite = async () => {
-    if (!currentSite.value) return;
-    
-    try {
-      const authService = await import('../services/pocketbase').then(m => m.authService);
-      const user = authService.currentUser;
-      if (!user) {
-        currentUserRole.value = null;
-        setCurrentUserRole(null);
-        return;
-      }
-
-      const role = await siteUserService.getUserRoleForSite(user.id, currentSite.value.id!);
-      currentUserRole.value = role;
-      setCurrentUserRole(role);
-    } catch (error) {
-      console.error('Error loading user role:', error);
-      currentUserRole.value = null;
-      setCurrentUserRole(null);
-    }
+    await store.loadUserSites();
   };
 
   const selectSite = async (siteId: string) => {
-    // Clear any pending site selection
-    if (siteSelectionTimer) {
-      clearTimeout(siteSelectionTimer);
+    const userSite = userSites.value.find(us => us.site === siteId);
+    if (userSite && userSite.expand?.site) {
+      await store.selectSite(userSite.expand.site as Site, userSite.role);
+      // Note: Removed custom event emission as watchers handle site changes
     }
-
-    // Debounce site selection to prevent rapid successive calls
-    return new Promise<void>((resolve) => {
-      siteSelectionTimer = setTimeout(async () => {
-        try {
-          const site = userSites.value.find(s => s.id === siteId);
-          if (site) {
-            currentSite.value = site;
-            setCurrentSiteId(siteId);
-            
-            // Load user role for the selected site
-            await loadUserRoleForCurrentSite();
-          }
-          resolve();
-        } catch (error) {
-          console.error('Error selecting site:', error);
-          resolve();
-        }
-      }, 100); // 100ms debounce
-    });
   };
 
   const createSite = async (siteData: Pick<Site, 'name' | 'description' | 'total_units' | 'total_planned_area'>) => {
-    try {
-      const newSite = await siteService.create(siteData);
-      userSites.value.push(newSite);
-      await selectSite(newSite.id!);
-      return newSite;
-    } catch (error) {
-      console.error('Error creating site:', error);
-      throw error;
-    }
+    return await store.createSite(siteData);
   };
 
   const updateSite = async (siteId: string, siteData: Partial<Site>) => {
-    try {
-      const updatedSite = await siteService.update(siteId, siteData);
-      const index = userSites.value.findIndex(s => s.id === siteId);
-      if (index !== -1) {
-        userSites.value[index] = updatedSite;
-      }
-      if (currentSite.value?.id === siteId) {
-        currentSite.value = updatedSite;
-      }
-      return updatedSite;
-    } catch (error) {
-      console.error('Error updating site:', error);
-      throw error;
-    }
+    return await store.updateSite(siteId, siteData);
   };
 
   const addUserToSite = async (userId: string, siteId: string, role: 'owner' | 'supervisor' | 'accountant' = 'supervisor') => {
@@ -245,7 +113,7 @@ export function useSite() {
       
       // If changing current user's role, update local state
       if (currentUser && currentUser.id === userId && siteId === currentSite.value?.id) {
-        currentUserRole.value = newRole;
+        const { setCurrentUserRole } = await import('../services/pocketbase');
         setCurrentUserRole(newRole);
       }
       
@@ -259,10 +127,6 @@ export function useSite() {
 
   const hasSiteAccess = computed(() => {
     return currentSite.value !== null;
-  });
-
-  const isReadyForRouting = computed(() => {
-    return isInitialized.value;
   });
 
   const isCurrentUserAdmin = computed(() => {
@@ -288,10 +152,10 @@ export function useSite() {
   };
 
   return {
-    currentSite: computed(() => currentSite.value),
-    userSites: computed(() => userSites.value),
-    currentUserRole: computed(() => currentUserRole.value),
-    isLoading: computed(() => isLoading.value),
+    currentSite,
+    userSites,
+    currentUserRole,
+    isLoading,
     hasSiteAccess,
     isReadyForRouting,
     isCurrentUserAdmin,

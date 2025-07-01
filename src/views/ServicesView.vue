@@ -18,8 +18,13 @@
       </button>
     </div>
 
+    <!-- Loading State -->
+    <div v-if="loading" class="flex justify-center py-8">
+      <Loader2 class="h-8 w-8 animate-spin text-primary-600" />
+    </div>
+
     <!-- Services Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div v-else-if="services && services.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div v-for="service in services" :key="service.id" class="card hover:shadow-md transition-shadow duration-200 cursor-pointer" @click="viewServiceDetail(service.id!)">
         <div class="flex items-start justify-between">
           <div class="flex-1">
@@ -101,13 +106,21 @@
         </div>
       </div>
       
-      <div v-if="services.length === 0" class="col-span-full">
-        <div class="text-center py-12">
-          <Wrench class="mx-auto h-12 w-12 text-gray-400" />
-          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('services.noServices') }}</h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('services.getStarted') }}</p>
-        </div>
-      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else class="text-center py-12">
+      <Wrench class="mx-auto h-12 w-12 text-gray-400" />
+      <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('services.noServices') }}</h3>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('services.getStarted') }}</p>
+      <button 
+        v-if="canCreate"
+        @click="handleAddService" 
+        class="mt-4 btn-primary"
+      >
+        <Plus class="mr-2 h-4 w-4" />
+        {{ t('services.addService') }}
+      </button>
     </div>
 
     <!-- Summary Cards -->
@@ -229,8 +242,8 @@
             </div>
             
             <div class="flex space-x-3 pt-4">
-              <button type="submit" :disabled="loading" class="flex-1 btn-primary">
-                <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
+              <button type="submit" :disabled="saveLoading" class="flex-1 btn-primary">
+                <Loader2 v-if="saveLoading" class="mr-2 h-4 w-4 animate-spin" />
                 {{ editingService ? t('common.update') : t('common.create') }}
               </button>
               <button type="button" @click="closeModal" class="flex-1 btn-outline">
@@ -245,7 +258,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, computed, nextTick } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { 
   Wrench, 
@@ -264,6 +277,7 @@ import {
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { usePermissions } from '../composables/usePermissions';
+import { useSiteData } from '../composables/useSiteData';
 import TagSelector from '../components/TagSelector.vue';
 import { 
   serviceService, 
@@ -278,13 +292,27 @@ const { t } = useI18n();
 const { canCreate, canUpdate, canDelete } = usePermissions();
 const router = useRouter();
 
-const services = ref<Service[]>([]);
-const serviceBookings = ref<ServiceBooking[]>([]);
+// Use reactive site data management
+const { data: services, loading: servicesLoading, reload: reloadServices } = useSiteData(
+  async (siteId) => await serviceService.getAll()
+);
+
+const { data: serviceBookings, loading: bookingsLoading } = useSiteData(
+  async (siteId) => await serviceBookingService.getAll()
+);
+
+const { data: allTags, loading: tagsLoading } = useSiteData(
+  async (siteId) => await tagService.getAll()
+);
+
 const serviceTags = ref<Map<string, TagType[]>>(new Map());
 const showAddModal = ref(false);
 const editingService = ref<Service | null>(null);
-const loading = ref(false);
+const saveLoading = ref(false);
 const nameInputRef = ref<HTMLInputElement>();
+
+// Compute overall loading state
+const loading = computed(() => servicesLoading.value || bookingsLoading.value || tagsLoading.value);
 
 const form = reactive({
   name: '',
@@ -298,19 +326,19 @@ const form = reactive({
 });
 
 const activeServicesCount = computed(() => {
-  return services.value.filter(service => service.is_active).length;
+  return services.value?.filter(service => service.is_active).length || 0;
 });
 
 const laborServicesCount = computed(() => {
-  return services.value.filter(service => service.category === 'labor' && service.is_active).length;
+  return services.value?.filter(service => service.category === 'labor' && service.is_active).length || 0;
 });
 
 const equipmentServicesCount = computed(() => {
-  return services.value.filter(service => service.category === 'equipment' && service.is_active).length;
+  return services.value?.filter(service => service.category === 'equipment' && service.is_active).length || 0;
 });
 
 const totalBookingsCount = computed(() => {
-  return serviceBookings.value.length;
+  return serviceBookings.value?.length || 0;
 });
 
 const getServiceIcon = (category: Service['category']) => {
@@ -325,10 +353,12 @@ const getServiceIcon = (category: Service['category']) => {
 };
 
 const getServiceBookingsCount = (serviceId: string) => {
-  return serviceBookings.value.filter(booking => booking.service === serviceId).length;
+  return serviceBookings.value?.filter(booking => booking.service === serviceId).length || 0;
 };
 
 const getServiceAverageRate = (serviceId: string) => {
+  if (!serviceBookings.value) return 0;
+  
   const serviceBookingsForService = serviceBookings.value.filter(booking => booking.service === serviceId);
   if (serviceBookingsForService.length === 0) return 0;
   
@@ -342,46 +372,35 @@ const viewServiceDetail = (serviceId: string) => {
   router.push(`/services/${serviceId}`);
 };
 
-const loadData = async () => {
-  try {
-    const [servicesData, bookingsData, allTags] = await Promise.all([
-      serviceService.getAll(),
-      serviceBookingService.getAll(),
-      tagService.getAll()
-    ]);
-    
-    services.value = servicesData;
-    serviceBookings.value = bookingsData;
-    
-    // Map tags for each service
+// Watch for changes in services and tags to update tag mapping
+watch([services, allTags], () => {
+  if (services.value && allTags.value) {
     const tagMap = new Map<string, TagType[]>();
-    for (const service of servicesData) {
+    for (const service of services.value) {
       if (service.tags && service.tags.length > 0) {
-        const serviceTagObjects = allTags.filter(tag => service.tags!.includes(tag.id!));
+        const serviceTagObjects = allTags.value.filter(tag => service.tags!.includes(tag.id!));
         tagMap.set(service.id!, serviceTagObjects);
       }
     }
     serviceTags.value = tagMap;
-  } catch (error) {
-    console.error('Error loading data:', error);
   }
-};
+}, { immediate: true });
 
 const saveService = async () => {
-  loading.value = true;
+  saveLoading.value = true;
   try {
     if (editingService.value) {
       await serviceService.update(editingService.value.id!, form);
     } else {
       await serviceService.create(form);
     }
-    await loadData();
+    await reloadServices();
     closeModal();
   } catch (error) {
     console.error('Error saving service:', error);
     alert(t('messages.error'));
   } finally {
-    loading.value = false;
+    saveLoading.value = false;
   }
 };
 
@@ -402,7 +421,7 @@ const editService = (service: Service) => {
 const toggleServiceStatus = async (service: Service) => {
   try {
     await serviceService.update(service.id!, { is_active: !service.is_active });
-    await loadData();
+    await reloadServices();
   } catch (error) {
     console.error('Error updating service status:', error);
     alert(t('messages.error'));
@@ -413,7 +432,7 @@ const deleteService = async (id: string) => {
   if (confirm(t('messages.confirmDelete', { item: t('services.service') }))) {
     try {
       await serviceService.delete(id);
-      await loadData();
+      await reloadServices();
     } catch (error) {
       console.error('Error deleting service:', error);
       alert(t('messages.error'));
@@ -453,9 +472,6 @@ const handleQuickAction = async () => {
   }
 };
 
-const handleSiteChange = () => {
-  loadData();
-};
 
 const handleKeyboardShortcut = (event: KeyboardEvent) => {
   if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
@@ -465,15 +481,12 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
 };
 
 onMounted(() => {
-  loadData();
   window.addEventListener('show-add-modal', handleQuickAction);
-  window.addEventListener('site-changed', handleSiteChange);
   window.addEventListener('keydown', handleKeyboardShortcut);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
-  window.removeEventListener('site-changed', handleSiteChange);
   window.removeEventListener('keydown', handleKeyboardShortcut);
 });
 </script>

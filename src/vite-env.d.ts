@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/client" />
 /// <reference path="./types/tauri.d.ts" />
 
 interface ImportMetaEnv {

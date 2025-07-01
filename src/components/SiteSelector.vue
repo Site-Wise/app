@@ -274,14 +274,19 @@ const editForm = reactive({
 });
 
 const otherSites = computed(() => {
-  return (userSites.value as SiteWithOwnership[]).filter(site => site.id !== currentSite.value?.id);
+  return userSites.value
+    .filter(userSite => userSite.expand?.site && userSite.expand.site.id !== currentSite.value?.id)
+    .map(userSite => ({
+      ...userSite.expand.site,
+      userRole: userSite.role,
+      isOwner: userSite.role === 'owner'
+    }));
 });
 
 const selectSite = async (siteId: string) => {
   await selectSiteAction(siteId);
   dropdownOpen.value = false;
-  // Emit event to refresh data in other components
-  window.dispatchEvent(new CustomEvent('site-changed'));
+  // Note: Removed custom event emission as watchers handle site changes
 };
 
 const handleCreateSite = async () => {
@@ -289,8 +294,7 @@ const handleCreateSite = async () => {
   try {
     await createSite(createForm);
     closeCreateModal();
-    // Emit event to refresh data in other components
-    window.dispatchEvent(new CustomEvent('site-changed'));
+    // Note: Removed custom event emission as watchers handle site changes
   } catch (error) {
     console.error('Error creating site:', error);
   } finally {
@@ -350,8 +354,7 @@ const handleUpdateSite = async () => {
   try {
     await updateSite(managingSite.value.id!, editForm);
     closeManageModal();
-    // Emit event to refresh data in other components
-    window.dispatchEvent(new CustomEvent('site-changed'));
+    // Note: Removed custom event emission as watchers handle site changes
   } catch (error) {
     console.error('Error updating site:', error);
     alert('Failed to update site. Please try again.');

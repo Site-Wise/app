@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { computed } from 'vue'
 import PaymentsView from '../../views/PaymentsView.vue'
 import { createMockRouter } from '../utils/test-utils'
+import { setupTestPinia } from '../utils/test-setup'
 
 // Mock i18n
 vi.mock('../../composables/useI18n', () => ({
@@ -66,7 +67,7 @@ vi.mock('../../services/pocketbase', () => ({
         payment_date: '2024-01-20',
         reference: 'CHQ-001',
         notes: 'Partial payment for steel',
-        incoming_items: ['item-1', 'item-2'],
+        deliveries: ['delivery-1', 'delivery-2'],
         expand: {
           vendor: { id: 'vendor-1', name: 'ABC Steel Co.' },
           account: { id: 'account-1', name: 'Main Bank', type: 'bank' }
@@ -78,7 +79,7 @@ vi.mock('../../services/pocketbase', () => ({
         payment_date: '2024-01-15',
         reference: 'UPI-12345',
         notes: 'Full payment',
-        incoming_items: ['item-3'],
+        deliveries: ['delivery-3'],
         expand: {
           vendor: { id: 'vendor-2', name: 'XYZ Cement Ltd.' },
           account: { id: 'account-2', name: 'Digital Wallet', type: 'digital_wallet' }
@@ -90,7 +91,7 @@ vi.mock('../../services/pocketbase', () => ({
         payment_date: '2024-01-10',
         reference: '',
         notes: '',
-        incoming_items: [],
+        deliveries: [],
         expand: {
           vendor: { id: 'vendor-3', name: 'Local Bricks' },
           account: { id: 'account-3', name: 'Cash', type: 'cash' }
@@ -156,15 +157,24 @@ vi.mock('../../services/pocketbase', () => ({
   },
   serviceBookingService: {
     getAll: vi.fn().mockResolvedValue([])
-  }
+  },
+  getCurrentSiteId: vi.fn(() => 'site-1'),
+  setCurrentSiteId: vi.fn(),
+  getCurrentUserRole: vi.fn(() => 'owner'),
+  setCurrentUserRole: vi.fn()
 }))
 
 describe('PaymentsView - Mobile Responsive Design', () => {
   let wrapper: any
   let router: any
+  let pinia: any
+  let siteStore: any
 
   beforeEach(() => {
     vi.clearAllMocks()
+    const { pinia: testPinia, siteStore: testSiteStore } = setupTestPinia()
+    pinia = testPinia
+    siteStore = testSiteStore
     router = createMockRouter()
     
     // Mock window.innerWidth for mobile testing
@@ -189,7 +199,7 @@ describe('PaymentsView - Mobile Responsive Design', () => {
     return mount(PaymentsView, {
       props,
       global: {
-        plugins: [router],
+        plugins: [pinia, router],
         stubs: {
           'CreditCard': true,
           'Plus': true,

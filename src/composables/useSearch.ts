@@ -135,10 +135,10 @@ export function useSearch<T = any>(options: SearchOptions) {
 
 // Predefined search configurations for common collections
 export const searchConfigs = {
-  incoming_items: {
-    collection: 'incoming_items' as const,
+  delivery_items: {
+    collection: 'delivery_items' as const,
     searchFields: ['item', 'vendor', 'notes'],
-    expand: 'vendor'
+    expand: 'vendor,delivery'
   },
   deliveries: {
     collection: 'deliveries' as const,
@@ -174,7 +174,7 @@ export const searchConfigs = {
   payments: {
     collection: 'payments' as const,
     searchFields: ['expand.vendor.name', 'expand.account.name', 'description'],
-    expand: 'vendor,account,incoming_items,service_bookings'
+    expand: 'vendor,account,deliveries,service_bookings'
   }
 }
 

@@ -1,4 +1,5 @@
 import { ref, onMounted } from 'vue';
+import { useRegisterSW } from 'virtual:pwa-register/vue';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -16,8 +17,12 @@ export function usePWA() {
   const isInstalled = ref(false);
   const isOnline = ref(navigator.onLine);
   const installPrompt = ref<BeforeInstallPromptEvent | null>(null);
-  const updateAvailable = ref(false);
-  const registration = ref<ServiceWorkerRegistration | null>(null);
+  
+  // Use Vite PWA plugin's built-in registration
+  const {
+    needRefresh: updateAvailable,
+    updateServiceWorker
+  } = useRegisterSW();
 
   // Check if app is installed
   const checkInstallStatus = () => {
@@ -47,55 +52,16 @@ export function usePWA() {
     }
   };
 
-  // Update the app
+  // Update the app using Vite PWA plugin's built-in functionality
   const updateApp = async () => {
-    if (!registration.value || !registration.value.waiting) return;
-
     try {
-      // Tell the waiting service worker to skip waiting
-      registration.value.waiting.postMessage({ type: 'SKIP_WAITING' });
-      
-      // Reload the page to activate the new service worker
-      window.location.reload();
+      await updateServiceWorker(true);
     } catch (error) {
       console.error('PWA: Error updating app:', error);
     }
   };
 
-  // Register service worker
-  const registerServiceWorker = async () => {
-    if ('serviceWorker' in navigator) {
-      try {
-        const reg = await navigator.serviceWorker.register('/sw.js');
-        registration.value = reg;
-
-        // Check for updates
-        reg.addEventListener('updatefound', () => {
-          const newWorker = reg.installing;
-          if (newWorker) {
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                updateAvailable.value = true;
-              }
-            });
-          }
-        });
-
-        // Handle service worker messages
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data && event.data.type === 'SW_UPDATED') {
-            updateAvailable.value = true;
-          }
-        });
-
-        return reg;
-      } catch (error) {
-        console.error('PWA: Service Worker registration failed:', error);
-        return null;
-      }
-    }
-    return null;
-  };
+  // Service worker is automatically registered by Vite PWA plugin
 
   // Request notification permission
   const requestNotificationPermission = async () => {
@@ -148,7 +114,6 @@ export function usePWA() {
   // Initialize PWA features
   const initializePWA = () => {
     checkInstallStatus();
-    registerServiceWorker();
 
     // Listen for install prompt
     window.addEventListener('beforeinstallprompt', (e: Event) => {

@@ -1,0 +1,406 @@
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
+import { setupTestPinia } from '../utils/test-setup'
+
+// Create persistent mock collections
+const mockSitesCollection = {
+  getFullList: vi.fn().mockResolvedValue([]),
+  create: vi.fn().mockResolvedValue({}),
+  update: vi.fn().mockResolvedValue({})
+}
+
+const mockSiteUsersCollection = {
+  getFullList: vi.fn().mockResolvedValue([]),
+  create: vi.fn().mockResolvedValue({}),
+  update: vi.fn().mockResolvedValue({})
+}
+
+// Mock PocketBase service
+vi.mock('../../services/pocketbase', () => ({
+  setCurrentSiteId: vi.fn(),
+  setCurrentUserRole: vi.fn(),
+  getCurrentSiteId: vi.fn(() => 'site-1'),
+  getCurrentUserRole: vi.fn(() => 'owner'),
+  pb: {
+    authStore: {
+      isValid: true,
+      model: { id: 'user-1' }
+    },
+    collection: vi.fn((name: string) => {
+      if (name === 'sites') return mockSitesCollection
+      if (name === 'site_users') return mockSiteUsersCollection
+      return {
+        getFullList: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue({}),
+        update: vi.fn().mockResolvedValue({})
+      }
+    })
+  }
+}))
+
+describe('Site Store', () => {
+  let store: any
+  let pinia: any
+
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    
+    // Reset persistent collection mocks
+    mockSitesCollection.create.mockResolvedValue({})
+    mockSitesCollection.update.mockResolvedValue({})
+    mockSitesCollection.getFullList.mockResolvedValue([])
+    mockSiteUsersCollection.getFullList.mockResolvedValue([])
+    
+    // Get mock function to control return value
+    const pocketbaseMocks = await import('../../services/pocketbase')
+    const getCurrentSiteIdMock = vi.mocked(pocketbaseMocks.getCurrentSiteId)
+    getCurrentSiteIdMock.mockReturnValue('site-1')
+    
+    const { pinia: testPinia, siteStore } = setupTestPinia()
+    pinia = testPinia
+    store = siteStore
+  })
+
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
+  describe('Site Selection', () => {
+    it('should prevent duplicate site selection', async () => {
+      const mockSite = {
+        id: 'site-1',
+        name: 'Test Site',
+        total_units: 100,
+        total_planned_area: 50000,
+        admin_user: 'user-1',
+        users: ['user-1']
+      }
+
+      const { setCurrentSiteId } = await import('../../services/pocketbase')
+
+      // Test the actual behavior: store should already have site-1 selected
+      // from setupTestPinia, so selecting the same site should be a no-op
+      expect(store.currentSiteId).toBe('site-1')
+      expect(store.currentUserRole).toBe('owner')
+
+      await store.selectSite(mockSite, 'owner')
+
+      expect(setCurrentSiteId).not.toHaveBeenCalled()
+    })
+
+    it('should update site when different site selected', async () => {
+      const newSite = {
+        id: 'site-2',
+        name: 'New Site',
+        total_units: 50,
+        total_planned_area: 25000,
+        admin_user: 'user-1',
+        users: ['user-1']
+      }
+
+      const { setCurrentSiteId, setCurrentUserRole } = await import('../../services/pocketbase')
+
+      await store.selectSite(newSite, 'supervisor')
+
+      expect(store.currentSite).toEqual(newSite)
+      expect(store.currentSiteId).toBe('site-2')
+      expect(store.currentUserRole).toBe('supervisor')
+      expect(setCurrentSiteId).toHaveBeenCalledWith('site-2')
+      expect(setCurrentUserRole).toHaveBeenCalledWith('supervisor')
+    })
+
+    it('should handle site selection errors gracefully', async () => {
+      const { setCurrentSiteId } = await import('../../services/pocketbase')
+      const mockSetCurrentSiteId = vi.mocked(setCurrentSiteId)
+      mockSetCurrentSiteId.mockImplementationOnce(() => {
+        throw new Error('Storage error')
+      })
+
+      const mockSite = {
+        id: 'site-error',
+        name: 'Error Site',
+        total_units: 100,
+        total_planned_area: 50000,
+        admin_user: 'user-1',
+        users: ['user-1']
+      }
+
+      await store.selectSite(mockSite, 'owner')
+
+      expect(store.currentSite).toBe(null)
+      expect(store.currentSiteId).toBe(null)
+      expect(store.currentUserRole).toBe(null)
+    })
+  })
+
+  describe('Site Loading', () => {
+    it('should load user sites and auto-select if only one', async () => {
+      const mockUserSites = [
+        {
+          site: 'site-1',
+          role: 'owner',
+          expand: { 
+            site: { 
+              id: 'site-1', 
+              name: 'Only Site',
+              total_units: 100,
+              total_planned_area: 50000,
+              admin_user: 'user-1',
+              users: ['user-1']
+            } 
+          }
+        }
+      ]
+
+      mockSiteUsersCollection.getFullList.mockResolvedValue(mockUserSites)
+
+      await store.loadUserSites()
+
+      expect(store.userSites).toEqual(mockUserSites)
+      expect(store.currentSite).toEqual(mockUserSites[0].expand.site)
+      expect(store.isInitialized).toBe(true)
+    })
+
+    it('should not auto-select when multiple sites available', async () => {
+      const mockUserSites = [
+        {
+          site: 'site-1',
+          role: 'owner',
+          expand: { site: { id: 'site-1', name: 'Site 1' } }
+        },
+        {
+          site: 'site-2',
+          role: 'manager',
+          expand: { site: { id: 'site-2', name: 'Site 2' } }
+        }
+      ]
+
+      // Mock getCurrentSiteId to return null for this test
+      const pocketbaseMocks = await import('../../services/pocketbase')
+      const getCurrentSiteIdMock = vi.mocked(pocketbaseMocks.getCurrentSiteId)
+      getCurrentSiteIdMock.mockReturnValue(null)
+
+      mockSiteUsersCollection.getFullList.mockResolvedValue(mockUserSites)
+      
+      // Clear current site using the action instead of $patch
+      await store.clearCurrentSite()
+
+      await store.loadUserSites()
+
+      expect(store.userSites).toEqual(mockUserSites)
+      expect(store.currentSite).toBe(null)
+      expect(store.isInitialized).toBe(true)
+    })
+
+    it('should handle unauthenticated state', async () => {
+      const { pb } = await import('../../services/pocketbase')
+      pb.authStore.isValid = false
+
+      await store.loadUserSites()
+
+      expect(store.userSites).toEqual([])
+      expect(store.currentSite).toBe(null)
+      expect(store.isInitialized).toBe(true)
+    })
+  })
+
+  describe('isReadyForRouting', () => {
+    it('should be true when initialized with a current site', async () => {
+      const mockUserSites = [
+        {
+          site: 'site-1',
+          role: 'owner',
+          expand: { 
+            site: { 
+              id: 'site-1', 
+              name: 'Test Site',
+              total_units: 100,
+              total_planned_area: 50000,
+              admin_user: 'user-1',
+              users: ['user-1']
+            } 
+          }
+        }
+      ]
+
+      mockSiteUsersCollection.getFullList.mockResolvedValue(mockUserSites)
+
+      await store.loadUserSites()
+
+      expect(store.isReadyForRouting).toBe(true)
+    })
+
+    it('should be true when initialized with no user sites', async () => {
+      mockSiteUsersCollection.getFullList.mockResolvedValue([])
+
+      await store.loadUserSites()
+
+      expect(store.isReadyForRouting).toBe(true)
+    })
+
+    it('should be false when not initialized', () => {
+      // Start with fresh store that hasn't called loadUserSites
+      expect(store.isReadyForRouting).toBe(false)
+    })
+
+    it('should be false when initialized but has sites and no current site', async () => {
+      const mockUserSites = [
+        { site: 'site-1', role: 'owner', expand: { site: { id: 'site-1', name: 'Site 1' } } },
+        { site: 'site-2', role: 'manager', expand: { site: { id: 'site-2', name: 'Site 2' } } }
+      ]
+
+      // Mock getCurrentSiteId to return null for this test - need to set this before loadUserSites
+      const pocketbaseMocks = await import('../../services/pocketbase')
+      const getCurrentSiteIdMock = vi.mocked(pocketbaseMocks.getCurrentSiteId)
+      getCurrentSiteIdMock.mockReturnValue(null)
+
+      // Reset the mock and set new return value
+      mockSiteUsersCollection.getFullList.mockReset()
+      mockSiteUsersCollection.getFullList.mockResolvedValue(mockUserSites)
+      
+      // Clear current site first to ensure no site is selected
+      await store.clearCurrentSite()
+      
+      // Reset all store state to ensure clean test
+      store.$patch({ 
+        currentSiteId: null, 
+        currentSite: null, 
+        userSites: [],
+        isInitialized: false 
+      })
+
+      // Fix the auth store mock for this specific test
+      const { pb } = await import('../../services/pocketbase')
+      pb.authStore.isValid = true
+      pb.authStore.model = { id: 'user-1' }
+
+      await store.loadUserSites()
+
+      expect(store.userSites.length).toBe(2) // Should have loaded 2 sites
+      expect(store.currentSite).toBe(null) // Should not have selected a site
+      expect(store.isInitialized).toBe(true) // Should be initialized
+      expect(store.isReadyForRouting).toBe(false) // Should NOT be ready because has sites but no current site
+    })
+  })
+
+  describe('Site Management', () => {
+    it('should create site and auto-select it', async () => {
+      const newSiteData = { name: 'New Site' }
+      const createdSite = { id: 'site-new', ...newSiteData }
+
+      mockSitesCollection.create.mockResolvedValue(createdSite)
+      mockSiteUsersCollection.getFullList.mockResolvedValue([
+        { site: 'site-new', role: 'owner', expand: { site: createdSite } }
+      ])
+
+      await store.createSite(newSiteData)
+
+      expect(store.currentSite).toEqual(createdSite)
+    })
+
+    it('should update current site when updated', async () => {
+      const updatedData = { name: 'Updated Name' }
+      const updatedSite = { id: 'site-1', name: 'Updated Name', total_units: 100, total_planned_area: 50000, admin_user: 'user-1', users: ['user-1'] }
+
+      // First set up a current site using selectSite
+      const originalSite = { id: 'site-1', name: 'Original Name', total_units: 100, total_planned_area: 50000, admin_user: 'user-1', users: ['user-1'] }
+      
+      // Mock the setCurrentSiteId since selectSite calls it - ensure they don't throw
+      const pocketbaseMocks = await import('../../services/pocketbase')
+      const setCurrentSiteIdMock = vi.mocked(pocketbaseMocks.setCurrentSiteId)
+      const setCurrentUserRoleMock = vi.mocked(pocketbaseMocks.setCurrentUserRole)
+      setCurrentSiteIdMock.mockImplementation(() => undefined)  // Return undefined, don't throw
+      setCurrentUserRoleMock.mockImplementation(() => undefined)  // Return undefined, don't throw
+      
+      // Ensure auth store is properly set for this test too
+      pocketbaseMocks.pb.authStore.isValid = true
+      pocketbaseMocks.pb.authStore.model = { id: 'user-1' }
+      
+      try {
+        await store.selectSite(originalSite, 'owner')
+      } catch (error) {
+        console.error('selectSite failed:', error)
+        throw error
+      }
+      
+      // Verify the site was selected
+      expect(store.currentSite).toEqual(originalSite)
+      expect(store.currentSiteId).toBe('site-1')
+
+      mockSitesCollection.update.mockResolvedValue(updatedSite)
+
+      await store.updateSite('site-1', updatedData)
+
+      expect(store.currentSite).toEqual(updatedSite)
+    })
+  })
+
+  describe('Permission Helpers', () => {
+    beforeEach(async () => {
+      const mockUserSites = [
+        { site: 'site-1', role: 'owner', expand: { site: { id: 'site-1', name: 'Site 1' } } },
+        { site: 'site-2', role: 'manager', expand: { site: { id: 'site-2', name: 'Site 2' } } },
+        { site: 'site-3', role: 'supervisor', expand: { site: { id: 'site-3', name: 'Site 3' } } }
+      ]
+      
+      // Reset the mock and ensure it returns the correct data
+      mockSiteUsersCollection.getFullList.mockReset()
+      mockSiteUsersCollection.getFullList.mockResolvedValue(mockUserSites)
+      
+      // Ensure we have a clean store state
+      store.$patch({ 
+        userSites: [],
+        currentSite: null,
+        currentSiteId: null,
+        isInitialized: false 
+      })
+      
+      // Fix the auth store mock for permission helpers tests
+      const { pb } = await import('../../services/pocketbase')
+      pb.authStore.isValid = true
+      pb.authStore.model = { id: 'user-1' }
+      
+      await store.loadUserSites()
+      
+      // Verify the user sites were loaded correctly
+      expect(store.userSites.length).toBe(3)
+    })
+
+    it('should check if user can manage site', async () => {
+      // Mock setCurrentSiteId and setCurrentUserRole
+      const pocketbaseMocks = await import('../../services/pocketbase')
+      const setCurrentSiteIdMock = vi.mocked(pocketbaseMocks.setCurrentSiteId)
+      const setCurrentUserRoleMock = vi.mocked(pocketbaseMocks.setCurrentUserRole)
+      setCurrentSiteIdMock.mockImplementation(() => {})
+      setCurrentUserRoleMock.mockImplementation(() => {})
+      
+      await store.selectSite({ id: 'site-1', name: 'Site 1', total_units: 100, total_planned_area: 50000, admin_user: 'user-1', users: ['user-1'] }, 'owner')
+      expect(store.canManageSite()).toBe(true)
+
+      await store.selectSite({ id: 'site-2', name: 'Site 2', total_units: 100, total_planned_area: 50000, admin_user: 'user-1', users: ['user-1'] }, 'manager')
+      expect(store.canManageSite()).toBe(true)
+
+      await store.selectSite({ id: 'site-3', name: 'Site 3', total_units: 100, total_planned_area: 50000, admin_user: 'user-1', users: ['user-1'] }, 'supervisor')
+      expect(store.canManageSite()).toBe(false)
+    })
+
+    it('should check if user is owner', async () => {
+      // Mock setCurrentSiteId and setCurrentUserRole
+      const pocketbaseMocks = await import('../../services/pocketbase')
+      const setCurrentSiteIdMock = vi.mocked(pocketbaseMocks.setCurrentSiteId)
+      const setCurrentUserRoleMock = vi.mocked(pocketbaseMocks.setCurrentUserRole)
+      setCurrentSiteIdMock.mockImplementation(() => {})
+      setCurrentUserRoleMock.mockImplementation(() => {})
+      
+      await store.selectSite({ id: 'site-1', name: 'Site 1', total_units: 100, total_planned_area: 50000, admin_user: 'user-1', users: ['user-1'] }, 'owner')
+      expect(store.isOwner()).toBe(true)
+
+      await store.selectSite({ id: 'site-2', name: 'Site 2', total_units: 100, total_planned_area: 50000, admin_user: 'user-1', users: ['user-1'] }, 'manager')
+      expect(store.isOwner()).toBe(false)
+    })
+
+    it('should check permissions for specific site', () => {
+      expect(store.canManageSite('site-1')).toBe(true)
+      expect(store.isOwner('site-2')).toBe(false)
+    })
+  })
+})

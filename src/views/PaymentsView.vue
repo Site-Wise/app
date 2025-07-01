@@ -311,6 +311,7 @@ import {
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
+import { useSiteData } from '../composables/useSiteData';
 import { 
   paymentService, 
   accountTransactionService,
@@ -335,14 +336,48 @@ interface VendorWithOutstanding extends Vendor {
   pendingItems: number;
 }
 
-const payments = ref<AccountTransaction[]>([]);
-const vendors = ref<Vendor[]>([]);
-const accounts = ref<Account[]>([]);
-const deliveries = ref<Delivery[]>([]);
-const serviceBookings = ref<ServiceBooking[]>([]);
+// Use site data management
+const { data: paymentsData, loading: paymentsLoading, reload: reloadPayments } = useSiteData(
+  async (siteId) => {
+    const transactionsData = await accountTransactionService.getAll();
+    // Filter to show only debit transactions with vendors (payments)
+    return transactionsData.filter(transaction => 
+      transaction.type === 'debit' && transaction.vendor
+    );
+  }
+);
+
+const { data: vendorsData, loading: vendorsLoading } = useSiteData(
+  async (siteId) => await vendorService.getAll()
+);
+
+const { data: accountsData, loading: accountsLoading } = useSiteData(
+  async (siteId) => await accountService.getAll()
+);
+
+const { data: deliveriesData, loading: deliveriesLoading } = useSiteData(
+  async (siteId) => await deliveryService.getAll()
+);
+
+const { data: serviceBookingsData, loading: serviceBookingsLoading } = useSiteData(
+  async (siteId) => await serviceBookingService.getAll()
+);
+
+// Computed properties from useSiteData
+const payments = computed(() => paymentsData.value || []);
+const vendors = computed(() => vendorsData.value || []);
+const accounts = computed(() => accountsData.value || []);
+const deliveries = computed(() => deliveriesData.value || []);
+const serviceBookings = computed(() => serviceBookingsData.value || []);
 const showAddModal = ref(false);
 const viewingPayment = ref<AccountTransaction | null>(null);
 const loading = ref(false);
+
+// Compute overall loading state
+const overallLoading = computed(() => 
+  paymentsLoading.value || vendorsLoading.value || accountsLoading.value || 
+  deliveriesLoading.value || serviceBookingsLoading.value
+);
 const vendorOutstanding = ref(0);
 const vendorInputRef = ref<HTMLInputElement>();
 const openMobileMenuId = ref<string | null>(null);
@@ -365,10 +400,11 @@ const canCreatePayment = computed(() => {
 
 
 const activeAccounts = computed(() => {
-  return accounts.value.filter(account => account.is_active);
+  return accounts.value?.filter(account => account.is_active) || [];
 });
 
 const vendorsWithOutstanding = computed(() => {
+  if (!vendors.value) return [];
   return vendors.value.map(vendor => {
     // Calculate outstanding from deliveries
     const vendorDeliveries = deliveries.value.filter(delivery => 
@@ -417,27 +453,11 @@ const getRelatedItemsCount = () => {
   return 0;
 };
 
-const loadData = async () => {
-  try {
-    const [transactionsData, vendorsData, accountsData, deliveryData, serviceBookingsData] = await Promise.all([
-      accountTransactionService.getAll(),
-      vendorService.getAll(),
-      accountService.getAll(),
-      deliveryService.getAll(),
-      serviceBookingService.getAll()
-    ]);
-    
-    // Filter to show only debit transactions with vendors (payments)
-    payments.value = transactionsData.filter(transaction => 
-      transaction.type === 'debit' && transaction.vendor
-    );
-    vendors.value = vendorsData;
-    accounts.value = accountsData;
-    deliveries.value = deliveryData;
-    serviceBookings.value = serviceBookingsData;
-  } catch (error) {
-    console.error('Error loading data:', error);
-  }
+const reloadAllData = async () => {
+  await Promise.all([
+    reloadPayments(),
+    // Other data will be reloaded automatically by useSiteData
+  ]);
 };
 
 const loadVendorOutstanding = () => {
@@ -495,7 +515,7 @@ const savePayment = async () => {
     await paymentService.create(paymentData);
     success(t('messages.createSuccess', { item: t('common.payment') }));
     // Usage is automatically incremented by PocketBase hooks
-    await loadData();
+    await reloadAllData();
     closeModal();
   } catch (err) {
     console.error('Error saving payment:', err);
@@ -555,9 +575,7 @@ const handleQuickAction = () => {
   vendorInputRef.value?.focus();
 };
 
-const handleSiteChange = () => {
-  loadData();
-};
+// Site change is handled automatically by useSiteData
 
 const handleKeyboardShortcut = (event: KeyboardEvent) => {
   if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
@@ -577,26 +595,27 @@ const handleClickOutside = (event: Event) => {
 };
 
 onMounted(async () => {
-  await loadData();
+  // Data loading is handled automatically by useSiteData
   
   // Check for paymentId query parameter and auto-open payment modal
   const paymentId = route.query.paymentId as string;
   if (paymentId) {
-    const payment = payments.value.find(p => p.id === paymentId);
-    if (payment) {
-      viewingPayment.value = payment;
-    }
+    // Wait a bit for data to load, then check for the payment
+    setTimeout(() => {
+      const payment = payments.value.find(p => p.id === paymentId);
+      if (payment) {
+        viewingPayment.value = payment;
+      }
+    }, 500);
   }
   
   window.addEventListener('show-add-modal', handleQuickAction);
-  window.addEventListener('site-changed', handleSiteChange);
   window.addEventListener('keydown', handleKeyboardShortcut);
   document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
-  window.removeEventListener('site-changed', handleSiteChange);
   window.removeEventListener('keydown', handleKeyboardShortcut);
   document.removeEventListener('click', handleClickOutside);
 });

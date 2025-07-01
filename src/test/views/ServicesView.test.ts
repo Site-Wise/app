@@ -1,5 +1,29 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { mount, VueWrapper } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { setupTestPinia } from '../utils/test-setup'
+
+// Mock useSiteData to return controlled data
+vi.mock('../../composables/useSiteData', () => ({
+  useSiteData: vi.fn()
+}))
+
+// Mock useSite composable
+vi.mock('../../composables/useSite', () => ({
+  useSite: () => ({
+    currentSiteId: { value: 'site-1' },
+    isInitialized: { value: true }
+  })
+}))
+
+// Mock site store
+vi.mock('../../stores/site', () => ({
+  useSiteStore: () => ({
+    currentSiteId: 'site-1',
+    isInitialized: true,
+    $patch: vi.fn()
+  })
+}))
 
 // All mocks must be at the top before any imports
 vi.mock('../../composables/useI18n', () => ({
@@ -136,13 +160,15 @@ import { createMockRouter } from '../utils/test-utils'
 
 describe('ServicesView', () => {
   let wrapper: any
+  let pinia: any
+  let siteStore: any
 
   const createWrapper = () => {
     const router = createMockRouter()
     
     return mount(ServicesView, {
       global: {
-        plugins: [router],
+        plugins: [router, pinia],
         stubs: {
           'router-link': true,
           'TagSelector': {
@@ -155,15 +181,94 @@ describe('ServicesView', () => {
     })
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
+    
+    pinia = createPinia()
+    setActivePinia(pinia)
+    
+    const { useSiteStore } = await import('../../stores/site')
+    siteStore = useSiteStore()
+    siteStore.currentSiteId = 'site-1'
+    siteStore.isInitialized = true
+    
+    // Mock data
+    const mockServices = [{
+      id: 'service-1',
+      name: 'Test Service',
+      service_type: 'Construction',
+      category: 'labor' as const,
+      unit: 'hour',
+      standard_rate: 100,
+      description: 'Test service description',
+      tags: ['tag-1', 'tag-2'],
+      is_active: true,
+      site: 'site-1'
+    }]
+    
+    const mockServiceBookings = [{
+      id: 'booking-1',
+      service: 'service-1',
+      duration: 8,
+      total_amount: 800,
+      site: 'site-1'
+    }]
+    
+    const mockTags = [
+      { id: 'tag-1', name: 'Plumbing', color: '#ef4444', type: 'service_category', site: 'site-1', usage_count: 5 },
+      { id: 'tag-2', name: 'Electrical', color: '#22c55e', type: 'service_category', site: 'site-1', usage_count: 3 }
+    ]
+    
+    // Mock useSiteData to return different data based on the service function passed
+    const { useSiteData } = await import('../../composables/useSiteData')
+    const reloadServices = vi.fn()
+    
+    vi.mocked(useSiteData).mockImplementation((serviceFunction) => {
+      const { ref } = require('vue')
+      
+      // Check the function to determine which data to return
+      const funcString = serviceFunction.toString()
+      
+      if (funcString.includes('serviceService.getAll')) {
+        return {
+          data: ref(mockServices),
+          loading: ref(false),
+          error: ref(null),
+          reload: reloadServices
+        }
+      } else if (funcString.includes('serviceBookingService.getAll')) {
+        return {
+          data: ref(mockServiceBookings),
+          loading: ref(false),
+          error: ref(null),
+          reload: vi.fn()
+        }
+      } else if (funcString.includes('tagService.getAll')) {
+        return {
+          data: ref(mockTags),
+          loading: ref(false),
+          error: ref(null),
+          reload: vi.fn()
+        }
+      }
+      
+      // Default fallback
+      return {
+        data: ref([]),
+        loading: ref(false),
+        error: ref(null),
+        reload: vi.fn()
+      }
+    })
+    
     wrapper = createWrapper()
+    
+    // Store reload function for later tests
+    ;(wrapper as any).reloadServices = reloadServices
   })
 
   afterEach(() => {
-    if (wrapper) {
-      wrapper.unmount()
-    }
+    wrapper?.unmount()
   })
 
   it('should render services page title', () => {
@@ -267,6 +372,9 @@ describe('ServicesView', () => {
     expect(capturedFormData.service_type).toBe('New Type')
     expect(capturedFormData.category).toBe('labor')
     expect(capturedFormData.tags).toEqual(['tag-1', 'tag-2'])
+    
+    // Verify reload was called - use the stored reload function
+    expect((wrapper as any).reloadServices).toHaveBeenCalled()
   })
 
   it('should handle service editing with tag preservation', async () => {

@@ -1539,7 +1539,7 @@ export class PaymentService {
 
     const records = await pb.collection('payments').getFullList({
       filter: `site="${siteId}"`,
-      expand: 'vendor,account,incoming_items,service_bookings'
+      expand: 'vendor,account,deliveries,service_bookings'
     });
     return records.map(record => this.mapRecordToPayment(record));
   }

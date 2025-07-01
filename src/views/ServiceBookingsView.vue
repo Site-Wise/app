@@ -386,6 +386,7 @@ import {
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { usePermissions } from '../composables/usePermissions';
+import { useSiteData } from '../composables/useSiteData';
 import { useServiceBookingSearch } from '../composables/useSearch';
 import PhotoGallery from '../components/PhotoGallery.vue';
 import { 
@@ -408,13 +409,32 @@ const serviceBookings = computed(() => {
   return searchQuery.value.trim() ? searchResults.value : allServiceBookings.value
 });
 
-const allServiceBookings = ref<ServiceBooking[]>([]);
-const services = ref<Service[]>([]);
-const vendors = ref<Vendor[]>([]);
+// Use site data management
+const { data: allServiceBookingsData, loading: bookingsLoading, reload: reloadBookings } = useSiteData(
+  async (siteId) => await serviceBookingService.getAll()
+);
+
+const { data: servicesData, loading: servicesLoading } = useSiteData(
+  async (siteId) => await serviceService.getAll()
+);
+
+const { data: vendorsData, loading: vendorsLoading } = useSiteData(
+  async (siteId) => await vendorService.getAll()
+);
+
+// Computed properties from useSiteData
+const allServiceBookings = computed(() => allServiceBookingsData.value || []);
+const services = computed(() => servicesData.value || []);
+const vendors = computed(() => vendorsData.value || []);
 const showAddModal = ref(false);
 const editingBooking = ref<ServiceBooking | null>(null);
 const viewingBooking = ref<ServiceBooking | null>(null);
 const loading = ref(false);
+
+// Compute overall loading state
+const overallLoading = computed(() => 
+  bookingsLoading.value || servicesLoading.value || vendorsLoading.value
+);
 const serviceInputRef = ref<HTMLInputElement>();
 const openMobileMenuId = ref<string | null>(null);
 
@@ -432,26 +452,15 @@ const form = reactive({
 });
 
 const activeServices = computed(() => {
-  return services.value.filter(service => service.is_active);
+  return services.value?.filter(service => service.is_active) || [];
 });
 
-const loadData = async () => {
-  try {
-    const [bookingsData, servicesData, vendorsData] = await Promise.all([
-      serviceBookingService.getAll(),
-      serviceService.getAll(),
-      vendorService.getAll()
-    ]);
-    
-    allServiceBookings.value = bookingsData;
-    services.value = servicesData;
-    vendors.value = vendorsData;
-    
-    // Load all items for search functionality
-    loadAll();
-  } catch (error) {
-    console.error('Error loading data:', error);
-  }
+const reloadAllData = async () => {
+  await reloadBookings();
+  // Other data will be reloaded automatically by useSiteData
+  
+  // Load all items for search functionality
+  loadAll();
 };
 
 const calculateTotal = () => {
@@ -459,7 +468,7 @@ const calculateTotal = () => {
 };
 
 const updateRateFromService = () => {
-  const selectedService = services.value.find(service => service.id === form.service);
+  const selectedService = services.value?.find(service => service.id === form.service);
   if (selectedService && selectedService.standard_rate) {
     form.unit_rate = selectedService.standard_rate;
     calculateTotal();
@@ -485,7 +494,7 @@ const saveBooking = async () => {
       await serviceBookingService.create(data);
     }
     
-    await loadData();
+    await reloadAllData();
     closeModal();
   } catch (error) {
     console.error('Error saving service booking:', error);
@@ -525,7 +534,7 @@ const deleteBooking = async (id: string) => {
   if (confirm(t('messages.confirmDelete', { item: t('serviceBookings.booking') }))) {
     try {
       await serviceBookingService.delete(id);
-      await loadData();
+      await reloadAllData();
     } catch (error) {
       console.error('Error deleting service booking:', error);
       alert(t('messages.error'));
@@ -574,9 +583,7 @@ const handleQuickAction = async () => {
   }
 };
 
-const handleSiteChange = () => {
-  loadData();
-};
+// Site change is handled automatically by useSiteData
 
 const handleClickOutside = (event: Event) => {
   const target = event.target as Element;
@@ -597,16 +604,16 @@ const handleKeyboardShortcut = async (event: KeyboardEvent) => {
 };
 
 onMounted(() => {
-  loadData();
+  // Data loading is handled automatically by useSiteData
+  // Initial load all for search functionality
+  setTimeout(() => loadAll(), 100);
   window.addEventListener('show-add-modal', handleQuickAction);
-  window.addEventListener('site-changed', handleSiteChange);
   window.addEventListener('keydown', handleKeyboardShortcut);
   document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
-  window.removeEventListener('site-changed', handleSiteChange);
   window.removeEventListener('keydown', handleKeyboardShortcut);
   document.removeEventListener('click', handleClickOutside);
 });
