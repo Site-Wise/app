@@ -309,6 +309,7 @@
 import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
+import { useSite } from '../composables/useSite';
 import { useI18n } from '../composables/useI18n';
 import { useTheme } from '../composables/useTheme';
 import { AlertCircle, Loader2 } from 'lucide-vue-next';
@@ -363,6 +364,9 @@ const handleLogin = async () => {
   try {
     const result = await login(form.email, form.password, turnstileToken.value);
     if (result.success) {
+      // Load user sites before navigation to prevent race condition
+      const { loadUserSites } = useSite();
+      await loadUserSites();
       router.push('/');
     } else {
       error.value = result.error || t('auth.loginFailed');

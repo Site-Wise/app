@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, watch } from 'vue';
 import { useAuth } from './composables/useAuth';
 import { useSite } from './composables/useSite';
 import { usePlatform } from './composables/usePlatform';
@@ -55,6 +55,18 @@ const { isAuthenticated } = useAuth();
 const { hasSiteAccess, isReadyForRouting, loadUserSites } = useSite();
 const { platformInfo } = usePlatform();
 const { requestPermission } = useNativeNotifications();
+
+// Watch for authentication changes to handle login/logout
+watch(() => isAuthenticated.value, async (newValue) => {
+  if (newValue) {
+    await loadUserSites();
+    
+    // Request notification permission if supported
+    if (platformInfo.value.isTauri || 'Notification' in window) {
+      await requestPermission();
+    }
+  }
+});
 
 onMounted(async () => {
   if (isAuthenticated.value) {

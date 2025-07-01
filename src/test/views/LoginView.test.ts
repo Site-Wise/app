@@ -60,6 +60,14 @@ vi.mock('../../composables/useAuth', () => ({
   })
 }))
 
+// Mock the site composable
+const mockLoadUserSites = vi.fn().mockResolvedValue(undefined)
+vi.mock('../../composables/useSite', () => ({
+  useSite: () => ({
+    loadUserSites: mockLoadUserSites
+  })
+}))
+
 // Mock the theme composable
 vi.mock('../../composables/useTheme', () => ({
   useTheme: () => ({
