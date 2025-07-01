@@ -258,7 +258,7 @@
     "bookService": "Book Service",
     "startDate": "Start Date",
     "endDate": "End Date",
-    "duration": "Duration",
+    "duration": "Quantity",
     "rate": "Rate",
     "unitRate": "Unit Rate",
     "paymentStatus": "Payment Status",

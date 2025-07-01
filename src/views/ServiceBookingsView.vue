@@ -73,7 +73,7 @@
             <!-- Desktop Row -->
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="text-sm font-medium text-gray-900 dark:text-white">{{ booking.expand?.service?.name || 'Unknown Service' }}</div>
-              <div class="text-sm text-gray-500 dark:text-gray-400">{{ booking.expand?.service?.service_type || 'Unknown Type' }}</div>
+              <div class="text-sm text-gray-500 dark:text-gray-400">{{ booking.expand?.service?.category || 'Unknown Type' }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="text-sm text-gray-900 dark:text-white">{{ booking.expand?.vendor?.name || 'Unknown Vendor' }}</div>
@@ -222,7 +222,7 @@
               <select ref="serviceInputRef" v-model="form.service" required class="input mt-1" @change="updateRateFromService" autofocus>
                 <option value="">{{ t('forms.selectService') }}</option>
                 <option v-for="service in activeServices" :key="service.id" :value="service.id">
-                  {{ service.name }} ({{ service.service_type }})
+                  {{ service.name }} ({{ service.category }})
                 </option>
               </select>
             </div>
@@ -268,14 +268,14 @@
               </select>
             </div>
             
-            <div>
+            <!-- <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.paymentStatus') }}</label>
               <select v-model="form.payment_status" required class="input mt-1">
                 <option value="pending">{{ t('common.pending') }}</option>
                 <option value="partial">{{ t('common.partial') }}</option>
                 <option value="paid">{{ t('common.paid') }}</option>
               </select>
-            </div>
+            </div> -->
             
             <div v-if="form.payment_status !== 'pending'">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.paidAmount') }}</label>
