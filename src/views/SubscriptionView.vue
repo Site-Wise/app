@@ -98,7 +98,7 @@
               </div>
 
               <!-- Subscription Status Messages -->
-              <div v-if="subscriptionStatus === 'cancelled_pending'" class="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <div v-if="subscriptionStatus === 'cancelled'" class="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                 <div class="flex items-center gap-2">
                   <AlertTriangle class="h-4 w-4 text-amber-600 dark:text-amber-400" />
                   <span class="text-sm font-medium text-amber-800 dark:text-amber-200">

@@ -51,41 +51,50 @@ declare global {
 }
 
 export function useSubscription() {
-  const subscriptionStore = useSubscriptionStore();
+  // Lazy store initialization to avoid Pinia errors during app setup
+  let subscriptionStore: ReturnType<typeof useSubscriptionStore> | null = null;
+  
+  const getStore = () => {
+    if (!subscriptionStore) {
+      subscriptionStore = useSubscriptionStore();
+    }
+    return subscriptionStore;
+  };
 
   // Watch for site changes and load subscription data
   watch(() => getCurrentSiteId(), async (newSiteId) => {
+    const store = getStore();
     if (newSiteId) {
       try {
-        await subscriptionStore.loadSubscription();
+        await store.loadSubscription();
       } catch (err) {
         console.error('Error loading subscription in watcher:', err);
       }
     } else {
-      subscriptionStore.clearSubscriptionData();
+      store.clearSubscriptionData();
     }
   }, { immediate: true });
 
   // Helper functions - delegate to store
   const isLimited = (limit: number): boolean => {
-    return subscriptionStore.isLimited(limit);
+    return getStore().isLimited(limit);
   };
 
   const isUnlimited = (limit: number): boolean => {
-    return subscriptionStore.isUnlimited(limit);
+    return getStore().isUnlimited(limit);
   };
 
   const isDisabled = (limit: number): boolean => {
-    return subscriptionStore.isDisabled(limit);
+    return getStore().isDisabled(limit);
   };
 
   const checkCreateLimit = (type: 'items' | 'vendors' | 'deliveries' | 'service_bookings' | 'payments' | 'sites' | 'services' | 'accounts' | 'vendor_returns'): boolean => {
-    return subscriptionStore.checkCreateLimit(type);
+    return getStore().checkCreateLimit(type);
   };
 
   const getAllPlans = async () => {
     try {
-      return await subscriptionStore.loadAllPlans();
+      return await getStore().loadAllPlans();
     } catch (err) {
       console.error('Error loading subscription plans:', err);
       throw err;
@@ -94,7 +103,7 @@ export function useSubscription() {
 
   const loadSubscription = async () => {
     try {
-      await subscriptionStore.loadSubscription();
+      await getStore().loadSubscription();
     } catch (err) {
       console.error('Error loading subscription:', err);
       throw err;
@@ -103,7 +112,7 @@ export function useSubscription() {
 
   const createDefaultSubscription = async (siteId: string) => {
     try {
-      await subscriptionStore.createDefaultSubscription(siteId);
+      await getStore().createDefaultSubscription(siteId);
     } catch (err) {
       console.error('Error creating default subscription:', err);
       throw err;
@@ -125,7 +134,7 @@ export function useSubscription() {
       });
 
       // Reload subscription data
-      await subscriptionStore.loadSubscription(siteId);
+      await getStore().loadSubscription(siteId);
     } catch (err) {
       console.error('Error creating free tier subscription:', err);
       throw err;
@@ -141,7 +150,7 @@ export function useSubscription() {
       // Implementation for upgrading subscription
       // This would involve Razorpay integration
       const response = await pb.collection('site_subscriptions').update(
-        subscriptionStore.currentSubscription?.id || '',
+        getStore().currentSubscription?.id || '',
         {
           subscription_plan: planId,
           status: 'active'
@@ -149,7 +158,7 @@ export function useSubscription() {
       );
 
       // Reload subscription to get updated data
-      await subscriptionStore.loadSubscription();
+      await getStore().loadSubscription();
       return response;
     } catch (err) {
       console.error('Error upgrading subscription:', err);
@@ -159,12 +168,13 @@ export function useSubscription() {
 
   const cancelSubscription = async () => {
     try {
-      if (!subscriptionStore.currentSubscription) {
+      const store = getStore();
+      if (!store.currentSubscription) {
         throw new Error('No subscription to cancel');
       }
 
       const response = await pb.collection('site_subscriptions').update(
-        subscriptionStore.currentSubscription.id,
+        store.currentSubscription.id,
         {
           status: 'cancelled',
           cancelled_at: new Date().toISOString()
@@ -172,7 +182,7 @@ export function useSubscription() {
       );
 
       // Reload subscription to get updated data
-      await subscriptionStore.loadSubscription();
+      await store.loadSubscription();
       return response;
     } catch (err) {
       console.error('Error cancelling subscription:', err);
@@ -182,12 +192,13 @@ export function useSubscription() {
 
   const reactivateSubscription = async () => {
     try {
-      if (!subscriptionStore.currentSubscription) {
+      const store = getStore();
+      if (!store.currentSubscription) {
         throw new Error('No subscription to reactivate');
       }
 
       const response = await pb.collection('site_subscriptions').update(
-        subscriptionStore.currentSubscription.id,
+        store.currentSubscription.id,
         {
           status: 'active',
           cancelled_at: null
@@ -195,7 +206,7 @@ export function useSubscription() {
       );
 
       // Reload subscription to get updated data
-      await subscriptionStore.loadSubscription();
+      await store.loadSubscription();
       return response;
     } catch (err) {
       console.error('Error reactivating subscription:', err);
@@ -271,19 +282,19 @@ export function useSubscription() {
 
   return {
     // State from store (already computed, accessed directly)
-    currentSubscription: subscriptionStore.currentSubscription,
-    currentUsage: subscriptionStore.currentUsage,
-    currentPlan: subscriptionStore.currentPlan,
-    usageLimits: subscriptionStore.usageLimits,
-    isLoading: subscriptionStore.isLoading,
-    error: subscriptionStore.error,
+    get currentSubscription() { return getStore().currentSubscription; },
+    get currentUsage() { return getStore().currentUsage; },
+    get currentPlan() { return getStore().currentPlan; },
+    get usageLimits() { return getStore().usageLimits; },
+    get isLoading() { return getStore().isLoading; },
+    get error() { return getStore().error; },
     
     // Computed from store (already computed, accessed directly)
-    isReadOnly: subscriptionStore.isReadOnly,
-    isSubscriptionActive: subscriptionStore.isSubscriptionActive,
-    isSubscriptionCancelled: subscriptionStore.isSubscriptionCancelled,
-    canReactivateSubscription: subscriptionStore.canReactivateSubscription,
-    subscriptionStatus: subscriptionStore.subscriptionStatus,
+    get isReadOnly() { return getStore().isReadOnly; },
+    get isSubscriptionActive() { return getStore().isSubscriptionActive; },
+    get isSubscriptionCancelled() { return getStore().isSubscriptionCancelled; },
+    get canReactivateSubscription() { return getStore().canReactivateSubscription; },
+    get subscriptionStatus() { return getStore().subscriptionStatus; },
     
     // Methods
     loadSubscription,

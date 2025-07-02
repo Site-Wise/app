@@ -1,6 +1,6 @@
-const CACHE_NAME = 'SiteWise-v0.3.6';
-const STATIC_CACHE = 'SiteWise-static-v0.3.6';
-const DYNAMIC_CACHE = 'SiteWise-dynamic-v0.3.6';
+const CACHE_NAME = 'SiteWise-v0.4.0';
+const STATIC_CACHE = 'SiteWise-static-v0.4.0';
+const DYNAMIC_CACHE = 'SiteWise-dynamic-v0.4.0';
 
 // Files to cache immediately
 const STATIC_ASSETS = [

@@ -133,52 +133,59 @@ const router = createRouter({
 });
 
 router.beforeEach((to, _from, next) => {
-  const isAuthenticated = authService.isAuthenticated;
-  const currentSiteId = getCurrentSiteId();
-  const userRole = getCurrentUserRole();
+  try {
+    const isAuthenticated = authService.isAuthenticated;
+    const currentSiteId = getCurrentSiteId();
+    const userRole = getCurrentUserRole();
 
-  // Handle authentication requirements
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    next('/login');
-    return;
-  }
-
-  // Handle guest-only routes (like login)
-  if (to.meta.requiresGuest && isAuthenticated) {
-    if (!currentSiteId) {
-      next('/select-site');
-    } else {
-      next('/');
+    // Handle authentication requirements
+    if (to.meta.requiresAuth && !isAuthenticated) {
+      next('/login');
+      return;
     }
-    return;
-  }
 
-  // Handle site selection requirements
-  if (to.meta.requiresSite && !currentSiteId) {
-    next('/select-site');
-    return;
-  }
+    // Handle guest-only routes (like login)
+    if (to.meta.requiresGuest && isAuthenticated) {
+      if (!currentSiteId) {
+        next('/select-site');
+      } else {
+        next('/');
+      }
+      return;
+    }
 
-  // Handle owner-only routes
-  if (to.meta.ownerOnly && userRole !== 'owner') {
-    next('/');
-    return;
-  }
+    // Handle site selection requirements
+    if (to.meta.requiresSite && !currentSiteId) {
+      next('/select-site');
+      return;
+    }
 
-  // Handle permission requirements
-  if (to.meta.permission && currentSiteId) {
-    const permissions = calculatePermissions(userRole);
-    const requiredPermission = to.meta.permission as keyof typeof permissions;
-    
-    if (!permissions[requiredPermission]) {
-      // Redirect to dashboard if user doesn't have permission
+    // Handle owner-only routes
+    if (to.meta.ownerOnly && userRole !== 'owner') {
       next('/');
       return;
     }
-  }
 
-  // Allow navigation
-  next();
+    // Handle permission requirements
+    if (to.meta.permission && currentSiteId) {
+      const permissions = calculatePermissions(userRole);
+      const requiredPermission = to.meta.permission as keyof typeof permissions;
+      
+      if (!permissions[requiredPermission]) {
+        // Redirect to dashboard if user doesn't have permission
+        next('/');
+        return;
+      }
+    }
+
+    // Allow navigation
+    next();
+  } catch (error) {
+    console.error('Router guard error:', error);
+    // If there's an error in router guards, allow navigation to proceed
+    // This prevents the app from being completely blocked
+    next();
+  }
 });
 
 export default router;
