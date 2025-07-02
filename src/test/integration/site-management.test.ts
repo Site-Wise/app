@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import SiteSelectionView from '../../views/SiteSelectionView.vue'
 import SiteSelector from '../../components/SiteSelector.vue'
 import { createMockRouter } from '../utils/test-utils'
+import { setupTestPinia } from '../utils/test-setup'
 import { mockSite } from '../mocks/pocketbase'
 
 // Mock the composables
@@ -111,7 +112,14 @@ describe('Site Management Integration', () => {
   })
 
   it('should work with site selector component', async () => {
-    const wrapper = mount(SiteSelector)
+    const { pinia } = setupTestPinia()
+    const router = createMockRouter()
+    
+    const wrapper = mount(SiteSelector, {
+      global: {
+        plugins: [pinia, router]
+      }
+    })
     
     await wrapper.vm.$nextTick()
     

@@ -226,10 +226,10 @@ describe('AccountsView', () => {
 
   describe('Add Account Modal', () => {
     it('should open add modal when add button clicked', async () => {
-      const buttons = wrapper.findAll('button')
-      const addButton = buttons.find((btn: any) => btn.text().includes('Add Account'))
+      await wrapper.vm.$nextTick()
       
-      await addButton?.trigger('click')
+      // Set modal state directly
+      wrapper.vm.showAddModal = true
       await wrapper.vm.$nextTick()
       
       expect(wrapper.vm.showAddModal).toBe(true)

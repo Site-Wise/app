@@ -574,7 +574,8 @@ export class AuthService {
     turnstileToken?: string,
     phone?: string,
     countryCode?: string,
-    couponCode?: string
+    couponCode?: string,
+    legalAccepted?: boolean
   ) {
     const data = {
       email,
@@ -584,7 +585,9 @@ export class AuthService {
       phone: phone ? `${countryCode}${phone}` : undefined,
       couponCode,
       sites: [], // Initialize with empty sites array
-      turnstileToken
+      turnstileToken,
+      legal_accepted: legalAccepted || false,
+      legal_accepted_at: legalAccepted ? new Date().toISOString() : null
     };
     return await pb.collection('users').create(data);
   }

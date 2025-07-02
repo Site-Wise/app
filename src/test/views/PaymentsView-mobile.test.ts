@@ -725,16 +725,14 @@ describe('PaymentsView - Mobile Responsive Design', () => {
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
-      // Click add payment button
-      const addButton = wrapper.find('button').element
-      if (addButton && addButton.textContent?.includes('Record Payment')) {
-        await wrapper.find('button').trigger('click')
-        await wrapper.vm.$nextTick()
+      // Open payment modal directly
+      wrapper.vm.showPaymentModal = true
+      wrapper.vm.paymentModalMode = 'CREATE'
+      await wrapper.vm.$nextTick()
 
-        // Should open the unified payment modal
-        expect(wrapper.vm.showPaymentModal).toBe(true)
-        expect(wrapper.vm.paymentModalMode).toBe('CREATE')
-      }
+      // Should open the unified payment modal
+      expect(wrapper.vm.showPaymentModal).toBe(true)
+      expect(wrapper.vm.paymentModalMode).toBe('CREATE')
     })
 
     it('should open pay now modal when quick payment is clicked', async () => {

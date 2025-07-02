@@ -34,6 +34,8 @@ export interface SiteSubscription {
   trial_end_date?: string
   billing_start_date?: string
   next_billing_date?: string
+  current_period_end?: string
+  cancel_at_period_end?: boolean
   auto_renew: boolean
   cancelled_at?: string
   razorpay_subscription_id?: string
@@ -271,7 +273,7 @@ export const useSubscriptionStore = defineStore('subscription', () => {
         sort: 'price'
       })
       allPlans.value = plans as unknown as SubscriptionPlan[]
-      return plans
+      return allPlans.value
     } catch (err) {
       console.error('Error loading subscription plans:', err)
       throw err

@@ -203,6 +203,72 @@ export function useSubscription() {
     }
   };
 
+  const initializeRazorpayCheckout = async (planId: string) => {
+    try {
+      const siteId = getCurrentSiteId();
+      if (!siteId) throw new Error('No site selected');
+
+      // Get the plan details
+      const plan = await pb.collection('subscription_plans').getOne(planId);
+      
+      // Create a Razorpay order (this would typically be done through your backend)
+      const orderData = {
+        amount: plan.price * 100, // Razorpay expects amount in paise
+        currency: plan.currency || 'INR',
+        receipt: `order_${Date.now()}`,
+        notes: {
+          site_id: siteId,
+          plan_id: planId
+        }
+      };
+
+      // In a real implementation, you'd create the order through your backend
+      // For now, we'll just prepare the checkout options
+      const options: RazorpayCheckoutOptions = {
+        key: import.meta.env.VITE_RAZORPAY_KEY || '', // You'll need to add this to your env
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Site-Wise',
+        description: `Subscribe to ${plan.name} Plan`,
+        order_id: '', // This would come from your backend
+        handler: async (response) => {
+          // Handle successful payment
+          try {
+            // Update subscription with payment details
+            await upgradeSubscription(planId);
+            // You might want to store payment details as well
+            console.log('Payment successful:', response);
+          } catch (err) {
+            console.error('Error processing payment:', err);
+            throw err;
+          }
+        },
+        prefill: {
+          // You can prefill user details if available
+        },
+        theme: {
+          color: '#f97316' // Orange theme color
+        },
+        modal: {
+          ondismiss: () => {
+            console.log('Payment modal closed');
+          }
+        }
+      };
+
+      // Check if Razorpay is loaded
+      if (!window.Razorpay) {
+        throw new Error('Razorpay SDK not loaded. Please ensure Razorpay script is included in your HTML.');
+      }
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      console.error('Error initializing Razorpay checkout:', err);
+      throw err;
+    }
+  };
+
   return {
     // State from store (already computed, accessed directly)
     currentSubscription: subscriptionStore.currentSubscription,
@@ -228,6 +294,7 @@ export function useSubscription() {
     upgradeSubscription,
     cancelSubscription,
     reactivateSubscription,
+    initializeRazorpayCheckout,
     
     // Helper functions
     isLimited,

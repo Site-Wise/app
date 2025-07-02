@@ -344,6 +344,89 @@ Plans with `max_items: -1` (or any limit set to -1) should be treated as unlimit
 - The `isUnlimited()` helper function correctly identifies these plans
 - The `checkCreateLimit` function should return `true` for unlimited plans regardless of usage
 
+## Subscription System Integration
+
+### Critical Rule: Subscription Limits Control Button Availability
+**All create/add buttons in views MUST be controlled by subscription limits.** Views use `checkCreateLimit('type')` to determine if creation is allowed based on current usage vs plan limits.
+
+### Test Patterns for Subscription Integration
+
+#### 1. REQUIRED: useSubscription Mock in View Tests
+```typescript
+// ✅ CORRECT: Always include useSubscription mock in view tests
+vi.mock('../../composables/useSubscription', () => ({
+  useSubscription: () => ({
+    checkCreateLimit: vi.fn().mockReturnValue(true), // Allow creation by default
+    isReadOnly: { value: false }
+  })
+}))
+```
+
+#### 2. Modal Opening Pattern for Tests
+When testing views with subscription-controlled add buttons:
+```typescript
+// ❌ WRONG: Clicking hidden add buttons (mobile responsiveness hides them)
+const addButton = wrapper.find('[data-testid="add-item-btn"]')
+await addButton.trigger('click')
+
+// ✅ CORRECT: Direct modal state manipulation
+wrapper.vm.showAddModal = true
+wrapper.vm.paymentModalMode = 'CREATE' // For specific modal modes
+await wrapper.vm.$nextTick()
+```
+
+**Reason**: Add buttons often have `hidden md:flex` classes for mobile responsiveness, making them invisible in tests. Direct state manipulation bypasses DOM interaction issues.
+
+#### 3. Subscription Store Integration
+The subscription system uses Pinia stores with these key components:
+- **Store**: `useSubscriptionStore()` - Central subscription state management  
+- **Composable**: `useSubscription()` - Wrapper for store with reactive site changes
+- **Integration**: Views use `checkCreateLimit(type)` to control button visibility
+
+#### 4. Complete PocketBase Mock for Subscription Tests
+```typescript
+// ✅ REQUIRED: Complete mock with collection routing
+vi.mock('../../services/pocketbase', () => ({
+  pb: {
+    collection: vi.fn((name: string) => {
+      if (name === 'site_subscriptions') {
+        return { getFirstListItem: vi.fn().mockResolvedValue(mockSubscriptionData) }
+      } else if (name === 'subscription_usage') {
+        return { getFirstListItem: vi.fn().mockResolvedValue(mockUsageData) }
+      }
+      return { getFirstListItem: vi.fn().mockRejectedValue(new Error('Not found')) }
+    })
+  },
+  getCurrentSiteId: vi.fn(() => 'site-1'),
+  // ... other required service mocks
+}))
+```
+
+#### 5. View Component Integration Pattern
+Views implement subscription checks in computed properties:
+```typescript
+// In Vue components
+const canCreateItem = computed(() => {
+  return checkCreateLimit('items') && permissions.canCreate.value
+})
+```
+
+### Successful Test Fixes Applied
+- **ItemsView.test.ts**: Fixed add button tests using direct modal manipulation
+- **ServicesView.test.ts**: Applied same pattern for service creation
+- **VendorsView.test.ts**: Fixed subscription limit mocking
+- **AccountsView.test.ts**: Implemented direct modal state setting
+- **ServiceBookingsView.test.ts**: Fixed date input tests with form manipulation  
+- **PaymentsView.test.ts**: Applied mobile-responsive test patterns
+- **useSubscription tests**: Created from scratch with proper collection routing
+
+### Key Testing Rules
+1. **Always mock `useSubscription`** in view tests
+2. **Use direct modal manipulation** instead of clicking hidden buttons
+3. **Test subscription limits** by mocking `checkCreateLimit` return values
+4. **Reference working tests** as patterns when fixing similar issues
+5. **Write from scratch** when fixing becomes too complex
+
 ## PocketBase Auto-Cancellation Fix
 
 ### Problem: Dual Data Loading Race Condition

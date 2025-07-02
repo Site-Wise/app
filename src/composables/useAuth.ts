@@ -29,10 +29,11 @@ export function useAuth() {
     turnstileToken?: string,
     phone?: string,
     countryCode?: string,
-    couponCode?: string
+    couponCode?: string,
+    legalAccepted?: boolean
   ) => {
     try {
-      await authService.register(email, password, name, turnstileToken, phone, countryCode, couponCode);
+      await authService.register(email, password, name, turnstileToken, phone, countryCode, couponCode, legalAccepted);
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };

@@ -1,17 +1,5 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-    <!-- Corner Ribbon -->
-    <div class="absolute top-0 right-0 w-36 h-36 overflow-hidden">
-      <a 
-        href="https://bolt.new" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        class="absolute top-5 -right-9 w-48 transform rotate-45 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white text-xs font-semibold py-2 text-center shadow-lg hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200"
-      >
-        Built with Bolt.new
-      </a>
-    </div>
-    
     <div class="max-w-md w-full space-y-8">
       <div>
         <div class="flex items-center justify-center">
@@ -272,6 +260,42 @@
               </div>
             </div>
 
+            <!-- Legal Acceptance -->
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+              <label class="flex items-start space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  v-model="registerForm.legalAccepted"
+                  required
+                  class="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 rounded"
+                />
+                <div class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                  <span>I agree to the</span>
+                  <button
+                    type="button"
+                    @click="showTermsModal = true"
+                    class="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 underline mx-1"
+                  >
+                    Terms and Conditions
+                  </button>
+                  <span>and</span>
+                  <button
+                    type="button"
+                    @click="showPrivacyModal = true"
+                    class="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 underline mx-1"
+                  >
+                    Privacy Policy
+                  </button>
+                  <span>of Site-Wise.</span>
+                </div>
+              </label>
+              
+              <!-- Error message for validation -->
+              <div v-if="showValidationErrors && !registerForm.legalAccepted" class="mt-2 text-sm text-red-600 dark:text-red-400">
+                You must accept the Terms and Conditions and Privacy Policy to continue.
+              </div>
+            </div>
+
             <!-- Turnstile Widget for Registration -->
             <div class="h-[65px]">
               <TurnstileWidget
@@ -288,7 +312,7 @@
             <div class="flex space-x-3">
               <button
                 type="submit"
-                :disabled="registerLoading || !registerTurnstileToken || !passwordsMatch"
+                :disabled="registerLoading || !registerTurnstileToken || !passwordsMatch || !registerForm.legalAccepted"
                 class="flex-1 btn-primary"
               >
                 <Loader2 v-if="registerLoading" class="mr-2 h-4 w-4 animate-spin" />
@@ -306,6 +330,19 @@
         </div>
       </div>
     </div>
+
+    <!-- Legal Modals -->
+    <LegalModal
+      :is-visible="showTermsModal"
+      type="terms"
+      @close="showTermsModal = false"
+    />
+    
+    <LegalModal
+      :is-visible="showPrivacyModal"
+      type="privacy"
+      @close="showPrivacyModal = false"
+    />
   </div>
 </template>
 
@@ -318,6 +355,7 @@ import { useI18n } from '../composables/useI18n';
 import { useTheme } from '../composables/useTheme';
 import { AlertCircle, Loader2 } from 'lucide-vue-next';
 import TurnstileWidget from '../components/TurnstileWidget.vue';
+import LegalModal from '../components/LegalModal.vue';
 
 const router = useRouter();
 const { login, register } = useAuth();
@@ -328,6 +366,9 @@ const loading = ref(false);
 const registerLoading = ref(false);
 const error = ref('');
 const activeTab = ref('login');
+const showValidationErrors = ref(false);
+const showTermsModal = ref(false);
+const showPrivacyModal = ref(false);
 
 // Turnstile configuration
 const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
@@ -348,7 +389,8 @@ const registerForm = reactive({
   countryCode: '+91',
   couponCode: '',
   password: '',
-  confirmPassword: ''
+  confirmPassword: '',
+  legalAccepted: false
 });
 
 // Password validation
@@ -375,7 +417,7 @@ const handleLogin = async () => {
     } else {
       error.value = result.error || t('auth.loginFailed');
       // Reset Turnstile on failure
-      if (loginTurnstileRef.value) {
+      if (loginTurnstileRef.value && typeof loginTurnstileRef.value.reset === 'function') {
         loginTurnstileRef.value.reset();
         turnstileToken.value = '';
       }
@@ -383,7 +425,7 @@ const handleLogin = async () => {
   } catch (err: any) {
     error.value = err.message || t('messages.error');
     // Reset Turnstile on error
-    if (loginTurnstileRef.value) {
+    if (loginTurnstileRef.value && typeof loginTurnstileRef.value.reset === 'function') {
       loginTurnstileRef.value.reset();
       turnstileToken.value = '';
     }
@@ -393,6 +435,13 @@ const handleLogin = async () => {
 };
 
 const handleRegister = async () => {
+  showValidationErrors.value = true;
+
+  if (!registerForm.legalAccepted) {
+    error.value = 'You must accept the Terms and Conditions and Privacy Policy to continue.';
+    return;
+  }
+
   if (!registerTurnstileToken.value && turnstileSiteKey) {
     error.value = t('auth.turnstileRequired');
     return;
@@ -415,7 +464,8 @@ const handleRegister = async () => {
       registerTurnstileToken.value,
       registerForm.phone,
       registerForm.countryCode,
-      registerForm.couponCode
+      registerForm.couponCode,
+      registerForm.legalAccepted
     );
     if (result.success) {
       activeTab.value = 'login';
@@ -428,7 +478,7 @@ const handleRegister = async () => {
     } else {
       error.value = result.error || t('auth.registrationFailed');
       // Reset Turnstile on failure
-      if (registerTurnstileRef.value) {
+      if (registerTurnstileRef.value && typeof registerTurnstileRef.value.reset === 'function') {
         registerTurnstileRef.value.reset();
         registerTurnstileToken.value = '';
       }
@@ -436,7 +486,7 @@ const handleRegister = async () => {
   } catch (err: any) {
     error.value = err.message || t('messages.error');
     // Reset Turnstile on error
-    if (registerTurnstileRef.value) {
+    if (registerTurnstileRef.value && typeof registerTurnstileRef.value.reset === 'function') {
       registerTurnstileRef.value.reset();
       registerTurnstileToken.value = '';
     }

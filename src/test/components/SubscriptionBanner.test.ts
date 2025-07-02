@@ -1,15 +1,14 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { computed } from 'vue'
+import { createRouter, createWebHistory } from 'vue-router'
 import SubscriptionBanner from '../../components/SubscriptionBanner.vue'
-import { createMockRouter } from '../utils/test-utils'
 
-// Mock the useSubscription composable
-vi.mock('../../composables/useSubscription', () => ({
-  useSubscription: vi.fn(() => ({
-    currentSubscription: computed(() => null),
-    currentUsage: computed(() => null),
-    currentPlan: computed(() => ({
+// Create a simple mock for useSubscription that returns the correct structure
+const createMockSubscription = (overrides = {}) => {
+  const defaults = {
+    currentSubscription: null,
+    currentUsage: null,
+    currentPlan: {
       id: 'free-plan',
       name: 'Free',
       price: 0,
@@ -27,43 +26,54 @@ vi.mock('../../composables/useSubscription', () => ({
       is_default: true,
       created: '2024-01-01T00:00:00Z',
       updated: '2024-01-01T00:00:00Z'
-    })),
-    usageLimits: computed(() => ({
+    },
+    usageLimits: {
       items: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
       vendors: { current: 0, max: 25, exceeded: false, disabled: false, unlimited: false },
       deliveries: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
       service_bookings: { current: 0, max: 50, exceeded: false, disabled: false, unlimited: false },
       payments: { current: 0, max: 200, exceeded: false, disabled: false, unlimited: false }
-    })),
-    isLoading: computed(() => false),
-    error: computed(() => null),
-    isReadOnly: computed(() => false),
-    isSubscriptionActive: computed(() => true),
-    loadSubscription: vi.fn().mockResolvedValue(undefined),
-    createDefaultSubscription: vi.fn().mockResolvedValue(undefined),
-    createFreeTierSubscription: vi.fn().mockResolvedValue(undefined),
-    checkCreateLimit: vi.fn().mockReturnValue(true),
-    getAllPlans: vi.fn().mockResolvedValue([]),
-    upgradeSubscription: vi.fn().mockResolvedValue(undefined),
-    cancelSubscription: vi.fn().mockResolvedValue(undefined)
-  }))
+    },
+    isLoading: false,
+    error: null,
+    isReadOnly: false,
+    isSubscriptionActive: true,
+    isSubscriptionCancelled: false,
+    canReactivateSubscription: false,
+    subscriptionStatus: 'active',
+    // Methods
+    loadSubscription: vi.fn(),
+    createDefaultSubscription: vi.fn(),
+    createFreeTierSubscription: vi.fn(),
+    checkCreateLimit: vi.fn(() => true),
+    getAllPlans: vi.fn(),
+    upgradeSubscription: vi.fn(),
+    cancelSubscription: vi.fn(),
+    reactivateSubscription: vi.fn(),
+    initializeRazorpayCheckout: vi.fn(),
+    isUnlimited: vi.fn(() => false),
+    isDisabled: vi.fn(() => false),
+    isLimited: vi.fn(() => true)
+  }
+  
+  return { ...defaults, ...overrides }
+}
+
+// Mock the useSubscription composable
+vi.mock('../../composables/useSubscription', () => ({
+  useSubscription: vi.fn(() => createMockSubscription())
 }))
 
 // Mock the useI18n composable
 vi.mock('../../composables/useI18n', () => ({
   useI18n: () => ({
-    currentLanguage: computed(() => 'en'),
-    setLanguage: vi.fn(),
     t: (key: string, params?: any) => {
+      // Simple translation mock that returns the key
       if (params) {
         return `${key}(${JSON.stringify(params)})`
       }
       return key
-    },
-    availableLanguages: [
-      { code: 'en', name: 'English', nativeName: 'English' },
-      { code: 'hi', name: 'Hindi', nativeName: 'हिंदी' }
-    ]
+    }
   })
 }))
 
@@ -73,9 +83,15 @@ describe('SubscriptionBanner', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    router = createMockRouter([
-      { path: '/subscription', name: 'subscription', component: { template: '<div>Subscription</div>' } }
-    ])
+    
+    // Create a minimal router for testing
+    router = createRouter({
+      history: createWebHistory(),
+      routes: [
+        { path: '/', name: 'home', component: { template: '<div>Home</div>' } },
+        { path: '/subscription', name: 'subscription', component: { template: '<div>Subscription</div>' } }
+      ]
+    })
   })
 
   afterEach(() => {
@@ -90,7 +106,7 @@ describe('SubscriptionBanner', () => {
       global: {
         plugins: [router],
         stubs: {
-          'router-link': { template: '<a><slot /></a>' }
+          'router-link': true
         }
       }
     })
@@ -102,7 +118,9 @@ describe('SubscriptionBanner', () => {
   })
 
   it('should not show banner when subscription is active and not read-only', () => {
+    // Default mock has isSubscriptionActive: true and isReadOnly: false
     wrapper = createWrapper()
+    // The banner should not be visible
     expect(wrapper.find('.bg-amber-50').exists()).toBe(false)
   })
 
@@ -110,133 +128,108 @@ describe('SubscriptionBanner', () => {
     const { useSubscription } = await import('../../composables/useSubscription')
     const mockUseSubscription = vi.mocked(useSubscription)
     
-    mockUseSubscription.mockReturnValue({
-      currentSubscription: computed(() => null),
-      currentUsage: computed(() => null),
-      currentPlan: computed(() => ({
-        id: 'free-plan',
-        name: 'Free',
-        price: 0,
-        currency: 'USD',
-        features: {
-          max_items: 100,
-          max_vendors: 25,
-          max_deliveries: 100,
-          max_services: 10,
-          max_service_bookings: 50,
-          max_accounts: 2,
-          max_payments: 200,
-          max_vendor_returns: 10,
-          max_sites: 1
-        },
-        is_active: true,
-        is_default: true,
-        created: '2024-01-01T00:00:00Z',
-        updated: '2024-01-01T00:00:00Z'
-      })),
-      usageLimits: computed(() => ({
-        items: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
-        vendors: { current: 0, max: 25, exceeded: false, disabled: false, unlimited: false },
-        deliveries: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
-        services: { current: 0, max: 50, exceeded: false, disabled: false, unlimited: false },
-        service_bookings: { current: 0, max: 50, exceeded: false, disabled: false, unlimited: false },
-        accounts: { current: 0, max: 200, exceeded: false, disabled: false, unlimited: false },
-        payments: { current: 0, max: 200, exceeded: false, disabled: false, unlimited: false },
-        vendor_returns: { current: 0, max: 200, exceeded: false, disabled: false, unlimited: false }
-      })),
-      isLoading: computed(() => false),
-      error: computed(() => null),
-      isReadOnly: computed(() => false),
-      isSubscriptionActive: computed(() => false), // Inactive subscription
-      loadSubscription: vi.fn().mockResolvedValue(undefined),
-      createDefaultSubscription: vi.fn().mockResolvedValue(undefined),
-      createFreeTierSubscription: vi.fn().mockResolvedValue(undefined),
-      checkCreateLimit: vi.fn().mockReturnValue(true),
-      isUnlimited: vi.fn().mockReturnValue(false),
-      getAllPlans: vi.fn().mockResolvedValue([]),
-      upgradeSubscription: vi.fn().mockResolvedValue(undefined),
-      cancelSubscription: vi.fn().mockResolvedValue(undefined),
-      reactivateSubscription: vi.fn().mockResolvedValue(undefined),
-      isSubscriptionCancelled: computed(() => false),
-      canReactivateSubscription: computed(() => false),
-      subscriptionStatus: computed(() => 'active'),
-      initializeRazorpayCheckout: vi.fn().mockResolvedValue(undefined),
-      createRazorpayOrder: vi.fn().mockResolvedValue({}),
-      handlePaymentSuccess: vi.fn().mockResolvedValue(undefined),
-      isDisabled: vi.fn().mockReturnValue(false),
-      isLimited: vi.fn().mockReturnValue(true)
-    })
+    // Override to make subscription inactive
+    mockUseSubscription.mockImplementation(() => createMockSubscription({
+      isSubscriptionActive: false
+    }))
 
     wrapper = createWrapper()
     await wrapper.vm.$nextTick()
     
+    // The banner should be visible
     expect(wrapper.find('.bg-amber-50').exists()).toBe(true)
+    expect(wrapper.text()).toContain('subscription.banner.subscriptionExpired')
   })
 
   it('should show banner when in read-only mode', async () => {
     const { useSubscription } = await import('../../composables/useSubscription')
     const mockUseSubscription = vi.mocked(useSubscription)
     
-    mockUseSubscription.mockReturnValue({
-      currentSubscription: computed(() => null),
-      currentUsage: computed(() => null),
-      currentPlan: computed(() => ({
-        id: 'free-plan',
-        name: 'Free',
-        price: 0,
-        currency: 'USD',
-        features: {
-          max_items: 100,
-          max_vendors: 25,
-          max_deliveries: 100,
-          max_services: 10,
-          max_service_bookings: 50,
-          max_payments: 200,
-          max_accounts: 2,
-          max_vendor_returns: 10,
-          max_sites: 1
-        },
-        is_active: true,
-        is_default: true,
-        created: '2024-01-01T00:00:00Z',
-        updated: '2024-01-01T00:00:00Z'
-      })),
-      usageLimits: computed(() => ({
-        items: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
+    // Override to make it read-only
+    mockUseSubscription.mockImplementation(() => createMockSubscription({
+      isReadOnly: true,
+      usageLimits: {
+        items: { current: 100, max: 100, exceeded: true, disabled: false, unlimited: false },
         vendors: { current: 0, max: 25, exceeded: false, disabled: false, unlimited: false },
         deliveries: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
-        services: { current: 0, max: 50, exceeded: false, disabled: false, unlimited: false },
         service_bookings: { current: 0, max: 50, exceeded: false, disabled: false, unlimited: false },
-        accounts: { current: 0, max: 50, exceeded: false, disabled: false, unlimited: false },
-        payments: { current: 0, max: 200, exceeded: false, disabled: false, unlimited: false },
-        vendor_returns: { current: 0, max: 200, exceeded: false, disabled: false, unlimited: false }
-      })),
-      isLoading: computed(() => false),
-      error: computed(() => null),
-      isReadOnly: computed(() => true), // Read-only mode
-      isSubscriptionActive: computed(() => true),
-      loadSubscription: vi.fn().mockResolvedValue(undefined),
-      createDefaultSubscription: vi.fn().mockResolvedValue(undefined),
-      createFreeTierSubscription: vi.fn().mockResolvedValue(undefined),
-      checkCreateLimit: vi.fn().mockReturnValue(true),
-      isUnlimited: vi.fn().mockReturnValue(false),
-      getAllPlans: vi.fn().mockResolvedValue([]),
-      upgradeSubscription: vi.fn().mockResolvedValue(undefined),
-      cancelSubscription: vi.fn().mockResolvedValue(undefined),
-      reactivateSubscription: vi.fn().mockResolvedValue(undefined),
-      isSubscriptionCancelled: computed(() => false),
-      canReactivateSubscription: computed(() => false),
-      subscriptionStatus: computed(() => 'active'),
-      initializeRazorpayCheckout: vi.fn().mockResolvedValue(undefined),
-      createRazorpayOrder: vi.fn().mockResolvedValue({}),
-      handlePaymentSuccess: vi.fn().mockResolvedValue(undefined),
-      isDisabled: vi.fn().mockReturnValue(false),
-      isLimited: vi.fn().mockReturnValue(true)
-    })
+        payments: { current: 0, max: 200, exceeded: false, disabled: false, unlimited: false }
+      }
+    }))
 
     wrapper = createWrapper()
     await wrapper.vm.$nextTick()
     
+    // The banner should be visible
     expect(wrapper.find('.bg-amber-50').exists()).toBe(true)
+    expect(wrapper.text()).toContain('subscription.banner.freeTierLimitReached')
+  })
+
+  it('should show exceeded limits in usage details', async () => {
+    const { useSubscription } = await import('../../composables/useSubscription')
+    const mockUseSubscription = vi.mocked(useSubscription)
+    
+    // Override with exceeded limits
+    mockUseSubscription.mockImplementation(() => createMockSubscription({
+      isReadOnly: true,
+      usageLimits: {
+        items: { current: 100, max: 100, exceeded: true, disabled: false, unlimited: false },
+        vendors: { current: 25, max: 25, exceeded: true, disabled: false, unlimited: false },
+        deliveries: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
+        service_bookings: { current: 0, max: 50, exceeded: false, disabled: false, unlimited: false },
+        payments: { current: 0, max: 200, exceeded: false, disabled: false, unlimited: false }
+      }
+    }))
+
+    wrapper = createWrapper()
+    await wrapper.vm.$nextTick()
+    
+    const text = wrapper.text()
+    expect(text).toContain('subscription.limits.items')
+    expect(text).toContain('subscription.limits.vendors')
+  })
+
+  it('should allow dismissing the banner when canDismiss is true', async () => {
+    const { useSubscription } = await import('../../composables/useSubscription')
+    const mockUseSubscription = vi.mocked(useSubscription)
+    
+    mockUseSubscription.mockImplementation(() => createMockSubscription({
+      isReadOnly: true
+    }))
+
+    wrapper = createWrapper({ canDismiss: true })
+    await wrapper.vm.$nextTick()
+    
+    // Banner should be visible
+    expect(wrapper.find('.bg-amber-50').exists()).toBe(true)
+    
+    // Find and click dismiss button
+    const dismissButton = wrapper.find('button[aria-label]')
+    expect(dismissButton.exists()).toBe(true)
+    
+    await dismissButton.trigger('click')
+    await wrapper.vm.$nextTick()
+    
+    // Banner should be hidden after dismissing
+    expect(wrapper.find('.bg-amber-50').exists()).toBe(false)
+  })
+
+  it('should not show dismiss button when canDismiss is false', async () => {
+    const { useSubscription } = await import('../../composables/useSubscription')
+    const mockUseSubscription = vi.mocked(useSubscription)
+    
+    mockUseSubscription.mockImplementation(() => createMockSubscription({
+      isReadOnly: true
+    }))
+
+    wrapper = createWrapper({ canDismiss: false })
+    await wrapper.vm.$nextTick()
+    
+    // Banner should be visible
+    expect(wrapper.find('.bg-amber-50').exists()).toBe(true)
+    
+    // Dismiss button should not exist
+    const dismissButton = wrapper.find('button[aria-label]')
+    expect(dismissButton.exists()).toBe(false)
   })
 })
