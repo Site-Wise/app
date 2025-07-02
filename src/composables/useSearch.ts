@@ -165,7 +165,7 @@ export const searchConfigs = {
   },
   items: {
     collection: 'items' as const,
-    searchFields: ['name', 'description', 'category']
+    searchFields: ['name', 'description']
   },
   services: {
     collection: 'services' as const,

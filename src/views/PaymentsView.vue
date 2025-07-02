@@ -305,6 +305,31 @@
               <span class="font-medium text-gray-700 dark:text-gray-300">Notes:</span>
               <p class="ml-2 text-gray-600 dark:text-gray-400">{{ viewingPayment.notes }}</p>
             </div>
+            
+            <!-- Credit Notes Used -->
+            <div v-if="viewingPayment.credit_notes && viewingPayment.credit_notes.length > 0">
+              <span class="font-medium text-gray-700 dark:text-gray-300">Credit Notes Used:</span>
+              <div class="ml-2 mt-2 space-y-2">
+                <div 
+                  v-for="creditNoteId in viewingPayment.credit_notes" 
+                  :key="creditNoteId"
+                  class="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800"
+                >
+                  <div>
+                    <p class="text-sm font-medium text-green-800 dark:text-green-300">
+                      {{ getCreditNoteDisplay(creditNoteId) }}
+                    </p>
+                    <p class="text-xs text-green-600 dark:text-green-400">
+                      Applied to this payment
+                    </p>
+                  </div>
+                  <span class="text-sm font-semibold text-green-700 dark:text-green-300">
+                    ₹{{ getCreditNoteAmount(creditNoteId) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
             <!-- Related return info if available -->
             <div v-if="(viewingPayment.expand as any)?.related_return">
               <span class="font-medium text-gray-700 dark:text-gray-300">Related Return:</span>
@@ -636,6 +661,31 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
 };
 
+const getCreditNoteDisplay = (creditNoteId: string) => {
+  // Try to get credit note from expanded data first
+  if (viewingPayment.value?.expand?.credit_notes) {
+    const creditNote = viewingPayment.value.expand.credit_notes.find(cn => cn.id === creditNoteId);
+    if (creditNote) {
+      return creditNote.note_number || `CN-${creditNote.id?.slice(-6)}`;
+    }
+  }
+  // Fallback to generic display
+  return `CN-${creditNoteId.slice(-6)}`;
+};
+
+const getCreditNoteAmount = (creditNoteId: string) => {
+  // Try to get credit note from expanded data first
+  if (viewingPayment.value?.expand?.credit_notes) {
+    const creditNote = viewingPayment.value.expand.credit_notes.find(cn => cn.id === creditNoteId);
+    if (creditNote) {
+      // For payments, we need to get the used amount from credit note usage
+      // For now, we'll show the balance (this could be enhanced later)
+      return creditNote.balance?.toFixed(2) || '0.00';
+    }
+  }
+  return '0.00';
+};
+
 const toggleMobileMenu = (paymentId: string) => {
   openMobileMenuId.value = openMobileMenuId.value === paymentId ? null : paymentId;
 };
@@ -658,7 +708,8 @@ const handlePaymentModalSubmit = async (data: any) => {
         reference: form.reference,
         notes: form.notes,
         deliveries: form.deliveries,
-        service_bookings: form.service_bookings
+        service_bookings: form.service_bookings,
+        credit_notes: form.credit_notes || []
       };
       
       await paymentService.create(paymentData);

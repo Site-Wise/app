@@ -193,10 +193,10 @@
             <div class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-600/50 rounded-xl p-4">
               <h4 class="font-medium text-gray-900 dark:text-white mb-3">Current Site Stats</h4>
               <div class="grid grid-cols-3 gap-4 text-center">
-                <div>
+                <!-- <div>
                   <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ managingSite.users?.length || 0 }}</p>
                   <p class="text-xs text-gray-600 dark:text-gray-400">Team Members</p>
-                </div>
+                </div> -->
                 <div>
                   <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ formatDate(managingSite.created) }}</p>
                   <p class="text-xs text-gray-600 dark:text-gray-400">Created</p>
@@ -252,7 +252,6 @@ interface SiteWithOwnership {
   total_units: number;
   total_planned_area: number;
   admin_user: string;
-  users: string[];
   created?: string;
   updated?: string;
   userRole?: 'owner' | 'supervisor' | 'accountant';

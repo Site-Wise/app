@@ -58,13 +58,7 @@ module.exports = {
   },
 
   createStandardItems: (siteId) => {
-    const standardItems = [
-      { name: 'Cement', unit: 'bag' },
-      { name: 'River Sand', unit: 'ton' },
-      { name: 'Aggregate', unit: 'ton' },
-      { name: 'M-Sand', unit: 'ton' },
-      { name: 'Rebar', unit: 'ton' }
-    ]
+    const standardItems = require("./items.json")
 
     try {
       const itemsCollection = $app.findCollectionByNameOrId('items')
@@ -118,7 +112,7 @@ module.exports = {
       usage.set('period_end', periodEnd.toISOString())
       usage.set('items_count', 0)
       usage.set('vendors_count', 0)
-      usage.set('deliveries_count', 0)
+      usage.set('incoming_deliveries_count', 0)
       usage.set('service_bookings_count', 0)
       usage.set('payments_count', 0)
 

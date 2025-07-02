@@ -593,6 +593,7 @@
     "deletePayment": "भुगतान हटाएं",
     "paymentAccount": "भुगतान खाता",
     "paymentDate": "भुगतान दिनांक",
+    "availableCreditNotes": "उपलब्ध क्रेडिट नोट्स",
     "outstandingAmountsByVendor": "विक्रेता के अनुसार बकाया राशि",
     "pendingDeliveries": "लंबित डिलीवरी",
     "noPayments": "कोई भुगतान रिकॉर्ड नहीं",

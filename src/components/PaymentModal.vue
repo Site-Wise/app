@@ -51,6 +51,39 @@
               </div>
             </div>
 
+            <!-- Credit Notes Section (CREATE/PAY_NOW only) -->
+            <div v-if="mode !== 'EDIT' && form.vendor && availableCreditNotes.length > 0">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.availableCreditNotes') }}</label>
+              <div class="mt-2 space-y-2 max-h-32 overflow-y-auto">
+                <div 
+                  v-for="creditNote in availableCreditNotes" 
+                  :key="creditNote.id"
+                  class="flex items-center space-x-3 p-2 border border-gray-200 dark:border-gray-600 rounded-md"
+                >
+                  <input
+                    :id="`credit-note-${creditNote.id}`"
+                    v-model="form.credit_notes"
+                    :value="creditNote.id"
+                    type="checkbox"
+                    class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                    @change="handleCreditNoteChange"
+                  />
+                  <label :for="`credit-note-${creditNote.id}`" class="flex-1 text-sm">
+                    <div class="flex justify-between">
+                      <span class="text-gray-900 dark:text-white">{{ creditNote.note_number || `CN-${creditNote.id?.slice(-6)}` }}</span>
+                      <span class="text-green-600 dark:text-green-400 font-medium">₹{{ creditNote.balance.toFixed(2) }}</span>
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                      {{ creditNote.description }}
+                    </div>
+                  </label>
+                </div>
+              </div>
+              <div v-if="selectedCreditNoteAmount > 0" class="mt-2 text-sm text-green-600 dark:text-green-400">
+                Selected credit notes: ₹{{ selectedCreditNoteAmount.toFixed(2) }}
+              </div>
+            </div>
+
             <!-- Payment Date (CREATE/PAY_NOW) or Display (EDIT) -->
             <div v-if="mode !== 'EDIT'">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.paymentDate') }}</label>
@@ -82,6 +115,22 @@
                 >
                   Pay All (₹{{ vendorOutstanding.toFixed(2) }})
                 </button>
+              </div>
+              <!-- Payment breakdown when credit notes are involved -->
+              <div v-if="selectedCreditNoteAmount > 0" class="mt-2 text-sm bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+                <div class="flex justify-between">
+                  <span class="text-gray-700 dark:text-gray-300">Account payment:</span>
+                  <span class="text-gray-900 dark:text-white">₹{{ (form.amount - selectedCreditNoteAmount).toFixed(2) }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-700 dark:text-gray-300">Credit notes:</span>
+                  <span class="text-green-600 dark:text-green-400">₹{{ selectedCreditNoteAmount.toFixed(2) }}</span>
+                </div>
+                <hr class="my-1 border-gray-300 dark:border-gray-600">
+                <div class="flex justify-between font-medium">
+                  <span class="text-gray-900 dark:text-white">Total payment:</span>
+                  <span class="text-gray-900 dark:text-white">₹{{ form.amount.toFixed(2) }}</span>
+                </div>
               </div>
             </div>
             <div v-else class="flex justify-between">
@@ -307,8 +356,10 @@ import type {
   Vendor, 
   Account,
   Delivery,
-  ServiceBooking
+  ServiceBooking,
+  VendorCreditNote
 } from '../services/pocketbase';
+import { vendorCreditNoteService } from '../services/pocketbase';
 
 // Props
 interface Props {
@@ -356,12 +407,17 @@ const form = reactive({
   reference: '',
   notes: '',
   deliveries: [] as string[],
-  service_bookings: [] as string[]
+  service_bookings: [] as string[],
+  credit_notes: [] as string[]
 });
 
 // Vendor data
 const vendorOutstanding = ref(0);
 const vendorPendingItems = ref(0);
+
+// Credit notes data
+const availableCreditNotes = ref<VendorCreditNote[]>([]);
+const loadingCreditNotes = ref(false);
 
 // Computed properties
 const modalTitle = computed(() => {
@@ -393,6 +449,13 @@ const modalIconColor = computed(() => {
 
 const activeAccounts = computed(() => {
   return props.accounts.filter(account => account.is_active);
+});
+
+const selectedCreditNoteAmount = computed(() => {
+  return form.credit_notes.reduce((total, creditNoteId) => {
+    const creditNote = availableCreditNotes.value.find(cn => cn.id === creditNoteId);
+    return total + (creditNote?.balance || 0);
+  }, 0);
 });
 
 const allocatedAmount = computed((): number => {
@@ -569,13 +632,18 @@ const calculateVendorOutstanding = () => {
     return sum + (outstanding > 0 ? outstanding : 0);
   }, 0);
   
-  vendorOutstanding.value = deliveryOutstanding + serviceOutstanding;
+  // Calculate credit notes balance for this vendor
+  const creditBalance = availableCreditNotes.value.reduce((sum, note) => sum + note.balance, 0);
+  
+  // Net outstanding = delivery + service outstanding - available credit notes
+  vendorOutstanding.value = Math.max(0, deliveryOutstanding + serviceOutstanding - creditBalance);
   vendorPendingItems.value = vendorDeliveries.filter(d => d.payment_status !== 'paid').length + 
                             vendorBookings.filter(b => b.payment_status !== 'paid').length;
 };
 
 const handleVendorChange = () => {
   calculateVendorOutstanding();
+  loadVendorCreditNotes();
   
   // For PAY_NOW mode or when suggested, auto-fill the amount
   if (props.mode === 'PAY_NOW' || (props.mode === 'CREATE' && form.amount === 0)) {
@@ -585,6 +653,7 @@ const handleVendorChange = () => {
   // Clear selections when vendor changes
   form.deliveries = [];
   form.service_bookings = [];
+  form.credit_notes = [];
 };
 
 const handleAmountChange = () => {
@@ -659,6 +728,37 @@ const handleDeliverySelectionChange = () => {
   }
 };
 
+const loadVendorCreditNotes = async () => {
+  if (!form.vendor) {
+    availableCreditNotes.value = [];
+    calculateVendorOutstanding(); // Recalculate without credit notes
+    return;
+  }
+  
+  try {
+    loadingCreditNotes.value = true;
+    const creditNotes = await vendorCreditNoteService.getByVendor(form.vendor);
+    // Only show active credit notes with balance > 0
+    availableCreditNotes.value = creditNotes.filter(cn => 
+      cn.status === 'active' && cn.balance > 0
+    );
+    // Recalculate outstanding after loading credit notes
+    calculateVendorOutstanding();
+  } catch (err) {
+    console.error('Error loading credit notes:', err);
+    availableCreditNotes.value = [];
+    calculateVendorOutstanding(); // Recalculate without credit notes
+  } finally {
+    loadingCreditNotes.value = false;
+  }
+};
+
+const handleCreditNoteChange = () => {
+  // When credit notes are selected/deselected, we may want to adjust
+  // the remaining payment amount needed
+  calculateVendorOutstanding();
+};
+
 const payAllOutstanding = () => {
   form.amount = vendorOutstanding.value;
   updateDeliverySelectionFromAmount();
@@ -674,7 +774,8 @@ const initializeForm = () => {
     reference: '',
     notes: '',
     deliveries: [],
-    service_bookings: []
+    service_bookings: [],
+    credit_notes: []
   });
   
   // Initialize based on mode and props

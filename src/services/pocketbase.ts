@@ -34,17 +34,11 @@ export interface Site {
   description?: string;
   total_units: number;
   total_planned_area: number; // in sqft
-  /** @deprecated Use SiteUser table with role='owner' instead */
   admin_user: string; // User ID of the admin
-  /** @deprecated Use SiteUser table for user associations instead */
-  users: string[]; // Array of user IDs with access to this site
   created?: string;
   updated?: string;
   expand?: {
-    /** @deprecated Use SiteUser table with role='owner' instead */
     admin_user?: User;
-    /** @deprecated Use SiteUser table for user associations instead */
-    users?: User[];
   };
 }
 
@@ -303,6 +297,7 @@ export interface Payment {
   notes?: string;
   deliveries: string[]; // Multi-item deliveries
   service_bookings: string[]; // New field for service payments
+  credit_notes?: string[]; // Credit notes used in this payment
   site: string; // Site ID
   created?: string;
   updated?: string;
@@ -313,6 +308,7 @@ export interface Payment {
     deliveries?: Delivery[];
     service_bookings?: ServiceBooking[];
     payment_allocations?: PaymentAllocation[];
+    credit_notes?: VendorCreditNote[];
   };
 }
 
@@ -443,18 +439,15 @@ export interface CreditNoteUsage {
   credit_note: string; // VendorCreditNote ID
   used_amount: number;
   used_date: string;
-  payment_transaction?: string; // Related Payment ID
-  delivery_item?: string; // DeliveryItem ID if used for specific item
-  service_booking?: string; // ServiceBooking ID if used for service
-  notes?: string;
+  payment: string; // Required - Payment ID (credit notes now go through payments)
+  vendor: string; // Vendor ID for quick filtering
+  description?: string; // Description of usage
   site: string; // Site ID
   created?: string;
   updated?: string;
   expand?: {
     credit_note?: VendorCreditNote;
-    payment_transaction?: Payment;
-    delivery_item?: DeliveryItem;
-    service_booking?: ServiceBooking;
+    payment?: Payment;
   };
 }
 
@@ -782,7 +775,6 @@ export class SiteUserService {
       total_units: record.total_units,
       total_planned_area: record.total_planned_area,
       admin_user: record.admin_user,
-      users: record.users || [],
       created: record.created,
       updated: record.updated
     };
@@ -960,12 +952,10 @@ export class SiteService {
       total_units: record.total_units,
       total_planned_area: record.total_planned_area,
       admin_user: record.admin_user,
-      users: record.users || [],
       created: record.created,
       updated: record.updated,
       expand: record.expand ? {
         admin_user: record.expand.admin_user ? this.mapRecordToUser(record.expand.admin_user) : undefined,
-        users: record.expand.users ? record.expand.users.map((user: RecordModel) => this.mapRecordToUser(user)) : undefined
       } : undefined
     };
   }
@@ -1559,7 +1549,7 @@ export class PaymentService {
 
     const records = await pb.collection('payments').getFullList({
       filter: `site="${siteId}"`,
-      expand: 'vendor,account,deliveries,service_bookings,payment_allocations,payment_allocations.delivery,payment_allocations.service_booking,payment_allocations.service_booking.service'
+      expand: 'vendor,account,deliveries,service_bookings,payment_allocations,payment_allocations.delivery,payment_allocations.service_booking,payment_allocations.service_booking.service,credit_notes'
     });
     return records.map(record => this.mapRecordToPayment(record));
   }
@@ -1575,26 +1565,46 @@ export class PaymentService {
       throw new Error('Permission denied: Cannot create payments');
     }
 
+    // Calculate credit note amount and validate credit note balances
+    let creditNoteAmount = 0;
+    if (data.credit_notes && data.credit_notes.length > 0) {
+      creditNoteAmount = await this.validateAndCalculateCreditNoteAmount(data.credit_notes);
+    }
+
+    // Calculate actual account payment amount
+    const accountPaymentAmount = data.amount - creditNoteAmount;
+    
+    if (accountPaymentAmount < 0) {
+      throw new Error('Credit note amount cannot exceed total payment amount');
+    }
+
     // Create the payment
     const record = await pb.collection('payments').create({
       ...data,
       site: siteId
     });
 
-    // Create corresponding debit transaction
-    const vendorName = await this.getVendorName(data.vendor);
-    await accountTransactionService.create({
-      account: data.account,
-      type: 'debit',
-      amount: data.amount,
-      transaction_date: data.payment_date,
-      description: `Payment to ${vendorName}`,
-      reference: data.reference,
-      notes: data.notes,
-      vendor: data.vendor
-    });
+    // Process credit notes first
+    if (data.credit_notes && data.credit_notes.length > 0) {
+      await this.processCreditNotes(record.id, data.credit_notes, data.vendor);
+    }
 
-    // Handle payment allocations
+    // Create corresponding debit transaction only for actual account payment amount
+    if (accountPaymentAmount > 0) {
+      const vendorName = await this.getVendorName(data.vendor);
+      await accountTransactionService.create({
+        account: data.account,
+        type: 'debit',
+        amount: accountPaymentAmount,
+        transaction_date: data.payment_date,
+        description: `Payment to ${vendorName}`,
+        reference: data.reference,
+        notes: data.notes,
+        vendor: data.vendor
+      });
+    }
+
+    // Handle payment allocations with total amount (including credit notes)
     await this.handlePaymentAllocations(record.id, data.deliveries || [], data.service_bookings || [], data.amount);
 
     return this.mapRecordToPayment(record);
@@ -1718,7 +1728,7 @@ export class PaymentService {
     return true;
   }
 
-  private mapRecordToPayment(record: RecordModel): Payment {
+  mapRecordToPayment(record: RecordModel): Payment {
     return {
       id: record.id,
       vendor: record.vendor,
@@ -1729,6 +1739,7 @@ export class PaymentService {
       notes: record.notes,
       deliveries: record.deliveries || [],
       service_bookings: record.service_bookings || [],
+      credit_notes: record.credit_notes || [],
       site: record.site,
       created: record.created,
       updated: record.updated,
@@ -1740,7 +1751,9 @@ export class PaymentService {
         service_bookings: record.expand.service_bookings ?
           record.expand.service_bookings.map((booking: RecordModel) => this.mapRecordToServiceBooking(booking)) : undefined,
         payment_allocations: record.expand.payment_allocations ?
-          record.expand.payment_allocations.map((allocation: RecordModel) => paymentAllocationService.mapRecordToPaymentAllocation(allocation)) : undefined
+          record.expand.payment_allocations.map((allocation: RecordModel) => paymentAllocationService.mapRecordToPaymentAllocation(allocation)) : undefined,
+        credit_notes: record.expand.credit_notes ?
+          record.expand.credit_notes.map((creditNote: RecordModel) => vendorCreditNoteService.mapRecordToCreditNote(creditNote)) : undefined
       } : undefined
     };
   }
@@ -1797,6 +1810,48 @@ export class PaymentService {
       created: record.created,
       updated: record.updated
     };
+  }
+
+  private async validateAndCalculateCreditNoteAmount(creditNoteIds: string[]): Promise<number> {
+    let totalCreditAmount = 0;
+    
+    for (const creditNoteId of creditNoteIds) {
+      const creditNote = await vendorCreditNoteService.getById(creditNoteId);
+      if (!creditNote) {
+        throw new Error(`Credit note ${creditNoteId} not found`);
+      }
+      if (creditNote.status !== 'active') {
+        throw new Error(`Credit note ${creditNoteId} is not active`);
+      }
+      if (creditNote.balance <= 0) {
+        throw new Error(`Credit note ${creditNoteId} has no remaining balance`);
+      }
+      totalCreditAmount += creditNote.balance;
+    }
+    
+    return totalCreditAmount;
+  }
+
+  private async processCreditNotes(paymentId: string, creditNoteIds: string[], vendorId: string): Promise<void> {
+    for (const creditNoteId of creditNoteIds) {
+      const creditNote = await vendorCreditNoteService.getById(creditNoteId);
+      if (!creditNote) continue;
+      
+      const usageAmount = creditNote.balance; // Use the entire remaining balance
+      
+      // Create credit note usage record (this serves as the audit trail)
+      await creditNoteUsageService.create({
+        credit_note: creditNoteId,
+        payment: paymentId,
+        vendor: vendorId,
+        used_amount: usageAmount,
+        used_date: new Date().toISOString().split('T')[0],
+        description: `Applied to payment ${paymentId}`
+      });
+      
+      // Update credit note balance
+      await vendorCreditNoteService.updateBalance(creditNoteId, -usageAmount);
+    }
   }
 }
 
@@ -2202,7 +2257,7 @@ export class AccountTransactionService {
     };
   }
 
-  private mapRecordToCreditNote(record: RecordModel): VendorCreditNote {
+  mapRecordToCreditNote(record: RecordModel): VendorCreditNote {
     return {
       id: record.id,
       vendor: record.vendor,
@@ -2316,7 +2371,6 @@ export class SiteInvitationService {
       total_units: record.total_units,
       total_planned_area: record.total_planned_area,
       admin_user: record.admin_user,
-      users: record.users || [],
       created: record.created,
       updated: record.updated
     };
@@ -2953,7 +3007,7 @@ class VendorCreditNoteService {
     return this.update(id, { balance: newBalance, status });
   }
 
-  private mapRecordToCreditNote(record: RecordModel): VendorCreditNote {
+  mapRecordToCreditNote(record: RecordModel): VendorCreditNote {
     return {
       id: record.id,
       vendor: record.vendor,
@@ -3020,7 +3074,7 @@ class CreditNoteUsageService {
 
     const records = await pb.collection('credit_note_usage').getFullList({
       filter: `site="${siteId}"`,
-      expand: 'credit_note,payment_transaction,delivery,service_booking',
+      expand: 'credit_note,payment',
       sort: '-created'
     });
     return records.map(record => this.mapRecordToUsage(record));
@@ -3032,7 +3086,19 @@ class CreditNoteUsageService {
 
     const records = await pb.collection('credit_note_usage').getFullList({
       filter: `site="${siteId}" && credit_note="${creditNoteId}"`,
-      expand: 'credit_note,payment_transaction,delivery,service_booking',
+      expand: 'credit_note,payment',
+      sort: '-created'
+    });
+    return records.map(record => this.mapRecordToUsage(record));
+  }
+
+  async getByPayment(paymentId: string): Promise<CreditNoteUsage[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('credit_note_usage').getFullList({
+      filter: `site="${siteId}" && payment="${paymentId}"`,
+      expand: 'credit_note,payment',
       sort: '-created'
     });
     return records.map(record => this.mapRecordToUsage(record));
@@ -3048,8 +3114,8 @@ class CreditNoteUsageService {
       throw new Error('Permission denied: Cannot create credit note usage');
     }
 
-    // Update credit note balance
-    await vendorCreditNoteService.updateBalance(data.credit_note, data.used_amount);
+    // Note: Credit note balance is updated by the calling service (PaymentService)
+    // to ensure proper transaction handling and avoid double updates
 
     const record = await pb.collection('credit_note_usage').create({
       ...data,
@@ -3064,62 +3130,15 @@ class CreditNoteUsageService {
       credit_note: record.credit_note,
       used_amount: record.used_amount,
       used_date: record.used_date,
-      payment_transaction: record.payment_transaction,
-      delivery_item: record.delivery_item,
-      service_booking: record.service_booking,
-      notes: record.notes,
+      payment: record.payment,
+      vendor: record.vendor,
+      description: record.description,
       site: record.site,
       created: record.created,
       updated: record.updated,
       expand: record.expand ? {
-        credit_note: record.expand.credit_note ? {
-          id: record.expand.credit_note.id,
-          vendor: record.expand.credit_note.vendor,
-          credit_amount: record.expand.credit_note.credit_amount,
-          balance: record.expand.credit_note.balance,
-          issue_date: record.expand.credit_note.issue_date,
-          expiry_date: record.expand.credit_note.expiry_date,
-          reference: record.expand.credit_note.reference,
-          reason: record.expand.credit_note.reason,
-          return_id: record.expand.credit_note.return_id,
-          status: record.expand.credit_note.status,
-          site: record.expand.credit_note.site,
-          created: record.expand.credit_note.created,
-          updated: record.expand.credit_note.updated
-        } : undefined,
-        payment_transaction: record.expand.payment_transaction ? {
-          id: record.expand.payment_transaction.id,
-          vendor: record.expand.payment_transaction.vendor,
-          account: record.expand.payment_transaction.account,
-          amount: record.expand.payment_transaction.amount,
-          payment_date: record.expand.payment_transaction.payment_date,
-          reference: record.expand.payment_transaction.reference,
-          notes: record.expand.payment_transaction.notes,
-          deliveries: record.expand.payment_transaction.deliveries || [],
-          service_bookings: record.expand.payment_transaction.service_bookings || [],
-          site: record.expand.payment_transaction.site,
-          created: record.expand.payment_transaction.created,
-          updated: record.expand.payment_transaction.updated
-        } : undefined,
-        delivery_item: record.expand.delivery_item ? deliveryItemService.mapRecordToDeliveryItem(record.expand.delivery_item) : undefined,
-        service_booking: record.expand.service_booking ? {
-          id: record.expand.service_booking.id,
-          service: record.expand.service_booking.service,
-          vendor: record.expand.service_booking.vendor,
-          start_date: record.expand.service_booking.start_date,
-          end_date: record.expand.service_booking.end_date,
-          duration: record.expand.service_booking.duration,
-          unit_rate: record.expand.service_booking.unit_rate,
-          total_amount: record.expand.service_booking.total_amount,
-          status: record.expand.service_booking.status,
-          completion_photos: record.expand.service_booking.completion_photos || [],
-          notes: record.expand.service_booking.notes,
-          payment_status: record.expand.service_booking.payment_status,
-          paid_amount: record.expand.service_booking.paid_amount,
-          site: record.expand.service_booking.site,
-          created: record.expand.service_booking.created,
-          updated: record.expand.service_booking.updated
-        } : undefined
+        credit_note: record.expand.credit_note ? vendorCreditNoteService.mapRecordToCreditNote(record.expand.credit_note) : undefined,
+        payment: record.expand.payment ? paymentService.mapRecordToPayment(record.expand.payment) : undefined
       } : undefined
     };
   }

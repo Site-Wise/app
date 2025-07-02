@@ -82,7 +82,7 @@ onRecordAfterDeleteSuccess((e) => {
 
     // Clean up all site-related data
     const collections = [
-      'items', 'vendors', 'deliveries', 'service_bookings',
+      'items', 'vendors', 'incoming_items', 'service_bookings',
       'payments', 'accounts', 'services', 'quotations'
     ]
 

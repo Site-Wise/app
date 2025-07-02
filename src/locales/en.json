@@ -591,6 +591,7 @@
     "deletePayment": "Delete Payment",
     "paymentAccount": "Payment Account",
     "paymentDate": "Payment Date",
+    "availableCreditNotes": "Available Credit Notes",
     "outstandingAmountsByVendor": "Outstanding Amounts by Vendor",
     "pendingDeliveries": "pending deliveries",
     "noPayments": "No payments recorded",

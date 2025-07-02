@@ -96,7 +96,7 @@
                         receivedInvitationsCount }}</span>
                     </div>
                   </div>
-                  <span class="ml-2 text-gray-700 dark:text-gray-300 font-medium text-sm">{{ user?.name }}</span>
+                  <span class="hidden md:block ml-2 text-gray-700 dark:text-gray-300 font-medium text-sm">{{ user?.name }}</span>
                 </div>
                 <ChevronDown class="h-3 w-3 ml-1 md:ml-2 transition-transform duration-200"
                   :class="{ 'rotate-180': userMenuOpen }" />

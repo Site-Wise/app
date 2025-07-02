@@ -122,7 +122,17 @@ export const useSiteStore = defineStore('site', () => {
 
   async function createSite(data: Partial<Site>) {
     try {
-      const site = await pb.collection('sites').create(data)
+      // Ensure admin_user is set to current authenticated user
+      if (!pb.authStore.isValid || !pb.authStore.record?.id) {
+        throw new Error('User not authenticated')
+      }
+
+      const siteData = {
+        ...data,
+        admin_user: pb.authStore.record.id,
+      }
+
+      const site = await pb.collection('sites').create(siteData)
       
       // Note: site_user record creation is handled by PocketBase hooks
       // when a site is created (see external_services/pocketbase/site-creation-hook.js)
