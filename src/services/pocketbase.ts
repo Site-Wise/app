@@ -358,6 +358,7 @@ export interface VendorReturn {
   return_date: string;
   reason: 'damaged' | 'wrong_item' | 'excess_delivery' | 'quality_issue' | 'specification_mismatch' | 'other';
   status: 'initiated' | 'approved' | 'rejected' | 'completed' | 'refunded';
+  processing_option?: 'credit_note' | 'refund'; // Choice between credit note or direct refund
   notes?: string;
   photos?: string[]; // Array of photo filenames
   approval_notes?: string;

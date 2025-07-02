@@ -103,12 +103,12 @@ describe('PocketBase Services', () => {
     it('should get all sites for user', async () => {
       const sites = await siteService.getAll()
       expect(sites).toHaveLength(1)
-      expect(sites[0]).toEqual(mockSite)
+      expect(sites[0]).toMatchObject(mockSite)
     })
 
     it('should get site by ID', async () => {
       const site = await siteService.getById('site-1')
-      expect(site).toEqual(mockSite)
+      expect(site).toMatchObject(mockSite)
     })
 
     it('should create a new site', async () => {

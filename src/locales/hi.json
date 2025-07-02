@@ -410,7 +410,18 @@
     "unknown": "अज्ञात",
     "paymentDone": "भुगतान पूर्ण",
     "summary": "सारांश",
-    "outstandingBalanceAsOf": "बकाया शेष राशि"
+    "outstandingBalanceAsOf": "बकाया शेष राशि",
+    "processingOption": "प्रसंस्करण विकल्प",
+    "processingOptions": {
+      "creditNote": "क्रेडिट नोट बनाएं",
+      "creditNoteDesc": "इस विक्रेता के साथ भविष्य में उपयोग के लिए क्रेडिट नोट बनाएं",
+      "directRefund": "सीधा रिफंड",
+      "directRefundDesc": "खाता शेष में तत्काल रिफंड प्रक्रिया करें"
+    },
+    "creditAmount": "क्रेडिट राशि",
+    "creditNoteExpiry": "क्रेडिट नोट समाप्ति",
+    "creditNoteReference": "क्रेडिट नोट संदर्भ",
+    "processRefund": "वापसी प्रक्रिया"
   },
   "returns": {
     "createReturn": "वापसी बनाएं",

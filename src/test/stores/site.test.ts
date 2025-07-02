@@ -23,7 +23,8 @@ vi.mock('../../services/pocketbase', () => ({
   pb: {
     authStore: {
       isValid: true,
-      model: { id: 'user-1' }
+      model: { id: 'user-1' },
+      record: { id: 'user-1' }
     },
     collection: vi.fn((name: string) => {
       if (name === 'sites') return mockSitesCollection

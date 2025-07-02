@@ -36,7 +36,7 @@ const createMockSubscription = (overrides = {}) => {
     },
     isLoading: false,
     error: null,
-    isReadOnly: false,
+    isReadOnly: { value: false },
     isSubscriptionActive: true,
     isSubscriptionCancelled: false,
     canReactivateSubscription: false,
@@ -147,7 +147,7 @@ describe('SubscriptionBanner', () => {
     
     // Override to make it read-only
     mockUseSubscription.mockImplementation(() => createMockSubscription({
-      isReadOnly: true,
+      isReadOnly: { value: true },
       usageLimits: {
         items: { current: 100, max: 100, exceeded: true, disabled: false, unlimited: false },
         vendors: { current: 0, max: 25, exceeded: false, disabled: false, unlimited: false },
@@ -171,7 +171,7 @@ describe('SubscriptionBanner', () => {
     
     // Override with exceeded limits
     mockUseSubscription.mockImplementation(() => createMockSubscription({
-      isReadOnly: true,
+      isReadOnly: { value: true },
       usageLimits: {
         items: { current: 100, max: 100, exceeded: true, disabled: false, unlimited: false },
         vendors: { current: 25, max: 25, exceeded: true, disabled: false, unlimited: false },

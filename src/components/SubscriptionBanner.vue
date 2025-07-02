@@ -65,16 +65,16 @@ const isUpgradePending = ref(false);
 
 const showBanner = computed(() => {
   if (isDismissed.value && !props.persistent) return false;
-  return isReadOnly || !isSubscriptionActive;
+  return isReadOnly.value || !isSubscriptionActive.value;
 });
 
 const bannerMessage = computed(() => {
-  if (!isSubscriptionActive) {
+  if (!isSubscriptionActive.value) {
     return t('subscription.banner.subscriptionExpired');
   }
   
-  if (isReadOnly) {
-    if (currentPlan?.name === 'Free') {
+  if (isReadOnly.value) {
+    if (currentPlan.value?.name === 'Free') {
       return t('subscription.banner.freeTierLimitReached');
     }
     return t('subscription.banner.subscriptionLimitReached');
@@ -84,42 +84,42 @@ const bannerMessage = computed(() => {
 });
 
 const usageDetails = computed(() => {
-  if (!usageLimits) return '';
+  if (!usageLimits.value) return '';
   
   const exceededLimits: string[] = [];
   
-  if (usageLimits.items.exceeded) {
+  if (usageLimits.value.items.exceeded) {
     exceededLimits.push(t('subscription.limits.items', { 
-      current: usageLimits.items.current, 
-      max: usageLimits.items.max 
+      current: usageLimits.value.items.current, 
+      max: usageLimits.value.items.max 
     }));
   }
   
-  if (usageLimits.vendors.exceeded) {
+  if (usageLimits.value.vendors.exceeded) {
     exceededLimits.push(t('subscription.limits.vendors', { 
-      current: usageLimits.vendors.current, 
-      max: usageLimits.vendors.max 
+      current: usageLimits.value.vendors.current, 
+      max: usageLimits.value.vendors.max 
     }));
   }
   
-  if (usageLimits.deliveries.exceeded) {
+  if (usageLimits.value.deliveries.exceeded) {
     exceededLimits.push(t('subscription.limits.deliveries', { 
-      current: usageLimits.deliveries.current, 
-      max: usageLimits.deliveries.max 
+      current: usageLimits.value.deliveries.current, 
+      max: usageLimits.value.deliveries.max 
     }));
   }
   
-  if (usageLimits.service_bookings.exceeded) {
+  if (usageLimits.value.service_bookings.exceeded) {
     exceededLimits.push(t('subscription.limits.serviceBookings', { 
-      current: usageLimits.service_bookings.current, 
-      max: usageLimits.service_bookings.max 
+      current: usageLimits.value.service_bookings.current, 
+      max: usageLimits.value.service_bookings.max 
     }));
   }
   
-  if (usageLimits.payments.exceeded) {
+  if (usageLimits.value.payments.exceeded) {
     exceededLimits.push(t('subscription.limits.payments', { 
-      current: usageLimits.payments.current, 
-      max: usageLimits.payments.max 
+      current: usageLimits.value.payments.current, 
+      max: usageLimits.value.payments.max 
     }));
   }
   

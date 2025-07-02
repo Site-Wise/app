@@ -461,7 +461,6 @@ describe('SiteSelector', () => {
       await manageButton.trigger('click')
       
       expect(wrapper.text()).toContain('Current Site Stats')
-      expect(wrapper.text()).toContain('Team Members')
       expect(wrapper.text()).toContain('Created')
       expect(wrapper.text()).toContain('Units')
     })

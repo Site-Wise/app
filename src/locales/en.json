@@ -410,7 +410,18 @@
     "unknown": "Unknown",
     "paymentDone": "Payment done",
     "summary": "SUMMARY",
-    "outstandingBalanceAsOf": "Outstanding Balance as of"
+    "outstandingBalanceAsOf": "Outstanding Balance as of",
+    "processingOption": "Processing Option",
+    "processingOptions": {
+      "creditNote": "Create Credit Note",
+      "creditNoteDesc": "Create a credit note for future use with this vendor",
+      "directRefund": "Direct Refund",
+      "directRefundDesc": "Process immediate refund to account balance"
+    },
+    "creditAmount": "Credit Amount",
+    "creditNoteExpiry": "Credit Note Expiry",
+    "creditNoteReference": "Credit Note Reference",
+    "processRefund": "Process Return"
   },
   "returns": {
     "createReturn": "Create Return",
