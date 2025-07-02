@@ -88,7 +88,7 @@
                 <button @click="editQuotation(quotation)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300">
                   <Edit2 class="h-4 w-4" />
                 </button>
-                <button @click="deleteQuotation(quotation.id!)" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
+                <button @click="deleteQuotation(quotation.id!)" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300" :disabled="!canDelete">
                   <Trash2 class="h-4 w-4" />
                 </button>
               </div>
@@ -190,10 +190,12 @@ import {
   type Quotation 
 } from '../services/pocketbase';
 import { useI18n } from '../composables/useI18n';
+import { usePermissions } from '../composables/usePermissions';
 import { useSiteData } from '../composables/useSiteData';
 import { useQuotationSearch } from '../composables/useSearch';
 
 const { t } = useI18n();
+const { canDelete } = usePermissions();
 // Search functionality
 const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useQuotationSearch();
 

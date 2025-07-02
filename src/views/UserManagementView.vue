@@ -138,7 +138,7 @@
                       <UserX v-if="siteUser.is_active" class="h-4 w-4" />
                       <UserCheck v-else class="h-4 w-4" />
                     </button>
-                    <button @click="removeUser(siteUser)" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" :title="t('users.removeUser')">
+                    <button @click="removeUser(siteUser)" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" :title="t('users.removeUser')" :disabled="!canDelete">
                       <Trash2 class="h-4 w-4" />
                     </button>
                   </div>
@@ -454,9 +454,11 @@ import {
   siteUserService,
   type SiteUser
 } from '../services/pocketbase';
+import { usePermissions } from '../composables/usePermissions';
 
 const { t } = useI18n();
 const { currentSite, canManageUsers, changeUserRole, removeUserFromSite } = useSite();
+const { canDelete } = usePermissions();
 const { 
   pendingInvitations, 
   sendInvitation, 

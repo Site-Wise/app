@@ -204,10 +204,12 @@ import {
   type Item,
   type Tag as TagType
 } from '../services/pocketbase';
+import { usePermissions } from '../composables/usePermissions';
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
+const { canDelete } = usePermissions();
 
 const router = useRouter();
 
@@ -248,7 +250,7 @@ const canCreateItem = computed(() => {
 });
 
 const canEditDelete = computed(() => {
-  return !isReadOnly.value;
+  return !isReadOnly.value && canDelete.value;
 });
 
 const form = reactive({

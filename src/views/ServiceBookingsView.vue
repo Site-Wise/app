@@ -100,7 +100,7 @@
                 <button @click="editBooking(booking)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300" :title="t('common.edit')" v-if="canUpdate">
                   <Edit2 class="h-4 w-4" />
                 </button>
-                <button @click="deleteBooking(booking.id!)" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300" :title="t('common.delete')" v-if="canDelete">
+                <button @click="deleteBooking(booking.id!)" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300" :title="t('common.delete')" :disabled="!canDelete">
                   <Trash2 class="h-4 w-4" />
                 </button>
               </div>
@@ -176,7 +176,7 @@
                     </button>
                     <button 
                       @click="deleteBooking(booking.id!); closeMobileMenu()"
-                      v-if="canDelete"
+                      :disabled="!canDelete"
                       class="w-full flex items-center px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
                     >
                       <Trash2 class="h-4 w-4 mr-2" />
@@ -411,7 +411,6 @@ const { data: vendorsData } = useSiteData(
 );
 
 // Computed properties from useSiteData
-const allServiceBookings = computed(() => allServiceBookingsData.value || []);
 const services = computed(() => servicesData.value || []);
 const vendors = computed(() => vendorsData.value || []);
 const showAddModal = ref(false);

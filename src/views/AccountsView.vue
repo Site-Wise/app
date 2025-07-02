@@ -96,7 +96,7 @@
               <EyeOff class="h-4 w-4" v-if="account.is_active"></EyeOff>
               <Eye class="h-4 w-4" v-if="!account.is_active"></Eye>
             </button>
-            <button @click="deleteAccount(account.id!)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400" title="Delete">
+            <button @click="deleteAccount(account.id!)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400" title="Delete" :disabled="!canDelete">
               <Trash2 class="h-4 w-4" />
             </button>
           </div>
@@ -243,8 +243,10 @@ import {
 import { useI18n } from '../composables/useI18n';
 import { useAccountSearch } from '../composables/useSearch';
 import { useSiteData } from '../composables/useSiteData';
+import { usePermissions } from '../composables/usePermissions';
 
 const { t } = useI18n();
+const { canDelete } = usePermissions();
 const router = useRouter();
 // Use site-aware data loading
 const { data: accountsData, reload: reloadAccounts } = useSiteData(async () => {

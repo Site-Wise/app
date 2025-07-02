@@ -155,11 +155,21 @@ vi.mock('../../services/pocketbase', () => ({
   itemService: { getAll: vi.fn().mockResolvedValue([]) },
   paymentService: { getAll: vi.fn().mockResolvedValue([]) },
   
-  // ⚠️ CRITICAL: Always include these for useSiteStore
+  // ⚠️ CRITICAL: Always include these for useSiteStore and usePermissions
   getCurrentSiteId: vi.fn(() => 'site-1'),
   setCurrentSiteId: vi.fn(),
   getCurrentUserRole: vi.fn(() => 'owner'),
   setCurrentUserRole: vi.fn(),
+  calculatePermissions: vi.fn().mockReturnValue({
+    canCreate: true,
+    canRead: true,
+    canUpdate: true,
+    canDelete: true,
+    canManageUsers: true,
+    canManageRoles: true,
+    canExport: true,
+    canViewFinancials: true
+  }),
   
   // Optional: pb object if needed
   pb: {
@@ -254,6 +264,57 @@ describe('ComponentName', () => {
 - **Button finding**: `buttons.find((btn: any) => btn.text().includes('text'))`
 - **Form testing**: Set `wrapper.vm.form.field` directly, not DOM elements
 - **Async operations**: `await wrapper.vm.$nextTick()` + `setTimeout(50)` pattern
+
+## Common Build Error Patterns
+
+### 1. Type Conversion Errors
+When you encounter type conversion errors like:
+```
+Conversion of type 'X[]' to type 'Y[]' may be a mistake
+```
+**Fix**: Check if you're mixing different data types. Common case: search functionality returning different types than the view expects.
+
+### 2. Incomplete Script Setup in Views
+If a view has `<script setup lang="ts">` with only imports and no implementation:
+- The view needs complete implementation of all methods/properties referenced in the template
+- Use `useSiteData` composable for data loading
+- Include all state variables, computed properties, and methods
+
+### 3. Service Method Availability
+Not all services have a `getAll()` method. Check `src/services/pocketbase.ts` for available methods:
+- Most services have `getAll()`: items, deliveries, vendors, etc.
+- Some services are query-only: deliveryItemService (use specific query methods)
+
+### 4. Search Implementation Type Mismatches
+When implementing search in views that use different data types:
+- Ensure search returns match the expected type
+- Consider disabling search if types are incompatible
+- Document why search is disabled with a comment
+
+### 5. Missing calculatePermissions in Test Mocks
+**Error Pattern**: `[vitest] No "calculatePermissions" export is defined on the "../../services/pocketbase" mock`
+
+**Root Cause**: Views using `usePermissions` composable require `calculatePermissions` function from PocketBase service
+
+**Fix**: Always include `calculatePermissions` in PocketBase service mocks:
+```typescript
+vi.mock('../../services/pocketbase', () => ({
+  // ...other service mocks
+  calculatePermissions: vi.fn().mockReturnValue({
+    canCreate: true,
+    canRead: true,
+    canUpdate: true,
+    canDelete: true,
+    canManageUsers: true,
+    canManageRoles: true,
+    canExport: true,
+    canViewFinancials: true
+  }),
+  // ...rest of mock
+}))
+```
+
+**Prevention**: Use the centralized mock from `src/test/mocks/pocketbase.ts` when possible, or ensure all required functions are included in custom mocks.
 
 ## Commands
 ```bash

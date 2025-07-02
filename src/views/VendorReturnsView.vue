@@ -333,33 +333,42 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, computed } from 'vue';
 import {
   Plus,
-  Search,
   Download,
   Eye,
   Check,
   DollarSign,
   RotateCcw,
   Clock,
-  CheckCircle,
-  Loader2
+  CheckCircle
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSiteData } from '../composables/useSiteData';
-import { useVendorReturnSearch } from '../composables/useSearch';
+import {
+  vendorReturnService,
+  vendorService,
+  accountService,
+  type VendorReturn
+} from '../services/pocketbase';
 import ReturnModal from '../components/returns/ReturnModal.vue';
 import ReturnDetailsModal from '../components/returns/ReturnDetailsModal.vue';
 import RefundModal from '../components/returns/RefundModal.vue';
 import SearchBox from '../components/SearchBox.vue';
 
 const { t } = useI18n();
-const route = useRoute();
 
-// Search functionality
-const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useVendorReturnSearch();
+// State
+const searchQuery = ref('');
+const statusFilter = ref('');
+const vendorFilter = ref('');
+const loading = ref(false);
+const showReturnModal = ref(false);
+const showDetailsModal = ref(false);
+const showRefundModal = ref(false);
+const isEditMode = ref(false);
+const selectedReturn = ref<VendorReturn | null>(null);
 
 // Use site data management
 const { data: returnsData, reload: reloadReturns } = useSiteData(
@@ -370,150 +379,76 @@ const { data: vendorsData } = useSiteData(
   async () => await vendorService.getAll()
 );
 
-const { data: deliveriesData } = useSiteData(
-  async () => await deliveryService.getAll()
-);
-
 const { data: accountsData } = useSiteData(
   async () => await accountService.getAll()
 );
 
-// Computed properties from useSiteData
+// Computed properties
 const returns = computed(() => returnsData.value || []);
 const vendors = computed(() => vendorsData.value || []);
-const deliveries = computed(() => deliveriesData.value || []);
+const deliveryItems = computed(() => []); // TODO: Fetch delivery items when needed
 const accounts = computed(() => accountsData.value || []);
 
-const deliveryItems = ref<DeliveryItem[]>([]);
-const loading = ref(false);
-
-
-// Search and filters
-const statusFilter = ref('');
-const vendorFilter = ref('');
-
-// Modals
-const showReturnModal = ref(false);
-const showDetailsModal = ref(false);
-const showRefundModal = ref(false);
-const selectedReturn = ref<VendorReturn | null>(null);
-const isEditMode = ref(false);
-
-// Computed properties
 const filteredReturns = computed(() => {
-  if (!returns.value) return [];
-  let filtered = searchQuery.value.trim() ? searchResults.value : returns.value;
-
+  let filtered = returns.value;
+  
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    filtered = filtered.filter(r => 
+      r.id?.toLowerCase().includes(query) ||
+      r.expand?.vendor?.name?.toLowerCase().includes(query) ||
+      r.reason?.toLowerCase().includes(query)
+    );
+  }
+  
   if (statusFilter.value) {
-    filtered = filtered.filter(returnItem => returnItem.status === statusFilter.value);
+    filtered = filtered.filter(r => r.status === statusFilter.value);
   }
-
+  
   if (vendorFilter.value) {
-    filtered = filtered.filter(returnItem => returnItem.vendor === vendorFilter.value);
+    filtered = filtered.filter(r => r.vendor === vendorFilter.value);
   }
-
+  
   return filtered;
 });
 
-const pendingReturns = computed(() => {
-  return returns.value?.filter(returnItem => returnItem.status === 'initiated').length || 0;
-});
+const pendingReturns = computed(() => 
+  returns.value.filter(r => r.status === 'initiated').length
+);
 
-const completedReturns = computed(() => {
-  return returns.value?.filter(returnItem => 
-    returnItem.status === 'completed' || returnItem.status === 'refunded'
-  ).length || 0;
-});
+const completedReturns = computed(() => 
+  returns.value.filter(r => r.status === 'completed').length
+);
 
-const totalRefunded = computed(() => {
-  return returns.value?.reduce((sum, returnItem) => {
-    return sum + (returnItem.actual_refund_amount || 0);
-  }, 0) || 0;
-});
+const totalRefunded = computed(() => 
+  returns.value.reduce((sum, r) => sum + (r.actual_refund_amount || 0), 0)
+);
 
 // Methods
-const loadDeliveryItems = async () => {
-  if (!deliveries.value || deliveries.value.length === 0) return;
-  
-  loading.value = true;
-  try {
-    // Extract delivery items from deliveries
-    const allDeliveryItems: DeliveryItem[] = [];
-    
-    // Try to extract from expanded delivery data first
-    deliveries.value.forEach(delivery => {
-      if (delivery.expand?.delivery_items) {
-        delivery.expand.delivery_items.forEach(deliveryItem => {
-          allDeliveryItems.push({
-            ...deliveryItem,
-            expand: {
-              ...deliveryItem.expand,
-              delivery: delivery
-            }
-          });
-        });
-      }
-    });
-    
-    // If no delivery items found via expand, fetch them directly
-    if (allDeliveryItems.length === 0 && deliveries.value.length > 0) {
-      for (const delivery of deliveries.value) {
-        try {
-          const items = await deliveryItemService.getByDelivery(delivery.id!);
-          items.forEach((deliveryItem: DeliveryItem) => {
-            allDeliveryItems.push({
-              ...deliveryItem,
-              expand: {
-                ...deliveryItem.expand,
-                delivery: delivery
-              }
-            });
-          });
-        } catch (err) {
-          console.error('Error fetching delivery items for delivery', delivery.id, err);
-        }
-      }
-    }
-    
-    deliveryItems.value = allDeliveryItems;
-  } catch (error) {
-    console.error('Error loading delivery items:', error);
-  } finally {
-    loading.value = false;
-  }
-};
-
-const reloadAllData = async () => {
-  await reloadReturns();
-  // Other data will be reloaded automatically by useSiteData
-  await loadDeliveryItems();
-};
-
-const getStatusClass = (status: string) => {
-  const classes = {
-    initiated: 'status-pending',
-    approved: 'status-approved',
-    rejected: 'status-rejected',
-    completed: 'status-completed',
-    refunded: 'status-paid'
-  };
-  return classes[status as keyof typeof classes] || 'status-pending';
-};
-
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
 };
 
-// Modal handlers
+const getStatusClass = (status: string) => {
+  const classes = {
+    'initiated': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+    'approved': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+    'rejected': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+    'completed': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+    'refunded': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
+  };
+  return classes[status as keyof typeof classes] || classes.initiated;
+};
+
+const exportReturns = () => {
+  // TODO: Implement export functionality
+  console.log('Export returns');
+};
+
 const openCreateModal = () => {
-  selectedReturn.value = null;
   isEditMode.value = false;
+  selectedReturn.value = null;
   showReturnModal.value = true;
-  
-  // Pre-select vendor if coming from vendor detail page
-  if (route.query.vendor && typeof route.query.vendor === 'string') {
-    vendorFilter.value = route.query.vendor;
-  }
 };
 
 const closeReturnModal = () => {
@@ -521,19 +456,27 @@ const closeReturnModal = () => {
   selectedReturn.value = null;
 };
 
-const viewReturn = (returnItem: VendorReturn) => {
-  selectedReturn.value = returnItem;
-  showDetailsModal.value = true;
-};
-
 const closeDetailsModal = () => {
   showDetailsModal.value = false;
   selectedReturn.value = null;
 };
 
-const approveReturn = (returnItem: VendorReturn) => {
+const closeRefundModal = () => {
+  showRefundModal.value = false;
+};
+
+const viewReturn = (returnItem: VendorReturn) => {
   selectedReturn.value = returnItem;
   showDetailsModal.value = true;
+};
+
+const approveReturn = async (returnItem: VendorReturn) => {
+  try {
+    await vendorReturnService.update(returnItem.id!, { status: 'approved' });
+    await reloadReturns();
+  } catch (error) {
+    console.error('Error approving return:', error);
+  }
 };
 
 const processRefund = (returnItem: VendorReturn) => {
@@ -541,112 +484,51 @@ const processRefund = (returnItem: VendorReturn) => {
   showRefundModal.value = true;
 };
 
-const closeRefundModal = () => {
-  showRefundModal.value = false;
-  selectedReturn.value = null;
-};
-
-// Event handlers
 const handleReturnSave = async () => {
-  await reloadAllData();
+  await reloadReturns();
   closeReturnModal();
 };
 
 const handleApprove = async () => {
-  await reloadAllData();
-  closeDetailsModal();
+  if (selectedReturn.value) {
+    await approveReturn(selectedReturn.value);
+    closeDetailsModal();
+  }
 };
 
 const handleReject = async () => {
-  await reloadAllData();
-  closeDetailsModal();
+  if (selectedReturn.value) {
+    try {
+      await vendorReturnService.update(selectedReturn.value.id!, { status: 'rejected' });
+      await reloadReturns();
+      closeDetailsModal();
+    } catch (error) {
+      console.error('Error rejecting return:', error);
+    }
+  }
 };
 
 const handleComplete = async () => {
-  await reloadAllData();
-  closeDetailsModal();
+  if (selectedReturn.value) {
+    try {
+      await vendorReturnService.update(selectedReturn.value.id!, { status: 'completed' });
+      await reloadReturns();
+      closeDetailsModal();
+    } catch (error) {
+      console.error('Error completing return:', error);
+    }
+  }
 };
 
 const handleRefund = () => {
   closeDetailsModal();
-  showRefundModal.value = true;
+  if (selectedReturn.value) {
+    processRefund(selectedReturn.value);
+  }
 };
 
 const handleRefundSave = async () => {
-  await reloadAllData();
+  await reloadReturns();
   closeRefundModal();
 };
-
-const exportReturns = () => {
-  // Create CSV content
-  const headers = [
-    t('vendors.returnId'), 
-    t('common.date'), 
-    t('common.vendor'), 
-    t('vendors.reason'), 
-    t('common.status'), 
-    t('vendors.returnAmount'), 
-    t('vendors.refundAmount')
-  ];
-  const rows = filteredReturns.value.map(returnItem => [
-    returnItem.id?.slice(-6) || '',
-    returnItem.return_date,
-    returnItem.expand?.vendor?.name || returnItem.expand?.vendor?.contact_person || t('common.unknownVendor'),
-    t(`vendors.returnReasons.${returnItem.reason}`),
-    t(`vendors.returnStatuses.${returnItem.status}`),
-    returnItem.total_return_amount,
-    returnItem.actual_refund_amount || 0
-  ]);
-
-  // Convert to CSV
-  const csvContent = [headers, ...rows]
-    .map(row => row.map(field => 
-      typeof field === 'string' && field.includes(',') ? `"${field}"` : field
-    ).join(','))
-    .join('\n');
-
-  // Download file
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', `vendor-returns-${new Date().toISOString().split('T')[0]}.csv`);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
-
-const handleKeyboardShortcut = (event: KeyboardEvent) => {
-  if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
-    event.preventDefault();
-    openCreateModal();
-  }
-};
-
-onMounted(() => {
-  // Pre-select vendor filter if specified in query
-  if (route.query.vendor && typeof route.query.vendor === 'string') {
-    vendorFilter.value = route.query.vendor;
-  }
-  
-  // Data loading is handled automatically by useSiteData
-  // Load delivery items when deliveries are available
-  setTimeout(() => loadDeliveryItems(), 500);
-  setTimeout(() => loadAll(), 100);
-  
-  window.addEventListener('keydown', handleKeyboardShortcut);
-});
-
-// Watch for deliveries changes to reload delivery items
-computed(() => {
-  if (deliveries.value && deliveries.value.length > 0) {
-    setTimeout(() => loadDeliveryItems(), 100);
-  }
-  return null;
-});
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyboardShortcut);
-});
 </script>

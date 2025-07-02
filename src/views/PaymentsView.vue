@@ -341,7 +341,7 @@ const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
 
 // Search functionality
-const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = usePaymentSearch();
+const { searchQuery, loading: searchLoading, loadAll } = usePaymentSearch();
 
 interface VendorWithOutstanding extends Vendor {
   outstandingAmount: number;
@@ -376,7 +376,8 @@ const { data: serviceBookingsData } = useSiteData(
 );
 
 // Computed properties from useSiteData
-const payments = computed(() => searchQuery.value.trim() ? searchResults.value : (paymentsData.value || []));
+// Note: Search is currently disabled because it returns Payment objects while the view uses AccountTransaction objects
+const payments = computed<AccountTransaction[]>(() => paymentsData.value || []);
 const vendors = computed(() => vendorsData.value || []);
 const accounts = computed(() => accountsData.value || []);
 const deliveries = computed(() => deliveriesData.value || []);

@@ -445,10 +445,12 @@ import {
   vendorReturnService,
   type Delivery
 } from '../services/pocketbase';
+import { usePermissions } from '../composables/usePermissions';
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
+const { canDelete } = usePermissions();
 
 // Use site data management
 const { data: allDeliveriesData, loading: deliveriesLoading, reload: reloadDeliveries } = useSiteData(
@@ -501,7 +503,7 @@ const canCreateDelivery = computed(() => {
 });
 
 const canEditDelete = computed(() => {
-  return !isReadOnly.value;
+  return !isReadOnly.value && canDelete.value;
 });
 
 const reloadAllData = async () => {

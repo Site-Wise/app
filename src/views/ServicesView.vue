@@ -99,7 +99,7 @@
               <EyeOff class="h-4 w-4" v-if="service.is_active"></EyeOff>
               <Eye class="h-4 w-4" v-if="!service.is_active"></Eye>
             </button>
-            <button @click="deleteService(service.id!)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400" :title="t('common.delete')" v-if="canDelete">
+            <button @click="deleteService(service.id!)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400" :title="t('common.delete')" :disabled="!canDelete">
               <Trash2 class="h-4 w-4" />
             </button>
           </div>

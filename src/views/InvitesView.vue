@@ -145,7 +145,7 @@
                 
                 <button 
                   @click="declineInvitation(invitation.id!)"
-                  :disabled="decliningInvite === invitation.id"
+                  :disabled="decliningInvite === invitation.id || !canDelete"
                   class="flex-1 flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Loader2 v-if="decliningInvite === invitation.id" class="h-4 w-4 animate-spin" />
@@ -177,6 +177,7 @@ import {
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useInvitations } from '../composables/useInvitations';
+import { usePermissions } from '../composables/usePermissions';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -187,6 +188,7 @@ const {
   acceptInvitation, 
   rejectInvitation 
 } = useInvitations();
+const { canDelete } = usePermissions();
 
 const acceptingInvite = ref<string | null>(null);
 const decliningInvite = ref<string | null>(null);

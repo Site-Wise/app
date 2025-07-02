@@ -189,6 +189,16 @@ vi.mock('../../services/pocketbase', () => ({
   getCurrentSiteId: vi.fn().mockReturnValue('site-1'),
   setCurrentSiteId: vi.fn(),
   getCurrentUserRole: vi.fn().mockReturnValue('owner'),
+  calculatePermissions: vi.fn().mockReturnValue({
+    canCreate: true,
+    canRead: true,
+    canUpdate: true,
+    canDelete: true,
+    canManageUsers: true,
+    canManageRoles: true,
+    canExport: true,
+    canViewFinancials: true
+  }),
   setCurrentUserRole: vi.fn(),
   pb: {
     collection: vi.fn(() => ({

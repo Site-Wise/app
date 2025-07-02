@@ -194,19 +194,24 @@ import { useSiteData } from '../composables/useSiteData';
 import TagSelector from '../components/TagSelector.vue';
 import SearchBox from '../components/SearchBox.vue';
 import { useVendorSearch } from '../composables/useSearch';
-import { 
-  vendorService, 
-  deliveryService, 
-  paymentService,
+import {
+  vendorService,
+  deliveryService,
   serviceBookingService,
+  paymentService,
   tagService,
   type Vendor,
+  type Delivery,
+  type ServiceBooking,
+  type Payment,
   type Tag as TagType
 } from '../services/pocketbase';
+import { usePermissions } from '../composables/usePermissions';
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
+const { canDelete } = usePermissions();
 
 const router = useRouter();
 
@@ -251,7 +256,7 @@ const canCreateVendor = computed(() => {
 });
 
 const canEditDelete = computed(() => {
-  return !isReadOnly.value;
+  return !isReadOnly.value && canDelete.value;
 });
 
 const form = reactive({
@@ -267,16 +272,16 @@ const form = reactive({
 const getVendorOutstanding = (vendorId: string) => {
   // Include deliveries outstanding
   const deliveriesOutstanding = deliveries.value
-    ?.filter(delivery => delivery.vendor === vendorId)
-    ?.reduce((sum, delivery) => {
+    ?.filter((delivery: Delivery) => delivery.vendor === vendorId)
+    ?.reduce((sum: number, delivery: Delivery) => {
       const outstanding = delivery.total_amount - delivery.paid_amount;
       return sum + (outstanding > 0 ? outstanding : 0);
     }, 0) || 0;
   
   // Include service bookings outstanding
   const serviceOutstanding = serviceBookings.value
-    ?.filter(booking => booking.vendor === vendorId)
-    ?.reduce((sum, booking) => {
+    ?.filter((booking: ServiceBooking) => booking.vendor === vendorId)
+    ?.reduce((sum: number, booking: ServiceBooking) => {
       const outstanding = booking.total_amount - booking.paid_amount;
       return sum + (outstanding > 0 ? outstanding : 0);
     }, 0) || 0;
@@ -286,8 +291,8 @@ const getVendorOutstanding = (vendorId: string) => {
 
 const getVendorPaid = (vendorId: string) => {
   return payments.value
-    ?.filter(payment => payment.vendor === vendorId)
-    ?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
+    ?.filter((payment: Payment) => payment.vendor === vendorId)
+    ?.reduce((sum: number, payment: Payment) => sum + payment.amount, 0) || 0;
 };
 
 const viewVendorDetail = (vendorId: string) => {

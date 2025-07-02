@@ -8,6 +8,7 @@
     "dev:tauri": "tauri dev",
     "build": "vue-tsc -b && vite build",
     "build:tauri": "tauri build",
+    "lint": "npx oxlint@latest",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",

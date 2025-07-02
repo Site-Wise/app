@@ -119,6 +119,19 @@ vi.mock('../../services/pocketbase', () => {
       incrementUsage: vi.fn()
     },
     getCurrentSiteId: vi.fn().mockReturnValue(null), // Return null to prevent subscription loading
+    setCurrentSiteId: vi.fn(),
+    getCurrentUserRole: vi.fn().mockReturnValue('owner'),
+    setCurrentUserRole: vi.fn(),
+    calculatePermissions: vi.fn().mockReturnValue({
+      canCreate: true,
+      canRead: true,
+      canUpdate: true,
+      canDelete: true,
+      canManageUsers: true,
+      canManageRoles: true,
+      canExport: true,
+      canViewFinancials: true
+    }),
     pb: {
       collection: vi.fn((_name: string) => ({
         getFirstListItem: vi.fn().mockRejectedValue(new Error('Not found')),
