@@ -604,7 +604,11 @@
     "editPayment": "Edit Payment Allocation",
     "updatePayment": "Update Payment",
     "allocated": "Allocated",
-    "unallocated": "Unallocated"
+    "unallocated": "Unallocated",
+    "fullyAllocated": "Fully Allocated",
+    "partiallyAllocated": "Partially Allocated",
+    "currentAllocations": "Current Allocations",
+    "allocationStatus": "Allocation Status"
   },
   "site": {
     "selectSite": "Select a Site",

@@ -278,7 +278,7 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     }
   }
 
-  function checkCreateLimit(type: 'items' | 'vendors' | 'deliveries' | 'service_bookings' | 'payments' | 'accounts' | 'vendor_returns' | 'services'): boolean {
+  function checkCreateLimit(type: 'items' | 'vendors' | 'deliveries' | 'service_bookings' | 'payments' | 'accounts' | 'vendor_returns' | 'services' | 'sites'): boolean {
     if (!currentSubscription.value) return false
     
     const plan = currentSubscription.value.expand?.subscription_plan
@@ -321,6 +321,9 @@ export const useSubscriptionStore = defineStore('subscription', () => {
       case 'services':
         if (isDisabled(plan.features.max_services)) return false
         return isUnlimited(plan.features.max_services) || (usage.services_count || 0) < plan.features.max_services
+      case 'sites':
+        if (isDisabled(plan.features.max_sites)) return false
+        return isUnlimited(plan.features.max_sites) || true // Site count is not tracked in usage, so we only check if sites are disabled
       default:
         return false
     }

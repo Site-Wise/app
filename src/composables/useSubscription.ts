@@ -1,5 +1,5 @@
-import { computed, watch } from 'vue';
-import { pb, getCurrentSiteId, type Site } from '../services/pocketbase';
+import { watch } from 'vue';
+import { pb, getCurrentSiteId } from '../services/pocketbase';
 import { useSubscriptionStore } from '../stores/subscription';
 
 // Export store types for backwards compatibility
@@ -79,7 +79,7 @@ export function useSubscription() {
     return subscriptionStore.isDisabled(limit);
   };
 
-  const checkCreateLimit = (type: 'items' | 'vendors' | 'deliveries' | 'service_bookings' | 'payments'): boolean => {
+  const checkCreateLimit = (type: 'items' | 'vendors' | 'deliveries' | 'service_bookings' | 'payments' | 'sites' | 'services' | 'accounts' | 'vendor_returns'): boolean => {
     return subscriptionStore.checkCreateLimit(type);
   };
 
@@ -133,7 +133,7 @@ export function useSubscription() {
   };
 
   // Payment and subscription management methods
-  const upgradeSubscription = async (planId: string, paymentOptions: any = {}) => {
+  const upgradeSubscription = async (planId: string) => {
     try {
       const siteId = getCurrentSiteId();
       if (!siteId) throw new Error('No site selected');

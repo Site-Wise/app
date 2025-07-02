@@ -431,7 +431,7 @@ const totalRefunded = computed(() =>
 );
 
 const canCreateReturn = computed(() => {
-  return checkCreateLimit('vendor_returns') && !isReadOnly.value;
+  return checkCreateLimit('vendor_returns') && !isReadOnly;
 });
 
 // Methods

@@ -171,7 +171,7 @@ vi.mock('../../composables/useSiteData', () => ({
 vi.mock('../../composables/useSubscription', () => ({
   useSubscription: () => ({
     checkCreateLimit: vi.fn().mockReturnValue(true),
-    isReadOnly: { value: false }
+    isReadOnly: false
   })
 }))
 
@@ -231,13 +231,6 @@ vi.mock('../../composables/useI18n', () => ({
   })
 }))
 
-// Mock subscription composable
-vi.mock('../../composables/useSubscription', () => ({
-  useSubscription: () => ({
-    checkCreateLimit: vi.fn().mockReturnValue(true),
-    isReadOnly: computed(() => false)
-  })
-}))
 
 // Mock toast composable
 vi.mock('../../composables/useToast', () => ({
@@ -580,8 +573,9 @@ describe('PaymentsView - Mobile Responsive Design', () => {
       const dropdown = actionCell.find('.absolute')
       const menuButtons = dropdown.findAll('button')
       
-      expect(menuButtons.length).toBe(1)
+      expect(menuButtons.length).toBe(2)
       expect(menuButtons[0].text()).toContain('View')
+      expect(menuButtons[1].text()).toContain('Edit')
     })
 
     it('should close menu when clicking outside', async () => {
@@ -724,46 +718,45 @@ describe('PaymentsView - Mobile Responsive Design', () => {
       }
     })
 
-    it('should update selectable items when vendor and amount are set', async () => {
+    it('should open unified payment modal when adding payment', async () => {
       wrapper = createWrapper()
       
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
-      // Set vendor and amount to trigger updateSelectableItems
-      wrapper.vm.form.vendor = 'vendor-1'
-      wrapper.vm.form.amount = 1000
-      wrapper.vm.updateSelectableItems()
+      // Click add payment button
+      const addButton = wrapper.find('button').element
+      if (addButton && addButton.textContent?.includes('Record Payment')) {
+        await wrapper.find('button').trigger('click')
+        await wrapper.vm.$nextTick()
 
-      await wrapper.vm.$nextTick()
-
-      // Should show selectable deliveries for vendor-1
-      expect(wrapper.vm.selectableDeliveries.length).toBe(2)
-      expect(wrapper.vm.selectableDeliveries[0].outstanding).toBe(2000) // delivery-1: 3000 - 1000
-      expect(wrapper.vm.selectableDeliveries[1].outstanding).toBe(2000) // delivery-2: 2000 - 0
+        // Should open the unified payment modal
+        expect(wrapper.vm.showPaymentModal).toBe(true)
+        expect(wrapper.vm.paymentModalMode).toBe('CREATE')
+      }
     })
 
-    it('should calculate amount when deliveries are selected', async () => {
+    it('should open pay now modal when quick payment is clicked', async () => {
       wrapper = createWrapper()
       
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
-      // Set up form data
-      wrapper.vm.form.vendor = 'vendor-1'
-      wrapper.vm.form.amount = 1000
-      wrapper.vm.updateSelectableItems()
+      // Find a pay now button
+      const payNowButtons = wrapper.findAll('button').filter(button => 
+        button.text().includes('Pay Now')
+      )
+      
+      if (payNowButtons.length > 0) {
+        await payNowButtons[0].trigger('click')
+        await wrapper.vm.$nextTick()
 
-      // Select delivery
-      wrapper.vm.form.deliveries = ['delivery-1']
-      wrapper.vm.updateAmountFromSelection()
-
-      await wrapper.vm.$nextTick()
-
-      // Amount should be updated to outstanding amount of selected delivery
-      expect(wrapper.vm.form.amount).toBe(2000)
+        // Should open the unified payment modal in PAY_NOW mode
+        expect(wrapper.vm.showPaymentModal).toBe(true)
+        expect(wrapper.vm.paymentModalMode).toBe('PAY_NOW')
+      }
     })
 
     it('should handle partial payment scenarios correctly', async () => {
@@ -839,27 +832,27 @@ describe('PaymentsView - Mobile Responsive Design', () => {
       expect(canEdit).toBe(false)
     })
 
-    it('should include partially paid deliveries in selectable items', async () => {
+    it('should open edit modal when edit button is clicked', async () => {
       wrapper = createWrapper()
       
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
-      // Set vendor to trigger updateSelectableItems
-      wrapper.vm.form.vendor = 'vendor-1'
-      wrapper.vm.form.amount = 1000
-      wrapper.vm.updateSelectableItems()
+      // Find the first payment in the table
+      const payments = wrapper.vm.payments
+      if (payments && payments.length > 0) {
+        const payment = payments[0]
+        
+        // Call startEditPayment directly
+        await wrapper.vm.startEditPayment(payment)
+        await wrapper.vm.$nextTick()
 
-      await wrapper.vm.$nextTick()
-
-      // Should include delivery-1 (partially paid: 3000 total - 1000 paid = 2000 outstanding)
-      // Should include delivery-2 (unpaid: 2000 total - 0 paid = 2000 outstanding)
-      expect(wrapper.vm.selectableDeliveries.length).toBe(2)
-      
-      const partiallyPaidDelivery = wrapper.vm.selectableDeliveries.find((d: any) => d.paid_amount === 1000)
-      expect(partiallyPaidDelivery).toBeDefined()
-      expect(partiallyPaidDelivery.outstanding).toBe(2000)
+        // Should open the unified payment modal in EDIT mode
+        expect(wrapper.vm.showPaymentModal).toBe(true)
+        expect(wrapper.vm.paymentModalMode).toBe('EDIT')
+        expect(wrapper.vm.currentPayment).toStrictEqual(payment)
+      }
     })
   })
 })

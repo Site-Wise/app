@@ -606,7 +606,11 @@
     "editPayment": "भुगतान आवंटन संपादित करें",
     "updatePayment": "भुगतान अपडेट करें",
     "allocated": "आवंटित",
-    "unallocated": "अनावंटित"
+    "unallocated": "अनावंटित",
+    "fullyAllocated": "पूर्णतः आवंटित",
+    "partiallyAllocated": "आंशिक रूप से आवंटित",
+    "currentAllocations": "वर्तमान आवंटन",
+    "allocationStatus": "आवंटन स्थिति"
   },
   "site": {
     "selectSite": "साइट चुनें",

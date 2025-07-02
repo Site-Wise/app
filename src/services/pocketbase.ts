@@ -1556,7 +1556,7 @@ export class PaymentService {
 
     const records = await pb.collection('payments').getFullList({
       filter: `site="${siteId}"`,
-      expand: 'vendor,account,deliveries,service_bookings'
+      expand: 'vendor,account,deliveries,service_bookings,payment_allocations,payment_allocations.delivery,payment_allocations.service_booking,payment_allocations.service_booking.service'
     });
     return records.map(record => this.mapRecordToPayment(record));
   }
@@ -1735,7 +1735,9 @@ export class PaymentService {
         deliveries: record.expand.deliveries ?
           record.expand.deliveries.map((delivery: RecordModel) => deliveryService.mapRecordToDelivery(delivery)) : undefined,
         service_bookings: record.expand.service_bookings ?
-          record.expand.service_bookings.map((booking: RecordModel) => this.mapRecordToServiceBooking(booking)) : undefined
+          record.expand.service_bookings.map((booking: RecordModel) => this.mapRecordToServiceBooking(booking)) : undefined,
+        payment_allocations: record.expand.payment_allocations ?
+          record.expand.payment_allocations.map((allocation: RecordModel) => paymentAllocationService.mapRecordToPaymentAllocation(allocation)) : undefined
       } : undefined
     };
   }
@@ -1835,7 +1837,7 @@ export class PaymentAllocationService {
     }
   }
 
-  private mapRecordToPaymentAllocation(record: RecordModel): PaymentAllocation {
+  mapRecordToPaymentAllocation(record: RecordModel): PaymentAllocation {
     return {
       id: record.id,
       payment: record.payment,

@@ -248,11 +248,11 @@ const formLoading = ref(false);
 const nameInputRef = ref<HTMLInputElement>();
 
 const canCreateItem = computed(() => {
-  return !isReadOnly.value && checkCreateLimit('items');
+  return !isReadOnly && checkCreateLimit('items');
 });
 
 const canEditDelete = computed(() => {
-  return !isReadOnly.value && canDelete.value;
+  return !isReadOnly && canDelete.value;
 });
 
 const form = reactive({
@@ -313,7 +313,7 @@ const viewItemDetail = (itemId: string) => {
 };
 
 const handleAddItem = async () => {
-  if (!canCreateItem.value) {
+  if (!canCreateItem) {
     error(t('subscription.banner.freeTierLimitReached'));
     return;
   }
@@ -358,7 +358,7 @@ const editItem = (item: Item) => {
 };
 
 const cloneItem = async (item: Item) => {
-  if (!canCreateItem.value) {
+  if (!canCreateItem) {
     error(t('subscription.banner.freeTierLimitReached'));
     return;
   }

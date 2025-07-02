@@ -68,7 +68,42 @@
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-              <div class="text-sm font-medium text-gray-900 dark:text-white">₹{{ payment.amount.toFixed(2) }}</div>
+              <div class="flex items-center">
+                <div class="text-sm font-medium text-gray-900 dark:text-white">₹{{ payment.amount.toFixed(2) }}</div>
+                <!-- Allocation Status Indicator -->
+                <div v-if="payment.expand?.payment_allocations" class="ml-2">
+                  <span 
+                    v-if="getUnallocatedAmount(payment, payment.expand.payment_allocations) === 0"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                    :title="t('payments.fullyAllocated')"
+                  >
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    Allocated
+                  </span>
+                  <span 
+                    v-else-if="getUnallocatedAmount(payment, payment.expand.payment_allocations) < payment.amount"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                    :title="`${t('payments.partiallyAllocated')}: ₹${getUnallocatedAmount(payment, payment.expand.payment_allocations).toFixed(2)} remaining`"
+                  >
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    Partial
+                  </span>
+                  <span 
+                    v-else
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400"
+                    :title="t('payments.unallocated')"
+                  >
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                    Unallocated
+                  </span>
+                </div>
+              </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
               {{ formatDate(payment.payment_date) }}
@@ -80,6 +115,16 @@
               <div class="flex items-center space-x-2">
                 <button @click="viewPayment(payment)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300" :title="t('common.view')">
                   <Eye class="h-4 w-4" />
+                </button>
+                <button 
+                  v-if="canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])" 
+                  @click="startEditPayment(payment)" 
+                  class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300" 
+                  :title="t('common.edit')"
+                >
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
                 </button>
               </div>
             </td>
@@ -93,7 +138,27 @@
             </td>
             <td class="px-4 py-4 lg:hidden">
               <div class="text-right">
-                <div class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{ payment.amount.toFixed(2) }}</div>
+                <div class="flex items-center justify-end">
+                  <div class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{ payment.amount.toFixed(2) }}</div>
+                  <!-- Mobile Allocation Status Indicator -->
+                  <div v-if="payment.expand?.payment_allocations" class="ml-2">
+                    <span 
+                      v-if="getUnallocatedAmount(payment, payment.expand.payment_allocations) === 0"
+                      class="inline-flex w-2 h-2 bg-green-500 rounded-full"
+                      :title="t('payments.fullyAllocated')"
+                    ></span>
+                    <span 
+                      v-else-if="getUnallocatedAmount(payment, payment.expand.payment_allocations) < payment.amount"
+                      class="inline-flex w-2 h-2 bg-yellow-500 rounded-full"
+                      :title="t('payments.partiallyAllocated')"
+                    ></span>
+                    <span 
+                      v-else
+                      class="inline-flex w-2 h-2 bg-orange-500 rounded-full"
+                      :title="t('payments.unallocated')"
+                    ></span>
+                  </div>
+                </div>
                 <div class="flex items-center justify-end mt-1">
                   <component :is="getAccountIcon(payment.expand?.account?.type)" class="mr-1 h-3 w-3 text-gray-500 dark:text-gray-400" />
                   <div class="text-xs text-gray-500 dark:text-gray-400">{{ payment.expand?.account?.name || t('common.unknown') }}</div>
@@ -132,6 +197,16 @@
                     >
                       <Eye class="h-4 w-4 mr-2" />
                       {{ t('common.view') }}
+                    </button>
+                    <button 
+                      v-if="canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])"
+                      @click="startEditPayment(payment); closeMobileMenu()"
+                      class="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                    >
+                      <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                      </svg>
+                      {{ t('common.edit') }}
                     </button>
                   </div>
                 </Transition>
@@ -180,127 +255,21 @@
       </div>
     </div>
 
-    <!-- Add Payment Modal -->
-    <div v-if="showAddModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4" @click.stop>
-        <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Record New Payment</h3>
-          
-          <form @submit.prevent="savePayment" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.vendor') }}</label>
-              <select ref="vendorInputRef" v-model="form.vendor" required class="input mt-1" @change="loadVendorOutstanding" autofocus>
-                <option value="">{{ t('forms.selectVendor') }}</option>
-                <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
-                  {{ vendor.name }}
-                </option>
-              </select>
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.paymentAccount') }}</label>
-              <select v-model="form.account" required class="input mt-1">
-                <option value="">{{ t('forms.selectAccount') }}</option>
-                <option v-for="account in activeAccounts" :key="account.id" :value="account.id">
-                  {{ account.name }} ({{ account.type.replace('_', ' ') }}) - ₹{{ account.current_balance.toFixed(2) }}
-                </option>
-              </select>
-            </div>
-            
-            <div v-if="form.vendor && vendorOutstanding > 0" class="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-              <p class="text-sm text-yellow-800 dark:text-yellow-300">
-                Outstanding amount for this vendor: <strong>₹{{ vendorOutstanding.toFixed(2) }}</strong>
-              </p>
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.amount') }}</label>
-              <input v-model.number="form.amount" type="number" step="0.01" required class="input mt-1" placeholder="0.00" @input="updateSelectableItems" />
-            </div>
-            
-            <!-- Deliveries/Bookings Selection -->
-            <div v-if="form.vendor && form.amount > 0 && (selectableDeliveries.length > 0 || selectableBookings.length > 0)" class="space-y-3">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.selectItemsToPay') }}</label>
-              
-              <!-- Deliveries -->
-              <div v-if="selectableDeliveries.length > 0">
-                <h4 class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{{ t('common.deliveries') }}</h4>
-                <div class="space-y-2 max-h-40 overflow-y-auto">
-                  <label v-for="delivery in selectableDeliveries" :key="delivery.id" class="flex items-start space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      :value="delivery.id" 
-                      v-model="form.deliveries"
-                      @change="updateAmountFromSelection"
-                      class="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 rounded"
-                    />
-                    <div class="flex-1 text-sm">
-                      <div class="flex justify-between">
-                        <span class="text-gray-900 dark:text-white">{{ formatDate(delivery.delivery_date) }}</span>
-                        <span class="font-medium text-gray-900 dark:text-white">₹{{ delivery.outstanding.toFixed(2) }}</span>
-                      </div>
-                      <div class="text-xs text-gray-500 dark:text-gray-400">
-                        Total: ₹{{ delivery.total_amount.toFixed(2) }} | Paid: ₹{{ delivery.paid_amount.toFixed(2) }}
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-              
-              <!-- Service Bookings -->
-              <div v-if="selectableBookings.length > 0">
-                <h4 class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{{ t('common.serviceBookings') }}</h4>
-                <div class="space-y-2 max-h-40 overflow-y-auto">
-                  <label v-for="booking in selectableBookings" :key="booking.id" class="flex items-start space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      :value="booking.id" 
-                      v-model="form.service_bookings"
-                      @change="updateAmountFromSelection"
-                      class="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 rounded"
-                    />
-                    <div class="flex-1 text-sm">
-                      <div class="flex justify-between">
-                        <span class="text-gray-900 dark:text-white">{{ booking.expand?.service?.name || 'Service' }}</span>
-                        <span class="font-medium text-gray-900 dark:text-white">₹{{ booking.outstanding.toFixed(2) }}</span>
-                      </div>
-                      <div class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ formatDate(booking.start_date) }} | Total: ₹{{ booking.total_amount.toFixed(2) }}
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.paymentDate') }}</label>
-              <input v-model="form.transaction_date" type="date" required class="input mt-1" />
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reference</label>
-              <input v-model="form.reference" type="text" class="input mt-1" placeholder="Check number, transfer ID, etc." />
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
-              <textarea v-model="form.notes" class="input mt-1" rows="3" placeholder="Payment notes"></textarea>
-            </div>
-            
-            <div class="flex space-x-3 pt-4">
-              <button type="submit" :disabled="loading" class="flex-1 btn-primary">
-                <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-                Record Payment
-              </button>
-              <button type="button" @click="closeModal" class="flex-1 btn-outline">
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+    <!-- Unified Payment Modal -->
+    <PaymentModal
+      :is-visible="showPaymentModal"
+      :mode="paymentModalMode"
+      :payment="currentPayment"
+      :current-allocations="currentAllocations"
+      :vendors="vendors"
+      :accounts="accounts"
+      :deliveries="deliveries"
+      :service-bookings="serviceBookings"
+      :vendor-id="vendorIdForPayNow"
+      :outstanding-amount="outstandingAmountForPayNow"
+      @submit="handlePaymentModalSubmit"
+      @close="handlePaymentModalClose"
+    />
 
     <!-- View Payment Modal -->
     <div v-if="viewingPayment" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
@@ -337,11 +306,11 @@
               <p class="ml-2 text-gray-600 dark:text-gray-400">{{ viewingPayment.notes }}</p>
             </div>
             <!-- Related return info if available -->
-            <div v-if="viewingPayment.expand?.related_return">
+            <div v-if="(viewingPayment.expand as any)?.related_return">
               <span class="font-medium text-gray-700 dark:text-gray-300">Related Return:</span>
               <div class="ml-2 mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                <p class="text-sm font-medium text-gray-900 dark:text-white">Return Date: {{ formatDate(viewingPayment.expand.related_return.return_date) }}</p>
-                <p class="text-xs text-gray-600 dark:text-gray-400">Amount: ₹{{ viewingPayment.expand.related_return.total_return_amount.toFixed(2) }}</p>
+                <p class="text-sm font-medium text-gray-900 dark:text-white">Return Date: {{ formatDate((viewingPayment.expand as any).related_return.return_date) }}</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400">Amount: ₹{{ (viewingPayment.expand as any).related_return.total_return_amount.toFixed(2) }}</p>
               </div>
             </div>
           </div>
@@ -405,107 +374,11 @@
         </div>
       </div>
     </div>
-
-    <!-- Edit Payment Modal -->
-    <div v-if="showEditModal && editingPayment" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeEditModal" @keydown.esc="closeEditModal" tabindex="-1">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4" @click.stop>
-        <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">{{ t('payments.editPayment') }}</h3>
-          
-          <form @submit.prevent="saveEditPayment" class="space-y-4">
-            <!-- Payment Info (Read-only) -->
-            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-2">
-              <div class="flex justify-between">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.vendor') }}:</span>
-                <span class="text-sm text-gray-900 dark:text-white">{{ editingPayment.expand?.vendor?.name }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.amount') }}:</span>
-                <span class="text-sm text-gray-900 dark:text-white">₹{{ editingPayment.amount.toFixed(2) }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.allocated') }}:</span>
-                <span class="text-sm text-gray-900 dark:text-white">₹{{ (editingPayment.amount - getUnallocatedAmount(editingPayment, editingPaymentAllocations)).toFixed(2) }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.unallocated') }}:</span>
-                <span class="text-sm font-semibold text-orange-600 dark:text-orange-400">₹{{ getUnallocatedAmount(editingPayment, editingPaymentAllocations).toFixed(2) }}</span>
-              </div>
-            </div>
-            
-            <!-- Deliveries/Bookings Selection (Same as create, but for editing) -->
-            <div v-if="editingPayment.vendor && getUnallocatedAmount(editingPayment, editingPaymentAllocations) > 0 && (selectableDeliveries.length > 0 || selectableBookings.length > 0)" class="space-y-3">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.selectItemsToPay') }}</label>
-              
-              <!-- Deliveries -->
-              <div v-if="selectableDeliveries.length > 0">
-                <h4 class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{{ t('common.deliveries') }}</h4>
-                <div class="space-y-2 max-h-40 overflow-y-auto">
-                  <label v-for="delivery in selectableDeliveries" :key="delivery.id" class="flex items-start space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      :value="delivery.id" 
-                      v-model="form.deliveries"
-                      @change="updateAmountFromSelection"
-                      class="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 rounded"
-                    />
-                    <div class="flex-1 text-sm">
-                      <div class="flex justify-between">
-                        <span class="text-gray-900 dark:text-white">{{ formatDate(delivery.delivery_date) }}</span>
-                        <span class="font-medium text-gray-900 dark:text-white">₹{{ delivery.outstanding.toFixed(2) }}</span>
-                      </div>
-                      <div class="text-xs text-gray-500 dark:text-gray-400">
-                        Total: ₹{{ delivery.total_amount.toFixed(2) }} | Paid: ₹{{ delivery.paid_amount.toFixed(2) }}
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-              
-              <!-- Service Bookings -->
-              <div v-if="selectableBookings.length > 0">
-                <h4 class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{{ t('common.serviceBookings') }}</h4>
-                <div class="space-y-2 max-h-40 overflow-y-auto">
-                  <label v-for="booking in selectableBookings" :key="booking.id" class="flex items-start space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      :value="booking.id" 
-                      v-model="form.service_bookings"
-                      @change="updateAmountFromSelection"
-                      class="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 rounded"
-                    />
-                    <div class="flex-1 text-sm">
-                      <div class="flex justify-between">
-                        <span class="text-gray-900 dark:text-white">{{ booking.expand?.service?.name || 'Service' }}</span>
-                        <span class="font-medium text-gray-900 dark:text-white">₹{{ booking.outstanding.toFixed(2) }}</span>
-                      </div>
-                      <div class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ formatDate(booking.start_date) }} | Total: ₹{{ booking.total_amount.toFixed(2) }}
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-            </div>
-            
-            <div class="flex space-x-3 pt-4">
-              <button type="submit" :disabled="loading" class="flex-1 btn-primary">
-                <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-                {{ t('payments.updatePayment') }}
-              </button>
-              <button type="button" @click="closeEditModal" class="flex-1 btn-outline">
-                {{ t('common.cancel') }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { 
   CreditCard, 
@@ -523,10 +396,10 @@ import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
 import { usePaymentSearch } from '../composables/useSearch';
 import SearchBox from '../components/SearchBox.vue';
+import PaymentModal from '../components/PaymentModal.vue';
 import { 
   paymentService, 
   paymentAllocationService,
-  accountTransactionService,
   vendorService,
   accountService,
   deliveryService,
@@ -535,7 +408,7 @@ import {
   getCurrentSiteId,
   pb,
   type Payment,
-  type AccountTransaction, 
+ 
   type Vendor,
   type Account,
   type PaymentAllocation
@@ -579,38 +452,28 @@ const vendors = computed(() => paymentsData.value?.vendors || []);
 const accounts = computed(() => paymentsData.value?.accounts || []);
 const deliveries = computed(() => paymentsData.value?.deliveries || []);
 const serviceBookings = computed(() => paymentsData.value?.serviceBookings || []);
-const showAddModal = ref(false);
-const showEditModal = ref(false);
+// Unified modal state
+const showPaymentModal = ref(false);
+const paymentModalMode = ref<'CREATE' | 'PAY_NOW' | 'EDIT'>('CREATE');
+const currentPayment = ref<Payment | null>(null);
+const currentAllocations = ref<PaymentAllocation[]>([]);
+const vendorIdForPayNow = ref('');
+const outstandingAmountForPayNow = ref(0);
+
+// View payment modal state
 const viewingPayment = ref<Payment | null>(null);
-const editingPayment = ref<Payment | null>(null);
 const viewingPaymentAllocations = ref<PaymentAllocation[]>([]);
-const editingPaymentAllocations = ref<PaymentAllocation[]>([]);
-const loading = ref(false);
 const loadingAllocations = ref(false);
 const allocationLoadingPromises = ref<Map<string, Promise<PaymentAllocation[]>>>(new Map());
 
-const vendorOutstanding = ref(0);
-const vendorInputRef = ref<HTMLInputElement>();
 const openMobileMenuId = ref<string | null>(null);
 
-const form = reactive({
-  vendor: '',
-  account: '',
-  amount: 0,
-  transaction_date: new Date().toISOString().split('T')[0],
-  reference: '',
-  notes: '',
-  description: '',
-  deliveries: [] as string[],
-  service_bookings: [] as string[]
-});
-
 const canCreatePayment = computed(() => {
-  return !isReadOnly.value && checkCreateLimit('payments');
+  return !isReadOnly && checkCreateLimit('payments');
 });
 
 const canEditPayment = computed(() => {
-  return !isReadOnly.value && getCurrentUserRole() === 'owner';
+  return !isReadOnly && getCurrentUserRole() === 'owner';
 });
 
 const getUnallocatedAmount = (payment: Payment, allocations: PaymentAllocation[]): number => {
@@ -624,32 +487,6 @@ const canPaymentBeEdited = (payment: Payment, allocations: PaymentAllocation[]):
   return unallocatedAmount > 0;
 };
 
-interface SelectableDelivery {
-  id: string;
-  delivery_date: string;
-  total_amount: number;
-  paid_amount: number;
-  outstanding: number;
-}
-
-interface SelectableBooking {
-  id: string;
-  start_date: string;
-  total_amount: number;
-  paid_amount: number;
-  outstanding: number;
-  expand?: {
-    service?: { name: string };
-  };
-}
-
-const selectableDeliveries = ref<SelectableDelivery[]>([]);
-const selectableBookings = ref<SelectableBooking[]>([]);
-
-
-const activeAccounts = computed(() => {
-  return accounts.value?.filter(account => account.is_active) || [];
-});
 
 const vendorsWithOutstanding = computed(() => {
   if (!vendors.value) return [];
@@ -701,149 +538,38 @@ const reloadAllData = async () => {
   await reloadPayments();
 };
 
-const loadVendorOutstanding = () => {
-  if (form.vendor) {
-    // Calculate outstanding from deliveries
-    const vendorDeliveries = deliveries.value.filter(delivery => 
-      delivery.vendor === form.vendor
-    );
-    const deliveryOutstanding = vendorDeliveries.reduce((sum, delivery) => {
-      const outstanding = delivery.total_amount - delivery.paid_amount;
-      return sum + (outstanding > 0 ? outstanding : 0);
-    }, 0);
-    
-    // Calculate outstanding from service bookings
-    const vendorBookings = serviceBookings.value.filter(booking => 
-      booking.vendor === form.vendor
-    );
-    const serviceOutstanding = vendorBookings.reduce((sum, booking) => {
-      const outstanding = booking.total_amount - booking.paid_amount;
-      return sum + (outstanding > 0 ? outstanding : 0);
-    }, 0);
-    
-    vendorOutstanding.value = deliveryOutstanding + serviceOutstanding;
-    updateSelectableItems();
-  }
-};
-
-const updateSelectableItems = () => {
-  if (!form.vendor || form.amount <= 0) {
-    selectableDeliveries.value = [];
-    selectableBookings.value = [];
-    return;
-  }
-  
-  // Get unpaid/partially paid deliveries for this vendor
-  const vendorDeliveries = deliveries.value.filter(delivery => 
-    delivery.vendor === form.vendor && delivery.payment_status !== 'paid'
-  );
-  
-  selectableDeliveries.value = vendorDeliveries.map(delivery => ({
-    id: delivery.id!,
-    delivery_date: delivery.delivery_date,
-    total_amount: delivery.total_amount,
-    paid_amount: delivery.paid_amount,
-    outstanding: delivery.total_amount - delivery.paid_amount
-  })).filter(d => d.outstanding > 0);
-  
-  // Get unpaid/partially paid service bookings for this vendor
-  const vendorBookings = serviceBookings.value.filter(booking => 
-    booking.vendor === form.vendor && booking.payment_status !== 'paid'
-  );
-  
-  selectableBookings.value = vendorBookings.map(booking => ({
-    id: booking.id!,
-    start_date: booking.start_date,
-    total_amount: booking.total_amount,
-    paid_amount: booking.paid_amount,
-    outstanding: booking.total_amount - booking.paid_amount,
-    expand: booking.expand
-  })).filter(b => b.outstanding > 0);
-};
-
-const updateAmountFromSelection = () => {
-  let totalAmount = 0;
-  
-  // Calculate total from selected deliveries
-  form.deliveries.forEach(deliveryId => {
-    const delivery = selectableDeliveries.value.find(d => d.id === deliveryId);
-    if (delivery) {
-      totalAmount += delivery.outstanding;
-    }
-  });
-  
-  // Calculate total from selected service bookings
-  form.service_bookings.forEach(bookingId => {
-    const booking = selectableBookings.value.find(b => b.id === bookingId);
-    if (booking) {
-      totalAmount += booking.outstanding;
-    }
-  });
-  
-  if (totalAmount > 0) {
-    form.amount = totalAmount;
-  }
-};
 
 const handleAddPayment = () => {
-  if (!canCreatePayment.value) {
+  if (!canCreatePayment) {
     error(t('subscription.banner.freeTierLimitReached'));
     return;
   }
-  showAddModal.value = true;
-  vendorInputRef.value?.focus();
+  paymentModalMode.value = 'CREATE';
+  currentPayment.value = null;
+  currentAllocations.value = [];
+  showPaymentModal.value = true;
 };
 
-const savePayment = async () => {
-  if (!checkCreateLimit('payments')) {
-    error(t('subscription.banner.freeTierLimitReached'));
-    return;
-  }
-  loading.value = true;
-  try {
-    // Map form to payment format for backward compatibility
-    const paymentData = {
-      vendor: form.vendor,
-      account: form.account,
-      amount: form.amount,
-      payment_date: form.transaction_date,
-      reference: form.reference,
-      notes: form.notes,
-      deliveries: form.deliveries,
-      service_bookings: form.service_bookings
-    };
-    
-    await paymentService.create(paymentData);
-    success(t('messages.createSuccess', { item: t('common.payment') }));
-    // Usage is automatically incremented by PocketBase hooks
-    await reloadAllData();
-    closeModal();
-  } catch (err) {
-    console.error('Error saving payment:', err);
-    error(t('messages.error'));
-  } finally {
-    loading.value = false;
-  }
-};
 
 const quickPayment = (vendor: VendorWithOutstanding) => {
-  if (!canCreatePayment.value) {
+  if (!canCreatePayment) {
     error(t('subscription.banner.freeTierLimitReached'));
     return;
   }
-  form.vendor = vendor.id!;
-  form.amount = vendor.outstandingAmount;
-  loadVendorOutstanding();
-  showAddModal.value = true;
-  vendorInputRef.value?.focus();
+  paymentModalMode.value = 'PAY_NOW';
+  vendorIdForPayNow.value = vendor.id!;
+  outstandingAmountForPayNow.value = vendor.outstandingAmount;
+  currentPayment.value = null;
+  currentAllocations.value = [];
+  showPaymentModal.value = true;
 };
 
 const viewPayment = async (payment: Payment) => {
   viewingPayment.value = payment;
-  viewingPaymentAllocations.value = [];
-  
-  // Load payment allocations with request deduplication
-  if (payment.id) {
+  // Use allocations from expand data if available, otherwise load them
+  if (payment.expand?.payment_allocations) {
+    viewingPaymentAllocations.value = payment.expand.payment_allocations;
+  } else if (payment.id) {
     loadingAllocations.value = true;
     try {
       // Check if we're already loading allocations for this payment
@@ -867,160 +593,43 @@ const viewPayment = async (payment: Payment) => {
     } finally {
       loadingAllocations.value = false;
     }
+  } else {
+    viewingPaymentAllocations.value = [];
   }
 };
 
 const startEditPayment = async (payment: Payment) => {
-  editingPayment.value = payment;
-  // Reuse allocations already loaded in viewPayment to prevent duplicate requests
-  editingPaymentAllocations.value = viewingPaymentAllocations.value;
+  // Use allocations from expand data if available
+  let allocations: PaymentAllocation[] = [];
+  if (payment.expand?.payment_allocations) {
+    allocations = payment.expand.payment_allocations;
+  } else {
+    // Fallback to reusing allocations from viewPayment if called from view modal
+    allocations = viewingPaymentAllocations.value.length > 0 ? viewingPaymentAllocations.value : [];
+    
+    // If no allocations available, load them
+    if (allocations.length === 0 && payment.id) {
+      try {
+        allocations = await paymentAllocationService.getByPayment(payment.id);
+      } catch (err) {
+        console.error('Error loading payment allocations for edit:', err);
+        allocations = [];
+      }
+    }
+  }
   
-  // Set up form for editing
-  form.vendor = payment.vendor;
-  form.deliveries = [];
-  form.service_bookings = [];
-  
-  // Load selectable items for this vendor
-  updateSelectableItemsForEdit();
+  // Set up unified modal for editing
+  paymentModalMode.value = 'EDIT';
+  currentPayment.value = payment;
+  currentAllocations.value = allocations;
+  vendorIdForPayNow.value = '';
+  outstandingAmountForPayNow.value = 0;
   
   // Close view modal and open edit modal
   viewingPayment.value = null;
-  showEditModal.value = true;
+  showPaymentModal.value = true;
 };
 
-const updateSelectableItemsForEdit = () => {
-  if (!editingPayment.value?.vendor) {
-    selectableDeliveries.value = [];
-    selectableBookings.value = [];
-    return;
-  }
-  
-  // Get unpaid/partially paid deliveries for this vendor
-  const vendorDeliveries = deliveries.value.filter(delivery => 
-    delivery.vendor === editingPayment.value?.vendor && delivery.payment_status !== 'paid'
-  );
-  
-  selectableDeliveries.value = vendorDeliveries.map(delivery => ({
-    id: delivery.id!,
-    delivery_date: delivery.delivery_date,
-    total_amount: delivery.total_amount,
-    paid_amount: delivery.paid_amount,
-    outstanding: delivery.total_amount - delivery.paid_amount
-  })).filter(d => d.outstanding > 0);
-  
-  // Get unpaid/partially paid service bookings for this vendor
-  const vendorBookings = serviceBookings.value.filter(booking => 
-    booking.vendor === editingPayment.value?.vendor && booking.payment_status !== 'paid'
-  );
-  
-  selectableBookings.value = vendorBookings.map(booking => ({
-    id: booking.id!,
-    start_date: booking.start_date,
-    total_amount: booking.total_amount,
-    paid_amount: booking.paid_amount,
-    outstanding: booking.total_amount - booking.paid_amount,
-    expand: booking.expand
-  })).filter(b => b.outstanding > 0);
-};
-
-const saveEditPayment = async () => {
-  if (!editingPayment.value) return;
-  
-  loading.value = true;
-  try {
-    // Calculate how much we can allocate (limited by unallocated amount)
-    const unallocatedAmount = getUnallocatedAmount(editingPayment.value, editingPaymentAllocations.value);
-    
-    // Create new allocations for selected items
-    let remainingAmount = unallocatedAmount;
-    
-    // Handle delivery allocations
-    for (const deliveryId of form.deliveries) {
-      if (remainingAmount <= 0) break;
-      
-      const delivery = selectableDeliveries.value.find(d => d.id === deliveryId);
-      if (!delivery) continue;
-      
-      const allocatedAmount = Math.min(remainingAmount, delivery.outstanding);
-      
-      // Create payment allocation record
-      await paymentAllocationService.create({
-        payment: editingPayment.value.id!,
-        delivery: deliveryId,
-        allocated_amount: allocatedAmount,
-        site: getCurrentSiteId()!
-      });
-      
-      // Update delivery payment status
-      const newPaidAmount = delivery.paid_amount + allocatedAmount;
-      const newStatus = newPaidAmount >= delivery.total_amount ? 'paid' : 'partial';
-      
-      await pb.collection('deliveries').update(deliveryId, {
-        paid_amount: newPaidAmount,
-        payment_status: newStatus
-      });
-      
-      remainingAmount -= allocatedAmount;
-    }
-    
-    // Handle service booking allocations
-    for (const bookingId of form.service_bookings) {
-      if (remainingAmount <= 0) break;
-      
-      const booking = selectableBookings.value.find(b => b.id === bookingId);
-      if (!booking) continue;
-      
-      const allocatedAmount = Math.min(remainingAmount, booking.outstanding);
-      
-      // Create payment allocation record
-      await paymentAllocationService.create({
-        payment: editingPayment.value.id!,
-        service_booking: bookingId,
-        allocated_amount: allocatedAmount,
-        site: getCurrentSiteId()!
-      });
-      
-      // Update service booking payment status
-      const newPaidAmount = booking.paid_amount + allocatedAmount;
-      const newStatus = newPaidAmount >= booking.total_amount ? 'paid' : 'partial';
-      
-      await pb.collection('service_bookings').update(bookingId, {
-        paid_amount: newPaidAmount,
-        payment_status: newStatus
-      });
-      
-      remainingAmount -= allocatedAmount;
-    }
-    
-    success(t('messages.updateSuccess', { item: t('common.payment') }));
-    await reloadAllData();
-    closeEditModal();
-  } catch (err) {
-    console.error('Error updating payment allocations:', err);
-    error(t('messages.error'));
-  } finally {
-    loading.value = false;
-  }
-};
-
-const closeEditModal = () => {
-  showEditModal.value = false;
-  editingPayment.value = null;
-  editingPaymentAllocations.value = [];
-  Object.assign(form, {
-    vendor: '',
-    account: '',
-    amount: 0,
-    transaction_date: new Date().toISOString().split('T')[0],
-    reference: '',
-    notes: '',
-    description: '',
-    deliveries: [],
-    service_bookings: []
-  });
-  selectableDeliveries.value = [];
-  selectableBookings.value = [];
-};
 
 
 const formatDate = (dateString: string) => {
@@ -1035,25 +644,113 @@ const closeMobileMenu = () => {
   openMobileMenuId.value = null;
 };
 
-const closeModal = () => {
-  showAddModal.value = false;
-  Object.assign(form, {
-    vendor: '',
-    account: '',
-    amount: 0,
-    transaction_date: new Date().toISOString().split('T')[0],
-    reference: '',
-    notes: '',
-    description: '',
-    deliveries: [],
-    service_bookings: []
-  });
-  vendorOutstanding.value = 0;
+const handlePaymentModalSubmit = async (data: any) => {
+  const { mode, form, payment } = data;
+  
+  try {
+    if (mode === 'CREATE' || mode === 'PAY_NOW') {
+      // Create new payment
+      const paymentData = {
+        vendor: form.vendor,
+        account: form.account,
+        amount: form.amount,
+        payment_date: form.transaction_date,
+        reference: form.reference,
+        notes: form.notes,
+        deliveries: form.deliveries,
+        service_bookings: form.service_bookings
+      };
+      
+      await paymentService.create(paymentData);
+      success(t('messages.createSuccess', { item: t('common.payment') }));
+    } else if (mode === 'EDIT') {
+      // Update payment allocations
+      const unallocatedAmount = getUnallocatedAmount(payment, currentAllocations.value);
+      let remainingAmount = unallocatedAmount;
+      
+      // Handle delivery allocations
+      for (const deliveryId of form.deliveries) {
+        if (remainingAmount <= 0) break;
+        
+        const delivery = deliveries.value.find(d => d.id === deliveryId);
+        if (!delivery) continue;
+        
+        const outstanding = delivery.total_amount - delivery.paid_amount;
+        const allocatedAmount = Math.min(remainingAmount, outstanding);
+        
+        // Create payment allocation record
+        await paymentAllocationService.create({
+          payment: payment.id!,
+          delivery: deliveryId,
+          allocated_amount: allocatedAmount,
+          site: getCurrentSiteId()!
+        });
+        
+        // Update delivery payment status
+        const newPaidAmount = delivery.paid_amount + allocatedAmount;
+        const newStatus = newPaidAmount >= delivery.total_amount ? 'paid' : 'partial';
+        
+        await pb.collection('deliveries').update(deliveryId, {
+          paid_amount: newPaidAmount,
+          payment_status: newStatus
+        });
+        
+        remainingAmount -= allocatedAmount;
+      }
+      
+      // Handle service booking allocations
+      for (const bookingId of form.service_bookings) {
+        if (remainingAmount <= 0) break;
+        
+        const booking = serviceBookings.value.find(b => b.id === bookingId);
+        if (!booking) continue;
+        
+        const outstanding = booking.total_amount - booking.paid_amount;
+        const allocatedAmount = Math.min(remainingAmount, outstanding);
+        
+        // Create payment allocation record
+        await paymentAllocationService.create({
+          payment: payment.id!,
+          service_booking: bookingId,
+          allocated_amount: allocatedAmount,
+          site: getCurrentSiteId()!
+        });
+        
+        // Update service booking payment status
+        const newPaidAmount = booking.paid_amount + allocatedAmount;
+        const newStatus = newPaidAmount >= booking.total_amount ? 'paid' : 'partial';
+        
+        await pb.collection('service_bookings').update(bookingId, {
+          paid_amount: newPaidAmount,
+          payment_status: newStatus
+        });
+        
+        remainingAmount -= allocatedAmount;
+      }
+      
+      success(t('messages.updateSuccess', { item: t('common.payment') }));
+    }
+    
+    // Reload data and close modal
+    await reloadAllData();
+    showPaymentModal.value = false;
+  } catch (err) {
+    console.error('Error saving payment:', err);
+    error(t('messages.error'));
+  }
+};
+
+const handlePaymentModalClose = () => {
+  showPaymentModal.value = false;
+  paymentModalMode.value = 'CREATE';
+  currentPayment.value = null;
+  currentAllocations.value = [];
+  vendorIdForPayNow.value = '';
+  outstandingAmountForPayNow.value = 0;
 };
 
 const handleQuickAction = () => {
-  showAddModal.value = true;
-  vendorInputRef.value?.focus();
+  handleAddPayment();
 };
 
 // Site change is handled automatically by useSiteData
@@ -1061,9 +758,8 @@ const handleQuickAction = () => {
 const handleKeyboardShortcut = (event: KeyboardEvent) => {
   if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
     event.preventDefault();
-    if (canCreatePayment.value) {
-      showAddModal.value = true;
-      vendorInputRef.value?.focus();
+    if (canCreatePayment) {
+      handleAddPayment();
     }
   }
 };

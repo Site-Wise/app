@@ -499,11 +499,11 @@ const loading = computed(() => deliveriesLoading.value);
 const openMobileMenuId = ref<string | null>(null);
 
 const canCreateDelivery = computed(() => {
-  return !isReadOnly.value && checkCreateLimit('deliveries');
+  return !isReadOnly && checkCreateLimit('deliveries');
 });
 
 const canEditDelete = computed(() => {
-  return !isReadOnly.value && canDelete.value;
+  return !isReadOnly && canDelete.value;
 });
 
 const reloadAllData = async () => {

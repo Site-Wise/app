@@ -254,11 +254,11 @@ const loading = ref(false);
 const firstInputRef = ref<HTMLInputElement>();
 
 const canCreateVendor = computed(() => {
-  return !isReadOnly.value && checkCreateLimit('vendors');
+  return !isReadOnly && checkCreateLimit('vendors');
 });
 
 const canEditDelete = computed(() => {
-  return !isReadOnly.value && canDelete.value;
+  return !isReadOnly && canDelete.value;
 });
 
 const form = reactive({
@@ -332,7 +332,7 @@ const reloadAllData = async () => {
 };
 
 const handleAddVendor = async () => {
-  if (!canCreateVendor.value) {
+  if (!canCreateVendor) {
     error(t('subscription.banner.freeTierLimitReached'));
     return;
   }

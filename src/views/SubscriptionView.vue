@@ -462,11 +462,11 @@ const confirmReactivate = async () => {
 };
 
 const isCurrentPlanFree = () => {
-  return currentPlan.value?.price === 0 || currentPlan.value?.is_default;
+  return currentPlan?.price === 0 || currentPlan?.is_default;
 };
 
 const getActionButtonText = () => {
-  if (isSubscriptionCancelled.value) {
+  if (isSubscriptionCancelled) {
     return t('subscription.resubscribe');
   }
   
@@ -477,7 +477,7 @@ const getUpgradeButtonText = (plan: SubscriptionPlan) => {
   const isPlanFree = plan.price === 0 || plan.is_default;
   const currentPlanIsFree = isCurrentPlanFree();
   
-  if (isSubscriptionCancelled.value) {
+  if (isSubscriptionCancelled) {
     return isPlanFree ? t('subscription.reactivate') : t('subscription.subscribe');
   }
   
@@ -491,7 +491,7 @@ const getUpgradeButtonText = (plan: SubscriptionPlan) => {
     return t('subscription.subscribe');
   }
   
-  const currentPrice = currentPlan.value?.price || 0;
+  const currentPrice = currentPlan?.price || 0;
   if (plan.price > currentPrice) {
     return t('subscription.upgrade');
   } else if (plan.price < currentPrice) {
