@@ -303,6 +303,28 @@ describe('Site Store', () => {
     })
   })
 
+  describe('Request Deduplication', () => {
+    it('should deduplicate concurrent loadUserSites calls', async () => {
+      const mockGetFullList = vi.fn().mockResolvedValue([])
+      
+      // Reset and configure the mock for this test
+      mockSiteUsersCollection.getFullList.mockReset()
+      mockSiteUsersCollection.getFullList.mockResolvedValue([])
+
+      // Make multiple concurrent calls
+      const promises = [
+        store.loadUserSites(),
+        store.loadUserSites(),
+        store.loadUserSites()
+      ]
+
+      await Promise.all(promises)
+
+      // Should only make one actual request despite 3 calls
+      expect(mockSiteUsersCollection.getFullList).toHaveBeenCalledTimes(1)
+    })
+  })
+
   describe('Permission Helpers', () => {
     beforeEach(async () => {
       const mockUserSites = [

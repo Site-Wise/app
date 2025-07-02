@@ -316,6 +316,115 @@ vi.mock('../../services/pocketbase', () => ({
 
 **Prevention**: Use the centralized mock from `src/test/mocks/pocketbase.ts` when possible, or ensure all required functions are included in custom mocks.
 
+## Subscription System
+
+### Critical Fix: Usage Data Handling
+The `checkCreateLimit` function in `useSubscription.ts` must handle cases where usage data doesn't exist yet:
+
+```typescript
+// ✅ CORRECT: Handle null usage data
+const usage = currentUsage.value || {
+  items_count: 0,
+  vendors_count: 0,
+  deliveries_count: 0,
+  service_bookings_count: 0,
+  payments_count: 0
+};
+
+// ❌ WRONG: Block creation when usage data is null
+if (!currentSubscription.value || !currentUsage.value) return false;
+```
+
+**Why**: Usage records are created by PocketBase hooks when needed. If no usage record exists yet, treat current usage as 0 rather than blocking all creation.
+
+**Impact**: Views like ItemsView, VendorsView, etc. use `checkCreateLimit` to enable/disable add buttons.
+
+### Unlimited Plans
+Plans with `max_items: -1` (or any limit set to -1) should be treated as unlimited:
+- The `isUnlimited()` helper function correctly identifies these plans
+- The `checkCreateLimit` function should return `true` for unlimited plans regardless of usage
+
+## PocketBase Auto-Cancellation Fix
+
+### Problem: Dual Data Loading Race Condition
+Views were getting `ClientResponseError: The request was autocancelled` due to simultaneous requests to the same PocketBase collection.
+
+### Root Cause
+Views using both `useSiteData` and search composables (e.g., `useAccountSearch`) were making duplicate requests:
+1. `useSiteData` automatically loads data on mount and site changes
+2. `loadAll()` from search composables also loads the same data
+3. PocketBase auto-cancels the first request when the second starts
+
+### Critical Rule
+**NEVER call `loadAll()` in `onMounted()` when using `useSiteData`**
+
+```typescript
+// ❌ WRONG: Creates race condition with useSiteData
+onMounted(() => {
+  setTimeout(() => loadAll(), 100); // This conflicts with useSiteData
+});
+
+// ✅ CORRECT: Let useSiteData handle data loading
+onMounted(() => {
+  // Data loading is handled automatically by useSiteData
+  window.addEventListener('keydown', handleKeyboardShortcut);
+});
+```
+
+### Fixed Views
+The following views were fixed by removing redundant `loadAll()` calls:
+- AccountsView.vue
+- VendorsView.vue  
+- ItemsView.vue
+- ServiceBookingsView.vue
+- QuotationsView.vue
+- PaymentsView.vue
+- DeliveryView.vue
+
+### Prevention
+When creating new views that use both `useSiteData` and search:
+- Let `useSiteData` handle automatic data loading
+- Only use search composables for search functionality
+- Never call `loadAll()` manually unless specifically needed for search initialization
+
+## Site Selection Auto-Cancellation Fix
+
+### Problem: Multiple loadUserSites() Calls
+Site selection was experiencing `ClientResponseError: The request was autocancelled` due to concurrent `loadUserSites()` calls from multiple sources:
+1. App.vue auth watcher (on login)
+2. App.vue onMounted (on page load)  
+3. SiteSelectionView onMounted (redundant)
+
+### Solution: Request Deduplication
+Implemented request deduplication in the site store to prevent multiple simultaneous calls:
+
+```typescript
+// Site store now prevents concurrent loadUserSites calls
+let loadUserSitesPromise: Promise<void> | null = null
+
+async function loadUserSites() {
+  // If already loading, return the existing promise
+  if (loadUserSitesPromise) {
+    return loadUserSitesPromise
+  }
+  
+  loadUserSitesPromise = loadUserSitesInternal()
+  try {
+    await loadUserSitesPromise
+  } finally {
+    loadUserSitesPromise = null
+  }
+}
+```
+
+### Additional Fix
+Removed redundant `loadUserSites()` call from SiteSelectionView since App.vue already handles site loading.
+
+### Result
+- ✅ No more auto-cancellation errors during site selection
+- ✅ Proper deduplication of concurrent requests
+- ✅ Maintained functionality across all components
+
 ## Commands
 ```bash
 npm run dev          # Development server

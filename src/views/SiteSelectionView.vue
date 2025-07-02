@@ -279,11 +279,8 @@ const handleRejectInvitation = async (invitationId: string) => {
 };
 
 onMounted(async () => {
-  // Load both sites and invitations
-  await Promise.all([
-    loadUserSites(),
-    loadReceivedInvitations()
-  ]);
+  // Site loading is handled by App.vue, just load invitations
+  await loadReceivedInvitations();
   
   // Wait for component to be fully mounted before auto-navigation
   await nextTick();

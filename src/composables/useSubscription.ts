@@ -303,12 +303,19 @@ export function useSubscription() {
   };
 
   const checkCreateLimit = (type: 'items' | 'vendors' | 'deliveries' | 'service_bookings' | 'payments'): boolean => {
-    if (!currentSubscription.value || !currentUsage.value) return false;
+    if (!currentSubscription.value) return false;
     
     const plan = currentSubscription.value.expand?.subscription_plan;
     if (!plan || !plan.features) return false;
 
-    const usage = currentUsage.value;
+    // If no usage data exists yet, treat current usage as 0 for all types
+    const usage = currentUsage.value || {
+      items_count: 0,
+      vendors_count: 0,
+      deliveries_count: 0,
+      service_bookings_count: 0,
+      payments_count: 0
+    };
     
     switch (type) {
       case 'items':

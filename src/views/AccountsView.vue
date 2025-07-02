@@ -399,8 +399,7 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
 };
 
 onMounted(() => {
-  // Load search data when accounts data changes
-  loadAll();
+  // Data loading is handled automatically by useSiteData
   window.addEventListener('keydown', handleKeyboardShortcut);
 });
 

@@ -10,12 +10,32 @@ export const useSiteStore = defineStore('site', () => {
   const currentUserRole = ref<string | null>(getCurrentUserRole())
   const isInitialized = ref(false)
   const isLoading = ref(false)
+  
+  // Request deduplication: prevent multiple simultaneous loadUserSites calls
+  let loadUserSitesPromise: Promise<void> | null = null
 
   const isReadyForRouting = computed(() => {
     return isInitialized.value
   })
 
   async function loadUserSites() {
+    // If there's already a request in progress, return that promise
+    if (loadUserSitesPromise) {
+      return loadUserSitesPromise
+    }
+
+    // Create and store the promise for this request
+    loadUserSitesPromise = loadUserSitesInternal()
+    
+    try {
+      await loadUserSitesPromise
+    } finally {
+      // Clear the promise when done (success or failure)
+      loadUserSitesPromise = null
+    }
+  }
+
+  async function loadUserSitesInternal() {
     try {
       isLoading.value = true
       

@@ -421,7 +421,7 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
 };
 
 onMounted(() => {
-  setTimeout(() => loadAll(), 100);
+  // Data loading is handled automatically by useSiteData
   window.addEventListener('show-add-modal', handleQuickAction);
   window.addEventListener('keydown', handleKeyboardShortcut);
 });

@@ -435,7 +435,6 @@ onMounted(() => {
   // Data loading is handled automatically by useSiteData
   // Set up watchers for tag updates
   setTimeout(watchForTagUpdates, 100);
-  setTimeout(() => loadAll(), 100);
   window.addEventListener('show-add-modal', handleQuickAction);
   window.addEventListener('keydown', handleKeyboardShortcut);
 });

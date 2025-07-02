@@ -604,7 +604,6 @@ const handleClickOutside = (event: Event) => {
 
 onMounted(async () => {
   // Data loading is handled automatically by useSiteData
-  setTimeout(() => loadAll(), 100);
   // Check for paymentId query parameter and auto-open payment modal
   const paymentId = route.query.paymentId as string;
   if (paymentId) {
