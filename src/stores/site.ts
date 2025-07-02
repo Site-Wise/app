@@ -12,7 +12,7 @@ export const useSiteStore = defineStore('site', () => {
   const isLoading = ref(false)
 
   const isReadyForRouting = computed(() => {
-    return isInitialized.value && (currentSite.value !== null || userSites.value.length === 0)
+    return isInitialized.value
   })
 
   async function loadUserSites() {

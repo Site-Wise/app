@@ -67,7 +67,7 @@
             <div class="space-y-3">
               <template v-for="userSite in userSites" :key="userSite.id">
                 <div v-if="userSite.expand?.site"
-                     @click="selectSite(userSite.expand?.site?.id!)"
+                     @click="selectSite(userSite.site)"
                      class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700">
                 <div class="flex items-center justify-between">
                   <div class="flex-1">
@@ -99,7 +99,7 @@
         <div v-else class="space-y-4">
           <template v-for="userSite in userSites" :key="userSite.id">
             <div v-if="userSite.expand?.site"
-                 @click="selectSite(userSite.expand?.site?.id!)"
+                 @click="selectSite(userSite.site)"
                  class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700">
             <div class="flex items-center justify-between">
               <div class="flex-1">
@@ -258,7 +258,7 @@ const handleAcceptInvitation = async (invitationId: string) => {
     
     // If this was the only invitation and user now has one site, auto-select it
     if (userSites.value.length === 1 && receivedInvitations.value.length === 0) {
-      await selectSite(userSites.value[0].id!);
+      await selectSite(userSites.value[0].site);
     }
   } catch (error) {
     console.error('Error accepting invitation:', error);
@@ -292,7 +292,7 @@ onMounted(async () => {
   if (userSites.value.length === 1 && receivedInvitations.value.length === 0) {
     // Add small delay to ensure router is ready
     setTimeout(async () => {
-      await selectSite(userSites.value[0].expand?.site?.id!);
+      await selectSite(userSites.value[0].site);
     }, 100);
   }
 });

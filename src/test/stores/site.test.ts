@@ -242,7 +242,7 @@ describe('Site Store', () => {
       expect(store.isReadyForRouting).toBe(false)
     })
 
-    it('should be false when initialized but has sites and no current site', async () => {
+    it('should be true when initialized, even with multiple sites and no current site', async () => {
       const mockUserSites = [
         { site: 'site-1', role: 'owner', expand: { site: { id: 'site-1', name: 'Site 1' } } },
         { site: 'site-2', role: 'manager', expand: { site: { id: 'site-2', name: 'Site 2' } } }
@@ -278,7 +278,7 @@ describe('Site Store', () => {
       expect(store.userSites.length).toBe(2) // Should have loaded 2 sites
       expect(store.currentSite).toBe(null) // Should not have selected a site
       expect(store.isInitialized).toBe(true) // Should be initialized
-      expect(store.isReadyForRouting).toBe(false) // Should NOT be ready because has sites but no current site
+      expect(store.isReadyForRouting).toBe(true) // Should be ready so user can see SiteSelectionView
     })
   })
 
