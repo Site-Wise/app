@@ -1024,6 +1024,12 @@
     "liters": "लीटर",
     "meters": "मीटर",
     "feet": "फीट",
-    "units": "इकाई"
+    "units": "इकाई",
+    "number": "संख्या",
+    "cubic meter": "घन मीटर",
+    "kilogram": "किलोग्राम",
+    "square meter": "वर्ग मीटर",
+    "liter": "लीटर",
+    "meter": "मीटर"
   }
 }

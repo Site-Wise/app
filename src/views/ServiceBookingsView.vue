@@ -459,7 +459,7 @@ const activeServices = computed(() => {
 });
 
 const canCreateServiceBooking = computed(() => {
-  return canCreate.value && checkCreateLimit('service_bookings') && !isReadOnly;
+  return canCreate.value && checkCreateLimit('service_bookings') && !isReadOnly.value;
 });
 
 const reloadAllData = async () => {

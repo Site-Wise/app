@@ -248,11 +248,11 @@ const formLoading = ref(false);
 const nameInputRef = ref<HTMLInputElement>();
 
 const canCreateItem = computed(() => {
-  return !isReadOnly && checkCreateLimit('items');
+  return !isReadOnly.value && checkCreateLimit('items');
 });
 
 const canEditDelete = computed(() => {
-  return !isReadOnly && canDelete.value;
+  return !isReadOnly.value && canDelete.value;
 });
 
 const form = reactive({

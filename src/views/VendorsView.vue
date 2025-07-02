@@ -254,11 +254,11 @@ const loading = ref(false);
 const firstInputRef = ref<HTMLInputElement>();
 
 const canCreateVendor = computed(() => {
-  return !isReadOnly && checkCreateLimit('vendors');
+  return !isReadOnly.value && checkCreateLimit('vendors');
 });
 
 const canEditDelete = computed(() => {
-  return !isReadOnly && canDelete.value;
+  return !isReadOnly.value && canDelete.value;
 });
 
 const form = reactive({

@@ -318,11 +318,11 @@ const saveLoading = ref(false);
 const nameInputRef = ref<HTMLInputElement>();
 
 const canCreateService = computed(() => {
-  return !isReadOnly && checkCreateLimit('services');
+  return !isReadOnly.value && checkCreateLimit('services');
 });
 
 const canEditDelete = computed(() => {
-  return !isReadOnly && canDelete.value;
+  return !isReadOnly.value && canDelete.value;
 });
 
 const form = reactive({

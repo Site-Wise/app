@@ -1022,6 +1022,12 @@
     "liters": "Litres",
     "meters": "Meters",
     "feet": "Feet",
-    "units": "Units"
+    "units": "Units",
+    "number": "Number",
+    "cubic meter": "Cubic Meter",
+    "kilogram": "Kilogram",
+    "square meter": "Square Meter",
+    "liter": "Liter",
+    "meter": "Meter"
   }
 }

@@ -70,11 +70,11 @@
                   />
                   <label :for="`credit-note-${creditNote.id}`" class="flex-1 text-sm">
                     <div class="flex justify-between">
-                      <span class="text-gray-900 dark:text-white">{{ creditNote.note_number || `CN-${creditNote.id?.slice(-6)}` }}</span>
+                      <span class="text-gray-900 dark:text-white">{{ creditNote.reference || `CN-${creditNote.id?.slice(-6)}` }}</span>
                       <span class="text-green-600 dark:text-green-400 font-medium">₹{{ creditNote.balance.toFixed(2) }}</span>
                     </div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">
-                      {{ creditNote.description }}
+                      {{ creditNote.reason }}
                     </div>
                   </label>
                 </div>

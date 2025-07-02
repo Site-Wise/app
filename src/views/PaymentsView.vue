@@ -494,11 +494,11 @@ const allocationLoadingPromises = ref<Map<string, Promise<PaymentAllocation[]>>>
 const openMobileMenuId = ref<string | null>(null);
 
 const canCreatePayment = computed(() => {
-  return !isReadOnly && checkCreateLimit('payments');
+  return !isReadOnly.value && checkCreateLimit('payments');
 });
 
 const canEditPayment = computed(() => {
-  return !isReadOnly && getCurrentUserRole() === 'owner';
+  return !isReadOnly.value && getCurrentUserRole() === 'owner';
 });
 
 const getUnallocatedAmount = (payment: Payment, allocations: PaymentAllocation[]): number => {
@@ -666,7 +666,7 @@ const getCreditNoteDisplay = (creditNoteId: string) => {
   if (viewingPayment.value?.expand?.credit_notes) {
     const creditNote = viewingPayment.value.expand.credit_notes.find(cn => cn.id === creditNoteId);
     if (creditNote) {
-      return creditNote.note_number || `CN-${creditNote.id?.slice(-6)}`;
+      return creditNote.reference || `CN-${creditNote.id?.slice(-6)}`;
     }
   }
   // Fallback to generic display

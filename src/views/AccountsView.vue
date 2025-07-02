@@ -298,7 +298,7 @@ const lowBalanceCount = computed(() => {
 });
 
 const canCreateAccount = computed(() => {
-  return checkCreateLimit('accounts') && !isReadOnly;
+  return checkCreateLimit('accounts') && !isReadOnly.value;
 });
 
 const getAccountIcon = (type: Account['type']) => {
