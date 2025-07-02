@@ -35,38 +35,79 @@ vi.mock('../../composables/useSiteData', () => ({
     
     // Mock data based on what the PaymentsView expects
     let mockData;
-    if (loadDataFn.toString().includes('accountTransactionService')) {
-      // Mock account transactions for payments
-      mockData = [
-        {
-          id: 'payment-1',
-          type: 'debit',
-          amount: 5000.00,
-          transaction_date: '2024-01-20',
-          reference: 'CHQ-001',
-          description: 'Payment for steel',
-          vendor: 'vendor-1',
-          account: 'account-1',
-          expand: {
-            vendor: { id: 'vendor-1', name: 'ABC Steel Co.' },
-            account: { id: 'account-1', name: 'Main Bank', type: 'bank' }
+    if (loadDataFn.toString().includes('Promise.all')) {
+      // Mock consolidated data structure
+      mockData = {
+        payments: [
+          {
+            id: 'payment-1',
+            vendor: 'vendor-1',
+            account: 'account-1',
+            amount: 5000.00,
+            payment_date: '2024-01-20',
+            reference: 'CHQ-001',
+            notes: 'Partial payment for steel',
+            deliveries: ['delivery-1', 'delivery-2'],
+            service_bookings: [],
+            expand: {
+              vendor: { id: 'vendor-1', name: 'ABC Steel Co.' },
+              account: { id: 'account-1', name: 'Main Bank', type: 'bank' }
+            }
+          },
+          {
+            id: 'payment-2',
+            vendor: 'vendor-2',
+            account: 'account-2',
+            amount: 10000.00,
+            payment_date: '2024-01-15',
+            reference: 'UPI-12345',
+            notes: 'Full payment',
+            deliveries: ['delivery-3'],
+            service_bookings: ['booking-1'],
+            expand: {
+              vendor: { id: 'vendor-2', name: 'XYZ Cement Ltd.' },
+              account: { id: 'account-2', name: 'Digital Wallet', type: 'digital_wallet' }
+            }
           }
-        },
-        {
-          id: 'payment-2',
-          type: 'debit',
-          amount: 10000.00,
-          transaction_date: '2024-01-15',
-          reference: 'UPI-12345',
-          description: 'Full payment',
-          vendor: 'vendor-2',
-          account: 'account-2',
-          expand: {
-            vendor: { id: 'vendor-2', name: 'XYZ Cement Ltd.' },
-            account: { id: 'account-2', name: 'Digital Wallet', type: 'digital_wallet' }
+        ],
+        vendors: [
+          { id: 'vendor-1', name: 'ABC Steel Co.' },
+          { id: 'vendor-2', name: 'XYZ Cement Ltd.' }
+        ],
+        accounts: [
+          { id: 'account-1', name: 'Main Bank', type: 'bank', is_active: true, current_balance: 10000 },
+          { id: 'account-2', name: 'Digital Wallet', type: 'digital_wallet', is_active: true, current_balance: 5000 }
+        ],
+        deliveries: [
+          { 
+            id: 'delivery-1', 
+            vendor: 'vendor-1', 
+            delivery_date: '2024-01-15',
+            total_amount: 3000,
+            paid_amount: 1000,
+            payment_status: 'partial' 
+          },
+          { 
+            id: 'delivery-2', 
+            vendor: 'vendor-1', 
+            delivery_date: '2024-01-18',
+            total_amount: 2000,
+            paid_amount: 0,
+            payment_status: 'pending' 
           }
-        }
-      ]
+        ],
+        serviceBookings: [
+          { 
+            id: 'booking-1', 
+            vendor: 'vendor-2', 
+            start_date: '2024-01-20',
+            total_amount: 5000,
+            paid_amount: 2000,
+            payment_status: 'partial',
+            expand: { service: { name: 'Plumbing Service' } }
+          }
+        ]
+      }
     } else if (loadDataFn.toString().includes('vendorService')) {
       // Mock vendors
       mockData = [
@@ -76,11 +117,44 @@ vi.mock('../../composables/useSiteData', () => ({
     } else if (loadDataFn.toString().includes('accountService')) {
       // Mock accounts
       mockData = [
-        { id: 'account-1', name: 'Main Bank', type: 'bank' },
-        { id: 'account-2', name: 'Digital Wallet', type: 'digital_wallet' }
+        { id: 'account-1', name: 'Main Bank', type: 'bank', is_active: true },
+        { id: 'account-2', name: 'Digital Wallet', type: 'digital_wallet', is_active: true }
+      ]
+    } else if (loadDataFn.toString().includes('deliveryService')) {
+      // Mock deliveries with outstanding amounts
+      mockData = [
+        { 
+          id: 'delivery-1', 
+          vendor: 'vendor-1', 
+          delivery_date: '2024-01-15',
+          total_amount: 3000,
+          paid_amount: 1000,
+          payment_status: 'partial' 
+        },
+        { 
+          id: 'delivery-2', 
+          vendor: 'vendor-1', 
+          delivery_date: '2024-01-18',
+          total_amount: 2000,
+          paid_amount: 0,
+          payment_status: 'pending' 
+        }
+      ]
+    } else if (loadDataFn.toString().includes('serviceBookingService')) {
+      // Mock service bookings with outstanding amounts
+      mockData = [
+        { 
+          id: 'booking-1', 
+          vendor: 'vendor-2', 
+          start_date: '2024-01-20',
+          total_amount: 5000,
+          paid_amount: 2000,
+          payment_status: 'partial',
+          expand: { service: { name: 'Plumbing Service' } }
+        }
       ]
     } else {
-      // Default empty array for deliveries and service bookings
+      // Default empty array
       mockData = []
     }
     
@@ -125,8 +199,14 @@ vi.mock('../../composables/useI18n', () => ({
         'payments.details': 'Details',
         'payments.paymentDate': 'Payment Date',
         'payments.paymentAccount': 'Payment Account',
-        'payments.itemsAffected': 'Items Affected',
+        'payments.paidFor': 'Payment Applied To',
+        'payments.editPayment': 'Edit Payment Allocation',
+        'payments.updatePayment': 'Update Payment',
+        'payments.allocated': 'Allocated',
+        'payments.unallocated': 'Unallocated',
         'common.vendor': 'Vendor',
+        'common.edit': 'Edit',
+        'common.close': 'Close',
         'common.account': 'Account',
         'common.amount': 'Amount',
         'common.reference': 'Reference',
@@ -173,11 +253,14 @@ vi.mock('../../services/pocketbase', () => ({
     getAll: vi.fn().mockResolvedValue([
       {
         id: 'payment-1',
+        vendor: 'vendor-1',
+        account: 'account-1',
         amount: 5000.00,
         payment_date: '2024-01-20',
         reference: 'CHQ-001',
         notes: 'Partial payment for steel',
         deliveries: ['delivery-1', 'delivery-2'],
+        service_bookings: [],
         expand: {
           vendor: { id: 'vendor-1', name: 'ABC Steel Co.' },
           account: { id: 'account-1', name: 'Main Bank', type: 'bank' }
@@ -185,11 +268,14 @@ vi.mock('../../services/pocketbase', () => ({
       },
       {
         id: 'payment-2',
+        vendor: 'vendor-2',
+        account: 'account-2',
         amount: 10000.00,
         payment_date: '2024-01-15',
         reference: 'UPI-12345',
         notes: 'Full payment',
         deliveries: ['delivery-3'],
+        service_bookings: ['booking-1'],
         expand: {
           vendor: { id: 'vendor-2', name: 'XYZ Cement Ltd.' },
           account: { id: 'account-2', name: 'Digital Wallet', type: 'digital_wallet' }
@@ -197,11 +283,14 @@ vi.mock('../../services/pocketbase', () => ({
       },
       {
         id: 'payment-3',
+        vendor: 'vendor-3',
+        account: 'account-3',
         amount: 2500.00,
         payment_date: '2024-01-10',
         reference: '',
         notes: '',
         deliveries: [],
+        service_bookings: [],
         expand: {
           vendor: { id: 'vendor-3', name: 'Local Bricks' },
           account: { id: 'account-3', name: 'Cash', type: 'cash' }
@@ -210,63 +299,60 @@ vi.mock('../../services/pocketbase', () => ({
     ]),
     create: vi.fn().mockResolvedValue({ id: 'new-payment' })
   },
+  paymentAllocationService: {
+    create: vi.fn().mockResolvedValue({ id: 'allocation-1' }),
+    getByPayment: vi.fn().mockResolvedValue([]),
+    getByDelivery: vi.fn().mockResolvedValue([]),
+    getByServiceBooking: vi.fn().mockResolvedValue([]),
+    deleteByPayment: vi.fn().mockResolvedValue()
+  },
   accountTransactionService: {
+    create: vi.fn().mockResolvedValue({ id: 'transaction-1' })
+  },
+  vendorService: {
     getAll: vi.fn().mockResolvedValue([
-      {
-        id: 'payment-1',
-        type: 'debit',
-        amount: 5000.00,
-        transaction_date: '2024-01-20',
-        reference: 'CHQ-001',
-        description: 'Payment for steel',
-        vendor: 'vendor-1',
-        account: 'account-1',
-        expand: {
-          vendor: { id: 'vendor-1', name: 'ABC Steel Co.' },
-          account: { id: 'account-1', name: 'Main Bank', type: 'bank' }
-        }
+      { id: 'vendor-1', name: 'ABC Steel Co.' },
+      { id: 'vendor-2', name: 'XYZ Cement Ltd.' }
+    ])
+  },
+  accountService: {
+    getAll: vi.fn().mockResolvedValue([
+      { id: 'account-1', name: 'Main Bank', type: 'bank', is_active: true, current_balance: 10000 },
+      { id: 'account-2', name: 'Digital Wallet', type: 'digital_wallet', is_active: true, current_balance: 5000 }
+    ])
+  },
+  deliveryService: {
+    getAll: vi.fn().mockResolvedValue([
+      { 
+        id: 'delivery-1', 
+        vendor: 'vendor-1', 
+        delivery_date: '2024-01-15',
+        total_amount: 3000,
+        paid_amount: 1000,
+        payment_status: 'partial' 
       },
-      {
-        id: 'payment-2',
-        type: 'debit',
-        amount: 10000.00,
-        transaction_date: '2024-01-15',
-        reference: 'UPI-12345',
-        description: 'Full payment',
-        vendor: 'vendor-2',
-        account: 'account-2',
-        expand: {
-          vendor: { id: 'vendor-2', name: 'XYZ Cement Ltd.' },
-          account: { id: 'account-2', name: 'Digital Wallet', type: 'digital_wallet' }
-        }
-      },
-      {
-        id: 'payment-3',
-        type: 'debit',
-        amount: 2500.00,
-        transaction_date: '2024-01-10',
-        reference: '',
-        description: '',
-        vendor: 'vendor-3',
-        account: 'account-3',
-        expand: {
-          vendor: { id: 'vendor-3', name: 'Local Bricks' },
-          account: { id: 'account-3', name: 'Cash', type: 'cash' }
-        }
+      { 
+        id: 'delivery-2', 
+        vendor: 'vendor-1', 
+        delivery_date: '2024-01-18',
+        total_amount: 2000,
+        paid_amount: 0,
+        payment_status: 'pending' 
       }
     ])
   },
-  vendorService: {
-    getAll: vi.fn().mockResolvedValue([])
-  },
-  accountService: {
-    getAll: vi.fn().mockResolvedValue([])
-  },
-  deliveryService: {
-    getAll: vi.fn().mockResolvedValue([])
-  },
   serviceBookingService: {
-    getAll: vi.fn().mockResolvedValue([])
+    getAll: vi.fn().mockResolvedValue([
+      { 
+        id: 'booking-1', 
+        vendor: 'vendor-2', 
+        start_date: '2024-01-20',
+        total_amount: 5000,
+        paid_amount: 2000,
+        payment_status: 'partial',
+        expand: { service: { name: 'Plumbing Service' } }
+      }
+    ])
   },
   getCurrentSiteId: vi.fn(() => 'site-1'),
   setCurrentSiteId: vi.fn(),
@@ -535,9 +621,10 @@ describe('PaymentsView - Mobile Responsive Design', () => {
       const outstandingSection = wrapper.find('.mt-8.card')
       expect(outstandingSection.exists()).toBe(true)
       
-      // Check that the "No outstanding amounts" message is displayed
-      // since our mock data doesn't create outstanding amounts
-      expect(wrapper.text()).toContain('No outstanding amounts')
+      // Check that outstanding amounts are displayed correctly with our mock data
+      expect(wrapper.text()).toContain('Outstanding Amounts by Vendor')
+      expect(wrapper.text()).toContain('ABC Steel Co.')
+      expect(wrapper.text()).toContain('XYZ Cement Ltd.')
     })
   })
 
@@ -595,6 +682,184 @@ describe('PaymentsView - Mobile Responsive Design', () => {
       const searchInput = wrapper.findComponent({ name: 'SearchBox' })
       expect(searchInput.exists()).toBe(true)
       expect(searchInput.props('placeholder')).toContain('Search')
+    })
+  })
+
+  describe('Payment Allocation Functionality', () => {
+    it('should show outstanding amounts for vendors', async () => {
+      wrapper = createWrapper()
+      
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      // Since our mock data includes deliveries and bookings with outstanding amounts,
+      // ABC Steel Co. should have ₹4000 outstanding (₹2000 from delivery-1, ₹2000 from delivery-2)
+      // XYZ Cement Ltd. should have ₹3000 outstanding (from booking-1)
+      expect(wrapper.text()).toContain('Outstanding Amounts by Vendor')
+    })
+
+    it('should calculate vendor outstanding amounts correctly', async () => {
+      wrapper = createWrapper()
+      
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      // Test the computed vendorsWithOutstanding calculation
+      const vendorsWithOutstanding = wrapper.vm.vendorsWithOutstanding
+      
+      // ABC Steel Co. should have outstanding amount from deliveries
+      const abcSteel = vendorsWithOutstanding.find((v: any) => v.name === 'ABC Steel Co.')
+      if (abcSteel) {
+        expect(abcSteel.outstandingAmount).toBe(4000) // ₹2000 + ₹2000 from deliveries
+        expect(abcSteel.pendingItems).toBe(2) // 2 deliveries
+      }
+
+      // XYZ Cement Ltd. should have outstanding amount from service booking
+      const xyzCement = vendorsWithOutstanding.find((v: any) => v.name === 'XYZ Cement Ltd.')
+      if (xyzCement) {
+        expect(xyzCement.outstandingAmount).toBe(3000) // ₹5000 - ₹2000 from booking
+        expect(xyzCement.pendingItems).toBe(1) // 1 booking
+      }
+    })
+
+    it('should update selectable items when vendor and amount are set', async () => {
+      wrapper = createWrapper()
+      
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Set vendor and amount to trigger updateSelectableItems
+      wrapper.vm.form.vendor = 'vendor-1'
+      wrapper.vm.form.amount = 1000
+      wrapper.vm.updateSelectableItems()
+
+      await wrapper.vm.$nextTick()
+
+      // Should show selectable deliveries for vendor-1
+      expect(wrapper.vm.selectableDeliveries.length).toBe(2)
+      expect(wrapper.vm.selectableDeliveries[0].outstanding).toBe(2000) // delivery-1: 3000 - 1000
+      expect(wrapper.vm.selectableDeliveries[1].outstanding).toBe(2000) // delivery-2: 2000 - 0
+    })
+
+    it('should calculate amount when deliveries are selected', async () => {
+      wrapper = createWrapper()
+      
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Set up form data
+      wrapper.vm.form.vendor = 'vendor-1'
+      wrapper.vm.form.amount = 1000
+      wrapper.vm.updateSelectableItems()
+
+      // Select delivery
+      wrapper.vm.form.deliveries = ['delivery-1']
+      wrapper.vm.updateAmountFromSelection()
+
+      await wrapper.vm.$nextTick()
+
+      // Amount should be updated to outstanding amount of selected delivery
+      expect(wrapper.vm.form.amount).toBe(2000)
+    })
+
+    it('should handle partial payment scenarios correctly', async () => {
+      wrapper = createWrapper()
+      
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Mock a payment with partial allocation
+      const mockPayment = {
+        id: 'payment-1',
+        vendor: 'vendor-1',
+        amount: 5000,
+        payment_date: '2024-01-20'
+      }
+
+      const mockAllocations = [
+        { id: 'alloc-1', allocated_amount: 2000 }, // Only 2000 allocated out of 5000
+      ]
+
+      // Test unallocated amount calculation
+      const unallocatedAmount = wrapper.vm.getUnallocatedAmount(mockPayment, mockAllocations)
+      expect(unallocatedAmount).toBe(3000) // 5000 - 2000 = 3000 unallocated
+    })
+
+    it('should show edit button for payments with unallocated amount (owner only)', async () => {
+      wrapper = createWrapper()
+      
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Mock a payment with partial allocation
+      const mockPayment = {
+        id: 'payment-1',
+        vendor: 'vendor-1',
+        amount: 5000,
+        payment_date: '2024-01-20'
+      }
+
+      const mockAllocations = [
+        { id: 'alloc-1', allocated_amount: 2000 }, // Only 2000 allocated out of 5000
+      ]
+
+      // Test if payment can be edited (should be true for owner with unallocated amount)
+      const canEdit = wrapper.vm.canPaymentBeEdited(mockPayment, mockAllocations)
+      expect(canEdit).toBe(true)
+    })
+
+    it('should not show edit button for fully allocated payments', async () => {
+      wrapper = createWrapper()
+      
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Mock a fully allocated payment
+      const mockPayment = {
+        id: 'payment-1',
+        vendor: 'vendor-1',
+        amount: 5000,
+        payment_date: '2024-01-20'
+      }
+
+      const mockAllocations = [
+        { id: 'alloc-1', allocated_amount: 3000 },
+        { id: 'alloc-2', allocated_amount: 2000 }
+      ]
+
+      // Test if payment can be edited (should be false for fully allocated)
+      const canEdit = wrapper.vm.canPaymentBeEdited(mockPayment, mockAllocations)
+      expect(canEdit).toBe(false)
+    })
+
+    it('should include partially paid deliveries in selectable items', async () => {
+      wrapper = createWrapper()
+      
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Set vendor to trigger updateSelectableItems
+      wrapper.vm.form.vendor = 'vendor-1'
+      wrapper.vm.form.amount = 1000
+      wrapper.vm.updateSelectableItems()
+
+      await wrapper.vm.$nextTick()
+
+      // Should include delivery-1 (partially paid: 3000 total - 1000 paid = 2000 outstanding)
+      // Should include delivery-2 (unpaid: 2000 total - 0 paid = 2000 outstanding)
+      expect(wrapper.vm.selectableDeliveries.length).toBe(2)
+      
+      const partiallyPaidDelivery = wrapper.vm.selectableDeliveries.find((d: any) => d.paid_amount === 1000)
+      expect(partiallyPaidDelivery).toBeDefined()
+      expect(partiallyPaidDelivery.outstanding).toBe(2000)
     })
   })
 })

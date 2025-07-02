@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import { useSubscription } from '../../composables/useSubscription'
 import { pb } from '../../services/pocketbase'
 
@@ -21,6 +22,9 @@ vi.mock('../../services/pocketbase', () => ({
                   max_deliveries: 5,
                   max_service_bookings: 5,
                   max_payments: 5,
+                  max_accounts: 5,
+                  max_vendor_returns: 5,
+                  max_services: 5,
                   max_sites: 1
                 },
                 is_active: true,
@@ -33,6 +37,18 @@ vi.mock('../../services/pocketbase', () => ({
                 name: 'Free',
                 price: 0,
                 currency: 'INR',
+                features: {
+                  max_items: 1,
+                  max_vendors: 1,
+                  max_deliveries: 5,
+                  max_service_bookings: 5,
+                  max_payments: 5,
+                  max_accounts: 5,
+                  max_vendor_returns: 5,
+                  max_services: 5,
+                  max_sites: 1
+                },
+                is_active: true,
                 is_default: true
               })
             }
@@ -41,12 +57,40 @@ vi.mock('../../services/pocketbase', () => ({
         }
       } else if (name === 'site_subscriptions') {
         return {
-          getFirstListItem: vi.fn().mockRejectedValue(new Error('No subscription found')),
+          getFirstListItem: vi.fn().mockResolvedValue({
+            id: 'subscription-1',
+            site: 'site-1',
+            subscription_plan: 'plan-free',
+            status: 'active',
+            auto_renew: false,
+            expand: {
+              subscription_plan: {
+                id: 'plan-free',
+                name: 'Free',
+                price: 0,
+                currency: 'INR',
+                features: {
+                  max_items: 1,
+                  max_vendors: 1,
+                  max_deliveries: 5,
+                  max_service_bookings: 5,
+                  max_payments: 5,
+                  max_accounts: 5,
+                  max_vendor_returns: 5,
+                  max_services: 5,
+                  max_sites: 1
+                },
+                is_active: true,
+                is_default: true
+              }
+            }
+          }),
           create: vi.fn().mockResolvedValue({
             id: 'subscription-1',
             site: 'site-1',
             subscription_plan: 'plan-free',
-            status: 'active'
+            status: 'active',
+            auto_renew: false
           })
         }
       } else if (name === 'subscription_usage') {
@@ -61,12 +105,14 @@ vi.mock('../../services/pocketbase', () => ({
       }
     })
   },
-  getCurrentSiteId: vi.fn().mockReturnValue(null) // Return null to prevent automatic loading
+  getCurrentSiteId: vi.fn().mockReturnValue('site-1') // Return a site ID for testing
 }))
 
 describe('useSubscription - Default Plan Assignment', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Set up Pinia for each test
+    setActivePinia(createPinia())
   })
 
   it('should create subscription with default plan', async () => {

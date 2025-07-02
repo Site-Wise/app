@@ -312,6 +312,23 @@ export interface Payment {
     account?: Account;
     deliveries?: Delivery[];
     service_bookings?: ServiceBooking[];
+    payment_allocations?: PaymentAllocation[];
+  };
+}
+
+export interface PaymentAllocation {
+  id?: string;
+  payment: string; // Payment ID
+  delivery?: string; // Delivery ID (optional)
+  service_booking?: string; // ServiceBooking ID (optional)
+  allocated_amount: number; // Amount allocated to this delivery/booking
+  site: string; // Site ID
+  created?: string;
+  updated?: string;
+  expand?: {
+    payment?: Payment;
+    delivery?: Delivery;
+    service_booking?: ServiceBooking;
   };
 }
 
@@ -1574,11 +1591,73 @@ export class PaymentService {
       vendor: data.vendor
     });
 
-    // Update payment status of related service bookings and deliveries
-    await this.updateServiceBookingsPaymentStatus(data.vendor, data.amount);
-    await this.updateDeliveriesPaymentStatus(data.vendor, data.amount);
+    // Handle payment allocations
+    await this.handlePaymentAllocations(record.id, data.deliveries || [], data.service_bookings || [], data.amount);
 
     return this.mapRecordToPayment(record);
+  }
+
+  private async handlePaymentAllocations(paymentId: string, deliveryIds: string[], serviceBookingIds: string[], totalAmount: number) {
+    const siteId = getCurrentSiteId();
+    if (!siteId) return;
+
+    let remainingAmount = totalAmount;
+    
+    // Handle delivery allocations
+    for (const deliveryId of deliveryIds) {
+      if (remainingAmount <= 0) break;
+      
+      const delivery = await pb.collection('deliveries').getOne(deliveryId);
+      const outstandingAmount = delivery.total_amount - delivery.paid_amount;
+      const allocatedAmount = Math.min(remainingAmount, outstandingAmount);
+      
+      // Create payment allocation record
+      await paymentAllocationService.create({
+        payment: paymentId,
+        delivery: deliveryId,
+        allocated_amount: allocatedAmount,
+        site: siteId
+      });
+      
+      // Update delivery payment status
+      const newPaidAmount = delivery.paid_amount + allocatedAmount;
+      const newStatus = newPaidAmount >= delivery.total_amount ? 'paid' : 'partial';
+      
+      await pb.collection('deliveries').update(deliveryId, {
+        paid_amount: newPaidAmount,
+        payment_status: newStatus
+      });
+      
+      remainingAmount -= allocatedAmount;
+    }
+    
+    // Handle service booking allocations
+    for (const bookingId of serviceBookingIds) {
+      if (remainingAmount <= 0) break;
+      
+      const booking = await pb.collection('service_bookings').getOne(bookingId);
+      const outstandingAmount = booking.total_amount - booking.paid_amount;
+      const allocatedAmount = Math.min(remainingAmount, outstandingAmount);
+      
+      // Create payment allocation record
+      await paymentAllocationService.create({
+        payment: paymentId,
+        service_booking: bookingId,
+        allocated_amount: allocatedAmount,
+        site: siteId
+      });
+      
+      // Update service booking payment status
+      const newPaidAmount = booking.paid_amount + allocatedAmount;
+      const newStatus = newPaidAmount >= booking.total_amount ? 'paid' : 'partial';
+      
+      await pb.collection('service_bookings').update(bookingId, {
+        paid_amount: newPaidAmount,
+        payment_status: newStatus
+      });
+      
+      remainingAmount -= allocatedAmount;
+    }
   }
 
 
@@ -1591,64 +1670,49 @@ export class PaymentService {
     }
   }
 
-  private async updateServiceBookingsPaymentStatus(vendorId: string, paymentAmount: number) {
-    const siteId = getCurrentSiteId();
-    if (!siteId) return;
-
-    const serviceBookings = await pb.collection('service_bookings')
-      .getFullList({
-        filter: `vendor="${vendorId}" && payment_status!="paid" && site="${siteId}"`,
-        sort: 'created'
-      });
-
-    let remainingAmount = paymentAmount;
-
-    for (const booking of serviceBookings) {
-      if (remainingAmount <= 0) break;
-
-      const outstandingAmount = booking.total_amount - booking.paid_amount;
-      const paymentForBooking = Math.min(remainingAmount, outstandingAmount);
-
-      const newPaidAmount = booking.paid_amount + paymentForBooking;
-      const newStatus = newPaidAmount >= booking.total_amount ? 'paid' : 'partial';
-
-      await pb.collection('service_bookings').update(booking.id, {
-        paid_amount: newPaidAmount,
-        payment_status: newStatus
-      });
-
-      remainingAmount -= paymentForBooking;
+  async delete(id: string): Promise<boolean> {
+    // Check permissions
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canDelete) {
+      throw new Error('Permission denied: Cannot delete payments');
     }
-  }
 
-  private async updateDeliveriesPaymentStatus(vendorId: string, paymentAmount: number) {
-    const siteId = getCurrentSiteId();
-    if (!siteId) return;
-
-    const deliveries = await pb.collection('deliveries')
-      .getFullList({
-        filter: `vendor="${vendorId}" && payment_status!="paid" && site="${siteId}"`,
-        sort: 'created'
-      });
-
-    let remainingAmount = paymentAmount;
-
-    for (const delivery of deliveries) {
-      if (remainingAmount <= 0) break;
-
-      const outstandingAmount = delivery.total_amount - delivery.paid_amount;
-      const paymentForDelivery = Math.min(remainingAmount, outstandingAmount);
-
-      const newPaidAmount = delivery.paid_amount + paymentForDelivery;
-      const newStatus = newPaidAmount >= delivery.total_amount ? 'paid' : 'partial';
-
-      await pb.collection('deliveries').update(delivery.id, {
-        paid_amount: newPaidAmount,
-        payment_status: newStatus
-      });
-
-      remainingAmount -= paymentForDelivery;
+    // Get payment allocations to reverse them
+    const allocations = await paymentAllocationService.getByPayment(id);
+    
+    // Reverse payment status updates
+    for (const allocation of allocations) {
+      if (allocation.delivery) {
+        const delivery = await pb.collection('deliveries').getOne(allocation.delivery);
+        const newPaidAmount = delivery.paid_amount - allocation.allocated_amount;
+        const newStatus = newPaidAmount <= 0 ? 'pending' : (newPaidAmount >= delivery.total_amount ? 'paid' : 'partial');
+        
+        await pb.collection('deliveries').update(allocation.delivery, {
+          paid_amount: Math.max(0, newPaidAmount),
+          payment_status: newStatus
+        });
+      }
+      
+      if (allocation.service_booking) {
+        const booking = await pb.collection('service_bookings').getOne(allocation.service_booking);
+        const newPaidAmount = booking.paid_amount - allocation.allocated_amount;
+        const newStatus = newPaidAmount <= 0 ? 'pending' : (newPaidAmount >= booking.total_amount ? 'paid' : 'partial');
+        
+        await pb.collection('service_bookings').update(allocation.service_booking, {
+          paid_amount: Math.max(0, newPaidAmount),
+          payment_status: newStatus
+        });
+      }
     }
+    
+    // Delete payment allocations
+    await paymentAllocationService.deleteByPayment(id);
+    
+    // Delete the payment
+    await pb.collection('payments').delete(id);
+    
+    return true;
   }
 
   private mapRecordToPayment(record: RecordModel): Payment {
@@ -1727,6 +1791,61 @@ export class PaymentService {
       site: record.site,
       created: record.created,
       updated: record.updated
+    };
+  }
+}
+
+export class PaymentAllocationService {
+  async create(data: Omit<PaymentAllocation, 'id' | 'created' | 'updated'>): Promise<PaymentAllocation> {
+    const record = await pb.collection('payment_allocations').create(data);
+    return this.mapRecordToPaymentAllocation(record);
+  }
+
+  async getByPayment(paymentId: string): Promise<PaymentAllocation[]> {
+    const records = await pb.collection('payment_allocations')
+      .getFullList({
+        filter: `payment="${paymentId}"`,
+        expand: 'delivery,service_booking,service_booking.service'
+      });
+    return records.map(record => this.mapRecordToPaymentAllocation(record));
+  }
+
+  async getByDelivery(deliveryId: string): Promise<PaymentAllocation[]> {
+    const records = await pb.collection('payment_allocations')
+      .getFullList({
+        filter: `delivery="${deliveryId}"`
+      });
+    return records.map(record => this.mapRecordToPaymentAllocation(record));
+  }
+
+  async getByServiceBooking(serviceBookingId: string): Promise<PaymentAllocation[]> {
+    const records = await pb.collection('payment_allocations')
+      .getFullList({
+        filter: `service_booking="${serviceBookingId}"`
+      });
+    return records.map(record => this.mapRecordToPaymentAllocation(record));
+  }
+
+  async deleteByPayment(paymentId: string): Promise<void> {
+    const allocations = await this.getByPayment(paymentId);
+    for (const allocation of allocations) {
+      if (allocation.id) {
+        await pb.collection('payment_allocations').delete(allocation.id);
+      }
+    }
+  }
+
+  private mapRecordToPaymentAllocation(record: RecordModel): PaymentAllocation {
+    return {
+      id: record.id,
+      payment: record.payment,
+      delivery: record.delivery,
+      service_booking: record.service_booking,
+      allocated_amount: record.allocated_amount,
+      site: record.site,
+      created: record.created,
+      updated: record.updated,
+      expand: record.expand
     };
   }
 }
@@ -3335,6 +3454,7 @@ export const vendorService = new VendorService();
 export const quotationService = new QuotationService();
 export const serviceBookingService = new ServiceBookingService();
 export const paymentService = new PaymentService();
+export const paymentAllocationService = new PaymentAllocationService();
 export const tagService = new TagService();
 export const accountTransactionService = new AccountTransactionService();
 export const vendorReturnService = new VendorReturnService();

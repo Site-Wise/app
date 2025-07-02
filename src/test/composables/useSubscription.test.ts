@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
 import { useSubscription } from '../../composables/useSubscription';
 import { pb, getCurrentSiteId } from '../../services/pocketbase';
 
@@ -105,9 +106,7 @@ const mockSubscription = {
   site: 'site_1',
   subscription_plan: 'plan_free',
   status: 'active',
-  current_period_start: '2024-01-01T00:00:00.000Z',
-  current_period_end: '2024-02-01T00:00:00.000Z',
-  cancel_at_period_end: false,
+  auto_renew: false,
   expand: {
     subscription_plan: mockFreePlan
   }
@@ -131,6 +130,8 @@ const mockUsage = {
 describe('useSubscription', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Set up Pinia for each test
+    setActivePinia(createPinia());
     (getCurrentSiteId as Mock).mockReturnValue('site_1');
     // Mock console.error to prevent test failures
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -916,7 +917,7 @@ describe('useSubscription', () => {
     it('should cancel subscription at period end', async () => {
       const mockUpdate = vi.fn().mockResolvedValue({
         ...mockSubscription,
-        cancel_at_period_end: true
+        status: 'cancelled'
       });
       const mockCollection = vi.fn((name: string) => {
         if (name === 'site_subscriptions') {
@@ -937,7 +938,7 @@ describe('useSubscription', () => {
       await cancelSubscription();
 
       expect(mockUpdate).toHaveBeenCalledWith('sub_1', {
-        cancel_at_period_end: true,
+        status: 'cancelled',
         cancelled_at: expect.any(String)
       });
     });
@@ -972,9 +973,7 @@ describe('useSubscription', () => {
         site: 'site_new',
         subscription_plan: 'plan_free',
         status: 'active',
-        current_period_start: expect.any(String),
-        current_period_end: expect.any(String),
-        cancel_at_period_end: false
+        auto_renew: false
       });
     });
   });

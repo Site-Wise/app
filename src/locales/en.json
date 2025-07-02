@@ -599,7 +599,12 @@
     "paymentFor": "Record Payment for {vendorName}",
     "outstandingAmountVendor": "Outstanding amount for this vendor: {amount}",
     "paymentDetails": "Payment Details",
-    "itemsAffected": "Items Affected"
+    "selectItemsToPay": "Select deliveries/bookings to pay for",
+    "paidFor": "Payment Applied To",
+    "editPayment": "Edit Payment Allocation",
+    "updatePayment": "Update Payment",
+    "allocated": "Allocated",
+    "unallocated": "Unallocated"
   },
   "site": {
     "selectSite": "Select a Site",
