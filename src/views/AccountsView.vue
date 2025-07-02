@@ -10,8 +10,11 @@
       </div>
       <button 
         @click="handleAddAccount" 
-        class="btn-primary"
-        :title="t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
+        :disabled="!canCreateAccount"
+        :class="[
+          canCreateAccount ? 'btn-primary' : 'btn-disabled'
+        ]"
+        :title="!canCreateAccount ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
       >
         <Plus class="mr-2 h-4 w-4" />
         {{ t('accounts.addAccount') }}
@@ -244,9 +247,11 @@ import { useI18n } from '../composables/useI18n';
 import { useAccountSearch } from '../composables/useSearch';
 import { useSiteData } from '../composables/useSiteData';
 import { usePermissions } from '../composables/usePermissions';
+import { useSubscription } from '../composables/useSubscription';
 
 const { t } = useI18n();
 const { canDelete } = usePermissions();
+const { checkCreateLimit, isReadOnly } = useSubscription();
 const router = useRouter();
 // Use site-aware data loading
 const { data: accountsData, reload: reloadAccounts } = useSiteData(async () => {
@@ -255,7 +260,7 @@ const { data: accountsData, reload: reloadAccounts } = useSiteData(async () => {
 });
 
 // Search functionality
-const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useAccountSearch();
+const { searchQuery, loading: searchLoading, results: searchResults } = useAccountSearch();
 
 // Display items: use search results if searching, otherwise site data
 const accounts = computed(() => {
@@ -290,6 +295,10 @@ const activeAccountsCount = computed(() => {
 
 const lowBalanceCount = computed(() => {
   return accounts.value.filter(account => account.is_active && account.current_balance < 1000).length;
+});
+
+const canCreateAccount = computed(() => {
+  return checkCreateLimit('accounts') && !isReadOnly.value;
 });
 
 const getAccountIcon = (type: Account['type']) => {

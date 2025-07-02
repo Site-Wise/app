@@ -133,6 +133,7 @@ vi.mock('../../services/pocketbase', () => {
                     max_items: 10,
                     max_vendors: 10,
                     max_deliveries: 50,
+                    max_services: 1,
                     max_service_bookings: 50,
                     max_payments: 50,
                     max_sites: 1

@@ -261,6 +261,12 @@
                       </span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-600 dark:text-gray-400">{{ t('subscription.limits.services') }}</span>
+                      <span class="font-medium text-gray-900 dark:text-white">
+                        {{ formatPlanLimit(plan.features.max_services) }}
+                      </span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
                       <span class="text-gray-600 dark:text-gray-400">{{ t('subscription.limits.service_bookings') }}</span>
                       <span class="font-medium text-gray-900 dark:text-white">
                         {{ formatPlanLimit(plan.features.max_service_bookings) }}

@@ -1,5 +1,6 @@
 import { ref, watch, Ref, unref } from 'vue';
 import { useSiteStore } from '../stores/site';
+import { pb } from '../services/pocketbase';
 
 /**
  * Composable for managing data that depends on the current site.
@@ -31,7 +32,7 @@ export function useSiteData<T>(
 
   const loadData = async () => {
     const currentSiteId = unref(siteStore.currentSiteId);
-    if (!currentSiteId) {
+    if (!currentSiteId || !pb.authStore.isValid) {
       data.value = null;
       return;
     }
@@ -140,7 +141,7 @@ export function useSitePaginatedData<T>(
 
   const loadData = async () => {
     const currentSiteId = siteStore.currentSiteId;
-    if (!currentSiteId) {
+    if (!currentSiteId || !pb.authStore.isValid) {
       items.value = [];
       totalPages.value = 1;
       totalItems.value = 0;

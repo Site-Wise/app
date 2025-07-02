@@ -68,7 +68,12 @@
               <template v-for="userSite in userSites" :key="userSite.id">
                 <div v-if="userSite.expand?.site"
                      @click="selectSite(userSite.site)"
-                     class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700">
+                     :class="[
+                       'p-4 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors duration-200',
+                       isLoading 
+                         ? 'opacity-50 cursor-not-allowed' 
+                         : 'hover:border-primary-500 dark:hover:border-primary-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700'
+                     ]">
                 <div class="flex items-center justify-between">
                   <div class="flex-1">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ userSite.expand?.site?.name }}</h3>
@@ -100,7 +105,12 @@
           <template v-for="userSite in userSites" :key="userSite.id">
             <div v-if="userSite.expand?.site"
                  @click="selectSite(userSite.site)"
-                 class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700">
+                 :class="[
+                   'p-4 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors duration-200',
+                   isLoading 
+                     ? 'opacity-50 cursor-not-allowed' 
+                     : 'hover:border-primary-500 dark:hover:border-primary-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700'
+                 ]">
             <div class="flex items-center justify-between">
               <div class="flex-1">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ userSite.expand?.site?.name }}</h3>
@@ -199,19 +209,29 @@ const createForm = reactive({
 });
 
 const selectSite = async (siteId: string) => {
-  await selectSiteAction(siteId);
+  // Prevent site selection while still loading
+  if (isLoading.value) {
+    console.warn('Site selection prevented: still loading user sites');
+    return;
+  }
   
-  // Ensure router is available and navigate safely
   try {
-    if (!router) {
-      router = useRouter();
+    await selectSiteAction(siteId);
+    
+    // Ensure router is available and navigate safely
+    try {
+      if (!router) {
+        router = useRouter();
+      }
+      await nextTick(); // Ensure component is fully mounted
+      router.push('/');
+    } catch (error) {
+      console.error('Navigation failed:', error);
+      // Fallback: force page reload to dashboard
+      window.location.href = '/';
     }
-    await nextTick(); // Ensure component is fully mounted
-    router.push('/');
   } catch (error) {
-    console.error('Navigation failed:', error);
-    // Fallback: force page reload to dashboard
-    window.location.href = '/';
+    console.error('Site selection failed:', error);
   }
 };
 
@@ -280,7 +300,16 @@ const handleRejectInvitation = async (invitationId: string) => {
 
 onMounted(async () => {
   // Site loading is handled by App.vue, just load invitations
-  await loadReceivedInvitations();
+  try {
+    await loadReceivedInvitations();
+  } catch (error) {
+    // Ignore auto-cancellation errors that occur during navigation
+    if (error instanceof Error && error.message.includes('autocancelled')) {
+      console.debug('Invitation loading was cancelled due to navigation');
+      return;
+    }
+    console.error('Error loading invitations:', error);
+  }
   
   // Wait for component to be fully mounted before auto-navigation
   await nextTick();

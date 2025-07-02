@@ -15,7 +15,7 @@ export const useSiteStore = defineStore('site', () => {
   let loadUserSitesPromise: Promise<void> | null = null
 
   const isReadyForRouting = computed(() => {
-    return isInitialized.value
+    return isInitialized.value && !isLoading.value
   })
 
   async function loadUserSites() {

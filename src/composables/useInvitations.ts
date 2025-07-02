@@ -3,6 +3,7 @@ import {
   siteInvitationService,
   authService,
   siteUserService,
+  pb,
   type SiteInvitation 
 } from '../services/pocketbase';
 
@@ -30,7 +31,7 @@ export function useInvitations() {
 
   const loadReceivedInvitations = async () => {
     const user = authService.currentUser;
-    if (!user) return;
+    if (!user || !pb.authStore.isValid) return;
 
     isLoading.value = true;
     try {
@@ -46,6 +47,8 @@ export function useInvitations() {
   };
 
   const loadSiteInvitations = async (siteId: string) => {
+    if (!pb.authStore.isValid) return;
+    
     isLoading.value = true;
     try {
       // First cleanup expired invitations

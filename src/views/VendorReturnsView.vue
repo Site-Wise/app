@@ -16,7 +16,11 @@
         </button>
         <button 
           @click="openCreateModal" 
-          class="btn-primary"
+          :disabled="!canCreateReturn"
+          :class="[
+            canCreateReturn ? 'btn-primary' : 'btn-disabled'
+          ]"
+          :title="!canCreateReturn ? t('subscription.banner.freeTierLimitReached') : ''"
         >
           <Plus class="mr-2 h-4 w-4" />
           {{ t('vendors.addReturn') }}
@@ -345,6 +349,7 @@ import {
   CheckCircle
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
+import { useSubscription } from '../composables/useSubscription';
 import { useSiteData } from '../composables/useSiteData';
 import {
   vendorReturnService,
@@ -358,6 +363,7 @@ import RefundModal from '../components/returns/RefundModal.vue';
 import SearchBox from '../components/SearchBox.vue';
 
 const { t } = useI18n();
+const { checkCreateLimit, isReadOnly } = useSubscription();
 
 // State
 const searchQuery = ref('');
@@ -423,6 +429,10 @@ const completedReturns = computed(() =>
 const totalRefunded = computed(() => 
   returns.value.reduce((sum, r) => sum + (r.actual_refund_amount || 0), 0)
 );
+
+const canCreateReturn = computed(() => {
+  return checkCreateLimit('vendor_returns') && !isReadOnly.value;
+});
 
 // Methods
 const formatDate = (dateString: string) => {

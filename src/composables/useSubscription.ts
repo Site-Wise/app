@@ -1,5 +1,6 @@
 import { ref, computed, watch } from 'vue';
 import { pb, getCurrentSiteId, type Site } from '../services/pocketbase';
+import { useSiteStore } from '../stores/site';
 
 export interface SubscriptionPlan {
   id?: string;
@@ -10,8 +11,11 @@ export interface SubscriptionPlan {
     max_items: number;
     max_vendors: number;
     max_deliveries: number;
+    max_services: number,
     max_service_bookings: number;
     max_payments: number;
+    max_accounts: number;
+    max_vendor_returns: number;
     max_sites: number;
   };
   is_active: boolean;
@@ -49,8 +53,11 @@ export interface SubscriptionUsage {
   items_count: number;
   vendors_count: number;
   deliveries_count: number;
+  services_count: number;
   service_bookings_count: number;
   payments_count: number;
+  accounts_count: number;
+  vendor_returns_count: number;
   created?: string;
   updated?: string;
 }
@@ -103,8 +110,11 @@ export interface UsageLimits {
   items: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
   vendors: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
   deliveries: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
+  services: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
   service_bookings: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
   payments: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
+  accounts: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
+  vendor_returns: { current: number; max: number; exceeded: boolean; disabled: boolean; unlimited: boolean };
 }
 
 const currentSubscription = ref<SiteSubscription | null>(null);
@@ -129,8 +139,11 @@ export function useSubscription() {
       (isLimited(plan.features.max_items) && usage.items_count >= plan.features.max_items) ||
       (isLimited(plan.features.max_vendors) && usage.vendors_count >= plan.features.max_vendors) ||
       (isLimited(plan.features.max_deliveries) && usage.deliveries_count >= plan.features.max_deliveries) ||
+      (isLimited(plan.features.max_services) && usage.services_count >= plan.features.max_services) ||
       (isLimited(plan.features.max_service_bookings) && usage.service_bookings_count >= plan.features.max_service_bookings) ||
-      (isLimited(plan.features.max_payments) && usage.payments_count >= plan.features.max_payments)
+      (isLimited(plan.features.max_payments) && usage.payments_count >= plan.features.max_payments) ||
+      (isLimited(plan.features.max_accounts) && usage.accounts_count >= plan.features.max_accounts) ||
+      (isLimited(plan.features.max_vendor_returns) && usage.vendor_returns_count >= plan.features.max_vendor_returns)
     );
   });
 
@@ -204,6 +217,13 @@ export function useSubscription() {
         disabled: isDisabled(plan.features.max_deliveries),
         exceeded: isLimited(plan.features.max_deliveries) && usage.deliveries_count >= plan.features.max_deliveries
       },
+      services: {
+        current: usage.services_count,
+        max: plan.features.max_services,
+        unlimited: isUnlimited(plan.features.max_services),
+        disabled: isDisabled(plan.features.max_services),
+        exceeded: isLimited(plan.features.max_services) && usage.services_count >= plan.features.max_services
+      },
       service_bookings: {
         current: usage.service_bookings_count,
         max: plan.features.max_service_bookings,
@@ -217,6 +237,20 @@ export function useSubscription() {
         unlimited: isUnlimited(plan.features.max_payments),
         disabled: isDisabled(plan.features.max_payments),
         exceeded: isLimited(plan.features.max_payments) && usage.payments_count >= plan.features.max_payments
+      },
+      accounts: {
+        current: usage.accounts_count,
+        max: plan.features.max_accounts,
+        unlimited: isUnlimited(plan.features.max_accounts),
+        disabled: isDisabled(plan.features.max_accounts),
+        exceeded: isLimited(plan.features.max_accounts) && usage.accounts_count >= plan.features.max_accounts
+      },
+      vendor_returns: {
+        current: usage.vendor_returns_count,
+        max: plan.features.max_vendor_returns,
+        unlimited: isUnlimited(plan.features.max_vendor_returns),
+        disabled: isDisabled(plan.features.max_vendor_returns),
+        exceeded: isLimited(plan.features.max_vendor_returns) && usage.vendor_returns_count >= plan.features.max_vendor_returns
       }
     };
   });
@@ -302,7 +336,7 @@ export function useSubscription() {
     return createDefaultSubscription(siteId);
   };
 
-  const checkCreateLimit = (type: 'items' | 'vendors' | 'deliveries' | 'service_bookings' | 'payments'): boolean => {
+  const checkCreateLimit = (type: 'items' | 'vendors' | 'deliveries' | 'services' | 'service_bookings' | 'payments' | 'accounts' | 'vendor_returns' | 'sites'): boolean => {
     if (!currentSubscription.value) return false;
     
     const plan = currentSubscription.value.expand?.subscription_plan;
@@ -313,8 +347,11 @@ export function useSubscription() {
       items_count: 0,
       vendors_count: 0,
       deliveries_count: 0,
+      services_count: 0,
       service_bookings_count: 0,
-      payments_count: 0
+      payments_count: 0,
+      accounts_count: 0,
+      vendor_returns_count: 0
     };
     
     switch (type) {
@@ -327,12 +364,30 @@ export function useSubscription() {
       case 'deliveries':
         if (isDisabled(plan.features.max_deliveries)) return false;
         return isUnlimited(plan.features.max_deliveries) || usage.deliveries_count < plan.features.max_deliveries;
+      case 'services':
+        if (isDisabled(plan.features.max_services)) return false;
+        return isUnlimited(plan.features.max_services) || usage.services_count < plan.features.max_services;
       case 'service_bookings':
         if (isDisabled(plan.features.max_service_bookings)) return false;
         return isUnlimited(plan.features.max_service_bookings) || usage.service_bookings_count < plan.features.max_service_bookings;
       case 'payments':
         if (isDisabled(plan.features.max_payments)) return false;
         return isUnlimited(plan.features.max_payments) || usage.payments_count < plan.features.max_payments;
+      case 'accounts':
+        if (isDisabled(plan.features.max_accounts)) return false;
+        return isUnlimited(plan.features.max_accounts) || usage.accounts_count < plan.features.max_accounts;
+      case 'vendor_returns':
+        if (isDisabled(plan.features.max_vendor_returns)) return false;
+        return isUnlimited(plan.features.max_vendor_returns) || usage.vendor_returns_count < plan.features.max_vendor_returns;
+      case 'sites':
+        // Special case: Always allow creating the first site regardless of subscription
+        const siteStore = useSiteStore();
+        const currentSiteCount = siteStore.userSites?.length || 0;
+        if (currentSiteCount === 0) return true;
+        
+        // For subsequent sites, check subscription limits
+        if (isDisabled(plan.features.max_sites)) return false;
+        return isUnlimited(plan.features.max_sites) || currentSiteCount < plan.features.max_sites;
       default:
         return false;
     }

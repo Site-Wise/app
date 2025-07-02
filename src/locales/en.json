@@ -907,6 +907,7 @@
       "items": "Items",
       "vendors": "Vendors",
       "deliveries": "Deliveries",
+      "services": "Services",
       "serviceBookings": "Service Bookings",
       "service_bookings": "Service Bookings",
       "payments": "Payments"

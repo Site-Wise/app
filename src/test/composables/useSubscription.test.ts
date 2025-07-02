@@ -71,8 +71,11 @@ const mockFreePlan = {
     max_items: 1,
     max_vendors: 1,
     max_deliveries: 5,
+    max_services: 5,
     max_service_bookings: 5,
     max_payments: 5,
+    max_accounts: 5,
+    max_vendor_returns: 5,
     max_sites: 1
   },
   is_active: true
@@ -87,8 +90,11 @@ const mockBasicPlan = {
     max_items: -1,
     max_vendors: -1,
     max_deliveries: -1,
+    max_services: -1,
     max_service_bookings: -1,
     max_payments: -1,
+    max_accounts: -1,
+    max_vendor_returns: -1,
     max_sites: 3
   },
   is_active: true
@@ -115,8 +121,11 @@ const mockUsage = {
   items_count: 0,
   vendors_count: 0,
   deliveries_count: 0,
+  services_count: 0,
   service_bookings_count: 0,
-  payments_count: 0
+  payments_count: 0,
+  accounts_count: 0,
+  vendor_returns_count: 0
 };
 
 describe('useSubscription', () => {
@@ -284,8 +293,11 @@ describe('useSubscription', () => {
         items: { current: 0, max: 1, unlimited: false, disabled: false, exceeded: false },
         vendors: { current: 0, max: 1, unlimited: false, disabled: false, exceeded: false },
         deliveries: { current: 0, max: 5, unlimited: false, disabled: false, exceeded: false },
+        services: { current: 0, max: 5, unlimited: false, disabled: false, exceeded: false },
         service_bookings: { current: 0, max: 5, unlimited: false, disabled: false, exceeded: false },
-        payments: { current: 0, max: 5, unlimited: false, disabled: false, exceeded: false }
+        accounts: { current: 0, max: 5, unlimited: false, disabled: false, exceeded: false },
+        payments: { current: 0, max: 5, unlimited: false, disabled: false, exceeded: false },
+        vendor_returns: { current: 0, max: 5, unlimited: false, disabled: false, exceeded: false }
       });
     });
 
@@ -455,6 +467,7 @@ describe('useSubscription', () => {
           max_items: -1,
           max_vendors: -1,
           max_deliveries: -1,
+          max_services: -1,
           max_service_bookings: -1,
           max_payments: -1,
           max_sites: -1
@@ -488,6 +501,7 @@ describe('useSubscription', () => {
           max_items: -1,
           max_vendors: -1,
           max_deliveries: -1,
+          max_services: -1,
           max_service_bookings: -1,
           max_payments: -1,
           max_sites: -1
@@ -517,6 +531,7 @@ describe('useSubscription', () => {
           max_items: 0,
           max_vendors: 0,
           max_deliveries: 0,
+          max_services: 0,
           max_service_bookings: 0,
           max_payments: 0,
           max_sites: 1
@@ -550,6 +565,7 @@ describe('useSubscription', () => {
           max_items: 0,
           max_vendors: 0,
           max_deliveries: 0,
+          max_services: 0,
           max_service_bookings: 0,
           max_payments: 0,
           max_sites: 1
@@ -579,6 +595,7 @@ describe('useSubscription', () => {
           max_items: 10,
           max_vendors: 5,
           max_deliveries: 20,
+          max_services: 0,
           max_service_bookings: 15,
           max_payments: 25,
           max_sites: 3
@@ -620,6 +637,7 @@ describe('useSubscription', () => {
           max_items: 10,
           max_vendors: 5,
           max_deliveries: 20,
+          max_services: 0,
           max_service_bookings: 15,
           max_payments: 25,
           max_sites: 3
@@ -658,6 +676,7 @@ describe('useSubscription', () => {
           max_items: 10,
           max_vendors: 5,
           max_deliveries: 20,
+          max_services: 1,
           max_service_bookings: 15,
           max_payments: 25,
           max_sites: 3
@@ -700,6 +719,7 @@ describe('useSubscription', () => {
           max_items: -1,        // unlimited
           max_vendors: 0,       // disabled
           max_deliveries: 10,  // limited
+          max_services: 1, // limited
           max_service_bookings: -1,     // unlimited
           max_payments: 0,      // disabled
           max_sites: 3          // limited
@@ -763,6 +783,7 @@ describe('useSubscription', () => {
           max_items: -1,
           max_vendors: -1,
           max_deliveries: -1,
+          max_services: -1,
           max_service_bookings: -1,
           max_payments: -1,
           max_sites: -1
@@ -804,6 +825,7 @@ describe('useSubscription', () => {
           max_items: -1,        // unlimited
           max_vendors: 10,      // limited - will exceed
           max_deliveries: -1,  // unlimited
+          max_services: 0, // disabled
           max_service_bookings: 0,      // disabled
           max_payments: -1,     // unlimited
           max_sites: 3

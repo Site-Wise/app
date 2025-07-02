@@ -99,6 +99,13 @@ vi.mock('../../composables/usePermissions', () => ({
   })
 }))
 
+vi.mock('../../composables/useSubscription', () => ({
+  useSubscription: () => ({
+    checkCreateLimit: vi.fn().mockReturnValue(true),
+    isReadOnly: { value: false }
+  })
+}))
+
 vi.mock('../../components/TagSelector.vue', () => ({
   default: {
     name: 'TagSelector',
@@ -150,7 +157,36 @@ vi.mock('../../services/pocketbase', () => {
       findOrCreate: vi.fn().mockResolvedValue(mockTags[0]),
       incrementUsage: vi.fn().mockResolvedValue(undefined)
     },
-    getCurrentSiteId: vi.fn().mockReturnValue('site-1')
+    getCurrentSiteId: vi.fn().mockReturnValue('site-1'),
+    setCurrentSiteId: vi.fn(),
+    getCurrentUserRole: vi.fn(() => 'owner'),
+    setCurrentUserRole: vi.fn(),
+    calculatePermissions: vi.fn().mockReturnValue({
+      canCreate: true,
+      canRead: true,
+      canUpdate: true,
+      canDelete: true,
+      canManageUsers: true,
+      canManageRoles: true,
+      canExport: true,
+      canViewFinancials: true
+    }),
+    pb: {
+      authStore: { isValid: true, model: { id: 'user-1' } },
+      collection: vi.fn(() => ({ 
+        getFullList: vi.fn().mockResolvedValue([]),
+        getFirstListItem: vi.fn().mockResolvedValue({
+          id: 'subscription-1',
+          plan: 'free',
+          max_items: 10,
+          max_vendors: 5,
+          max_deliveries: 5,
+          max_service_bookings: 5,
+          max_payments: 5,
+          is_active: true
+        })
+      }))
+    }
   }
 })
 
@@ -340,7 +376,18 @@ describe('ServicesView', () => {
     let capturedFormData: any = null
     mockCreate.mockImplementation((formData) => {
       capturedFormData = { ...formData }
-      return Promise.resolve({ id: 'new-service' })
+      return Promise.resolve({
+        id: 'new-service',
+        name: formData.name,
+        category: formData.category,
+        service_type: formData.service_type,
+        unit: formData.unit,
+        standard_rate: formData.standard_rate,
+        description: formData.description,
+        tags: formData.tags,
+        is_active: formData.is_active,
+        site: 'site-1'
+      })
     })
     
     // Open modal
@@ -387,7 +434,18 @@ describe('ServicesView', () => {
     mockUpdate.mockImplementation((id, formData) => {
       capturedId = id
       capturedFormData = { ...formData }
-      return Promise.resolve(formData)
+      return Promise.resolve({
+        id,
+        name: formData.name || 'Test Service',
+        category: formData.category || 'labor',
+        service_type: formData.service_type || 'Construction',
+        unit: formData.unit || 'hour',
+        standard_rate: formData.standard_rate || 100,
+        description: formData.description || 'Test description',
+        tags: formData.tags || [],
+        is_active: formData.is_active !== undefined ? formData.is_active : true,
+        site: 'site-1'
+      })
     })
     
     // Wait for data to load

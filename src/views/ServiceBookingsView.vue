@@ -8,7 +8,14 @@
           {{ t('serviceBookings.subtitle') }}
         </p>
       </div>
-      <button @click="showAddModal = true" class="btn-primary" v-if="canCreate">
+      <button 
+        @click="showAddModal = true" 
+        :disabled="!canCreateServiceBooking"
+        :class="[
+          canCreateServiceBooking ? 'btn-primary' : 'btn-disabled'
+        ]"
+        :title="!canCreateServiceBooking ? t('subscription.banner.freeTierLimitReached') : ''"
+      >
         <Plus class="mr-2 h-4 w-4" />
         {{ t('serviceBookings.bookService') }}
       </button>
@@ -29,6 +36,17 @@
         :placeholder="t('search.serviceBookings')"
         :search-loading="searchLoading"
       />
+    </div>
+
+    <!-- Desktop Search -->
+    <div class="hidden md:block mb-6">
+      <div class="max-w-md">
+        <SearchBox
+          v-model="searchQuery"
+          :placeholder="t('search.serviceBookings')"
+          :search-loading="searchLoading"
+        />
+      </div>
     </div>
 
     <!-- Service Bookings Table -->
@@ -375,6 +393,7 @@ import {
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { usePermissions } from '../composables/usePermissions';
+import { useSubscription } from '../composables/useSubscription';
 import { useSiteData } from '../composables/useSiteData';
 import { useServiceBookingSearch } from '../composables/useSearch';
 import PhotoGallery from '../components/PhotoGallery.vue';
@@ -388,6 +407,7 @@ import {
 
 const { t } = useI18n();
 const { canCreate, canUpdate, canDelete } = usePermissions();
+const { checkCreateLimit, isReadOnly } = useSubscription();
 
 // Search functionality
 const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useServiceBookingSearch();
@@ -436,6 +456,10 @@ const form = reactive({
 
 const activeServices = computed(() => {
   return services.value?.filter(service => service.is_active) || [];
+});
+
+const canCreateServiceBooking = computed(() => {
+  return canCreate.value && checkCreateLimit('service_bookings') && !isReadOnly.value;
 });
 
 const reloadAllData = async () => {

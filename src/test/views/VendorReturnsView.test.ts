@@ -73,6 +73,16 @@ vi.mock('../../composables/usePermissions', () => ({
   })
 }))
 
+vi.mock('../../composables/useSubscription', () => ({
+  useSubscription: () => ({
+    checkCreateLimit: vi.fn((feature: string) => {
+      // Always return true for tests to allow creation
+      return true
+    }),
+    isReadOnly: { value: false }
+  })
+}))
+
 // Mock SearchBox component
 vi.mock('../../components/SearchBox.vue', () => ({
   default: {
@@ -177,7 +187,19 @@ vi.mock('../../services/pocketbase', () => {
     }),
     pb: {
       authStore: { isValid: true, model: { id: 'user-1' } },
-      collection: vi.fn(() => ({ getFullList: vi.fn().mockResolvedValue([]) }))
+      collection: vi.fn(() => ({ 
+        getFullList: vi.fn().mockResolvedValue([]),
+        getFirstListItem: vi.fn().mockResolvedValue({
+          id: 'subscription-1',
+          plan: 'free',
+          max_items: 10,
+          max_vendors: 5,
+          max_deliveries: 5,
+          max_service_bookings: 5,
+          max_payments: 5,
+          is_active: true
+        })
+      }))
     }
   }
 })
@@ -445,6 +467,14 @@ describe('VendorReturnsView', () => {
     it('should open create modal when add button is clicked', async () => {
       const buttons = wrapper.findAll('button')
       const addButton = buttons.find((btn: any) => btn.text().includes('Add Return'))
+      
+      // Verify the button exists and is enabled
+      expect(addButton).toBeDefined()
+      expect(addButton.exists()).toBe(true)
+      expect(addButton.attributes('disabled')).toBeUndefined()
+      
+      // Verify canCreateReturn is true
+      expect(wrapper.vm.canCreateReturn).toBe(true)
       
       await addButton.trigger('click')
       await wrapper.vm.$nextTick()

@@ -909,6 +909,7 @@
       "items": "वस्तुएं",
       "vendors": "विक्रेता",
       "deliveries": "वितरण",
+      "services": "सेवाएं",
       "serviceBookings": "सेवा बुकिंग",
       "service_bookings": "सेवा बुकिंग",
       "payments": "भुगतान"

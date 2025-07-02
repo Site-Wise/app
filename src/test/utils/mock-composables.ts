@@ -83,6 +83,7 @@ export const createMockUseSubscription = (overrides: any = {}) => ({
       max_items: 50,
       max_vendors: 10,
       max_deliveries: 20,
+      max_services: 1,
       max_service_bookings: 10,
       max_payments: 30,
       max_sites: 1

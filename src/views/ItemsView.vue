@@ -23,11 +23,13 @@
 
     <!-- Search Box -->
     <div class="mb-6">
-      <SearchBox
-        v-model="searchQuery"
-        :placeholder="t('search.items')"
-        :search-loading="searchLoading"
-      />
+      <div class="max-w-md">
+        <SearchBox
+          v-model="searchQuery"
+          :placeholder="t('search.items')"
+          :search-loading="searchLoading"
+        />
+      </div>
     </div>
 
     <!-- Items Grid -->
@@ -214,7 +216,7 @@ const { canDelete } = usePermissions();
 const router = useRouter();
 
 // Search functionality
-const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useItemSearch();
+const { searchQuery, loading: searchLoading, results: searchResults } = useItemSearch();
 
 // Use site-aware data loading
 const { data: itemsData, reload: reloadItems } = useSiteData(async () => {

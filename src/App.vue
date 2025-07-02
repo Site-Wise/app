@@ -45,6 +45,7 @@
 import { onMounted, watch } from 'vue';
 import { useAuth } from './composables/useAuth';
 import { useSite } from './composables/useSite';
+import { useSiteStore } from './stores/site';
 import { usePlatform } from './composables/usePlatform';
 import { useNativeNotifications } from './composables/useNativeNotifications';
 import AppLayout from './components/AppLayout.vue';
@@ -58,7 +59,7 @@ const { requestPermission } = useNativeNotifications();
 
 // Watch for authentication changes to handle login/logout
 watch(() => isAuthenticated.value, async (newValue, oldValue) => {
-  // Only load on initial authentication or login (not on app start)
+  // Handle login
   if (newValue && !oldValue) {
     await loadUserSites();
     
@@ -66,6 +67,16 @@ watch(() => isAuthenticated.value, async (newValue, oldValue) => {
     if (platformInfo.value.isTauri || 'Notification' in window) {
       await requestPermission();
     }
+  } 
+  // Handle logout - clear site data to prevent race conditions  
+  else if (!newValue && oldValue) {
+    const siteStore = useSiteStore();
+    await siteStore.clearCurrentSite();
+    siteStore.$patch({ 
+      userSites: [],
+      isLoading: false
+      // Keep isInitialized: true to avoid showing loading skeleton on logout
+    });
   }
 });
 

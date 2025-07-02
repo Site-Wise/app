@@ -21,6 +21,17 @@ vi.mock('../../services/pocketbase', () => ({
   }
 }))
 
+// Create a mock function that we can control
+const mockCheckCreateLimit = vi.fn(() => true)
+
+// Mock the useSubscription composable
+vi.mock('../../composables/useSubscription', () => ({
+  useSubscription: () => ({
+    checkCreateLimit: mockCheckCreateLimit,
+    isReadOnly: { value: false }
+  })
+}))
+
 // Mock the useSite composable
 vi.mock('../../composables/useSite', () => ({
   useSite: () => ({
@@ -301,6 +312,49 @@ describe('SiteSelector', () => {
       expect(wrapper.vm.showCreateModal).toBe(false)
       expect(wrapper.vm.createForm.name).toBe('') // Form should be reset
     })
+
+    it('should disable create site button when subscription limit is reached', async () => {
+      // Set checkCreateLimit to return false
+      mockCheckCreateLimit.mockReturnValue(false)
+      
+      wrapper = mount(SiteSelector)
+      
+      // Open dropdown
+      await wrapper.find('button').trigger('click')
+      
+      // Find the create button
+      const buttons = wrapper.findAll('button')
+      const createButton = buttons.find((btn: any) => btn.text().includes('Create New Site'))
+      
+      expect(createButton?.exists()).toBe(true)
+      expect(createButton?.attributes('disabled')).toBeDefined()
+      expect(createButton?.classes()).toContain('cursor-not-allowed')
+      
+      // Reset mock for other tests
+      mockCheckCreateLimit.mockReturnValue(true)
+    })
+
+    it('should show error when trying to create site at limit', async () => {
+      // Set checkCreateLimit to return false
+      mockCheckCreateLimit.mockReturnValue(false)
+      
+      // Mock alert
+      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {})
+      
+      wrapper = mount(SiteSelector)
+      
+      // Try to submit create form
+      wrapper.vm.showCreateModal = true
+      await wrapper.vm.handleCreateSite()
+      
+      expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining('limit'))
+      expect(mockCreateSite).not.toHaveBeenCalled()
+      
+      alertSpy.mockRestore()
+      // Reset mock for other tests
+      mockCheckCreateLimit.mockReturnValue(true)
+    })
+
   })
 
   describe('Manage Site Modal', () => {

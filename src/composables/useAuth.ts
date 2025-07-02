@@ -39,9 +39,18 @@ export function useAuth() {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     authService.logout();
     user.value = null;
+    
+    // Clear site store to prevent race conditions
+    try {
+      const { useSiteStore } = await import('../stores/site');
+      const siteStore = useSiteStore();
+      await siteStore.clearCurrentSite();
+    } catch (error) {
+      console.warn('Failed to clear site store on logout:', error);
+    }
   };
 
   // Expose updateUser for manual refresh if needed

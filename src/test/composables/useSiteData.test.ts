@@ -130,6 +130,9 @@ describe('useSiteData', () => {
     const mockError = new Error('Failed to load data')
     mockLoadData.mockRejectedValue(mockError)
 
+    // Suppress console.error for this test
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
     const { data, loading, error } = useSiteData(mockLoadData)
 
     // Wait for error to be set
@@ -138,6 +141,8 @@ describe('useSiteData', () => {
     expect(data.value).toBe(null)
     expect(loading.value).toBe(false)
     expect(error.value).toEqual(mockError)
+    
+    consoleSpy.mockRestore()
   })
 
   it('should provide reload function', async () => {

@@ -23,11 +23,13 @@
 
     <!-- Search Box -->
     <div class="mb-6">
-      <SearchBox
-        v-model="searchQuery"
-        :placeholder="t('search.payments')"
-        :search-loading="searchLoading"
-      />
+      <div class="max-w-md">
+        <SearchBox
+          v-model="searchQuery"
+          :placeholder="t('search.payments')"
+          :search-loading="searchLoading"
+        />
+      </div>
     </div>
 
     <!-- Payments Table -->
@@ -341,7 +343,7 @@ const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
 
 // Search functionality
-const { searchQuery, loading: searchLoading, loadAll } = usePaymentSearch();
+const { searchQuery, loading: searchLoading } = usePaymentSearch();
 
 interface VendorWithOutstanding extends Vendor {
   outstandingAmount: number;

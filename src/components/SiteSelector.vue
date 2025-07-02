@@ -70,8 +70,15 @@
       <!-- Actions -->
       <div class="border-t border-gray-200 dark:border-gray-700 p-2">
         <button
-          @click="showCreateModal = true; dropdownOpen = false"
-          class="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors duration-200"
+          @click="canCreateSite ? (showCreateModal = true, dropdownOpen = false) : null"
+          :disabled="!canCreateSite"
+          :class="[
+            'w-full flex items-center px-3 py-2 text-sm rounded-md transition-colors duration-200',
+            canCreateSite 
+              ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' 
+              : 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
+          ]"
+          :title="!canCreateSite ? t('subscription.banner.freeTierLimitReached') : ''"
         >
           <Plus class="mr-2 h-4 w-4" />
           Create New Site
@@ -231,9 +238,11 @@ import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import { Building, ChevronDown, Check, Plus, Settings, Loader2, Save } from 'lucide-vue-next';
 import { useSite } from '../composables/useSite';
 import { useI18n } from '../composables/useI18n';
+import { useSubscription } from '../composables/useSubscription';
 
 const { currentSite, userSites, selectSite: selectSiteAction, createSite, updateSite, isCurrentUserAdmin } = useSite();
 const { t } = useI18n();
+const { checkCreateLimit } = useSubscription();
 
 // Type for sites with additional ownership information
 interface SiteWithOwnership {
@@ -283,6 +292,10 @@ const otherSites = computed(() => {
     } as SiteWithOwnership));
 });
 
+const canCreateSite = computed(() => {
+  return checkCreateLimit('sites');
+});
+
 const selectSite = async (siteId: string) => {
   await selectSiteAction(siteId);
   dropdownOpen.value = false;
@@ -290,6 +303,12 @@ const selectSite = async (siteId: string) => {
 };
 
 const handleCreateSite = async () => {
+  // Double-check subscription limit
+  if (!canCreateSite.value) {
+    alert(t('subscription.banner.freeTierLimitReached'));
+    return;
+  }
+  
   createLoading.value = true;
   try {
     await createSite(createForm);
@@ -297,6 +316,7 @@ const handleCreateSite = async () => {
     // Note: Removed custom event emission as watchers handle site changes
   } catch (error) {
     console.error('Error creating site:', error);
+    alert('Failed to create site. Please try again.');
   } finally {
     createLoading.value = false;
   }

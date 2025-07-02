@@ -192,6 +192,7 @@ Example features JSON:
   "max_items": 1,
   "max_vendors": 1, 
   "max_deliveries": 5,
+  "max_services": 2,
   "max_service_bookings": 5,
   "max_payments": 5,
   "max_sites": 1
@@ -275,6 +276,7 @@ Future interfaces will replace JSON tag arrays with proper relations:
     "max_items": 1,
     "max_vendors": 1,
     "max_deliveries": 5,
+    "max_services": 2,
     "max_service_bookings": 5,
     "max_payments": 5,
     "max_sites": 1
@@ -294,6 +296,7 @@ Future interfaces will replace JSON tag arrays with proper relations:
     "max_items": -1,
     "max_vendors": -1,
     "max_deliveries": -1,
+    "max_services": 2,
     "max_service_bookings": -1,
     "max_payments": -1,
     "max_sites": 3

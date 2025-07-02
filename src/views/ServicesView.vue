@@ -9,9 +9,12 @@
       </div>
       <button 
         @click="handleAddService" 
-        class="btn-primary hidden md:flex items-center" 
-        v-if="canCreate"
-        :title="t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
+        :disabled="!canCreateService"
+        :class="[
+          canCreateService ? 'btn-primary' : 'btn-disabled',
+          'hidden md:flex items-center'
+        ]"
+        :title="!canCreateService ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
       >
         <Plus class="mr-2 h-4 w-4" />
         {{ t('services.addService') }}
@@ -91,7 +94,7 @@
             </div>
           </div>
           
-          <div class="flex items-center space-x-2 ml-4" @click.stop v-if="canUpdate || canDelete">
+          <div class="flex items-center space-x-2 ml-4" @click.stop v-if="canEditDelete">
             <button @click="editService(service)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" :title="t('common.edit')" v-if="canUpdate">
               <Edit2 class="h-4 w-4" />
             </button>
@@ -114,7 +117,7 @@
       <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('services.noServices') }}</h3>
       <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('services.getStarted') }}</p>
       <button 
-        v-if="canCreate"
+        v-if="canCreateService"
         @click="handleAddService" 
         class="mt-4 btn-primary"
       >
@@ -277,6 +280,8 @@ import {
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { usePermissions } from '../composables/usePermissions';
+import { useSubscription } from '../composables/useSubscription';
+import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
 import TagSelector from '../components/TagSelector.vue';
 import { 
@@ -288,7 +293,9 @@ import {
 } from '../services/pocketbase';
 
 const { t } = useI18n();
-const { canCreate, canUpdate, canDelete } = usePermissions();
+const { canUpdate, canDelete } = usePermissions();
+const { success, error } = useToast();
+const { checkCreateLimit, isReadOnly } = useSubscription();
 const router = useRouter();
 
 // Use reactive site data management
@@ -310,6 +317,13 @@ const editingService = ref<Service | null>(null);
 const saveLoading = ref(false);
 const nameInputRef = ref<HTMLInputElement>();
 
+const canCreateService = computed(() => {
+  return !isReadOnly.value && checkCreateLimit('services');
+});
+
+const canEditDelete = computed(() => {
+  return !isReadOnly.value && canDelete.value;
+});
 
 const form = reactive({
   name: '',
@@ -388,8 +402,14 @@ const saveService = async () => {
   try {
     if (editingService.value) {
       await serviceService.update(editingService.value.id!, form);
+      success(t('messages.updateSuccess', { item: t('common.service') }));
     } else {
+      if (!checkCreateLimit('services')) {
+        error(t('subscription.banner.freeTierLimitReached'));
+        return;
+      }
       await serviceService.create(form);
+      success(t('messages.createSuccess', { item: t('common.service') }));
     }
     await reloadServices();
     closeModal();
@@ -454,15 +474,18 @@ const closeModal = () => {
 };
 
 const handleAddService = async () => {
-  if (canCreate.value) {
-    showAddModal.value = true;
-    await nextTick();
-    nameInputRef.value?.focus();
+  if (!canCreateService.value) {
+    error(t('subscription.banner.freeTierLimitReached'));
+    return;
   }
+
+  showAddModal.value = true;
+  await nextTick();
+  nameInputRef.value?.focus();
 };
 
 const handleQuickAction = async () => {
-  if (canCreate.value) {
+  if (canCreateService.value) {
     showAddModal.value = true;
     await nextTick();
     nameInputRef.value?.focus();

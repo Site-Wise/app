@@ -23,11 +23,13 @@
 
     <!-- Search Box -->
     <div class="mb-6">
-      <SearchBox
-        v-model="searchQuery"
-        :placeholder="t('search.vendors')"
-        :search-loading="searchLoading"
-      />
+      <div class="max-w-md">
+        <SearchBox
+          v-model="searchQuery"
+          :placeholder="t('search.vendors')"
+          :search-loading="searchLoading"
+        />
+      </div>
     </div>
 
     <!-- Vendors Grid -->
@@ -216,7 +218,7 @@ const { canDelete } = usePermissions();
 const router = useRouter();
 
 // Search functionality
-const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useVendorSearch();
+const { searchQuery, loading: searchLoading, results: searchResults } = useVendorSearch();
 
 // Use site data management
 const { data: vendorsData, reload: reloadVendors } = useSiteData(
