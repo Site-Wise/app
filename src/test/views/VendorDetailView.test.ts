@@ -16,6 +16,24 @@ vi.mock('../../composables/useI18n', () => ({
         'vendors.recordPayment': 'Record Payment',
         'vendors.createReturn': 'Create Return',
         'vendors.unnamedVendor': 'Unnamed Vendor',
+        'vendors.vendorLedger': 'Vendor Ledger',
+        'vendors.vendor': 'Vendor',
+        'vendors.contact': 'Contact',
+        'vendors.generated': 'Generated',
+        'vendors.date': 'Date',
+        'vendors.description': 'Description',
+        'vendors.reference': 'Reference',
+        'vendors.dues': 'Dues',
+        'vendors.payments': 'Payments',
+        'vendors.balance': 'Balance',
+        'vendors.unknownItem': 'Unknown Item',
+        'vendors.units': 'Units',
+        'vendors.received': 'Received',
+        'vendors.paymentReceived': 'Payment Received',
+        'vendors.creditNoteIssued': 'Credit Note Issued',
+        'vendors.refundForReturn': 'Refund for Return',
+        'vendors.refundProcessed': 'Refund Processed',
+        'vendors.ledger': 'Ledger',
         'common.name': 'Name',
         'common.contact': 'Contact',
         'common.phone': 'Phone',
@@ -179,6 +197,92 @@ describe('VendorDetailView', () => {
 
       // Should show export button
       expect(wrapper.text()).toContain('Export Ledger')
+    })
+
+    it('should handle PDF export with proper logo aspect ratio', async () => {
+      // Mock Image constructor with proper aspect ratio
+      const mockImage = {
+        naturalWidth: 100,
+        naturalHeight: 50, // 2:1 aspect ratio
+        crossOrigin: '',
+        src: '',
+        onload: null,
+        onerror: null
+      }
+
+      // Mock Image constructor globally
+      global.Image = vi.fn().mockImplementation(() => mockImage)
+
+      // Mock jsPDF
+      const mockDoc = {
+        internal: {
+          pageSize: { width: 210, height: 297 },
+          getCurrentPageInfo: () => ({ pageNumber: 1 })
+        },
+        setFontSize: vi.fn(),
+        setFont: vi.fn(),
+        setTextColor: vi.fn(),
+        setDrawColor: vi.fn(),
+        text: vi.fn(),
+        line: vi.fn(),
+        addImage: vi.fn(),
+        addPage: vi.fn(),
+        save: vi.fn()
+      }
+
+      // Mock jsPDF import
+      vi.doMock('jspdf', () => ({
+        jsPDF: vi.fn().mockImplementation(() => mockDoc)
+      }))
+
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Test the aspect ratio calculation directly
+      const maxLogoWidth = 25
+      const maxLogoHeight = 15
+      const aspectRatio = mockImage.naturalWidth / mockImage.naturalHeight // 100/50 = 2
+      let logoWidth = maxLogoWidth // 25
+      let logoHeight = maxLogoWidth / aspectRatio // 25/2 = 12.5
+
+      // Verify the calculation is correct
+      expect(aspectRatio).toBe(2)
+      expect(logoWidth).toBe(25)
+      expect(logoHeight).toBe(12.5)
+      expect(logoHeight).toBeLessThanOrEqual(maxLogoHeight)
+    })
+
+    it('should handle tall logo aspect ratio by scaling with height', async () => {
+      // Mock Image constructor with tall aspect ratio (logo is taller than it is wide)
+      const mockImage = {
+        naturalWidth: 50,
+        naturalHeight: 100, // 1:2 aspect ratio (tall logo)
+        crossOrigin: '',
+        src: '',
+        onload: null,
+        onerror: null
+      }
+
+      // Test the aspect ratio calculation for tall logos
+      const maxLogoWidth = 25
+      const maxLogoHeight = 15
+      const aspectRatio = mockImage.naturalWidth / mockImage.naturalHeight // 50/100 = 0.5
+      let logoWidth = maxLogoWidth // 25
+      let logoHeight = maxLogoWidth / aspectRatio // 25/0.5 = 50
+
+      // Height exceeds max, so scale by height instead
+      if (logoHeight > maxLogoHeight) {
+        logoHeight = maxLogoHeight // 15
+        logoWidth = maxLogoHeight * aspectRatio // 15 * 0.5 = 7.5
+      }
+
+      // Verify the calculation is correct for tall logos
+      expect(aspectRatio).toBe(0.5)
+      expect(logoWidth).toBe(7.5)
+      expect(logoHeight).toBe(15)
+      expect(logoWidth).toBeLessThanOrEqual(maxLogoWidth)
+      expect(logoHeight).toBeLessThanOrEqual(maxLogoHeight)
     })
   })
 

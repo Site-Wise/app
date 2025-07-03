@@ -30,7 +30,7 @@
                 <FileSpreadsheet class="mr-3 h-4 w-4 text-green-600" />
                 {{ t('vendors.exportCsv') }}
               </button>
-              <button @click="exportLedgerPDF(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <button @click="handleExportPdf(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <FileText class="mr-3 h-4 w-4 text-red-600" />
                 {{ t('vendors.exportPdf') }}
               </button>
@@ -204,16 +204,17 @@
       </div>
     </div>
 
-    <!-- Transaction History -->
+
+    <!-- Quick Summary Cards -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <!-- Deliveries -->
+    <!-- Deliveries Summary -->
     <div class="card">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('vendors.recentDeliveries') }}</h2>
         <span class="text-sm text-gray-500 dark:text-gray-400">{{ vendorDeliveries.length }} {{ t('vendors.total') }}</span>
       </div>
       <div class="space-y-3 max-h-96 overflow-y-auto">
-        <div v-for="delivery in vendorDeliveries.slice(0, 10)" :key="delivery.id"
+        <div v-for="delivery in vendorDeliveries.slice(0, 5)" :key="delivery.id"
           class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
           <div class="flex justify-between items-start mb-2">
             <div>
@@ -228,8 +229,6 @@
             <span class="text-gray-600 dark:text-gray-400">{{ delivery.delivery_reference || t('vendors.noReference') }}</span>
             <div class="text-right">
               <p class="font-medium text-gray-900 dark:text-white">₹{{ delivery.total_amount.toFixed(2) }}</p>
-              <p v-if="delivery.paid_amount > 0" class="text-green-600 dark:text-green-400">{{ t('vendors.paid') }}: ₹{{
-                delivery.paid_amount.toFixed(2) }}</p>
             </div>
           </div>
         </div>
@@ -240,30 +239,24 @@
       </div>
     </div>
 
-    <!-- Payments -->
+    <!-- Payments Summary -->
     <div class="card">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('vendors.paymentHistory') }}</h2>
         <span class="text-sm text-gray-500 dark:text-gray-400">{{ vendorPayments.length }} {{ t('vendors.payments') }}</span>
       </div>
       <div class="space-y-3 max-h-96 overflow-y-auto">
-        <div v-for="payment in vendorPayments.slice(0, 10)" :key="payment.id"
+        <div v-for="payment in vendorPayments.slice(0, 5)" :key="payment.id"
           class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
           <div class="flex justify-between items-start mb-2">
             <div>
               <h4 class="font-medium text-gray-900 dark:text-white">₹{{ payment.amount.toFixed(2) }}</h4>
               <p class="text-sm text-gray-600 dark:text-gray-400">{{ formatDate(payment.payment_date) }}</p>
-              <div v-if="payment.expand?.account" class="flex items-center mt-1">
-                <component :is="getAccountIcon(payment.expand.account.type)"
-                  class="mr-1 h-3 w-3 text-gray-500 dark:text-gray-400" />
-                <span class="text-xs text-gray-500 dark:text-gray-400">{{ payment.expand.account.name }}</span>
-              </div>
             </div>
             <div class="text-right text-sm">
-              <p v-if="payment.reference" class="text-gray-600 dark:text-gray-400">{{ t('vendors.reference') }}: {{ payment.reference }}</p>
+              <p v-if="payment.reference" class="text-gray-600 dark:text-gray-400">{{ payment.reference }}</p>
             </div>
           </div>
-          <p v-if="payment.notes" class="text-sm text-gray-600 dark:text-gray-400">{{ payment.notes }}</p>
         </div>
 
         <div v-if="vendorPayments.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -272,14 +265,14 @@
       </div>
     </div>
 
-    <!-- Returns -->
+    <!-- Returns Summary -->
     <div class="card">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('vendors.recentReturns') }}</h2>
         <span class="text-sm text-gray-500 dark:text-gray-400">{{ vendorReturns.length }} {{ t('vendors.returns') }}</span>
       </div>
       <div class="space-y-3 max-h-96 overflow-y-auto">
-        <div v-for="returnItem in vendorReturns.slice(0, 10)" :key="returnItem.id"
+        <div v-for="returnItem in vendorReturns.slice(0, 5)" :key="returnItem.id"
           class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
           <div class="flex justify-between items-start mb-2">
             <div>
@@ -287,9 +280,6 @@
                 Return #{{ returnItem.id?.slice(-6) }}
               </h4>
               <p class="text-sm text-gray-600 dark:text-gray-400">{{ formatDate(returnItem.return_date) }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">
-                {{ t(`vendors.returnReasons.${returnItem.reason}`) }}
-              </p>
             </div>
             <span :class="getReturnStatusClass(returnItem.status)">
               {{ t(`vendors.returnStatuses.${returnItem.status}`) }}
@@ -299,9 +289,6 @@
             <span class="text-gray-600 dark:text-gray-400">{{ t('vendors.returnAmount') }}</span>
             <div class="text-right">
               <p class="font-medium text-gray-900 dark:text-white">₹{{ returnItem.total_return_amount.toFixed(2) }}</p>
-              <p v-if="returnItem.actual_refund_amount && returnItem.actual_refund_amount > 0" class="text-green-600 dark:text-green-400">
-                {{ t('vendors.refunded') }}: ₹{{ returnItem.actual_refund_amount.toFixed(2) }}
-              </p>
             </div>
           </div>
         </div>
@@ -391,13 +378,8 @@ import {
   Mail,
   Phone,
   MapPin,
-  AlertCircle,
-  CheckCircle,
   TruckIcon,
   Loader2,
-  Banknote,
-  Wallet,
-  Smartphone,
   Building2,
   RotateCcw,
   FileText,
@@ -480,18 +462,139 @@ const paidDeliveries = computed(() => {
   return vendorDeliveries.value.filter(delivery => delivery.payment_status === 'paid').length;
 });
 
+// Comprehensive ledger entries with running balance
+const ledgerEntries = computed(() => {
+  const entries: Array<{
+    id: string;
+    type: 'delivery' | 'payment' | 'credit_note' | 'refund';
+    date: string;
+    description: string;
+    details?: string;
+    reference: string;
+    dues: number;
+    payments: number;
+    runningBalance: number;
+  }> = [];
 
-const getAccountIcon = (type?: Account['type']) => {
-  if (!type) return Wallet;
-  const icons = {
-    bank: Building2,
-    credit_card: CreditCard,
-    cash: Banknote,
-    digital_wallet: Smartphone,
-    other: Wallet
-  };
-  return icons[type] || Wallet;
-};
+  // Add delivery entries (dues)
+  vendorDeliveries.value.forEach(delivery => {
+    let description = `${t('vendors.delivery')} #${delivery.id?.slice(-6) || t('vendors.unknown')}`;
+    let details = '';
+    
+    // Create description from delivery items if available
+    if (delivery.expand?.delivery_items && delivery.expand.delivery_items.length > 0) {
+      const itemNames = delivery.expand.delivery_items.map((deliveryItem) => {
+        const itemName = deliveryItem.expand?.item?.name || t('vendors.unknownItem');
+        const quantity = deliveryItem.quantity || 0;
+        const unit = deliveryItem.expand?.item?.unit || t('vendors.units');
+        return `${itemName} (${quantity} ${unit})`;
+      });
+      details = `${t('vendors.received')}: ${itemNames.join(', ')}`;
+    }
+
+    entries.push({
+      id: delivery.id || '',
+      type: 'delivery',
+      date: delivery.delivery_date,
+      description,
+      details,
+      reference: delivery.delivery_reference || '',
+      dues: delivery.total_amount,
+      payments: 0,
+      runningBalance: 0 // Will be calculated below
+    });
+  });
+
+  // Add payment entries (credits)
+  vendorPayments.value.forEach(payment => {
+    entries.push({
+      id: payment.id || '',
+      type: 'payment',
+      date: payment.payment_date,
+      description: t('vendors.paymentReceived'),
+      details: payment.notes || '',
+      reference: payment.reference || '',
+      dues: 0,
+      payments: payment.amount,
+      runningBalance: 0 // Will be calculated below
+    });
+  });
+
+  // Add credit note entries (credits)
+  vendorCreditNotes.value.forEach(creditNote => {
+    // Only show credit notes that have been issued
+    if (creditNote.balance > 0) {
+      let details = '';
+      if (creditNote.reason) {
+        details = creditNote.reason;
+      }
+
+      entries.push({
+        id: creditNote.id || '',
+        type: 'credit_note',
+        date: creditNote.created || new Date().toISOString(),
+        description: t('vendors.creditNoteIssued'),
+        details,
+        reference: creditNote.reference || `CN-${creditNote.id?.slice(-6)}`,
+        dues: 0,
+        payments: creditNote.balance,
+        runningBalance: 0 // Will be calculated below
+      });
+    }
+  });
+
+  // Add refund entries (credits) - from processed returns
+  vendorReturns.value.forEach(returnItem => {
+    if (returnItem.status === 'refunded' && returnItem.actual_refund_amount && returnItem.actual_refund_amount > 0) {
+      let details = '';
+      
+      // Try to get delivery and item details  
+      details = `${t('vendors.refundForReturn')} #${returnItem.id?.slice(-6)}`;
+      if (returnItem.reason) {
+        details += ` - ${t(`vendors.returnReasons.${returnItem.reason}`)}`;
+      }
+
+      entries.push({
+        id: returnItem.id || '',
+        type: 'refund',
+        date: returnItem.completion_date || returnItem.return_date,
+        description: t('vendors.refundProcessed'),
+        details,
+        reference: `REF-${returnItem.id?.slice(-6)}`,
+        dues: 0,
+        payments: returnItem.actual_refund_amount,
+        runningBalance: 0 // Will be calculated below
+      });
+    }
+  });
+
+  // Sort entries by date
+  entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  // Calculate running balance
+  let runningBalance = 0;
+  entries.forEach(entry => {
+    runningBalance += entry.dues - entry.payments;
+    entry.runningBalance = runningBalance;
+  });
+
+  return entries;
+});
+
+// Calculate totals for the ledger
+const totalDues = computed(() => {
+  return ledgerEntries.value.reduce((sum, entry) => sum + entry.dues, 0);
+});
+
+const totalPayments = computed(() => {
+  return ledgerEntries.value.reduce((sum, entry) => sum + entry.payments, 0);
+});
+
+const finalBalance = computed(() => {
+  return totalDues.value - totalPayments.value;
+});
+
+
 
 
 const goBack = () => {
@@ -606,20 +709,77 @@ const exportLedger = () => {
   document.body.removeChild(link);
 };
 
-const exportLedgerPDF = () => {
+const addFooter = (doc: any, pageWidth: number, pageHeight: number, margin: number) => {
+  const footerY = pageHeight - 15;
+  
+  // Horizontal line
+  doc.setDrawColor(200, 200, 200);
+  doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
+  
+  // Footer text
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(107, 114, 128); // Gray color
+  doc.text('Generated with SiteWise - One stop solution for construction site management', margin, footerY);
+  
+  // Page number (right aligned)
+  const pageNum = doc.internal.getCurrentPageInfo().pageNumber;
+  doc.text(`Page ${pageNum}`, pageWidth - margin - 15, footerY);
+};
+
+const exportLedgerPDF = async () => {
   if (!vendor.value) return;
   
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
   const margin = 20;
-  let yPosition = 30;
+  let yPosition = 25;
   
-  // Header
+  // Load and add logo
+  try {
+    const logoImg = new Image();
+    logoImg.crossOrigin = 'anonymous';
+    
+    await new Promise((resolve, reject) => {
+      logoImg.onload = resolve;
+      logoImg.onerror = reject;
+      logoImg.src = '/logo.png';
+    });
+    
+    // Add logo to the right side of header with proper aspect ratio
+    const maxLogoWidth = 25;
+    const maxLogoHeight = 15;
+    
+    // Calculate aspect ratio and fit within bounds
+    const aspectRatio = logoImg.naturalWidth / logoImg.naturalHeight;
+    let logoWidth = maxLogoWidth;
+    let logoHeight = maxLogoWidth / aspectRatio;
+    
+    // If height exceeds max, scale by height instead
+    if (logoHeight > maxLogoHeight) {
+      logoHeight = maxLogoHeight;
+      logoWidth = maxLogoHeight * aspectRatio;
+    }
+    
+    const logoX = pageWidth - margin - logoWidth;
+    const logoY = yPosition - 5;
+    
+    doc.addImage(logoImg, 'PNG', logoX, logoY, logoWidth, logoHeight);
+  } catch (error) {
+    console.warn('Could not load logo for PDF:', error);
+    // Continue without logo if it fails to load
+  }
+  
+  // Document title (no SiteWise text in header, just logo)
+  yPosition += 10;
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
+  doc.setTextColor(0, 0, 0); // Black for main content
   doc.text(t('vendors.vendorLedger'), margin, yPosition);
   
-  yPosition += 10;
+  // Vendor information
+  yPosition += 12;
   doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
   doc.text(`${t('vendors.vendor')}: ${vendor.value.name}`, margin, yPosition);
@@ -642,8 +802,8 @@ const exportLedgerPDF = () => {
   
   // Table headers
   doc.setFont("helvetica", "bold");
-  const headers = [t('vendors.date'), t('vendors.description'), t('vendors.reference'), t('vendors.dues'), t('vendors.payments')];
-  const colWidths = [25, 70, 25, 25, 25];
+  const headers = [t('vendors.date'), t('vendors.description'), t('vendors.reference'), t('vendors.dues'), t('vendors.payments'), t('vendors.balance')];
+  const colWidths = [22, 60, 22, 22, 22, 22];
   let xPos = margin;
   
   headers.forEach((header, i) => {
@@ -659,77 +819,41 @@ const exportLedgerPDF = () => {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   
-  // Combine and sort all transactions
-  const allTransactions: any[] = [];
-  
-  vendorDeliveries.value.forEach(delivery => {
-    // Create description from delivery items
-    let description = '';
-    if (delivery.expand?.delivery_items && delivery.expand.delivery_items.length > 0) {
-      const itemNames = delivery.expand?.delivery_items.map((obj) => 
-        `${obj.expand?.item?.name} (${obj.quantity} ${obj.expand?.item?.unit})`
-      );
-      // const itemDescriptions = delivery.expand.delivery_items.map(deliveryItem => {
-      //   const itemName = deliveryItem.expand?.item?.name || 'Unknown Item';
-      //   return `${itemName} (${deliveryItem.quantity} ${deliveryItem.expand?.item?.unit || 'units'})`;
-      // });
-      // description = itemDescriptions.join(', ');
-      description = t('vendors.received') + ': ' + itemNames.join(', ') 
-    } else {
-      description = `${t('vendors.delivery')} #${delivery.id?.slice(-6) || t('vendors.unknown')}`;
-    }
-    
-    allTransactions.push({
-      date: new Date(delivery.delivery_date).toLocaleDateString('en-CA'), // Format as Y-m-d
-      description: description,
-      reference: delivery.delivery_reference || '',
-      dues: delivery.total_amount,
-      payments: 0,
-      type: 'delivery'
-    });
-  });
-  
-  vendorPayments.value.forEach(payment => {
-    allTransactions.push({
-      date: new Date(payment.payment_date).toLocaleDateString('en-CA'), // Format as Y-m-d
-      description: t('vendors.paymentReceived'),
-      reference: payment.reference || '',
-      dues: 0,
-      payments: payment.amount,
-      type: 'payment'
-    });
-  });
-  
-  allTransactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  
-  allTransactions.forEach(transaction => {
-    if (yPosition > 260) {
+  // Use comprehensive ledger entries
+  ledgerEntries.value.forEach(entry => {
+    if (yPosition > 240) { // Leave more space for footer
       doc.addPage();
       yPosition = 30;
     }
     
     xPos = margin;
     
+    // Create description with details if available
+    let fullDescription = entry.description;
+    if (entry.details) {
+      fullDescription += ` - ${entry.details}`;
+    }
+    
     // Handle multi-line description
-    const description = transaction.description;
     const maxDescriptionWidth = colWidths[1] - 5; // Description column width minus padding
-    const descriptionLines = doc.splitTextToSize(description, maxDescriptionWidth);
+    const descriptionLines = doc.splitTextToSize(fullDescription, maxDescriptionWidth);
     const lineHeight = 4;
     const rowHeight = Math.max(6, descriptionLines.length * lineHeight);
     
     // Check if we need a new page for multi-line content
-    if (yPosition + rowHeight > 260) {
+    if (yPosition + rowHeight > 240) { // Leave more space for footer
       doc.addPage();
       yPosition = 30;
     }
     
     // Draw row data
     const rowData = [
-      transaction.date,
+      new Date(entry.date).toLocaleDateString('en-CA'),
       '', // Description handled separately for multi-line
-      transaction.reference,
-      transaction.dues ? String.fromCharCode(8377) + transaction.dues.toFixed(1) : '',
-      transaction.payments ? String.fromCharCode(8377) + transaction.payments.toFixed(1) : ''
+      entry.reference || '',
+      entry.dues > 0 ? entry.dues.toFixed(0) : '',
+      entry.payments > 0 ? entry.payments.toFixed(0) : '',
+      Math.abs(entry.runningBalance).toFixed(0) + (entry.runningBalance >= 0 ? ' Dr' : ' Cr')
     ];
     
     // Draw non-description columns
@@ -750,7 +874,7 @@ const exportLedgerPDF = () => {
   });
   
   // Summary
-  if (yPosition > 240) {
+  if (yPosition > 200) { // Leave more space for footer
     doc.addPage();
     yPosition = 30;
   }
@@ -759,8 +883,43 @@ const exportLedgerPDF = () => {
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
   yPosition += 8;
   
-  // doc.setFont('helvetica', 'bold');
-  // doc.text(`Outstanding Balance: ₹${outstandingAmount.toFixed(2)}`, margin, yPosition);
+  // Add totals
+  doc.setFont('helvetica', 'bold');
+  doc.text(t('vendors.totals'), margin, yPosition);
+  
+  xPos = margin;
+  const totalsData = [
+    '',
+    '',
+    '',
+    totalDues.value.toFixed(0),
+    totalPayments.value.toFixed(0),
+    Math.abs(finalBalance.value).toFixed(0) + (finalBalance.value >= 0 ? ' Dr' : ' Cr')
+  ];
+  
+  totalsData.forEach((data, i) => {
+    if (i >= 3) { // Only show financial columns
+      doc.text(data, xPos, yPosition);
+    }
+    xPos += colWidths[i];
+  });
+  
+  yPosition += 10;
+  
+  // Final balance summary
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  const balanceText = finalBalance.value >= 0 
+    ? `${t('vendors.totalOutstanding')}: ${finalBalance.value.toFixed(0)}`
+    : `${t('vendors.creditBalance')}: ${Math.abs(finalBalance.value).toFixed(0)}`;
+  doc.text(balanceText, margin, yPosition);
+  
+  // Add footer to all pages
+  const totalPages = doc.internal.pages.length - 1; // Subtract 1 because pages array includes a null first element
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    addFooter(doc, pageWidth, pageHeight, margin);
+  }
   
   // Save the PDF
   doc.save(`${vendor.value.name}_${t('vendors.ledger')}_${new Date().toISOString().split('T')[0]}.pdf`);
@@ -769,50 +928,72 @@ const exportLedgerPDF = () => {
 const generateLedgerCSV = () => {
   if (!vendor.value) return '';
 
-  const headers = [t('vendors.date'), t('vendors.description'), t('vendors.reference'), t('vendors.dues'), t('vendors.payments'), t('vendors.notes')];
+  const headers = [
+    t('vendors.date'), 
+    t('vendors.description'), 
+    t('vendors.details'),
+    t('vendors.reference'), 
+    t('vendors.dues'), 
+    t('vendors.payments'),
+    t('vendors.runningBalance')
+  ];
 
   const rows: (string | number)[][] = [];
 
-  // Add deliveries
-  vendorDeliveries.value.forEach(delivery => {
+  // Use the comprehensive ledger entries
+  ledgerEntries.value.forEach(entry => {
     rows.push([
-      delivery.delivery_date,
-      `${t('vendors.delivery')} #${delivery.id?.slice(-6) || t('vendors.unknown')}`,
-      delivery.delivery_reference || '',
-      delivery.total_amount, // Dues (deliveries owed)
-      '', // Empty payments column
-      delivery.notes || ''
+      entry.date,
+      entry.description,
+      entry.details || '',
+      entry.reference || '',
+      entry.dues > 0 ? entry.dues : '',
+      entry.payments > 0 ? entry.payments : '',
+      entry.runningBalance
     ]);
   });
 
-  // Add payments
-  vendorPayments.value.forEach(payment => {
-    rows.push([
-      payment.payment_date,
-      t('vendors.paymentDone'),
-      payment.reference || '',
-      '', // Empty dues column
-      payment.amount, // Payments (credits)
-      payment.notes || ''
-    ]);
-  });
-
-  // Sort by date
-  rows.sort((a, b) => new Date(a[0] as string).getTime() - new Date(b[0] as string).getTime());
-
-  // Add summary row
+  // Add totals row
   rows.push([
     '',
-    t('vendors.summary'),
+    t('vendors.totals'),
+    '',
+    '',
+    totalDues.value,
+    totalPayments.value,
+    finalBalance.value
+  ]);
+
+  // Add summary information
+  rows.push([
     '',
     '',
     '',
     '',
-    outstandingAmount.value,
+    '',
+    '',
+    ''
+  ]);
+
+  rows.push([
+    t('vendors.generated'),
+    new Date().toISOString().split('T')[0],
     '',
     '',
     '',
-    `${t('vendors.outstandingBalanceAsOf')} ${new Date().toISOString().split('T')[0]}`
+    '',
+    ''
+  ]);
+
+  const balanceStatus = finalBalance.value >= 0 ? t('vendors.outstanding') : t('vendors.creditBalance');
+  rows.push([
+    t('vendors.finalBalance'),
+    `₹${Math.abs(finalBalance.value).toFixed(2)} (${balanceStatus})`,
+    '',
+    '',
+    '',
+    '',
+    ''
   ]);
 
   // Convert to CSV
@@ -846,20 +1027,29 @@ const createReturn = () => {
   });
 };
 
+// Handle async PDF export
+const handleExportPdf = async () => {
+  try {
+    await exportLedgerPDF();
+  } catch (error) {
+    console.error('Error exporting PDF:', error);
+  }
+};
+
 // Handle mobile menu actions
-const handleMobileAction = (action: string) => {
+const handleMobileAction = async (action: string) => {
   // Close the menu first
   showMobileMenu.value = false;
   
   // Then execute the action after a small delay to ensure menu closes
-  setTimeout(() => {
+  setTimeout(async () => {
     try {
       switch (action) {
         case 'exportCsv':
           exportLedger();
           break;
         case 'exportPdf':
-          exportLedgerPDF();
+          await exportLedgerPDF();
           break;
         case 'createReturn':
           createReturn();
