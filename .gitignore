@@ -41,6 +41,8 @@ src-tauri/gen
 # working file
 TODO.md
 BAD_PATTERNS.md
+FIXES.md
+PERFORMANCE.md
 
 # T&C files
 src/assets/legal/privacy*.js

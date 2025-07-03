@@ -295,17 +295,17 @@ export function useSubscription() {
   const store = getGlobalStore();
 
   return {
-    // State from store (direct reactive refs for better performance)
+    // State from store (direct reactive refs for better performance)  
     currentSubscription: store.currentSubscription,
     currentUsage: store.currentUsage,
-    currentPlan: store.currentPlan,
-    usageLimits: store.usageLimits,
+    currentPlan: store.currentPlan as any,
+    usageLimits: store.usageLimits as any,
     isLoading: store.isLoading,
     error: store.error,
     
     // Computed from store (direct reactive refs)
     isReadOnly: store.isReadOnly as unknown as ComputedRef<boolean>,
-    isSubscriptionActive: store.isSubscriptionActive,
+    isSubscriptionActive: store.isSubscriptionActive as unknown as ComputedRef<boolean>,
     isSubscriptionCancelled: store.isSubscriptionCancelled,
     canReactivateSubscription: store.canReactivateSubscription,
     subscriptionStatus: store.subscriptionStatus,

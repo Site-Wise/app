@@ -272,7 +272,7 @@ const { t } = useI18n();
 
 // Form data
 const form = reactive({
-  processing_option: 'refund', // Default to refund option
+  processing_option: 'refund' as 'refund' | 'credit_note', // Default to refund option
   refund_amount: 0,
   refund_date: new Date().toISOString().split('T')[0],
   refund_method: '',
