@@ -102,20 +102,23 @@ vi.mock('../../composables/useSubscription', () => ({
   })
 }))
 
-vi.mock('../../composables/useSearch', () => ({
-  useItemSearch: () => ({
-    searchQuery: { value: '' },
-    loading: { value: false },
-    results: { value: [] },
-    loadAll: vi.fn()
-  }),
-  useAccountSearch: () => ({
-    searchQuery: { value: '' },
-    loading: { value: false },
-    results: { value: [] },
-    loadAll: vi.fn()
-  })
-}))
+vi.mock('../../composables/useSearch', () => {
+  const { ref } = require('vue')
+  return {
+    useItemSearch: () => ({
+      searchQuery: ref(''),
+      loading: ref(false),
+      results: ref([]),
+      loadAll: vi.fn()
+    }),
+    useAccountSearch: () => ({
+      searchQuery: ref(''),
+      loading: ref(false),
+      results: ref([]),
+      loadAll: vi.fn()
+    })
+  }
+})
 
 describe('Site Data Reactivity Integration', () => {
   let pinia: any

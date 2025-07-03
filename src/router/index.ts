@@ -11,6 +11,12 @@ const router = createRouter({
       meta: { requiresGuest: true }
     },
     {
+      path: '/forgot-password',
+      name: 'ForgotPassword',
+      component: () => import('../views/ForgotPasswordView.vue'),
+      meta: { requiresGuest: true }
+    },
+    {
       path: '/select-site',
       name: 'SiteSelection',
       component: () => import('../views/SiteSelectionView.vue'),

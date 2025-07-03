@@ -190,6 +190,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, computed, nextTick } from 'vue';
+import { useKeyboardShortcutSingle } from '../composables/useKeyboardShortcut';
 import { useRouter } from 'vue-router';
 import { Package, Plus, Edit2, Trash2, Loader2, Copy } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
@@ -415,21 +416,15 @@ const handleQuickAction = async () => {
   nameInputRef.value?.focus();
 };
 
-const handleKeyboardShortcut = (event: KeyboardEvent) => {
-  if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
-    event.preventDefault();
-    handleAddItem();
-  }
-};
+// Keyboard shortcut for adding new item (Shift+Alt+N)
+useKeyboardShortcutSingle('n', handleAddItem, { shiftKey: true, altKey: true });
 
 onMounted(() => {
   // Data loading is handled automatically by useSiteData
   window.addEventListener('show-add-modal', handleQuickAction);
-  window.addEventListener('keydown', handleKeyboardShortcut);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
-  window.removeEventListener('keydown', handleKeyboardShortcut);
 });
 </script>

@@ -84,9 +84,17 @@
             </div>
 
             <div>
-              <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ t('auth.password') }}
-              </label>
+              <div class="flex items-center justify-between">
+                <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('auth.password') }}
+                </label>
+                <router-link
+                  to="/forgot-password"
+                  class="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200"
+                >
+                  {{ t('auth.forgotPassword') }}?
+                </router-link>
+              </div>
               <div class="mt-1">
                 <input
                   id="password"

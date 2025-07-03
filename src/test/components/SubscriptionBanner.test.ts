@@ -5,10 +5,12 @@ import SubscriptionBanner from '../../components/SubscriptionBanner.vue'
 
 // Create a simple mock for useSubscription that returns the correct structure
 const createMockSubscription = (overrides = {}) => {
+  const { ref } = require('vue')
+  
   const defaults = {
-    currentSubscription: null,
-    currentUsage: null,
-    currentPlan: {
+    currentSubscription: ref(null),
+    currentUsage: ref(null),
+    currentPlan: ref({
       id: 'free-plan',
       name: 'Free',
       price: 0,
@@ -26,21 +28,21 @@ const createMockSubscription = (overrides = {}) => {
       is_default: true,
       created: '2024-01-01T00:00:00Z',
       updated: '2024-01-01T00:00:00Z'
-    },
-    usageLimits: {
+    }),
+    usageLimits: ref({
       items: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
       vendors: { current: 0, max: 25, exceeded: false, disabled: false, unlimited: false },
       deliveries: { current: 0, max: 100, exceeded: false, disabled: false, unlimited: false },
       service_bookings: { current: 0, max: 50, exceeded: false, disabled: false, unlimited: false },
       payments: { current: 0, max: 200, exceeded: false, disabled: false, unlimited: false }
-    },
-    isLoading: false,
-    error: null,
-    isReadOnly: { value: false },
-    isSubscriptionActive: true,
-    isSubscriptionCancelled: false,
-    canReactivateSubscription: false,
-    subscriptionStatus: 'active',
+    }),
+    isLoading: ref(false),
+    error: ref(null),
+    isReadOnly: ref(false),
+    isSubscriptionActive: ref(true),
+    isSubscriptionCancelled: ref(false),
+    canReactivateSubscription: ref(false),
+    subscriptionStatus: ref('active'),
     // Methods
     loadSubscription: vi.fn(),
     createDefaultSubscription: vi.fn(),
@@ -56,7 +58,17 @@ const createMockSubscription = (overrides = {}) => {
     isLimited: vi.fn(() => true)
   }
   
-  return { ...defaults, ...overrides }
+  // Apply overrides to refs properly
+  const result = { ...defaults }
+  Object.keys(overrides).forEach(key => {
+    if (result[key] && typeof result[key] === 'object' && 'value' in result[key]) {
+      result[key].value = overrides[key]
+    } else {
+      result[key] = overrides[key]
+    }
+  })
+  
+  return result
 }
 
 // Mock the useSubscription composable
@@ -145,9 +157,10 @@ describe('SubscriptionBanner', () => {
     const { useSubscription } = await import('../../composables/useSubscription')
     const mockUseSubscription = vi.mocked(useSubscription)
     
-    // Override to make it read-only
+    // Override to make it read-only but subscription still active
     mockUseSubscription.mockImplementation(() => createMockSubscription({
-      isReadOnly: { value: true },
+      isReadOnly: true,
+      isSubscriptionActive: true,  // Keep subscription active so it shows freeTierLimitReached
       usageLimits: {
         items: { current: 100, max: 100, exceeded: true, disabled: false, unlimited: false },
         vendors: { current: 0, max: 25, exceeded: false, disabled: false, unlimited: false },
@@ -169,9 +182,10 @@ describe('SubscriptionBanner', () => {
     const { useSubscription } = await import('../../composables/useSubscription')
     const mockUseSubscription = vi.mocked(useSubscription)
     
-    // Override with exceeded limits
+    // Override with exceeded limits but subscription still active
     mockUseSubscription.mockImplementation(() => createMockSubscription({
-      isReadOnly: { value: true },
+      isReadOnly: true,
+      isSubscriptionActive: true,  // Keep subscription active
       usageLimits: {
         items: { current: 100, max: 100, exceeded: true, disabled: false, unlimited: false },
         vendors: { current: 25, max: 25, exceeded: true, disabled: false, unlimited: false },
