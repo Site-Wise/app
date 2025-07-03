@@ -1,365 +1,243 @@
-# PocketBase Schema Design
+# PocketBase Schema
 
-This document outlines the complete database schema for SiteWise, including all collections, relationships, and subscription management.
+This document outlines the database schema for the SiteWise application, managed by PocketBase.
+
+## Table of Contents
+
+- [Core Collections](#core-collections)
+  - [users](#users)
+  - [sites](#sites)
+  - [site_users](#site_users)
+- [Subscription & Usage](#subscription--usage)
+  - [subscription_plans](#subscription_plans)
+  - [site_subscriptions](#site_subscriptions)
+  - [subscription_usage](#subscription_usage)
+- [Invitation System](#invitation-system)
+  - [site_invitations](#site_invitations)
+- [Site Data Collections](#site-data-collections)
+  - [items](#items)
+  - [accounts](#accounts)
+  - [vendors](#vendors)
+  - [deliveries](#deliveries)
+  - [services](#services)
+  - [service_bookings](#service_bookings)
+  - [payments](#payments)
+  - [quotations](#quotations)
+- [System Collections](#system-collections)
+  - [usage_recalculation_requests](#usage_recalculation_requests)
+
+---
 
 ## Core Collections
 
-### 1. users
-Built-in PocketBase collection with custom fields:
-- `id` (string, auto-generated)
-- `email` (string, required)
-- `name` (string, required)
-- `phone` (string, optional)
-- `avatar` (file, optional)
-- `sites` (json array, optional) - Array of site IDs for quick access
-- `created` (datetime, auto)
-- `updated` (datetime, auto)
+### `users`
 
-### 2. sites
-Fields:
-- `id` (string, auto-generated)
-- `name` (string, required)
-- `description` (text, optional)
-- `total_units` (number, required) - Number of apartments, offices, etc.
-- `total_planned_area` (number, required) - Total area in square feet
-- `admin_user` (relation to users, required) - **@deprecated** Use site_users with role='owner'
-- `users` (json array, optional) - **@deprecated** Use site_users table
-- `created` (datetime, auto)
-- `updated` (datetime, auto)
+Stores user account information. This is a standard PocketBase collection.
 
-### 3. site_users
-User-site role assignments:
-- `id` (string, auto-generated)
-- `site` (relation to sites, required)
-- `user` (relation to users, required)
-- `role` (select, required) - "owner", "supervisor", "accountant"
-- `assigned_by` (relation to users, required) - Who assigned this role
-- `assigned_at` (datetime, required) - When role was assigned
-- `is_active` (boolean, required) - Can be deactivated without deletion
-- `created` (datetime, auto)
-- `updated` (datetime, auto)
+| Field      | Type     | Description                                      |
+|------------|----------|--------------------------------------------------|
+| `id`       | `string` | Unique identifier for the user.                  |
+| `email`    | `string` | User's email address, used for login.            |
+| `name`     | `string` | User's full name.                                |
+| `avatar`   | `file`   | User's profile picture.                          |
+| `password` | `string` | Hashed password for the user.                    |
 
-### 4. site_invitations
-Manages user invitations to sites:
-- `id` (string, auto-generated)
-- `site` (relation to sites, required)
-- `email` (string, required) - Email address of invitee
-- `role` (select, required) - "owner", "supervisor", "accountant"
-- `invited_by` (relation to users, required)
-- `invited_at` (datetime, required)
-- `status` (select, required) - "pending", "accepted", "expired"
-- `expires_at` (datetime, required)
-- `created` (datetime, auto)
-- `updated` (datetime, auto)
+### `sites`
 
-### 5. accounts
-Payment accounts and financial tracking:
-- `id` (string, auto-generated)
-- `name` (string, required)
-- `type` (select, required) - "bank", "credit_card", "cash", "digital_wallet", "other"
-- `account_number` (string, optional)
-- `bank_name` (string, optional)
-- `description` (text, optional)
-- `is_active` (boolean, required)
-- `opening_balance` (number, required)
-- `current_balance` (number, required) - Updated automatically
-- `site` (relation to sites, required)
-- `created` (datetime, auto)
-- `updated` (datetime, auto)
+Represents a workspace or project site that a user can create and manage.
 
-### 6. items
-Construction materials and supplies:
-- `id` (string, auto-generated)
-- `name` (string, required)
-- `description` (text, optional)
-- `unit` (string, required) - kg, pcs, m², etc.
-- `site` (relation to sites, required)
-- `created` (datetime, auto)
-- `updated` (datetime, auto)
+| Field        | Type       | Description                                       |
+|--------------|------------|---------------------------------------------------|
+| `id`         | `string`   | Unique identifier for the site.                   |
+| `name`       | `string`   | Name of the site.                                 |
+| `admin_user` | `relation` | The user who created the site (`users.id`).       |
+| `is_active`  | `bool`     | Whether the site is currently active.             |
 
-### 7. services
-Construction services (labor, equipment, professional):
-- `id` (string, auto-generated)
-- `name` (string, required)
-- `description` (text, optional)
-- `category` (select, required) - "labor", "equipment", "professional", "transport", "other"
-- `service_type` (string, required) - e.g., "Plumber", "Electrician", "Tractor"
-- `unit` (string, required) - "hour", "day", "job", "sqft"
-- `standard_rate` (number, optional) - Standard rate per unit
-- `is_active` (boolean, required)
-- `tags` (json array, optional) - **@deprecated** Use unified tag system
-- `site` (relation to sites, required)
-- `created` (datetime, auto)
-- `updated` (datetime, auto)
+### `site_users`
 
-### 8. vendors
-Suppliers and contractors:
-- `id` (string, auto-generated)
-- `name` (string, required)
-- `contact_person` (string, optional)
-- `email` (string, optional)
-- `phone` (string, optional)
-- `address` (text, optional)
-- `tags` (json array, optional) - **@deprecated** Use unified tag system
-- `site` (relation to sites, required)
-- `created` (datetime, auto)
-- `updated` (datetime, auto)
+Manages user roles and permissions for each site.
 
-### 9. quotations
-Price quotes from vendors:
-- `id` (string, auto-generated)
-- `vendor` (relation to vendors, required)
-- `item` (relation to items, optional)
-- `service` (relation to services, optional)
-- `quotation_type` (select, required) - "item", "service"
-- `unit_price` (number, required)
-- `minimum_quantity` (number, optional)
-- `valid_until` (date, optional)
-- `notes` (text, optional)
-- `status` (select, required) - "pending", "approved", "rejected", "expired"
-- `site` (relation to sites, required)
-- `created` (datetime, auto)
-- `updated` (datetime, auto)
+| Field         | Type       | Description                                                |
+|---------------|------------|------------------------------------------------------------|
+| `id`          | `string`   | Unique identifier for the site-user relationship.          |
+| `site`        | `relation` | The site the user has access to (`sites.id`).              |
+| `user`        | `relation` | The user with access (`users.id`).                         |
+| `role`        | `string`   | User's role (e.g., `owner`, `admin`, `editor`, `viewer`).  |
+| `assigned_by` | `relation` | The user who assigned the role (`users.id`).               |
+| `is_active`   | `bool`     | Whether the user's access to the site is currently active. |
 
-### 10. Deliveries
-Delivery records:
-- `id` (string, auto-generated)
-- `item` (relation to items, required)
-- `vendor` (relation to vendors, required)
-- `quantity` (number, required)
-- `unit_price` (number, required)
-- `total_amount` (number, required)
-- `delivery_date` (date, required)
-- `photos` (file array, optional)
-- `notes` (text, optional)
-- `payment_status` (select, required) - "pending", "partial", "paid"
-- `paid_amount` (number, required, default: 0)
-- `site` (relation to sites, required)
-- `created` (datetime, auto)
-- `updated` (datetime, auto)
+---
 
-### 11. service_bookings
-Service scheduling and execution:
-- `id` (string, auto-generated)
-- `service` (relation to services, required)
-- `vendor` (relation to vendors, required)
-- `start_date` (datetime, required)
-- `end_date` (datetime, optional)
-- `duration` (number, required) - In hours or days based on service unit
-- `unit_rate` (number, required)
-- `total_amount` (number, required)
-- `status` (select, required) - "scheduled", "in_progress", "completed", "cancelled"
-- `completion_photos` (file array, optional)
-- `notes` (text, optional)
-- `payment_status` (select, required) - "pending", "partial", "paid"
-- `paid_amount` (number, required, default: 0)
-- `site` (relation to sites, required)
-- `created` (datetime, auto)
-- `updated` (datetime, auto)
+## Subscription & Usage
 
-### 12. payments
-Payment records to vendors:
-- `id` (string, auto-generated)
-- `vendor` (relation to vendors, required)
-- `account` (relation to accounts, required)
-- `amount` (number, required)
-- `payment_date` (date, required)
-- `reference` (string, optional) - Check number, transfer ID, etc.
-- `notes` (text, optional)
-- `deliveries` (json array, optional) - IDs of items paid for
-- `service_bookings` (json array, optional) - IDs of services paid for
-- `site` (relation to sites, required)
-- `created` (datetime, auto)
-- `updated` (datetime, auto)
+### `subscription_plans`
 
-## Subscription Management Collections
+Defines the available subscription tiers and their corresponding limits.
 
-### 13. subscription_plans
-Fields:
-- `id` (string, auto-generated)
-- `name` (string, required) - "Free", "Basic", "Pro"
-- `price` (number, required) - Monthly price in cents/paise
-- `currency` (string, required) - "INR", "USD"
-- `features` (json, required) - Feature limits object
-- `is_active` (boolean, required) - Plan availability
-- `is_default` (boolean, default: false) - Default plan for new users
-- `created` (datetime, auto)
-- `updated` (datetime, auto)
+| Field                       | Type      | Description                                                              |
+|-----------------------------|-----------|--------------------------------------------------------------------------|
+| `id`                        | `string`  | Unique identifier for the plan.                                          |
+| `name`                      | `string`  | Name of the plan (e.g., "Free", "Pro", "Business").                      |
+| `is_active`                 | `bool`    | Whether the plan is available for new subscriptions.                     |
+| `is_default`                | `bool`    | If `true`, this plan is assigned to new sites by default.                |
+| `items_count`               | `number`  | Maximum number of items allowed (`-1` for unlimited).                    |
+| `vendors_count`             | `number`  | Maximum number of vendors allowed (`-1` for unlimited).                  |
+| `deliveries_count`          | `number`  | Maximum number of deliveries allowed (`-1` for unlimited).               |
+| `service_bookings_count`    | `number`  | Maximum number of service bookings allowed (`-1` for unlimited).         |
+| `payments_count`            | `number`  | Maximum number of payments allowed (`-1` for unlimited).                 |
 
-Example features JSON:
-```json
-{
-  "max_items": 1,
-  "max_vendors": 1, 
-  "max_deliveries": 5,
-  "max_services": 2,
-  "max_service_bookings": 5,
-  "max_payments": 5,
-  "max_sites": 1
-}
-```
+### `site_subscriptions`
 
-### 14. site_subscriptions
-Fields:
-- `id` (string, auto-generated)
-- `site` (relation to sites, required)
-- `subscription_plan` (relation to subscription_plans, required)
-- `status` (select, required) - "active", "cancelled", "expired", "past_due", "pending_payment"
-- `current_period_start` (datetime, required)
-- `current_period_end` (datetime, required) 
-- `razorpay_subscription_id` (string, optional) - Razorpay subscription ID
-- `razorpay_customer_id` (string, optional) - Razorpay customer ID
-- `cancel_at_period_end` (boolean, default: false)
-- `cancelled_at` (datetime, optional)
-- `reactivated_at` (datetime, optional)
-- `trial_end` (datetime, optional)
-- `created` (datetime, auto)
-- `updated` (datetime, auto)
+Tracks the subscription status for each site.
 
-### 15. subscription_usage
-Fields:
-- `id` (string, auto-generated)
-- `site` (relation to sites, required)
-- `period_start` (datetime, required)
-- `period_end` (datetime, required)
-- `items_count` (number, default: 0)
-- `vendors_count` (number, default: 0)
-- `deliveries_count` (number, default: 0)
-- `service_bookings_count` (number, default: 0)
-- `payments_count` (number, default: 0)
-- `created` (datetime, auto)
-- `updated` (datetime, auto)
+| Field                  | Type       | Description                                                   |
+|------------------------|------------|---------------------------------------------------------------|
+| `id`                   | `string`   | Unique identifier for the subscription.                       |
+| `site`                 | `relation` | The subscribed site (`sites.id`).                             |
+| `subscription_plan`    | `relation` | The current subscription plan (`subscription_plans.id`).      |
+| `status`               | `string`   | Subscription status (e.g., `active`, `past_due`, `canceled`). |
+| `current_period_start` | `datetime` | Start of the current billing period.                          |
+| `current_period_end`   | `datetime` | End of the current billing period.                            |
+| `cancel_at_period_end` | `bool`     | If `true`, the subscription will be canceled at the period end. |
 
-### 16. payment_transactions
-Fields:
-- `id` (string, auto-generated)
-- `site_subscription` (relation to site_subscriptions, required)
-- `razorpay_payment_id` (string, optional)
-- `razorpay_order_id` (string, required)
-- `amount` (number, required) - Amount in cents/paise
-- `currency` (string, required)
-- `status` (select, required) - "pending", "successful", "failed", "refunded"
-- `payment_method` (string, optional)
-- `failure_reason` (text, optional)
-- `created` (datetime, auto)
-- `updated` (datetime, auto)
+### `subscription_usage`
 
-## Future Enhancement Collections
+Tracks resource usage for each site within a billing period.
 
-### 17. tags (Planned)
-Unified tagging system to replace JSON arrays:
-- `id` (string, auto-generated)
-- `name` (string, required)
-- `description` (text, optional)
-- `color` (string, optional) - For UI categorization
-- `type` (select, required) - "service_category", "specialty", "item_category", "custom"
-- `site` (relation to sites, required)
-- `usage_count` (number, default: 0) - For popularity-based autocomplete
-- `created` (datetime, auto)
-- `updated` (datetime, auto)
+| Field                       | Type       | Description                                                   |
+|-----------------------------|------------|---------------------------------------------------------------|
+| `id`                        | `string`   | Unique identifier for the usage record.                       |
+| `site`                      | `relation` | The site being tracked (`sites.id`).                          |
+| `period_start`              | `datetime` | Start of the billing period for this usage record.            |
+| `period_end`                | `datetime` | End of the billing period for this usage record.              |
+| `items_count`               | `number`   | Current count of items for the site.                          |
+| `vendors_count`             | `number`   | Current count of vendors for the site.                        |
+| `incoming_deliveries_count` | `number`   | Current count of deliveries for the site.                     |
+| `service_bookings_count`    | `number`   | Current count of service bookings for the site.               |
+| `payments_count`            | `number`   | Current count of payments for the site.                       |
 
-### Enhanced Interfaces with Tags
-Future interfaces will replace JSON tag arrays with proper relations:
-- `service_tags` - Many-to-many relation between services and tags
-- `vendor_tags` - Many-to-many relation between vendors and tags
-- `item_tags` - Many-to-many relation between items and tags
+---
 
-## Default Data
+## Invitation System
 
-### Free Plan
-```json
-{
-  "name": "Free",
-  "price": 0,
-  "currency": "INR",
-  "features": {
-    "max_items": 1,
-    "max_vendors": 1,
-    "max_deliveries": 5,
-    "max_services": 2,
-    "max_service_bookings": 5,
-    "max_payments": 5,
-    "max_sites": 1
-  },
-  "is_active": true,
-  "is_default": true
-}
-```
+### `site_invitations`
 
-### Basic Plan (₹299/month)
-```json
-{
-  "name": "Basic", 
-  "price": 29900,
-  "currency": "INR",
-  "features": {
-    "max_items": -1,
-    "max_vendors": -1,
-    "max_deliveries": -1,
-    "max_services": 2,
-    "max_service_bookings": -1,
-    "max_payments": -1,
-    "max_sites": 3
-  },
-  "is_active": true,
-  "is_default": false
-}
-```
+Stores invitations for users to join a site.
 
-## Business Logic
+| Field         | Type       | Description                                                     |
+|---------------|------------|-----------------------------------------------------------------|
+| `id`          | `string`   | Unique identifier for the invitation.                           |
+| `site`        | `relation` | The site the user is invited to (`sites.id`).                   |
+| `email`       | `string`   | The email address of the invited user.                          |
+| `role`        | `string`   | The role to be assigned upon acceptance.                        |
+| `invited_by`  | `relation` | The user who sent the invitation (`users.id`).                  |
+| `status`      | `string`   | Invitation status (`pending`, `accepted`, `rejected`, `expired`). |
+| `accepted_at` | `datetime` | Timestamp when the invitation was accepted.                     |
 
-### Site Management
-1. **New Site Creation**: 
-   - Automatically create site_subscription with Free plan
-   - Create site_user record for owner
-   - Initialize subscription_usage record
-2. **User Role Management**:
-   - Site owners can invite users and assign roles
-   - Roles determine permissions (owner/supervisor/accountant)
-   - Users can be deactivated without deletion
+---
 
-### Financial Tracking
-1. **Payment Processing**:
-   - Payments automatically allocated to oldest outstanding items/services
-   - Account balances updated in real-time
-   - Payment status automatically calculated
-2. **Account Management**:
-   - Multiple payment methods supported
-   - Opening and current balances tracked
-   - Balance recalculation available
+## Site Data Collections
 
-### Subscription Management
-1. **Usage Tracking**: Update subscription_usage on each create operation
-2. **Limit Enforcement**: Check limits before allowing create operations
-3. **Read-Only Mode**: When limits exceeded, allow only read operations
-4. **Billing Cycle**: Monthly billing with automatic renewal
-5. **Grace Period**: 3 days past due before account suspension
-6. **Plan Upgrades**: Immediate effect with prorated billing
+These collections store the primary data for each site. Every record in these collections is linked to a `site`.
 
-### Data Integrity
-1. **Site Isolation**: All data strictly isolated per site
-2. **Role-Based Access**: Permissions enforced at API level
-3. **Audit Trail**: All operations logged with timestamps
-4. **Soft Deletion**: Important records deactivated, not deleted
+### `items`
 
-### Photo Management
-1. **File Storage**: Photos stored in PocketBase file system
-2. **Multiple Photos**: Support for multiple photos per delivery/completion
-3. **File Size Limits**: Configurable limits per collection
+Materials and goods used in the construction project.
 
-## Migration Notes
+| Field         | Type       | Description                               |
+|---------------|------------|-------------------------------------------|
+| `id`          | `string`   | Unique identifier for the item.           |
+| `site`        | `relation` | The site this item belongs to (`sites.id`). |
+| `name`        | `string`   | Name of the item (e.g., "Cement").        |
+| `unit`        | `string`   | Unit of measurement (e.g., "bag", "kg").  |
+| `description` | `string`   | Optional description of the item.         |
 
-### Deprecated Fields
-1. **Site.admin_user**: Use site_users table with role='owner'
-2. **Site.users**: Use site_users table for all user associations
-3. **Item.quantity**: Use delivery history for tracking
-4. **Item.category**: Plan to migrate to unified tag system
-5. **Service.tags**: Plan to migrate to unified tag system
-6. **Vendor.tags**: Plan to migrate to unified tag system
+### `accounts`
 
-### Planned Improvements
-1. **Unified Tagging**: Replace JSON arrays with proper relational tags
-2. **Enhanced Search**: Full-text search across collections
-3. **Advanced Reporting**: Built-in analytics and reporting
-4. **API Versioning**: Support for multiple API versions
-5. **Webhooks**: External system integration capabilities
+Financial accounts for managing transactions.
+
+| Field             | Type       | Description                                                   |
+|-------------------|------------|---------------------------------------------------------------|
+| `id`              | `string`   | Unique identifier for the account.                            |
+| `site`            | `relation` | The site this account belongs to (`sites.id`).                |
+| `name`            | `string`   | Name of the account (e.g., "Cash", "Bank Account").           |
+| `type`            | `string`   | Type of account (e.g., `cash`, `bank`).                       |
+| `description`     | `string`   | Optional description.                                         |
+| `is_active`       | `bool`     | Whether the account is active.                                |
+| `opening_balance` | `number`   | The initial balance of the account.                           |
+| `current_balance` | `number`   | The current balance, updated automatically.                   |
+
+### `vendors`
+
+Suppliers of materials and services.
+
+| Field  | Type       | Description                                  |
+|--------|------------|----------------------------------------------|
+| `id`   | `string`   | Unique identifier for the vendor.            |
+| `site` | `relation` | The site this vendor belongs to (`sites.id`).  |
+| `name` | `string`   | Name of the vendor.                          |
+| ...    | ...        | Other vendor details (e.g., contact info).   |
+
+### `deliveries` (or `incoming_items`)
+
+Records of incoming material deliveries.
+
+| Field  | Type       | Description                                     |
+|--------|------------|-------------------------------------------------|
+| `id`   | `string`   | Unique identifier for the delivery.             |
+| `site` | `relation` | The site this delivery belongs to (`sites.id`).   |
+| ...    | ...        | Delivery details (e.g., item, quantity, date).  |
+
+### `services`
+
+Services that can be booked (e.g., "Electrician", "Plumber").
+
+| Field  | Type       | Description                                   |
+|--------|------------|-----------------------------------------------|
+| `id`   | `string`   | Unique identifier for the service.            |
+| `site` | `relation` | The site this service belongs to (`sites.id`).  |
+| `name` | `string`   | Name of the service.                          |
+| ...    | ...        | Other service details.                        |
+
+### `service_bookings`
+
+Records of booked services.
+
+| Field  | Type       | Description                                         |
+|--------|------------|-----------------------------------------------------|
+| `id`   | `string`   | Unique identifier for the booking.                  |
+| `site` | `relation` | The site this booking belongs to (`sites.id`).      |
+| ...    | ...        | Booking details (e.g., service, date, provider).    |
+
+### `payments`
+
+Records of financial transactions.
+
+| Field  | Type       | Description                                     |
+|--------|------------|-------------------------------------------------|
+| `id`   | `string`   | Unique identifier for the payment.              |
+| `site` | `relation` | The site this payment belongs to (`sites.id`).    |
+| ...    | ...        | Payment details (e.g., amount, date, account).  |
+
+### `quotations`
+
+Quotations received from vendors.
+
+| Field  | Type       | Description                                       |
+|--------|------------|---------------------------------------------------|
+| `id`   | `string`   | Unique identifier for the quotation.              |
+| `site` | `relation` | The site this quotation belongs to (`sites.id`).    |
+| ...    | ...        | Quotation details (e.g., vendor, items, prices).  |
+
+---
+
+## System Collections
+
+### `usage_recalculation_requests`
+
+A utility collection to manually trigger usage recalculation for a site.
+
+| Field    | Type       | Description                                      |
+|----------|------------|--------------------------------------------------|
+| `site`   | `relation` | The site to recalculate usage for (`sites.id`).  |
+| `status` | `string`   | The status of the request (`pending`, `done`).   |

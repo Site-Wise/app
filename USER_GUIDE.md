@@ -1,818 +1,152 @@
 # SiteWise User Guide
 
-Welcome to SiteWise - your complete construction site management solution! This guide will help you get started and make the most of all the features available in the application.
-
-## Key Features Overview
-
-SiteWise provides comprehensive construction site management with these powerful features:
-
-### 🏗️ **Multi-Site Management**
-- Manage multiple construction sites from a single dashboard
-- Site-based data isolation for security and organization
-- Role-based access control (Owner, Supervisor, Accountant)
-- Site invitation and user management system
-
-### 📦 **Item & Inventory Management**
-- Track construction items with quantities and categories
-- Monitor delivery history and price trends
-- Stock quantity tracking with average pricing
-- Comprehensive item details with photo support
-
-### 🛠️ **Service Management**
-- Manage construction services (Labor, Equipment, Professional, Transport)
-- Service booking and scheduling system
-- Rate management with standard pricing
-- Service category organization with tagging
-
-### 👥 **Vendor Management**
-- Comprehensive vendor contact database
-- Vendor specialties and capability tracking
-- Financial relationship management
-- Outstanding payment tracking
-
-### 💰 **Financial Management**
-- Multiple payment account support (Bank, Credit Card, Cash, Digital Wallet)
-- Real-time balance tracking and calculations
-- Payment status management (Pending, Partial, Paid)
-- Financial reporting and expense tracking
-
-### 📝 **Quotation System**
-- Price quote management from vendors
-- Support for both item and service quotations
-- Quotation validity tracking
-- Approval workflow management
-
-### 🚚 **Delivery Tracking**
-- Record incoming item deliveries with photos
-- Delivery documentation and receipt management
-- Payment status integration
-- Vendor delivery history
-
-### 💳 **Payment Management**
-- Record payments to vendors with account tracking
-- Automatic payment allocation to outstanding items/services
-- Payment reference and note management
-- Account balance updates
-
-### 📊 **Dashboard & Analytics**
-- Real-time site overview with key metrics
-- Expense tracking per square foot
-- Outstanding amount monitoring
-- Payment trend analysis
-
-### 🔐 **Security & Permissions**
-- JWT-based authentication
-- Site-based data isolation
-- Role-based access control
-- Secure API with PocketBase backend
-
-### 💼 **Subscription Management**
-- Free tier with basic functionality
-- Paid plans with unlimited features
-- Usage tracking and limit enforcement
-- Payment integration
-
-### 🌐 **Progressive Web App (PWA)**
-- Offline capability
-- Mobile-responsive design
-- App installation support
-- Push notifications
-
-### 🌍 **Internationalization**
-- Multi-language support (English, Hindi)
-- Localized user interface
-- Currency and date formatting
+Welcome to SiteWise! This guide will help you get started with managing your construction projects efficiently.
 
 ## Table of Contents
 
-1. [Key Features Overview](#key-features-overview)
-2. [Getting Started](#getting-started)
-3. [Dashboard Overview](#dashboard-overview)
-4. [Managing Sites](#managing-sites)
-5. [Items Management](#items-management)
-6. [Services Management](#services-management)
-7. [Vendor Management](#vendor-management)
-8. [Financial Management](#financial-management)
-9. [Recording Deliveries](#recording-deliveries)
-10. [Service Bookings](#service-bookings)
-11. [Payment Tracking](#payment-tracking)
-12. [User Management](#user-management)
-13. [Subscription Management](#subscription-management)
-14. [Reports and Analytics](#reports-and-analytics)
-15. [Mobile App Features](#mobile-app-features)
+1.  [Getting Started](#getting-started)
+    -   [Creating an Account](#creating-an-account)
+    -   [Creating Your First Site](#creating-your-first-site)
+2.  [Core Concepts](#core-concepts)
+    -   [Managing Sites](#managing-sites)
+    -   [User Roles & Invitations](#user-roles--invitations)
+3.  [Managing Site Data](#managing-site-data)
+    -   [Items](#items)
+    -   [Vendors](#vendors)
+    -   [Services](#services)
+    -   [Accounts](#accounts)
+4.  [Daily Operations](#daily-operations)
+    -   [Recording Deliveries](#recording-deliveries)
+    -   [Booking Services](#booking-services)
+    -   [Making Payments](#making-payments)
+    -   [Managing Quotations](#managing-quotations)
+5.  [Subscription & Billing](#subscription--billing)
 
 ---
 
 ## Getting Started
 
-### Creating Your Account
+### Creating an Account
 
-1. **Registration Process**
-   - Visit the SiteWise application
-   - Click on "Create Account" 
-   - Enter your full name, email address, and create a secure password
-   - Click "Create Account" to complete registration
+To start using SiteWise, you first need to create an account.
 
-*[Screenshot: Registration page with form fields highlighted]*
+1.  Navigate to the registration page.
+2.  Fill in your name, email address, and a secure password.
+3.  Click "Create Account".
 
-2. **First Login**
-   - Enter your email and password
-   - Click "Sign In" to access your dashboard
+### Creating Your First Site
 
-*[Screenshot: Login page with credentials form]*
+After your first login, you will be prompted to create a **Site**. A Site represents a single construction project or workspace.
 
-### Setting Up Your First Site
+1.  Enter a name for your site (e.g., "Main Street Tower").
+2.  Click "Create Site".
 
-After logging in for the first time, you'll need to create your first construction site:
-
-1. **Site Creation**
-   - You'll be automatically directed to the site creation page
-   - Enter your site name (e.g., "Downtown Office Building")
-   - Add a description (optional but recommended)
-   - Enter total units (number of apartments, offices, etc.)
-   - Enter planned area in square feet
-   - Click "Create Site"
-
-*[Screenshot: Site creation form with sample data filled in]*
-
-2. **Site Selection**
-   - Once created, your site will be automatically selected
-   - You can switch between sites anytime using the site selector in the top navigation
-
-*[Screenshot: Site selector dropdown showing multiple sites]*
+Once created, all the data you enter—such as items, vendors, and payments—will be associated with this site.
 
 ---
 
-## Dashboard Overview
+## Core Concepts
 
-Your dashboard provides a complete overview of your construction site's current status and key metrics.
+### Managing Sites
 
-### Key Metrics Cards
+You can manage multiple sites from a single account.
 
-*[Screenshot: Dashboard with all metric cards visible]*
+-   **Switching Sites**: Use the site selector dropdown in the navigation bar to switch between your sites.
+-   **Creating a New Site**: In the site selector, you will find an option to create a new site.
 
-1. **Total Expenses** - Shows cumulative spending across all categories
-2. **Current Month Expenses** - This month's spending compared to previous months
-3. **Expense per Sqft** - Cost efficiency metric for your project
-4. **Outstanding Amount** - Money owed to vendors and contractors
+### User Roles & Invitations
 
-### Charts and Analytics
+You can invite team members to collaborate on your sites. SiteWise uses a role-based access control system to manage permissions.
 
-*[Screenshot: Dashboard charts section]*
+**Roles:**
 
-1. **Payments Last 7 Days** - Recent payment activity trend
-2. **Payment Status Breakdown** - Visual breakdown of paid vs outstanding amounts
+-   **Owner**: Full control over the site, including billing and user management.
+-   **Admin**: Can manage all site data and invite other users.
+-   **Editor**: Can create and edit site data but cannot manage users or settings.
+-   **Viewer**: Read-only access to site data.
 
-### Quick Actions
+**Inviting Users:**
 
-The dashboard includes quick action buttons for common tasks:
-- Add Item
-- Add Vendor
-- Record Delivery
-- Record Payment
-
-*[Screenshot: Quick actions section highlighted]*
+1.  Go to the "User Management" section.
+2.  Click "Invite User".
+3.  Enter the user's email address and select a role.
+4.  An invitation will be sent to the user. Once they accept, they will have access to the site with the assigned role.
 
 ---
 
-## Managing Sites
+## Managing Site Data
 
-### Creating Additional Sites
+This section covers the foundational data for your site.
 
-If you manage multiple construction projects:
+### Items
 
-1. Click the site selector in the top navigation
-2. Click "Create New Site"
-3. Fill in the site details
-4. Click "Create Site"
+**Items** are the materials used in your project (e.g., cement, bricks, steel).
 
-*[Screenshot: Multiple sites in site selector]*
+-   **To Add an Item**: Go to the "Items" page and click "Add Item". Provide a name and unit of measurement (e.g., "bag", "kg").
+-   A standard list of construction items is created automatically when you create a new site.
 
-### Switching Between Sites
+### Vendors
 
-- Use the site selector dropdown to switch between your sites
-- All data (items, vendors, payments) is site-specific
-- Your role and permissions may vary between sites
+**Vendors** are the suppliers you purchase materials and services from.
 
-*[Screenshot: Site switching process]*
+-   **To Add a Vendor**: Go to the "Vendors" page and click "Add Vendor". Fill in their contact information.
 
----
+### Services
 
-## Items Management
+**Services** are the tasks performed by contractors or laborers (e.g., plumbing, electrical work).
 
-Items are the construction materials and supplies you use in your project.
+-   **To Add a Service**: Go to the "Services" page and click "Add Service". Define the service and its unit of measurement (e.g., "hourly", "daily").
 
-### Adding Items
+### Accounts
 
-1. **Navigate to Items**
-   - Click "Items" in the main navigation
-   - Click "Add Item" button
+**Accounts** are used to track your finances. You can create multiple accounts to represent your cash, bank accounts, or digital wallets.
 
-*[Screenshot: Items list page with Add Item button highlighted]*
-
-2. **Fill Item Details**
-   - **Item Name**: e.g., "Portland Cement"
-   - **Description**: Additional details about the item
-   - **Unit**: Select measurement unit (kg, pcs, m², etc.)
-   - **Quantity**: Initial stock quantity
-   - **Category**: Organize items by type (optional)
-
-*[Screenshot: Add Item form with sample data]*
-
-3. **Save Item**
-   - Click "Save" to add the item to your inventory
-
-### Managing Item Details
-
-*[Screenshot: Item detail page with delivery history]*
-
-Each item has a detailed view showing:
-- **Delivery History**: All recorded deliveries for this item
-- **Price Trends**: How unit prices have changed over time
-- **Stock Levels**: Current quantity and total delivered
-- **Vendor Information**: Which vendors supply this item
-
-### Editing Items
-
-1. Click on any item from the items list
-2. Click "Edit" on the item detail page
-3. Update the information as needed
-4. Click "Save" to apply changes
-
-*[Screenshot: Edit item form]*
+-   **To Add an Account**: Go to the "Accounts" page. A "Cash" account is created for you by default.
 
 ---
 
-## Services Management
+## Daily Operations
 
-Services include labor, equipment rental, and professional services needed for construction.
+This section covers the day-to-day activities you will perform in SiteWise.
 
-### Adding Services
+### Recording Deliveries
 
-1. **Navigate to Services**
-   - Click "Services" in the main navigation
-   - Click "Add Service"
+When you receive materials from a vendor, you should record it as a **Delivery**.
 
-*[Screenshot: Services page with Add Service button]*
+1.  Go to the "Deliveries" or "Incoming Items" page.
+2.  Click "Record Delivery".
+3.  Select the item, vendor, quantity, and price.
 
-2. **Service Details**
-   - **Service Name**: e.g., "Excavation Work"
-   - **Category**: Labor, Equipment, Professional, Transport, or Other
-   - **Service Type**: Specific type like "Electrician", "Crane Rental"
-   - **Unit**: How the service is charged (hourly, daily, per job)
-   - **Standard Rate**: Typical cost per unit
-   - **Tags**: Keywords for easy searching
+This will update your item stock and create a payable record for the vendor.
 
-*[Screenshot: Add Service form with different categories shown]*
+### Booking Services
 
-### Service Categories
+When you hire a contractor for a job, you can track it by **Booking a Service**.
 
-- **Labor**: Skilled workers, contractors, craftsmen
-- **Equipment**: Machinery rental, tools, vehicles
-- **Professional**: Architects, engineers, consultants
-- **Transport**: Delivery services, material transport
-- **Other**: Miscellaneous services
+1.  Go to the "Service Bookings" page.
+2.  Click "Book Service".
+3.  Select the service, vendor, and the agreed-upon rate.
 
-*[Screenshot: Service categories dropdown]*
+### Making Payments
 
----
+When you pay a vendor, record the transaction to keep your finances up to date.
 
-## Vendor Management
+1.  Go to the "Payments" page.
+2.  Click "Record Payment".
+3.  Select the vendor, the amount paid, and the account used for the payment.
 
-Vendors are your suppliers, contractors, and service providers.
+### Managing Quotations
 
-### Adding Vendors
+You can track quotes from vendors for items and services.
 
-1. **Navigate to Vendors**
-   - Click "Vendors" in the main navigation
-   - Click "Add Vendor"
-
-*[Screenshot: Vendors list with Add Vendor button]*
-
-2. **Vendor Information**
-   - **Company Name**: Official business name
-   - **Contact Person**: Primary contact
-   - **Email**: Business email address
-   - **Phone**: Contact number
-   - **Address**: Business address
-   - **Specialties**: What they supply or do (use tags)
-
-*[Screenshot: Add Vendor form with contact information]*
-
-### Vendor Details and History
-
-*[Screenshot: Vendor detail page showing transaction history]*
-
-Each vendor page shows:
-- **Contact Information**: All contact details
-- **Financial Summary**: Total paid and outstanding amounts
-- **Transaction History**: All deliveries and payments
-- **Payment Status**: Visual breakdown of payment status
-
-### Quick Payments
-
-From any vendor page, you can quickly record a payment:
-1. Click "Record Payment" 
-2. Enter payment amount and details
-3. Payment will be automatically allocated to outstanding items
-
-*[Screenshot: Quick payment form from vendor page]*
+1.  Go to the "Quotations" page.
+2.  Create a new quotation, specifying the vendor, items/services, and prices.
 
 ---
 
-## Financial Management
+## Subscription & Billing
 
-### Setting Up Payment Accounts
+SiteWise operates on a subscription model with different plans to suit your needs.
 
-Before recording payments, set up your payment accounts:
-
-1. **Navigate to Accounts**
-   - Click "Accounts" in the main navigation
-   - Click "Add Account"
-
-*[Screenshot: Accounts page with Add Account button]*
-
-2. **Account Types**
-   - **Bank Account**: Your business bank accounts
-   - **Credit Card**: Company credit cards
-   - **Cash**: Cash payments and petty cash
-   - **Digital Wallet**: PayTM, GPay, etc.
-   - **Other**: Any other payment method
-
-*[Screenshot: Account types dropdown]*
-
-3. **Account Details**
-   - **Account Name**: Descriptive name
-   - **Account Number**: Bank account or card number (optional)
-   - **Bank Name**: Financial institution
-   - **Opening Balance**: Starting balance
-   - **Description**: Additional notes
-
-*[Screenshot: Add Account form with bank details]*
-
-### Account Balances
-
-*[Screenshot: Account detail page with balance history]*
-
-- **Current Balance**: Updated automatically with each payment
-- **Transaction History**: All payments made from this account
-- **Balance Trends**: Visual representation of balance changes
-
----
-
-## Recording Deliveries
-
-Track all incoming materials and supplies with detailed delivery records.
-
-### Recording a New Delivery
-
-1. **Start Recording**
-   - From Dashboard: Click "Record Delivery" quick action
-   - From Items page: Click "Record Delivery"
-   - From Incoming page: Click "Record Delivery"
-
-*[Screenshot: Multiple ways to access Record Delivery]*
-
-2. **Delivery Details**
-   - **Item**: Select from your items list
-   - **Vendor**: Choose the supplier
-   - **Quantity**: Amount delivered
-   - **Unit Price**: Price per unit
-   - **Delivery Date**: When it was delivered
-   - **Photos**: Upload delivery photos (recommended)
-   - **Notes**: Additional delivery information
-
-*[Screenshot: Record Delivery form with photo upload area]*
-
-### Delivery Photos
-
-*[Screenshot: Photo gallery showing delivery photos]*
-
-- Upload multiple photos per delivery
-- Photos help with quality control and record keeping
-- Click on photos to view full-size with zoom and rotation options
-
-### Payment Status Tracking
-
-Each delivery automatically tracks payment status:
-- **Pending**: No payment made yet
-- **Partial**: Some payment made, balance outstanding
-- **Paid**: Fully paid
-
-*[Screenshot: Delivery list showing different payment statuses]*
-
----
-
-## Service Bookings
-
-Schedule and track service work on your construction site.
-
-### Booking a Service
-
-1. **Navigate to Service Bookings**
-   - Click "Service Bookings" in the main navigation
-   - Click "Book Service"
-
-*[Screenshot: Service Bookings page with Book Service button]*
-
-2. **Booking Details**
-   - **Service**: Select from your services list
-   - **Vendor**: Choose service provider
-   - **Start Date**: When work begins
-   - **End Date**: When work completes (optional)
-   - **Duration**: Time required (hours or days)
-   - **Rate**: Agreed price per unit
-   - **Notes**: Special instructions or requirements
-
-*[Screenshot: Book Service form with date pickers]*
-
-### Service Status Tracking
-
-*[Screenshot: Service booking with different status indicators]*
-
-Track your services through different stages:
-- **Scheduled**: Booking confirmed, work not started
-- **In Progress**: Work currently ongoing
-- **Completed**: Work finished
-- **Cancelled**: Booking cancelled
-
-### Completion Documentation
-
-*[Screenshot: Completed service with photos]*
-
-When work is completed:
-- Upload completion photos for quality assurance
-- Update final costs if different from estimate
-- Mark service as completed
-
----
-
-## Payment Tracking
-
-Keep track of all payments to vendors and maintain accurate financial records.
-
-### Recording Payments
-
-1. **Start Payment Record**
-   - From Dashboard: Click "Record Payment"
-   - From Vendors page: Click "Record Payment" on vendor
-   - From Payments page: Click "Record Payment"
-
-*[Screenshot: Payment recording options from different pages]*
-
-2. **Payment Details**
-   - **Vendor**: Who you're paying
-   - **Payment Account**: Which account to pay from
-   - **Amount**: Payment amount
-   - **Payment Date**: When payment was made
-   - **Reference**: Check number, transfer ID, etc.
-   - **Notes**: Payment purpose or additional info
-
-*[Screenshot: Record Payment form with all fields filled]*
-
-### Automatic Payment Allocation
-
-*[Screenshot: Payment allocation showing which items/services were paid]*
-
-When you record a payment:
-- Payment is automatically allocated to outstanding deliveries and services
-- Oldest outstanding amounts are paid first
-- Payment status is updated automatically
-- Account balances are adjusted
-
-### Payment Reports
-
-*[Screenshot: Payment history with filtering options]*
-
-View and analyze payment data:
-- Filter by date range, vendor, or payment method
-- Export payment reports for accounting
-- Track payment patterns and cash flow
-
----
-
-## User Management
-
-If you're a site owner, you can invite team members and manage their access.
-
-### User Roles
-
-**Owner**
-- Full access to all features
-- Can invite and manage users
-- Can delete items and make major changes
-- Manages subscription and billing
-
-**Supervisor** 
-- Can add and edit most information
-- Cannot delete items or manage users
-- Full access to financial information
-- Can generate reports
-
-**Accountant**
-- Read-only access to most features
-- Full access to financial reports
-- Can export data for accounting
-- Cannot modify core data
-
-*[Screenshot: User roles comparison table]*
-
-### Inviting Users
-
-1. **Navigate to User Management**
-   - Click "Users" in the main navigation (Owner only)
-   - Click "Invite User"
-
-*[Screenshot: User Management page with Invite User button]*
-
-2. **Send Invitation**
-   - **Email**: Enter user's email address
-   - **Role**: Select appropriate role
-   - Click "Send Invite"
-
-*[Screenshot: Invite User form with role selection]*
-
-3. **Managing Invitations**
-   - View pending invitations
-   - Resend invitations if needed
-   - Track invitation status
-
-*[Screenshot: Invitations list with different statuses]*
-
-### Managing Existing Users
-
-*[Screenshot: User list with management options]*
-
-For existing users, you can:
-- Change user roles
-- Activate or deactivate users
-- Remove users from the site
-
----
-
-## Subscription Management
-
-### Understanding Plans
-
-**Free Plan**
-- 1 Item, 1 Vendor
-- 5 Deliveries per month
-- 5 Service bookings per month
-- 5 Payments per month
-- 1 Site
-
-**Basic Plan (₹299/month)**
-- Unlimited Items and Vendors
-- Unlimited Deliveries and Services
-- Unlimited Payments
-- Up to 3 Sites
-
-*[Screenshot: Subscription plans comparison]*
-
-### Upgrading Your Plan
-
-1. **Navigate to Subscription**
-   - Click your profile menu
-   - Select "Subscription"
-
-*[Screenshot: Profile menu with Subscription option]*
-
-2. **Choose Plan**
-   - Review current usage
-   - Select desired plan
-   - Complete payment process
-
-*[Screenshot: Plan selection page with current usage displayed]*
-
-### Usage Tracking
-
-*[Screenshot: Usage dashboard showing limits and current usage]*
-
-Monitor your usage:
-- See current month's usage vs limits
-- Get warnings when approaching limits
-- Track usage trends over time
-
----
-
-## Reports and Analytics
-
-### Dashboard Analytics
-
-*[Screenshot: Dashboard with various charts and metrics]*
-
-Your dashboard provides key insights:
-- Expense trends over time
-- Payment status breakdowns
-- Cost per square foot calculations
-- Outstanding amount tracking
-
-### Detailed Reports
-
-Generate detailed reports for different aspects:
-
-**Item Reports**
-- Delivery history and price trends
-- Stock levels and usage patterns
-- Vendor price comparisons
-
-*[Screenshot: Item report with price trend chart]*
-
-**Financial Reports**
-- Payment history and patterns
-- Account balance trends
-- Outstanding amounts by vendor
-
-*[Screenshot: Financial report with payment trends]*
-
-**Vendor Reports**
-- Transaction history per vendor
-- Payment reliability analysis
-- Outstanding amount summaries
-
-*[Screenshot: Vendor report with transaction history]*
-
-### Exporting Data
-
-*[Screenshot: Export options dialog]*
-
-Export your data for external analysis:
-- PDF reports for presentations
-- Excel files for detailed analysis
-- CSV files for accounting software
-
----
-
-## Mobile App Features
-
-### Installing the App
-
-SiteWise works as a Progressive Web App (PWA) on your mobile device:
-
-1. **On Mobile Browser**
-   - Visit SiteWise in Chrome/Safari
-   - Look for "Install App" notification
-   - Tap "Install" to add to home screen
-
-*[Screenshot: Mobile install prompt]*
-
-2. **App Features**
-   - Works offline for basic functions
-   - Quick access from home screen
-   - Mobile-optimized interface
-
-### Mobile-Specific Features
-
-*[Screenshot: Mobile interface showing key features]*
-
-**Camera Integration**
-- Take photos directly for deliveries
-- Scan documents and receipts
-- Quick photo uploads
-
-**Offline Capability**
-- View recent data without internet
-- Queue actions when offline
-- Sync when connection restored
-
-**Quick Actions**
-- Swipe gestures for common tasks
-- Touch-friendly interface
-- One-handed operation support
-
----
-
-## Tips and Best Practices
-
-### Getting the Most from SiteWise
-
-**Daily Workflow**
-1. Check dashboard for overview
-2. Record any new deliveries immediately
-3. Update service booking statuses
-4. Review outstanding payments
-
-**Weekly Tasks**
-1. Reconcile account balances
-2. Review vendor payment statuses
-3. Update item stock levels
-4. Generate progress reports
-
-**Monthly Activities**
-1. Analyze expense trends
-2. Review subscription usage
-3. Export financial reports
-4. Plan upcoming purchases
-
-### Data Organization Tips
-
-**Item Management**
-- Use consistent naming conventions
-- Add detailed descriptions for clarity
-- Keep categories organized and simple
-- Update stock levels regularly
-
-**Vendor Management**
-- Maintain complete contact information
-- Use tags for easy searching
-- Regular payment to maintain relationships
-- Track delivery performance
-
-**Financial Tracking**
-- Record payments promptly
-- Use meaningful references
-- Reconcile accounts regularly
-- Keep receipts and documentation
-
----
-
-## Troubleshooting
-
-### Common Issues and Solutions
-
-**Can't See Recent Changes**
-- Refresh the page
-- Check internet connection
-- Verify you're on the correct site
-
-**Photo Upload Problems**
-- Check file size (max 10MB)
-- Ensure stable internet connection
-- Try different photo format (JPG/PNG)
-
-**Payment Not Updating Status**
-- Verify payment amount is correct
-- Check that vendor matches delivery vendor
-- Contact support if issue persists
-
-**Access Denied Errors**
-- Verify your role permissions
-- Contact site owner for access
-- Check if you're on correct site
-
-*[Screenshot: Error message examples with solutions]*
-
-### Getting Help
-
-**In-App Support**
-- Use the help button in navigation
-- Access documentation links
-- Submit feedback through app
-
-**Contact Information**
-- Email support for technical issues
-- Video tutorials for common tasks
-- Community forum for best practices
-
----
-
-## Security and Privacy
-
-### Data Protection
-
-Your construction data is protected with:
-- Secure authentication and encryption
-- Site-based data isolation
-- Regular automated backups
-- GDPR-compliant data handling
-
-### Best Security Practices
-
-**Account Security**
-- Use strong, unique passwords
-- Log out from shared devices
-- Regular password updates
-- Enable account notifications
-
-**Data Management**
-- Regular data exports for backup
-- Verify user permissions periodically
-- Remove inactive users
-- Monitor unusual activity
-
-*[Screenshot: Security settings page]*
-
----
-
-## Conclusion
-
-SiteWise provides a comprehensive solution for managing your construction projects efficiently. This guide covers the essential features to get you started, but there's much more to explore.
-
-**Next Steps**
-1. Complete your site setup
-2. Add your first items and vendors
-3. Start recording deliveries
-4. Invite your team members
-5. Explore advanced reporting features
-
-**Stay Updated**
-- Check for app updates regularly
-- Review new feature announcements
-- Participate in user feedback surveys
-- Join our community for tips and best practices
-
-Welcome to more efficient construction management with SiteWise!
-
----
-
-*For additional support, contact our team or visit our help center for video tutorials and detailed guides.*
+-   **Usage Limits**: Each plan has limits on the number of resources you can create (e.g., items, vendors, deliveries per month).
+-   **Upgrading**: You can upgrade your plan at any time from the "Subscription" page in your account settings.

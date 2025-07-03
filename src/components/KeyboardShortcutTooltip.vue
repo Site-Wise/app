@@ -7,7 +7,7 @@
       aria-label="Keyboard shortcuts help"
     >
       <!-- Overlay with shortcuts panel -->
-      <div class="absolute top-4 right-4 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 p-4 max-w-md pointer-events-auto">
+      <div class="absolute bottom-4 right-4 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 p-4 max-w-md pointer-events-auto">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Keyboard Shortcuts</h3>
           <div class="text-xs text-gray-500 dark:text-gray-400">Hold Alt+Shift</div>
@@ -94,8 +94,9 @@ const updateElementTooltips = () => {
         tooltips.push({
           id: `tooltip-${index}`,
           key: shortcut.toUpperCase(),
-          top: rect.top + window.scrollY,
-          left: rect.left + rect.width / 2 + window.scrollX
+          top: rect.top + 24 + window.scrollY,
+          // left: rect.left + rect.width / 2 + window.scrollX
+          left: rect.left + 16 + window.scrollX
         })
       }
     })
