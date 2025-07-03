@@ -15,6 +15,7 @@
           'hidden md:flex items-center'
         ]"
         :title="!canCreatePayment ? t('subscription.banner.freeTierLimitReached') : ''"
+        data-keyboard-shortcut="n"
       >
         <Plus class="mr-2 h-4 w-4" />
         {{ t('payments.recordPayment') }}
@@ -418,6 +419,7 @@ import {
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
+import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { useSiteData } from '../composables/useSiteData';
 import { usePaymentSearch } from '../composables/useSearch';
 import SearchBox from '../components/SearchBox.vue';
@@ -443,6 +445,7 @@ const route = useRoute();
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
+const { registerShortcut } = useKeyboardShortcuts();
 
 // Search functionality
 const { searchQuery, loading: searchLoading } = usePaymentSearch();
@@ -806,13 +809,20 @@ const handleQuickAction = () => {
 
 // Site change is handled automatically by useSiteData
 
-const handleKeyboardShortcut = (event: KeyboardEvent) => {
-  if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
-    event.preventDefault();
-    if (canCreatePayment) {
-      handleAddPayment();
-    }
-  }
+// Register keyboard shortcuts
+const registerShortcuts = () => {
+  registerShortcut({
+    key: 'n',
+    label: 'New Payment',
+    description: 'Create a new payment record',
+    action: () => {
+      if (canCreatePayment.value) {
+        handleAddPayment();
+      }
+    },
+    category: 'action',
+    requiresAltShift: true
+  });
 };
 
 const handleClickOutside = (event: Event) => {
@@ -836,14 +846,15 @@ onMounted(async () => {
     }, 500);
   }
   
+  // Register keyboard shortcuts
+  registerShortcuts();
+  
   window.addEventListener('show-add-modal', handleQuickAction);
-  window.addEventListener('keydown', handleKeyboardShortcut);
   document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
-  window.removeEventListener('keydown', handleKeyboardShortcut);
   document.removeEventListener('click', handleClickOutside);
 });
 </script>

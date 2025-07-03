@@ -26,7 +26,8 @@
           <router-link v-for="item in navigation" :key="item.name" :to="item.to"
             class="flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200"
             :class="item.current ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'"
-            @click="sidebarOpen = false" :aria-current="item.current ? 'page' : undefined">
+            @click="sidebarOpen = false" :aria-current="item.current ? 'page' : undefined"
+            :data-keyboard-shortcut="item.shortcut">
             <component :is="item.icon" class="mr-3 h-5 w-5" :aria-hidden="true" />
             {{ t(item.nameKey) }}
           </router-link>
@@ -216,6 +217,9 @@
 
     <!-- FAB Overlay for mobile -->
     <div v-if="fabMenuOpen" @click="fabMenuOpen = false" class="md:hidden fixed inset-0 bg-transparent z-40"></div>
+    
+    <!-- Keyboard Shortcut Tooltip System -->
+    <KeyboardShortcutTooltip />
   </div>
 </template>
 
@@ -226,10 +230,12 @@ import { useAuth } from '../composables/useAuth';
 import { useSite } from '../composables/useSite';
 import { useI18n } from '../composables/useI18n';
 import { useInvitations } from '../composables/useInvitations';
+import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import ThemeToggle from './ThemeToggle.vue';
 import PWAPrompt from './PWAPrompt.vue';
 import SiteSelector from './SiteSelector.vue';
 import LanguageSelector from './LanguageSelector.vue';
+import KeyboardShortcutTooltip from './KeyboardShortcutTooltip.vue';
 import {
   BarChart3,
   Package,
@@ -257,6 +263,7 @@ const { user, logout } = useAuth();
 const { hasSiteAccess, canManageUsers, currentUserRole } = useSite();
 const { t } = useI18n();
 const { receivedInvitationsCount, loadReceivedInvitations } = useInvitations();
+const { } = useKeyboardShortcuts(); // Initialize keyboard shortcuts system
 
 const sidebarOpen = ref(false);
 const userMenuOpen = ref(false);
@@ -264,16 +271,16 @@ const fabMenuOpen = ref(false);
 const userMenuRef = ref<HTMLElement | null>(null);
 
 const navigation = computed(() => [
-  { name: 'Dashboard', nameKey: 'nav.dashboard', to: '/', icon: BarChart3, current: route.name === 'Dashboard' },
-  { name: 'Items', nameKey: 'nav.items', to: '/items', icon: Package, current: route.name === 'Items' },
-  { name: 'Services', nameKey: 'nav.services', to: '/services', icon: Wrench, current: route.name === 'Services' },
-  { name: 'Vendors', nameKey: 'nav.vendors', to: '/vendors', icon: Users, current: route.name === 'Vendors' },
-  { name: 'Deliveries', nameKey: 'nav.deliveries', to: '/deliveries', icon: TruckIcon, current: route.name === 'Deliveries' },
-  { name: 'Service Bookings', nameKey: 'nav.serviceBookings', to: '/service-bookings', icon: Calendar, current: route.name === 'ServiceBookings' },
-  { name: 'Quotations', nameKey: 'nav.quotations', to: '/quotations', icon: FileText, current: route.name === 'Quotations' },
-  { name: 'Accounts', nameKey: 'nav.accounts', to: '/accounts', icon: CreditCard, current: route.name === 'Accounts' },
-  { name: 'Payments', nameKey: 'nav.payments', to: '/payments', icon: BanknoteArrowDown, current: route.name === 'Payments' },
-  { name: 'Vendor Returns', nameKey: 'nav.vendorReturns', to: '/vendor-returns', icon: RotateCcw, current: route.name === 'VendorReturns' },
+  { name: 'Dashboard', nameKey: 'nav.dashboard', to: '/', icon: BarChart3, current: route.name === 'Dashboard', shortcut: 'd' },
+  { name: 'Items', nameKey: 'nav.items', to: '/items', icon: Package, current: route.name === 'Items', shortcut: 'i' },
+  { name: 'Services', nameKey: 'nav.services', to: '/services', icon: Wrench, current: route.name === 'Services', shortcut: 's' },
+  { name: 'Vendors', nameKey: 'nav.vendors', to: '/vendors', icon: Users, current: route.name === 'Vendors', shortcut: 'v' },
+  { name: 'Deliveries', nameKey: 'nav.deliveries', to: '/deliveries', icon: TruckIcon, current: route.name === 'Deliveries', shortcut: 'e' },
+  { name: 'Service Bookings', nameKey: 'nav.serviceBookings', to: '/service-bookings', icon: Calendar, current: route.name === 'ServiceBookings', shortcut: 'b' },
+  { name: 'Quotations', nameKey: 'nav.quotations', to: '/quotations', icon: FileText, current: route.name === 'Quotations', shortcut: 'q' },
+  { name: 'Accounts', nameKey: 'nav.accounts', to: '/accounts', icon: CreditCard, current: route.name === 'Accounts', shortcut: 'a' },
+  { name: 'Payments', nameKey: 'nav.payments', to: '/payments', icon: BanknoteArrowDown, current: route.name === 'Payments', shortcut: 'p' },
+  { name: 'Vendor Returns', nameKey: 'nav.vendorReturns', to: '/vendor-returns', icon: RotateCcw, current: route.name === 'VendorReturns', shortcut: 'r' },
 ]);
 
 const baseFabActions = [
