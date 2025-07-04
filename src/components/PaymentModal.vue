@@ -120,16 +120,22 @@
               <div v-if="selectedCreditNoteAmount > 0" class="mt-2 text-sm bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
                 <div class="flex justify-between">
                   <span class="text-gray-700 dark:text-gray-300">Account payment:</span>
-                  <span class="text-gray-900 dark:text-white">₹{{ (form.amount - selectedCreditNoteAmount).toFixed(2) }}</span>
+                  <span :class="accountPaymentAmount >= 0 ? 'text-gray-900 dark:text-white' : 'text-red-600 dark:text-red-400'">
+                    ₹{{ Math.max(0, accountPaymentAmount).toFixed(2) }}
+                  </span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-700 dark:text-gray-300">Credit notes:</span>
-                  <span class="text-green-600 dark:text-green-400">₹{{ selectedCreditNoteAmount.toFixed(2) }}</span>
+                  <span class="text-green-600 dark:text-green-400">₹{{ Math.min(selectedCreditNoteAmount, form.amount).toFixed(2) }}</span>
                 </div>
                 <hr class="my-1 border-gray-300 dark:border-gray-600">
                 <div class="flex justify-between font-medium">
                   <span class="text-gray-900 dark:text-white">Total payment:</span>
                   <span class="text-gray-900 dark:text-white">₹{{ form.amount.toFixed(2) }}</span>
+                </div>
+                <!-- Warning if credit notes exceed payment amount -->
+                <div v-if="selectedCreditNoteAmount > form.amount" class="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                  ⚠️ Credit notes exceed payment amount. Only ₹{{ form.amount.toFixed(2) }} will be used.
                 </div>
               </div>
             </div>
@@ -171,10 +177,10 @@
               </div>
               
               <!-- Progress bar -->
-              <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3 mt-2">
+              <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3 mt-2 overflow-hidden">
                 <div 
                   class="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full transition-all duration-300"
-                  :style="{ width: `${allocationPercentage}%` }"
+                  :style="{ width: `${Math.min(100, allocationPercentage)}%` }"
                 ></div>
               </div>
               <div class="text-xs text-gray-500 dark:text-gray-400 text-center">
@@ -458,6 +464,10 @@ const selectedCreditNoteAmount = computed(() => {
   }, 0);
 });
 
+const accountPaymentAmount = computed(() => {
+  return form.amount - selectedCreditNoteAmount.value;
+});
+
 const allocatedAmount = computed((): number => {
   if (props.mode === 'EDIT' && props.payment) {
     const currentlyAllocated = props.currentAllocations.reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
@@ -632,11 +642,12 @@ const calculateVendorOutstanding = () => {
     return sum + (outstanding > 0 ? outstanding : 0);
   }, 0);
   
-  // Calculate credit notes balance for this vendor
-  const creditBalance = availableCreditNotes.value.reduce((sum, note) => sum + note.balance, 0);
+  // Total outstanding before credit notes
+  const totalOutstanding = deliveryOutstanding + serviceOutstanding;
   
-  // Net outstanding = delivery + service outstanding - available credit notes
-  vendorOutstanding.value = Math.max(0, deliveryOutstanding + serviceOutstanding - creditBalance);
+  // Note: Don't automatically subtract all available credit notes from outstanding
+  // as user should explicitly choose which credit notes to use
+  vendorOutstanding.value = totalOutstanding;
   vendorPendingItems.value = vendorDeliveries.filter(d => d.payment_status !== 'paid').length + 
                             vendorBookings.filter(b => b.payment_status !== 'paid').length;
 };
@@ -754,13 +765,29 @@ const loadVendorCreditNotes = async () => {
 };
 
 const handleCreditNoteChange = () => {
-  // When credit notes are selected/deselected, we may want to adjust
-  // the remaining payment amount needed
+  // When credit notes are selected/deselected, recalculate if needed
   calculateVendorOutstanding();
+  
+  // In CREATE mode, if the current amount was auto-set to outstanding,
+  // keep it synchronized with the vendor outstanding
+  if (props.mode === 'CREATE' && form.amount === vendorOutstanding.value) {
+    // Keep amount in sync with outstanding if it was auto-set
+    form.amount = vendorOutstanding.value;
+  }
 };
 
 const payAllOutstanding = () => {
-  form.amount = vendorOutstanding.value;
+  // Calculate total payment needed
+  const totalPaymentNeeded = vendorOutstanding.value;
+  
+  // The form amount should be the total needed payment
+  form.amount = totalPaymentNeeded;
+  
+  // Auto-select all available credit notes if not already selected
+  if (availableCreditNotes.value.length > 0 && form.credit_notes.length === 0) {
+    form.credit_notes = availableCreditNotes.value.map(cn => cn.id!);
+  }
+  
   updateDeliverySelectionFromAmount();
 };
 

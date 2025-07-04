@@ -1611,7 +1611,9 @@ export class PaymentService {
     // Calculate credit note amount and validate credit note balances
     let creditNoteAmount = 0;
     if (data.credit_notes && data.credit_notes.length > 0) {
-      creditNoteAmount = await this.validateAndCalculateCreditNoteAmount(data.credit_notes);
+      const totalAvailableCredit = await this.validateAndCalculateCreditNoteAmount(data.credit_notes);
+      // Use the minimum of: total payment amount OR total available credit
+      creditNoteAmount = Math.min(data.amount, totalAvailableCredit);
     }
 
     // Calculate actual account payment amount
@@ -1629,7 +1631,7 @@ export class PaymentService {
 
     // Process credit notes first
     if (data.credit_notes && data.credit_notes.length > 0) {
-      await this.processCreditNotes(record.id, data.credit_notes, data.vendor);
+      await this.processCreditNotes(record.id, data.credit_notes, data.vendor, creditNoteAmount);
     }
 
     // Create corresponding debit transaction only for actual account payment amount
@@ -1875,25 +1877,35 @@ export class PaymentService {
     return totalCreditAmount;
   }
 
-  private async processCreditNotes(paymentId: string, creditNoteIds: string[], vendorId: string): Promise<void> {
+  private async processCreditNotes(paymentId: string, creditNoteIds: string[], vendorId: string, totalCreditAmount: number): Promise<void> {
+    let remainingCreditToUse = totalCreditAmount;
+    
     for (const creditNoteId of creditNoteIds) {
+      if (remainingCreditToUse <= 0) break;
+      
       const creditNote = await vendorCreditNoteService.getById(creditNoteId);
       if (!creditNote) continue;
       
-      const usageAmount = creditNote.balance; // Use the entire remaining balance
+      // Use the minimum of: remaining credit needed OR credit note balance
+      const usageAmount = Math.min(remainingCreditToUse, creditNote.balance);
       
-      // Create credit note usage record (this serves as the audit trail)
-      await creditNoteUsageService.create({
-        credit_note: creditNoteId,
-        payment: paymentId,
-        vendor: vendorId,
-        used_amount: usageAmount,
-        used_date: new Date().toISOString().split('T')[0],
-        description: `Applied to payment ${paymentId}`
-      });
-      
-      // Update credit note balance
-      await vendorCreditNoteService.updateBalance(creditNoteId, -usageAmount);
+      if (usageAmount > 0) {
+        // Create credit note usage record (this serves as the audit trail)
+        await creditNoteUsageService.create({
+          credit_note: creditNoteId,
+          payment: paymentId,
+          vendor: vendorId,
+          used_amount: usageAmount,
+          used_date: new Date().toISOString().split('T')[0],
+          description: `Applied to payment ${paymentId}`
+        });
+        
+        // Update credit note balance
+        await vendorCreditNoteService.updateBalance(creditNoteId, -usageAmount);
+        
+        // Reduce remaining credit to use
+        remainingCreditToUse -= usageAmount;
+      }
     }
   }
 }
@@ -3141,6 +3153,18 @@ class CreditNoteUsageService {
 
     const records = await pb.collection('credit_note_usage').getFullList({
       filter: `site="${siteId}" && payment="${paymentId}"`,
+      expand: 'credit_note,payment',
+      sort: '-created'
+    });
+    return records.map(record => this.mapRecordToUsage(record));
+  }
+
+  async getByVendor(vendorId: string): Promise<CreditNoteUsage[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('credit_note_usage').getFullList({
+      filter: `site="${siteId}" && vendor="${vendorId}"`,
       expand: 'credit_note,payment',
       sort: '-created'
     });

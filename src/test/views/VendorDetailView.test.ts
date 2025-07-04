@@ -31,6 +31,7 @@ vi.mock('../../composables/useI18n', () => ({
         'vendors.received': 'Received',
         'vendors.paymentReceived': 'Payment Received',
         'vendors.creditNoteIssued': 'Credit Note Issued',
+        'vendors.creditNoteUsed': 'Credit Note Applied',
         'vendors.refundForReturn': 'Refund for Return',
         'vendors.refundProcessed': 'Refund Processed',
         'vendors.ledger': 'Ledger',
@@ -82,6 +83,9 @@ vi.mock('../../services/pocketbase', () => ({
     getByVendor: vi.fn().mockResolvedValue([])
   },
   vendorCreditNoteService: {
+    getByVendor: vi.fn().mockResolvedValue([])
+  },
+  creditNoteUsageService: {
     getByVendor: vi.fn().mockResolvedValue([])
   },
   accountTransactionService: {

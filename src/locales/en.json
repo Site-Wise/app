@@ -457,6 +457,7 @@
     "refundForReturn": "Refund for return",
     "refundProcessed": "Refund processed",
     "creditNoteIssued": "Credit note issued",
+    "creditNoteUsed": "Credit note applied",
     "details": "Details",
     "finalBalance": "Final Balance",
     "totalOutstanding": "Total Outstanding",

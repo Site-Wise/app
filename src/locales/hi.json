@@ -457,6 +457,7 @@
     "refundForReturn": "रिटर्न के लिए वापसी",
     "refundProcessed": "वापसी प्रोसेस की गई",
     "creditNoteIssued": "क्रेडिट नोट जारी किया गया",
+    "creditNoteUsed": "क्रेडिट नोट लागू किया गया",
     "details": "विवरण",
     "finalBalance": "अंतिम बैलेंस",
     "totalOutstanding": "कुल बकाया",

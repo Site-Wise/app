@@ -396,6 +396,7 @@ import {
   tagService,
   vendorReturnService,
   vendorCreditNoteService,
+  creditNoteUsageService,
   accountTransactionService,
   type Vendor,
   type Delivery,
@@ -404,6 +405,7 @@ import {
   type Tag as TagType,
   type VendorReturn,
   type VendorCreditNote,
+  type CreditNoteUsage,
   type AccountTransaction
 } from '../services/pocketbase';
 
@@ -416,6 +418,7 @@ const vendorDeliveries = ref<Delivery[]>([]);
 const vendorPayments = ref<Payment[]>([]);
 const vendorReturns = ref<VendorReturn[]>([]);
 const vendorCreditNotes = ref<VendorCreditNote[]>([]);
+const vendorCreditNoteUsages = ref<CreditNoteUsage[]>([]);
 const vendorRefunds = ref<AccountTransaction[]>([]);
 const accounts = ref<Account[]>([]);
 const vendorTags = ref<TagType[]>([]);
@@ -520,10 +523,10 @@ const ledgerEntries = computed(() => {
     });
   });
 
-  // Add credit note entries (credits)
+  // Add credit note entries (credits) - only show current available balance
   vendorCreditNotes.value.forEach(creditNote => {
-    // Only show credit notes that have been issued
-    if (creditNote.balance > 0) {
+    // Only show credit notes that have been issued and show the original amount
+    if (creditNote.credit_amount > 0) {
       let details = '';
       if (creditNote.reason) {
         details = creditNote.reason;
@@ -532,15 +535,38 @@ const ledgerEntries = computed(() => {
       entries.push({
         id: creditNote.id || '',
         type: 'credit_note',
-        date: creditNote.created || new Date().toISOString(),
+        date: creditNote.issue_date,
         description: t('vendors.creditNoteIssued'),
         details,
         reference: creditNote.reference || `CN-${creditNote.id?.slice(-6)}`,
         dues: 0,
-        payments: creditNote.balance,
+        payments: creditNote.credit_amount,
         runningBalance: 0 // Will be calculated below
       });
     }
+  });
+
+  // Add credit note usage entries (debits) - these reduce the vendor balance
+  vendorCreditNoteUsages.value.forEach(usage => {
+    let details = `Applied to payment`;
+    if (usage.expand?.payment?.reference) {
+      details += ` ${usage.expand.payment.reference}`;
+    }
+    if (usage.description) {
+      details = usage.description;
+    }
+
+    entries.push({
+      id: usage.id || '',
+      type: 'credit_note',
+      date: usage.used_date,
+      description: t('vendors.creditNoteUsed'),
+      details,
+      reference: usage.expand?.credit_note?.reference || `CN-${usage.credit_note?.slice(-6)}`,
+      dues: usage.used_amount, // Credit note usage is a debit to vendor balance
+      payments: 0,
+      runningBalance: 0 // Will be calculated below
+    });
   });
 
   // Add refund entries (credits) - from processed returns
@@ -610,12 +636,13 @@ const loadVendorData = async () => {
   const vendorId = route.params.id as string;
 
   try {
-    const [vendorData, allDeliveries, allPayments, allReturns, allCreditNotes, allTransactions, accountsData, allTags] = await Promise.all([
+    const [vendorData, allDeliveries, allPayments, allReturns, allCreditNotes, allCreditNoteUsages, allTransactions, accountsData, allTags] = await Promise.all([
       vendorService.getAll(),
       deliveryService.getAll(),
       paymentService.getAll(),
       vendorReturnService.getByVendor(vendorId),
       vendorCreditNoteService.getByVendor(vendorId),
+      creditNoteUsageService.getByVendor(vendorId),
       accountTransactionService.getAll(),
       accountService.getAll(),
       tagService.getAll()
@@ -630,6 +657,7 @@ const loadVendorData = async () => {
       .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime());
     vendorReturns.value = allReturns;
     vendorCreditNotes.value = allCreditNotes;
+    vendorCreditNoteUsages.value = allCreditNoteUsages;
     // Filter refund transactions (credit transactions with vendor)
     vendorRefunds.value = allTransactions
       .filter(transaction => transaction.type === 'credit' && transaction.vendor === vendorId)
