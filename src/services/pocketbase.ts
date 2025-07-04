@@ -35,6 +35,8 @@ export interface Site {
   total_units: number;
   total_planned_area: number; // in sqft
   admin_user: string; // User ID of the admin
+  is_active?: boolean; // Active status (false when deleted)
+  deleted_at?: string; // Timestamp when site was deleted (soft delete)
   created?: string;
   updated?: string;
   expand?: {
@@ -50,6 +52,7 @@ export interface SiteUser {
   assigned_by: string; // User ID who assigned this role
   assigned_at: string; // Timestamp
   is_active: boolean;  // Can be deactivated without deletion
+  disowned_at?: string; // Timestamp when site was disowned (soft delete)
   created?: string;
   updated?: string;
   expand?: {
@@ -806,7 +809,9 @@ export class SiteService {
       expand: 'site'
     });
 
-    const sites = siteUsers.map(siteUser => siteUser.expand?.site).filter(Boolean);
+    const sites = siteUsers
+      .map(siteUser => siteUser.expand?.site)
+      .filter(site => site && (site.is_active !== false)); // Filter out deleted sites
     return sites.map(site => this.mapRecordToSite(site));
   }
 
@@ -945,6 +950,41 @@ export class SiteService {
     }
   }
 
+  async disownSite(siteId: string): Promise<void> {
+    const currentUser = authService.currentUser;
+    if (!currentUser) throw new Error('User not authenticated');
+
+    // Check if current user is the owner
+    const currentUserRole = await siteUserService.getUserRoleForSite(currentUser.id, siteId);
+    if (currentUserRole !== 'owner') {
+      throw new Error('Permission denied: Only owners can delete a site');
+    }
+
+    // Get all site users
+    const siteUsers = await pb.collection('site_users').getFullList({
+      filter: `site="${siteId}"`
+    });
+
+    const disownedAt = new Date().toISOString();
+
+    // Update the site record - mark as inactive and set deleted_at
+    await pb.collection('sites').update(siteId, {
+      is_active: false,
+      deleted_at: disownedAt
+    });
+
+    // Update all site_users records - set is_active to false and add disowned_at
+    for (const siteUser of siteUsers) {
+      await pb.collection('site_users').update(siteUser.id, {
+        is_active: false,
+        disowned_at: disownedAt
+      });
+    }
+
+    // Note: The actual deletion of site data will be handled by a cron job
+    // that runs one month after deleted_at
+  }
+
   private mapRecordToSite(record: RecordModel): Site {
     return {
       id: record.id,
@@ -953,6 +993,8 @@ export class SiteService {
       total_units: record.total_units,
       total_planned_area: record.total_planned_area,
       admin_user: record.admin_user,
+      is_active: record.is_active,
+      deleted_at: record.deleted_at,
       created: record.created,
       updated: record.updated,
       expand: record.expand ? {

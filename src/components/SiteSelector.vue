@@ -226,19 +226,40 @@
                 Cancel
               </button>
             </div>
+
+            <!-- Delete Site Button - Only for Owners -->
+            <div v-if="isOwnerOfManagingSite" class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                @click="openDeleteModal"
+                class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-medium rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+              >
+                <Trash2 class="h-4 w-4" />
+                {{ t('sites.delete.title') }}
+              </button>
+            </div>
           </form>
         </div>
       </div>
     </div>
+
+    <!-- Delete Site Modal -->
+    <SiteDeleteModal
+      :visible="showDeleteModal"
+      :site="managingSite"
+      @close="showDeleteModal = false"
+      @deleted="handleSiteDeleted"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
-import { Building, ChevronDown, Check, Plus, Settings, Loader2, Save } from 'lucide-vue-next';
+import { Building, ChevronDown, Check, Plus, Settings, Loader2, Save, Trash2 } from 'lucide-vue-next';
 import { useSite } from '../composables/useSite';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
+import SiteDeleteModal from './SiteDeleteModal.vue';
 
 const { currentSite, userSites, selectSite: selectSiteAction, createSite, updateSite, isCurrentUserAdmin } = useSite();
 const { t } = useI18n();
@@ -262,6 +283,7 @@ interface SiteWithOwnership {
 const dropdownOpen = ref(false);
 const showCreateModal = ref(false);
 const showManageModal = ref(false);
+const showDeleteModal = ref(false);
 const createLoading = ref(false);
 const updateLoading = ref(false);
 const selectorRef = ref<HTMLElement | null>(null);
@@ -385,6 +407,18 @@ const handleUpdateSite = async () => {
 const formatDate = (dateString?: string) => {
   if (!dateString) return 'N/A';
   return new Date(dateString).toLocaleDateString();
+};
+
+const isOwnerOfManagingSite = computed(() => {
+  return managingSite.value?.isOwner === true;
+});
+
+const openDeleteModal = () => {
+  showDeleteModal.value = true;
+};
+
+const handleSiteDeleted = () => {
+  closeManageModal();
 };
 
 const handleClickOutside = (event: Event) => {

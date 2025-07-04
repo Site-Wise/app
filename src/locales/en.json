@@ -1038,7 +1038,25 @@
     "confirmCancel": "Are you sure you want to cancel your subscription?"
   },
   "sites": {
-    "selectSite": "Select site"
+    "selectSite": "Select site",
+    "units": "units",
+    "sqft": "sqft",
+    "delete": {
+      "title": "Delete Site",
+      "subtitle": "This action cannot be undone",
+      "warning": "Are you absolutely sure you want to delete this site?",
+      "consequences": {
+        "users": "All users will lose access to this site",
+        "data": "All site data will be permanently deleted after 30 days",
+        "permanent": "This action cannot be reversed"
+      },
+      "deletingSite": "You are about to delete:",
+      "confirmPrompt": "Type \"{siteName}\" to confirm deletion",
+      "confirm": "Delete Site",
+      "deleting": "Deleting...",
+      "success": "{siteName} has been scheduled for deletion",
+      "error": "Failed to delete site. Please try again."
+    }
   },
   "fileUpload": {
     "takePhoto": "Take Photo",
