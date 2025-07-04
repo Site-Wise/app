@@ -4,6 +4,7 @@ import { setupTestPinia } from '../utils/test-setup'
 // Create persistent mock collections
 const mockSitesCollection = {
   getFullList: vi.fn().mockResolvedValue([]),
+  getOne: vi.fn(),
   create: vi.fn().mockResolvedValue({}),
   update: vi.fn().mockResolvedValue({})
 }
@@ -135,44 +136,58 @@ describe('Site Store', () => {
 
   describe('Site Loading', () => {
     it('should load user sites and auto-select if only one', async () => {
-      const mockUserSites = [
+      const mockSiteUsersData = [
         {
+          id: 'us-1',
           site: 'site-1',
           role: 'owner',
-          expand: { 
-            site: { 
-              id: 'site-1', 
-              name: 'Only Site',
-              total_units: 100,
-              total_planned_area: 50000,
-              admin_user: 'user-1',
-              users: ['user-1']
-            } 
-          }
+          is_active: true
         }
       ]
 
-      mockSiteUsersCollection.getFullList.mockResolvedValue(mockUserSites)
+      const mockSitesData = [
+        { 
+          id: 'site-1', 
+          name: 'Only Site',
+          total_units: 100,
+          total_planned_area: 50000,
+          admin_user: 'user-1',
+          users: ['user-1']
+        }
+      ]
+
+      mockSiteUsersCollection.getFullList.mockResolvedValue(mockSiteUsersData)
+      mockSitesCollection.getFullList.mockResolvedValue(mockSitesData)
 
       await store.loadUserSites()
 
-      expect(store.userSites).toEqual(mockUserSites)
-      expect(store.currentSite).toEqual(mockUserSites[0].expand.site)
+      // The result should have the expand property populated
+      expect(store.userSites.length).toBe(1)
+      expect(store.userSites[0].site).toBe('site-1')
+      expect(store.userSites[0].expand?.site).toEqual(mockSitesData[0])
+      expect(store.currentSite).toEqual(mockSitesData[0])
       expect(store.isInitialized).toBe(true)
     })
 
     it('should not auto-select when multiple sites available', async () => {
-      const mockUserSites = [
+      const mockSiteUsersData = [
         {
+          id: 'us-1',
           site: 'site-1',
           role: 'owner',
-          expand: { site: { id: 'site-1', name: 'Site 1' } }
+          is_active: true
         },
         {
+          id: 'us-2',
           site: 'site-2',
           role: 'manager',
-          expand: { site: { id: 'site-2', name: 'Site 2' } }
+          is_active: true
         }
+      ]
+
+      const mockSitesData = [
+        { id: 'site-1', name: 'Site 1' },
+        { id: 'site-2', name: 'Site 2' }
       ]
 
       // Mock getCurrentSiteId to return null for this test
@@ -180,14 +195,15 @@ describe('Site Store', () => {
       const getCurrentSiteIdMock = vi.mocked(pocketbaseMocks.getCurrentSiteId)
       getCurrentSiteIdMock.mockReturnValue(null)
 
-      mockSiteUsersCollection.getFullList.mockResolvedValue(mockUserSites)
+      mockSiteUsersCollection.getFullList.mockResolvedValue(mockSiteUsersData)
+      mockSitesCollection.getFullList.mockResolvedValue(mockSitesData)
       
       // Clear current site using the action instead of $patch
       await store.clearCurrentSite()
 
       await store.loadUserSites()
 
-      expect(store.userSites).toEqual(mockUserSites)
+      expect(store.userSites.length).toBe(2)
       expect(store.currentSite).toBe(null)
       expect(store.isInitialized).toBe(true)
     })
@@ -245,8 +261,8 @@ describe('Site Store', () => {
 
     it('should be true when initialized, even with multiple sites and no current site', async () => {
       const mockUserSites = [
-        { site: 'site-1', role: 'owner', expand: { site: { id: 'site-1', name: 'Site 1' } } },
-        { site: 'site-2', role: 'manager', expand: { site: { id: 'site-2', name: 'Site 2' } } }
+        { site: 'site-1', role: 'owner', is_active: true, expand: { site: { id: 'site-1', name: 'Site 1' } } },
+        { site: 'site-2', role: 'manager', is_active: true, expand: { site: { id: 'site-2', name: 'Site 2' } } }
       ]
 
       // Mock getCurrentSiteId to return null for this test - need to set this before loadUserSites
@@ -290,7 +306,7 @@ describe('Site Store', () => {
 
       mockSitesCollection.create.mockResolvedValue(createdSite)
       mockSiteUsersCollection.getFullList.mockResolvedValue([
-        { site: 'site-new', role: 'owner', expand: { site: createdSite } }
+        { site: 'site-new', role: 'owner', is_active: true, expand: { site: createdSite } }
       ])
 
       await store.createSite(newSiteData)
@@ -364,6 +380,24 @@ describe('Site Store', () => {
         { id: 'us-2', site: 'site-2', user: 'user-1', role: 'supervisor', assigned_by: 'user-1', assigned_at: '2024-01-01T00:00:00Z', is_active: true },
         { id: 'us-3', site: 'site-3', user: 'user-1', role: 'accountant', assigned_by: 'user-1', assigned_at: '2024-01-01T00:00:00Z', is_active: true }
       ])
+
+      // Mock the sites collection to return corresponding site data
+      const sitesData = [
+        { id: 'site-1', name: 'Site 1', total_units: 100, total_planned_area: 50000, admin_user: 'user-1', users: ['user-1'] },
+        { id: 'site-2', name: 'Site 2', total_units: 200, total_planned_area: 60000, admin_user: 'user-1', users: ['user-1'] },
+        { id: 'site-3', name: 'Site 3', total_units: 300, total_planned_area: 70000, admin_user: 'user-1', users: ['user-1'] }
+      ]
+      
+      // Reset the mocks first to ensure they're not interfered with by other tests
+      mockSitesCollection.getFullList.mockReset()
+      mockSitesCollection.getOne.mockReset()
+      
+      // Set up both getFullList and getOne mocks
+      mockSitesCollection.getFullList.mockResolvedValue(sitesData)
+      mockSitesCollection.getOne.mockImplementation((id: string) => {
+        const site = sitesData.find(s => s.id === id)
+        return site ? Promise.resolve(site) : Promise.reject(new Error(`Site ${id} not found`))
+      })
       
       // Load user sites to populate the store
       await store.loadUserSites()

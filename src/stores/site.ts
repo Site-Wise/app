@@ -51,17 +51,67 @@ export const useSiteStore = defineStore('site', () => {
       
       const userId = pb.authStore.model.id
 
+      // Fetch site_users for the current user - only active ones
       const fetchedUserSites = await pb.collection('site_users').getFullList({
         filter: `user="${userId}" && is_active=true`,
-        expand: 'site',
         sort: '-created'
       })
 
-      userSites.value = fetchedUserSites as unknown as SiteUser[]
+      // Try to fetch sites to work around PocketBase expand issues
+      let validUserSites: any[] = []
+      
+      if (fetchedUserSites.length > 0) {
+        const siteIds = [...new Set(fetchedUserSites.map(us => us.site))]; // Get unique site IDs
+        const sitesMap = new Map<string, Site>();
+
+        try {
+          // Attempt to fetch all sites in one query using OR filter
+          const filter = siteIds.map(id => `id="${id}"`).join(' || ');
+          const sites = await pb.collection('sites').getFullList({ filter });
+          
+          // Create a map for quick lookup
+          sites.forEach(site => {
+            sitesMap.set(site.id, site as unknown as Site);
+          });
+
+          // If the bulk query failed to return sites, fall back to individual queries
+          if (sites.length === 0 && siteIds.length > 0) {
+            for (const siteId of siteIds) {
+              try {
+                const site = await pb.collection('sites').getOne(siteId);
+                if (site && site.id) {
+                  sitesMap.set(site.id, site as unknown as Site);
+                }
+              } catch (error) {
+                // Individual site might not exist or user might not have access
+                console.debug(`Could not fetch site ${siteId}`);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching sites:', error);
+        }
+
+        // Manually populate the expand property for successful site fetches
+        validUserSites = fetchedUserSites.map(us => {
+          const site = sitesMap.get(us.site);
+          if (site) {
+            return {
+              ...us,
+              expand: { site }
+            };
+          } else {
+            // Skip sites that couldn't be fetched
+            return null;
+          }
+        }).filter(Boolean); // Remove nulls
+      }
+
+      userSites.value = validUserSites as unknown as SiteUser[]
 
       // Load current site if we have a site ID
       if (currentSiteId.value) {
-        const userSite = fetchedUserSites.find(us => us.site === currentSiteId.value)
+        const userSite = validUserSites.find(us => us.site === currentSiteId.value)
         if (userSite && userSite.expand?.site) {
           currentSite.value = userSite.expand.site as Site
           currentUserRole.value = userSite.role
@@ -73,8 +123,8 @@ export const useSiteStore = defineStore('site', () => {
       }
 
       // Auto-select if only one site
-      if (!currentSiteId.value && fetchedUserSites.length === 1) {
-        const userSite = fetchedUserSites[0]
+      if (!currentSiteId.value && validUserSites.length === 1) {
+        const userSite = validUserSites[0]
         if (userSite.expand?.site) {
           await selectSite(userSite.expand.site as Site, userSite.role)
         }
