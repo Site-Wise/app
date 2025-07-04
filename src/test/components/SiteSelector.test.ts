@@ -70,6 +70,19 @@ describe('SiteSelector', () => {
   let pinia: any
   let siteStore: any
 
+  const createWrapper = (options = {}) => {
+    return mount(SiteSelector, {
+      global: {
+        plugins: [pinia],
+        stubs: {
+          SiteDeleteModal: true
+        },
+        ...options.global
+      },
+      ...options
+    })
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
     
@@ -91,14 +104,14 @@ describe('SiteSelector', () => {
 
   describe('Basic Rendering', () => {
     it('should render site selector button', () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       expect(wrapper.find('button').exists()).toBe(true)
       expect(wrapper.text()).toContain(mockSite.name)
     })
 
     it('should show dropdown when clicked', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       await wrapper.find('button').trigger('click')
       
@@ -106,7 +119,7 @@ describe('SiteSelector', () => {
     })
 
     it('should display current site information', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       await wrapper.find('button').trigger('click')
       
@@ -116,11 +129,7 @@ describe('SiteSelector', () => {
     })
 
     it('should show other sites in dropdown', async () => {
-      wrapper = mount(SiteSelector, {
-        global: {
-          plugins: [pinia]
-        }
-      })
+      wrapper = createWrapper()
       
       await wrapper.find('button').trigger('click')
       
@@ -128,7 +137,7 @@ describe('SiteSelector', () => {
     })
 
     it('should show manage button for admin users', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       await wrapper.find('button').trigger('click')
       
@@ -139,11 +148,7 @@ describe('SiteSelector', () => {
 
   describe('Site Selection', () => {
     it('should call selectSite when other site is clicked', async () => {
-      wrapper = mount(SiteSelector, {
-        global: {
-          plugins: [pinia]
-        }
-      })
+      wrapper = createWrapper()
       
       await wrapper.find('button').trigger('click')
       
@@ -158,7 +163,7 @@ describe('SiteSelector', () => {
     })
 
     it('should close dropdown after site selection', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       await wrapper.find('button').trigger('click')
       expect(wrapper.find('.absolute').exists()).toBe(true)
@@ -177,7 +182,7 @@ describe('SiteSelector', () => {
 
   describe('Create Site Modal', () => {
     it('should show create site modal when create button is clicked', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       // First open the dropdown
       await wrapper.find('button').trigger('click')
@@ -194,7 +199,7 @@ describe('SiteSelector', () => {
     })
 
     it('should close dropdown when create modal opens', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       await wrapper.find('button').trigger('click')
       expect(wrapper.vm.dropdownOpen).toBe(true)
@@ -208,7 +213,7 @@ describe('SiteSelector', () => {
     })
 
     it('should handle site creation form submission', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       // Open create modal
       await wrapper.find('button').trigger('click')
@@ -242,7 +247,7 @@ describe('SiteSelector', () => {
       // Mock a slow create operation
       mockCreateSite.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
       
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       // Open modal
       await wrapper.find('button').trigger('click')
@@ -270,11 +275,7 @@ describe('SiteSelector', () => {
     it('should close modal and reset form after successful creation', async () => {
       mockCreateSite.mockResolvedValue(mockSite)
       
-      wrapper = mount(SiteSelector, {
-        global: {
-          plugins: [pinia]
-        }
-      })
+      wrapper = createWrapper()
       
       // Open modal and submit
       await wrapper.find('button').trigger('click')
@@ -293,7 +294,7 @@ describe('SiteSelector', () => {
     })
 
     it('should cancel modal when cancel button is clicked', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       // Open modal
       await wrapper.find('button').trigger('click')
@@ -317,7 +318,7 @@ describe('SiteSelector', () => {
       // Set checkCreateLimit to return false
       mockCheckCreateLimit.mockReturnValue(false)
       
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       // Open dropdown
       await wrapper.find('button').trigger('click')
@@ -341,7 +342,7 @@ describe('SiteSelector', () => {
       // Mock alert
       const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {})
       
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       // Try to submit create form
       wrapper.vm.showCreateModal = true
@@ -359,7 +360,7 @@ describe('SiteSelector', () => {
 
   describe('Manage Site Modal', () => {
     it('should open manage modal when manage button is clicked', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       await wrapper.find('button').trigger('click')
       
@@ -372,7 +373,7 @@ describe('SiteSelector', () => {
     })
 
     it('should populate edit form with current site data', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       await wrapper.find('button').trigger('click')
       const manageButton = wrapper.find('[title="Manage Site"]')
@@ -384,7 +385,7 @@ describe('SiteSelector', () => {
     })
 
     it('should handle site update form submission', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       // Open manage modal
       await wrapper.find('button').trigger('click')
@@ -416,7 +417,7 @@ describe('SiteSelector', () => {
     it('should show loading state during site update', async () => {
       mockUpdateSite.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
       
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       // Open modal and submit
       await wrapper.find('button').trigger('click')
@@ -435,7 +436,7 @@ describe('SiteSelector', () => {
     it('should handle update errors gracefully', async () => {
       mockUpdateSite.mockRejectedValue(new Error('Update failed'))
       
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       // Open modal and submit
       await wrapper.find('button').trigger('click')
@@ -454,7 +455,7 @@ describe('SiteSelector', () => {
     })
 
     it('should display site stats in manage modal', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       await wrapper.find('button').trigger('click')
       const manageButton = wrapper.find('[title="Manage Site"]')
@@ -466,7 +467,7 @@ describe('SiteSelector', () => {
     })
 
     it('should close manage modal and reset form', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       // Open modal
       await wrapper.find('button').trigger('click')
@@ -489,7 +490,7 @@ describe('SiteSelector', () => {
 
   describe('Click Outside Handling', () => {
     it('should close dropdown when clicking outside', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       await wrapper.find('button').trigger('click')
       expect(wrapper.vm.dropdownOpen).toBe(true)
@@ -508,7 +509,7 @@ describe('SiteSelector', () => {
     })
 
     it('should not close dropdown when clicking inside', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       await wrapper.find('button').trigger('click')
       expect(wrapper.vm.dropdownOpen).toBe(true)
@@ -529,14 +530,14 @@ describe('SiteSelector', () => {
 
   describe('Date Formatting', () => {
     it('should format dates correctly', () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       const result = wrapper.vm.formatDate('2024-01-01T00:00:00Z')
       expect(result).toMatch(/\d{1,2}\/\d{1,2}\/\d{4}/)
     })
 
     it('should handle invalid dates', () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       const result = wrapper.vm.formatDate(null)
       expect(result).toBe('N/A')
@@ -545,7 +546,7 @@ describe('SiteSelector', () => {
 
   describe('Permissions', () => {
     it('should show manage button only for current user admin', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       await wrapper.find('button').trigger('click')
       
@@ -555,7 +556,7 @@ describe('SiteSelector', () => {
     })
 
     it('should show manage button for sites where user is owner', async () => {
-      wrapper = mount(SiteSelector)
+      wrapper = createWrapper()
       
       await wrapper.find('button').trigger('click')
       

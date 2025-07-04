@@ -23,6 +23,7 @@ export function setupTestPinia() {
       total_units: 100,
       total_planned_area: 50000,
       admin_user: 'user-1',
+      is_active: true,
       users: ['user-1'],
       created: '2024-01-01T00:00:00Z',
       updated: '2024-01-01T00:00:00Z'
@@ -38,6 +39,7 @@ export function setupTestPinia() {
           total_units: 100,
           total_planned_area: 50000,
           admin_user: 'user-1',
+          is_active: true,
           users: ['user-1'],
           created: '2024-01-01T00:00:00Z',
           updated: '2024-01-01T00:00:00Z'

@@ -94,7 +94,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const { showToast } = useToast()
+const { success, error: showError } = useToast()
 const siteStore = useSiteStore()
 const router = useRouter()
 
@@ -137,12 +137,12 @@ const handleDelete = async () => {
       await siteStore.loadUserSites()
     }
 
-    showToast(t('sites.delete.success', { siteName: props.site.name }), 'success')
+    success(t('sites.delete.success', { siteName: props.site.name }))
     emit('deleted')
     emit('close')
   } catch (error) {
     console.error('Failed to delete site:', error)
-    showToast(t('sites.delete.error'), 'error')
+    showError(t('sites.delete.error'))
   } finally {
     deleting.value = false
   }

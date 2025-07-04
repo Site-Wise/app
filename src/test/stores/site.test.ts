@@ -233,6 +233,7 @@ describe('Site Store', () => {
               total_units: 100,
               total_planned_area: 50000,
               admin_user: 'user-1',
+              is_active: true,
               users: ['user-1']
             } 
           }
@@ -261,8 +262,8 @@ describe('Site Store', () => {
 
     it('should be true when initialized, even with multiple sites and no current site', async () => {
       const mockUserSites = [
-        { site: 'site-1', role: 'owner', is_active: true, expand: { site: { id: 'site-1', name: 'Site 1' } } },
-        { site: 'site-2', role: 'manager', is_active: true, expand: { site: { id: 'site-2', name: 'Site 2' } } }
+        { site: 'site-1', role: 'owner', is_active: true, expand: { site: { id: 'site-1', name: 'Site 1', is_active: true } } },
+        { site: 'site-2', role: 'manager', is_active: true, expand: { site: { id: 'site-2', name: 'Site 2', is_active: true } } }
       ]
 
       // Mock getCurrentSiteId to return null for this test - need to set this before loadUserSites
@@ -273,6 +274,13 @@ describe('Site Store', () => {
       // Reset the mock and set new return value
       mockSiteUsersCollection.getFullList.mockReset()
       mockSiteUsersCollection.getFullList.mockResolvedValue(mockUserSites)
+      
+      // Also mock the sites collection to return the expected sites
+      mockSitesCollection.getFullList.mockReset()
+      mockSitesCollection.getFullList.mockResolvedValue([
+        { id: 'site-1', name: 'Site 1', is_active: true },
+        { id: 'site-2', name: 'Site 2', is_active: true }
+      ])
       
       // Clear current site first to ensure no site is selected
       await store.clearCurrentSite()
@@ -345,14 +353,22 @@ describe('Site Store', () => {
   describe('Permission Helpers', () => {
     beforeEach(async () => {
       const mockUserSites = [
-        { site: 'site-1', role: 'owner', expand: { site: { id: 'site-1', name: 'Site 1' } } },
-        { site: 'site-2', role: 'manager', expand: { site: { id: 'site-2', name: 'Site 2' } } },
-        { site: 'site-3', role: 'supervisor', expand: { site: { id: 'site-3', name: 'Site 3' } } }
+        { site: 'site-1', role: 'owner', expand: { site: { id: 'site-1', name: 'Site 1', is_active: true } } },
+        { site: 'site-2', role: 'manager', expand: { site: { id: 'site-2', name: 'Site 2', is_active: true } } },
+        { site: 'site-3', role: 'supervisor', expand: { site: { id: 'site-3', name: 'Site 3', is_active: true } } }
       ]
       
       // Reset the mock and ensure it returns the correct data
       mockSiteUsersCollection.getFullList.mockReset()
       mockSiteUsersCollection.getFullList.mockResolvedValue(mockUserSites)
+      
+      // Also mock the sites collection
+      mockSitesCollection.getFullList.mockReset()
+      mockSitesCollection.getFullList.mockResolvedValue([
+        { id: 'site-1', name: 'Site 1', is_active: true },
+        { id: 'site-2', name: 'Site 2', is_active: true },
+        { id: 'site-3', name: 'Site 3', is_active: true }
+      ])
       
       // Ensure we have a clean store state
       store.$patch({ 

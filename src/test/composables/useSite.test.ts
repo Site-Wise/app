@@ -32,7 +32,7 @@ vi.mock('../../services/pocketbase', () => ({
       }
       if (name === 'sites') {
         return {
-          getFullList: vi.fn().mockResolvedValue([]),
+          getFullList: vi.fn().mockResolvedValue([mockSite]),
           create: vi.fn().mockImplementation((data) => Promise.resolve({ ...mockSite, ...data })),
           update: vi.fn().mockImplementation((id, data) => Promise.resolve({ ...mockSite, ...data })),
           delete: vi.fn()
