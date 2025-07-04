@@ -16,20 +16,32 @@
           </div>
         </div>
       </div>
-      <div class="flex items-center space-x-3">
+      <!-- Desktop Actions -->
+      <div class="hidden md:flex items-center space-x-3">
         <button @click="recalculateBalance" :disabled="recalculating" class="btn-outline">
           <RefreshCw :class="{ 'animate-spin': recalculating }" class="mr-2 h-4 w-4" />
           Recalculate Balance
         </button>
-        <div class="flex items-center space-x-2">
-          <button @click="exportStatement" class="btn-outline">
+        <div class="relative export-dropdown">
+          <button @click="showExportDropdown = !showExportDropdown" class="btn-outline flex items-center">
             <Download class="mr-2 h-4 w-4" />
-            Export CSV
+            Export Statement
+            <ChevronDown class="ml-2 h-4 w-4" />
           </button>
-          <button @click="exportStatementPDF" class="btn-outline">
-            <FileText class="mr-2 h-4 w-4" />
-            Export PDF
-          </button>
+          
+          <!-- Export Dropdown Menu -->
+          <div v-if="showExportDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+            <div class="py-1">
+              <button @click="exportStatement(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <FileSpreadsheet class="mr-3 h-4 w-4 text-green-600" />
+                Export CSV
+              </button>
+              <button @click="handleExportPdf(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <FileText class="mr-3 h-4 w-4 text-red-600" />
+                Export PDF
+              </button>
+            </div>
+          </div>
         </div>
         <button @click="showCreditModal = true" class="btn-outline">
           <Plus class="mr-2 h-4 w-4" />
@@ -39,6 +51,50 @@
           <Edit2 class="mr-2 h-4 w-4" />
           Edit Account
         </button>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div class="md:hidden relative mobile-menu">
+        <button @click="showMobileMenu = !showMobileMenu" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <MoreVertical class="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        </button>
+        
+        <!-- Mobile Dropdown Menu -->
+        <div v-if="showMobileMenu" class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+          <div class="py-1">
+            <!-- Recalculate Balance -->
+            <button @click="handleMobileAction('recalculateBalance')" :disabled="recalculating" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50">
+              <RefreshCw :class="{ 'animate-spin': recalculating }" class="mr-3 h-5 w-5 text-gray-600" />
+              Recalculate Balance
+            </button>
+            
+            <!-- Export Options -->
+            <div class="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700">
+              Export Statement
+            </div>
+            <button @click="handleMobileAction('exportCsv')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <FileSpreadsheet class="mr-3 h-5 w-5 text-green-600" />
+              Export CSV
+            </button>
+            <button @click="handleMobileAction('exportPdf')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <FileText class="mr-3 h-5 w-5 text-red-600" />
+              Export PDF
+            </button>
+            
+            <!-- Divider -->
+            <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+            
+            <!-- Other Actions -->
+            <button @click="handleMobileAction('addCredit')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <Plus class="mr-3 h-5 w-5 text-gray-600" />
+              Add Credit Entry
+            </button>
+            <button @click="handleMobileAction('editAccount')" class="flex items-center w-full px-4 py-3 text-sm text-white bg-blue-600 hover:bg-blue-700">
+              <Edit2 class="mr-3 h-5 w-5 text-white" />
+              Edit Account
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -319,7 +375,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { 
   ArrowLeft, 
@@ -336,7 +392,10 @@ import {
   Building2,
   CreditCard,
   Plus,
-  FileText
+  FileText,
+  FileSpreadsheet,
+  ChevronDown,
+  MoreVertical
 } from 'lucide-vue-next';
 import { jsPDF } from 'jspdf';
 import { 
@@ -357,6 +416,8 @@ const editLoading = ref(false);
 const creditLoading = ref(false);
 const recalculating = ref(false);
 const filterPeriod = ref('all');
+const showExportDropdown = ref(false);
+const showMobileMenu = ref(false);
 
 const editForm = reactive({
   name: '',
@@ -564,20 +625,77 @@ const exportStatement = () => {
   document.body.removeChild(link);
 };
 
-const exportStatementPDF = () => {
+const addFooter = (doc: any, pageWidth: number, pageHeight: number, margin: number) => {
+  const footerY = pageHeight - 15;
+  
+  // Horizontal line
+  doc.setDrawColor(200, 200, 200);
+  doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
+  
+  // Footer text
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(107, 114, 128); // Gray color
+  doc.text('Generated with SiteWise - One stop solution for construction site management', margin, footerY);
+  
+  // Page number (right aligned)
+  const pageNum = doc.internal.getCurrentPageInfo().pageNumber;
+  doc.text(`Page ${pageNum}`, pageWidth - margin - 15, footerY);
+};
+
+const exportStatementPDF = async () => {
   if (!account.value) return;
   
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
   const margin = 20;
-  let yPosition = 30;
+  let yPosition = 25;
   
-  // Header
+  // Load and add logo
+  try {
+    const logoImg = new Image();
+    logoImg.crossOrigin = 'anonymous';
+    
+    await new Promise((resolve, reject) => {
+      logoImg.onload = resolve;
+      logoImg.onerror = reject;
+      logoImg.src = '/logo.png';
+    });
+    
+    // Add logo to the right side of header with proper aspect ratio
+    const maxLogoWidth = 25;
+    const maxLogoHeight = 15;
+    
+    // Calculate aspect ratio and fit within bounds
+    const aspectRatio = logoImg.naturalWidth / logoImg.naturalHeight;
+    let logoWidth = maxLogoWidth;
+    let logoHeight = maxLogoWidth / aspectRatio;
+    
+    // If height exceeds max, scale by height instead
+    if (logoHeight > maxLogoHeight) {
+      logoHeight = maxLogoHeight;
+      logoWidth = maxLogoHeight * aspectRatio;
+    }
+    
+    const logoX = pageWidth - margin - logoWidth;
+    const logoY = yPosition - 5;
+    
+    doc.addImage(logoImg, 'PNG', logoX, logoY, logoWidth, logoHeight);
+  } catch (error) {
+    console.warn('Could not load logo for PDF:', error);
+    // Continue without logo if it fails to load
+  }
+  
+  // Document title (no SiteWise text in header, just logo)
+  yPosition += 10;
   doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0); // Black for main content
   doc.text('Account Statement', margin, yPosition);
   
-  yPosition += 10;
+  // Account information
+  yPosition += 12;
   doc.setFontSize(12);
   doc.setFont('helvetica', 'normal');
   doc.text(`Account: ${account.value.name}`, margin, yPosition);
@@ -586,17 +704,14 @@ const exportStatementPDF = () => {
   doc.text(`Type: ${account.value.type.replace('_', ' ').toUpperCase()}`, margin, yPosition);
   
   yPosition += 6;
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, margin, yPosition);
-  
-  yPosition += 6;
-  doc.text(`Current Balance: ₹${account.value.current_balance.toFixed(2)}`, margin, yPosition);
+  doc.text(`Generated: ${new Date().toLocaleDateString('en-CA')}`, margin, yPosition);
   
   yPosition += 15;
   
   // Table headers
   doc.setFont('helvetica', 'bold');
   const headers = ['Date', 'Description', 'Reference', 'Dues', 'Payments', 'Balance'];
-  const colWidths = [25, 50, 25, 20, 20, 25];
+  const colWidths = [25, 40, 25, 25, 25, 30];
   let xPos = margin;
   
   headers.forEach((header, i) => {
@@ -612,20 +727,23 @@ const exportStatementPDF = () => {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   
-  filteredTransactions.value.forEach(transaction => {
-    if (yPosition > 260) {
+  // Use ascending order (oldest first) for PDF
+  const ascendingTransactions = [...filteredTransactions.value].reverse();
+  
+  ascendingTransactions.forEach(transaction => {
+    if (yPosition > 240) { // Leave more space for footer
       doc.addPage();
       yPosition = 30;
     }
     
     xPos = margin;
     const rowData = [
-      transaction.transaction_date,
-      transaction.description.substring(0, 25),
+      new Date(transaction.transaction_date).toLocaleDateString('en-CA'),
+      transaction.description.substring(0, 30), // Adjust for new column width
       transaction.reference || '',
-      transaction.type === 'debit' ? `₹${transaction.amount.toFixed(2)}` : '',
-      transaction.type === 'credit' ? `₹${transaction.amount.toFixed(2)}` : '',
-      `₹${((transaction as any).running_balance || 0).toFixed(2)}`
+      transaction.type === 'debit' ? transaction.amount.toFixed(2) : '',
+      transaction.type === 'credit' ? transaction.amount.toFixed(2) : '',
+      Math.abs(((transaction as any).running_balance || 0)).toFixed(2) + (((transaction as any).running_balance || 0) >= 0 ? ' Dr' : ' Cr')
     ];
     
     rowData.forEach((data, i) => {
@@ -637,7 +755,7 @@ const exportStatementPDF = () => {
   });
   
   // Summary
-  if (yPosition > 240) {
+  if (yPosition > 200) { // Leave more space for footer
     doc.addPage();
     yPosition = 30;
   }
@@ -647,7 +765,17 @@ const exportStatementPDF = () => {
   yPosition += 8;
   
   doc.setFont('helvetica', 'bold');
-  doc.text(`Final Balance: ₹${account.value.current_balance.toFixed(2)}`, margin, yPosition);
+  const balanceText = account.value.current_balance >= 0 
+    ? `Final Balance: ${account.value.current_balance.toFixed(2)} Dr`
+    : `Final Balance: ${Math.abs(account.value.current_balance).toFixed(2)} Cr`;
+  doc.text(balanceText, margin, yPosition);
+  
+  // Add footer to all pages
+  const totalPages = doc.internal.pages.length - 1; // Subtract 1 because pages array includes a null first element
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    addFooter(doc, pageWidth, pageHeight, margin);
+  }
   
   // Save the PDF
   doc.save(`${account.value.name}_statement_${new Date().toISOString().split('T')[0]}.pdf`);
@@ -659,7 +787,7 @@ const generateStatementCSV = () => {
   const headers = ['Date', 'Description', 'Reference', 'Dues', 'Payments', 'Balance', 'Notes'];
   
   const rows = filteredTransactions.value.map(transaction => [
-    transaction.transaction_date,
+    new Date(transaction.transaction_date).toLocaleDateString('en-CA'),
     transaction.description,
     transaction.reference || '',
     transaction.type === 'debit' ? transaction.amount : '', // Dues (debits)
@@ -722,10 +850,71 @@ const saveCreditEntry = async () => {
 };
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString();
+  return new Date(dateString).toLocaleDateString('en-CA');
+};
+
+// Handle async PDF export
+const handleExportPdf = async () => {
+  try {
+    await exportStatementPDF();
+  } catch (error) {
+    console.error('Error exporting PDF:', error);
+  }
+};
+
+// Handle mobile menu actions
+const handleMobileAction = async (action: string) => {
+  // Close the menu first
+  showMobileMenu.value = false;
+  
+  // Then execute the action after a small delay to ensure menu closes
+  setTimeout(async () => {
+    try {
+      switch (action) {
+        case 'recalculateBalance':
+          await recalculateBalance();
+          break;
+        case 'exportCsv':
+          exportStatement();
+          break;
+        case 'exportPdf':
+          await handleExportPdf();
+          break;
+        case 'addCredit':
+          showCreditModal.value = true;
+          break;
+        case 'editAccount':
+          editAccount();
+          break;
+        default:
+          console.warn('Unknown mobile action:', action);
+      }
+    } catch (error) {
+      console.error('Error executing mobile action:', action, error);
+    }
+  }, 100);
+};
+
+// Click outside handler for dropdowns
+const handleClickOutside = (event: Event) => {
+  const exportDropdown = document.querySelector('.export-dropdown');
+  const mobileMenu = document.querySelector('.mobile-menu');
+  
+  if (exportDropdown && !exportDropdown.contains(event.target as Node)) {
+    showExportDropdown.value = false;
+  }
+  
+  if (mobileMenu && !mobileMenu.contains(event.target as Node)) {
+    showMobileMenu.value = false;
+  }
 };
 
 onMounted(() => {
   loadAccountData();
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
 });
 </script>
