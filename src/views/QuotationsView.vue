@@ -84,13 +84,30 @@
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-              <div class="flex items-center space-x-2">
-                <button @click="editQuotation(quotation)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300">
+              <!-- Desktop Action Buttons -->
+              <div class="hidden lg:flex items-center space-x-2" @click.stop>
+                <button
+                  @click="editQuotation(quotation)"
+                  class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  :title="t('common.edit')"
+                >
                   <Edit2 class="h-4 w-4" />
                 </button>
-                <button @click="deleteQuotation(quotation.id!)" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300" :disabled="!canDelete">
+                <button
+                  @click="deleteQuotation(quotation.id!)"
+                  class="p-2 text-red-400 hover:text-red-600 dark:hover:text-red-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  :title="t('common.delete')"
+                >
                   <Trash2 class="h-4 w-4" />
                 </button>
+              </div>
+
+              <!-- Mobile Dropdown Menu -->
+              <div class="lg:hidden">
+                <CardDropdownMenu
+                  :actions="getQuotationActions(quotation)"
+                  @action="handleQuotationAction(quotation, $event)"
+                />
               </div>
             </td>
           </tr>
@@ -193,6 +210,7 @@ import { useI18n } from '../composables/useI18n';
 import { usePermissions } from '../composables/usePermissions';
 import { useSiteData } from '../composables/useSiteData';
 import { useQuotationSearch } from '../composables/useSearch';
+import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 
 const { t } = useI18n();
 const { canDelete } = usePermissions();
@@ -346,6 +364,35 @@ const handleAddQuotation = async () => {
 };
 
 // Site change is handled automatically by useSiteData
+
+const getQuotationActions = (_quotation: Quotation) => {
+  return [
+    {
+      key: 'edit',
+      label: t('common.edit'),
+      icon: Edit2,
+      variant: 'default' as const
+    },
+    {
+      key: 'delete',
+      label: t('common.delete'),
+      icon: Trash2,
+      variant: 'danger' as const,
+      disabled: !canDelete.value
+    }
+  ];
+};
+
+const handleQuotationAction = (quotation: Quotation, action: string) => {
+  switch (action) {
+    case 'edit':
+      editQuotation(quotation);
+      break;
+    case 'delete':
+      deleteQuotation(quotation.id!);
+      break;
+  }
+};
 
 const handleKeyboardShortcut = (event: KeyboardEvent) => {
   if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {

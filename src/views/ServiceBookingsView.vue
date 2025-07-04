@@ -111,16 +111,44 @@
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium hidden lg:table-cell">
-              <div class="flex items-center space-x-2">
-                <button @click="viewBooking(booking)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300" :title="t('common.view')">
+              <!-- Desktop Action Buttons -->
+              <div class="hidden lg:flex items-center space-x-2" @click.stop>
+                <button 
+                  @click="viewBooking(booking)" 
+                  class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" 
+                  :title="t('common.view')"
+                >
                   <Eye class="h-4 w-4" />
                 </button>
-                <button @click="editBooking(booking)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300" :title="t('common.edit')" v-if="canUpdate">
+                <button 
+                  v-if="canUpdate"
+                  @click="editBooking(booking)" 
+                  class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" 
+                  :title="t('common.edit')"
+                >
                   <Edit2 class="h-4 w-4" />
                 </button>
-                <button @click="deleteBooking(booking.id!)" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300" :title="t('common.delete')" :disabled="!canDelete">
+                <button 
+                  @click="deleteBooking(booking.id!)" 
+                  :disabled="!canDelete"
+                  :class="[
+                    canDelete 
+                      ? 'text-red-400 hover:text-red-600 dark:hover:text-red-300' 
+                      : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+                    'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+                  ]"
+                  :title="t('common.delete')"
+                >
                   <Trash2 class="h-4 w-4" />
                 </button>
+              </div>
+
+              <!-- Mobile Dropdown Menu -->
+              <div class="lg:hidden">
+                <CardDropdownMenu
+                  :actions="getBookingActions(booking)"
+                  @action="handleBookingAction(booking, $event)"
+                />
               </div>
             </td>
 
@@ -152,56 +180,11 @@
               </div>
             </td>
             <td class="px-4 py-4 lg:hidden">
-              <div class="relative flex items-center justify-end">
-                <button 
-                  @click="toggleMobileMenu(booking.id!)"
-                  class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-                  :title="t('common.actions')"
-                >
-                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
-                  </svg>
-                </button>
-                
-                <!-- Mobile Actions Menu -->
-                <Transition
-                  enter-active-class="transition duration-200 ease-out"
-                  enter-from-class="transform scale-95 opacity-0"
-                  enter-to-class="transform scale-100 opacity-100"
-                  leave-active-class="transition duration-150 ease-in"
-                  leave-from-class="transform scale-100 opacity-100"
-                  leave-to-class="transform scale-95 opacity-0"
-                >
-                  <div 
-                    v-if="openMobileMenuId === booking.id"
-                    class="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-20 min-w-[120px] origin-top-right"
-                    @click.stop
-                  >
-                    <button 
-                      @click="viewBooking(booking); closeMobileMenu()"
-                      class="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
-                    >
-                      <Eye class="h-4 w-4 mr-2" />
-                      {{ t('common.view') }}
-                    </button>
-                    <button 
-                      @click="editBooking(booking); closeMobileMenu()"
-                      v-if="canUpdate"
-                      class="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
-                    >
-                      <Edit2 class="h-4 w-4 mr-2" />
-                      {{ t('common.edit') }}
-                    </button>
-                    <button 
-                      @click="deleteBooking(booking.id!); closeMobileMenu()"
-                      :disabled="!canDelete"
-                      class="w-full flex items-center px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
-                    >
-                      <Trash2 class="h-4 w-4 mr-2" />
-                      {{ t('common.delete') }}
-                    </button>
-                  </div>
-                </Transition>
+              <div class="flex items-center justify-end">
+                <CardDropdownMenu
+                  :actions="getBookingActions(booking)"
+                  @action="handleBookingAction(booking, $event)"
+                />
               </div>
             </td>
           </tr>
@@ -398,6 +381,7 @@ import { useSiteData } from '../composables/useSiteData';
 import { useServiceBookingSearch } from '../composables/useSearch';
 import PhotoGallery from '../components/PhotoGallery.vue';
 import SearchBox from '../components/SearchBox.vue';
+import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import { 
   serviceBookingService, 
   serviceService,
@@ -439,7 +423,6 @@ const viewingBooking = ref<ServiceBooking | null>(null);
 const loading = ref(false);
 
 const serviceInputRef = ref<HTMLInputElement>();
-const openMobileMenuId = ref<string | null>(null);
 
 const form = reactive({
   service: '',
@@ -557,12 +540,43 @@ const formatDateTime = (dateString: string) => {
   return new Date(dateString).toLocaleString();
 };
 
-const toggleMobileMenu = (bookingId: string) => {
-  openMobileMenuId.value = openMobileMenuId.value === bookingId ? null : bookingId;
+const getBookingActions = (_booking: ServiceBooking) => {
+  return [
+    {
+      key: 'view',
+      label: t('common.view'),
+      icon: Eye,
+      variant: 'default' as const
+    },
+    {
+      key: 'edit',
+      label: t('common.edit'),
+      icon: Edit2,
+      variant: 'default' as const,
+      disabled: !canUpdate.value
+    },
+    {
+      key: 'delete',
+      label: t('common.delete'),
+      icon: Trash2,
+      variant: 'danger' as const,
+      disabled: !canDelete.value
+    }
+  ];
 };
 
-const closeMobileMenu = () => {
-  openMobileMenuId.value = null;
+const handleBookingAction = (booking: ServiceBooking, action: string) => {
+  switch (action) {
+    case 'view':
+      viewBooking(booking);
+      break;
+    case 'edit':
+      editBooking(booking);
+      break;
+    case 'delete':
+      deleteBooking(booking.id!);
+      break;
+  }
 };
 
 const closeModal = () => {
@@ -592,13 +606,6 @@ const handleQuickAction = async () => {
 
 // Site change is handled automatically by useSiteData
 
-const handleClickOutside = (event: Event) => {
-  const target = event.target as Element;
-  if (!target.closest('.relative')) {
-    closeMobileMenu();
-  }
-};
-
 const handleKeyboardShortcut = async (event: KeyboardEvent) => {
   if (event.shiftKey && event.altKey && event.key.toLowerCase() === 'n') {
     event.preventDefault();
@@ -614,12 +621,10 @@ onMounted(() => {
   // Data loading is handled automatically by useSiteData
   window.addEventListener('show-add-modal', handleQuickAction);
   window.addEventListener('keydown', handleKeyboardShortcut);
-  document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
   window.removeEventListener('show-add-modal', handleQuickAction);
   window.removeEventListener('keydown', handleKeyboardShortcut);
-  document.removeEventListener('click', handleClickOutside);
 });
 </script>

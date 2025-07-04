@@ -82,33 +82,43 @@
               </div>
             </div>
           </div>
-          <div class="flex items-center space-x-2" @click.stop>
-            <button 
-              @click="editVendor(vendor)" 
+          
+          <!-- Desktop Action Buttons -->
+          <div class="hidden lg:flex items-center space-x-2" @click.stop>
+            <button
+              @click="editVendor(vendor)"
               :disabled="!canEditDelete"
               :class="[
                 canEditDelete 
-                  ? 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300' 
+                  ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200' 
                   : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
-                'p-1'
+                'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
               ]"
-              title="Edit"
+              :title="t('common.edit')"
             >
               <Edit2 class="h-4 w-4" />
             </button>
-            <button 
-              @click="deleteVendor(vendor.id!)" 
+            <button
+              @click="deleteVendor(vendor.id!)"
               :disabled="!canEditDelete"
               :class="[
                 canEditDelete 
-                  ? 'text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400' 
+                  ? 'text-red-400 hover:text-red-600 dark:hover:text-red-300' 
                   : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
-                'p-1'
+                'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
               ]"
-              title="Delete"
+              :title="t('common.delete')"
             >
               <Trash2 class="h-4 w-4" />
             </button>
+          </div>
+
+          <!-- Mobile Dropdown Menu -->
+          <div class="lg:hidden">
+            <CardDropdownMenu
+              :actions="getVendorActions(vendor)"
+              @action="handleVendorAction(vendor, $event)"
+            />
           </div>
         </div>
       </div>
@@ -196,6 +206,7 @@ import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
 import TagSelector from '../components/TagSelector.vue';
 import SearchBox from '../components/SearchBox.vue';
+import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import { useVendorSearch } from '../composables/useSearch';
 import {
   vendorService,
@@ -332,6 +343,36 @@ const reloadAllData = async () => {
   // Other data will be reloaded automatically by useSiteData
 };
 
+const getVendorActions = (_vendor: Vendor) => {
+  return [
+    {
+      key: 'edit',
+      label: t('common.edit'),
+      icon: Edit2,
+      variant: 'default' as const,
+      disabled: !canEditDelete
+    },
+    {
+      key: 'delete',
+      label: t('common.delete'),
+      icon: Trash2,
+      variant: 'danger' as const,
+      disabled: !canEditDelete
+    }
+  ];
+};
+
+const handleVendorAction = (vendor: Vendor, action: string) => {
+  switch (action) {
+    case 'edit':
+      editVendor(vendor);
+      break;
+    case 'delete':
+      deleteVendor(vendor.id!);
+      break;
+  }
+};
+
 const handleAddVendor = async () => {
   if (!canCreateVendor) {
     error(t('subscription.banner.freeTierLimitReached'));
@@ -387,7 +428,7 @@ const editVendor = (vendor: Vendor) => {
 };
 
 const deleteVendor = async (id: string) => {
-  if (!canEditDelete.value) {
+  if (!canEditDelete) {
     error(t('subscription.banner.freeTierLimitReached'));
     return;
   }

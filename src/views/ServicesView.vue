@@ -94,17 +94,55 @@
             </div>
           </div>
           
-          <div class="flex items-center space-x-2 ml-4" @click.stop v-if="canEditDelete">
-            <button @click="editService(service)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" :title="t('common.edit')" v-if="canUpdate">
+          <!-- Desktop Action Buttons -->
+          <div class="hidden lg:flex items-center space-x-2" @click.stop>
+            <button
+              @click="editService(service)"
+              :disabled="!canUpdate"
+              :class="[
+                canUpdate 
+                  ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200' 
+                  : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+                'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+              ]"
+              :title="t('common.edit')"
+            >
               <Edit2 class="h-4 w-4" />
             </button>
-            <button @click="toggleServiceStatus(service)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" :title="service.is_active ? t('services.deactivate') : t('services.activate')" v-if="canUpdate">
-              <EyeOff class="h-4 w-4" v-if="service.is_active"></EyeOff>
-              <Eye class="h-4 w-4" v-if="!service.is_active"></Eye>
+            <button
+              @click="toggleServiceStatus(service)"
+              :disabled="!canUpdate"
+              :class="[
+                canUpdate 
+                  ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200' 
+                  : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+                'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+              ]"
+              :title="service.is_active ? t('services.deactivate') : t('services.activate')"
+            >
+              <component :is="service.is_active ? EyeOff : Eye" class="h-4 w-4" />
             </button>
-            <button @click="deleteService(service.id!)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400" :title="t('common.delete')" :disabled="!canDelete">
+            <button
+              @click="deleteService(service.id!)"
+              :disabled="!canDelete"
+              :class="[
+                canDelete 
+                  ? 'text-red-400 hover:text-red-600 dark:hover:text-red-300' 
+                  : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+                'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+              ]"
+              :title="t('common.delete')"
+            >
               <Trash2 class="h-4 w-4" />
             </button>
+          </div>
+
+          <!-- Mobile Dropdown Menu -->
+          <div class="lg:hidden">
+            <CardDropdownMenu
+              :actions="getServiceActions(service)"
+              @action="handleServiceAction(service, $event)"
+            />
           </div>
         </div>
       </div>
@@ -284,6 +322,7 @@ import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
 import TagSelector from '../components/TagSelector.vue';
+import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import { 
   serviceService, 
   serviceBookingService,
@@ -321,9 +360,6 @@ const canCreateService = computed(() => {
   return !isReadOnly.value && checkCreateLimit('services');
 });
 
-const canEditDelete = computed(() => {
-  return !isReadOnly.value && canDelete.value;
-});
 
 const form = reactive({
   name: '',
@@ -471,6 +507,46 @@ const closeModal = () => {
     tags: [],
     is_active: true
   });
+};
+
+const getServiceActions = (service: Service) => {
+  return [
+    {
+      key: 'edit',
+      label: t('common.edit'),
+      icon: Edit2,
+      variant: 'default' as const,
+      hidden: !canUpdate.value
+    },
+    {
+      key: 'toggle-status',
+      label: service.is_active ? t('services.deactivate') : t('services.activate'),
+      icon: service.is_active ? EyeOff : Eye,
+      variant: 'default' as const,
+      hidden: !canUpdate.value
+    },
+    {
+      key: 'delete',
+      label: t('common.delete'),
+      icon: Trash2,
+      variant: 'danger' as const,
+      disabled: !canDelete
+    }
+  ];
+};
+
+const handleServiceAction = (service: Service, action: string) => {
+  switch (action) {
+    case 'edit':
+      editService(service);
+      break;
+    case 'toggle-status':
+      toggleServiceStatus(service);
+      break;
+    case 'delete':
+      deleteService(service.id!);
+      break;
+  }
 };
 
 const handleAddService = async () => {

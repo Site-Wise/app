@@ -124,24 +124,39 @@
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <div class="flex items-center space-x-2">
-                  <button @click="viewDelivery(delivery)" class="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300">
+                <!-- Desktop Action Buttons -->
+                <div class="hidden lg:flex items-center space-x-2" @click.stop>
+                  <button 
+                    @click="viewDelivery(delivery)" 
+                    class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                    :title="t('common.view')"
+                  >
                     <Eye class="h-4 w-4" />
                   </button>
                   <button 
                     v-if="canEditDelete && delivery.payment_status === 'pending'" 
                     @click="editDelivery(delivery)" 
-                    class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                    class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                    :title="t('common.edit')"
                   >
                     <Edit2 class="h-4 w-4" />
                   </button>
                   <button 
                     v-if="canEditDelete && delivery.payment_status === 'pending'" 
                     @click="deleteDelivery(delivery)" 
-                    class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                    class="p-2 text-red-400 hover:text-red-600 dark:hover:text-red-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                    :title="t('common.delete')"
                   >
                     <Trash2 class="h-4 w-4" />
                   </button>
+                </div>
+
+                <!-- Mobile Dropdown Menu -->
+                <div class="lg:hidden">
+                  <CardDropdownMenu
+                    :actions="getDeliveryActions(delivery)"
+                    @action="handleDeliveryAction(delivery, $event)"
+                  />
                 </div>
               </td>
             </tr>
@@ -178,52 +193,10 @@
             
             <!-- Mobile Actions Menu -->
             <div class="relative">
-              <button 
-                @click="toggleMobileMenu(delivery.id!)"
-                class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg touch-manipulation"
-              >
-                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                </svg>
-              </button>
-              
-              <Transition
-                enter-active-class="transition ease-out duration-100"
-                enter-from-class="transform opacity-0 scale-95"
-                enter-to-class="transform opacity-100 scale-100"
-                leave-active-class="transition ease-in duration-75"
-                leave-from-class="transform opacity-100 scale-100"
-                leave-to-class="transform opacity-0 scale-95"
-              >
-                <div v-if="openMobileMenuId === delivery.id"
-                     class="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 z-10">
-                  <div class="py-1">
-                    <button 
-                      @click="viewDelivery(delivery); openMobileMenuId = null"
-                      class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center touch-manipulation"
-                    >
-                      <Eye class="h-4 w-4 mr-2" />
-                      {{ t('common.view') }}
-                    </button>
-                    <button 
-                      v-if="canEditDelete && delivery.payment_status === 'pending'"
-                      @click="editDelivery(delivery); openMobileMenuId = null"
-                      class="w-full text-left px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center touch-manipulation"
-                    >
-                      <Edit2 class="h-4 w-4 mr-2" />
-                      {{ t('common.edit') }}
-                    </button>
-                    <button 
-                      v-if="canEditDelete && delivery.payment_status === 'pending'"
-                      @click="deleteDelivery(delivery); openMobileMenuId = null"
-                      class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center touch-manipulation"
-                    >
-                      <Trash2 class="h-4 w-4 mr-2" />
-                      {{ t('common.delete') }}
-                    </button>
-                  </div>
-                </div>
-              </Transition>
+              <CardDropdownMenu
+                :actions="getDeliveryActions(delivery)"
+                @action="handleDeliveryAction(delivery, $event)"
+              />
             </div>
           </div>
 
@@ -440,6 +413,7 @@ import { useDeliverySearch } from '../composables/useSearch';
 import PhotoGallery from '../components/PhotoGallery.vue';
 import MultiItemDeliveryModal from '../components/delivery/MultiItemDeliveryModal.vue';
 import SearchBox from '../components/SearchBox.vue';
+import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import { 
   deliveryService,
   vendorReturnService,
@@ -496,7 +470,6 @@ const showPhotoGallery = ref(false);
 const galleryDelivery = ref<Delivery | null>(null);
 const galleryIndex = ref(0);
 const loading = computed(() => deliveriesLoading.value);
-const openMobileMenuId = ref<string | null>(null);
 
 const canCreateDelivery = computed(() => {
   return !isReadOnly.value && checkCreateLimit('deliveries');
@@ -505,6 +478,45 @@ const canCreateDelivery = computed(() => {
 const canEditDelete = computed(() => {
   return !isReadOnly.value && canDelete.value;
 });
+
+const getDeliveryActions = (delivery: Delivery) => {
+  return [
+    {
+      key: 'view',
+      label: t('common.view'),
+      icon: Eye,
+      variant: 'default' as const
+    },
+    {
+      key: 'edit',
+      label: t('common.edit'),
+      icon: Edit2,
+      variant: 'default' as const,
+      disabled: !canEditDelete.value || delivery.payment_status !== 'pending'
+    },
+    {
+      key: 'delete',
+      label: t('common.delete'),
+      icon: Trash2,
+      variant: 'danger' as const,
+      disabled: !canEditDelete.value || delivery.payment_status !== 'pending'
+    }
+  ];
+};
+
+const handleDeliveryAction = (delivery: Delivery, action: string) => {
+  switch (action) {
+    case 'view':
+      viewDelivery(delivery);
+      break;
+    case 'edit':
+      editDelivery(delivery);
+      break;
+    case 'delete':
+      deleteDelivery(delivery);
+      break;
+  }
+};
 
 const reloadAllData = async () => {
   try {
@@ -618,9 +630,7 @@ const handleDeliveryEditSuccess = () => {
   reloadAllData();
 };
 
-const toggleMobileMenu = (deliveryId: string) => {
-  openMobileMenuId.value = openMobileMenuId.value === deliveryId ? null : deliveryId;
-};
+
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('en-IN');
@@ -652,13 +662,6 @@ const openPhotoGallery = (delivery: Delivery, index: number) => {
   showPhotoGallery.value = true;
 };
 
-// Close mobile menu when clicking outside
-const handleClickOutside = (event: Event) => {
-  const target = event.target as HTMLElement;
-  if (!target.closest('.relative')) {
-    openMobileMenuId.value = null;
-  }
-};
 
 // Handle 'show-add-modal' event from FAB
 const handleShowAddModal = () => {
@@ -674,13 +677,11 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
 
 onMounted(() => {
   // Data loading is handled automatically by useSiteData
-  document.addEventListener('click', handleClickOutside);
   window.addEventListener('show-add-modal', handleShowAddModal);
   window.addEventListener('keydown', handleKeyboardShortcut);
 });
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
   window.removeEventListener('show-add-modal', handleShowAddModal);
   window.removeEventListener('keydown', handleKeyboardShortcut);
 });

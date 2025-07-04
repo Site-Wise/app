@@ -72,46 +72,56 @@
               </div>
             </div>
           </div>
-          <div class="flex items-center space-x-2" @click.stop>
-            <button 
-              @click="editItem(item)" 
+          
+          <!-- Desktop Action Buttons -->
+          <div class="hidden lg:flex items-center space-x-2" @click.stop>
+            <button
+              @click="editItem(item)"
               :disabled="!canEditDelete"
               :class="[
                 canEditDelete 
-                  ? 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300' 
+                  ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200' 
                   : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
-                'p-1'
+                'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
               ]"
               :title="t('items.editItem')"
             >
               <Edit2 class="h-4 w-4" />
             </button>
-            <button 
+            <button
               @click="cloneItem(item)"
               :disabled="!canCreateItem"
               :class="[
                 canCreateItem 
-                  ? 'text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400' 
+                  ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200' 
                   : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
-                'p-1'
+                'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
               ]"
               :title="t('items.cloneItem')"
             >
               <Copy class="h-4 w-4" />
             </button>
-            <button 
-              @click="deleteItem(item.id!)" 
+            <button
+              @click="deleteItem(item.id!)"
               :disabled="!canEditDelete"
               :class="[
                 canEditDelete 
-                  ? 'text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400' 
+                  ? 'text-red-400 hover:text-red-600 dark:hover:text-red-300' 
                   : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
-                'p-1'
+                'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
               ]"
               :title="t('items.deleteItem')"
             >
               <Trash2 class="h-4 w-4" />
             </button>
+          </div>
+
+          <!-- Mobile Dropdown Menu -->
+          <div class="lg:hidden">
+            <CardDropdownMenu
+              :actions="getItemActions(item)"
+              @action="handleItemAction(item, $event)"
+            />
           </div>
         </div>
       </div>
@@ -199,6 +209,7 @@ import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
 import TagSelector from '../components/TagSelector.vue';
 import SearchBox from '../components/SearchBox.vue';
+import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import { useItemSearch } from '../composables/useSearch';
 import { 
   itemService, 
@@ -249,11 +260,11 @@ const formLoading = ref(false);
 const nameInputRef = ref<HTMLInputElement>();
 
 const canCreateItem = computed(() => {
-  return !isReadOnly.value && checkCreateLimit('items');
+  return checkCreateLimit('items') && !isReadOnly.value;
 });
 
 const canEditDelete = computed(() => {
-  return !isReadOnly.value && canDelete.value;
+  return !isReadOnly.value && canDelete;
 });
 
 const form = reactive({
@@ -311,6 +322,46 @@ const getUnitDisplay = (unitKey: string) => {
 
 const viewItemDetail = (itemId: string) => {
   router.push(`/items/${itemId}`);
+};
+
+const getItemActions = (_item: Item) => {
+  return [
+    {
+      key: 'edit',
+      label: t('items.editItem'),
+      icon: Edit2,
+      variant: 'default' as const,
+      disabled: !canEditDelete
+    },
+    {
+      key: 'clone',
+      label: t('items.cloneItem'),
+      icon: Copy,
+      variant: 'default' as const,
+      disabled: !canCreateItem
+    },
+    {
+      key: 'delete',
+      label: t('items.deleteItem'),
+      icon: Trash2,
+      variant: 'danger' as const,
+      disabled: !canEditDelete
+    }
+  ];
+};
+
+const handleItemAction = (item: Item, action: string) => {
+  switch (action) {
+    case 'edit':
+      editItem(item);
+      break;
+    case 'clone':
+      cloneItem(item);
+      break;
+    case 'delete':
+      deleteItem(item.id!);
+      break;
+  }
 };
 
 const handleAddItem = async () => {
@@ -382,7 +433,7 @@ const cloneItem = async (item: Item) => {
 };
 
 const deleteItem = async (id: string) => {
-  if (!canEditDelete.value) {
+  if (!canEditDelete) {
     error(t('subscription.banner.freeTierLimitReached'));
     return;
   }

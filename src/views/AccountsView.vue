@@ -84,17 +84,43 @@
             </div>
           </div>
           
-          <div class="flex items-center space-x-2 ml-4" @click.stop>
-            <button @click="editAccount(account)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" title="Edit">
+          <!-- Desktop Action Buttons -->
+          <div class="hidden lg:flex items-center space-x-2" @click.stop>
+            <button
+              @click="editAccount(account)"
+              class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+              :title="t('common.edit')"
+            >
               <Edit2 class="h-4 w-4" />
             </button>
-            <button @click="toggleAccountStatus(account)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" :title="account.is_active ? t('users.deactivate') : t('users.activate')">
-              <EyeOff class="h-4 w-4" v-if="account.is_active"></EyeOff>
-              <Eye class="h-4 w-4" v-if="!account.is_active"></Eye>
+            <button
+              @click="toggleAccountStatus(account)"
+              class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+              :title="account.is_active ? t('users.deactivate') : t('users.activate')"
+            >
+              <component :is="account.is_active ? EyeOff : Eye" class="h-4 w-4" />
             </button>
-            <button @click="deleteAccount(account.id!)" class="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400" title="Delete" :disabled="!canDelete">
+            <button
+              @click="deleteAccount(account.id!)"
+              :disabled="!canDelete"
+              :class="[
+                canDelete 
+                  ? 'text-red-400 hover:text-red-600 dark:hover:text-red-300' 
+                  : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+                'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+              ]"
+              :title="t('common.delete')"
+            >
               <Trash2 class="h-4 w-4" />
             </button>
+          </div>
+
+          <!-- Mobile Dropdown Menu -->
+          <div class="lg:hidden">
+            <CardDropdownMenu
+              :actions="getAccountActions(account)"
+              @action="handleAccountAction(account, $event)"
+            />
           </div>
         </div>
       </div>
@@ -234,6 +260,7 @@ import {
   Building2
 } from 'lucide-vue-next';
 import SearchBox from '../components/SearchBox.vue';
+import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import { 
   accountService,
   type Account
@@ -387,6 +414,44 @@ const closeModal = () => {
     is_active: true,
     opening_balance: 0
   });
+};
+
+const getAccountActions = (account: Account) => {
+  return [
+    {
+      key: 'edit',
+      label: t('common.edit'),
+      icon: Edit2,
+      variant: 'default' as const
+    },
+    {
+      key: 'toggle-status',
+      label: account.is_active ? t('users.deactivate') : t('users.activate'),
+      icon: account.is_active ? EyeOff : Eye,
+      variant: 'default' as const
+    },
+    {
+      key: 'delete',
+      label: t('common.delete'),
+      icon: Trash2,
+      variant: 'danger' as const,
+      disabled: !canDelete
+    }
+  ];
+};
+
+const handleAccountAction = (account: Account, action: string) => {
+  switch (action) {
+    case 'edit':
+      editAccount(account);
+      break;
+    case 'toggle-status':
+      toggleAccountStatus(account);
+      break;
+    case 'delete':
+      deleteAccount(account.id!);
+      break;
+  }
 };
 
 const handleAddAccount = async () => {

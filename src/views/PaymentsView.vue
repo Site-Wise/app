@@ -113,20 +113,31 @@
               {{ payment.reference || '-' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium hidden lg:table-cell">
-              <div class="flex items-center space-x-2">
-                <button @click="viewPayment(payment)" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300" :title="t('common.view')">
+              <!-- Desktop Action Buttons -->
+              <div class="hidden lg:flex items-center space-x-2" @click.stop>
+                <button
+                  @click="viewPayment(payment)"
+                  class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  :title="t('common.view')"
+                >
                   <Eye class="h-4 w-4" />
                 </button>
-                <button 
-                  v-if="canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])" 
-                  @click="startEditPayment(payment)" 
-                  class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300" 
+                <button
+                  v-if="canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])"
+                  @click="startEditPayment(payment)"
+                  class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                   :title="t('common.edit')"
                 >
-                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                  </svg>
+                  <Edit2 class="h-4 w-4" />
                 </button>
+              </div>
+
+              <!-- Mobile Dropdown Menu -->
+              <div class="lg:hidden">
+                <CardDropdownMenu
+                  :actions="getPaymentActions(payment)"
+                  @action="handlePaymentAction(payment, $event)"
+                />
               </div>
             </td>
 
@@ -410,6 +421,7 @@ import {
   CreditCard, 
   Plus, 
   Eye, 
+  Edit2,
   Loader2,
   Banknote,
   Wallet,
@@ -424,6 +436,7 @@ import { useSiteData } from '../composables/useSiteData';
 import { usePaymentSearch } from '../composables/useSearch';
 import SearchBox from '../components/SearchBox.vue';
 import PaymentModal from '../components/PaymentModal.vue';
+import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import { 
   paymentService, 
   paymentAllocationService,
@@ -808,6 +821,35 @@ const handleQuickAction = () => {
 };
 
 // Site change is handled automatically by useSiteData
+
+const getPaymentActions = (payment: Payment) => {
+  return [
+    {
+      key: 'view',
+      label: t('common.view'),
+      icon: Eye,
+      variant: 'default' as const
+    },
+    {
+      key: 'edit',
+      label: t('common.edit'),
+      icon: Edit2,
+      variant: 'default' as const,
+      hidden: !canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])
+    }
+  ];
+};
+
+const handlePaymentAction = (payment: Payment, action: string) => {
+  switch (action) {
+    case 'view':
+      viewPayment(payment);
+      break;
+    case 'edit':
+      startEditPayment(payment);
+      break;
+  }
+};
 
 // Register keyboard shortcuts
 const registerShortcuts = () => {
