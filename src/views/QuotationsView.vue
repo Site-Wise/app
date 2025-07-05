@@ -12,6 +12,7 @@
         @click="handleAddQuotation" 
         class="btn-primary"
         :title="t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
+        data-keyboard-shortcut="n"
       >
         <Plus class="mr-2 h-4 w-4" />
         {{ t('quotations.addQuotation') }}

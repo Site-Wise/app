@@ -15,6 +15,7 @@
           'hidden md:flex items-center'
         ]"
         :title="!canCreateVendor ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
+        data-keyboard-shortcut="n"
       >
         <Plus class="mr-2 h-4 w-4" />
         {{ t('vendors.addVendor') }}

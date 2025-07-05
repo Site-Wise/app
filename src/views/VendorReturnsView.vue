@@ -20,7 +20,8 @@
           :class="[
             canCreateReturn ? 'btn-primary' : 'btn-disabled'
           ]"
-          :title="!canCreateReturn ? t('subscription.banner.freeTierLimitReached') : ''"
+          :title="!canCreateReturn ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
+          data-keyboard-shortcut="n"
         >
           <Plus class="mr-2 h-4 w-4" />
           {{ t('vendors.addReturn') }}
