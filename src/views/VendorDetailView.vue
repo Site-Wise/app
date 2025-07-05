@@ -34,6 +34,10 @@
                 <FileText class="mr-3 h-4 w-4 text-red-600" />
                 {{ t('vendors.exportPdf') }}
               </button>
+              <button @click="exportTallyXml(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <FileText class="mr-3 h-4 w-4 text-blue-600" />
+                {{ t('vendors.exportTallyXml') }}
+              </button>
             </div>
           </div>
         </div>
@@ -67,6 +71,10 @@
             <button @click="handleMobileAction('exportPdf')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
               <FileText class="mr-3 h-5 w-5 text-red-600" />
               {{ t('vendors.exportPdf') }}
+            </button>
+            <button @click="handleMobileAction('exportTallyXml')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <FileText class="mr-3 h-5 w-5 text-blue-600" />
+              {{ t('vendors.exportTallyXml') }}
             </button>
             
             <!-- Divider -->
@@ -409,6 +417,7 @@ import {
   type CreditNoteUsage,
   type AccountTransaction
 } from '../services/pocketbase';
+import { TallyXmlExporter } from '../utils/tallyXmlExport';
 
 const route = useRoute();
 const router = useRouter();
@@ -1034,6 +1043,40 @@ const generateLedgerCSV = () => {
   ).join('\n');
 };
 
+const exportTallyXml = () => {
+  if (!vendor.value) return;
+
+  try {
+    // Prepare ledger data for Tally XML export
+    const ledgerData = TallyXmlExporter.prepareLedgerData(
+      vendor.value,
+      vendorDeliveries.value,
+      vendorPayments.value,
+      vendorCreditNotes.value,
+      vendorCreditNoteUsages.value,
+      vendorReturns.value
+    );
+
+    // Export options
+    const exportOptions = {
+      companyName: 'SiteWise Construction', // You can make this configurable
+      periodFrom: '01-04-2024', // Financial year start
+      periodTo: '31-03-2025',   // Financial year end
+      includeNarration: true,
+      includeVoucherNumber: true
+    };
+
+    // Generate XML content
+    const xmlContent = TallyXmlExporter.generateVendorLedgerXml(ledgerData, exportOptions);
+
+    // Download the XML file
+    const filename = `${vendor.value.name || 'Vendor'}_Tally_${new Date().toISOString().split('T')[0]}.xml`;
+    TallyXmlExporter.downloadXmlFile(xmlContent, filename);
+  } catch (error) {
+    console.error('Error exporting Tally XML:', error);
+  }
+};
+
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
 };
@@ -1079,6 +1122,9 @@ const handleMobileAction = async (action: string) => {
           break;
         case 'exportPdf':
           await exportLedgerPDF();
+          break;
+        case 'exportTallyXml':
+          exportTallyXml();
           break;
         case 'createReturn':
           createReturn();
