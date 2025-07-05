@@ -317,7 +317,8 @@ const getUnitDisplay = (unitKey: string) => {
     return unitKey;
   }
   
-  return `${translation} (${unitKey})`;
+  // return `${translation} (${unitKey})`;
+  return `(${translation})`;
 };
 
 const viewItemDetail = (itemId: string) => {

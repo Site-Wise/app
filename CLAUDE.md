@@ -14,6 +14,20 @@ Vue 3 + TypeScript + Vite, PocketBase backend, Tauri desktop, PWA mobile, Tailwi
 - **Deprecation**: `incoming_items` has been deprecated. Use `deliveries` and `delivery_items` instead.
 - **Payment Interface**: The `Payment` interface now has `deliveries: string[]` (not `incoming_items`)
 
+## Security Model
+
+### Site Data Isolation
+- All service methods filter data by `getCurrentSiteId()`
+- `getById()` methods include site validation to prevent cross-site access
+- All site-specific services now have consistent `getById()` methods
+- Exceptions: AuthService, SiteService, SiteUserService (by design)
+- **Testing**: `cross-site-access-prevention.test.ts` verifies isolation works correctly
+
+### Role-Based Access Control
+- Three roles: `owner`, `supervisor`, `accountant`
+- Permissions checked via `calculatePermissions(userRole)`
+- API rules in PocketBase must match these roles exactly
+
 ## Key Patterns
 
 ### Code Structure

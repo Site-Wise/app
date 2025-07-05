@@ -1029,8 +1029,13 @@ export class AccountService {
   }
 
   async getById(id: string): Promise<Account | null> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
     try {
-      const record = await pb.collection('accounts').getOne(id);
+      const record = await pb.collection('accounts').getOne(id, {
+        filter: `site="${siteId}"`
+      });
       return this.mapRecordToAccount(record);
     } catch (error) {
       return null;
@@ -1126,6 +1131,20 @@ export class ItemService {
     return records.map(record => this.mapRecordToItem(record));
   }
 
+  async getById(id: string): Promise<Item | null> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    try {
+      const record = await pb.collection('items').getOne(id, {
+        filter: `site="${siteId}"`
+      });
+      return this.mapRecordToItem(record);
+    } catch (error) {
+      return null;
+    }
+  }
+
   async create(data: Omit<Item, 'id' | 'site'>): Promise<Item> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
@@ -1194,8 +1213,13 @@ export class ServiceService {
   }
 
   async getById(id: string): Promise<Service | null> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
     try {
-      const record = await pb.collection('services').getOne(id);
+      const record = await pb.collection('services').getOne(id, {
+        filter: `site="${siteId}"`
+      });
       return this.mapRecordToService(record);
     } catch (error) {
       return null;
@@ -1273,6 +1297,20 @@ export class VendorService {
     return records.map(record => this.mapRecordToVendor(record));
   }
 
+  async getById(id: string): Promise<Vendor | null> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    try {
+      const record = await pb.collection('vendors').getOne(id, {
+        filter: `site="${siteId}"`
+      });
+      return this.mapRecordToVendor(record);
+    } catch (error) {
+      return null;
+    }
+  }
+
   async create(data: Omit<Vendor, 'id' | 'site'>): Promise<Vendor> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
@@ -1341,6 +1379,21 @@ export class QuotationService {
       expand: 'vendor,item,service'
     });
     return records.map(record => this.mapRecordToQuotation(record));
+  }
+
+  async getById(id: string): Promise<Quotation | null> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    try {
+      const record = await pb.collection('quotations').getOne(id, {
+        filter: `site="${siteId}"`,
+        expand: 'vendor,item,service'
+      });
+      return this.mapRecordToQuotation(record);
+    } catch (error) {
+      return null;
+    }
   }
 
   async create(data: Omit<Quotation, 'id' | 'site'>): Promise<Quotation> {
@@ -1468,8 +1521,12 @@ export class ServiceBookingService {
   }
 
   async getById(id: string): Promise<ServiceBooking | null> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
     try {
       const record = await pb.collection('service_bookings').getOne(id, {
+        filter: `site="${siteId}"`,
         expand: 'vendor,service'
       });
       return this.mapRecordToServiceBooking(record);
@@ -1595,6 +1652,21 @@ export class PaymentService {
       expand: 'vendor,account,deliveries,service_bookings,payment_allocations,payment_allocations.delivery,payment_allocations.service_booking,payment_allocations.service_booking.service,credit_notes'
     });
     return records.map(record => this.mapRecordToPayment(record));
+  }
+
+  async getById(id: string): Promise<Payment | null> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    try {
+      const record = await pb.collection('payments').getOne(id, {
+        filter: `site="${siteId}"`,
+        expand: 'vendor,account,deliveries,service_bookings,payment_allocations,payment_allocations.delivery,payment_allocations.service_booking,payment_allocations.service_booking.service,credit_notes'
+      });
+      return this.mapRecordToPayment(record);
+    } catch (error) {
+      return null;
+    }
   }
 
   async create(data: Omit<Payment, 'id' | 'site'>): Promise<Payment> {
@@ -1977,6 +2049,20 @@ export class TagService {
     return records.map(record => this.mapRecordToTag(record));
   }
 
+  async getById(id: string): Promise<Tag | null> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    try {
+      const record = await pb.collection('tags').getOne(id, {
+        filter: `site="${siteId}"`
+      });
+      return this.mapRecordToTag(record);
+    } catch (error) {
+      return null;
+    }
+  }
+
   async getBySite(siteId: string): Promise<Tag[]> {
     const records = await pb.collection('tags').getFullList({
       filter: `site="${siteId}"`,
@@ -2110,6 +2196,21 @@ export class AccountTransactionService {
       sort: '-transaction_date'
     });
     return records.map(record => this.mapRecordToAccountTransaction(record));
+  }
+
+  async getById(id: string): Promise<AccountTransaction | null> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    try {
+      const record = await pb.collection('account_transactions').getOne(id, {
+        filter: `site="${siteId}"`,
+        expand: 'account,vendor,related_return,credit_note'
+      });
+      return this.mapRecordToAccountTransaction(record);
+    } catch (error) {
+      return null;
+    }
   }
 
   async getByAccount(accountId: string): Promise<AccountTransaction[]> {
@@ -2459,8 +2560,12 @@ export class VendorReturnService {
   }
 
   async getById(id: string): Promise<VendorReturn | null> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
     try {
       const record = await pb.collection('vendor_returns').getOne(id, {
+        filter: `site="${siteId}"`,
         expand: 'vendor,approved_by'
       });
       return this.mapRecordToVendorReturn(record);
@@ -2834,6 +2939,21 @@ export class VendorRefundService {
     return records.map(record => this.mapRecordToVendorRefund(record));
   }
 
+  async getById(id: string): Promise<VendorRefund | null> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    try {
+      const record = await pb.collection('vendor_refunds').getOne(id, {
+        filter: `site="${siteId}"`,
+        expand: 'vendor_return,vendor,account,processed_by'
+      });
+      return this.mapRecordToVendorRefund(record);
+    } catch (error) {
+      return null;
+    }
+  }
+
   async getByReturn(vendorReturnId: string): Promise<VendorRefund[]> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
@@ -3013,8 +3133,12 @@ class VendorCreditNoteService {
   }
 
   async getById(id: string): Promise<VendorCreditNote | null> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
     try {
       const record = await pb.collection('vendor_credit_notes').getOne(id, {
+        filter: `site="${siteId}"`,
         expand: 'vendor,return'
       });
       return this.mapRecordToCreditNote(record);
@@ -3225,7 +3349,11 @@ export class DeliveryService {
   }
 
   async getById(id: string): Promise<Delivery> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
     const record = await pb.collection('deliveries').getOne(id, {
+      filter: `site="${siteId}"`,
       expand: 'vendor,delivery_items,delivery_items.item'
     });
     

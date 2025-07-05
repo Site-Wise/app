@@ -1,9 +1,7 @@
 // Hook to automatically grant site permissions when an invitation is accepted
 onRecordAfterUpdateSuccess((e) => {
-  if (e.record.tableName() !== 'site_invitations') return
-
   const invitation = e.record
-  const oldRecord = e.record.originalCopy()
+  const oldRecord = e.record.original()
 
   // Check if status changed from pending to accepted
   if (!(oldRecord.get('status') === 'pending' && invitation.get('status') === 'accepted')) {
@@ -16,7 +14,7 @@ onRecordAfterUpdateSuccess((e) => {
     const users = e.app.findRecordsByFilter('users', `email = "${userEmail}"`)
 
     if (!users || users.length === 0) {
-      e.app.logger().error(`No user found with email ${userEmail} for invitation ${invitation.getId()}`)
+      e.app.logger().error(`No user found with email ${userEmail} for invitation ${invitation.get('id')}`)
       return
     }
 
@@ -42,7 +40,7 @@ onRecordAfterUpdateSuccess((e) => {
     const siteUserCollection = e.app.findCollectionByNameOrId('site_users')
     const siteUserRecord = new Record(siteUserCollection)
     siteUserRecord.set('site', invitation.get('site'))
-    siteUserRecord.set('user', user.getId())
+    siteUserRecord.set('user', user.get('id'))
     siteUserRecord.set('role', invitation.get('role'))
     siteUserRecord.set('assigned_by', invitation.get('invited_by'))
     siteUserRecord.set('is_active', true)
