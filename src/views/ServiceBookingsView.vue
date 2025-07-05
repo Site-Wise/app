@@ -365,7 +365,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, computed, nextTick } from 'vue';
+import { ref, reactive, computed, nextTick } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { 
   Calendar, 
   Plus, 
@@ -618,14 +619,7 @@ const handleKeyboardShortcut = async (event: KeyboardEvent) => {
   }
 };
 
-onMounted(() => {
-  // Data loading is handled automatically by useSiteData
-  window.addEventListener('show-add-modal', handleQuickAction);
-  window.addEventListener('keydown', handleKeyboardShortcut);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('show-add-modal', handleQuickAction);
-  window.removeEventListener('keydown', handleKeyboardShortcut);
-});
+// Event listeners using @vueuse/core
+useEventListener(window, 'show-add-modal', handleQuickAction);
+useEventListener(window, 'keydown', handleKeyboardShortcut);
 </script>

@@ -21,8 +21,28 @@ export function usePWA() {
   // Use Vite PWA plugin's built-in registration
   const {
     needRefresh: updateAvailable,
-    updateServiceWorker
-  } = useRegisterSW();
+    updateServiceWorker,
+    offlineReady
+  } = useRegisterSW({
+    immediate: true,
+    onRegistered(r) {
+      console.log('PWA: Service Worker registered', r);
+      // Check for updates periodically (every hour)
+      r && setInterval(() => {
+        console.log('PWA: Checking for updates...');
+        r.update();
+      }, 60 * 60 * 1000);
+    },
+    onRegisterError(error) {
+      console.error('PWA: Service Worker registration error', error);
+    },
+    onNeedRefresh() {
+      console.log('PWA: New content available, update needed');
+    },
+    onOfflineReady() {
+      console.log('PWA: App ready to work offline');
+    }
+  });
 
   // Check if app is installed
   const checkInstallStatus = () => {
@@ -153,6 +173,7 @@ export function usePWA() {
     isInstalled,
     isOnline,
     updateAvailable,
+    offlineReady,
     installApp,
     updateApp,
     requestNotificationPermission,

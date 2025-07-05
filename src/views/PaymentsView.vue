@@ -415,7 +415,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { useRoute } from 'vue-router';
 import { 
   CreditCard, 
@@ -874,6 +875,10 @@ const handleClickOutside = (event: Event) => {
   }
 };
 
+// Event listeners using @vueuse/core
+useEventListener(window, 'show-add-modal', handleQuickAction);
+useEventListener(document, 'click', handleClickOutside);
+
 onMounted(async () => {
   // Data loading is handled automatically by useSiteData
   // Check for paymentId query parameter and auto-open payment modal
@@ -890,13 +895,5 @@ onMounted(async () => {
   
   // Register keyboard shortcuts
   registerShortcuts();
-  
-  window.addEventListener('show-add-modal', handleQuickAction);
-  document.addEventListener('click', handleClickOutside);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('show-add-modal', handleQuickAction);
-  document.removeEventListener('click', handleClickOutside);
 });
 </script>

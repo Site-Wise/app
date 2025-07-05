@@ -197,7 +197,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, computed, nextTick } from 'vue';
+import { ref, reactive, onMounted, computed, nextTick } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { useKeyboardShortcutSingle } from '../composables/useKeyboardShortcut';
 import { useRouter } from 'vue-router';
 import { Users, Plus, Edit2, Trash2, Loader2, Mail, Phone, MapPin } from 'lucide-vue-next';
@@ -472,15 +473,13 @@ const handleQuickAction = async () => {
 // Keyboard shortcut for adding new vendor (Shift+Alt+N)
 useKeyboardShortcutSingle('n', handleAddVendor, { shiftKey: true, altKey: true });
 
+// Event listeners using @vueuse/core
+useEventListener(window, 'show-add-modal', handleQuickAction);
+
 onMounted(() => {
   // Data loading is handled automatically by useSiteData
   // Set up watchers for tag updates
   setTimeout(watchForTagUpdates, 100);
-  window.addEventListener('show-add-modal', handleQuickAction);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('show-add-modal', handleQuickAction);
 });
 
 // Watch for changes in vendors and tags to update mapping

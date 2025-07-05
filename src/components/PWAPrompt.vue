@@ -101,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { HardHat, Download, X, RefreshCw, WifiOff, Loader2 } from 'lucide-vue-next';
 import { usePWA } from '../composables/usePWA';
 import { useI18n } from '../composables/useI18n';
@@ -150,6 +150,24 @@ onMounted(() => {
   const wasDismissed = sessionStorage.getItem('pwa-install-dismissed');
   if (wasDismissed) {
     dismissed.value = true;
+  }
+  
+  // Debug logging
+  console.log('PWAPrompt mounted:', {
+    isInstallable: isInstallable.value,
+    updateAvailable: updateAvailable.value,
+    isOnline: isOnline.value,
+    dismissed: dismissed.value,
+    updateDismissed: updateDismissed.value
+  });
+});
+
+// Watch for update availability changes
+watch(updateAvailable, (newValue) => {
+  console.log('PWAPrompt: updateAvailable changed to', newValue);
+  if (newValue) {
+    // Reset dismissal when a new update is available
+    updateDismissed.value = false;
   }
 });
 </script>

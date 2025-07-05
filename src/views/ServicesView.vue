@@ -300,7 +300,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
+import { ref, reactive, computed, watch, nextTick } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { useRouter } from 'vue-router';
 import { 
   Wrench, 
@@ -577,13 +578,7 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
   }
 };
 
-onMounted(() => {
-  window.addEventListener('show-add-modal', handleQuickAction);
-  window.addEventListener('keydown', handleKeyboardShortcut);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('show-add-modal', handleQuickAction);
-  window.removeEventListener('keydown', handleKeyboardShortcut);
-});
+// Event listeners using @vueuse/core
+useEventListener(window, 'show-add-modal', handleQuickAction);
+useEventListener(window, 'keydown', handleKeyboardShortcut);
 </script>

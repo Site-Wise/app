@@ -85,7 +85,7 @@ export default defineConfig({
         clientsClaim: true
       },
       devOptions: {
-        enabled: false // Disable in development to avoid the error
+        enabled: true // Enable PWA in development for testing
       }
     })])
   ],

@@ -404,7 +404,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { Plus, Edit2, Trash2, Loader2, Eye, X } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
@@ -676,16 +677,9 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
   }
 };
 
-onMounted(() => {
-  // Data loading is handled automatically by useSiteData
-  window.addEventListener('show-add-modal', handleShowAddModal);
-  window.addEventListener('keydown', handleKeyboardShortcut);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('show-add-modal', handleShowAddModal);
-  window.removeEventListener('keydown', handleKeyboardShortcut);
-});
+// Event listeners using @vueuse/core
+useEventListener(window, 'show-add-modal', handleShowAddModal);
+useEventListener(window, 'keydown', handleKeyboardShortcut);
 </script>
 
 <style scoped>

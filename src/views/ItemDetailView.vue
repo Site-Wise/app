@@ -203,6 +203,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { useI18n } from '../composables/useI18n';
 import { useRoute, useRouter } from 'vue-router';
 import {
@@ -508,18 +509,13 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
 };
 
+// Event listeners using @vueuse/core
+const handleResize = () => {
+  setTimeout(drawPriceChart, 100);
+};
+useEventListener(window, 'resize', handleResize);
+
 onMounted(() => {
   loadItemData();
-
-  // Redraw chart on window resize
-  const handleResize = () => {
-    setTimeout(drawPriceChart, 100);
-  };
-  window.addEventListener('resize', handleResize);
-
-  // Cleanup
-  return () => {
-    window.removeEventListener('resize', handleResize);
-  };
 });
 </script>

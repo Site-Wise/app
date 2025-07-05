@@ -199,7 +199,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, computed, nextTick } from 'vue';
+import { ref, reactive, computed, nextTick } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { FileText, Plus, Edit2, Trash2, Loader2 } from 'lucide-vue-next';
 import { 
   quotationService, 
@@ -402,12 +403,6 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
   }
 };
 
-onMounted(() => {
-  // Data loading is handled automatically by useSiteData
-  window.addEventListener('keydown', handleKeyboardShortcut);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyboardShortcut);
-});
+// Event listeners using @vueuse/core
+useEventListener(window, 'keydown', handleKeyboardShortcut);
 </script>

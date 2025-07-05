@@ -367,7 +367,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { useRoute, useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
 import {
@@ -1108,12 +1109,10 @@ const handleClickOutside = (event: Event) => {
   }
 };
 
+// Event listeners using @vueuse/core
+useEventListener(document, 'click', handleClickOutside);
+
 onMounted(() => {
   loadVendorData();
-  document.addEventListener('click', handleClickOutside);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
 });
 </script>

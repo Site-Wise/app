@@ -201,7 +201,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, computed, nextTick } from 'vue';
+import { ref, reactive, computed, nextTick } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { useKeyboardShortcutSingle } from '../composables/useKeyboardShortcut';
 import { useRouter } from 'vue-router';
 import { Package, Plus, Edit2, Trash2, Loader2, Copy } from 'lucide-vue-next';
@@ -473,12 +474,6 @@ const handleQuickAction = async () => {
 // Keyboard shortcut for adding new item (Shift+Alt+N)
 useKeyboardShortcutSingle('n', handleAddItem, { shiftKey: true, altKey: true });
 
-onMounted(() => {
-  // Data loading is handled automatically by useSiteData
-  window.addEventListener('show-add-modal', handleQuickAction);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('show-add-modal', handleQuickAction);
-});
+// Handle custom event for modal
+useEventListener(window, 'show-add-modal', handleQuickAction);
 </script>
