@@ -4,8 +4,7 @@ import {
   authService,
   siteUserService,
   pb,
-  type SiteInvitation,
-  type User 
+  type SiteInvitation
 } from '../services/pocketbase';
 
 const pendingInvitations = ref<SiteInvitation[]>([]);

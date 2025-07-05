@@ -592,7 +592,7 @@ const isExpired = (dateString: string) => {
 
 const isCurrentUser = (siteUser: SiteUser) => {
   const currentUser = authService.currentUser;
-  return currentUser && siteUser.user === currentUser.id;
+  return Boolean(currentUser && siteUser.user === currentUser.id);
 };
 
 const loadSiteUsers = async () => {
