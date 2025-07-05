@@ -4,7 +4,8 @@ import {
   authService,
   siteUserService,
   pb,
-  type SiteInvitation 
+  type SiteInvitation,
+  type User 
 } from '../services/pocketbase';
 
 const pendingInvitations = ref<SiteInvitation[]>([]);
@@ -36,9 +37,27 @@ export function useInvitations() {
     isLoading.value = true;
     try {
       const allInvitations = await siteInvitationService.getAll();
-      receivedInvitations.value = allInvitations.filter(
+      const pendingInvitationsForUser = allInvitations.filter(
         invitation => invitation.email === user.email && invitation.status === 'pending'
       );
+
+      // Filter out invitations for sites where the user is already a member
+      const validInvitations = [];
+      for (const invitation of pendingInvitationsForUser) {
+        try {
+          const existingRole = await siteUserService.getUserRoleForSite(user.id, invitation.site);
+          // Only include invitation if user is NOT already a member
+          if (!existingRole) {
+            validInvitations.push(invitation);
+          }
+        } catch (error) {
+          // If there's an error checking membership, include the invitation
+          // (better to show it than hide a valid invitation)
+          validInvitations.push(invitation);
+        }
+      }
+
+      receivedInvitations.value = validInvitations;
     } catch (error) {
       console.error('Error loading received invitations:', error);
     } finally {
@@ -71,10 +90,32 @@ export function useInvitations() {
     const user = authService.currentUser;
     if (!user) throw new Error('User not authenticated');
 
+    const trimmedEmail = email.toLowerCase().trim();
+
+    // Check if there's already a user with this email who is a member of this site
+    // Use the same approach as siteUserService.getBySite to ensure consistency
+    try {
+      const siteUsers = await siteUserService.getBySite(siteId);
+      
+      const existingMember = siteUsers.find(siteUser => 
+        siteUser.expand?.user?.email?.toLowerCase() === trimmedEmail
+      );
+      
+      if (existingMember) {
+        throw new Error(`${trimmedEmail} is already a member of this site with the role: ${existingMember.role}`);
+      }
+    } catch (error) {
+      // If it's our custom error, re-throw it
+      if (error instanceof Error && error.message.includes('already a member')) {
+        throw error;
+      }
+      // Otherwise, continue - might be a permission error or network issue
+    }
+
     // Check if there's already a valid (pending) invitation for this email and site
     const existingInvitations = await siteInvitationService.getBySite(siteId);
     const activeInvitation = existingInvitations.find(
-      inv => inv.email.toLowerCase() === email.toLowerCase().trim() && 
+      inv => inv.email.toLowerCase() === trimmedEmail && 
              inv.status === 'pending' &&
              new Date(inv.expires_at) > new Date() // Not expired
     );
@@ -90,7 +131,7 @@ export function useInvitations() {
 
     const invitationData = {
       site: siteId,
-      email: email.toLowerCase().trim(),
+      email: trimmedEmail,
       role,
       invited_by: user.id,
       invited_at: new Date().toISOString(),

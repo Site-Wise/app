@@ -100,14 +100,14 @@
                   </div>
                   <div>
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('users.teamMembers') }}</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ siteUsers.length }} {{ t('users.members') }}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ filteredSiteUsers.length }} {{ t('users.members') }}</p>
                   </div>
                 </div>
               </div>
             </div>
             
             <div class="p-6 space-y-4">
-              <div v-for="siteUser in siteUsers" :key="siteUser.id" class="group relative">
+              <div v-for="siteUser in filteredSiteUsers" :key="siteUser.id" class="group relative">
                 <div class="flex items-center gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 hover:bg-white dark:hover:bg-gray-700 hover:shadow-md transition-all duration-200">
                   <!-- User Avatar -->
                   <div class="relative">
@@ -138,14 +138,24 @@
                       <UserX v-if="siteUser.is_active" class="h-4 w-4" />
                       <UserCheck v-else class="h-4 w-4" />
                     </button>
-                    <button @click="removeUser(siteUser)" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" :title="t('users.removeUser')" :disabled="!canDelete">
+                    <button 
+                      @click="removeUser(siteUser)" 
+                      :disabled="!canDelete || isCurrentUser(siteUser)"
+                      :class="[
+                        'p-2 rounded-lg transition-colors',
+                        (!canDelete || isCurrentUser(siteUser))
+                          ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' 
+                          : 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
+                      ]"
+                      :title="isCurrentUser(siteUser) ? t('users.cannotRemoveSelf') : t('users.removeUser')"
+                    >
                       <Trash2 class="h-4 w-4" />
                     </button>
                   </div>
                 </div>
               </div>
               
-              <div v-if="siteUsers.length === 0" class="text-center py-12">
+              <div v-if="filteredSiteUsers.length === 0" class="text-center py-12">
                 <div class="mx-auto w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center mb-4">
                   <Users class="h-12 w-12 text-gray-400" />
                 </div>
@@ -452,6 +462,7 @@ import { useSite } from '../composables/useSite';
 import { useInvitations } from '../composables/useInvitations';
 import { 
   siteUserService,
+  authService,
   type SiteUser
 } from '../services/pocketbase';
 import { usePermissions } from '../composables/usePermissions';
@@ -529,6 +540,13 @@ const roleStats = computed(() => {
   return stats;
 });
 
+const filteredSiteUsers = computed(() => {
+  const currentUser = authService.currentUser;
+  if (!currentUser) return siteUsers.value;
+  
+  return siteUsers.value.filter(siteUser => !isCurrentUser(siteUser));
+});
+
 const getUserInitials = (name?: string) => {
   if (!name) return 'U';
   return name
@@ -570,6 +588,11 @@ const formatRelativeTime = (dateString: string) => {
 
 const isExpired = (dateString: string) => {
   return new Date(dateString) <= new Date();
+};
+
+const isCurrentUser = (siteUser: SiteUser) => {
+  const currentUser = authService.currentUser;
+  return currentUser && siteUser.user === currentUser.id;
 };
 
 const loadSiteUsers = async () => {
@@ -645,6 +668,12 @@ const toggleUserStatus = async (siteUser: SiteUser) => {
 };
 
 const removeUser = async (siteUser: SiteUser) => {
+  // Prevent users from removing themselves
+  if (isCurrentUser(siteUser)) {
+    alert(t('users.cannotRemoveSelf'));
+    return;
+  }
+  
   if (!confirm(t('users.confirmRemoveUser', { name: siteUser.expand?.user?.name || 'this user' }))) {
     return;
   }
