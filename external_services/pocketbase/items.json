@@ -5,474 +5,474 @@
   },
   {
     "name": "Sand",
-    "unit": "cubic meter"
+    "unit": "m3"
   },
   {
     "name": "Aggregate",
-    "unit": "cubic meter"
+    "unit": "m3"
   },
   {
     "name": "Bricks",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Concrete",
-    "unit": "cubic meter"
+    "unit": "m3"
   },
   {
     "name": "Steel reinforcement bars",
-    "unit": "kilogram"
+    "unit": "kg"
   },
   {
     "name": "Timber",
-    "unit": "cubic meter"
+    "unit": "m3"
   },
   {
     "name": "Plywood",
-    "unit": "square meter"
+    "unit": "m2"
   },
   {
     "name": "Blocks",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Paint",
-    "unit": "liter"
+    "unit": "l"
   },
   {
     "name": "Glass",
-    "unit": "square meter"
+    "unit": "m2"
   },
   {
     "name": "Aluminum",
-    "unit": "kilogram"
+    "unit": "kg"
   },
   {
     "name": "Tiles",
-    "unit": "square meter"
+    "unit": "m2"
   },
   {
     "name": "Pipes",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "Nails",
-    "unit": "kilogram"
+    "unit": "kg"
   },
   {
     "name": "Gypsum board",
-    "unit": "square meter"
+    "unit": "m2"
   },
   {
     "name": "Bitumen",
-    "unit": "kilogram"
+    "unit": "kg"
   },
   {
     "name": "Stone",
-    "unit": "cubic meter"
+    "unit": "m3"
   },
   {
     "name": "Lime",
-    "unit": "kilogram"
+    "unit": "kg"
   },
   {
     "name": "Plumbing fittings",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Electrical wires",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "Doors",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Windows",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Foam insulation",
-    "unit": "square meter"
+    "unit": "m2"
   },
   {
     "name": "Rubber",
-    "unit": "kilogram"
+    "unit": "kg"
   },
   {
     "name": "Copper",
-    "unit": "kilogram"
+    "unit": "kg"
   },
   {
     "name": "Fabric",
-    "unit": "square meter"
+    "unit": "m2"
   },
   {
     "name": "Surkhi",
-    "unit": "kilogram"
+    "unit": "kg"
   },
   {
     "name": "White cement",
-    "unit": "kilogram"
+    "unit": "kg"
   },
   {
     "name": "Asphalt",
-    "unit": "kilogram"
+    "unit": "kg"
   },
   {
     "name": "Bamboo",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "Alloy",
-    "unit": "kilogram"
+    "unit": "kg"
   },
   {
     "name": "Ceramics",
-    "unit": "square meter"
+    "unit": "m2"
   },
   {
     "name": "Carbon fiber",
-    "unit": "kilogram"
+    "unit": "kg"
   },
   {
     "name": "Liquid waterproofing gel",
-    "unit": "liter"
+    "unit": "l"
   },
   {
     "name": "Toilet",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Wash basin",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Sink",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Bathtub",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Showerhead",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Hand shower",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Health faucet/Jet spray",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Cistern flush tank",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Toilet seat cover",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Bidet",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Urinal",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Flushing cistern",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Basin faucet",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Bathtub faucet",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Basin bottle trap",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Floor drain",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Shower drain channel",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Basin coupling",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Soap dish",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Towel ring",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Toilet paper holder",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Tumbler holder",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Shelf tray",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Robe hook",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Vanity unit",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Mirror",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Exhaust fan",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Water heater",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Pipe",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "Pipe fittings",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Water pump",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "Electrical wire 0.5 sqmm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "Electrical wire 0.75 sqmm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "Electrical wire 1.0 sqmm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "Electrical wire 1.5 sqmm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "Electrical wire 2.5 sqmm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "Electrical wire 4.0 sqmm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "Electrical wire 6.0 sqmm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "Electrical wire 10.0 sqmm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "CPVC pipe 15mm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "CPVC pipe 20mm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "CPVC pipe 25mm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "CPVC pipe 32mm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "CPVC pipe 40mm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "CPVC pipe 50mm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "CPVC pipe 65mm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "CPVC pipe 80mm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "CPVC pipe 100mm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "CPVC pipe 150mm",
-    "unit": "meter"
+    "unit": "m"
   },
   {
     "name": "CPVC elbow 15mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC elbow 20mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC elbow 25mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC elbow 32mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC elbow 40mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC elbow 50mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC tee 15mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC tee 20mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC tee 25mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC tee 32mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC tee 40mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC tee 50mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC reducer 15x20mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC reducer 20x25mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC reducer 25x32mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC reducer 32x40mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC reducer 40x50mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC coupler 15mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC coupler 20mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC coupler 25mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC coupler 32mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC coupler 40mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC coupler 50mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC union 15mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC union 20mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC union 25mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC union 32mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC union 40mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC union 50mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC ball valve 15mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC ball valve 20mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC ball valve 25mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC ball valve 32mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC ball valve 40mm",
-    "unit": "number"
+    "unit": "each"
   },
   {
     "name": "CPVC ball valve 50mm",
-    "unit": "number"
+    "unit": "each"
   }
 ]

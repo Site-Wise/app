@@ -162,15 +162,16 @@
                 <option value="pkt">{{ t('units.pkt') }} (pkt)</option>
                 <option value="each">{{ t('units.each') }} (each)</option>
                 <option value="ft">{{ t('units.ft') }} (ft)</option>
+                <option value="m">{{ t('units.m') }} (m)</option>
                 <option value="m2">{{ t('units.m2') }} (m²)</option>
+                <option value="sqft">{{ t('units.sqft') }} (sqft)</option>
                 <option value="m3">{{ t('units.m3') }} (m³)</option>
+                <option value="ft3">{{ t('units.ft3') }} (ft³)</option>
+                <option value="l">{{ t('units.l') }} (l)</option>
                 <option value="kg">{{ t('units.kg') }} (kg)</option>
                 <option value="ton">{{ t('units.ton') }} (ton)</option>
                 <option value="bag">{{ t('units.bag') }} (bag)</option>
                 <option value="box">{{ t('units.box') }} (box)</option>
-                <option value="sqft">{{ t('units.sqft') }} (sqft)</option>
-                <option value="ft3">{{ t('units.ft3') }} (ft³)</option>
-                <option value="l">{{ t('units.l') }} (l)</option>
               </select>
             </div>
 

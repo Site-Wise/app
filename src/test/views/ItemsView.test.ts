@@ -263,7 +263,7 @@ describe('ItemsView', () => {
     
     expect(wrapper.text()).toContain('Test Item')
     expect(wrapper.text()).toContain('Test Description')
-    expect(wrapper.text()).toContain('kg')
+    expect(wrapper.text()).toContain('(Kilograms)')
   })
 
   it('should show add modal when add button is clicked', async () => {
