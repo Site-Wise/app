@@ -27,6 +27,7 @@ dist-ssr
 .clocignore
 *.tsbuildinfo
 coverage
+coverage-report.json
 
 # Tauri
 src-tauri/target

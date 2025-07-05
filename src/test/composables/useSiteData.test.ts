@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { ref } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
-import { useSiteData } from '../../composables/useSiteData'
+import { useSiteData, useSitePaginatedData } from '../../composables/useSiteData'
 import { useSiteStore } from '../../stores/site'
 
 // Mock the pocketbase service to prevent actual API calls
@@ -246,5 +246,298 @@ describe('useSiteData', () => {
 
     // Should have the data from the latest site change (site-2)
     expect(data.value).toEqual(mockItems2)
+  })
+})
+
+describe('useSitePaginatedData', () => {
+  let pinia: any
+  let siteStore: any
+  let mockLoadPaginatedData: any
+  let getCurrentSiteIdMock: any
+
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    
+    // Get the mock function to control return value
+    const pocketbaseMocks = await import('../../services/pocketbase')
+    getCurrentSiteIdMock = vi.mocked(pocketbaseMocks.getCurrentSiteId)
+    
+    // Reset to default return value for most tests
+    getCurrentSiteIdMock.mockReturnValue('site-1')
+    
+    // Set up Pinia
+    pinia = createPinia()
+    setActivePinia(pinia)
+    
+    // Get real store instance
+    siteStore = useSiteStore()
+    
+    // Create mock paginated data loading function
+    mockLoadPaginatedData = vi.fn()
+  })
+
+  afterEach(() => {
+    vi.clearAllTimers()
+  })
+
+  it('should initialize with default pagination values', () => {
+    const { items, loading, error, currentPage, totalPages, totalItems, perPage } = useSitePaginatedData(mockLoadPaginatedData)
+
+    expect(items.value).toEqual([])
+    expect(loading.value).toBe(true) // Loading starts immediately when site is available
+    expect(error.value).toBe(null)
+    expect(currentPage.value).toBe(1)
+    expect(totalPages.value).toBe(1)
+    expect(totalItems.value).toBe(0)
+    expect(perPage.value).toBe(10)
+  })
+
+  it('should use custom perPage option', () => {
+    const { perPage } = useSitePaginatedData(mockLoadPaginatedData, { perPage: 25 })
+    expect(perPage.value).toBe(25)
+  })
+
+  it('should load paginated data when site is available', async () => {
+    const mockResult = {
+      items: [{ id: 'item-1', name: 'Test Item' }],
+      totalItems: 50,
+      totalPages: 5
+    }
+    mockLoadPaginatedData.mockResolvedValue(mockResult)
+
+    const { items, loading, error, totalPages, totalItems } = useSitePaginatedData(mockLoadPaginatedData)
+
+    // Initially loading should be true
+    expect(loading.value).toBe(true)
+
+    // Wait for data to load
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    expect(mockLoadPaginatedData).toHaveBeenCalledWith('site-1', 1, 10)
+    expect(items.value).toEqual(mockResult.items)
+    expect(totalPages.value).toBe(5)
+    expect(totalItems.value).toBe(50)
+    expect(loading.value).toBe(false)
+    expect(error.value).toBe(null)
+  })
+
+  it('should not load data when no site is selected', async () => {
+    getCurrentSiteIdMock.mockReturnValue(null)
+    
+    pinia = createPinia()
+    setActivePinia(pinia)
+    siteStore = useSiteStore()
+    
+    vi.clearAllMocks()
+    mockLoadPaginatedData.mockResolvedValue({ items: [], totalItems: 0, totalPages: 1 })
+
+    const { items, totalPages, totalItems } = useSitePaginatedData(mockLoadPaginatedData)
+
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    expect(mockLoadPaginatedData).not.toHaveBeenCalled()
+    expect(items.value).toEqual([])
+    expect(totalPages.value).toBe(1)
+    expect(totalItems.value).toBe(0)
+  })
+
+  it('should handle pagination navigation', async () => {
+    const mockResult = {
+      items: [{ id: 'item-1', name: 'Test Item' }],
+      totalItems: 50,
+      totalPages: 5
+    }
+    mockLoadPaginatedData.mockResolvedValue(mockResult)
+
+    const { currentPage, totalPages, nextPage, prevPage, goToPage } = useSitePaginatedData(mockLoadPaginatedData)
+
+    // Wait for initial load
+    await new Promise(resolve => setTimeout(resolve, 50))
+    expect(currentPage.value).toBe(1)
+
+    // Test next page
+    nextPage()
+    await new Promise(resolve => setTimeout(resolve, 50))
+    expect(currentPage.value).toBe(2)
+    expect(mockLoadPaginatedData).toHaveBeenCalledWith('site-1', 2, 10)
+
+    // Test previous page
+    prevPage()
+    await new Promise(resolve => setTimeout(resolve, 50))
+    expect(currentPage.value).toBe(1)
+
+    // Test go to specific page
+    goToPage(3)
+    await new Promise(resolve => setTimeout(resolve, 50))
+    expect(currentPage.value).toBe(3)
+    expect(mockLoadPaginatedData).toHaveBeenCalledWith('site-1', 3, 10)
+  })
+
+  it('should not navigate beyond page boundaries', async () => {
+    const mockResult = {
+      items: [{ id: 'item-1', name: 'Test Item' }],
+      totalItems: 20,
+      totalPages: 2
+    }
+    mockLoadPaginatedData.mockResolvedValue(mockResult)
+
+    const { currentPage, nextPage, prevPage, goToPage } = useSitePaginatedData(mockLoadPaginatedData)
+
+    // Wait for initial load
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    // Try to go to previous page from page 1
+    prevPage()
+    expect(currentPage.value).toBe(1)
+
+    // Go to last page
+    goToPage(2)
+    await new Promise(resolve => setTimeout(resolve, 50))
+    expect(currentPage.value).toBe(2)
+
+    // Try to go to next page from last page
+    nextPage()
+    expect(currentPage.value).toBe(2)
+
+    // Try to go to invalid pages
+    goToPage(0)
+    expect(currentPage.value).toBe(2)
+
+    goToPage(10)
+    expect(currentPage.value).toBe(2)
+  })
+
+  it('should reset to page 1 when site changes', async () => {
+    const mockResult1 = {
+      items: [{ id: 'item-1', name: 'Site 1 Item' }],
+      totalItems: 30,
+      totalPages: 3
+    }
+    const mockResult2 = {
+      items: [{ id: 'item-2', name: 'Site 2 Item' }],
+      totalItems: 40,
+      totalPages: 4
+    }
+    
+    mockLoadPaginatedData
+      .mockResolvedValueOnce(mockResult1)
+      .mockResolvedValueOnce(mockResult1) // For page navigation
+      .mockResolvedValueOnce(mockResult2) // For site change
+
+    const { currentPage, goToPage, items } = useSitePaginatedData(mockLoadPaginatedData)
+
+    // Wait for initial load
+    await new Promise(resolve => setTimeout(resolve, 100))
+    expect(currentPage.value).toBe(1)
+
+    // Navigate to page 2
+    goToPage(2)
+    await new Promise(resolve => setTimeout(resolve, 100))
+    expect(currentPage.value).toBe(2)
+
+    // Change site
+    getCurrentSiteIdMock.mockReturnValue('site-2')
+    const mockSite2 = { id: 'site-2', name: 'Site 2' } as any
+    await siteStore.selectSite(mockSite2, 'admin')
+    
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    expect(currentPage.value).toBe(1) // Should reset to page 1
+    expect(items.value).toEqual(mockResult2.items)
+  })
+
+  it('should handle loading errors in paginated data', async () => {
+    const mockError = new Error('Failed to load paginated data')
+    mockLoadPaginatedData.mockRejectedValue(mockError)
+
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const { items, loading, error } = useSitePaginatedData(mockLoadPaginatedData)
+
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    expect(items.value).toEqual([])
+    expect(loading.value).toBe(false)
+    expect(error.value).toEqual(mockError)
+    
+    consoleSpy.mockRestore()
+  })
+
+  it('should clear data when site becomes null', async () => {
+    const mockResult = {
+      items: [{ id: 'item-1', name: 'Test Item' }],
+      totalItems: 50,
+      totalPages: 5
+    }
+    mockLoadPaginatedData.mockResolvedValue(mockResult)
+
+    const { items, totalPages, totalItems } = useSitePaginatedData(mockLoadPaginatedData)
+
+    // Wait for initial load
+    await new Promise(resolve => setTimeout(resolve, 100))
+    expect(items.value).toEqual(mockResult.items)
+
+    // Clear site
+    getCurrentSiteIdMock.mockReturnValue(null)
+    await siteStore.clearCurrentSite()
+
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    expect(items.value).toEqual([])
+    expect(totalPages.value).toBe(1)
+    expect(totalItems.value).toBe(0)
+  })
+
+  it('should provide reload functionality', async () => {
+    const mockResult1 = {
+      items: [{ id: 'item-1', name: 'Initial' }],
+      totalItems: 10,
+      totalPages: 1
+    }
+    const mockResult2 = {
+      items: [{ id: 'item-1', name: 'Reloaded' }],
+      totalItems: 15,
+      totalPages: 2
+    }
+    
+    mockLoadPaginatedData
+      .mockResolvedValueOnce(mockResult1)
+      .mockResolvedValueOnce(mockResult2)
+
+    const { items, totalItems, reload } = useSitePaginatedData(mockLoadPaginatedData)
+
+    // Wait for initial load
+    await new Promise(resolve => setTimeout(resolve, 50))
+    expect(items.value).toEqual(mockResult1.items)
+    expect(totalItems.value).toBe(10)
+
+    // Manually reload
+    await reload()
+
+    expect(items.value).toEqual(mockResult2.items)
+    expect(totalItems.value).toBe(15)
+    expect(mockLoadPaginatedData).toHaveBeenCalledTimes(2)
+  })
+
+  it('should handle auth store invalid state', async () => {
+    // Mock invalid auth state by overriding the mock
+    const pocketbaseMocks = await import('../../services/pocketbase')
+    const originalPb = pocketbaseMocks.pb
+    
+    // Create a new mock for this test
+    Object.defineProperty(originalPb, 'authStore', {
+      value: { isValid: false },
+      writable: true,
+      configurable: true
+    })
+
+    const { items, totalPages, totalItems } = useSitePaginatedData(mockLoadPaginatedData)
+
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    expect(mockLoadPaginatedData).not.toHaveBeenCalled()
+    expect(items.value).toEqual([])
+    expect(totalPages.value).toBe(1)
+    expect(totalItems.value).toBe(0)
   })
 })

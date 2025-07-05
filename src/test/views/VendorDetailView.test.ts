@@ -300,5 +300,52 @@ describe('VendorDetailView', () => {
       expect(wrapper.text()).toContain('Record Payment')
       expect(wrapper.text()).toContain('Create Return')
     })
+
+    it('should have XML export option in export dropdown', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Find export dropdown button
+      const exportButton = wrapper.findAll('button').find(btn => btn.text().includes('Export Ledger'));
+      expect(exportButton?.exists()).toBe(true);
+      
+      // Click to open dropdown
+      await exportButton?.trigger('click');
+      await wrapper.vm.$nextTick()
+
+      // Check if XML export option exists - it shows as translation key in tests
+      const xmlExportButton = wrapper.findAll('button').find(btn => 
+        btn.text().includes('Export for Tally') || 
+        btn.text().includes('vendors.exportTallyXml') ||
+        btn.text().includes('exportTallyXml')
+      );
+      
+      expect(xmlExportButton?.exists()).toBe(true);
+    });
+
+    it('should call exportTallyXml when XML export is clicked', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Mock the exportTallyXml method
+      const exportTallyXmlSpy = vi.spyOn(wrapper.vm, 'exportTallyXml')
+
+      // Open export dropdown
+      const exportButton = wrapper.findAll('button').find(btn => btn.text().includes('Export Ledger'))
+      await exportButton?.trigger('click')
+      await wrapper.vm.$nextTick()
+
+      // Click XML export option - use translation key that appears in tests
+      const xmlExportButton = wrapper.findAll('button').find(btn => 
+        btn.text().includes('Export for Tally') || 
+        btn.text().includes('vendors.exportTallyXml') ||
+        btn.text().includes('exportTallyXml')
+      )
+      await xmlExportButton?.trigger('click')
+
+      expect(exportTallyXmlSpy).toHaveBeenCalled()
+    });
   })
 })
