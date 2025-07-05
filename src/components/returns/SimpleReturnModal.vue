@@ -382,6 +382,7 @@ import {
 } from 'lucide-vue-next';
 import { useI18n } from '../../composables/useI18n';
 import { useToast } from '../../composables/useToast';
+import { useModalEscape } from '../../composables/useModalEscape';
 import FileUploadComponent from '../FileUploadComponent.vue';
 import {
   vendorReturnService,
@@ -407,6 +408,9 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const { success, error } = useToast();
+
+// ESC key handling for modal
+useModalEscape(() => emit('close'))
 
 // Component state
 const currentStep = ref(0);

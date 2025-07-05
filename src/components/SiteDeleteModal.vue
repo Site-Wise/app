@@ -2,15 +2,25 @@
   <div v-if="visible" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50" @click="$emit('close')">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md" @click.stop>
       <div class="p-6">
-        <!-- Header with Warning Icon -->
-        <div class="flex items-center gap-3 mb-6">
-          <div class="p-3 bg-red-100 dark:bg-red-900/30 rounded-xl">
-            <AlertTriangle class="h-6 w-6 text-red-600 dark:text-red-400" />
+        <!-- Header with Warning Icon and Close Button -->
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center gap-3">
+            <div class="p-3 bg-red-100 dark:bg-red-900/30 rounded-xl">
+              <AlertTriangle class="h-6 w-6 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ t('sites.delete.title') }}</h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('sites.delete.subtitle') }}</p>
+            </div>
           </div>
-          <div>
-            <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ t('sites.delete.title') }}</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('sites.delete.subtitle') }}</p>
-          </div>
+          <button 
+            @click="$emit('close')"
+            :disabled="deleting"
+            class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            :title="t('common.close')"
+          >
+            <X class="h-5 w-5" />
+          </button>
         </div>
 
         <!-- Warning Message -->
@@ -76,8 +86,9 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
-import { AlertTriangle, Trash2, Loader2 } from 'lucide-vue-next'
+import { AlertTriangle, Trash2, Loader2, X } from 'lucide-vue-next'
 import { useI18n } from '../composables/useI18n'
+import { useModalEscape } from '../composables/useModalEscape'
 import { siteService, type Site } from '../services/pocketbase'
 import { useToast } from '../composables/useToast'
 import { useSiteStore } from '../stores/site'
@@ -101,6 +112,9 @@ const router = useRouter()
 const confirmationText = ref('')
 const deleting = ref(false)
 const confirmInput = ref<HTMLInputElement>()
+
+// ESC key handling for modal
+useModalEscape(() => emit('close'), () => props.visible && !deleting.value)
 
 const canDelete = computed(() => {
   return confirmationText.value === props.site?.name

@@ -263,8 +263,8 @@
     </div>
 
     <!-- Edit Account Modal -->
-    <div v-if="showEditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <div v-if="showEditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="showEditModal = false" @keydown.esc="showEditModal = false" tabindex="-1">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700" @click.stop>
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Edit Account</h3>
           
@@ -320,8 +320,8 @@
     </div>
 
     <!-- Credit Entry Modal -->
-    <div v-if="showCreditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <div v-if="showCreditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="showCreditModal = false" @keydown.esc="showCreditModal = false" tabindex="-1">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700" @click.stop>
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Add Credit Entry</h3>
           

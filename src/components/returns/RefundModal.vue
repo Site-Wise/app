@@ -249,6 +249,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { X, DollarSign, AlertTriangle, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '../../composables/useI18n';
+import { useModalEscape } from '../../composables/useModalEscape';
 import {
   vendorRefundService,
   vendorCreditNoteService,
@@ -269,6 +270,9 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+
+// ESC key handling for modal
+useModalEscape(() => emit('close'))
 
 // Form data
 const form = reactive({

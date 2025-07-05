@@ -348,6 +348,7 @@ import {
   Loader2
 } from 'lucide-vue-next';
 import { useI18n } from '../../composables/useI18n';
+import { useModalEscape } from '../../composables/useModalEscape';
 import {
   vendorReturnService,
   vendorReturnItemService,
@@ -369,6 +370,9 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+
+// ESC key handling for modal
+useModalEscape(() => emit('close'))
 
 // Data
 const returnItems = ref<VendorReturnItem[]>([]);

@@ -3,9 +3,19 @@
     <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4" @click.stop>
       <div class="mt-3">
         <!-- Dynamic Header -->
-        <div class="flex items-center mb-4">
-          <component :is="modalIcon" class="h-6 w-6 mr-3" :class="modalIconColor" />
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ modalTitle }}</h3>
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center">
+            <component :is="modalIcon" class="h-6 w-6 mr-3" :class="modalIconColor" />
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ modalTitle }}</h3>
+          </div>
+          <button 
+            type="button"
+            @click="handleEscape"
+            class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            :title="t('common.close')"
+          >
+            <X class="h-5 w-5" />
+          </button>
         </div>
         
         <form @submit.prevent="handleSubmit" class="space-y-4">
@@ -352,7 +362,8 @@ import {
   Banknote,
   Wallet,
   Smartphone,
-  Building2
+  Building2,
+  X
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useToast } from '../composables/useToast';
