@@ -70,6 +70,7 @@ export const mockDeliveryItem: DeliveryItem = {
   unit_price: 45,
   total_amount: 22500,
   notes: 'Steel rebar delivery',
+  site: 'site-1',
   created: '2024-01-01T00:00:00Z',
   updated: '2024-01-01T00:00:00Z'
 }

@@ -279,15 +279,13 @@ import {
   Loader2
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
-import { useToast } from '../composables/useToast';
 import { usePaymentPartials } from '../composables/usePaymentPartials';
 import TriStateCheckbox from './TriStateCheckbox.vue';
 import type { 
   Vendor, 
   Account,
   Delivery,
-  ServiceBooking,
-  VendorCreditNote
+  ServiceBooking
 } from '../services/pocketbase';
 import { vendorCreditNoteService } from '../services/pocketbase';
 
@@ -318,7 +316,6 @@ const emit = defineEmits<Emits>();
 
 // Composables
 const { t } = useI18n();
-const { error } = useToast();
 const {
   form,
   availableCreditNotes,
@@ -327,7 +324,6 @@ const {
   accountPaymentAmount,
   unallocatedAmount,
   allocationPercentage,
-  isFullyAllocated,
   isOverAllocated,
   initializeAllocations,
   updateAllocationState,

@@ -24,20 +24,22 @@
             <!-- Vendor Selection (CREATE/PAY_NOW) or Display (EDIT) -->
             <div v-if="mode !== 'EDIT'">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.vendor') }}</label>
-              <select 
-                ref="vendorInputRef" 
-                v-model="form.vendor" 
-                required 
-                class="input mt-1" 
-                @change="handleVendorChange" 
+              <VendorSearchBox
+                ref="vendorInputRef"
+                v-model="form.vendor"
+                :vendors="vendors"
+                :deliveries="deliveries"
+                :serviceBookings="serviceBookings"
+                :placeholder="t('forms.selectVendor')"
                 :autofocus="mode === 'CREATE'"
+                :required="true"
+                :outstanding-amount="vendorOutstanding"
+                :pending-items-count="vendorPendingItems"
                 name="vendor"
-              >
-                <option value="">{{ t('forms.selectVendor') }}</option>
-                <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
-                  {{ vendor.name }}
-                </option>
-              </select>
+                @vendor-selected="handleVendorSelected"
+                @focus="handleVendorFocus"
+                class="mt-1"
+              />
             </div>
             <div v-else class="flex justify-between">
               <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.vendor') }}:</span>
@@ -82,10 +84,15 @@
                   <label :for="`credit-note-${creditNote.id}`" class="flex-1 text-sm">
                     <div class="flex justify-between">
                       <span class="text-gray-900 dark:text-white">{{ creditNote.reference || `CN-${creditNote.id?.slice(-6)}` }}</span>
-                      <span class="text-green-600 dark:text-green-400 font-medium">₹{{ creditNote.balance.toFixed(2) }}</span>
+                      <div class="text-right">
+                        <span class="text-green-600 dark:text-green-400 font-medium">₹{{ creditNote.balance.toFixed(2) }}</span>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                          of ₹{{ creditNote.credit_amount.toFixed(2) }}
+                        </div>
+                      </div>
                     </div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">
-                      {{ creditNote.reason }}
+                      {{ creditNote.reason }} • {{ formatDate(creditNote.issue_date) }}
                     </div>
                   </label>
                 </div>
@@ -93,6 +100,17 @@
               <div v-if="selectedCreditNoteAmount > 0" class="mt-2 text-sm text-green-600 dark:text-green-400">
                 Selected credit notes: ₹{{ selectedCreditNoteAmount.toFixed(2) }}
               </div>
+            </div>
+
+            <!-- Validation Error Display -->
+            <div v-if="validationError" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+              <div class="flex items-center">
+                <svg class="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                </svg>
+                <span class="text-sm font-medium text-red-800 dark:text-red-300">Validation Error</span>
+              </div>
+              <p class="text-sm text-red-700 dark:text-red-400 mt-1">{{ validationError }}</p>
             </div>
 
             <!-- Payment Date (CREATE/PAY_NOW) or Display (EDIT) -->
@@ -156,22 +174,6 @@
             </div>
           </div>
 
-          <!-- Outstanding Amount Alert (CREATE/PAY_NOW) -->
-          <div v-if="mode !== 'EDIT' && form.vendor && vendorOutstanding > 0" class="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-            <div class="flex items-center">
-              <svg class="w-5 h-5 text-yellow-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-              </svg>
-              <div>
-                <p class="text-sm font-medium text-yellow-800 dark:text-yellow-300">
-                  Outstanding amount for this vendor: <strong>₹{{ vendorOutstanding.toFixed(2) }}</strong>
-                </p>
-                <p class="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
-                  {{ vendorPendingItems }} pending deliveries/bookings
-                </p>
-              </div>
-            </div>
-          </div>
 
           <!-- Allocation Progress Section (All Modes) -->
           <div v-if="showAllocationProgress" class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
@@ -258,28 +260,40 @@
               </span>
             </div>
             
+            <!-- Warning when account is required but not selected -->
+            <div v-if="isAccountRequiredForDeliverySelection" class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+              <div class="flex items-center">
+                <svg class="w-5 h-5 text-yellow-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <span class="text-sm font-medium text-yellow-800 dark:text-yellow-300">Account Required</span>
+              </div>
+              <p class="text-sm text-yellow-700 dark:text-yellow-400 mt-1">Available credit notes are insufficient. Please select an account to proceed with delivery selection.</p>
+            </div>
+            
             <!-- Deliveries -->
             <div v-if="selectableDeliveries.length > 0">
               <h4 class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{{ t('common.deliveries') }}</h4>
               <div class="space-y-2 max-h-40 overflow-y-auto">
-                <label v-for="delivery in selectableDeliveries" :key="delivery.id" class="flex items-start space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    :value="delivery.id" 
-                    v-model="form.deliveries"
-                    @change="handleDeliverySelectionChange"
-                    class="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 rounded"
+                <div v-for="delivery in selectableDeliveries" :key="delivery.id" :class="[
+                  'p-2 rounded transition-colors',
+                  isAccountRequiredForDeliverySelection 
+                    ? 'opacity-50' 
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+                ]">
+                  <TriStateCheckbox
+                    :id="`delivery-${delivery.id}`"
+                    :label="formatDate(delivery.delivery_date)"
+                    :secondary-text="`Total: ₹${delivery.total_amount.toFixed(2)} | Paid: ₹${delivery.paid_amount.toFixed(2)}`"
+                    :state="form.delivery_allocations[delivery.id]?.state || 'unchecked'"
+                    :total-amount="delivery.outstanding"
+                    :allocated-amount="form.delivery_allocations[delivery.id]?.amount || 0"
+                    :disabled="isAccountRequiredForDeliverySelection"
+                    :allow-partial-edit="true"
+                    :aria-label="`Select delivery from ${formatDate(delivery.delivery_date)}`"
+                    @change="handleDeliveryTriStateChange(delivery.id, $event)"
                   />
-                  <div class="flex-1 text-sm">
-                    <div class="flex justify-between">
-                      <span class="text-gray-900 dark:text-white">{{ formatDate(delivery.delivery_date) }}</span>
-                      <span class="font-medium text-gray-900 dark:text-white">₹{{ delivery.outstanding.toFixed(2) }}</span>
-                    </div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">
-                      Total: ₹{{ delivery.total_amount.toFixed(2) }} | Paid: ₹{{ delivery.paid_amount.toFixed(2) }}
-                    </div>
-                  </div>
-                </label>
+                </div>
               </div>
             </div>
             
@@ -287,24 +301,25 @@
             <div v-if="selectableBookings.length > 0">
               <h4 class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{{ t('common.serviceBookings') }}</h4>
               <div class="space-y-2 max-h-40 overflow-y-auto">
-                <label v-for="booking in selectableBookings" :key="booking.id" class="flex items-start space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    :value="booking.id" 
-                    v-model="form.service_bookings"
-                    @change="handleDeliverySelectionChange"
-                    class="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 rounded"
+                <div v-for="booking in selectableBookings" :key="booking.id" :class="[
+                  'p-2 rounded transition-colors',
+                  isAccountRequiredForDeliverySelection 
+                    ? 'opacity-50' 
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+                ]">
+                  <TriStateCheckbox
+                    :id="`booking-${booking.id}`"
+                    :label="booking.expand?.service?.name || 'Service'"
+                    :secondary-text="`${formatDate(booking.start_date)} | Total: ₹${booking.total_amount.toFixed(2)}`"
+                    :state="form.service_booking_allocations[booking.id]?.state || 'unchecked'"
+                    :total-amount="booking.outstanding"
+                    :allocated-amount="form.service_booking_allocations[booking.id]?.amount || 0"
+                    :disabled="isAccountRequiredForDeliverySelection"
+                    :allow-partial-edit="true"
+                    :aria-label="`Select service booking for ${booking.expand?.service?.name || 'Service'}`"
+                    @change="handleServiceBookingTriStateChange(booking.id, $event)"
                   />
-                  <div class="flex-1 text-sm">
-                    <div class="flex justify-between">
-                      <span class="text-gray-900 dark:text-white">{{ booking.expand?.service?.name || 'Service' }}</span>
-                      <span class="font-medium text-gray-900 dark:text-white">₹{{ booking.outstanding.toFixed(2) }}</span>
-                    </div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">
-                      {{ formatDate(booking.start_date) }} | Total: ₹{{ booking.total_amount.toFixed(2) }}
-                    </div>
-                  </div>
-                </label>
+                </div>
               </div>
             </div>
 
@@ -368,6 +383,8 @@ import {
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useToast } from '../composables/useToast';
+import VendorSearchBox from './VendorSearchBox.vue';
+import TriStateCheckbox from './TriStateCheckbox.vue';
 import type { 
   Payment, 
   PaymentAllocation, 
@@ -413,7 +430,7 @@ const { t } = useI18n();
 const { error } = useToast();
 
 // Refs
-const vendorInputRef = ref<HTMLInputElement>();
+const vendorInputRef = ref<InstanceType<typeof VendorSearchBox>>();
 const loading = ref(false);
 
 // Form state
@@ -426,7 +443,9 @@ const form = reactive({
   notes: '',
   deliveries: [] as string[],
   service_bookings: [] as string[],
-  credit_notes: [] as string[]
+  credit_notes: [] as string[],
+  delivery_allocations: {} as Record<string, { state: 'unchecked' | 'partial' | 'checked', amount: number }>,
+  service_booking_allocations: {} as Record<string, { state: 'unchecked' | 'partial' | 'checked', amount: number }>
 });
 
 // Vendor data
@@ -486,17 +505,8 @@ const allocatedAmount = computed((): number => {
     return currentlyAllocated;
   }
   
-  // For CREATE/PAY_NOW, calculate from selected items
-  let total = 0;
-  form.deliveries.forEach(deliveryId => {
-    const delivery = selectableDeliveries.value.find(d => d.id === deliveryId);
-    if (delivery) total += delivery.outstanding;
-  });
-  form.service_bookings.forEach(bookingId => {
-    const booking = selectableBookings.value.find(b => b.id === bookingId);
-    if (booking) total += booking.outstanding;
-  });
-  return total;
+  // For CREATE/PAY_NOW, use the tri-state allocated amounts
+  return getTotalSelectedDeliveries();
 });
 
 const unallocatedAmount = computed((): number => {
@@ -609,7 +619,206 @@ const isFormValid = computed(() => {
     return form.deliveries.length > 0 || form.service_bookings.length > 0 || unallocatedAmount.value <= 0;
   }
   
-  return form.vendor && form.account && form.amount > 0;
+  const basicValidation = form.vendor && form.account && form.amount > 0;
+  if (!basicValidation) return false;
+  
+  // Additional validation for credit note logic
+  const validationError = validatePaymentConfiguration();
+  return !validationError;
+});
+
+// Validation methods for credit note logic
+const validatePaymentConfiguration = (): string | null => {
+  const singleCreditSufficientError = validateSingleCreditNoteSufficient();
+  const accountOnlySufficientError = validateAccountOnlySufficient();
+  const accountRequiredError = validateAccountRequiredForInsufficientCredit();
+  
+  return singleCreditSufficientError || accountOnlySufficientError || accountRequiredError;
+};
+
+const validateSingleCreditNoteSufficient = (): string | null => {
+  // If multiple credit notes are selected but only one would suffice
+  if (form.credit_notes.length > 1) {
+    const totalSelectedDeliveries = getTotalSelectedDeliveries();
+    
+    // Check if any single credit note would be sufficient
+    for (const creditNoteId of form.credit_notes) {
+      const creditNote = availableCreditNotes.value.find(cn => cn.id === creditNoteId);
+      if (creditNote && creditNote.balance >= totalSelectedDeliveries) {
+        return `A single credit note (${creditNote.reference || `CN-${creditNote.id?.slice(-6)}`}) is sufficient for this payment. Please select only one credit note.`;
+      }
+    }
+  }
+  return null;
+};
+
+const validateAccountOnlySufficient = (): string | null => {
+  // If user selects account amount and credit notes, but account amount alone is sufficient
+  if (form.credit_notes.length > 0 && form.account) {
+    const totalSelectedDeliveries = getTotalSelectedDeliveries();
+    const accountAmount = accountPaymentAmount.value;
+    
+    if (accountAmount >= totalSelectedDeliveries) {
+      return 'The account payment amount is sufficient for selected deliveries. Credit notes are not needed.';
+    }
+  }
+  return null;
+};
+
+const validateAccountRequiredForInsufficientCredit = (): string | null => {
+  // If no account is selected but credit notes are insufficient
+  if (!form.account && form.credit_notes.length > 0) {
+    const totalSelectedDeliveries = getTotalSelectedDeliveries();
+    const totalCreditAmount = selectedCreditNoteAmount.value;
+    
+    if (totalCreditAmount < totalSelectedDeliveries) {
+      return 'Available credit notes are insufficient. Please select an account to cover the remaining amount.';
+    }
+  }
+  return null;
+};
+
+const getTotalSelectedDeliveries = (): number => {
+  let total = 0;
+  
+  // Use allocated amounts from tri-state checkboxes
+  form.deliveries.forEach(deliveryId => {
+    const allocation = form.delivery_allocations[deliveryId];
+    if (allocation) {
+      total += allocation.amount;
+    } else {
+      // Fallback to full outstanding if no allocation data
+      const delivery = selectableDeliveries.value.find(d => d.id === deliveryId);
+      if (delivery) total += delivery.outstanding;
+    }
+  });
+  
+  form.service_bookings.forEach(bookingId => {
+    const allocation = form.service_booking_allocations[bookingId];
+    if (allocation) {
+      total += allocation.amount;
+    } else {
+      // Fallback to full outstanding if no allocation data
+      const booking = selectableBookings.value.find(b => b.id === bookingId);
+      if (booking) total += booking.outstanding;
+    }
+  });
+  
+  return total;
+};
+
+// Auto-select credit notes based on deliveries (oldest first)
+const autoSelectCreditNotes = () => {
+  const totalNeeded = getTotalSelectedDeliveries();
+  if (totalNeeded <= 0) {
+    form.credit_notes = [];
+    return;
+  }
+  
+  let remainingAmount = totalNeeded;
+  const selectedCreditNotes: string[] = [];
+  
+  // Sort available credit notes by date (oldest first)
+  const sortedCreditNotes = [...availableCreditNotes.value].sort((a, b) => 
+    new Date(a.issue_date).getTime() - new Date(b.issue_date).getTime()
+  );
+  
+  // Select credit notes until we have enough to cover the amount
+  for (const creditNote of sortedCreditNotes) {
+    if (remainingAmount <= 0) break;
+    
+    if (creditNote.balance > 0) {
+      selectedCreditNotes.push(creditNote.id!);
+      remainingAmount -= creditNote.balance;
+    }
+  }
+  
+  form.credit_notes = selectedCreditNotes;
+  
+  // If credit notes are insufficient and no account is selected, we need to require account selection
+  if (remainingAmount > 0 && !form.account) {
+    // This will be caught by validation
+    return;
+  }
+  
+  // Update the total amount to match the selected deliveries
+  form.amount = totalNeeded;
+};
+
+// Auto-select deliveries with tri-state logic when amount changes
+const autoSelectDeliveriesWithTriState = () => {
+  if (props.mode !== 'PAY_NOW' || form.amount <= 0) return;
+  
+  let remainingAmount = form.amount;
+  
+  // Clear current selections
+  form.deliveries = [];
+  form.service_bookings = [];
+  form.delivery_allocations = {};
+  form.service_booking_allocations = {};
+  
+  // Select deliveries first (by date)
+  const sortedDeliveries = [...selectableDeliveries.value].sort((a, b) => 
+    new Date(a.delivery_date).getTime() - new Date(b.delivery_date).getTime()
+  );
+  
+  for (const delivery of sortedDeliveries) {
+    if (remainingAmount <= 0) break;
+    
+    const allocatedAmount = Math.min(remainingAmount, delivery.outstanding);
+    
+    form.deliveries.push(delivery.id);
+    form.delivery_allocations[delivery.id] = {
+      state: allocatedAmount >= delivery.outstanding ? 'checked' : 'partial',
+      amount: allocatedAmount
+    };
+    
+    remainingAmount -= allocatedAmount;
+  }
+  
+  // Then select service bookings
+  const sortedBookings = [...selectableBookings.value].sort((a, b) => 
+    new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+  );
+  
+  for (const booking of sortedBookings) {
+    if (remainingAmount <= 0) break;
+    
+    const allocatedAmount = Math.min(remainingAmount, booking.outstanding);
+    
+    form.service_bookings.push(booking.id);
+    form.service_booking_allocations[booking.id] = {
+      state: allocatedAmount >= booking.outstanding ? 'checked' : 'partial',
+      amount: allocatedAmount
+    };
+    
+    remainingAmount -= allocatedAmount;
+  }
+};
+
+// Computed property for validation errors
+const validationError = computed(() => {
+  if (props.mode === 'EDIT') return null;
+  return validatePaymentConfiguration();
+});
+
+// Check if account is required for delivery selection
+const isAccountRequiredForDeliverySelection = computed(() => {
+  if (props.mode === 'EDIT' || !form.vendor) return false;
+  
+  // Calculate total available credit
+  const totalAvailableCredit = availableCreditNotes.value.reduce((sum, cn) => sum + cn.balance, 0);
+  
+  // If there are no credit notes or total credit is 0, account is always required
+  if (totalAvailableCredit === 0) return !form.account;
+  
+  // If account is not selected and there are outstanding deliveries that exceed available credit
+  if (!form.account) {
+    const totalOutstanding = vendorOutstanding.value;
+    return totalOutstanding > totalAvailableCredit;
+  }
+  
+  return false;
 });
 
 // Methods
@@ -679,6 +888,15 @@ const handleVendorChange = () => {
   form.credit_notes = [];
 };
 
+const handleVendorSelected = (vendor: Vendor) => {
+  form.vendor = vendor.id!;
+  handleVendorChange();
+};
+
+const handleVendorFocus = () => {
+  // Focus event from VendorSearchBox - can be used for additional logic if needed
+};
+
 const handleAmountChange = () => {
   // Update delivery selection based on amount
   updateDeliverySelectionFromAmount();
@@ -686,60 +904,15 @@ const handleAmountChange = () => {
 
 const updateDeliverySelectionFromAmount = () => {
   if (props.mode === 'PAY_NOW' && form.amount > 0) {
-    // Auto-select deliveries up to the amount
-    let remainingAmount = form.amount;
-    const selectedDeliveries: string[] = [];
-    const selectedBookings: string[] = [];
-    
-    // Select deliveries first (by date)
-    const sortedDeliveries = [...selectableDeliveries.value].sort((a, b) => 
-      new Date(a.delivery_date).getTime() - new Date(b.delivery_date).getTime()
-    );
-    
-    for (const delivery of sortedDeliveries) {
-      if (remainingAmount <= 0) break;
-      if (delivery.outstanding <= remainingAmount) {
-        selectedDeliveries.push(delivery.id);
-        remainingAmount -= delivery.outstanding;
-      }
-    }
-    
-    // Then select bookings
-    const sortedBookings = [...selectableBookings.value].sort((a, b) => 
-      new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
-    );
-    
-    for (const booking of sortedBookings) {
-      if (remainingAmount <= 0) break;
-      if (booking.outstanding <= remainingAmount) {
-        selectedBookings.push(booking.id);
-        remainingAmount -= booking.outstanding;
-      }
-    }
-    
-    form.deliveries = selectedDeliveries;
-    form.service_bookings = selectedBookings;
+    // Use the new tri-state logic
+    autoSelectDeliveriesWithTriState();
   }
 };
 
 const handleDeliverySelectionChange = () => {
   if (props.mode === 'CREATE') {
-    // Update amount based on selected deliveries
-    let totalAmount = 0;
-    
-    form.deliveries.forEach(deliveryId => {
-      const delivery = selectableDeliveries.value.find(d => d.id === deliveryId);
-      if (delivery) totalAmount += delivery.outstanding;
-    });
-    
-    form.service_bookings.forEach(bookingId => {
-      const booking = selectableBookings.value.find(b => b.id === bookingId);
-      if (booking) totalAmount += booking.outstanding;
-    });
-    
-    if (totalAmount > 0) {
-      form.amount = totalAmount;
-    }
+    // Auto-select credit notes based on selected deliveries
+    autoSelectCreditNotes();
   } else if (props.mode === 'EDIT') {
     // Validate that we don't exceed unallocated amount
     const selectedAmount = allocatedAmount.value;
@@ -749,6 +922,43 @@ const handleDeliverySelectionChange = () => {
       // This is a simple approach - in production you might want more sophisticated handling
     }
   }
+};
+
+// TriStateCheckbox handlers
+const handleDeliveryTriStateChange = (deliveryId: string, data: { state: 'unchecked' | 'partial' | 'checked', allocatedAmount: number }) => {
+  // Update the allocation state
+  form.delivery_allocations[deliveryId] = {
+    state: data.state,
+    amount: data.allocatedAmount
+  };
+  
+  // Update the deliveries array based on state
+  if (data.state === 'unchecked') {
+    form.deliveries = form.deliveries.filter(id => id !== deliveryId);
+  } else if (!form.deliveries.includes(deliveryId)) {
+    form.deliveries.push(deliveryId);
+  }
+  
+  // Trigger the existing delivery selection logic
+  handleDeliverySelectionChange();
+};
+
+const handleServiceBookingTriStateChange = (bookingId: string, data: { state: 'unchecked' | 'partial' | 'checked', allocatedAmount: number }) => {
+  // Update the allocation state
+  form.service_booking_allocations[bookingId] = {
+    state: data.state,
+    amount: data.allocatedAmount
+  };
+  
+  // Update the service_bookings array based on state
+  if (data.state === 'unchecked') {
+    form.service_bookings = form.service_bookings.filter(id => id !== bookingId);
+  } else if (!form.service_bookings.includes(bookingId)) {
+    form.service_bookings.push(bookingId);
+  }
+  
+  // Trigger the existing delivery selection logic
+  handleDeliverySelectionChange();
 };
 
 const loadVendorCreditNotes = async () => {
@@ -761,10 +971,10 @@ const loadVendorCreditNotes = async () => {
   try {
     loadingCreditNotes.value = true;
     const creditNotes = await vendorCreditNoteService.getByVendor(form.vendor);
-    // Only show active credit notes with balance > 0
-    availableCreditNotes.value = creditNotes.filter(cn => 
-      cn.status === 'active' && cn.balance > 0
-    );
+    // Only show active credit notes with balance > 0, sorted by date (oldest first)
+    availableCreditNotes.value = creditNotes
+      .filter(cn => cn.status === 'active' && cn.balance > 0)
+      .sort((a, b) => new Date(a.issue_date).getTime() - new Date(b.issue_date).getTime());
     // Recalculate outstanding after loading credit notes
     calculateVendorOutstanding();
   } catch (err) {
@@ -814,7 +1024,9 @@ const initializeForm = () => {
     notes: '',
     deliveries: [],
     service_bookings: [],
-    credit_notes: []
+    credit_notes: [],
+    delivery_allocations: {},
+    service_booking_allocations: {}
   });
   
   // Initialize based on mode and props

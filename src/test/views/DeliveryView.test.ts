@@ -228,13 +228,13 @@ vi.mock('../../components/delivery/MultiItemDeliveryModal.vue', () => ({
   }
 }))
 
-// Mock PhotoGallery component
-vi.mock('../../components/PhotoGallery.vue', () => ({
+// Mock ImageSlider component
+vi.mock('../../components/ImageSlider.vue', () => ({
   default: {
-    name: 'PhotoGallery',
-    template: '<div class="mock-photo-gallery">Photo Gallery</div>',
-    props: ['photos', 'initial-index'],
-    emits: ['close']
+    name: 'ImageSlider',
+    template: '<div v-if="show" class="mock-photo-gallery">Image Slider</div>',
+    props: ['show', 'images', 'initial-index', 'overlay-info'],
+    emits: ['close', 'update:show']
   }
 }))
 

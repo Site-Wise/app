@@ -2,6 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import PaymentModal from '../../components/PaymentModal.vue';
+import VendorSearchBox from '../../components/VendorSearchBox.vue';
 import { nextTick } from 'vue';
 
 // Mock composables and services
@@ -17,7 +18,7 @@ vi.mock('../../composables/useToast', () => ({
   }),
 }));
 
-import * as pocketbaseService from '../../services/pocketbase';
+import { vendorCreditNoteService } from '../../services/pocketbase';
 
 vi.mock('../../services/pocketbase', async (importOriginal) => {
   const mod = await importOriginal();
@@ -59,13 +60,15 @@ describe('PaymentModal.vue', () => {
     });
 
     expect(wrapper.find('h3').text()).toBe('payments.recordPayment');
-    expect(wrapper.find('select[name="vendor"]').exists()).toBe(true);
+    expect(wrapper.findComponent(VendorSearchBox).exists()).toBe(true);
     expect(wrapper.find('input[type="number"]').exists()).toBe(true);
     expect(wrapper.find('button[type="submit"]').text()).toBe('payments.recordPayment');
 
-    // Ensure vendor input is focused
-    await nextTick();
-    expect(wrapper.find('select[name="vendor"]').element).toBe(document.activeElement);
+    // Ensure vendor search box is rendered with correct props
+    const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+    expect(vendorSearchBox.props('vendors')).toEqual(mockVendors);
+    expect(vendorSearchBox.props('autofocus')).toBe(true);
+    expect(vendorSearchBox.props('required')).toBe(true);
   });
 
   it('renders correctly in PAY_NOW mode', async () => {
@@ -84,7 +87,7 @@ describe('PaymentModal.vue', () => {
     });
 
     expect(wrapper.find('h3').text()).toBe('Pay Outstanding Amount');
-    expect(wrapper.find('select[name="vendor"]').exists()).toBe(true);
+    expect(wrapper.findComponent(VendorSearchBox).exists()).toBe(true);
     expect(wrapper.find('input[type="number"]').exists()).toBe(true);
     expect(wrapper.find('button[type="submit"]').text()).toBe('Pay ₹350.00');
 
@@ -128,7 +131,7 @@ describe('PaymentModal.vue', () => {
     });
 
     expect(wrapper.find('h3').text()).toBe('payments.editPayment');
-    expect(wrapper.find('select[name="vendor"]').exists()).toBe(true);
+    expect(wrapper.findComponent(VendorSearchBox).exists()).toBe(false); // No search box in edit mode
     expect(wrapper.find('input[type="number"]').exists()).toBe(false);
     expect(wrapper.find('button[type="submit"]').text()).toBe('payments.updatePayment');
     expect(wrapper.html()).toContain('Vendor A');
@@ -202,7 +205,9 @@ describe('PaymentModal.vue', () => {
       attachTo: document.body,
     });
 
-    await wrapper.find('select[v-model="form.vendor"]').setValue('vendor1');
+    // Simulate vendor selection through VendorSearchBox
+    const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+    await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
     await nextTick();
 
     expect((wrapper.vm as any).vendorOutstanding).toBe(350); // 200 + 150
@@ -227,7 +232,8 @@ describe('PaymentModal.vue', () => {
     
     // Manually set vendor to trigger change handler if not already set by prop
     if ((wrapper.vm as any).form.vendor !== 'vendor1') {
-      await wrapper.find('select[name="vendor"]').setValue('vendor1');
+      const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+      await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
       await nextTick();
     }
 
@@ -281,7 +287,8 @@ describe('PaymentModal.vue', () => {
       attachTo: document.body,
     });
 
-    await wrapper.find('select[v-model="form.vendor"]').setValue('vendor1');
+    const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+    await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
     await nextTick();
 
     // Select a delivery
@@ -312,7 +319,8 @@ describe('PaymentModal.vue', () => {
 
     expect(wrapper.find('.bg-blue-50').exists()).toBe(false); // Not visible initially
 
-    await wrapper.find('select[v-model="form.vendor"]').setValue('vendor1');
+    const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+    await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
     await wrapper.find('input[type="number"]').setValue(200);
     await wrapper.find('input[type="checkbox"]').setValue(true);
     await nextTick();
@@ -339,7 +347,8 @@ describe('PaymentModal.vue', () => {
     expect(wrapper.find('button[type="submit"]').attributes('disabled')).toBe('');
 
     // Valid after filling required fields
-    await wrapper.find('select[v-model="form.vendor"]').setValue('vendor1');
+    const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+    await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
     await wrapper.find('select[name="account"]').setValue('account1');
     await wrapper.find('input[type="number"]').setValue(100);
     await nextTick();
@@ -361,7 +370,8 @@ describe('PaymentModal.vue', () => {
       attachTo: document.body,
     });
 
-    await wrapper.find('select[v-model="form.vendor"]').setValue('vendor1');
+    const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+    await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
     await wrapper.find('select[name="account"]').setValue('account1');
     await wrapper.find('input[type="number"]').setValue(100);
     await nextTick();
@@ -389,7 +399,8 @@ describe('PaymentModal.vue', () => {
       attachTo: document.body,
     });
 
-    await wrapper.find('select[v-model="form.vendor"]').setValue('vendor1');
+    const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+    await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
     await nextTick();
 
     expect(vendorCreditNoteService.getByVendor).toHaveBeenCalledWith('vendor1');
@@ -415,7 +426,8 @@ describe('PaymentModal.vue', () => {
       attachTo: document.body,
     });
 
-    await wrapper.find('select[v-model="form.vendor"]').setValue('vendor1');
+    const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+    await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
     await nextTick();
 
     // Select credit note
@@ -452,7 +464,8 @@ describe('PaymentModal.vue', () => {
       attachTo: document.body,
     });
 
-    await wrapper.find('select[v-model="form.vendor"]').setValue('vendor1');
+    const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+    await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
     await nextTick();
 
     await wrapper.find('input[type="checkbox"]').setValue(true);
@@ -481,7 +494,8 @@ describe('PaymentModal.vue', () => {
       attachTo: document.body,
     });
 
-    await wrapper.find('select[v-model="form.vendor"]').setValue('vendor1');
+    const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+    await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
     await nextTick();
 
     await wrapper.find('button', { text: 'Pay All (₹150.00)' }).trigger('click');
@@ -505,7 +519,8 @@ describe('PaymentModal.vue', () => {
       attachTo: document.body,
     });
 
-    await wrapper.find('select[v-model="form.vendor"]').setValue('vendor1');
+    const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+    await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
     await nextTick();
 
     expect(wrapper.html()).toContain('No pending deliveries or bookings for this vendor');
@@ -544,5 +559,299 @@ describe('PaymentModal.vue', () => {
     });
 
     expect(wrapper.html()).toContain('No additional items available for allocation');
+  });
+
+  describe('Credit Note Validation Logic', () => {
+    it('prevents payment when single credit note suffices but multiple selected', async () => {
+      const mockCreditNotes = [
+        { id: 'cn1', vendor: 'vendor1', balance: 200, status: 'active', reference: 'CN-001', reason: 'Return', credit_amount: 200, issue_date: '2024-01-01' },
+        { id: 'cn2', vendor: 'vendor1', balance: 100, status: 'active', reference: 'CN-002', reason: 'Refund', credit_amount: 100, issue_date: '2024-01-02' }
+      ];
+      vi.mocked(vendorCreditNoteService.getByVendor).mockResolvedValue(mockCreditNotes as any);
+
+      const wrapper = mount(PaymentModal, {
+        props: {
+          isVisible: true,
+          mode: 'CREATE',
+          vendors: mockVendors,
+          accounts: mockAccounts,
+          deliveries: [
+            { id: 'delivery1', vendor: 'vendor1', total_amount: 150, paid_amount: 0, payment_status: 'outstanding', delivery_date: '2024-07-01' }
+          ],
+          serviceBookings: [],
+        },
+        attachTo: document.body,
+      });
+
+      const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+      await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
+      await nextTick();
+
+      // Select a delivery (150 needed)
+      await wrapper.find('input[type="checkbox"]').setValue(true);
+      await nextTick();
+
+      // Select both credit notes (total 300, but only 150 needed)
+      const creditNoteCheckboxes = wrapper.findAll('input[type="checkbox"]').filter(cb => cb.attributes('id')?.includes('credit-note'));
+      await creditNoteCheckboxes[0].setValue(true);
+      await creditNoteCheckboxes[1].setValue(true);
+      await nextTick();
+
+      // Should show validation error
+      expect((wrapper.vm as any).validationError).toContain('A single credit note');
+      expect((wrapper.vm as any).isFormValid).toBe(false);
+      expect(wrapper.find('.bg-red-50').exists()).toBe(true);
+    });
+
+    it('prevents payment when account amount alone is sufficient', async () => {
+      const mockCreditNotes = [
+        { id: 'cn1', vendor: 'vendor1', balance: 50, status: 'active', reference: 'CN-001', reason: 'Return', credit_amount: 50, issue_date: '2024-01-01' }
+      ];
+      vi.mocked(vendorCreditNoteService.getByVendor).mockResolvedValue(mockCreditNotes as any);
+
+      const wrapper = mount(PaymentModal, {
+        props: {
+          isVisible: true,
+          mode: 'CREATE',
+          vendors: mockVendors,
+          accounts: mockAccounts,
+          deliveries: [
+            { id: 'delivery1', vendor: 'vendor1', total_amount: 100, paid_amount: 0, payment_status: 'outstanding', delivery_date: '2024-07-01' }
+          ],
+          serviceBookings: [],
+        },
+        attachTo: document.body,
+      });
+
+      const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+      await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
+      await wrapper.find('select[name="account"]').setValue('account1');
+      await nextTick();
+
+      // Select a delivery
+      await wrapper.find('input[type="checkbox"]').setValue(true);
+      await nextTick();
+
+      // Set account payment amount to 200 (sufficient for 100 delivery)
+      await wrapper.find('input[type="number"]').setValue(200);
+      await nextTick();
+
+      // Select a credit note as well
+      const creditNoteCheckbox = wrapper.find('input[type="checkbox"][id*="credit-note"]');
+      await creditNoteCheckbox.setValue(true);
+      await nextTick();
+
+      // Should show validation error
+      expect((wrapper.vm as any).validationError).toContain('account payment amount is sufficient');
+      expect((wrapper.vm as any).isFormValid).toBe(false);
+      expect(wrapper.find('.bg-red-50').exists()).toBe(true);
+    });
+
+    it('requires account selection when credit notes are insufficient', async () => {
+      const mockCreditNotes = [
+        { id: 'cn1', vendor: 'vendor1', balance: 50, status: 'active', reference: 'CN-001', reason: 'Return', credit_amount: 50, issue_date: '2024-01-01' }
+      ];
+      vi.mocked(vendorCreditNoteService.getByVendor).mockResolvedValue(mockCreditNotes as any);
+
+      const wrapper = mount(PaymentModal, {
+        props: {
+          isVisible: true,
+          mode: 'CREATE',
+          vendors: mockVendors,
+          accounts: mockAccounts,
+          deliveries: [
+            { id: 'delivery1', vendor: 'vendor1', total_amount: 100, paid_amount: 0, payment_status: 'outstanding', delivery_date: '2024-07-01' }
+          ],
+          serviceBookings: [],
+        },
+        attachTo: document.body,
+      });
+
+      const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+      await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
+      await nextTick();
+
+      // Select a delivery (100 needed)
+      await wrapper.find('input[type="checkbox"]').setValue(true);
+      await nextTick();
+
+      // Credit note should be auto-selected but insufficient
+      expect((wrapper.vm as any).form.credit_notes).toEqual(['cn1']);
+      expect((wrapper.vm as any).selectedCreditNoteAmount).toBe(50);
+      
+      // Should show validation error requiring account
+      expect((wrapper.vm as any).validationError).toContain('credit notes are insufficient');
+      expect((wrapper.vm as any).isFormValid).toBe(false);
+    });
+
+    it('auto-selects credit notes when deliveries are selected (oldest first)', async () => {
+      const mockCreditNotes = [
+        { id: 'cn1', vendor: 'vendor1', balance: 75, status: 'active', reference: 'CN-001', reason: 'Return', credit_amount: 75, issue_date: '2024-01-02' },
+        { id: 'cn2', vendor: 'vendor1', balance: 50, status: 'active', reference: 'CN-002', reason: 'Refund', credit_amount: 50, issue_date: '2024-01-01' }
+      ];
+      vi.mocked(vendorCreditNoteService.getByVendor).mockResolvedValue(mockCreditNotes as any);
+
+      const wrapper = mount(PaymentModal, {
+        props: {
+          isVisible: true,
+          mode: 'CREATE',
+          vendors: mockVendors,
+          accounts: mockAccounts,
+          deliveries: [
+            { id: 'delivery1', vendor: 'vendor1', total_amount: 100, paid_amount: 0, payment_status: 'outstanding', delivery_date: '2024-07-01' }
+          ],
+          serviceBookings: [],
+        },
+        attachTo: document.body,
+      });
+
+      const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+      await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
+      await nextTick();
+
+      // Select a delivery (100 needed)
+      await wrapper.find('input[type="checkbox"]').setValue(true);
+      await nextTick();
+
+      // Should auto-select credit notes by date (oldest first)
+      const selectedCreditNotes = (wrapper.vm as any).form.credit_notes;
+      expect(selectedCreditNotes).toEqual(['cn2', 'cn1']); // cn2 is older (2024-01-01), cn1 is newer (2024-01-02)
+      expect((wrapper.vm as any).selectedCreditNoteAmount).toBe(125); // 50 + 75
+    });
+
+    it('disables delivery selection when account required but not selected', async () => {
+      const mockCreditNotes = [
+        { id: 'cn1', vendor: 'vendor1', balance: 50, status: 'active', reference: 'CN-001', reason: 'Return', credit_amount: 50, issue_date: '2024-01-01' }
+      ];
+      vi.mocked(vendorCreditNoteService.getByVendor).mockResolvedValue(mockCreditNotes as any);
+
+      const wrapper = mount(PaymentModal, {
+        props: {
+          isVisible: true,
+          mode: 'CREATE',
+          vendors: mockVendors,
+          accounts: mockAccounts,
+          deliveries: [
+            { id: 'delivery1', vendor: 'vendor1', total_amount: 100, paid_amount: 0, payment_status: 'outstanding', delivery_date: '2024-07-01' }
+          ],
+          serviceBookings: [],
+        },
+        attachTo: document.body,
+      });
+
+      const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+      await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
+      await nextTick();
+
+      // Delivery checkboxes should be disabled
+      const deliveryCheckbox = wrapper.find('input[type="checkbox"]:not([id*="credit-note"])');
+      expect(deliveryCheckbox.attributes('disabled')).toBe('');
+      
+      // Should show warning message
+      expect(wrapper.find('.bg-yellow-50').exists()).toBe(true);
+      expect(wrapper.html()).toContain('Account Required');
+      expect(wrapper.html()).toContain('credit notes are insufficient');
+    });
+
+    it('enables delivery selection when account is selected', async () => {
+      const mockCreditNotes = [
+        { id: 'cn1', vendor: 'vendor1', balance: 50, status: 'active', reference: 'CN-001', reason: 'Return', credit_amount: 50, issue_date: '2024-01-01' }
+      ];
+      vi.mocked(vendorCreditNoteService.getByVendor).mockResolvedValue(mockCreditNotes as any);
+
+      const wrapper = mount(PaymentModal, {
+        props: {
+          isVisible: true,
+          mode: 'CREATE',
+          vendors: mockVendors,
+          accounts: mockAccounts,
+          deliveries: [
+            { id: 'delivery1', vendor: 'vendor1', total_amount: 100, paid_amount: 0, payment_status: 'outstanding', delivery_date: '2024-07-01' }
+          ],
+          serviceBookings: [],
+        },
+        attachTo: document.body,
+      });
+
+      const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+      await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
+      await wrapper.find('select[name="account"]').setValue('account1');
+      await nextTick();
+
+      // Delivery checkboxes should be enabled
+      const deliveryCheckbox = wrapper.find('input[type="checkbox"]:not([id*="credit-note"])');
+      expect(deliveryCheckbox.attributes('disabled')).toBeUndefined();
+      
+      // Should not show warning message
+      expect(wrapper.find('.bg-yellow-50').exists()).toBe(false);
+    });
+
+    it('falls back to account amount when credit notes are insufficient', async () => {
+      const mockCreditNotes = [
+        { id: 'cn1', vendor: 'vendor1', balance: 50, status: 'active', reference: 'CN-001', reason: 'Return', credit_amount: 50, issue_date: '2024-01-01' }
+      ];
+      vi.mocked(vendorCreditNoteService.getByVendor).mockResolvedValue(mockCreditNotes as any);
+
+      const wrapper = mount(PaymentModal, {
+        props: {
+          isVisible: true,
+          mode: 'CREATE',
+          vendors: mockVendors,
+          accounts: mockAccounts,
+          deliveries: [
+            { id: 'delivery1', vendor: 'vendor1', total_amount: 100, paid_amount: 0, payment_status: 'outstanding', delivery_date: '2024-07-01' }
+          ],
+          serviceBookings: [],
+        },
+        attachTo: document.body,
+      });
+
+      const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+      await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
+      await wrapper.find('select[name="account"]').setValue('account1');
+      await nextTick();
+
+      // Select a delivery (100 needed)
+      await wrapper.find('input[type="checkbox"]').setValue(true);
+      await nextTick();
+
+      // Should use credit note (50) + account payment (50) = 100 total
+      expect((wrapper.vm as any).selectedCreditNoteAmount).toBe(50);
+      expect((wrapper.vm as any).accountPaymentAmount).toBe(50);
+      expect((wrapper.vm as any).form.amount).toBe(100);
+      
+      // Should show breakdown
+      expect(wrapper.html()).toContain('Account payment: ₹50.00');
+      expect(wrapper.html()).toContain('Credit notes: ₹50.00');
+    });
+
+    it('displays credit note information correctly', async () => {
+      const mockCreditNotes = [
+        { id: 'cn1', vendor: 'vendor1', balance: 75, status: 'active', reference: 'CN-001', reason: 'Return', credit_amount: 100, issue_date: '2024-01-01' }
+      ];
+      vi.mocked(vendorCreditNoteService.getByVendor).mockResolvedValue(mockCreditNotes as any);
+
+      const wrapper = mount(PaymentModal, {
+        props: {
+          isVisible: true,
+          mode: 'CREATE',
+          vendors: mockVendors,
+          accounts: mockAccounts,
+          deliveries: [],
+          serviceBookings: [],
+        },
+        attachTo: document.body,
+      });
+
+      const vendorSearchBox = wrapper.findComponent(VendorSearchBox);
+      await vendorSearchBox.vm.$emit('vendor-selected', mockVendors[0]);
+      await nextTick();
+
+      // Should display credit note with remaining balance and original amount
+      expect(wrapper.html()).toContain('CN-001');
+      expect(wrapper.html()).toContain('₹75.00'); // remaining balance
+      expect(wrapper.html()).toContain('of ₹100.00'); // original amount
+      expect(wrapper.html()).toContain('Return'); // reason
+    });
   });
 });

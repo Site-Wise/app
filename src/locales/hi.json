@@ -489,7 +489,9 @@
     "details": "विवरण",
     "finalBalance": "अंतिम बैलेंस",
     "totalOutstanding": "कुल बकाया",
-    "balance": "बैलेंस"
+    "balance": "बैलेंस",
+    "amountDue": "बकाया राशि",
+    "extraAdvance": "अतिरिक्त अग्रिम"
   },
   "returns": {
     "createReturn": "वापसी बनाएं",
@@ -632,6 +634,11 @@
     "noDeliveries": "कोई डिलीवरी रिकॉर्ड नहीं",
     "noSearchResults": "आपकी खोज से मेल खाने वाली कोई डिलीवरी नहीं मिली",
     "noPhotos": "कोई फोटो नहीं",
+    "viewAllImages": "सभी छवियाँ देखें",
+    "noImages": "कोई छवि उपलब्ध नहीं",
+    "moreItems": "और आइटम",
+    "vendor": "विक्रेता",
+    "date": "दिनांक",
     "multiItemSubtitle": "एक ही डिलीवरी में कई वस्तुएं रिकॉर्ड करें",
     "confirmDelete": "क्या आप वाकई इस डिलीवरी को हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।",
     "deleteSuccess": "डिलीवरी सफलतापूर्वक हटाई गई",

@@ -276,6 +276,7 @@ import { useI18n } from '../../composables/useI18n';
 import {
   vendorReturnService,
   vendorReturnItemService,
+  getCurrentSiteId,
   type VendorReturn,
   type Vendor,
   type DeliveryItem
@@ -428,7 +429,8 @@ const handleSubmit = async () => {
         return_rate: item.return_rate,
         return_amount: item.return_amount,
         condition: item.condition as 'unopened' | 'opened' | 'damaged' | 'used',
-        item_notes: item.item_notes
+        item_notes: item.item_notes,
+        site: getCurrentSiteId() || ''
       });
     }
 

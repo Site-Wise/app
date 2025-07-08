@@ -8,28 +8,92 @@
           {{ t('delivery.subtitle') }}
         </p>
       </div>
-      <button 
-        @click="handleAddDelivery" 
-        :disabled="!canCreateDelivery"
-        :class="[
-          canCreateDelivery ? 'btn-primary' : 'btn-disabled',
-          'hidden md:flex items-center'
-        ]"
-        :title="!canCreateDelivery ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
-        data-keyboard-shortcut="n"
-      >
-        <Plus class="mr-2 h-4 w-4" />
-        {{ t('delivery.recordDelivery') }}
-      </button>
+      <div class="flex items-center space-x-3">
+        <button 
+          @click="viewAllImages"
+          :disabled="allImages.length === 0"
+          :class="[
+            allImages.length > 0 ? 'btn-outline' : 'btn-disabled',
+            'hidden md:flex items-center'
+          ]"
+          :title="allImages.length === 0 ? t('delivery.noImages') : t('delivery.viewAllImages')"
+        >
+          <Images class="mr-2 h-4 w-4" />
+          {{ t('delivery.viewAllImages') }} ({{ allImages.length }})
+        </button>
+        <button 
+          @click="handleAddDelivery" 
+          :disabled="!canCreateDelivery"
+          :class="[
+            canCreateDelivery ? 'btn-primary' : 'btn-disabled',
+            'hidden md:flex items-center'
+          ]"
+          :title="!canCreateDelivery ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
+          data-keyboard-shortcut="n"
+        >
+          <Plus class="mr-2 h-4 w-4" />
+          {{ t('delivery.recordDelivery') }}
+        </button>
+      </div>
     </div>
 
     <!-- Mobile Header with Search -->
     <div class="md:hidden mb-6">
-      <div class="mb-4">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('delivery.title') }}</h1>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          {{ t('delivery.subtitle') }}
-        </p>
+      <div class="mb-4 flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('delivery.title') }}</h1>
+          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            {{ t('delivery.subtitle') }}
+          </p>
+        </div>
+        
+        <!-- Mobile Action Menu -->
+        <div class="relative mobile-action-menu">
+          <button 
+            @click="showMobileActionMenu = !showMobileActionMenu" 
+            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <MoreVertical class="h-5 w-5 text-gray-600 dark:text-gray-400" />
+          </button>
+          
+          <!-- Mobile Dropdown Menu -->
+          <div 
+            v-if="showMobileActionMenu" 
+            class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700"
+          >
+            <div class="py-1">
+              <button 
+                @click="handleMobileAction('viewAllImages')"
+                :disabled="allImages.length === 0"
+                :class="[
+                  'flex items-center w-full px-4 py-3 text-sm transition-colors',
+                  allImages.length > 0 
+                    ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' 
+                    : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                ]"
+              >
+                <Images class="mr-3 h-5 w-5" />
+                {{ t('delivery.viewAllImages') }} ({{ allImages.length }})
+              </button>
+              
+              <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+              
+              <button 
+                @click="handleMobileAction('addDelivery')"
+                :disabled="!canCreateDelivery"
+                :class="[
+                  'flex items-center w-full px-4 py-3 text-sm transition-colors',
+                  canCreateDelivery 
+                    ? 'text-white bg-blue-600 hover:bg-blue-700' 
+                    : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                ]"
+              >
+                <Plus class="mr-3 h-5 w-5" />
+                {{ t('delivery.recordDelivery') }}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
       
       <!-- Mobile Search Box -->
@@ -404,9 +468,10 @@
     <!-- Image Slider -->
     <ImageSlider
       v-model:show="showPhotoGallery"
-      :images="galleryDelivery ? getPhotoUrls(galleryDelivery) : []"
+      :images="showAllImagesMode ? allImagesGalleryData.images : (galleryDelivery ? getPhotoUrls(galleryDelivery) : [])"
       :initial-index="galleryIndex"
-      @close="showPhotoGallery = false"
+      :overlay-info="showAllImagesMode ? allImagesGalleryData.overlayInfo : (galleryDelivery ? getOverlayInfo(galleryDelivery) : [])"
+      @close="showPhotoGallery = false; showAllImagesMode = false"
     />
   </div>
 </template>
@@ -414,7 +479,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useEventListener } from '@vueuse/core';
-import { Plus, Edit2, Trash2, Loader2, Eye, X } from 'lucide-vue-next';
+import { Plus, Edit2, Trash2, Loader2, Eye, X, Images, MoreVertical } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
@@ -460,6 +525,7 @@ const showAddModal = ref(false);
 const editingDelivery = ref<Delivery | null>(null);
 const viewingDelivery = ref<Delivery | null>(null);
 const loadingDeliveryDetails = ref(false);
+const showMobileActionMenu = ref(false);
 
 // Return information storage
 const returnInfo = ref<Record<string, {
@@ -479,6 +545,15 @@ const isDev = computed(() => import.meta.env.DEV);
 const showPhotoGallery = ref(false);
 const galleryDelivery = ref<Delivery | null>(null);
 const galleryIndex = ref(0);
+const showAllImagesMode = ref(false);
+const allImagesGalleryData = ref<{
+  images: string[];
+  overlayInfo: Array<{
+    vendorName?: string;
+    items?: string[];
+    deliveryDate?: string;
+  }>;
+}>({ images: [], overlayInfo: [] });
 const loading = computed(() => deliveriesLoading.value);
 
 const canCreateDelivery = computed(() => {
@@ -487,6 +562,22 @@ const canCreateDelivery = computed(() => {
 
 const canEditDelete = computed(() => {
   return !isReadOnly.value && canDelete.value;
+});
+
+const allImages = computed(() => {
+  if (!deliveries.value) return [];
+  
+  const images: Array<{ delivery: Delivery; photo: string; index: number }> = [];
+  
+  deliveries.value.forEach(delivery => {
+    if (delivery.photos && delivery.photos.length > 0) {
+      delivery.photos.forEach((photo, index) => {
+        images.push({ delivery, photo, index });
+      });
+    }
+  });
+  
+  return images;
 });
 
 const getDeliveryActions = (delivery: Delivery) => {
@@ -526,6 +617,60 @@ const handleDeliveryAction = (delivery: Delivery, action: string) => {
       deleteDelivery(delivery);
       break;
   }
+};
+
+const handleMobileAction = (action: string) => {
+  showMobileActionMenu.value = false;
+  
+  switch (action) {
+    case 'viewAllImages':
+      viewAllImages();
+      break;
+    case 'addDelivery':
+      handleAddDelivery();
+      break;
+  }
+};
+
+const viewAllImages = () => {
+  if (allImages.value.length === 0) return;
+  
+  // Create a comprehensive view of all images across all deliveries
+  const allImageUrls: string[] = [];
+  const allImageOverlays: Array<{
+    vendorName?: string;
+    items?: string[];
+    deliveryDate?: string;
+  }> = [];
+  
+  allImages.value.forEach(({ delivery, photo }) => {
+    allImageUrls.push(getPhotoUrl(delivery.id!, photo));
+    
+    const vendorName = delivery.expand?.vendor?.name || 'Unknown Vendor';
+    const items = delivery.expand?.delivery_items?.map(item => {
+      const itemName = item.expand?.item?.name || 'Unknown Item';
+      const quantity = item.quantity || 0;
+      const unit = item.expand?.item?.unit || 'units';
+      return `${itemName} (${quantity} ${unit})`;
+    }) || [];
+    
+    allImageOverlays.push({
+      vendorName,
+      items,
+      deliveryDate: delivery.delivery_date
+    });
+  });
+  
+  // Set up all images mode
+  allImagesGalleryData.value = {
+    images: allImageUrls,
+    overlayInfo: allImageOverlays
+  };
+  
+  showAllImagesMode.value = true;
+  galleryDelivery.value = null;
+  galleryIndex.value = 0;
+  showPhotoGallery.value = true;
 };
 
 const reloadAllData = async () => {
@@ -678,9 +823,31 @@ const getPhotoUrls = (delivery: Delivery) => {
   return delivery.photos.map(photo => getPhotoUrl(delivery.id!, photo));
 };
 
+const getOverlayInfo = (delivery: Delivery) => {
+  if (!delivery.photos || delivery.photos.length === 0) return [];
+  
+  const vendorName = delivery.expand?.vendor?.name || 'Unknown Vendor';
+  const items = delivery.expand?.delivery_items?.map(item => {
+    const itemName = item.expand?.item?.name || 'Unknown Item';
+    const quantity = item.quantity || 0;
+    const unit = item.expand?.item?.unit || 'units';
+    return `${itemName} (${quantity} ${unit})`;
+  }) || [];
+  
+  const overlayInfo = {
+    vendorName,
+    items,
+    deliveryDate: delivery.delivery_date
+  };
+  
+  // Return the same overlay info for each photo in the delivery
+  return delivery.photos.map(() => overlayInfo);
+};
+
 const openPhotoGallery = (delivery: Delivery, index: number) => {
   galleryDelivery.value = delivery;
   galleryIndex.value = index;
+  showAllImagesMode.value = false;
   showPhotoGallery.value = true;
 };
 

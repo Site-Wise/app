@@ -282,6 +282,7 @@ export interface DeliveryItem {
   unit_price: number;
   total_amount: number; // quantity * unit_price
   notes?: string; // Item-specific notes
+  site: string; // Site ID
   created?: string;
   updated?: string;
   expand?: {
@@ -388,6 +389,7 @@ export interface VendorReturnItem {
   return_amount: number; // quantity_returned * return_rate
   condition: 'unopened' | 'opened' | 'damaged' | 'used';
   item_notes?: string;
+  site: string; // Site ID
   created?: string;
   updated?: string;
   expand?: {
@@ -2844,11 +2846,34 @@ export class VendorReturnService {
 
 export class VendorReturnItemService {
   async getByReturn(vendorReturnId: string): Promise<VendorReturnItem[]> {
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
     const records = await pb.collection('vendor_return_items').getFullList({
-      filter: `vendor_return="${vendorReturnId}"`,
+      filter: `vendor_return="${vendorReturnId}" && site="${currentSite}"`,
       expand: 'delivery_item,delivery_item.item,delivery_item.delivery,delivery_item.delivery.vendor'
     });
     return records.map(record => this.mapRecordToVendorReturnItem(record));
+  }
+
+  async getById(id: string): Promise<VendorReturnItem> {
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    const record = await pb.collection('vendor_return_items').getOne(id, {
+      expand: 'vendor_return,delivery_item'
+    });
+    
+    // Validate site access
+    if (record.site !== currentSite) {
+      throw new Error('Access denied: VendorReturnItem not found in current site');
+    }
+    
+    return this.mapRecordToVendorReturnItem(record);
   }
 
   async create(data: Omit<VendorReturnItem, 'id' | 'created' | 'updated'>): Promise<VendorReturnItem> {
@@ -2858,7 +2883,15 @@ export class VendorReturnItemService {
       throw new Error('Permission denied: Cannot create return items');
     }
 
-    const record = await pb.collection('vendor_return_items').create(data);
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    // Ensure site is set in the data
+    const dataWithSite = { ...data, site: currentSite };
+
+    const record = await pb.collection('vendor_return_items').create(dataWithSite);
     return this.mapRecordToVendorReturnItem(record);
   }
 
@@ -2869,7 +2902,24 @@ export class VendorReturnItemService {
       throw new Error('Permission denied: Cannot update return items');
     }
 
-    const record = await pb.collection('vendor_return_items').update(id, data);
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    // First, get the existing record to validate site access
+    const existingRecord = await pb.collection('vendor_return_items').getOne(id);
+    if (existingRecord.site !== currentSite) {
+      throw new Error('Access denied: Cannot update return item from different site');
+    }
+
+    // Ensure site cannot be changed
+    const { site, ...updateData } = data;
+    if (site && site !== currentSite) {
+      throw new Error('Access denied: Cannot move return item to different site');
+    }
+
+    const record = await pb.collection('vendor_return_items').update(id, updateData);
     return this.mapRecordToVendorReturnItem(record);
   }
 
@@ -2878,6 +2928,17 @@ export class VendorReturnItemService {
     const permissions = calculatePermissions(userRole);
     if (!permissions.canDelete) {
       throw new Error('Permission denied: Cannot delete return items');
+    }
+
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    // First, get the existing record to validate site access
+    const existingRecord = await pb.collection('vendor_return_items').getOne(id);
+    if (existingRecord.site !== currentSite) {
+      throw new Error('Access denied: Cannot delete return item from different site');
     }
 
     await pb.collection('vendor_return_items').delete(id);
@@ -2894,6 +2955,7 @@ export class VendorReturnItemService {
       return_amount: record.return_amount,
       condition: record.condition,
       item_notes: record.item_notes,
+      site: record.site,
       created: record.created,
       updated: record.updated,
       expand: record.expand ? {
@@ -3511,6 +3573,7 @@ export class DeliveryService {
       unit_price: record.unit_price,
       total_amount: record.total_amount,
       notes: record.notes,
+      site: record.site,
       created: record.created,
       updated: record.updated,
       expand: record.expand ? {
@@ -3536,11 +3599,34 @@ export class DeliveryService {
 
 export class DeliveryItemService {
   async getByDelivery(deliveryId: string): Promise<DeliveryItem[]> {
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
     const records = await pb.collection('delivery_items').getFullList({
-      filter: `delivery="${deliveryId}"`,
+      filter: `delivery="${deliveryId}" && site="${currentSite}"`,
       expand: 'delivery,item'
     });
     return records.map(record => this.mapRecordToDeliveryItem(record));
+  }
+
+  async getById(id: string): Promise<DeliveryItem> {
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    const record = await pb.collection('delivery_items').getOne(id, {
+      expand: 'delivery,item'
+    });
+    
+    // Validate site access
+    if (record.site !== currentSite) {
+      throw new Error('Access denied: DeliveryItem not found in current site');
+    }
+    
+    return this.mapRecordToDeliveryItem(record);
   }
 
   async create(data: Omit<DeliveryItem, 'id' | 'created' | 'updated'>): Promise<DeliveryItem> {
@@ -3550,11 +3636,23 @@ export class DeliveryItemService {
       throw new Error('Permission denied: Cannot create delivery items');
     }
 
-    const record = await pb.collection('delivery_items').create(data);
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    // Ensure site is set in the data
+    const dataWithSite = { ...data, site: currentSite };
+
+    const record = await pb.collection('delivery_items').create(dataWithSite);
     
     // Update the parent delivery with the new item ID
     try {
       const delivery = await pb.collection('deliveries').getOne(data.delivery);
+      // Validate that the delivery belongs to the current site
+      if (delivery.site !== currentSite) {
+        throw new Error('Access denied: Cannot create delivery item for delivery in different site');
+      }
       const existingItemIds = delivery.delivery_items || [];
       await pb.collection('deliveries').update(data.delivery, {
         delivery_items: [...existingItemIds, record.id]
@@ -3573,7 +3671,24 @@ export class DeliveryItemService {
       throw new Error('Permission denied: Cannot update delivery items');
     }
 
-    const record = await pb.collection('delivery_items').update(id, data);
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    // First, get the existing record to validate site access
+    const existingRecord = await pb.collection('delivery_items').getOne(id);
+    if (existingRecord.site !== currentSite) {
+      throw new Error('Access denied: Cannot update delivery item from different site');
+    }
+
+    // Ensure site cannot be changed
+    const { site, ...updateData } = data;
+    if (site && site !== currentSite) {
+      throw new Error('Access denied: Cannot move delivery item to different site');
+    }
+
+    const record = await pb.collection('delivery_items').update(id, updateData);
     return this.mapRecordToDeliveryItem(record);
   }
 
@@ -3584,9 +3699,19 @@ export class DeliveryItemService {
       throw new Error('Permission denied: Cannot delete delivery items');
     }
 
-    // Get the item to find its parent delivery
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    // Get the item to find its parent delivery and validate site access
     try {
       const item = await pb.collection('delivery_items').getOne(id);
+      
+      // Validate site access
+      if (item.site !== currentSite) {
+        throw new Error('Access denied: Cannot delete delivery item from different site');
+      }
       
       // Delete the item
       await pb.collection('delivery_items').delete(id);
@@ -3594,6 +3719,10 @@ export class DeliveryItemService {
       // Update the parent delivery to remove this item ID
       if (item.delivery) {
         const delivery = await pb.collection('deliveries').getOne(item.delivery);
+        // Validate that the delivery belongs to the current site
+        if (delivery.site !== currentSite) {
+          console.warn('Delivery site mismatch during item deletion');
+        }
         const updatedItemIds = (delivery.delivery_items || []).filter((itemId: string) => itemId !== id);
         await pb.collection('deliveries').update(item.delivery, {
           delivery_items: updatedItemIds
@@ -3623,6 +3752,17 @@ export class DeliveryItemService {
       throw new Error('Permission denied: Cannot create delivery items');
     }
 
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    // Validate that the delivery belongs to the current site
+    const delivery = await pb.collection('deliveries').getOne(deliveryId);
+    if (delivery.site !== currentSite) {
+      throw new Error('Access denied: Cannot create delivery items for delivery in different site');
+    }
+
     const createdItems: DeliveryItem[] = [];
     const createdItemIds: string[] = [];
     
@@ -3634,7 +3774,8 @@ export class DeliveryItemService {
         quantity: itemData.quantity,
         unit_price: itemData.unit_price,
         total_amount,
-        notes: itemData.notes
+        notes: itemData.notes,
+        site: currentSite
       });
       createdItems.push(this.mapRecordToDeliveryItem(record));
       createdItemIds.push(record.id);
@@ -3642,7 +3783,6 @@ export class DeliveryItemService {
     
     // Update the parent delivery with the new item IDs
     try {
-      const delivery = await pb.collection('deliveries').getOne(deliveryId);
       const existingItemIds = delivery.delivery_items || [];
       await pb.collection('deliveries').update(deliveryId, {
         delivery_items: [...existingItemIds, ...createdItemIds]
@@ -3663,6 +3803,7 @@ export class DeliveryItemService {
       unit_price: record.unit_price,
       total_amount: record.total_amount,
       notes: record.notes,
+      site: record.site,
       created: record.created,
       updated: record.updated,
       expand: record.expand ? {

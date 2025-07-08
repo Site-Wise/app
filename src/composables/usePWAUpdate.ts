@@ -78,7 +78,7 @@ export function usePWAUpdate() {
   
   onMounted(() => {
     // Only check for updates in production and when not in Tauri
-    if (import.meta.env.PROD && !window.__TAURI__) {
+    if (import.meta.env.PROD && !(window as any).__TAURI__) {
       checkForUpdates();
     }
   });

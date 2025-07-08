@@ -71,6 +71,40 @@
         <p class="text-white text-lg mb-2">{{ t('messages.imageLoadError') }}</p>
         <p class="text-gray-400 text-sm">{{ t('messages.checkImageAccess') }}</p>
       </div>
+
+      <!-- Overlay Information -->
+      <div 
+        v-if="currentOverlayInfo && !imageLoading && !imageError"
+        class="absolute top-4 right-4 sm:top-6 sm:right-6 bg-black bg-opacity-75 text-white rounded-lg p-3 sm:p-4 max-w-xs sm:max-w-sm shadow-lg backdrop-blur-sm"
+      >
+        <div class="space-y-2 text-sm">
+          <div v-if="currentOverlayInfo.vendorName" class="font-semibold">
+            <span class="text-gray-300">{{ t('delivery.vendor') }}:</span>
+            <span class="ml-1">{{ currentOverlayInfo.vendorName }}</span>
+          </div>
+          
+          <div v-if="currentOverlayInfo.deliveryDate" class="text-gray-300">
+            <span>{{ t('delivery.date') }}:</span>
+            <span class="ml-1">{{ new Date(currentOverlayInfo.deliveryDate).toLocaleDateString() }}</span>
+          </div>
+          
+          <div v-if="currentOverlayInfo.items && currentOverlayInfo.items.length > 0" class="border-t border-gray-600 pt-2">
+            <div class="text-gray-300 mb-1">{{ t('delivery.items') }}:</div>
+            <div class="space-y-1 max-h-24 overflow-y-auto">
+              <div 
+                v-for="item in currentOverlayInfo.items.slice(0, 3)" 
+                :key="item"
+                class="text-xs bg-gray-800 bg-opacity-50 rounded px-2 py-1"
+              >
+                {{ item }}
+              </div>
+              <div v-if="currentOverlayInfo.items.length > 3" class="text-xs text-gray-400">
+                +{{ currentOverlayInfo.items.length - 3 }} {{ t('delivery.moreItems') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Thumbnail Strip -->
@@ -112,6 +146,11 @@ interface Props {
   show: boolean;
   images: string[];
   initialIndex?: number;
+  overlayInfo?: {
+    vendorName?: string;
+    items?: string[];
+    deliveryDate?: string;
+  }[];
 }
 
 interface Emits {
@@ -132,6 +171,10 @@ const imageError = ref(false);
 
 const currentImage = computed(() => {
   return props.images[currentIndex.value] || null;
+});
+
+const currentOverlayInfo = computed(() => {
+  return props.overlayInfo?.[currentIndex.value] || null;
 });
 
 // Watch for show prop changes to reset state

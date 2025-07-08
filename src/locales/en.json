@@ -489,7 +489,9 @@
     "details": "Details",
     "finalBalance": "Final Balance",
     "totalOutstanding": "Total Outstanding",
-    "balance": "Balance"
+    "balance": "Balance",
+    "amountDue": "Amount Due",
+    "extraAdvance": "Extra Advance"
   },
   "returns": {
     "createReturn": "Create Return",
@@ -629,6 +631,11 @@
     "noDeliveries": "No deliveries recorded",
     "noSearchResults": "No deliveries found matching your search",
     "noPhotos": "No photos",
+    "viewAllImages": "View All Images",
+    "noImages": "No images available",
+    "moreItems": "more items",
+    "vendor": "Vendor",
+    "date": "Date",
     "multiItemSubtitle": "Record multiple items in a single delivery",
     "confirmDelete": "Are you sure you want to delete this delivery? This action cannot be undone.",
     "deleteSuccess": "Delivery deleted successfully",

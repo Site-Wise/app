@@ -390,6 +390,7 @@ import {
   vendorCreditNoteService,
   accountTransactionService,
   accountService,
+  getCurrentSiteId,
   type DeliveryItem,
   type Account,
   type VendorReturn
@@ -642,7 +643,8 @@ const processReturn = async () => {
         return_rate: item.unit_price,
         return_amount: item.unit_price * returnQuantities[item.id!],
         condition: 'used', // Default condition
-        item_notes: ''
+        item_notes: '',
+        site: getCurrentSiteId() || ''
       });
     }
 
