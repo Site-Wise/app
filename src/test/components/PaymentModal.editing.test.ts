@@ -122,6 +122,9 @@ describe('PaymentModal - Editing Functionality', () => {
       },
     });
 
+    // Wait for initialization to complete
+    await nextTick();
+
     // Should show selectable items for additional allocation
     expect(wrapper.html()).toContain('payments.selectItemsToPay');
     expect(wrapper.html()).toContain('₹150.00'); // delivery2 amount

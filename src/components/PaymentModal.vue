@@ -332,7 +332,7 @@
             </div>
           </div>
 
-          <!-- Additional Fields (CREATE/PAY_NOW only) -->
+          <!-- Additional Fields -->
           <div v-if="mode !== 'EDIT'" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reference</label>
@@ -342,6 +342,18 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
               <textarea v-model="form.notes" class="input mt-1" rows="3" placeholder="Payment notes"></textarea>
+            </div>
+          </div>
+          
+          <!-- Additional Fields Display (EDIT mode) -->
+          <div v-else class="space-y-3">
+            <div v-if="payment?.reference" class="flex justify-between">
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Reference:</span>
+              <span class="text-sm text-gray-900 dark:text-white">{{ payment.reference }}</span>
+            </div>
+            <div v-if="payment?.notes" class="flex justify-between">
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Notes:</span>
+              <span class="text-sm text-gray-900 dark:text-white">{{ payment.notes }}</span>
             </div>
           </div>
           
@@ -369,7 +381,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, nextTick } from 'vue';
+import { ref, reactive, computed, watch, nextTick, onMounted } from 'vue';
 import { 
   CreditCard, 
   Plus, 
@@ -531,8 +543,8 @@ const showAllocationProgress = computed(() => {
 const showDeliverySelection = computed(() => {
   return form.vendor && (
     (props.mode !== 'EDIT' && form.amount > 0) || 
-    (props.mode === 'EDIT' && unallocatedAmount.value > 0)
-  ) && (selectableDeliveries.value.length > 0 || selectableBookings.value.length > 0);
+    (props.mode === 'EDIT')
+  );
 });
 
 const selectableDeliveries = computed(() => {
@@ -616,7 +628,14 @@ const submitButtonText = computed(() => {
 
 const isFormValid = computed(() => {
   if (props.mode === 'EDIT') {
-    return form.deliveries.length > 0 || form.service_bookings.length > 0 || unallocatedAmount.value <= 0;
+    // In EDIT mode, form is valid if:
+    // 1. There are any new selections for allocation, OR
+    // 2. The payment is fully allocated, OR  
+    // 3. There are existing allocations (partial allocation is acceptable)
+    return form.deliveries.length > 0 || 
+           form.service_bookings.length > 0 || 
+           unallocatedAmount.value <= 0 ||
+           (props.currentAllocations && props.currentAllocations.length > 0);
   }
   
   const basicValidation = form.vendor && form.account && form.amount > 0;
@@ -1077,6 +1096,13 @@ const handleBackdropClick = () => {
 const handleEscape = () => {
   emit('close');
 };
+
+// Lifecycle
+onMounted(() => {
+  if (props.isVisible) {
+    initializeForm();
+  }
+});
 
 // Watchers
 watch(() => props.isVisible, (newValue) => {

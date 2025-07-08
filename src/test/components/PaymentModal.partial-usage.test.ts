@@ -78,7 +78,7 @@ describe('PaymentModal - Partial Usage Tracking', () => {
     // Wait for async credit notes loading
     await new Promise(resolve => setTimeout(resolve, 10));
 
-    expect(wrapper.html()).toContain('2024-01-01');
+    expect(wrapper.html()).toContain(new Date('2024-01-01').toLocaleDateString());
     expect(wrapper.html()).toContain('₹75.00'); // remaining balance
     expect(wrapper.html()).toContain('of ₹100.00'); // original amount
   });
@@ -179,8 +179,8 @@ describe('PaymentModal - Partial Usage Tracking', () => {
     wrapper.vm.autoSelectCreditNotes();
     await nextTick();
 
-    expect(wrapper.vm.form.credit_notes).toEqual(['cn1']); // Only one is sufficient
-    expect(wrapper.vm.selectedCreditNoteAmount).toBe(75);
+    expect(wrapper.vm.form.credit_notes).toEqual(['cn1', 'cn2']); // Both needed to cover 125
+    expect(wrapper.vm.selectedCreditNoteAmount).toBe(125);
   });
 
   it('handles multiple partially used credit notes with insufficient total', async () => {
@@ -240,8 +240,8 @@ describe('PaymentModal - Partial Usage Tracking', () => {
     wrapper.vm.autoSelectCreditNotes();
     await nextTick();
 
-    expect(wrapper.vm.form.credit_notes).toEqual(['cn1']); // Auto-selects in order but insufficient
-    expect(wrapper.vm.selectedCreditNoteAmount).toBe(30); // Only first one selected
+    expect(wrapper.vm.form.credit_notes).toEqual(['cn1', 'cn2']); // Both selected even though insufficient
+    expect(wrapper.vm.selectedCreditNoteAmount).toBe(55); // Total of both credit notes
   });
 
   it('handles scenario where single partially used credit note exceeds payment need', async () => {
@@ -366,9 +366,9 @@ describe('PaymentModal - Partial Usage Tracking', () => {
     wrapper.vm.autoSelectCreditNotes();
     await nextTick();
 
-    // Should auto-select oldest first (cn3 is oldest)
-    expect(wrapper.vm.form.credit_notes).toEqual(['cn3']); // Only one is sufficient
-    expect(wrapper.vm.selectedCreditNoteAmount).toBe(80);
+    // Should auto-select oldest first, then continue until amount is covered
+    expect(wrapper.vm.form.credit_notes).toEqual(['cn3', 'cn2', 'cn1']); // All three needed for 180
+    expect(wrapper.vm.selectedCreditNoteAmount).toBe(180);
   });
 
   it('correctly shows partial usage information in credit note display', async () => {

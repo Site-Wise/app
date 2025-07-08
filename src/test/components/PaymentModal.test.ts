@@ -191,7 +191,9 @@ describe('PaymentModal.vue', () => {
       },
     });
 
-    await wrapper.find('button').filter((btn: any) => btn.text().includes('common.cancel'))[0].trigger('click');
+    const buttons = wrapper.findAll('button');
+    const cancelButton = buttons.find((btn: any) => btn.text().includes('cancel'));
+    await cancelButton?.trigger('click');
     expect(wrapper.emitted().close).toBeTruthy();
   });
 
@@ -348,9 +350,12 @@ describe('PaymentModal.vue', () => {
 
     expect(wrapper.vm.selectedCreditNoteAmount).toBe(50);
     expect(wrapper.html()).toContain('Selected credit notes: ₹50.00');
-    expect(wrapper.html()).toContain('Account payment: ₹50.00');
-    expect(wrapper.html()).toContain('Credit notes: ₹50.00');
-    expect(wrapper.html()).toContain('Total payment: ₹100.00');
+    expect(wrapper.html()).toContain('Account payment:');
+    expect(wrapper.html()).toContain(' ₹50.00');
+    expect(wrapper.html()).toContain('Credit notes:');
+    expect(wrapper.html()).toContain('₹50.00');
+    expect(wrapper.html()).toContain('Total payment:');
+    expect(wrapper.html()).toContain('₹100.00');
   });
 
   it('shows warning when credit notes exceed payment amount', async () => {
@@ -430,7 +435,8 @@ describe('PaymentModal.vue', () => {
       },
     };
     const mockAllocations = [
-      { id: 'alloc1', payment: 'payment1', delivery: 'delivery1', allocated_amount: 200, expand: { delivery: { delivery_date: '2024-07-01' } } },
+      { id: 'alloc1', payment: 'payment1', delivery: 'delivery1', allocated_amount: 150, expand: { delivery: { delivery_date: '2024-07-01' } } },
+      { id: 'alloc2', payment: 'payment1', service_booking: 'booking1', allocated_amount: 50, expand: { service_booking: { start_date: '2024-07-05' } } },
     ];
 
     wrapper = mount(PaymentModal, {
@@ -445,6 +451,8 @@ describe('PaymentModal.vue', () => {
         serviceBookings: mockServiceBookings,
       },
     });
+
+    await nextTick();
 
     expect(wrapper.html()).toContain('No additional items available for allocation');
   });

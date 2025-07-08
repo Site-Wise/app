@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { usePlatform } from '../../composables/usePlatform';
 import { nextTick } from 'vue';
@@ -9,29 +9,55 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 describe('usePlatform', () => {
+  let originalNavigator: any;
+  let originalMatchMedia: any;
+  let originalNotification: any;
+
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Reset user agent
-    Object.defineProperty(window, 'navigator', {
-      value: { userAgent: 'Mozilla/5.0 (Web browser)' },
-      writable: true,
-    });
-    
-    // Reset matchMedia
-    Object.defineProperty(window, 'matchMedia', {
-      value: vi.fn(() => ({ matches: false })),
-      writable: true,
-    });
+    // Store original values
+    originalNavigator = window.navigator;
+    originalMatchMedia = window.matchMedia;
+    originalNotification = (window as any).Notification;
+  });
 
-    // Reset Notification availability
-    delete (window as any).Notification;
+  afterEach(() => {
+    // Restore original values
+    Object.defineProperty(window, 'navigator', {
+      value: originalNavigator,
+      configurable: true,
+      writable: true
+    });
+    Object.defineProperty(window, 'matchMedia', {
+      value: originalMatchMedia,
+      configurable: true,
+      writable: true
+    });
+    if (originalNotification !== undefined) {
+      (window as any).Notification = originalNotification;
+    } else {
+      delete (window as any).Notification;
+    }
   });
 
   it('detects web platform when Tauri is not available', async () => {
     // Mock Tauri import to fail
     vi.doMock('@tauri-apps/api/core', () => {
       throw new Error('Tauri API not available');
+    });
+
+    // Mock web browser environment
+    Object.defineProperty(window, 'navigator', {
+      value: { userAgent: 'Mozilla/5.0 (Web browser)' },
+      configurable: true,
+      writable: true,
+    });
+    
+    Object.defineProperty(window, 'matchMedia', {
+      value: vi.fn(() => ({ matches: false })),
+      configurable: true,
+      writable: true,
     });
 
     const wrapper = mount({
@@ -91,8 +117,15 @@ describe('usePlatform', () => {
     });
 
     // Mock PWA detection
+    Object.defineProperty(window, 'navigator', {
+      value: { userAgent: 'Mozilla/5.0 (Web browser)' },
+      configurable: true,
+      writable: true,
+    });
+    
     Object.defineProperty(window, 'matchMedia', {
       value: vi.fn(() => ({ matches: true })),
+      configurable: true,
       writable: true,
     });
 
@@ -119,6 +152,13 @@ describe('usePlatform', () => {
     // Mock Android user agent
     Object.defineProperty(window, 'navigator', {
       value: { userAgent: 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Mobile Safari/537.36' },
+      configurable: true,
+      writable: true,
+    });
+
+    Object.defineProperty(window, 'matchMedia', {
+      value: vi.fn(() => ({ matches: false })),
+      configurable: true,
       writable: true,
     });
 
@@ -147,6 +187,13 @@ describe('usePlatform', () => {
     // Mock Windows user agent
     Object.defineProperty(window, 'navigator', {
       value: { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36' },
+      configurable: true,
+      writable: true,
+    });
+
+    Object.defineProperty(window, 'matchMedia', {
+      value: vi.fn(() => ({ matches: false })),
+      configurable: true,
       writable: true,
     });
 
@@ -203,8 +250,15 @@ describe('usePlatform', () => {
     });
 
     // Mock PWA detection
+    Object.defineProperty(window, 'navigator', {
+      value: { userAgent: 'Mozilla/5.0 (Web browser)' },
+      configurable: true,
+      writable: true,
+    });
+    
     Object.defineProperty(window, 'matchMedia', {
       value: vi.fn(() => ({ matches: true })),
+      configurable: true,
       writable: true,
     });
 
@@ -233,6 +287,19 @@ describe('usePlatform', () => {
     // Mock Tauri import to fail
     vi.doMock('@tauri-apps/api/core', () => {
       throw new Error('Tauri API not available');
+    });
+
+    // Mock web browser environment
+    Object.defineProperty(window, 'navigator', {
+      value: { userAgent: 'Mozilla/5.0 (Web browser)' },
+      configurable: true,
+      writable: true,
+    });
+    
+    Object.defineProperty(window, 'matchMedia', {
+      value: vi.fn(() => ({ matches: false })),
+      configurable: true,
+      writable: true,
     });
 
     // Mock Notification API availability

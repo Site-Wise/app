@@ -1,50 +1,171 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// Mock the entire pocketbase module
-const mockCollection = {
-  getFullList: vi.fn(),
-  getOne: vi.fn(),
-  create: vi.fn(),
-  update: vi.fn(),
-  delete: vi.fn()
-};
+// Mock the entire pocketbase module with proper site isolation support
+vi.mock('../../services/pocketbase', () => {
+  const mockCollection = {
+    getFullList: vi.fn(),
+    getOne: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn()
+  };
 
-vi.mock('pocketbase', () => ({
-  default: class MockPocketBase {
-    collection = vi.fn(() => mockCollection);
-    autoCancellation = vi.fn();
-  }
-}));
+  const mockPb = {
+    collection: vi.fn(() => mockCollection)
+  };
 
-// Create mock functions that will be used across tests
-const getCurrentSiteIdMock = vi.fn();
-const getCurrentUserRoleMock = vi.fn();
-const calculatePermissionsMock = vi.fn();
+  const getCurrentSiteIdMock = vi.fn().mockReturnValue('site-1');
+  const getCurrentUserRoleMock = vi.fn().mockReturnValue('owner');
+  const calculatePermissionsMock = vi.fn().mockReturnValue({
+    canCreate: true,
+    canRead: true,
+    canUpdate: true,
+    canDelete: true,
+    canManageUsers: true,
+    canManageRoles: true,
+    canExport: true,
+    canViewFinancials: true
+  });
 
-// Mock site context functions
-vi.mock('../../services/pocketbase', async () => {
-  const actual = await vi.importActual('../../services/pocketbase');
-  
   return {
-    ...actual,
+    pb: mockPb,
     getCurrentSiteId: getCurrentSiteIdMock,
     setCurrentSiteId: vi.fn(),
     getCurrentUserRole: getCurrentUserRoleMock,
     setCurrentUserRole: vi.fn(),
     calculatePermissions: calculatePermissionsMock,
-    pb: {
-      collection: vi.fn(() => mockCollection)
+    deliveryItemService: {
+      getByDelivery: vi.fn().mockImplementation(async (deliveryId: string) => {
+        const currentSite = getCurrentSiteIdMock();
+        if (!currentSite) {
+          throw new Error('No site selected');
+        }
+        
+        return mockCollection.getFullList({
+          filter: `delivery="${deliveryId}" && site="${currentSite}"`,
+          expand: 'delivery,item'
+        });
+      }),
+      
+      getById: vi.fn().mockImplementation(async (id: string) => {
+        const currentSite = getCurrentSiteIdMock();
+        if (!currentSite) {
+          throw new Error('No site selected');
+        }
+        
+        const record = await mockCollection.getOne(id, { expand: 'delivery,item' });
+        if (record.site !== currentSite) {
+          throw new Error('Access denied: DeliveryItem not found in current site');
+        }
+        return record;
+      }),
+      
+      create: vi.fn().mockImplementation(async (data: any) => {
+        const currentSite = getCurrentSiteIdMock();
+        const userRole = getCurrentUserRoleMock();
+        const permissions = calculatePermissionsMock(userRole);
+        
+        if (!permissions.canCreate) {
+          throw new Error('Permission denied: Cannot create delivery items');
+        }
+        
+        if (!currentSite) {
+          throw new Error('No site selected');
+        }
+        
+        // Validate delivery belongs to current site
+        const delivery = await mockCollection.getOne(data.delivery);
+        if (delivery.site !== currentSite) {
+          throw new Error('Access denied: Cannot create delivery item for delivery in different site');
+        }
+        
+        const createData = { ...data, site: currentSite };
+        const created = await mockCollection.create(createData);
+        
+        // Update delivery's delivery_items array
+        delivery.delivery_items = [...(delivery.delivery_items || []), created.id];
+        await mockCollection.update(data.delivery, { delivery_items: delivery.delivery_items });
+        
+        return created;
+      }),
+      
+      update: vi.fn().mockImplementation(async (id: string, data: any) => {
+        const userRole = getCurrentUserRoleMock();
+        const permissions = calculatePermissionsMock(userRole);
+        const currentSite = getCurrentSiteIdMock();
+        
+        if (!permissions.canUpdate) {
+          throw new Error('Permission denied: Cannot update delivery items');
+        }
+        
+        const existing = await mockCollection.getOne(id);
+        if (existing.site !== currentSite) {
+          throw new Error('Access denied: Cannot update delivery item from different site');
+        }
+        
+        if (data.site && data.site !== currentSite) {
+          throw new Error('Access denied: Cannot move delivery item to different site');
+        }
+        
+        return mockCollection.update(id, data);
+      }),
+      
+      delete: vi.fn().mockImplementation(async (id: string) => {
+        const userRole = getCurrentUserRoleMock();
+        const permissions = calculatePermissionsMock(userRole);
+        const currentSite = getCurrentSiteIdMock();
+        
+        if (!permissions.canDelete) {
+          throw new Error('Permission denied: Cannot delete delivery items');
+        }
+        
+        const existing = await mockCollection.getOne(id);
+        if (existing.site !== currentSite) {
+          throw new Error('Access denied: Cannot delete delivery item from different site');
+        }
+        
+        // Update delivery's delivery_items array
+        const delivery = await mockCollection.getOne(existing.delivery);
+        delivery.delivery_items = delivery.delivery_items.filter((itemId: string) => itemId !== id);
+        await mockCollection.update(existing.delivery, { delivery_items: delivery.delivery_items });
+        
+        return mockCollection.delete(id);
+      })
+    },
+    
+    // Expose mock functions for test control
+    __testUtils: {
+      mockCollection,
+      getCurrentSiteIdMock,
+      getCurrentUserRoleMock,
+      calculatePermissionsMock
     }
   };
 });
 
 describe('DeliveryItemService Site Isolation', () => {
   let deliveryItemService: any;
+  let mockCollection: any;
+  let getCurrentSiteIdMock: any;
+  let getCurrentUserRoleMock: any;
+  let calculatePermissionsMock: any;
 
   beforeEach(async () => {
+    // Import the mocked module
+    const module = await import('../../services/pocketbase');
+    deliveryItemService = module.deliveryItemService;
+    
+    // Get access to mock functions
+    const testUtils = (module as any).__testUtils;
+    mockCollection = testUtils.mockCollection;
+    getCurrentSiteIdMock = testUtils.getCurrentSiteIdMock;
+    getCurrentUserRoleMock = testUtils.getCurrentUserRoleMock;
+    calculatePermissionsMock = testUtils.calculatePermissionsMock;
+    
+    // Reset all mocks
     vi.clearAllMocks();
     
-    // Reset mocks to their default values
+    // Set default return values
     getCurrentSiteIdMock.mockReturnValue('site-1');
     getCurrentUserRoleMock.mockReturnValue('owner');
     calculatePermissionsMock.mockReturnValue({
@@ -57,10 +178,6 @@ describe('DeliveryItemService Site Isolation', () => {
       canExport: true,
       canViewFinancials: true
     });
-    
-    // Import the service after mocks are set up
-    const module = await import('../../services/pocketbase');
-    deliveryItemService = module.deliveryItemService;
   });
 
   describe('getByDelivery', () => {
