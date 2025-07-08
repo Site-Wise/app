@@ -3,9 +3,10 @@ import { mount } from '@vue/test-utils';
 import { usePlatform } from '../../composables/usePlatform';
 import { nextTick } from 'vue';
 
-// Mock Tauri API
+// Mock Tauri API - will be configured per test
+const mockInvoke = vi.fn();
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(),
+  invoke: mockInvoke,
 }));
 
 describe('usePlatform', () => {
@@ -42,10 +43,8 @@ describe('usePlatform', () => {
   });
 
   it('detects web platform when Tauri is not available', async () => {
-    // Mock Tauri import to fail
-    vi.doMock('@tauri-apps/api/core', () => {
-      throw new Error('Tauri API not available');
-    });
+    // Mock Tauri invoke to reject
+    mockInvoke.mockRejectedValue(new Error('Tauri API not available'));
 
     // Mock web browser environment
     Object.defineProperty(window, 'navigator', {
@@ -80,15 +79,11 @@ describe('usePlatform', () => {
 
   it('detects Tauri platform when available', async () => {
     // Mock successful Tauri invoke
-    const mockInvoke = vi.fn().mockResolvedValue({
+    mockInvoke.mockResolvedValue({
       platform: 'linux',
       arch: 'x86_64',
       is_native: true,
     });
-
-    vi.doMock('@tauri-apps/api/core', () => ({
-      invoke: mockInvoke,
-    }));
 
     const wrapper = mount({
       template: '<div></div>',
@@ -111,10 +106,8 @@ describe('usePlatform', () => {
   });
 
   it('detects PWA mode', async () => {
-    // Mock Tauri import to fail
-    vi.doMock('@tauri-apps/api/core', () => {
-      throw new Error('Tauri API not available');
-    });
+    // Mock Tauri invoke to reject
+    mockInvoke.mockRejectedValue(new Error('Tauri API not available'));
 
     // Mock PWA detection
     Object.defineProperty(window, 'navigator', {
@@ -144,10 +137,8 @@ describe('usePlatform', () => {
   });
 
   it('detects mobile platform based on user agent', async () => {
-    // Mock Tauri import to fail
-    vi.doMock('@tauri-apps/api/core', () => {
-      throw new Error('Tauri API not available');
-    });
+    // Mock Tauri invoke to reject
+    mockInvoke.mockRejectedValue(new Error('Tauri API not available'));
 
     // Mock Android user agent
     Object.defineProperty(window, 'navigator', {
@@ -179,10 +170,8 @@ describe('usePlatform', () => {
   });
 
   it('detects desktop platform based on user agent', async () => {
-    // Mock Tauri import to fail
-    vi.doMock('@tauri-apps/api/core', () => {
-      throw new Error('Tauri API not available');
-    });
+    // Mock Tauri invoke to reject
+    mockInvoke.mockRejectedValue(new Error('Tauri API not available'));
 
     // Mock Windows user agent
     Object.defineProperty(window, 'navigator', {
@@ -215,15 +204,11 @@ describe('usePlatform', () => {
 
   it('returns correct capabilities for Tauri desktop', async () => {
     // Mock successful Tauri invoke
-    const mockInvoke = vi.fn().mockResolvedValue({
+    mockInvoke.mockResolvedValue({
       platform: 'macos',
       arch: 'arm64',
       is_native: true,
     });
-
-    vi.doMock('@tauri-apps/api/core', () => ({
-      invoke: mockInvoke,
-    }));
 
     const wrapper = mount({
       template: '<div></div>',
@@ -244,10 +229,8 @@ describe('usePlatform', () => {
   });
 
   it('returns correct capabilities for web PWA', async () => {
-    // Mock Tauri import to fail
-    vi.doMock('@tauri-apps/api/core', () => {
-      throw new Error('Tauri API not available');
-    });
+    // Mock Tauri invoke to reject
+    mockInvoke.mockRejectedValue(new Error('Tauri API not available'));
 
     // Mock PWA detection
     Object.defineProperty(window, 'navigator', {
@@ -284,10 +267,8 @@ describe('usePlatform', () => {
   });
 
   it('returns correct capabilities for regular web', async () => {
-    // Mock Tauri import to fail
-    vi.doMock('@tauri-apps/api/core', () => {
-      throw new Error('Tauri API not available');
-    });
+    // Mock Tauri invoke to reject
+    mockInvoke.mockRejectedValue(new Error('Tauri API not available'));
 
     // Mock web browser environment
     Object.defineProperty(window, 'navigator', {

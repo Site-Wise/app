@@ -146,6 +146,14 @@ vi.mock('../../composables/useNativeNotifications', () => ({
   })
 }))
 
+// Mock AppLayout component
+vi.mock('../../components/AppLayout.vue', () => ({
+  default: {
+    name: 'AppLayout',
+    template: '<div>App Layout Mock</div>'
+  }
+}))
+
 describe('Authentication Flow Integration', () => {
   let pinia: any
   let siteStore: any
