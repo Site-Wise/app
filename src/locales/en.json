@@ -82,7 +82,8 @@
     "imageViewer": "Image Viewer",
     "image": "Image",
     "thumbnail": "Thumbnail",
-    "useArrowKeys": "Use ← → keys to navigate"
+    "useArrowKeys": "Use ← → keys to navigate",
+    "version": "Version"
   },
   "vendors": "Vendors",
   "vendor_returns": "Vendor Returns",

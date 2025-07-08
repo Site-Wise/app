@@ -2,15 +2,15 @@ import { ref, onMounted } from 'vue';
 import { useToast } from './useToast';
 import { useI18n } from './useI18n';
 
+// Create a shared state for the PWA update
+const showUpdatePrompt = ref(false);
+const updateAvailable = ref(false);
+const isUpdating = ref(false);
+let updateSW: (() => Promise<void>) | null = null;
+
 export function usePWAUpdate() {
   const { t } = useI18n();
   const { info } = useToast();
-  
-  const showUpdatePrompt = ref(false);
-  const updateAvailable = ref(false);
-  const isUpdating = ref(false);
-  
-  let updateSW: (() => Promise<void>) | null = null;
   
   const checkForUpdates = async () => {
     if ('serviceWorker' in navigator) {
@@ -75,10 +75,19 @@ export function usePWAUpdate() {
     showUpdatePrompt.value = false;
     updateAvailable.value = false;
   };
-  
+
+  // For testing purposes only: simulate an update and trigger the prompt
+  const simulateUpdateAndReload = () => {
+    updateSW = () => {
+      window.location.reload();
+      return Promise.resolve();
+    };
+    showUpdatePrompt.value = true;
+  };
+
   onMounted(() => {
-    // Only check for updates in production and when not in Tauri
-    if (import.meta.env.PROD && !(window as any).__TAURI__) {
+    // Only check for updates when not in Tauri
+    if (!(window as any).__TAURI__) {
       checkForUpdates();
     }
   });
@@ -88,6 +97,7 @@ export function usePWAUpdate() {
     updateAvailable,
     isUpdating,
     applyUpdate,
-    dismissUpdate
+    dismissUpdate,
+    ...(import.meta.env.DEV ? { simulateUpdateAndReload } : {})
   };
 }

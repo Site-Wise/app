@@ -7,6 +7,9 @@ const isTauri = process.env.TAURI_PLATFORM !== undefined
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+  },
   plugins: [
     vue(),
     // Only include PWA plugin when not building for Tauri

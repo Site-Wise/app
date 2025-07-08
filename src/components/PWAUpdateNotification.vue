@@ -1,20 +1,20 @@
 <template>
   <Transition
-    enter-active-class="transition ease-out duration-300"
-    enter-from-class="transform opacity-0 scale-95"
-    enter-to-class="transform opacity-100 scale-100"
-    leave-active-class="transition ease-in duration-200"
-    leave-from-class="transform opacity-100 scale-100"
-    leave-to-class="transform opacity-0 scale-95"
+    enter-active-class="transition ease-out duration-300 transform"
+    enter-from-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+    enter-to-class="opacity-100 translate-y-0 sm:scale-100"
+    leave-active-class="transition ease-in duration-200 transform"
+    leave-from-class="opacity-100 translate-y-0 sm:scale-100"
+    leave-to-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
   >
     <div 
       v-if="showUpdatePrompt" 
-      class="fixed bottom-4 right-4 z-50 w-full max-w-sm"
+      class="fixed bottom-4 inset-x-4 z-50 sm:right-4 sm:left-auto sm:max-w-sm"
       role="alert"
       aria-live="polite"
       aria-atomic="true"
     >
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 p-4">
         <div class="flex items-start">
           <div class="flex-shrink-0">
             <div class="flex items-center justify-center w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full">
