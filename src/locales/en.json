@@ -920,8 +920,10 @@
     "updateAvailable": "Update Available",
     "updateTitle": "Update Available",
     "updateMessage": "A new version of SiteWise is available. Update now to get the latest features.",
+    "updateDescription": "A new version is available with bug fixes and improvements.",
     "updateNow": "Update Now",
     "updating": "Updating...",
+    "updateInstalled": "App updated successfully!",
     "youreOffline": "You're offline"
   },
   "theme": {

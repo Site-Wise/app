@@ -38,6 +38,7 @@
       </div>
     </div>
     <ToastContainer />
+    <PWAUpdateNotification />
   </div>
 </template>
 
@@ -51,6 +52,7 @@ import { useNativeNotifications } from './composables/useNativeNotifications';
 import AppLayout from './components/AppLayout.vue';
 import SiteSelectionView from './views/SiteSelectionView.vue';
 import ToastContainer from './components/ToastContainer.vue';
+import PWAUpdateNotification from './components/PWAUpdateNotification.vue';
 
 const { isAuthenticated } = useAuth();
 const { hasSiteAccess, isReadyForRouting, loadUserSites } = useSite();

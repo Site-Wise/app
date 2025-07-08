@@ -923,8 +923,10 @@
     "updateAvailable": "अपडेट उपलब्ध",
     "updateTitle": "अपडेट उपलब्ध",
     "updateMessage": "SiteWise का नया संस्करण उपलब्ध है। नवीनतम सुविधाएं प्राप्त करने के लिए अभी अपडेट करें।",
+    "updateDescription": "बग फिक्स और सुधार के साथ नया संस्करण उपलब्ध है।",
     "updateNow": "अभी अपडेट करें",
     "updating": "अपडेट हो रहा है...",
+    "updateInstalled": "ऐप सफलतापूर्वक अपडेट हो गया!",
     "youreOffline": "आप ऑफलाइन हैं"
   },
   "theme": {
