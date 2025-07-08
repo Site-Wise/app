@@ -68,8 +68,8 @@ describe('usePlatform', () => {
     });
 
     // Wait for onMounted to complete
-    await nextTick();
     await new Promise(resolve => setTimeout(resolve, 10));
+    await nextTick();
 
     expect(wrapper.vm.platformInfo.platform).toBe('web');
     expect(wrapper.vm.platformInfo.isNative).toBe(false);
@@ -98,8 +98,8 @@ describe('usePlatform', () => {
     });
 
     // Wait for onMounted to complete
-    await nextTick();
     await new Promise(resolve => setTimeout(resolve, 10));
+    await nextTick();
 
     expect(wrapper.vm.platformInfo.platform).toBe('linux');
     expect(wrapper.vm.platformInfo.arch).toBe('x86_64');
@@ -137,8 +137,8 @@ describe('usePlatform', () => {
     });
 
     // Wait for onMounted to complete
-    await nextTick();
     await new Promise(resolve => setTimeout(resolve, 10));
+    await nextTick();
 
     expect(wrapper.vm.platformInfo.isPWA).toBe(true);
   });
@@ -170,8 +170,8 @@ describe('usePlatform', () => {
     });
 
     // Wait for onMounted to complete
-    await nextTick();
     await new Promise(resolve => setTimeout(resolve, 10));
+    await nextTick();
 
     expect(wrapper.vm.platformInfo.platform).toBe('android');
     expect(wrapper.vm.platformInfo.isMobile).toBe(true);
@@ -205,8 +205,8 @@ describe('usePlatform', () => {
     });
 
     // Wait for onMounted to complete
-    await nextTick();
     await new Promise(resolve => setTimeout(resolve, 10));
+    await nextTick();
 
     expect(wrapper.vm.platformInfo.platform).toBe('windows');
     expect(wrapper.vm.platformInfo.isMobile).toBe(false);
@@ -233,8 +233,8 @@ describe('usePlatform', () => {
     });
 
     // Wait for onMounted to complete
-    await nextTick();
     await new Promise(resolve => setTimeout(resolve, 10));
+    await nextTick();
 
     expect(wrapper.vm.capabilities.notifications).toBe(true);
     expect(wrapper.vm.capabilities.filesystem).toBe(true);
@@ -273,8 +273,8 @@ describe('usePlatform', () => {
     });
 
     // Wait for onMounted to complete
-    await nextTick();
     await new Promise(resolve => setTimeout(resolve, 10));
+    await nextTick();
 
     expect(wrapper.vm.capabilities.notifications).toBe(true);
     expect(wrapper.vm.capabilities.filesystem).toBe(false);
@@ -313,8 +313,8 @@ describe('usePlatform', () => {
     });
 
     // Wait for onMounted to complete
-    await nextTick();
     await new Promise(resolve => setTimeout(resolve, 10));
+    await nextTick();
 
     expect(wrapper.vm.capabilities.notifications).toBe(true);
     expect(wrapper.vm.capabilities.filesystem).toBe(false);

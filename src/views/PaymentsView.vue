@@ -60,7 +60,7 @@
           <tr v-for="payment in payments" :key="payment.id">
             <!-- Desktop Row -->
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ payment.expand?.vendor?.name || t('common.unknown') + ' ' + t('common.vendor') }}</div>
+              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ payment.expand?.vendor?.contact_person || t('common.unknown') + ' ' + t('common.vendor') }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="flex items-center">
@@ -143,7 +143,7 @@
 
             <!-- Mobile Row -->
             <td class="px-4 py-4 lg:hidden">
-              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ payment.expand?.vendor?.name || t('common.unknown') + ' ' + t('common.vendor') }}</div>
+              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ payment.expand?.vendor?.contact_person || t('common.unknown') + ' ' + t('common.vendor') }}</div>
               <div class="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">
                 {{ formatDate(payment.payment_date) }}
               </div>
@@ -241,7 +241,7 @@
       <div class="space-y-4">
         <div v-for="vendor in vendorsWithOutstanding" :key="vendor.id" class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
           <div class="mb-3 sm:mb-0">
-            <h3 class="font-medium text-gray-900 dark:text-white">{{ vendor.name }}</h3>
+            <h3 class="font-medium text-gray-900 dark:text-white">{{ vendor.contact_person }}</h3>
             <p class="text-sm text-gray-600 dark:text-gray-400">{{ vendor.pendingItems }} pending deliveries</p>
           </div>
           <div class="flex items-center justify-between sm:block sm:text-right">
@@ -292,7 +292,7 @@
           <div class="space-y-4">
             <div>
               <span class="font-medium text-gray-700 dark:text-gray-300">Vendor:</span>
-              <span class="ml-2 text-gray-900 dark:text-white">{{ viewingPayment.expand?.vendor?.name || 'Unknown Vendor' }}</span>
+              <span class="ml-2 text-gray-900 dark:text-white">{{ viewingPayment.expand?.vendor?.contact_person || 'Unknown Vendor' }}</span>
             </div>
             <div>
               <span class="font-medium text-gray-700 dark:text-gray-300">Account:</span>

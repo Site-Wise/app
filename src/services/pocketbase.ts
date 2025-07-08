@@ -3611,6 +3611,25 @@ export class DeliveryItemService {
     return records.map(record => this.mapRecordToDeliveryItem(record));
   }
 
+  async getAll(vendorFilter?: string): Promise<DeliveryItem[]> {
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    let filter = `site="${currentSite}"`;
+    if (vendorFilter) {
+      filter += ` && delivery.vendor="${vendorFilter}"`;
+    }
+
+    const records = await pb.collection('delivery_items').getFullList({
+      filter,
+      expand: 'delivery,delivery.vendor,item',
+      sort: '-created'
+    });
+    return records.map(record => this.mapRecordToDeliveryItem(record));
+  }
+
   async getById(id: string): Promise<DeliveryItem> {
     const currentSite = getCurrentSiteId();
     if (!currentSite) {

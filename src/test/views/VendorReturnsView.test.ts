@@ -102,8 +102,8 @@ vi.mock('../../components/returns/ReturnModal.vue', () => ({
   default: {
     name: 'ReturnModal',
     template: '<div class="return-modal-mock">Return Modal</div>',
-    props: ['show', 'editMode', 'returnData'],
-    emits: ['close', 'saved']
+    props: ['isEdit', 'returnData', 'vendors'],
+    emits: ['close', 'save']
   }
 }))
 
@@ -174,6 +174,9 @@ vi.mock('../../services/pocketbase', () => {
     },
     accountService: {
       getAll: vi.fn().mockResolvedValue([mockAccount])
+    },
+    deliveryItemService: {
+      getAll: vi.fn().mockResolvedValue([])
     },
     getCurrentSiteId: vi.fn().mockReturnValue('site-1'),
     setCurrentSiteId: vi.fn(),

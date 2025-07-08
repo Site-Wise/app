@@ -50,7 +50,7 @@ vi.mock('../../composables/useSiteData', () => ({
             deliveries: ['delivery-1', 'delivery-2'],
             service_bookings: [],
             expand: {
-              vendor: { id: 'vendor-1', name: 'ABC Steel Co.' },
+              vendor: { id: 'vendor-1', contact_person: 'ABC Steel Co.' },
               account: { id: 'account-1', name: 'Main Bank', type: 'bank' }
             }
           },
@@ -65,7 +65,7 @@ vi.mock('../../composables/useSiteData', () => ({
             deliveries: ['delivery-3'],
             service_bookings: ['booking-1'],
             expand: {
-              vendor: { id: 'vendor-2', name: 'XYZ Cement Ltd.' },
+              vendor: { id: 'vendor-2', contact_person: 'XYZ Cement Ltd.' },
               account: { id: 'account-2', name: 'Digital Wallet', type: 'digital_wallet' }
             }
           }
@@ -111,8 +111,8 @@ vi.mock('../../composables/useSiteData', () => ({
     } else if (loadDataFn.toString().includes('vendorService')) {
       // Mock vendors
       mockData = [
-        { id: 'vendor-1', name: 'ABC Steel Co.' },
-        { id: 'vendor-2', name: 'XYZ Cement Ltd.' }
+        { id: 'vendor-1', contact_person: 'ABC Steel Co.' },
+        { id: 'vendor-2', contact_person: 'XYZ Cement Ltd.' }
       ]
     } else if (loadDataFn.toString().includes('accountService')) {
       // Mock accounts
@@ -304,8 +304,8 @@ vi.mock('../../services/pocketbase', () => ({
   },
   vendorService: {
     getAll: vi.fn().mockResolvedValue([
-      { id: 'vendor-1', name: 'ABC Steel Co.' },
-      { id: 'vendor-2', name: 'XYZ Cement Ltd.' }
+      { id: 'vendor-1', contact_person: 'ABC Steel Co.' },
+      { id: 'vendor-2', contact_person: 'XYZ Cement Ltd.' }
     ])
   },
   accountService: {
@@ -704,14 +704,14 @@ describe('PaymentsView - Mobile Responsive Design', () => {
       const vendorsWithOutstanding = wrapper.vm.vendorsWithOutstanding
       
       // ABC Steel Co. should have outstanding amount from deliveries
-      const abcSteel = vendorsWithOutstanding.find((v: any) => v.name === 'ABC Steel Co.')
+      const abcSteel = vendorsWithOutstanding.find((v: any) => v.contact_person === 'ABC Steel Co.')
       if (abcSteel) {
         expect(abcSteel.outstandingAmount).toBe(4000) // ₹2000 + ₹2000 from deliveries
         expect(abcSteel.pendingItems).toBe(2) // 2 deliveries
       }
 
       // XYZ Cement Ltd. should have outstanding amount from service booking
-      const xyzCement = vendorsWithOutstanding.find((v: any) => v.name === 'XYZ Cement Ltd.')
+      const xyzCement = vendorsWithOutstanding.find((v: any) => v.contact_person === 'XYZ Cement Ltd.')
       if (xyzCement) {
         expect(xyzCement.outstandingAmount).toBe(3000) // ₹5000 - ₹2000 from booking
         expect(xyzCement.pendingItems).toBe(1) // 1 booking

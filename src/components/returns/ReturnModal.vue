@@ -59,10 +59,11 @@
                 type="button" 
                 @click="addReturnItem" 
                 class="btn-outline text-sm py-1 px-2"
-                :disabled="!form.vendor"
+                :disabled="!form.vendor || loadingDeliveryItems"
               >
-                <Plus class="h-3 w-3 mr-1" />
-                Add Item
+                <Loader2 v-if="loadingDeliveryItems" class="h-3 w-3 mr-1 animate-spin" />
+                <Plus v-else class="h-3 w-3 mr-1" />
+                {{ loadingDeliveryItems ? 'Loading...' : 'Add Item' }}
               </button>
             </div>
 
@@ -259,7 +260,11 @@
               </div>
             </div>
 
-            <div v-if="availableDeliveryItems.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+            <div v-if="loadingDeliveryItems" class="text-center py-8 text-gray-500 dark:text-gray-400">
+              <Loader2 class="h-6 w-6 animate-spin mx-auto mb-2" />
+              Loading delivery items...
+            </div>
+            <div v-else-if="availableDeliveryItems.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
               No delivered items found for this vendor.
             </div>
           </div>
@@ -276,6 +281,7 @@ import { useI18n } from '../../composables/useI18n';
 import {
   vendorReturnService,
   vendorReturnItemService,
+  deliveryItemService,
   getCurrentSiteId,
   type VendorReturn,
   type Vendor,
@@ -287,7 +293,6 @@ interface Props {
   isEdit: boolean;
   returnData?: VendorReturn | null;
   vendors: Vendor[];
-  deliveryItems: DeliveryItem[];
 }
 
 interface ReturnItemForm {
@@ -325,16 +330,17 @@ const uploadedFiles = ref<File[]>([]);
 const returnItems = ref<ReturnItemForm[]>([]);
 const loading = ref(false);
 const showItemSelection = ref(false);
+const vendorDeliveryItems = ref<DeliveryItem[]>([]);
+const loadingDeliveryItems = ref(false);
 
 // Computed properties
 const availableDeliveryItems = computed(() => {
   if (!form.vendor) return [];
   
-  return props.deliveryItems.filter(item => {
-    // Filter by vendor and exclude already selected items
-    const isVendorMatch = item.expand?.delivery?.vendor === form.vendor;
+  return vendorDeliveryItems.value.filter(item => {
+    // Exclude already selected items
     const isNotSelected = !returnItems.value.some(ri => ri.delivery_item === item.id);
-    return isVendorMatch && isNotSelected;
+    return isNotSelected;
   });
 });
 
@@ -360,7 +366,29 @@ watch(totalReturnAmount, (newTotal) => {
   form.total_return_amount = newTotal;
 });
 
+// Watch vendor selection to fetch delivery items
+watch(() => form.vendor, async (newVendorId) => {
+  if (newVendorId) {
+    await fetchVendorDeliveryItems(newVendorId);
+  } else {
+    vendorDeliveryItems.value = [];
+  }
+  // Clear selected items when vendor changes
+  returnItems.value = [];
+});
+
 // Methods
+const fetchVendorDeliveryItems = async (vendorId: string) => {
+  loadingDeliveryItems.value = true;
+  try {
+    vendorDeliveryItems.value = await deliveryItemService.getAll(vendorId);
+  } catch (error) {
+    console.error('Error fetching delivery items for vendor:', error);
+    vendorDeliveryItems.value = [];
+  } finally {
+    loadingDeliveryItems.value = false;
+  }
+};
 const addReturnItem = () => {
   if (!form.vendor) return;
   showItemSelection.value = true;

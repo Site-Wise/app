@@ -160,7 +160,7 @@
                 class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="text-sm font-medium text-gray-900 dark:text-white">
-                  {{ delivery.expand?.vendor?.name || 'Unknown Vendor' }}
+                  {{ delivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
@@ -246,7 +246,7 @@
           <div class="flex items-start justify-between mb-3">
             <div class="flex-1">
               <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
-                {{ delivery.expand?.vendor?.name || 'Unknown Vendor' }}
+                {{ delivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}
               </h3>
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 {{ formatDate(delivery.delivery_date) }}
@@ -315,7 +315,7 @@
             <div class="space-y-4">
               <div>
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('common.vendor') }}:</span>
-                <span class="ml-2 text-gray-900 dark:text-white">{{ viewingDelivery.expand?.vendor?.name || 'Unknown Vendor' }}</span>
+                <span class="ml-2 text-gray-900 dark:text-white">{{ viewingDelivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}</span>
               </div>
               <div>
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('delivery.deliveryDate') }}:</span>
@@ -646,7 +646,7 @@ const viewAllImages = () => {
   allImages.value.forEach(({ delivery, photo }) => {
     allImageUrls.push(getPhotoUrl(delivery.id!, photo));
     
-    const vendorName = delivery.expand?.vendor?.name || 'Unknown Vendor';
+    const vendorName = delivery.expand?.vendor?.contact_person || 'Unknown Vendor';
     const items = delivery.expand?.delivery_items?.map(item => {
       const itemName = item.expand?.item?.name || 'Unknown Item';
       const quantity = item.quantity || 0;

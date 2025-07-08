@@ -70,8 +70,7 @@ vi.mock('../../composables/useSiteData', () => ({
         expand: {
           vendor: {
             id: 'vendor-1',
-            name: 'Test Vendor',
-            contact_person: 'John Doe',
+            contact_person: 'Test Vendor',
             email: 'john@vendor.com',
             phone: '9876543210'
           },
@@ -107,8 +106,7 @@ vi.mock('../../composables/useSiteData', () => ({
         expand: {
           vendor: {
             id: 'vendor-2',
-            name: 'Second Vendor',
-            contact_person: 'Jane Smith',
+            contact_person: 'Second Vendor',
             email: 'jane@vendor2.com',
             phone: '9876543211'
           },

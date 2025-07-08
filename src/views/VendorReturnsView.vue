@@ -310,7 +310,6 @@
       :is-edit="isEditMode"
       :return-data="selectedReturn"
       :vendors="vendors"
-      :delivery-items="deliveryItems"
       @close="closeReturnModal"
       @save="handleReturnSave"
     />
@@ -393,7 +392,6 @@ const { data: accountsData } = useSiteData(
 // Computed properties
 const returns = computed(() => returnsData.value || []);
 const vendors = computed(() => vendorsData.value || []);
-const deliveryItems = computed(() => []); // TODO: Fetch delivery items when needed
 const accounts = computed(() => accountsData.value || []);
 
 const filteredReturns = computed(() => {
