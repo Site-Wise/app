@@ -67,14 +67,23 @@
       <!-- Total Amount -->
       <div class="md:col-span-2">
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          {{ t('common.total') }}
+          {{ t('common.total') }} *
         </label>
         <input 
-          :value="item.total_amount.toFixed(2)"
+          :value="item.total_amount"
+          @input="handleTotalAmountChange"
+          @blur="validateTotalAmount"
           type="number" 
-          readonly 
-          class="input bg-gray-100 dark:bg-gray-600"
+          min="0.01"
+          step="0.01"
+          required 
+          class="input"
+          :class="{ 'border-red-300': errors.total_amount }"
+          placeholder="0.00"
         />
+        <div v-if="errors.total_amount" class="text-red-600 dark:text-red-400 text-xs mt-1">
+          {{ errors.total_amount }}
+        </div>
       </div>
 
       <!-- Actions -->
@@ -151,7 +160,8 @@ const { t } = useI18n();
 const errors = reactive({
   item: '',
   quantity: '',
-  unit_price: ''
+  unit_price: '',
+  total_amount: ''
 });
 
 // Computed properties
@@ -204,17 +214,41 @@ const validateUnitPrice = () => {
   }
 };
 
+const validateTotalAmount = () => {
+  errors.total_amount = '';
+  if (props.item.total_amount <= 0) {
+    errors.total_amount = t('forms.totalAmountRequired');
+  }
+};
+
 const calculateTotal = (quantity: number, unit_price: number) => {
-  const total = quantity * unit_price;
+  // Ensure positive values for calculation
+  const safeQuantity = Math.max(0, quantity || 0);
+  const safeUnitPrice = Math.max(0, unit_price || 0);
+  const total = safeQuantity * safeUnitPrice;
   return Math.round(total * 100) / 100; // Round to 2 decimal places
 };
 
-const updateItem = (updates: Partial<DeliveryItemForm>) => {
+const calculateUnitPrice = (total_amount: number, quantity: number) => {
+  // Ensure positive values and prevent division by zero
+  const safeTotal = Math.max(0, total_amount || 0);
+  const safeQuantity = Math.max(0.01, quantity || 0.01); // Minimum 0.01 to prevent division by zero
+  const unit_price = safeTotal / safeQuantity;
+  return Math.round(unit_price * 100) / 100; // Round to 2 decimal places
+};
+
+const updateItem = (updates: Partial<DeliveryItemForm>, updateSource?: 'unit_price' | 'total_amount' | 'quantity') => {
   const updatedItem = { ...props.item, ...updates };
   
-  // Recalculate total if quantity or unit_price changed
-  if ('quantity' in updates || 'unit_price' in updates) {
+  // Handle two-way sync based on what was changed
+  if (updateSource === 'unit_price' || updateSource === 'quantity') {
+    // If unit price or quantity changed, recalculate total
     updatedItem.total_amount = calculateTotal(updatedItem.quantity, updatedItem.unit_price);
+  } else if (updateSource === 'total_amount') {
+    // If total amount changed, recalculate unit price (only if quantity > 0)
+    if (updatedItem.quantity > 0) {
+      updatedItem.unit_price = calculateUnitPrice(updatedItem.total_amount, updatedItem.quantity);
+    }
   }
   
   emit('update', props.index, updatedItem);
@@ -238,7 +272,7 @@ const handleItemSelected = (item: Item | null) => {
 const handleQuantityChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   const quantity = parseFloat(target.value) || 0;
-  updateItem({ quantity });
+  updateItem({ quantity }, 'quantity');
   // Clear error when user enters a valid value
   if (quantity > 0) {
     errors.quantity = '';
@@ -248,10 +282,20 @@ const handleQuantityChange = (event: Event) => {
 const handleUnitPriceChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   const unit_price = parseFloat(target.value) || 0;
-  updateItem({ unit_price });
+  updateItem({ unit_price }, 'unit_price');
   // Clear error when user enters a valid value
   if (unit_price > 0) {
     errors.unit_price = '';
+  }
+};
+
+const handleTotalAmountChange = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const total_amount = parseFloat(target.value) || 0;
+  updateItem({ total_amount }, 'total_amount');
+  // Clear error when user enters a valid value
+  if (total_amount > 0) {
+    errors.total_amount = '';
   }
 };
 

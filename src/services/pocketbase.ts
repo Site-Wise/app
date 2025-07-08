@@ -3412,8 +3412,36 @@ export class DeliveryService {
       throw new Error('Permission denied: Cannot delete deliveries');
     }
 
-    await pb.collection('deliveries').delete(id);
-    return true;
+    try {
+      // First, delete all associated delivery_items
+      const deliveryItems = await pb.collection('delivery_items').getFullList({
+        filter: `delivery="${id}"`
+      });
+      
+      // Delete each delivery item
+      for (const item of deliveryItems) {
+        try {
+          await pb.collection('delivery_items').delete(item.id);
+        } catch (itemErr) {
+          console.error('Error deleting delivery item:', itemErr);
+          throw new Error('DELIVERY_ITEMS_DELETE_FAILED');
+        }
+      }
+      
+      // Then delete the delivery itself
+      try {
+        await pb.collection('deliveries').delete(id);
+        return true;
+      } catch (deliveryErr) {
+        console.error('Error deleting delivery:', deliveryErr);
+        throw new Error('DELIVERY_DELETE_FAILED');
+      }
+    } catch (err) {
+      console.error('Error deleting delivery:', err);
+      
+      // Re-throw the error so UI can handle it appropriately
+      throw err;
+    }
   }
 
   async uploadPhoto(deliveryId: string, file: File): Promise<string> {
@@ -3421,6 +3449,19 @@ export class DeliveryService {
     formData.append('photos', file);
     const record = await pb.collection('deliveries').update(deliveryId, formData);
     return record.photos[record.photos.length - 1];
+  }
+
+  async uploadPhotos(deliveryId: string, files: File[]): Promise<string[]> {
+    if (files.length === 0) return [];
+    
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('photos', file);
+    });
+    
+    const record = await pb.collection('deliveries').update(deliveryId, formData);
+    // Return the newly added photos (last N photos where N = files.length)
+    return record.photos.slice(-files.length);
   }
 
   mapRecordToDelivery(record: RecordModel): Delivery {

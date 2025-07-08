@@ -94,6 +94,37 @@
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('delivery.photos') }}</label>
+              
+              <!-- Existing Photos Display -->
+              <div v-if="existingPhotos.length > 0" class="mb-4">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">{{ t('delivery.existingPhotos') }}</p>
+                <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
+                  <div 
+                    v-for="(photo, index) in existingPhotos" 
+                    :key="photo"
+                    class="relative group flex-shrink-0"
+                  >
+                    <img
+                      :src="getPhotoUrl(props.editingDelivery!.id!, photo)"
+                      :alt="`Existing photo ${index + 1}`"
+                      class="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-75 transition-opacity hover:scale-105"
+                      @click="openPhotoGallery(index)"
+                    />
+                    <div class="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        @click.stop="removeExistingPhoto(index)"
+                        class="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
+                        :title="t('common.delete')"
+                      >
+                        <X class="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Add New Photos -->
               <FileUploadComponent
                 v-model="selectedFilesForUpload"
                 accept-types="image/*"
@@ -118,16 +149,16 @@
               </button>
             </div>
 
-            <div v-if="deliveryItems.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+            <div v-if="activeDeliveryItems.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
               {{ t('delivery.noItemsAdded') }}
             </div>
 
             <div v-else class="space-y-4">
               <DeliveryItemRow
-                v-for="(item, index) in deliveryItems"
-                :key="index"
+                v-for="item in activeDeliveryItems"
+                :key="item.tempId"
                 :item="item"
-                :index="index"
+                :index="deliveryItems.indexOf(item)"
                 :items="items"
                 :used-items="usedItemIds"
                 @update="updateDeliveryItem"
@@ -136,11 +167,11 @@
             </div>
 
             <!-- Delivery Totals -->
-            <div v-if="deliveryItems.length > 0" class="border-t border-gray-200 dark:border-gray-600 pt-4 mt-6">
+            <div v-if="activeDeliveryItems.length > 0" class="border-t border-gray-200 dark:border-gray-600 pt-4 mt-6">
               <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <h5 class="font-medium text-gray-900 dark:text-white mb-3">{{ t('delivery.deliveryTotals') }}</h5>
                 <div class="space-y-2 text-sm">
-                  <div v-for="item in deliveryItems" :key="item.tempId" class="flex justify-between">
+                  <div v-for="item in activeDeliveryItems" :key="item.tempId" class="flex justify-between">
                     <span class="text-gray-600 dark:text-gray-400">
                       {{ getItemName(item.item) }} ({{ item.quantity }} {{ getItemUnit(item.item) }})
                     </span>
@@ -182,7 +213,7 @@
             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
               <h5 class="font-medium text-gray-900 dark:text-white mb-3">{{ t('delivery.itemsSummary') }}</h5>
               <div class="space-y-2 text-sm">
-                <div v-for="item in deliveryItems" :key="item.tempId" class="flex justify-between">
+                <div v-for="item in activeDeliveryItems" :key="item.tempId" class="flex justify-between">
                   <span>{{ getItemName(item.item) }} ({{ item.quantity }} {{ getItemUnit(item.item) }} @ ₹{{ item.unit_price }}/{{ getItemUnit(item.item) }})</span>
                   <span class="font-medium">₹{{ item.total_amount.toFixed(2) }}</span>
                 </div>
@@ -239,6 +270,14 @@
         </div>
       </div>
     </div>
+    
+    <!-- Image Slider -->
+    <ImageSlider
+      v-model:show="showPhotoGallery"
+      :images="existingPhotos.map(photo => getPhotoUrl(props.editingDelivery!.id!, photo))"
+      :initial-index="galleryIndex"
+      @close="showPhotoGallery = false"
+    />
   </div>
 </template>
 
@@ -251,6 +290,7 @@ import { useI18n } from '../../composables/useI18n';
 import { useToast } from '../../composables/useToast';
 import FileUploadComponent from '../FileUploadComponent.vue';
 import DeliveryItemRow from './DeliveryItemRow.vue';
+import ImageSlider from '../ImageSlider.vue';
 import {
   deliveryService,
   deliveryItemService,
@@ -267,11 +307,15 @@ interface Props {
 
 interface DeliveryItemForm {
   tempId: string;
+  id?: string; // Actual database ID for existing items
   item: string;
   quantity: number;
   unit_price: number;
   total_amount: number;
   notes?: string;
+  isNew?: boolean; // Track if this is a new item
+  isModified?: boolean; // Track if this item was modified
+  isDeleted?: boolean; // Track if this item should be deleted
 }
 
 const props = defineProps<Props>();
@@ -291,6 +335,9 @@ const vendors = ref<Vendor[]>([]);
 const items = ref<Item[]>([]);
 const vendorInputRef = ref<HTMLInputElement>();
 const selectedFilesForUpload = ref<File[]>([]);
+const existingPhotos = ref<string[]>([]);
+const showPhotoGallery = ref(false);
+const galleryIndex = ref(0);
 
 // Steps
 const steps = [
@@ -309,18 +356,29 @@ const deliveryForm = reactive<Omit<Delivery, 'id' | 'site' | 'created' | 'update
 });
 
 const deliveryItems = ref<DeliveryItemForm[]>([]);
+const originalDeliveryItems = ref<DeliveryItemForm[]>([]); // Track original items for comparison
 
 // Computed properties
 const totalAmount = computed(() => {
-  return deliveryItems.value.reduce((total, item) => total + item.total_amount, 0);
+  return deliveryItems.value
+    .filter(item => !item.isDeleted)
+    .reduce((total, item) => total + item.total_amount, 0);
 });
 
 const usedItemIds = computed(() => {
-  return deliveryItems.value.map(item => item.item).filter(Boolean);
+  return deliveryItems.value
+    .filter(item => !item.isDeleted)
+    .map(item => item.item)
+    .filter(Boolean);
 });
 
 const canAddMoreItems = computed(() => {
-  return deliveryItems.value.length < items.value.length;
+  const activeItems = deliveryItems.value.filter(item => !item.isDeleted);
+  return activeItems.length < items.value.length;
+});
+
+const activeDeliveryItems = computed(() => {
+  return deliveryItems.value.filter(item => !item.isDeleted);
 });
 
 const canProceedToNextStep = computed(() => {
@@ -328,8 +386,8 @@ const canProceedToNextStep = computed(() => {
     case 0: // Delivery Info
       return deliveryForm.vendor !== '' && deliveryForm.delivery_date !== '';
     case 1: // Items
-      return deliveryItems.value.length > 0 && 
-             deliveryItems.value.every(item => 
+      return activeDeliveryItems.value.length > 0 && 
+             activeDeliveryItems.value.every(item => 
                item.item !== '' && item.quantity > 0 && item.unit_price > 0
              );
     default:
@@ -369,20 +427,56 @@ const addNewItem = () => {
     quantity: 1,
     unit_price: 0,
     total_amount: 0,
-    notes: ''
+    notes: '',
+    isNew: true,
+    isModified: false,
+    isDeleted: false
   });
 };
 
 const updateDeliveryItem = (index: number, updatedItem: DeliveryItemForm) => {
+  const originalItem = originalDeliveryItems.value.find(item => item.tempId === updatedItem.tempId);
+  
+  // Mark as modified if values changed from original
+  if (originalItem && !updatedItem.isNew) {
+    const hasChanges = originalItem.item !== updatedItem.item ||
+                     originalItem.quantity !== updatedItem.quantity ||
+                     originalItem.unit_price !== updatedItem.unit_price ||
+                     originalItem.notes !== updatedItem.notes;
+    updatedItem.isModified = hasChanges;
+  }
+  
   deliveryItems.value[index] = { ...updatedItem };
 };
 
 const removeDeliveryItem = (index: number) => {
-  deliveryItems.value.splice(index, 1);
+  const item = deliveryItems.value[index];
+  
+  // If it's an existing item (has an ID), mark for deletion instead of removing
+  if (item.id && !item.isNew) {
+    item.isDeleted = true;
+    item.isModified = true;
+  } else {
+    // If it's a new item, just remove it from the array
+    deliveryItems.value.splice(index, 1);
+  }
 };
 
 const handleFilesSelected = (files: File[]) => {
   selectedFilesForUpload.value = files;
+};
+
+const getPhotoUrl = (deliveryId: string, filename: string) => {
+  return `${import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090'}/api/files/deliveries/${deliveryId}/${filename}`;
+};
+
+const openPhotoGallery = (index: number) => {
+  galleryIndex.value = index;
+  showPhotoGallery.value = true;
+};
+
+const removeExistingPhoto = (index: number) => {
+  existingPhotos.value.splice(index, 1);
 };
 
 const nextStep = () => {
@@ -391,21 +485,69 @@ const nextStep = () => {
   }
 };
 
+const handleDeliveryItemChanges = async (deliveryId: string) => {
+  // Handle deleted items
+  const deletedItems = deliveryItems.value.filter(item => item.isDeleted && item.id && !item.isNew);
+  for (const item of deletedItems) {
+    await deliveryItemService.delete(item.id!);
+  }
+
+  // Handle modified existing items
+  const modifiedItems = deliveryItems.value.filter(item => item.isModified && item.id && !item.isNew && !item.isDeleted);
+  for (const item of modifiedItems) {
+    await deliveryItemService.update(item.id!, {
+      item: item.item,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total_amount: item.total_amount,
+      notes: item.notes
+    });
+  }
+
+  // Handle new items
+  const newItems = deliveryItems.value.filter(item => item.isNew && !item.isDeleted);
+  if (newItems.length > 0) {
+    const newItemsData = newItems.map(item => ({
+      item: item.item,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      notes: item.notes
+    }));
+    
+    await deliveryItemService.createMultiple(deliveryId, newItemsData);
+  }
+};
+
 const saveDelivery = async () => {
   if (!canSubmit.value) return;
 
   loading.value = true;
   try {
-    // Prepare delivery data
+    // Prepare delivery data - preserve existing photos unless they were removed
     const deliveryData = {
-      ...deliveryForm,
+      vendor: deliveryForm.vendor,
+      delivery_date: deliveryForm.delivery_date,
+      delivery_reference: deliveryForm.delivery_reference,
+      notes: deliveryForm.notes,
       total_amount: totalAmount.value
-    } as Omit<Delivery, 'id' | 'site' | 'created' | 'updated' | 'expand'>;
+    } as Partial<Delivery>;
+    
+    // For edits, handle existing photo changes (removals)
+    if (props.editingDelivery) {
+      const originalPhotoCount = (props.editingDelivery.photos || []).length;
+      const currentPhotoCount = existingPhotos.value.length;
+      
+      // If photos were removed, update the delivery with remaining photos
+      if (currentPhotoCount !== originalPhotoCount) {
+        deliveryData.photos = existingPhotos.value;
+      }
+    }
     
     // Only set payment status for new deliveries - existing ones keep their current status
     if (!props.editingDelivery) {
       deliveryData.payment_status = 'pending';
       deliveryData.paid_amount = 0;
+      // Don't set photos to empty array - let PocketBase handle initialization
     }
 
     // Create or update delivery
@@ -413,25 +555,44 @@ const saveDelivery = async () => {
     if (props.editingDelivery) {
       delivery = await deliveryService.update(props.editingDelivery.id!, deliveryData);
     } else {
-      delivery = await deliveryService.create(deliveryData);
+      delivery = await deliveryService.create(deliveryData as Omit<Delivery, 'id' | 'site' | 'created' | 'updated' | 'expand'>);
     }
 
-    // Create delivery items
-    if (!props.editingDelivery) {
-      const itemsData = deliveryItems.value.map(item => ({
-        item: item.item,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        notes: item.notes
-      }));
+    // Handle delivery items for edit mode
+    if (props.editingDelivery) {
+      // Process delivery item changes
+      await handleDeliveryItemChanges(delivery.id!);
+    } else {
+      // Create delivery items for new delivery
+      const newItemsData = deliveryItems.value
+        .filter(item => !item.isDeleted)
+        .map(item => ({
+          item: item.item,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          notes: item.notes
+        }));
       
-      await deliveryItemService.createMultiple(delivery.id!, itemsData);
+      if (newItemsData.length > 0) {
+        await deliveryItemService.createMultiple(delivery.id!, newItemsData);
+      }
     }
 
-    // Upload photos if any
+    // Upload new photos if any (after main delivery update)
     if (selectedFilesForUpload.value.length > 0) {
-      for (const file of selectedFilesForUpload.value) {
-        await deliveryService.uploadPhoto(delivery.id!, file);
+      try {
+        const uploadedPhotos = await deliveryService.uploadPhotos(delivery.id!, selectedFilesForUpload.value);
+        console.log(`Successfully uploaded ${uploadedPhotos.length} of ${selectedFilesForUpload.value.length} photos`);
+        
+        // For editing, we need to fetch the updated delivery to get the final photo list
+        if (props.editingDelivery) {
+          // Update the existingPhotos list to reflect all photos (old + new)
+          existingPhotos.value = [...existingPhotos.value, ...uploadedPhotos];
+        }
+      } catch (uploadError) {
+        console.error('Error uploading photos:', uploadError);
+        // Continue with delivery save even if photo upload fails, but inform user
+        error(t('delivery.photoUploadError'));
       }
     }
 
@@ -484,21 +645,31 @@ const loadData = async () => {
     if (props.editingDelivery) {
       Object.assign(deliveryForm, {
         vendor: props.editingDelivery.vendor,
-        delivery_date: props.editingDelivery.delivery_date.split('T')[0], // Extract date part only
+        delivery_date: new Date(props.editingDelivery.delivery_date).toISOString().split('T')[0],
         delivery_reference: props.editingDelivery.delivery_reference,
         notes: props.editingDelivery.notes
       });
+      
+      // Load existing photos
+      existingPhotos.value = [...(props.editingDelivery.photos || [])];
 
       // Load delivery items if editing
       if (props.editingDelivery.expand?.delivery_items) {
         deliveryItems.value = props.editingDelivery.expand.delivery_items.map((item, index) => ({
           tempId: `edit_${index}`,
+          id: item.id,
           item: item.item,
           quantity: item.quantity,
           unit_price: item.unit_price,
           total_amount: item.total_amount,
-          notes: item.notes
+          notes: item.notes,
+          isNew: false,
+          isModified: false,
+          isDeleted: false
         }));
+        
+        // Store a deep copy of original items for comparison
+        originalDeliveryItems.value = JSON.parse(JSON.stringify(deliveryItems.value));
       }
     } else {
       // Add one empty item for new deliveries

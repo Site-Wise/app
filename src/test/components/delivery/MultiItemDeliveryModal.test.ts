@@ -36,6 +36,7 @@ vi.mock('../../../composables/useI18n', () => ({
         'common.notes': 'Notes',
         'forms.deliveryNotes': 'Additional delivery notes...',
         'delivery.photos': 'Photos',
+        'delivery.photoUploadError': 'Failed to upload photo. Please try again.',
         'delivery.addItem': 'Add Item',
         'delivery.noItemsAdded': 'No items added yet',
         'delivery.deliveryTotals': 'Delivery Totals',
@@ -63,7 +64,8 @@ vi.mock('../../../services/pocketbase', () => ({
   deliveryService: {
     create: vi.fn().mockResolvedValue({ id: 'delivery-1' }),
     update: vi.fn().mockResolvedValue({ id: 'delivery-1' }),
-    uploadPhoto: vi.fn().mockResolvedValue(true)
+    uploadPhoto: vi.fn().mockResolvedValue('photo-filename.jpg'),
+    uploadPhotos: vi.fn().mockResolvedValue(['photo1.jpg', 'photo2.jpg', 'photo3.jpg'])
   },
   deliveryItemService: {
     createMultiple: vi.fn().mockResolvedValue(true)
@@ -569,6 +571,191 @@ describe('MultiItemDeliveryModal', () => {
           total_amount: 500
         })
       )
+    })
+  })
+
+  describe('Photo Upload Functionality', () => {
+    it('should upload multiple photos successfully during delivery creation', async () => {
+      wrapper = createWrapper()
+      await nextTick()
+      
+      // Wait for data loading
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await nextTick()
+
+      // Set up photo files
+      const mockFiles = [
+        new File(['photo1'], 'photo1.jpg', { type: 'image/jpeg' }),
+        new File(['photo2'], 'photo2.jpg', { type: 'image/jpeg' }),
+        new File(['photo3'], 'photo3.jpg', { type: 'image/jpeg' })
+      ]
+      
+      wrapper.vm.selectedFilesForUpload = mockFiles
+
+      // Complete form for delivery creation
+      await wrapper.find('select').setValue('vendor-1')
+      await wrapper.find('input[type="date"]').setValue('2024-01-15')
+      
+      // Add item
+      wrapper.vm.updateDeliveryItem(0, {
+        tempId: 'temp-1',
+        item: 'item-1',
+        quantity: 10,
+        unit_price: 50,
+        total_amount: 500,
+        notes: ''
+      })
+
+      // Navigate to final step and submit
+      wrapper.vm.currentStep = 2
+      await nextTick()
+
+      // Submit the delivery
+      const submitButton = wrapper.findAll('button').find(btn => {
+        const text = btn.text()
+        const classes = btn.classes()
+        return text.includes('Create') || text.includes('Update') || classes.includes('bg-green-600')
+      })
+      
+      await submitButton.trigger('click')
+      await nextTick()
+
+      const { deliveryService } = await import('../../../services/pocketbase')
+      expect(deliveryService.uploadPhotos).toHaveBeenCalledWith('delivery-1', mockFiles)
+    })
+
+    it('should handle photo upload failure gracefully', async () => {
+      const { deliveryService } = await import('../../../services/pocketbase')
+      deliveryService.uploadPhotos.mockRejectedValueOnce(new Error('Upload failed'))
+
+      wrapper = createWrapper()
+      await nextTick()
+      
+      // Wait for data loading
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await nextTick()
+
+      // Set up photo files
+      const mockFiles = [
+        new File(['photo1'], 'photo1.jpg', { type: 'image/jpeg' })
+      ]
+      
+      wrapper.vm.selectedFilesForUpload = mockFiles
+
+      // Complete form
+      await wrapper.find('select').setValue('vendor-1')
+      await wrapper.find('input[type="date"]').setValue('2024-01-15')
+      
+      wrapper.vm.updateDeliveryItem(0, {
+        tempId: 'temp-1',
+        item: 'item-1',
+        quantity: 5,
+        unit_price: 100,
+        total_amount: 500,
+        notes: ''
+      })
+
+      // Navigate to final step and submit
+      wrapper.vm.currentStep = 2
+      await nextTick()
+
+      const submitButton = wrapper.findAll('button').find(btn => {
+        const text = btn.text()
+        return text.includes('Create') || text.includes('Update')
+      })
+      
+      await submitButton.trigger('click')
+      await nextTick()
+
+      // Should still create delivery even if photo upload fails
+      expect(deliveryService.create).toHaveBeenCalled()
+      expect(deliveryService.uploadPhotos).toHaveBeenCalledWith('delivery-1', mockFiles)
+    })
+
+    it('should update existing photos list when editing delivery with new photos', async () => {
+      const mockEditingDelivery = {
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        delivery_reference: 'REF-001',
+        photos: ['existing1.jpg', 'existing2.jpg'],
+        notes: 'Test delivery',
+        total_amount: 500,
+        expand: {
+          delivery_items: [
+            {
+              id: 'item-1',
+              item: 'item-1',
+              quantity: 5,
+              unit_price: 100,
+              total_amount: 500,
+              notes: ''
+            }
+          ]
+        }
+      }
+
+      wrapper = createWrapper({ editingDelivery: mockEditingDelivery })
+      await nextTick()
+      
+      // Wait for data loading
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await nextTick()
+
+      // Add new photos
+      const mockNewFiles = [
+        new File(['photo3'], 'photo3.jpg', { type: 'image/jpeg' })
+      ]
+      
+      wrapper.vm.selectedFilesForUpload = mockNewFiles
+
+      // Submit the update
+      wrapper.vm.currentStep = 2
+      await nextTick()
+
+      const submitButton = wrapper.findAll('button').find(btn => {
+        const text = btn.text()
+        return text.includes('Update')
+      })
+      
+      await submitButton.trigger('click')
+      await nextTick()
+
+      const { deliveryService } = await import('../../../services/pocketbase')
+      expect(deliveryService.uploadPhotos).toHaveBeenCalledWith('delivery-1', mockNewFiles)
+      
+      // Should update existingPhotos with new uploads
+      expect(wrapper.vm.existingPhotos).toEqual(['existing1.jpg', 'existing2.jpg', 'photo1.jpg', 'photo2.jpg', 'photo3.jpg'])
+    })
+
+    it('should handle files selection properly', async () => {
+      wrapper = createWrapper()
+      await nextTick()
+
+      const mockFiles = [
+        new File(['photo1'], 'photo1.jpg', { type: 'image/jpeg' }),
+        new File(['photo2'], 'photo2.jpg', { type: 'image/jpeg' })
+      ]
+
+      // Test handleFilesSelected method
+      wrapper.vm.handleFilesSelected(mockFiles)
+      expect(wrapper.vm.selectedFilesForUpload).toEqual(mockFiles)
+    })
+
+    it('should clear selected files when form is reset', async () => {
+      wrapper = createWrapper()
+      await nextTick()
+
+      const mockFiles = [
+        new File(['photo1'], 'photo1.jpg', { type: 'image/jpeg' })
+      ]
+
+      wrapper.vm.selectedFilesForUpload = mockFiles
+      expect(wrapper.vm.selectedFilesForUpload.length).toBe(1)
+
+      // Reset form
+      wrapper.vm.resetForm()
+      expect(wrapper.vm.selectedFilesForUpload.length).toBe(0)
     })
   })
 })

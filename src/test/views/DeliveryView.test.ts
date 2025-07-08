@@ -24,6 +24,9 @@ vi.mock('../../composables/useI18n', () => ({
         'delivery.noPhotos': 'No photos',
         'delivery.confirmDelete': 'Are you sure you want to delete this delivery?',
         'delivery.deleteSuccess': 'Delivery deleted successfully',
+        'delivery.deleteError': 'Failed to delete delivery',
+        'delivery.deleteItemsError': 'Failed to delete delivery items. Delivery deletion aborted.',
+        'delivery.deleteDeliveryError': 'Failed to delete delivery. Please try again.',
         'delivery.createSuccess': 'Delivery recorded successfully',
         'delivery.updateSuccess': 'Delivery updated successfully',
         'common.vendor': 'Vendor',
@@ -449,5 +452,149 @@ describe('DeliveryView', () => {
     
     // Check that the component still exists after the site change
     expect(wrapper.exists()).toBe(true)
+  })
+
+  describe('Delivery Deletion', () => {
+    let confirmSpy: any
+
+    beforeEach(() => {
+      // Mock window.confirm to always return true
+      confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    })
+
+    afterEach(() => {
+      confirmSpy.mockRestore()
+    })
+
+    it('should successfully delete delivery with delivery items', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+      deliveryService.delete.mockResolvedValue(true)
+
+      const mockDelivery = {
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        total_amount: 1000,
+        payment_status: 'pending'
+      }
+
+      await wrapper.vm.deleteDelivery(mockDelivery)
+
+      // Verify confirmation was shown
+      expect(confirmSpy).toHaveBeenCalledWith('Are you sure you want to delete this delivery?')
+      
+      // Verify deliveryService.delete was called
+      expect(deliveryService.delete).toHaveBeenCalledWith('delivery-1')
+      
+      // Verify success message was shown (mocked toast composable)
+      // Note: The actual toast is mocked, so we can't directly verify the call
+      // but we can verify that the delete function completed successfully
+    })
+
+    it('should handle delivery items deletion failure', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+      deliveryService.delete.mockRejectedValue(new Error('DELIVERY_ITEMS_DELETE_FAILED'))
+
+      const mockDelivery = {
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        total_amount: 1000,
+        payment_status: 'pending'
+      }
+
+      await wrapper.vm.deleteDelivery(mockDelivery)
+
+      // Verify deliveryService.delete was called
+      expect(deliveryService.delete).toHaveBeenCalledWith('delivery-1')
+      
+      // The error handling is tested implicitly by the function not throwing
+    })
+
+    it('should handle delivery deletion failure', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+      deliveryService.delete.mockRejectedValue(new Error('DELIVERY_DELETE_FAILED'))
+
+      const mockDelivery = {
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        total_amount: 1000,
+        payment_status: 'pending'
+      }
+
+      await wrapper.vm.deleteDelivery(mockDelivery)
+
+      // Verify deliveryService.delete was called
+      expect(deliveryService.delete).toHaveBeenCalledWith('delivery-1')
+      
+      // The error handling is tested implicitly by the function not throwing
+    })
+
+    it('should handle generic deletion error', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+      deliveryService.delete.mockRejectedValue(new Error('Some other error'))
+
+      const mockDelivery = {
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        total_amount: 1000,
+        payment_status: 'pending'
+      }
+
+      await wrapper.vm.deleteDelivery(mockDelivery)
+
+      // Verify deliveryService.delete was called
+      expect(deliveryService.delete).toHaveBeenCalledWith('delivery-1')
+      
+      // The error handling is tested implicitly by the function not throwing
+    })
+
+    it('should not proceed with deletion if user cancels confirmation', async () => {
+      // Mock window.confirm to return false
+      confirmSpy.mockReturnValue(false)
+
+      const { deliveryService } = await import('../../services/pocketbase')
+      
+      const mockDelivery = {
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        total_amount: 1000,
+        payment_status: 'pending'
+      }
+
+      await wrapper.vm.deleteDelivery(mockDelivery)
+
+      // Verify confirmation was shown
+      expect(confirmSpy).toHaveBeenCalledWith('Are you sure you want to delete this delivery?')
+      
+      // Verify deliveryService.delete was NOT called
+      expect(deliveryService.delete).not.toHaveBeenCalled()
+      
+      // Verify function completed without error
+      expect(confirmSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it('should handle non-Error objects in catch block', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+      deliveryService.delete.mockRejectedValue('String error')
+
+      const mockDelivery = {
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        total_amount: 1000,
+        payment_status: 'pending'
+      }
+
+      await wrapper.vm.deleteDelivery(mockDelivery)
+
+      // Verify deliveryService.delete was called
+      expect(deliveryService.delete).toHaveBeenCalledWith('delivery-1')
+      
+      // The error handling is tested implicitly by the function not throwing
+    })
   })
 })

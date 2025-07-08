@@ -284,18 +284,26 @@
             <!-- Photos -->
             <div>
               <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-3">{{ t('delivery.photos') }}</h4>
-              <div v-if="viewingDelivery.photos && viewingDelivery.photos.length > 0" class="grid grid-cols-2 gap-4">
-                <img
+              <div v-if="viewingDelivery.photos && viewingDelivery.photos.length > 0" class="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
+                <div
                   v-for="(photo, index) in viewingDelivery.photos"
                   :key="index"
-                  :src="getPhotoUrl(viewingDelivery.id!, photo)"
-                  :alt="`Photo ${index + 1}`"
-                  class="w-full h-32 object-cover rounded-lg cursor-pointer border border-gray-200 dark:border-gray-600"
-                  @click="openPhotoGallery(viewingDelivery, index)"
-                />
+                  class="flex-shrink-0 relative group"
+                >
+                  <img
+                    :src="getPhotoUrl(viewingDelivery.id!, photo)"
+                    :alt="`Photo ${index + 1}`"
+                    class="w-20 h-20 object-cover rounded-lg cursor-pointer border border-gray-200 dark:border-gray-600 hover:scale-105 transition-transform"
+                    @click="openPhotoGallery(viewingDelivery, index)"
+                  />
+                  <div v-if="index === 0 && viewingDelivery.photos.length > 1" class="absolute -top-1 -right-1 bg-primary-500 text-white text-xs px-1.5 py-0.5 rounded-full shadow-lg">
+                    +{{ viewingDelivery.photos.length - 1 }}
+                  </div>
+                </div>
               </div>
-              <div v-else class="text-gray-500 dark:text-gray-400">
-                {{ t('delivery.noPhotos') }}
+              <div v-else class="text-center py-4 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <Eye class="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p class="text-sm">{{ t('delivery.noPhotos') }}</p>
               </div>
             </div>
           </div>
@@ -393,10 +401,10 @@
       </div>
     </div>
 
-    <!-- Photo Gallery -->
-    <PhotoGallery
-      v-if="showPhotoGallery && galleryDelivery"
-      :photos="getPhotoUrls(galleryDelivery)"
+    <!-- Image Slider -->
+    <ImageSlider
+      v-model:show="showPhotoGallery"
+      :images="galleryDelivery ? getPhotoUrls(galleryDelivery) : []"
       :initial-index="galleryIndex"
       @close="showPhotoGallery = false"
     />
@@ -412,7 +420,7 @@ import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
 import { useDeliverySearch } from '../composables/useSearch';
-import PhotoGallery from '../components/PhotoGallery.vue';
+import ImageSlider from '../components/ImageSlider.vue';
 import MultiItemDeliveryModal from '../components/delivery/MultiItemDeliveryModal.vue';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
@@ -612,7 +620,19 @@ const deleteDelivery = async (delivery: Delivery) => {
     await reloadAllData();
   } catch (err) {
     console.error('Error deleting delivery:', err);
-    error(t('delivery.deleteError'));
+    
+    // Handle specific error types
+    if (err instanceof Error) {
+      if (err.message === 'DELIVERY_ITEMS_DELETE_FAILED') {
+        error(t('delivery.deleteItemsError'));
+      } else if (err.message === 'DELIVERY_DELETE_FAILED') {
+        error(t('delivery.deleteDeliveryError'));
+      } else {
+        error(t('delivery.deleteError'));
+      }
+    } else {
+      error(t('delivery.deleteError'));
+    }
   }
 };
 

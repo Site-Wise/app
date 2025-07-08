@@ -15,6 +15,7 @@ vi.mock('../../../composables/useI18n', () => ({
         'forms.unitPrice': 'Unit Price',
         'forms.quantityRequired': 'Quantity is required',
         'forms.unitPriceRequired': 'Unit price is required',
+        'forms.totalAmountRequired': 'Total amount is required',
         'forms.validationError': 'Please fix the following errors:',
         'delivery.removeItem': 'Remove Item',
         'delivery.itemNotes': 'Item Notes',
@@ -83,7 +84,7 @@ describe('DeliveryItemRow', () => {
       wrapper = createWrapper()
 
       expect(wrapper.find('.mock-item-selector').exists()).toBe(true)
-      expect(wrapper.findAll('input[type="number"]')).toHaveLength(3) // quantity, unit_price, total_amount (readonly)
+      expect(wrapper.findAll('input[type="number"]')).toHaveLength(3) // quantity, unit_price, total_amount (all editable)
       expect(wrapper.find('textarea').exists()).toBe(true)
       expect(wrapper.find('button').exists()).toBe(true) // remove button
     })
@@ -359,7 +360,7 @@ describe('DeliveryItemRow', () => {
       // Note: ItemSelector component has its own label, so we check visible labels
       expect(labels[0].text()).toBe('Quantity *')
       expect(labels[1].text()).toBe('Unit Price *')  
-      expect(labels[2].text()).toBe('Total')
+      expect(labels[2].text()).toBe('Total *')
       expect(labels[3].text()).toBe('Item Notes')
     })
 
@@ -369,16 +370,115 @@ describe('DeliveryItemRow', () => {
       // Check that number inputs have required attributes
       expect(wrapper.find('input[type="number"]').attributes('required')).toBeDefined()
       expect(wrapper.findAll('input[type="number"]')[1].attributes('required')).toBeDefined()
+      expect(wrapper.findAll('input[type="number"]')[2].attributes('required')).toBeDefined() // total amount is now required
       
       // ItemSelector component handles its own validation, so we check it exists
       expect(wrapper.findComponent({ name: 'ItemSelector' }).exists()).toBe(true)
     })
 
-    it('should mark total field as readonly', () => {
+    it('should mark total field as editable', () => {
       wrapper = createWrapper()
 
       const totalInput = wrapper.findAll('input[type="number"]')[2]
-      expect(totalInput.attributes('readonly')).toBeDefined()
+      expect(totalInput.attributes('readonly')).toBeUndefined()
+    })
+  })
+
+  describe('Two-Way Price Sync', () => {
+    it('should calculate unit price when total amount changes', async () => {
+      wrapper = createWrapper({
+        item: { ...mockDeliveryItem, item: 'item-1', quantity: 4 }
+      })
+
+      const totalInput = wrapper.findAll('input[type="number"]')[2]
+      await totalInput.setValue('400')
+      await totalInput.trigger('input')
+
+      // Check that update event was emitted with calculated unit price
+      expect(wrapper.emitted('update')).toBeTruthy()
+      const updateEvents = wrapper.emitted('update')
+      const lastUpdate = updateEvents[updateEvents.length - 1]
+      expect(lastUpdate[1].unit_price).toBe(100) // 400 / 4 = 100
+      expect(lastUpdate[1].total_amount).toBe(400)
+    })
+
+    it('should handle edge case when quantity is zero for total amount change', async () => {
+      wrapper = createWrapper({
+        item: { ...mockDeliveryItem, item: 'item-1', quantity: 0 }
+      })
+
+      const totalInput = wrapper.findAll('input[type="number"]')[2]
+      await totalInput.setValue('300')
+      await totalInput.trigger('input')
+
+      // When quantity is 0, unit price should not be calculated
+      const updateEvents = wrapper.emitted('update')
+      const lastUpdate = updateEvents[updateEvents.length - 1]
+      expect(lastUpdate[1].total_amount).toBe(300)
+      // Unit price should remain unchanged when quantity is 0
+    })
+
+    it('should calculate unit price with decimal precision', async () => {
+      wrapper = createWrapper({
+        item: { ...mockDeliveryItem, item: 'item-1', quantity: 3 }
+      })
+
+      const totalInput = wrapper.findAll('input[type="number"]')[2]
+      await totalInput.setValue('100')
+      await totalInput.trigger('input')
+
+      const updateEvents = wrapper.emitted('update')
+      const lastUpdate = updateEvents[updateEvents.length - 1]
+      expect(lastUpdate[1].unit_price).toBe(33.33) // 100 / 3 = 33.333, rounded to 33.33
+    })
+
+    it('should validate total amount on blur', async () => {
+      wrapper = createWrapper({
+        item: { ...mockDeliveryItem, total_amount: 0 }
+      })
+
+      const totalInput = wrapper.findAll('input[type="number"]')[2]
+      await totalInput.trigger('blur')
+      await nextTick()
+
+      expect(wrapper.find('.text-red-600').exists()).toBe(true)
+      expect(wrapper.text()).toContain('Total amount is required')
+    })
+
+    it('should clear total amount error when valid value is entered', async () => {
+      wrapper = createWrapper({
+        item: { ...mockDeliveryItem, total_amount: 0 }
+      })
+
+      // First trigger validation error
+      const totalInput = wrapper.findAll('input[type="number"]')[2]
+      await totalInput.trigger('blur')
+      await nextTick()
+      
+      expect(wrapper.text()).toContain('Total amount is required')
+
+      // Then enter valid value
+      await totalInput.setValue('150')
+      await totalInput.trigger('input')
+      await nextTick()
+
+      // Error should be cleared
+      expect(wrapper.text()).not.toContain('Total amount is required')
+    })
+
+    it('should handle negative values in total amount gracefully', async () => {
+      wrapper = createWrapper({
+        item: { ...mockDeliveryItem, item: 'item-1', quantity: 2 }
+      })
+
+      const totalInput = wrapper.findAll('input[type="number"]')[2]
+      await totalInput.setValue('-50')
+      await totalInput.trigger('input')
+
+      const updateEvents = wrapper.emitted('update')
+      const lastUpdate = updateEvents[updateEvents.length - 1]
+      // The component should handle negative values by treating them as 0
+      expect(lastUpdate[1].unit_price).toBe(0) // Negative total should result in 0 unit price
     })
   })
 })
