@@ -31,6 +31,7 @@
                 class="input mt-1" 
                 @change="handleVendorChange" 
                 :autofocus="mode === 'CREATE'"
+                name="vendor"
               >
                 <option value="">{{ t('forms.selectVendor') }}</option>
                 <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
@@ -46,7 +47,7 @@
             <!-- Account Selection (CREATE/PAY_NOW) or Display (EDIT) -->
             <div v-if="mode !== 'EDIT'">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.paymentAccount') }}</label>
-              <select v-model="form.account" required class="input mt-1">
+              <select v-model="form.account" required class="input mt-1" name="account">
                 <option value="">{{ t('forms.selectAccount') }}</option>
                 <option v-for="account in activeAccounts" :key="account.id" :value="account.id">
                   {{ account.name }} ({{ account.type.replace('_', ' ') }}) - ₹{{ account.current_balance.toFixed(2) }}

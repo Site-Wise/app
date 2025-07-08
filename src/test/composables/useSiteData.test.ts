@@ -281,6 +281,13 @@ describe('useSitePaginatedData', () => {
   })
 
   it('should initialize with default pagination values', () => {
+    // Mock the function to return the expected structure
+    mockLoadPaginatedData.mockResolvedValue({
+      items: [],
+      totalItems: 0,
+      totalPages: 1
+    })
+    
     const { items, loading, error, currentPage, totalPages, totalItems, perPage } = useSitePaginatedData(mockLoadPaginatedData)
 
     expect(items.value).toEqual([])
@@ -293,6 +300,13 @@ describe('useSitePaginatedData', () => {
   })
 
   it('should use custom perPage option', () => {
+    // Mock the function to return the expected structure
+    mockLoadPaginatedData.mockResolvedValue({
+      items: [],
+      totalItems: 0,
+      totalPages: 1
+    })
+    
     const { perPage } = useSitePaginatedData(mockLoadPaginatedData, { perPage: 25 })
     expect(perPage.value).toBe(25)
   })

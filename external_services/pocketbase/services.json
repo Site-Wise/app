@@ -1,0 +1,114 @@
+[
+  {
+    "name": "Engineer Visits and Supervision",
+    "description": "",
+    "category": "professional",
+    "standard_rate": 0,
+    "unit": "each",
+    "is_active": true
+  },
+  {
+    "name": "JCB / Excavator Rental",
+    "description": "",
+    "category": "equipment",
+    "standard_rate": 0,
+    "unit": "hourly",
+    "is_active": true
+  },
+  {
+    "name": "Tractor and Tipper Services (for material transport)",
+    "description": "",
+    "category": "equipment",
+    "standard_rate": 0,
+    "unit": "hourly",
+    "is_active": true
+  },
+  {
+    "name": "Electrical Services (wiring, temporary and permanent installations)",
+    "description": "",
+    "category": "professional",
+    "standard_rate": 0,
+    "unit": "daily",
+    "is_active": true
+  },
+  {
+    "name": "Plumbing Services (water supply, drainage, sanitation)",
+    "description": "",
+    "category": "professional",
+    "standard_rate": 0,
+    "unit": "daily",
+    "is_active": true
+  },
+  {
+    "name": "Masonry and Carpentry Services",
+    "description": "",
+    "category": "professional",
+    "standard_rate": 0,
+    "unit": "daily",
+    "is_active": true
+  },
+  {
+    "name": "HVAC Installation",
+    "description": "",
+    "category": "professional",
+    "standard_rate": 0,
+    "unit": "daily",
+    "is_active": true
+  },
+  {
+    "name": "Material Handling and Storage",
+    "description": "loading, unloading, shifting",
+    "category": "professional",
+    "standard_rate": 0,
+    "unit": "each",
+    "is_active": true
+  },
+  {
+    "name": "Site Preparation and Cleaning",
+    "description": "clearing, leveling, debris removal",
+    "category": "professional",
+    "standard_rate": 0,
+    "unit": "each",
+    "is_active": true
+  },
+  {
+    "name": "Scaffolding and Shuttering Rental",
+    "description": "",
+    "category": "equipment",
+    "standard_rate": 0,
+    "unit": "daily",
+    "is_active": true
+  },
+  {
+    "name": "Temporary Site Office and Labor Accommodation Setup",
+    "description": "",
+    "category": "equipment",
+    "standard_rate": 0,
+    "unit": "daily",
+    "is_active": true
+  },
+  {
+    "name": "Security Services (site guards)",
+    "description": "",
+    "category": "labor",
+    "standard_rate": 0,
+    "unit": "daily",
+    "is_active": true
+  },
+  {
+    "name": "Waste Disposal and Debris Removal",
+    "description": "",
+    "category": "professional",
+    "standard_rate": 0,
+    "unit": "each",
+    "is_active": true
+  },
+  {
+    "name": "Quality Control and Safety Compliance",
+    "description": "",
+    "category": "testing, PPE provision, safety audits",
+    "standard_rate": 0,
+    "unit": "each",
+    "is_active": true
+  }
+]

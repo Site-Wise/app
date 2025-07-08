@@ -37,8 +37,9 @@ onRecordAfterCreateSuccess((e) => {
     // Create free tier subscription for new site
     utils.createDefaultTierSubscription(siteId)
 
-    // Create standard construction items
+    // Create standard construction items and services
     utils.createStandardItems(siteId)
+    utils.createStandardServices(siteId)
     
     // Create default Cash account
     utils.createDefaultAccount(siteId)

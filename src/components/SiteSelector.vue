@@ -211,8 +211,11 @@
             <div class="flex gap-3 pt-4">
               <button 
                 type="submit" 
-                :disabled="updateLoading" 
-                class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed"
+                :disabled="updateLoading"
+                :class="[
+                  'flex-1 gap-2',
+                  !updateLoading ? 'btn-primary' : 'btn-disabled',
+                ]"
               >
                 <Loader2 v-if="updateLoading" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
@@ -221,7 +224,7 @@
               <button 
                 type="button" 
                 @click="closeManageModal" 
-                class="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                class="btn-outline flex-1"
               >
                 Cancel
               </button>

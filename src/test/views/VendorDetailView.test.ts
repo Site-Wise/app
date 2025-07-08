@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { setupTestPinia } from '../utils/test-setup'
 
 // All mocks must be at the top before any imports
+
 vi.mock('../../composables/useI18n', () => ({
   useI18n: () => ({
     t: (key: string, params?: any) => {
@@ -153,7 +154,9 @@ describe('VendorDetailView', () => {
       global: {
         plugins: [router, pinia],
         stubs: {
-          'router-link': true
+          'router-link': true,
+          'AlertCircle': true,
+          'CheckCircle': true
         }
       }
     })

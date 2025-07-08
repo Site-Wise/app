@@ -21,14 +21,14 @@
         <div class="flex items-center gap-3" v-if="canManageUsers">
           <button 
             @click="showInviteModal = true" 
-            class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-105 hover:shadow-lg"
+            class="btn-primary gap-2"
           >
             <UserPlus class="mr-2 h-5 w-5" />
             {{ t('users.inviteUser') }}
           </button>
           <button 
             @click="showPendingInvites = !showPendingInvites" 
-            class="inline-flex items-center px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors relative"
+            class="btn-outline gap-2"
           >
             <Mail class="h-5 w-5 text-gray-600 dark:text-gray-400" />
             <span v-if="pendingInvitations.length > 0" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -327,9 +327,12 @@
             
             <div class="flex gap-3 pt-4">
               <button 
-                type="submit" 
-                :disabled="inviteLoading" 
-                class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed"
+                type="submit"
+                :disabled="inviteLoading"
+                :class="[
+                  !inviteLoading ? 'btn-primary' : 'btn-disabled',
+                  'flex-1 gap-2'
+                ]"
               >
                 <Loader2 v-if="inviteLoading" class="h-4 w-4 animate-spin" />
                 <Send v-else class="h-4 w-4" />
@@ -338,7 +341,7 @@
               <button 
                 type="button" 
                 @click="closeInviteModal" 
-                class="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                class="flex-1 btn-outline"
               >
                 {{ t('common.cancel') }}
               </button>
