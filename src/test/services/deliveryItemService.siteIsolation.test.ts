@@ -16,25 +16,22 @@ vi.mock('pocketbase', () => ({
   }
 }));
 
+// Create mock functions that will be used across tests
+const getCurrentSiteIdMock = vi.fn();
+const getCurrentUserRoleMock = vi.fn();
+const calculatePermissionsMock = vi.fn();
+
 // Mock site context functions
 vi.mock('../../services/pocketbase', async () => {
   const actual = await vi.importActual('../../services/pocketbase');
+  
   return {
     ...actual,
-    getCurrentSiteId: vi.fn(() => 'site-1'),
+    getCurrentSiteId: getCurrentSiteIdMock,
     setCurrentSiteId: vi.fn(),
-    getCurrentUserRole: vi.fn(() => 'owner'),
+    getCurrentUserRole: getCurrentUserRoleMock,
     setCurrentUserRole: vi.fn(),
-    calculatePermissions: vi.fn(() => ({
-      canCreate: true,
-      canRead: true,
-      canUpdate: true,
-      canDelete: true,
-      canManageUsers: true,
-      canManageRoles: true,
-      canExport: true,
-      canViewFinancials: true
-    })),
+    calculatePermissions: calculatePermissionsMock,
     pb: {
       collection: vi.fn(() => mockCollection)
     }
@@ -43,26 +40,14 @@ vi.mock('../../services/pocketbase', async () => {
 
 describe('DeliveryItemService Site Isolation', () => {
   let deliveryItemService: any;
-  let getCurrentSiteId: any;
-  let setCurrentSiteId: any;
-  let getCurrentUserRole: any;
-  let calculatePermissions: any;
 
   beforeEach(async () => {
     vi.clearAllMocks();
     
-    // Import the service after mocks are set up
-    const module = await import('../../services/pocketbase');
-    deliveryItemService = module.deliveryItemService;
-    getCurrentSiteId = module.getCurrentSiteId;
-    setCurrentSiteId = module.setCurrentSiteId;
-    getCurrentUserRole = module.getCurrentUserRole;
-    calculatePermissions = module.calculatePermissions;
-    
-    // Set default values
-    getCurrentSiteId.mockReturnValue('site-1');
-    getCurrentUserRole.mockReturnValue('owner');
-    calculatePermissions.mockReturnValue({
+    // Reset mocks to their default values
+    getCurrentSiteIdMock.mockReturnValue('site-1');
+    getCurrentUserRoleMock.mockReturnValue('owner');
+    calculatePermissionsMock.mockReturnValue({
       canCreate: true,
       canRead: true,
       canUpdate: true,
@@ -72,6 +57,10 @@ describe('DeliveryItemService Site Isolation', () => {
       canExport: true,
       canViewFinancials: true
     });
+    
+    // Import the service after mocks are set up
+    const module = await import('../../services/pocketbase');
+    deliveryItemService = module.deliveryItemService;
   });
 
   describe('getByDelivery', () => {
@@ -90,16 +79,17 @@ describe('DeliveryItemService Site Isolation', () => {
 
       mockCollection.getFullList.mockResolvedValue(mockRecords);
 
-      await deliveryItemService.getByDelivery('delivery-1');
+      const result = await deliveryItemService.getByDelivery('delivery-1');
 
       expect(mockCollection.getFullList).toHaveBeenCalledWith({
         filter: 'delivery="delivery-1" && site="site-1"',
         expand: 'delivery,item'
       });
+      expect(result).toEqual(mockRecords);
     });
 
     it('should throw error when no site is selected', async () => {
-      getCurrentSiteId.mockReturnValue(null);
+      getCurrentSiteIdMock.mockReturnValue(null);
 
       await expect(deliveryItemService.getByDelivery('delivery-1')).rejects.toThrow('No site selected');
     });
@@ -125,6 +115,12 @@ describe('DeliveryItemService Site Isolation', () => {
       expect(mockCollection.getOne).toHaveBeenCalledWith('item-1', {
         expand: 'delivery,item'
       });
+    });
+
+    it('should throw error when no site is selected', async () => {
+      getCurrentSiteIdMock.mockReturnValue(null);
+
+      await expect(deliveryItemService.getById('item-1')).rejects.toThrow('No site selected');
     });
 
     it('should throw error for cross-site access attempt', async () => {
@@ -175,12 +171,13 @@ describe('DeliveryItemService Site Isolation', () => {
         notes: 'Test item'
       };
 
-      await deliveryItemService.create(createData);
+      const result = await deliveryItemService.create(createData);
 
       expect(mockCollection.create).toHaveBeenCalledWith({
         ...createData,
         site: 'site-1'
       });
+      expect(result).toEqual(mockCreatedRecord);
     });
 
     it('should validate delivery belongs to current site', async () => {
@@ -204,7 +201,7 @@ describe('DeliveryItemService Site Isolation', () => {
     });
 
     it('should throw error when no site is selected', async () => {
-      getCurrentSiteId.mockReturnValue(null);
+      getCurrentSiteIdMock.mockReturnValue(null);
 
       const createData = {
         delivery: 'delivery-1',
@@ -215,6 +212,29 @@ describe('DeliveryItemService Site Isolation', () => {
       };
 
       await expect(deliveryItemService.create(createData)).rejects.toThrow('No site selected');
+    });
+
+    it('should throw error when user lacks create permissions', async () => {
+      calculatePermissionsMock.mockReturnValue({
+        canCreate: false,
+        canRead: true,
+        canUpdate: true,
+        canDelete: true,
+        canManageUsers: false,
+        canManageRoles: false,
+        canExport: true,
+        canViewFinancials: true
+      });
+
+      const createData = {
+        delivery: 'delivery-1',
+        item: 'item-1',
+        quantity: 10,
+        unit_price: 100,
+        total_amount: 1000
+      };
+
+      await expect(deliveryItemService.create(createData)).rejects.toThrow('Permission denied: Cannot create delivery items');
     });
   });
 
@@ -244,10 +264,31 @@ describe('DeliveryItemService Site Isolation', () => {
         total_amount: 1500
       };
 
-      await deliveryItemService.update('item-1', updateData);
+      const result = await deliveryItemService.update('item-1', updateData);
 
       expect(mockCollection.getOne).toHaveBeenCalledWith('item-1');
       expect(mockCollection.update).toHaveBeenCalledWith('item-1', updateData);
+      expect(result).toEqual(mockUpdatedRecord);
+    });
+
+    it('should throw error when user lacks update permissions', async () => {
+      calculatePermissionsMock.mockReturnValue({
+        canCreate: true,
+        canRead: true,
+        canUpdate: false,
+        canDelete: true,
+        canManageUsers: false,
+        canManageRoles: false,
+        canExport: true,
+        canViewFinancials: true
+      });
+
+      const updateData = {
+        quantity: 15,
+        total_amount: 1500
+      };
+
+      await expect(deliveryItemService.update('item-1', updateData)).rejects.toThrow('Permission denied: Cannot update delivery items');
     });
 
     it('should prevent cross-site updates', async () => {
@@ -309,6 +350,21 @@ describe('DeliveryItemService Site Isolation', () => {
 
       expect(result).toBe(true);
       expect(mockCollection.delete).toHaveBeenCalledWith('item-1');
+    });
+
+    it('should throw error when user lacks delete permissions', async () => {
+      calculatePermissionsMock.mockReturnValue({
+        canCreate: true,
+        canRead: true,
+        canUpdate: true,
+        canDelete: false,
+        canManageUsers: false,
+        canManageRoles: false,
+        canExport: true,
+        canViewFinancials: true
+      });
+
+      await expect(deliveryItemService.delete('item-1')).rejects.toThrow('Permission denied: Cannot delete delivery items');
     });
 
     it('should prevent cross-site deletion', async () => {

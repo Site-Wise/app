@@ -177,7 +177,7 @@ describe('VendorSearchBox Integration', () => {
     expect(wrapper.emitted('update:modelValue')[0]).toEqual(['']);
   });
 
-  it('calculates outstanding amounts correctly', async () => {
+  it('displays outstanding amounts correctly in dropdown', async () => {
     const wrapper = mount(VendorSearchBox, {
       props: {
         modelValue: '',
@@ -189,17 +189,15 @@ describe('VendorSearchBox Integration', () => {
       },
     });
 
-    // Test outstanding calculation for vendor1
-    const vendor1Outstanding = wrapper.vm.getVendorOutstanding(mockVendors[0]);
+    // Set search query to show dropdown for vendor1
+    await wrapper.find('input').setValue('Vendor A');
+    await wrapper.vm.$nextTick();
     
     // delivery1: 1000 - 300 = 700
     // delivery2: 500 - 0 = 500  
     // booking1: 800 - 200 = 600
     // Total: 1800
-    expect(vendor1Outstanding).toBe(1800);
-
-    // Test pending count
-    const vendor1PendingCount = wrapper.vm.getVendorPendingCount(mockVendors[0]);
-    expect(vendor1PendingCount).toBe(3); // 2 deliveries + 1 booking (all non-paid)
+    expect(wrapper.html()).toContain('₹1800.00');
+    expect(wrapper.html()).toContain('3 pending'); // 2 deliveries + 1 booking (all non-paid)
   });
 });

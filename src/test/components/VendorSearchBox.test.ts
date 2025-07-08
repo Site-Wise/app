@@ -174,13 +174,16 @@ describe('VendorSearchBox', () => {
       expect(wrapper.vm.selectedVendor.name).toBe('Vendor A');
     });
 
-    it('calculates vendor outstanding amount correctly', () => {
+    it('displays vendor outstanding amount correctly in dropdown', async () => {
       const vendor = mockVendors[0]; // vendor1
-      const outstanding = wrapper.vm.getVendorOutstanding(vendor);
+      
+      // Set search query to show dropdown
+      await wrapper.find('input').setValue('Vendor A');
+      await wrapper.vm.$nextTick();
       
       // vendor1 has delivery1 (700 outstanding) + delivery2 (500 outstanding) + booking1 (600 outstanding)
       // = 1800 total outstanding
-      expect(outstanding).toBe(1800);
+      expect(wrapper.html()).toContain('₹1800.00');
     });
 
     it('calculates vendor pending count correctly', () => {
@@ -191,13 +194,16 @@ describe('VendorSearchBox', () => {
       expect(pendingCount).toBe(3);
     });
 
-    it('excludes paid items from outstanding calculation', () => {
+    it('displays correct outstanding amount excluding paid items', async () => {
       const vendor = mockVendors[1]; // vendor2
-      const outstanding = wrapper.vm.getVendorOutstanding(vendor);
+      
+      // Set search query to show dropdown
+      await wrapper.find('input').setValue('Vendor B');
+      await wrapper.vm.$nextTick();
       
       // vendor2 has delivery3 (fully paid, 0 outstanding) + booking2 (1200 outstanding)
       // = 1200 total outstanding
-      expect(outstanding).toBe(1200);
+      expect(wrapper.html()).toContain('₹1200.00');
     });
 
     it('shows no results message when no vendors match', async () => {

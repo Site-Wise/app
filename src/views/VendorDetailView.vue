@@ -475,24 +475,29 @@ const paidDeliveries = computed(() => {
   return vendorDeliveries.value.filter(delivery => delivery.payment_status === 'paid').length;
 });
 
-// Comprehensive ledger entries with running balance
+// Comprehensive ledger entries with proper accounting principles
 const ledgerEntries = computed(() => {
   const entries: Array<{
     id: string;
-    type: 'delivery' | 'payment' | 'credit_note' | 'refund';
+    type: 'opening_balance' | 'delivery' | 'payment' | 'credit_note' | 'credit_note_usage' | 'refund';
     date: string;
     description: string;
     details?: string;
     reference: string;
-    dues: number;
-    payments: number;
+    particulars: string;
+    debit: number;  // Purchases on credit, credit note usage
+    credit: number; // Payments, credit notes, refunds
     runningBalance: number;
   }> = [];
 
-  // Add delivery entries (dues)
+  // 1️⃣ Add opening balance if there are previous transactions
+  // For now, we'll start fresh, but this can be extended for previous period balances
+  
+  // 2️⃣ Add delivery entries (debits - purchases on credit)
   vendorDeliveries.value.forEach(delivery => {
     let description = `${t('vendors.delivery')} #${delivery.id?.slice(-6) || t('vendors.unknown')}`;
     let details = '';
+    let particulars = `Invoice: ${delivery.delivery_reference || delivery.id?.slice(-6) || 'N/A'}`;
     
     // Create description from delivery items if available
     if (delivery.expand?.delivery_items && delivery.expand.delivery_items.length > 0) {
@@ -503,6 +508,8 @@ const ledgerEntries = computed(() => {
         return `${itemName} (${quantity} ${unit})`;
       });
       details = `${t('vendors.received')}: ${itemNames.join(', ')}`;
+      particulars = `Invoice: ${delivery.delivery_reference || delivery.id?.slice(-6) || 'N/A'} - ${itemNames.slice(0, 2).map(item => item.split('(')[0].trim()).join(', ')}`;
+      if (itemNames.length > 2) particulars += ` +${itemNames.length - 2} more`;
     }
 
     entries.push({
@@ -512,34 +519,23 @@ const ledgerEntries = computed(() => {
       description,
       details,
       reference: delivery.delivery_reference || '',
-      dues: delivery.total_amount,
-      payments: 0,
+      particulars,
+      debit: delivery.total_amount,  // Debit increases vendor liability (what we owe)
+      credit: 0,
       runningBalance: 0 // Will be calculated below
     });
   });
 
-  // Add payment entries (credits)
-  vendorPayments.value.forEach(payment => {
-    entries.push({
-      id: payment.id || '',
-      type: 'payment',
-      date: payment.payment_date,
-      description: t('vendors.paymentReceived'),
-      details: payment.notes || '',
-      reference: payment.reference || '',
-      dues: 0,
-      payments: payment.amount,
-      runningBalance: 0 // Will be calculated below
-    });
-  });
-
-  // Add credit note entries (credits) - only show current available balance
+  // 3️⃣ Add return entries (only if credit note generated)
   vendorCreditNotes.value.forEach(creditNote => {
-    // Only show credit notes that have been issued and show the original amount
+    // Only show credit notes that have been issued (returns with credit notes)
     if (creditNote.credit_amount > 0) {
       let details = '';
+      let particulars = `Credit Note: ${creditNote.reference || `CN-${creditNote.id?.slice(-6)}`}`;
+      
       if (creditNote.reason) {
         details = creditNote.reason;
+        particulars += ` - ${creditNote.reason}`;
       }
 
       entries.push({
@@ -549,18 +545,22 @@ const ledgerEntries = computed(() => {
         description: t('vendors.creditNoteIssued'),
         details,
         reference: creditNote.reference || `CN-${creditNote.id?.slice(-6)}`,
-        dues: 0,
-        payments: creditNote.credit_amount,
+        particulars,
+        debit: 0,
+        credit: creditNote.credit_amount,  // Credit reduces vendor liability
         runningBalance: 0 // Will be calculated below
       });
     }
   });
 
-  // Add credit note usage entries (debits) - these reduce the vendor balance
+  // Add credit note usage entries (debits) - when credits are applied to payments
   vendorCreditNoteUsages.value.forEach(usage => {
     let details = `Applied to payment`;
+    let particulars = `Credit Applied: ${usage.expand?.credit_note?.reference || `CN-${usage.credit_note?.slice(-6)}`}`;
+    
     if (usage.expand?.payment?.reference) {
       details += ` ${usage.expand.payment.reference}`;
+      particulars += ` to ${usage.expand.payment.reference}`;
     }
     if (usage.description) {
       details = usage.description;
@@ -568,26 +568,50 @@ const ledgerEntries = computed(() => {
 
     entries.push({
       id: usage.id || '',
-      type: 'credit_note',
+      type: 'credit_note_usage',
       date: usage.used_date,
       description: t('vendors.creditNoteUsed'),
       details,
       reference: usage.expand?.credit_note?.reference || `CN-${usage.credit_note?.slice(-6)}`,
-      dues: usage.used_amount, // Credit note usage is a debit to vendor balance
-      payments: 0,
+      particulars,
+      debit: usage.used_amount, // Debit when credit is used (reduces available credit)
+      credit: 0,
       runningBalance: 0 // Will be calculated below
     });
   });
 
-  // Add refund entries (credits) - from processed returns
+  // 4️⃣ Add payment entries (credits - reduces what we owe)
+  vendorPayments.value.forEach(payment => {
+    let particulars = `Payment: ${payment.reference || 'Bank Transfer'}`;
+    if (payment.notes) {
+      particulars += ` - ${payment.notes}`;
+    }
+
+    entries.push({
+      id: payment.id || '',
+      type: 'payment',
+      date: payment.payment_date,
+      description: t('vendors.paymentMade'),
+      details: payment.notes || '',
+      reference: payment.reference || '',
+      particulars,
+      debit: 0,
+      credit: payment.amount,  // Credit reduces vendor liability (what we paid)
+      runningBalance: 0 // Will be calculated below
+    });
+  });
+
+  // Add refund entries (credits) - from processed returns with refunds
   vendorReturns.value.forEach(returnItem => {
     if (returnItem.status === 'refunded' && returnItem.actual_refund_amount && returnItem.actual_refund_amount > 0) {
       let details = '';
+      let particulars = `Refund: REF-${returnItem.id?.slice(-6)}`;
       
       // Try to get delivery and item details  
       details = `${t('vendors.refundForReturn')} #${returnItem.id?.slice(-6)}`;
       if (returnItem.reason) {
         details += ` - ${t(`vendors.returnReasons.${returnItem.reason}`)}`;
+        particulars += ` - ${returnItem.reason}`;
       }
 
       entries.push({
@@ -597,8 +621,9 @@ const ledgerEntries = computed(() => {
         description: t('vendors.refundProcessed'),
         details,
         reference: `REF-${returnItem.id?.slice(-6)}`,
-        dues: 0,
-        payments: returnItem.actual_refund_amount,
+        particulars,
+        debit: 0,
+        credit: returnItem.actual_refund_amount,  // Credit reduces vendor liability
         runningBalance: 0 // Will be calculated below
       });
     }
@@ -607,10 +632,10 @@ const ledgerEntries = computed(() => {
   // Sort entries by date
   entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  // Calculate running balance
+  // 5️⃣ Calculate running balance (Debit increases balance, Credit decreases balance)
   let runningBalance = 0;
   entries.forEach(entry => {
-    runningBalance += entry.dues - entry.payments;
+    runningBalance += entry.debit - entry.credit;  // Proper accounting: Dr (+), Cr (-)
     entry.runningBalance = runningBalance;
   });
 
@@ -618,16 +643,16 @@ const ledgerEntries = computed(() => {
 });
 
 // Calculate totals for the ledger
-const totalDues = computed(() => {
-  return ledgerEntries.value.reduce((sum, entry) => sum + entry.dues, 0);
+const totalDebits = computed(() => {
+  return ledgerEntries.value.reduce((sum, entry) => sum + entry.debit, 0);
 });
 
-const totalPayments = computed(() => {
-  return ledgerEntries.value.reduce((sum, entry) => sum + entry.payments, 0);
+const totalCredits = computed(() => {
+  return ledgerEntries.value.reduce((sum, entry) => sum + entry.credit, 0);
 });
 
 const finalBalance = computed(() => {
-  return totalDues.value - totalPayments.value;
+  return totalDebits.value - totalCredits.value;
 });
 
 
@@ -840,8 +865,8 @@ const exportLedgerPDF = async () => {
   
   // Table headers
   doc.setFont("helvetica", "bold");
-  const headers = [t('vendors.date'), t('vendors.description'), t('vendors.reference'), t('vendors.dues'), t('vendors.payments'), t('vendors.balance')];
-  const colWidths = [22, 60, 22, 22, 22, 22];
+  const headers = [t('vendors.date'), t('vendors.particulars'), t('vendors.reference'), t('vendors.debit'), t('vendors.credit'), t('vendors.balance')];
+  const colWidths = [20, 65, 20, 20, 20, 25];
   let xPos = margin;
   
   headers.forEach((header, i) => {
@@ -866,17 +891,11 @@ const exportLedgerPDF = async () => {
     
     xPos = margin;
     
-    // Create description with details if available
-    let fullDescription = entry.description;
-    if (entry.details) {
-      fullDescription += ` - ${entry.details}`;
-    }
-    
-    // Handle multi-line description
-    const maxDescriptionWidth = colWidths[1] - 5; // Description column width minus padding
-    const descriptionLines = doc.splitTextToSize(fullDescription, maxDescriptionWidth);
+    // Handle multi-line particulars
+    const maxParticularsWidth = colWidths[1] - 5; // Particulars column width minus padding
+    const particularsLines = doc.splitTextToSize(entry.particulars, maxParticularsWidth);
     const lineHeight = 4;
-    const rowHeight = Math.max(6, descriptionLines.length * lineHeight);
+    const rowHeight = Math.max(6, particularsLines.length * lineHeight);
     
     // Check if we need a new page for multi-line content
     if (yPosition + rowHeight > 240) { // Leave more space for footer
@@ -884,28 +903,33 @@ const exportLedgerPDF = async () => {
       yPosition = 30;
     }
     
+    // Balance display with Dr/Cr notation
+    const balanceDisplay = entry.runningBalance >= 0 
+      ? `${Math.abs(entry.runningBalance).toFixed(0)} Dr`
+      : `${Math.abs(entry.runningBalance).toFixed(0)} Cr`;
+    
     // Draw row data
     const rowData = [
       new Date(entry.date).toLocaleDateString('en-CA'),
-      '', // Description handled separately for multi-line
+      '', // Particulars handled separately for multi-line
       entry.reference || '',
-      entry.dues > 0 ? entry.dues.toFixed(0) : '',
-      entry.payments > 0 ? entry.payments.toFixed(0) : '',
-      Math.abs(entry.runningBalance).toFixed(0) + (entry.runningBalance >= 0 ? ' Dr' : ' Cr')
+      entry.debit > 0 ? entry.debit.toFixed(0) : '',
+      entry.credit > 0 ? entry.credit.toFixed(0) : '',
+      balanceDisplay
     ];
     
-    // Draw non-description columns
+    // Draw non-particulars columns
     rowData.forEach((data, i) => {
-      if (i !== 1) { // Skip description column
+      if (i !== 1) { // Skip particulars column
         doc.text(data, xPos, yPosition);
       }
       xPos += colWidths[i];
     });
     
-    // Draw multi-line description
-    const descriptionX = margin + colWidths[0];
-    descriptionLines.forEach((line: string, lineIndex: number) => {
-      doc.text(line, descriptionX, yPosition + (lineIndex * lineHeight));
+    // Draw multi-line particulars
+    const particularsX = margin + colWidths[0];
+    particularsLines.forEach((line: string, lineIndex: number) => {
+      doc.text(line, particularsX, yPosition + (lineIndex * lineHeight));
     });
     
     yPosition += rowHeight;
@@ -930,8 +954,8 @@ const exportLedgerPDF = async () => {
     '',
     '',
     '',
-    totalDues.value.toFixed(0),
-    totalPayments.value.toFixed(0),
+    totalDebits.value.toFixed(0),
+    totalCredits.value.toFixed(0),
     Math.abs(finalBalance.value).toFixed(0) + (finalBalance.value >= 0 ? ' Dr' : ' Cr')
   ];
   
@@ -968,26 +992,28 @@ const generateLedgerCSV = () => {
 
   const headers = [
     t('vendors.date'), 
-    t('vendors.description'), 
-    t('vendors.details'),
+    t('vendors.particulars'), 
     t('vendors.reference'), 
-    t('vendors.dues'), 
-    t('vendors.payments'),
-    t('vendors.runningBalance')
+    t('vendors.debit'), 
+    t('vendors.credit'),
+    t('vendors.balance')
   ];
 
   const rows: (string | number)[][] = [];
 
   // Use the comprehensive ledger entries
   ledgerEntries.value.forEach(entry => {
+    const balanceDisplay = entry.runningBalance >= 0 
+      ? `${entry.runningBalance.toFixed(2)} Dr`
+      : `${Math.abs(entry.runningBalance).toFixed(2)} Cr`;
+
     rows.push([
-      entry.date,
-      entry.description,
-      entry.details || '',
+      new Date(entry.date).toLocaleDateString('en-CA'),
+      entry.particulars,
       entry.reference || '',
-      entry.dues > 0 ? entry.dues : '',
-      entry.payments > 0 ? entry.payments : '',
-      entry.runningBalance
+      entry.debit > 0 ? entry.debit.toFixed(2) : '',
+      entry.credit > 0 ? entry.credit.toFixed(2) : '',
+      balanceDisplay
     ]);
   });
 
@@ -996,22 +1022,13 @@ const generateLedgerCSV = () => {
     '',
     t('vendors.totals'),
     '',
-    '',
-    totalDues.value,
-    totalPayments.value,
-    finalBalance.value
+    totalDebits.value.toFixed(2),
+    totalCredits.value.toFixed(2),
+    ''
   ]);
 
   // Add summary information
-  rows.push([
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    ''
-  ]);
+  rows.push(['', '', '', '', '', '']);
 
   rows.push([
     t('vendors.generated'),
@@ -1019,15 +1036,17 @@ const generateLedgerCSV = () => {
     '',
     '',
     '',
-    '',
     ''
   ]);
 
   const balanceStatus = finalBalance.value >= 0 ? t('vendors.outstanding') : t('vendors.creditBalance');
+  const finalBalanceDisplay = finalBalance.value >= 0 
+    ? `₹${finalBalance.value.toFixed(2)} Dr (${balanceStatus})`
+    : `₹${Math.abs(finalBalance.value).toFixed(2)} Cr (${balanceStatus})`;
+  
   rows.push([
     t('vendors.finalBalance'),
-    `₹${Math.abs(finalBalance.value).toFixed(2)} (${balanceStatus})`,
-    '',
+    finalBalanceDisplay,
     '',
     '',
     '',

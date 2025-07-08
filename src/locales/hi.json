@@ -491,7 +491,10 @@
     "totalOutstanding": "कुल बकाया",
     "balance": "बैलेंस",
     "amountDue": "बकाया राशि",
-    "extraAdvance": "अतिरिक्त अग्रिम"
+    "extraAdvance": "अतिरिक्त अग्रिम",
+    "particulars": "विवरण",
+    "debit": "नामे",
+    "paymentMade": "भुगतान किया गया"
   },
   "returns": {
     "createReturn": "वापसी बनाएं",

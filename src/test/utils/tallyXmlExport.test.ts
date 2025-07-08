@@ -176,7 +176,7 @@ describe('TallyXmlExporter', () => {
         []
       );
 
-      const creditUsageEntry = ledgerData.entries.find(entry => entry.type === 'credit_note' && entry.description === 'Credit Note Used');
+      const creditUsageEntry = ledgerData.entries.find(entry => entry.type === 'credit_note_usage' && entry.description === 'Credit Note Used');
       expect(creditUsageEntry).toBeDefined();
       expect(creditUsageEntry?.debitAmount).toBe(500);
       expect(creditUsageEntry?.creditAmount).toBe(0);

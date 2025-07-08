@@ -3,11 +3,12 @@ import type { Vendor, Delivery, Payment, VendorCreditNote, CreditNoteUsage, Vend
 // Tally XML Export Types
 export interface TallyLedgerEntry {
   id: string;
-  type: 'delivery' | 'payment' | 'credit_note' | 'refund';
+  type: 'opening_balance' | 'delivery' | 'payment' | 'credit_note' | 'credit_note_usage' | 'refund';
   date: string;
   description: string;
   details?: string;
   reference: string;
+  particulars: string;
   debitAmount: number;
   creditAmount: number;
   runningBalance: number;
@@ -213,10 +214,14 @@ export class TallyXmlExporter {
   ): TallyVendorLedgerData {
     const entries: TallyLedgerEntry[] = [];
 
-    // Add delivery entries (debits - what we owe the vendor)
+    // 1️⃣ Add opening balance if there are previous transactions
+    // For now, we'll start fresh, but this can be extended for previous period balances
+
+    // 2️⃣ Add delivery entries (debits - purchases on credit)
     deliveries.forEach(delivery => {
       let description = `Delivery #${delivery.id?.slice(-6) || 'Unknown'}`;
       let details = '';
+      let particulars = `Invoice: ${delivery.delivery_reference || delivery.id?.slice(-6) || 'N/A'}`;
       
       if (delivery.expand?.delivery_items && delivery.expand.delivery_items.length > 0) {
         const itemNames = delivery.expand.delivery_items.map((deliveryItem) => {
@@ -226,6 +231,8 @@ export class TallyXmlExporter {
           return `${itemName} (${quantity} ${unit})`;
         });
         details = `Received: ${itemNames.join(', ')}`;
+        particulars = `Invoice: ${delivery.delivery_reference || delivery.id?.slice(-6) || 'N/A'} - ${itemNames.slice(0, 2).map(item => item.split('(')[0].trim()).join(', ')}`;
+        if (itemNames.length > 2) particulars += ` +${itemNames.length - 2} more`;
       }
 
       entries.push({
@@ -235,14 +242,73 @@ export class TallyXmlExporter {
         description,
         details,
         reference: delivery.delivery_reference || '',
-        debitAmount: delivery.total_amount,
+        particulars,
+        debitAmount: delivery.total_amount,  // Debit increases vendor liability
         creditAmount: 0,
         runningBalance: 0 // Will be calculated
       });
     });
 
-    // Add payment entries (credits - what we paid to the vendor)
+    // 3️⃣ Add return entries (only if credit note generated)
+    creditNotes.forEach(creditNote => {
+      if (creditNote.credit_amount > 0) {
+        let details = '';
+        let particulars = `Credit Note: ${creditNote.reference || `CN-${creditNote.id?.slice(-6)}`}`;
+        
+        if (creditNote.reason) {
+          details = creditNote.reason;
+          particulars += ` - ${creditNote.reason}`;
+        }
+
+        entries.push({
+          id: creditNote.id || '',
+          type: 'credit_note',
+          date: creditNote.issue_date,
+          description: 'Credit Note Issued',
+          details,
+          reference: creditNote.reference || `CN-${creditNote.id?.slice(-6)}`,
+          particulars,
+          debitAmount: 0,
+          creditAmount: creditNote.credit_amount,  // Credit reduces vendor liability
+          runningBalance: 0 // Will be calculated
+        });
+      }
+    });
+
+    // Add credit note usage entries (debits) - when credits are applied
+    creditNoteUsages.forEach(usage => {
+      let details = 'Applied to payment';
+      let particulars = `Credit Applied: ${usage.expand?.credit_note?.reference || `CN-${usage.credit_note?.slice(-6)}`}`;
+      
+      if (usage.expand?.payment?.reference) {
+        details += ` ${usage.expand.payment.reference}`;
+        particulars += ` to ${usage.expand.payment.reference}`;
+      }
+      if (usage.description) {
+        details = usage.description;
+      }
+
+      entries.push({
+        id: usage.id || '',
+        type: 'credit_note_usage',
+        date: usage.used_date,
+        description: 'Credit Note Used',
+        details,
+        reference: usage.expand?.credit_note?.reference || `CN-${usage.credit_note?.slice(-6)}`,
+        particulars,
+        debitAmount: usage.used_amount,  // Debit when credit is used
+        creditAmount: 0,
+        runningBalance: 0 // Will be calculated
+      });
+    });
+
+    // 4️⃣ Add payment entries (credits - reduces what we owe)
     payments.forEach(payment => {
+      let particulars = `Payment: ${payment.reference || 'Bank Transfer'}`;
+      if (payment.notes) {
+        particulars += ` - ${payment.notes}`;
+      }
+
       entries.push({
         id: payment.id || '',
         type: 'payment',
@@ -250,56 +316,35 @@ export class TallyXmlExporter {
         description: 'Payment Made',
         details: payment.notes || '',
         reference: payment.reference || '',
+        particulars,
         debitAmount: 0,
-        creditAmount: payment.amount,
+        creditAmount: payment.amount,  // Credit reduces vendor liability
         runningBalance: 0 // Will be calculated
       });
     });
 
-    // Add credit note entries (credits)
-    creditNotes.forEach(creditNote => {
-      if (creditNote.credit_amount > 0) {
-        entries.push({
-          id: creditNote.id || '',
-          type: 'credit_note',
-          date: creditNote.issue_date,
-          description: 'Credit Note Issued',
-          details: creditNote.reason || '',
-          reference: creditNote.reference || `CN-${creditNote.id?.slice(-6)}`,
-          debitAmount: 0,
-          creditAmount: creditNote.credit_amount,
-          runningBalance: 0 // Will be calculated
-        });
-      }
-    });
-
-    // Add credit note usage entries (debits)
-    creditNoteUsages.forEach(usage => {
-      entries.push({
-        id: usage.id || '',
-        type: 'credit_note',
-        date: usage.used_date,
-        description: 'Credit Note Used',
-        details: usage.description || 'Applied to payment',
-        reference: usage.expand?.credit_note?.reference || `CN-${usage.credit_note?.slice(-6)}`,
-        debitAmount: usage.used_amount,
-        creditAmount: 0,
-        runningBalance: 0 // Will be calculated
-      });
-    });
-
-    // Add refund entries (credits)
+    // Add refund entries (credits) - from processed returns with refunds
     vendorReturns.forEach(returnItem => {
       if (returnItem.status === 'refunded' && returnItem.actual_refund_amount && returnItem.actual_refund_amount > 0) {
+        let details = '';
+        let particulars = `Refund: REF-${returnItem.id?.slice(-6)}`;
+        
+        details = `Refund for Return #${returnItem.id?.slice(-6)}`;
+        if (returnItem.reason) {
+          details += ` - ${returnItem.reason}`;
+          particulars += ` - ${returnItem.reason}`;
+        }
+
         entries.push({
           id: returnItem.id || '',
           type: 'refund',
           date: returnItem.completion_date || returnItem.return_date,
           description: 'Refund Processed',
-          details: `Refund for Return #${returnItem.id?.slice(-6)}${returnItem.reason ? ` - ${returnItem.reason}` : ''}`,
+          details,
           reference: `REF-${returnItem.id?.slice(-6)}`,
+          particulars,
           debitAmount: 0,
-          creditAmount: returnItem.actual_refund_amount,
+          creditAmount: returnItem.actual_refund_amount,  // Credit reduces vendor liability
           runningBalance: 0 // Will be calculated
         });
       }
@@ -308,10 +353,10 @@ export class TallyXmlExporter {
     // Sort entries by date
     entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    // Calculate running balance
+    // 5️⃣ Calculate running balance (Debit increases balance, Credit decreases balance)
     let runningBalance = 0;
     entries.forEach(entry => {
-      runningBalance += entry.debitAmount - entry.creditAmount;
+      runningBalance += entry.debitAmount - entry.creditAmount;  // Proper accounting: Dr (+), Cr (-)
       entry.runningBalance = runningBalance;
     });
 

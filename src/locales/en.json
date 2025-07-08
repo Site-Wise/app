@@ -491,7 +491,10 @@
     "totalOutstanding": "Total Outstanding",
     "balance": "Balance",
     "amountDue": "Amount Due",
-    "extraAdvance": "Extra Advance"
+    "extraAdvance": "Extra Advance",
+    "particulars": "Particulars",
+    "debit": "Debit",
+    "paymentMade": "Payment made"
   },
   "returns": {
     "createReturn": "Create Return",
