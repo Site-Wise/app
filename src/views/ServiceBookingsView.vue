@@ -107,9 +107,13 @@
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-              <span class="status-pending">
-                {{ t(`common.pending`) }}
+              <span :class="`status-${booking.payment_status}`">
+                {{ t(`common.${booking.payment_status}`) }}
               </span>
+              <!-- Show outstanding amount for partial payments -->
+              <div v-if="booking.payment_status === 'partial'" class="text-xs text-gray-500 dark:text-gray-400">
+                ₹{{ booking.outstanding.toFixed(2) }} pending
+              </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium hidden lg:table-cell">
               <!-- Desktop Action Buttons -->
@@ -169,6 +173,15 @@
                 <div class="mt-1">
                   <span :class="`text-xs status-${booking.status === 'scheduled' ? 'pending' : booking.status === 'completed' ? 'paid' : 'partial'}`">
                     {{ t(`serviceBookings.statuses.${booking.status}`) }}
+                  </span>
+                </div>
+                <!-- Payment Status for Mobile -->
+                <div class="mt-1">
+                  <span :class="`text-xs status-${booking.payment_status}`">
+                    {{ t(`common.${booking.payment_status}`) }}
+                  </span>
+                  <span v-if="booking.payment_status === 'partial'" class="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                    (₹{{ booking.outstanding.toFixed(2) }} pending)
                   </span>
                 </div>
               </div>
@@ -371,6 +384,7 @@ import {
   serviceBookingService, 
   serviceService,
   vendorService,
+  paymentAllocationService,
   type ServiceBooking 
 } from '../services/pocketbase';
 
@@ -381,14 +395,61 @@ const { checkCreateLimit, isReadOnly } = useSubscription();
 // Search functionality
 const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useServiceBookingSearch();
 
-// Display items: use search results if searching, otherwise all items
+// Client-side payment status calculation
+const paymentAllocations = computed(() => paymentAllocationsData.value || []);
+
+// Helper function to calculate payment status based on allocations
+const calculatePaymentStatus = (serviceBooking: ServiceBooking): 'pending' | 'partial' | 'paid' => {
+  if (!paymentAllocations.value.length) return 'pending';
+  
+  const allocatedAmount = paymentAllocations.value
+    .filter(allocation => allocation.service_booking === serviceBooking.id)
+    .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
+  
+  if (allocatedAmount <= 0) return 'pending';
+  if (allocatedAmount >= serviceBooking.total_amount) return 'paid';
+  return 'partial';
+};
+
+// Helper function to calculate outstanding amount
+const calculateOutstandingAmount = (serviceBooking: ServiceBooking): number => {
+  if (!paymentAllocations.value.length) return serviceBooking.total_amount;
+  
+  const allocatedAmount = paymentAllocations.value
+    .filter(allocation => allocation.service_booking === serviceBooking.id)
+    .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
+  
+  const outstanding = serviceBooking.total_amount - allocatedAmount;
+  return outstanding > 0 ? outstanding : 0;
+};
+
+// Display items: use search results if searching, otherwise all items with calculated payment status
 const serviceBookings = computed(() => {
-  return searchQuery.value.trim() ? searchResults.value : (allServiceBookingsData.value || [])
+  const baseBookings = searchQuery.value.trim() ? searchResults.value : (allServiceBookingsData.value || []);
+  
+  // Add computed payment status and outstanding amount to each booking
+  return baseBookings.map(booking => ({
+    ...booking,
+    payment_status: calculatePaymentStatus(booking),
+    outstanding: calculateOutstandingAmount(booking)
+  }));
 });
 
-// Use site data management
+// Use site data management - Load service bookings
 const { data: allServiceBookingsData, reload: reloadBookings } = useSiteData(
   async () => await serviceBookingService.getAll()
+);
+
+// Load payment allocations separately
+const { data: paymentAllocationsData } = useSiteData(
+  async () => {
+    try {
+      return await paymentAllocationService.getAll();
+    } catch (error) {
+      console.error('Error loading payment allocations:', error);
+      return [];
+    }
+  }
 );
 
 const { data: servicesData } = useSiteData(

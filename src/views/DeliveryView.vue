@@ -183,6 +183,10 @@
                 <span :class="`status-${delivery.payment_status}`">
                   {{ t(`common.${delivery.payment_status}`) }}
                 </span>
+                <!-- Show outstanding amount for partial payments -->
+                <div v-if="delivery.payment_status === 'partial'" class="text-xs text-gray-500 dark:text-gray-400">
+                  ₹{{ delivery.outstanding.toFixed(2) }} pending
+                </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="text-sm text-gray-900 dark:text-white">
@@ -285,6 +289,10 @@
               <span :class="`ml-1 status-${delivery.payment_status}`">
                 {{ t(`common.${delivery.payment_status}`) }}
               </span>
+              <!-- Show outstanding amount for partial payments -->
+              <div v-if="delivery.payment_status === 'partial'" class="text-xs text-gray-500 dark:text-gray-400">
+                ₹{{ delivery.outstanding.toFixed(2) }} pending
+              </div>
             </div>
           </div>
         </div>
@@ -335,6 +343,10 @@
                 <span :class="`ml-2 status-${viewingDelivery.payment_status}`">
                   {{ t(`common.${viewingDelivery.payment_status}`) }}
                 </span>
+                <!-- Show outstanding amount for partial payments -->
+                <div v-if="viewingDelivery.payment_status === 'partial'" class="text-xs text-gray-500 dark:text-gray-400">
+                  ₹{{ viewingDelivery.outstanding.toFixed(2) }} pending
+                </div>
               </div>
               <div>
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('delivery.paidAmount') }}:</span>
@@ -493,6 +505,7 @@ import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import { 
   deliveryService,
   vendorReturnService,
+  paymentAllocationService,
   type Delivery
 } from '../services/pocketbase';
 import { usePermissions } from '../composables/usePermissions';
@@ -503,6 +516,7 @@ const { success, error } = useToast();
 const { canDelete } = usePermissions();
 
 // Use site data management
+// Load deliveries data
 const { data: allDeliveriesData, loading: deliveriesLoading, reload: reloadDeliveries } = useSiteData(
   async () => {
     const deliveryData = await deliveryService.getAll();
@@ -513,12 +527,59 @@ const { data: allDeliveriesData, loading: deliveriesLoading, reload: reloadDeliv
   }
 );
 
+// Load payment allocations separately
+const { data: paymentAllocationsData } = useSiteData(
+  async () => {
+    try {
+      return await paymentAllocationService.getAll();
+    } catch (error) {
+      console.error('Error loading payment allocations:', error);
+      return [];
+    }
+  }
+);
+
 // Search functionality
 const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useDeliverySearch();
 
-// Display items: use search results if searching, otherwise all items
+// Client-side payment status calculation
+const paymentAllocations = computed(() => paymentAllocationsData.value || []);
+
+// Helper function to calculate payment status based on allocations
+const calculatePaymentStatus = (delivery: Delivery): 'pending' | 'partial' | 'paid' => {
+  if (!paymentAllocations.value.length) return 'pending';
+  
+  const allocatedAmount = paymentAllocations.value
+    .filter(allocation => allocation.delivery === delivery.id)
+    .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
+  
+  if (allocatedAmount <= 0) return 'pending';
+  if (allocatedAmount >= delivery.total_amount) return 'paid';
+  return 'partial';
+};
+
+// Helper function to calculate outstanding amount
+const calculateOutstandingAmount = (delivery: Delivery): number => {
+  if (!paymentAllocations.value.length) return delivery.total_amount;
+  
+  const allocatedAmount = paymentAllocations.value
+    .filter(allocation => allocation.delivery === delivery.id)
+    .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
+  
+  const outstanding = delivery.total_amount - allocatedAmount;
+  return outstanding > 0 ? outstanding : 0;
+};
+
+// Display items: use search results if searching, otherwise all items with calculated payment status
 const deliveries = computed(() => {
-  return searchQuery.value.trim() ? searchResults.value : (allDeliveriesData.value || [])
+  const baseDeliveries = searchQuery.value.trim() ? searchResults.value : (allDeliveriesData.value || []);
+  
+  // Add computed payment status and outstanding amount to each delivery
+  return baseDeliveries.map(delivery => ({
+    ...delivery,
+    payment_status: calculatePaymentStatus(delivery),
+    outstanding: calculateOutstandingAmount(delivery)
+  }));
 });
 
 // Removed unused allDeliveries computed property

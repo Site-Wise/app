@@ -302,6 +302,7 @@ export interface Payment {
   deliveries: string[]; // Multi-item deliveries
   service_bookings: string[]; // New field for service payments
   credit_notes?: string[]; // Credit notes used in this payment
+  payment_allocations?: string[]; // Payment allocation IDs for expand functionality
   site: string; // Site ID
   created?: string;
   updated?: string;
@@ -1822,6 +1823,7 @@ export class PaymentService {
     if (!siteId) return;
 
     let remainingAmount = totalAmount;
+    const createdAllocationIds: string[] = [];
     
     // Handle delivery allocations
     for (const deliveryId of deliveryIds) {
@@ -1833,13 +1835,14 @@ export class PaymentService {
       const allocatedAmount = Math.min(remainingAmount, outstandingAmount);
       
       // Create payment allocation record
-      await paymentAllocationService.create({
+      const allocationRecord = await paymentAllocationService.create({
         payment: paymentId,
         delivery: deliveryId,
         allocated_amount: allocatedAmount,
         site: siteId
       });
       
+      createdAllocationIds.push(allocationRecord.id!);
       remainingAmount -= allocatedAmount;
     }
     
@@ -1853,14 +1856,22 @@ export class PaymentService {
       const allocatedAmount = Math.min(remainingAmount, outstandingAmount);
       
       // Create payment allocation record
-      await paymentAllocationService.create({
+      const allocationRecord = await paymentAllocationService.create({
         payment: paymentId,
         service_booking: bookingId,
         allocated_amount: allocatedAmount,
         site: siteId
       });
       
+      createdAllocationIds.push(allocationRecord.id!);
       remainingAmount -= allocatedAmount;
+    }
+    
+    // Update payment record with allocation IDs so expand works properly
+    if (createdAllocationIds.length > 0) {
+      await pb.collection('payments').update(paymentId, {
+        payment_allocations: createdAllocationIds
+      });
     }
   }
 
@@ -2063,6 +2074,33 @@ export class PaymentService {
 }
 
 export class PaymentAllocationService {
+  async getAll(): Promise<PaymentAllocation[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('payment_allocations')
+      .getFullList({
+        filter: `site="${siteId}"`,
+        expand: 'delivery,service_booking,service_booking.service'
+      });
+    return records.map(record => this.mapRecordToPaymentAllocation(record));
+  }
+
+  async getById(id: string): Promise<PaymentAllocation | null> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    try {
+      const record = await pb.collection('payment_allocations').getOne(id, {
+        filter: `site="${siteId}"`,
+        expand: 'delivery,service_booking,service_booking.service'
+      });
+      return this.mapRecordToPaymentAllocation(record);
+    } catch (error) {
+      return null;
+    }
+  }
+
   async create(data: Omit<PaymentAllocation, 'id' | 'created' | 'updated'>): Promise<PaymentAllocation> {
     const record = await pb.collection('payment_allocations').create(data);
     return this.mapRecordToPaymentAllocation(record);

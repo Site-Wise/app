@@ -53,19 +53,19 @@
               v-if="state === 'checked'"
               class="font-medium text-green-600 dark:text-green-400"
             >
-              ₹{{ totalAmount.toFixed(2) }}
+              ₹{{ dueAmount.toFixed(2) }}
             </span>
             <span
               v-else-if="state === 'partial'"
               class="font-medium text-blue-600 dark:text-blue-400"
             >
-              ₹{{ allocatedAmount.toFixed(2) }} / ₹{{ totalAmount.toFixed(2) }}
+              ₹{{ allocatedAmount.toFixed(2) }} / ₹{{ dueAmount.toFixed(2) }}
             </span>
             <span
               v-else
               class="font-medium text-gray-500 dark:text-gray-400"
             >
-              ₹{{ totalAmount.toFixed(2) }}
+              ₹{{ dueAmount.toFixed(2) }}
             </span>
           </div>
           
@@ -79,35 +79,12 @@
         {{ secondaryText }}
       </div>
       
-      <!-- Partial Amount Input (when partial state and editable) -->
-      <div
-        v-if="state === 'partial' && allowPartialEdit"
-        class="mt-2 flex items-center space-x-2"
-      >
-        <label class="text-xs text-gray-600 dark:text-gray-400">
-          Partial amount:
-        </label>
-        <input
-          v-model.number="partialAmount"
-          type="number"
-          step="0.01"
-          :min="0"
-          :max="totalAmount"
-          @input="handlePartialAmountChange"
-          @blur="validatePartialAmount"
-          class="w-24 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          placeholder="0.00"
-        />
-        <span class="text-xs text-gray-500 dark:text-gray-400">
-          / ₹{{ totalAmount.toFixed(2) }}
-        </span>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { computed } from 'vue';
 import { Check } from 'lucide-vue-next';
 
 export type TriStateValue = 'unchecked' | 'partial' | 'checked';
@@ -116,18 +93,15 @@ interface Props {
   id?: string;
   label?: string;
   secondaryText?: string;
-  state: TriStateValue;
-  totalAmount: number;
+  dueAmount: number;
   allocatedAmount?: number;
   disabled?: boolean;
-  allowPartialEdit?: boolean;
   ariaLabel?: string;
 }
 
 interface Emits {
-  (e: 'update:state', value: TriStateValue): void;
   (e: 'update:allocatedAmount', value: number): void;
-  (e: 'change', data: { state: TriStateValue; allocatedAmount: number }): void;
+  (e: 'change', data: { allocatedAmount: number }): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -136,20 +110,27 @@ const props = withDefaults(defineProps<Props>(), {
   secondaryText: '',
   allocatedAmount: 0,
   disabled: false,
-  allowPartialEdit: false,
   ariaLabel: ''
 });
 
 const emit = defineEmits<Emits>();
 
-// Internal state for partial amount editing
-const partialAmount = ref(props.allocatedAmount);
+// Computed state based on allocated vs due amounts
+const state = computed((): TriStateValue => {
+  if (props.allocatedAmount <= 0) {
+    return 'unchecked';
+  } else if (props.allocatedAmount >= props.dueAmount) {
+    return 'checked';
+  } else {
+    return 'partial';
+  }
+});
 
 // Computed classes
 const checkboxClasses = computed(() => {
   const baseClasses = 'border-gray-300 dark:border-gray-600';
   
-  switch (props.state) {
+  switch (state.value) {
     case 'checked':
       return 'bg-green-500 border-green-500 dark:bg-green-600 dark:border-green-600';
     case 'partial':
@@ -161,7 +142,7 @@ const checkboxClasses = computed(() => {
 });
 
 const statusIndicatorClasses = computed(() => {
-  switch (props.state) {
+  switch (state.value) {
     case 'checked':
       return 'bg-green-500 dark:bg-green-400';
     case 'partial':
@@ -176,74 +157,28 @@ const statusIndicatorClasses = computed(() => {
 const handleClick = () => {
   if (props.disabled) return;
   
-  // Cycle through states: unchecked → checked → partial → unchecked
-  let newState: TriStateValue;
+  // Cycle through allocation amounts: 0 → full → half → 0
+  // State is automatically determined by the amounts
   let newAllocatedAmount: number;
   
-  switch (props.state) {
+  switch (state.value) {
     case 'unchecked':
-      newState = 'checked';
-      newAllocatedAmount = props.totalAmount;
+      newAllocatedAmount = props.dueAmount; // Full amount
       break;
     case 'checked':
-      newState = props.allowPartialEdit ? 'partial' : 'unchecked';
-      newAllocatedAmount = props.allowPartialEdit ? props.totalAmount * 0.5 : 0;
+      newAllocatedAmount = props.dueAmount * 0.5; // Half amount (partial)
       break;
     case 'partial':
-      newState = 'unchecked';
-      newAllocatedAmount = 0;
+      newAllocatedAmount = 0; // No amount
       break;
     default:
-      newState = 'unchecked';
       newAllocatedAmount = 0;
   }
   
-  partialAmount.value = newAllocatedAmount;
-  emit('update:state', newState);
   emit('update:allocatedAmount', newAllocatedAmount);
-  emit('change', { state: newState, allocatedAmount: newAllocatedAmount });
+  emit('change', { allocatedAmount: newAllocatedAmount });
 };
 
-const handlePartialAmountChange = () => {
-  const amount = Number(partialAmount.value) || 0;
-  const clampedAmount = Math.max(0, Math.min(amount, props.totalAmount));
-  
-  partialAmount.value = clampedAmount;
-  emit('update:allocatedAmount', clampedAmount);
-  emit('change', { state: 'partial', allocatedAmount: clampedAmount });
-};
-
-const validatePartialAmount = () => {
-  const amount = Number(partialAmount.value) || 0;
-  
-  if (amount <= 0) {
-    partialAmount.value = 0;
-    emit('update:state', 'unchecked');
-    emit('update:allocatedAmount', 0);
-    emit('change', { state: 'unchecked', allocatedAmount: 0 });
-  } else if (amount >= props.totalAmount) {
-    partialAmount.value = props.totalAmount;
-    emit('update:state', 'checked');
-    emit('update:allocatedAmount', props.totalAmount);
-    emit('change', { state: 'checked', allocatedAmount: props.totalAmount });
-  } else {
-    emit('update:state', 'partial');
-    emit('update:allocatedAmount', amount);
-    emit('change', { state: 'partial', allocatedAmount: amount });
-  }
-};
-
-// Watch for external changes to allocatedAmount
-watch(() => props.allocatedAmount, (newValue) => {
-  partialAmount.value = newValue;
-});
-
-// Watch for external state changes to sync partial amount
-watch(() => props.state, (newState) => {
-  if (newState === 'checked') {
-    partialAmount.value = props.totalAmount;
-  } else if (newState === 'unchecked') {
-    partialAmount.value = 0;
-  }
-});
+// All amount calculation logic is now handled by PaymentModal
+// No need for internal amount tracking or validation
 </script>
