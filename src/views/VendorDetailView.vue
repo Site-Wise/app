@@ -34,9 +34,10 @@
                 <FileText class="mr-3 h-4 w-4 text-red-600" />
                 {{ t('vendors.exportPdf') }}
               </button>
-              <button @click="exportTallyXml(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <button @click="exportTallyXml(); showExportDropdown = false" class="relative flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <FileText class="mr-3 h-4 w-4 text-blue-600" />
                 {{ t('vendors.exportTallyXml') }}
+                <StatusBadge type="beta" position="absolute" />
               </button>
             </div>
           </div>
@@ -72,9 +73,10 @@
               <FileText class="mr-3 h-5 w-5 text-red-600" />
               {{ t('vendors.exportPdf') }}
             </button>
-            <button @click="handleMobileAction('exportTallyXml')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+            <button @click="handleMobileAction('exportTallyXml')" class="relative flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
               <FileText class="mr-3 h-5 w-5 text-blue-600" />
               {{ t('vendors.exportTallyXml') }}
+              <StatusBadge type="beta" position="absolute" />
             </button>
             
             <!-- Divider -->
@@ -397,6 +399,7 @@ import {
   MoreVertical
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
+import StatusBadge from '../components/StatusBadge.vue';
 import {
   vendorService,
   deliveryService,

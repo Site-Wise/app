@@ -1142,6 +1142,10 @@
     "dropZone": "File upload area",
     "previewOf": "Preview of {filename}"
   },
+  "badges": {
+    "new": "New",
+    "beta": "Beta"
+  },
   "units": {
     "pcs": "Pieces",
     "pkt": "Packet",
