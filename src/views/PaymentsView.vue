@@ -752,7 +752,7 @@ const handlePaymentModalSubmit = async (data: any) => {
   
   try {
     if (mode === 'CREATE' || mode === 'PAY_NOW') {
-      // Create new payment
+      // Create new payment with detailed allocation data
       const paymentData = {
         vendor: form.vendor,
         account: form.account,
@@ -762,7 +762,11 @@ const handlePaymentModalSubmit = async (data: any) => {
         notes: form.notes,
         deliveries: form.deliveries,
         service_bookings: form.service_bookings,
-        credit_notes: form.credit_notes || []
+        credit_notes: form.credit_notes || [],
+        // Include detailed allocation data for proper handling
+        delivery_allocations: form.delivery_allocations || {},
+        service_booking_allocations: form.service_booking_allocations || {},
+        credit_note_allocations: form.credit_note_allocations || {}
       };
       
       await paymentService.create(paymentData);
@@ -776,9 +780,20 @@ const handlePaymentModalSubmit = async (data: any) => {
     // Reload data and close modal
     await reloadAllData();
     showPaymentModal.value = false;
-  } catch (err) {
+  } catch (err: any) {
     console.error('Error saving payment:', err);
-    error(t('messages.error'));
+    
+    // Check if this is a credit note validation error
+    if (err.message && err.message.includes('not available for this amount')) {
+      // This is a credit note balance issue - provide helpful error message
+      error(
+        'Credit note information has changed since the modal was opened. ' +
+        'Please close and reopen the payment modal to get updated credit note balances.\n\n' +
+        'Details: ' + err.message.split('\n')[0]
+      );
+    } else {
+      error(t('messages.error'));
+    }
   }
 };
 

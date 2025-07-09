@@ -1758,7 +1758,7 @@ export class PaymentService {
     }
   }
 
-  async create(data: Omit<Payment, 'id' | 'site'>): Promise<Payment> {
+  async create(data: any): Promise<Payment> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
 
@@ -1769,19 +1769,22 @@ export class PaymentService {
       throw new Error('Permission denied: Cannot create payments');
     }
 
-    // Calculate credit note amount and validate credit note balances
+    // Calculate credit note amount from detailed allocations
     let creditNoteAmount = 0;
-    if (data.credit_notes && data.credit_notes.length > 0) {
-      const totalAvailableCredit = await this.validateAndCalculateCreditNoteAmount(data.credit_notes);
-      // Use the minimum of: total payment amount OR total available credit
-      creditNoteAmount = Math.min(data.amount, totalAvailableCredit);
+    if (data.credit_note_allocations) {
+      creditNoteAmount = Object.values(data.credit_note_allocations).reduce((sum: number, allocation: any) => {
+        return sum + (allocation.amount || 0);
+      }, 0);
+      
+      // Validate credit note allocations
+      await this.validateCreditNoteAllocations(data.credit_note_allocations);
     }
 
     // Calculate actual account payment amount
     const accountPaymentAmount = data.amount - creditNoteAmount;
     
     if (accountPaymentAmount < 0) {
-      throw new Error('Credit note amount cannot exceed total payment amount');
+      throw new Error('Credit note amount exceeds total payment amount. This should not happen with proper validation.');
     }
 
     // Create the payment
@@ -1790,9 +1793,9 @@ export class PaymentService {
       site: siteId
     });
 
-    // Process credit notes first
-    if (data.credit_notes && data.credit_notes.length > 0) {
-      await this.processCreditNotes(record.id, data.credit_notes, data.vendor, creditNoteAmount);
+    // Process credit notes with detailed allocations
+    if (data.credit_note_allocations && Object.keys(data.credit_note_allocations).length > 0) {
+      await this.processCreditNoteAllocations(record.id, data.credit_note_allocations, data.vendor);
     }
 
     // Create corresponding debit transaction only for actual account payment amount
@@ -1812,10 +1815,94 @@ export class PaymentService {
       });
     }
 
-    // Handle payment allocations with total amount (including credit notes)
-    await this.handlePaymentAllocations(record.id, data.deliveries || [], data.service_bookings || [], data.amount);
+    // Handle payment allocations with detailed allocation amounts
+    await this.handleDetailedPaymentAllocations(
+      record.id, 
+      data.delivery_allocations || {}, 
+      data.service_booking_allocations || {}
+    );
 
     return this.mapRecordToPayment(record);
+  }
+
+  private async validateCreditNoteAllocations(creditNoteAllocations: Record<string, any>): Promise<void> {
+    for (const [creditNoteId, allocation] of Object.entries(creditNoteAllocations)) {
+      if (allocation.amount <= 0) continue;
+      
+      const creditNote = await vendorCreditNoteService.getById(creditNoteId);
+      if (!creditNote) {
+        throw new Error(`Credit note ${creditNoteId} not found`);
+      }
+      
+      if (allocation.amount > creditNote.balance) {
+        // Get usage details for better error context
+        const usageRecords = await creditNoteUsageService.getByCreditNote(creditNoteId);
+        const totalUsed = usageRecords.reduce((sum, usage) => sum + usage.used_amount, 0);
+        
+        throw new Error(
+          `Credit note ${creditNote.reference || creditNoteId.slice(-6)} is not available for this amount.\n` +
+          `Requested: ₹${allocation.amount.toFixed(2)}\n` +
+          `Available: ₹${creditNote.balance.toFixed(2)}\n` +
+          `Original amount: ₹${creditNote.credit_amount.toFixed(2)}\n` +
+          `Already used: ₹${totalUsed.toFixed(2)}\n` +
+          `The credit note may have been used in another payment. Please refresh and try again.`
+        );
+      }
+    }
+  }
+
+  private async processCreditNoteAllocations(paymentId: string, creditNoteAllocations: Record<string, any>, vendorId: string): Promise<void> {
+    for (const [creditNoteId, allocation] of Object.entries(creditNoteAllocations)) {
+      if (allocation.amount <= 0) continue;
+      
+      // Create credit note usage record with exact allocation amount
+      await creditNoteUsageService.create({
+        credit_note: creditNoteId,
+        payment: paymentId,
+        vendor: vendorId,
+        used_amount: allocation.amount,
+        used_date: new Date().toISOString().split('T')[0],
+        description: `Applied to payment ${paymentId} (${allocation.state} usage)`
+      });
+      
+      // Update credit note balance (this will also update status if fully used)
+      await vendorCreditNoteService.updateBalance(creditNoteId, allocation.amount);
+    }
+  }
+
+  private async handleDetailedPaymentAllocations(
+    paymentId: string, 
+    deliveryAllocations: Record<string, any>, 
+    serviceBookingAllocations: Record<string, any>
+  ): Promise<void> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) return;
+
+    // Handle delivery allocations with exact amounts
+    for (const [deliveryId, allocation] of Object.entries(deliveryAllocations)) {
+      if (allocation.amount <= 0) continue;
+      
+      // Create payment allocation record with exact amount
+      await paymentAllocationService.create({
+        payment: paymentId,
+        delivery: deliveryId,
+        allocated_amount: allocation.amount,
+        site: siteId
+      });
+    }
+    
+    // Handle service booking allocations with exact amounts
+    for (const [bookingId, allocation] of Object.entries(serviceBookingAllocations)) {
+      if (allocation.amount <= 0) continue;
+      
+      // Create payment allocation record with exact amount
+      await paymentAllocationService.create({
+        payment: paymentId,
+        service_booking: bookingId,
+        allocated_amount: allocation.amount,
+        site: siteId
+      });
+    }
   }
 
   private async handlePaymentAllocations(paymentId: string, deliveryIds: string[], serviceBookingIds: string[], totalAmount: number) {

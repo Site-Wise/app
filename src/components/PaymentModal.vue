@@ -1002,78 +1002,88 @@ const autoSelectCreditNotesForPayables = (targetAmount: number) => {
     return;
   }
   
-  let remainingAmount = targetAmount;
+  // Get current total allocated to credit notes (excluding manually deselected)
+  const currentAllocated = Object.entries(form.credit_note_allocations)
+    .filter(([_, allocation]) => !allocation.manuallyDeselected)
+    .reduce((sum, [_, allocation]) => sum + allocation.amount, 0);
   
-  // Sort credit notes by date (oldest first) for FIFO usage
-  const sortedCreditNotes = [...availableCreditNotes.value].sort((a, b) => 
+  // Sort credit notes by date - FIFO for increases, LIFO for decreases
+  const fifoSorted = [...availableCreditNotes.value].sort((a, b) => 
     new Date(a.issue_date).getTime() - new Date(b.issue_date).getTime()
   );
+  const lifoSorted = [...availableCreditNotes.value].sort((a, b) => 
+    new Date(b.issue_date).getTime() - new Date(a.issue_date).getTime()
+  );
   
-  // First pass: keep existing selections that aren't manually deselected
-  for (const creditNote of sortedCreditNotes) {
-    const allocation = form.credit_note_allocations[creditNote.id];
-    if (allocation && !allocation.manuallyDeselected && allocation.amount > 0) {
-      // Determine usable amount without exceeding remaining amount or credit note balance
-      let usableAmount = allocation.amount;
-      if (usableAmount > remainingAmount) {
-        usableAmount = remainingAmount;
-      }
-      if (usableAmount > creditNote.balance) {
-        console.warn(`Credit note allocation exceeds available balance: ${usableAmount} > ${creditNote.balance}`);
-        usableAmount = creditNote.balance;
-      }
+  if (targetAmount <= currentAllocated) {
+    // REDUCTION: Remove/reduce credit notes in LIFO order (newest first)
+    let amountToReduce = currentAllocated - targetAmount;
+    
+    for (const creditNote of lifoSorted) {
+      if (amountToReduce <= 0) break;
       
-      // Update allocation to fit remaining amount
-      form.credit_note_allocations[creditNote.id] = {
-        ...allocation,
-        amount: usableAmount,
-        state: usableAmount >= creditNote.balance ? 'checked' : 'partial'
-      };
-      
-      remainingAmount -= usableAmount;
-      
-      if (remainingAmount <= 0) break;
-    }
-  }
-  
-  // Second pass: add new credit notes for remaining amount (skip manually deselected ones)
-  if (remainingAmount > 0) {
-    for (const creditNote of sortedCreditNotes) {
       const allocation = form.credit_note_allocations[creditNote.id];
-      
-      // Skip if manually deselected or already allocated
-      if (allocation?.manuallyDeselected || (allocation?.amount || 0) > 0) {
+      if (!allocation || allocation.manuallyDeselected || allocation.amount <= 0) {
         continue;
       }
       
-      // Calculate usable amount without exceeding remaining amount or credit note balance
-      let usableAmount = remainingAmount;
-      if (usableAmount > creditNote.balance) {
-        usableAmount = creditNote.balance;
+      if (allocation.amount <= amountToReduce) {
+        // Remove this credit note entirely
+        form.credit_note_allocations[creditNote.id] = {
+          ...allocation,
+          amount: 0,
+          state: 'unchecked'
+        };
+        amountToReduce -= allocation.amount;
+      } else {
+        // Partially reduce this credit note
+        const newAmount = allocation.amount - amountToReduce;
+        form.credit_note_allocations[creditNote.id] = {
+          ...allocation,
+          amount: newAmount,
+          state: newAmount >= creditNote.balance ? 'checked' : 'partial'
+        };
+        amountToReduce = 0;
+      }
+    }
+  } else {
+    // INCREASE: Add credit notes in FIFO order (oldest first)
+    let remainingAmount = targetAmount - currentAllocated;
+    
+    for (const creditNote of fifoSorted) {
+      if (remainingAmount <= 0) break;
+      
+      const allocation = form.credit_note_allocations[creditNote.id];
+      
+      // Skip if manually deselected
+      if (allocation?.manuallyDeselected) {
+        continue;
       }
       
+      const currentAmount = allocation?.amount || 0;
+      const availableInCreditNote = creditNote.balance - currentAmount;
+      
+      if (availableInCreditNote <= 0) {
+        continue; // This credit note is already fully used
+      }
+      
+      const amountToAdd = remainingAmount > availableInCreditNote ? availableInCreditNote : remainingAmount;
+      const newAmount = currentAmount + amountToAdd;
+      
       form.credit_note_allocations[creditNote.id] = {
-        state: usableAmount >= creditNote.balance ? 'checked' : 'partial',
-        amount: usableAmount,
+        state: newAmount >= creditNote.balance ? 'checked' : 'partial',
+        amount: newAmount,
         manuallyDeselected: false
       };
       
-      // Add to credit_notes array if not already present
-      if (!form.credit_notes.includes(creditNote.id)) {
-        form.credit_notes.push(creditNote.id);
-      }
-      
-      remainingAmount -= usableAmount;
-      
-      if (remainingAmount <= 0) break;
+      remainingAmount -= amountToAdd;
     }
   }
   
-  // Clean up unused allocations and credit_notes array
-  form.credit_notes = form.credit_notes.filter(creditNoteId => {
-    const allocation = form.credit_note_allocations[creditNoteId];
-    return allocation && allocation.amount > 0;
-  });
+  // Clean up and update credit_notes array
+  form.credit_notes = Object.entries(form.credit_note_allocations)
+    .filter(([_, allocation]) => allocation.amount > 0)
+    .map(([creditNoteId, _]) => creditNoteId);
 };
 
 // Auto-select credit notes based on deliveries (oldest first)
@@ -1453,7 +1463,7 @@ const handleServiceBookingTriStateChange = (bookingId: string, data: { allocated
   handlePaymentAmountRecomputation();
 };
 
-const loadVendorCreditNotes = async () => {
+const loadVendorCreditNotes = async (forceRefresh = false) => {
   if (!form.vendor) {
     availableCreditNotes.value = [];
     calculateVendorOutstanding(); // Recalculate without credit notes
@@ -1464,9 +1474,17 @@ const loadVendorCreditNotes = async () => {
     loadingCreditNotes.value = true;
     const creditNotes = await vendorCreditNoteService.getByVendor(form.vendor);
     // Only show active credit notes with balance > 0, sorted by date (oldest first)
-    availableCreditNotes.value = creditNotes
+    const freshCreditNotes = creditNotes
       .filter(cn => cn.status === 'active' && cn.balance > 0)
       .sort((a, b) => new Date(a.issue_date).getTime() - new Date(b.issue_date).getTime());
+    
+    availableCreditNotes.value = freshCreditNotes;
+    
+    // If this is a refresh due to stale data, update credit note allocations
+    if (forceRefresh) {
+      updateCreditNoteAllocationsAfterRefresh(freshCreditNotes);
+    }
+    
     // Recalculate outstanding after loading credit notes
     calculateVendorOutstanding();
   } catch (err: any) {
@@ -1475,6 +1493,42 @@ const loadVendorCreditNotes = async () => {
     calculateVendorOutstanding(); // Recalculate without credit notes
   } finally {
     loadingCreditNotes.value = false;
+  }
+};
+
+// Update credit note allocations after refresh to handle stale data
+const updateCreditNoteAllocationsAfterRefresh = (freshCreditNotes: any[]) => {
+  const updatedAllocations = { ...form.credit_note_allocations };
+  let hasChanges = false;
+  
+  // Check each existing allocation against fresh data
+  for (const [creditNoteId, allocation] of Object.entries(updatedAllocations)) {
+    const freshCreditNote = freshCreditNotes.find(cn => cn.id === creditNoteId);
+    
+    if (!freshCreditNote) {
+      // Credit note no longer available, remove allocation
+      delete updatedAllocations[creditNoteId];
+      hasChanges = true;
+    } else if (allocation.amount > freshCreditNote.balance) {
+      // Credit note balance reduced, adjust allocation
+      if (freshCreditNote.balance > 0) {
+        updatedAllocations[creditNoteId] = {
+          ...allocation,
+          amount: freshCreditNote.balance,
+          state: 'checked' // Using full available balance
+        };
+      } else {
+        delete updatedAllocations[creditNoteId];
+      }
+      hasChanges = true;
+    }
+  }
+  
+  if (hasChanges) {
+    form.credit_note_allocations = updatedAllocations;
+    // Update credit_notes array to match
+    form.credit_notes = Object.keys(updatedAllocations).filter(id => updatedAllocations[id].amount > 0);
+    console.warn('Credit note allocations updated due to balance changes. Please review your selections.');
   }
 };
 
