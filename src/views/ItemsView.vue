@@ -16,6 +16,7 @@
         ]"
         :title="!canCreateItem ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
         data-keyboard-shortcut="n"
+        data-tour="add-item-btn"
       >
         <Plus class="mr-2 h-4 w-4" />
         {{ t('items.addItem') }}
@@ -23,7 +24,7 @@
     </div>
 
     <!-- Search Box -->
-    <div class="mb-6">
+    <div class="mb-6" data-tour="search-bar">
       <div class="max-w-md">
         <SearchBox
           v-model="searchQuery"
@@ -34,7 +35,7 @@
     </div>
 
     <!-- Items Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-tour="items-table">
       <div v-for="item in items" :key="item.id" class="card hover:shadow-md transition-shadow duration-200 cursor-pointer" @click="viewItemDetail(item.id!)">
         <div class="flex items-start justify-between">
           <div class="flex-1">

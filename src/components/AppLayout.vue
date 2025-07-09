@@ -69,7 +69,7 @@
 
           <div class="flex items-center space-x-4">
             <!-- Site Selector for desktop -->
-            <div class="hidden lg:block">
+            <div class="hidden lg:block" data-tour="site-selector">
               <SiteSelector />
             </div>
 
@@ -150,6 +150,14 @@
                     <CreditCard class="mr-3 h-4 w-4 md:h-5 md:w-5" />
                     <div class="flex-1 min-w-0">
                       <div class="font-medium text-sm truncate">{{ t('subscription.title') }}</div>
+                    </div>
+                  </button>
+                  <button @click="restartTour"
+                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300"
+                    role="menuitem">
+                    <HelpCircle class="mr-3 h-4 w-4 md:h-5 md:w-5" />
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium text-sm truncate">{{ t('nav.helpTour') }}</div>
                     </div>
                   </button>
                   <button @click="handleLogout"
@@ -247,6 +255,7 @@ import { useSite } from '../composables/useSite';
 import { useI18n } from '../composables/useI18n';
 import { useInvitations } from '../composables/useInvitations';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
+import { useOnboarding } from '../composables/useOnboarding';
 import ThemeToggle from './ThemeToggle.vue';
 import PWAPrompt from './PWAPrompt.vue';
 import SiteSelector from './SiteSelector.vue';
@@ -270,7 +279,8 @@ import {
   Mail,
   Wrench,
   Calendar,
-  RotateCcw
+  RotateCcw,
+  HelpCircle
 } from 'lucide-vue-next';
 
 import { usePWAUpdate } from '../composables/usePWAUpdate';
@@ -290,6 +300,7 @@ const router = useRouter();
 const { user, logout } = useAuth();
 const { hasSiteAccess, canManageUsers, currentUserRole } = useSite();
 const { t } = useI18n();
+const { autoStartTour, resetTour, getOnboardingDebugInfo } = useOnboarding();
 const { receivedInvitationsCount, loadReceivedInvitations } = useInvitations();
 const { } = useKeyboardShortcuts(); // Initialize keyboard shortcuts system
 
@@ -444,10 +455,135 @@ const goToSubscription = () => {
   router.push('/subscription');
 };
 
+const restartTour = () => {
+  userMenuOpen.value = false;
+  
+  // Reset the current page's tour
+  const tourId = route.name?.toString().toLowerCase() || 'dashboard';
+  resetTour(tourId);
+  
+  // Get the tour config based on current route
+  let tourConfig = null;
+  switch (route.name) {
+    case 'Dashboard':
+      tourConfig = {
+        id: 'dashboard',
+        steps: [
+          {
+            popover: {
+              title: 'onboarding.dashboard.welcome.title',
+              description: 'onboarding.dashboard.welcome.description',
+              side: 'bottom' as const,
+              align: 'center' as const
+            }
+          },
+          {
+            element: '[data-tour="site-selector"]',
+            popover: {
+              title: 'onboarding.dashboard.siteSelector.title',
+              description: 'onboarding.dashboard.siteSelector.description',
+              side: 'bottom' as const
+            }
+          },
+          {
+            element: '[data-tour="quick-stats"]',
+            popover: {
+              title: 'onboarding.dashboard.quickStats.title',
+              description: 'onboarding.dashboard.quickStats.description',
+              side: 'top' as const
+            }
+          },
+          {
+            element: '[data-tour="recent-activities"]',
+            popover: {
+              title: 'onboarding.dashboard.recentActivities.title',
+              description: 'onboarding.dashboard.recentActivities.description',
+              side: 'top' as const
+            }
+          },
+          {
+            popover: {
+              title: 'onboarding.dashboard.shortcuts.title',
+              description: 'onboarding.dashboard.shortcuts.description',
+              side: 'bottom' as const
+            }
+          }
+        ],
+        showOnce: true
+      };
+      break;
+    case 'Items':
+      tourConfig = {
+        id: 'items',
+        steps: [
+          {
+            element: '[data-tour="add-item-btn"]',
+            popover: {
+              title: 'onboarding.items.addButton.title',
+              description: 'onboarding.items.addButton.description',
+              side: 'left' as const
+            }
+          },
+          {
+            element: '[data-tour="search-bar"]',
+            popover: {
+              title: 'onboarding.items.search.title',
+              description: 'onboarding.items.search.description',
+              side: 'bottom' as const
+            }
+          },
+          {
+            element: '[data-tour="items-table"]',
+            popover: {
+              title: 'onboarding.items.table.title',
+              description: 'onboarding.items.table.description',
+              side: 'top' as const
+            }
+          }
+        ],
+        showOnce: true
+      };
+      break;
+    case 'Deliveries':
+      tourConfig = {
+        id: 'delivery',
+        steps: [
+          {
+            element: '[data-tour="record-delivery-btn"]',
+            popover: {
+              title: 'onboarding.delivery.recordButton.title',
+              description: 'onboarding.delivery.recordButton.description',
+              side: 'left' as const
+            }
+          }
+        ],
+        showOnce: true
+      };
+      break;
+    default:
+      console.log('No tour available for current route:', route.name);
+      return;
+  }
+  
+  if (tourConfig) {
+    // Small delay to ensure DOM is ready, then force start the tour
+    setTimeout(() => {
+      const { startTour } = useOnboarding();
+      startTour(tourConfig, true); // Force show with true
+    }, 100);
+  }
+};
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
   // Load invitations when component mounts
   loadReceivedInvitations();
+  
+  // Make debug info available in console
+  (window as any).onboardingDebug = getOnboardingDebugInfo;
+  
+  // Start onboarding tour if needed - only on initial load
+  setTimeout(() => autoStartTour(), 100);
 });
 
 onUnmounted(() => {

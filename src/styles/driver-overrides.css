@@ -1,0 +1,92 @@
+/* Driver.js custom styles for Site-Wise */
+
+/* Skip all button styling */
+.driver-skip-all {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.driver-skip-all:hover {
+  background-color: #dc2626;
+}
+
+/* Fix button text rendering issues */
+.driver-popover-footer button {
+  position: relative;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+/* Ensure button text is properly rendered */
+.driver-popover-footer button::before {
+  content: none !important;
+}
+
+.driver-popover-footer button::after {
+  content: none !important;
+}
+
+/* Dark mode support */
+.dark .driver-popover {
+  background-color: #1f2937;
+  color: #f3f4f6;
+  border: 1px solid #374151;
+}
+
+.dark .driver-popover-title {
+  color: #f9fafb;
+}
+
+.dark .driver-popover-description {
+  color: #e5e7eb;
+}
+
+.dark .driver-popover-footer button {
+  background-color: #374151 !important;
+  color: #f3f4f6 !important;
+  border: 1px solid #4b5563 !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+.dark .driver-popover-footer button:hover {
+  background-color: #4b5563 !important;
+}
+
+.dark .driver-popover-footer button[data-driver-el="next-btn"],
+.dark .driver-popover-footer button[data-driver-el="done-btn"] {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.dark .driver-popover-footer button[data-driver-el="next-btn"]:hover,
+.dark .driver-popover-footer button[data-driver-el="done-btn"]:hover {
+  background-color: #1d4ed8 !important;
+}
+
+/* Fix ghost text in dark mode */
+.dark .driver-popover-footer button * {
+  color: inherit !important;
+  text-shadow: none !important;
+}
+
+.dark .driver-popover-footer button::before,
+.dark .driver-popover-footer button::after {
+  display: none !important;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 640px) {
+  .driver-popover {
+    max-width: calc(100vw - 32px) !important;
+  }
+}

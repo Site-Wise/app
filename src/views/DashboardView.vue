@@ -22,7 +22,7 @@
     </div>
 
     <!-- Stats Cards -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" data-tour="quick-stats">
       <div class="card">
         <div class="flex items-center">
           <div class="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
@@ -74,7 +74,7 @@
 
 
     <!-- Payments Chart -->
-    <div class="card mt-8">
+    <div class="card mt-8" data-tour="recent-activities">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('dashboard.paymentsLastSevenDays') }}</h2>
         <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">

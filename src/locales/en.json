@@ -131,6 +131,7 @@
     "payments": "Payments",
     "users": "Users",
     "settings": "Settings",
+    "helpTour": "Show Help Tour",
     "profile": "Profile",
     "manage_users": "Manage Users",
     "logout": "Sign out",
@@ -1145,6 +1146,60 @@
   "badges": {
     "new": "New",
     "beta": "Beta"
+  },
+  "onboarding": {
+    "done": "Done",
+    "close": "Close",
+    "next": "Next",
+    "previous": "Previous",
+    "progressText": "Step {current} of {total}",
+    "skipAll": "Don't show tours on other pages",
+    "dashboard": {
+      "welcome": {
+        "title": "Welcome to Site-Wise",
+        "description": "Let's take a quick tour to help you get started with managing your construction site efficiently."
+      },
+      "siteSelector": {
+        "title": "Site Selection",
+        "description": "Switch between different construction sites you manage from this dropdown."
+      },
+      "quickStats": {
+        "title": "Quick Statistics",
+        "description": "Get an overview of your site's key metrics including deliveries, payments, and inventory."
+      },
+      "recentActivities": {
+        "title": "Recent Activities",
+        "description": "See the latest deliveries, payments, and other activities at your site."
+      },
+      "shortcuts": {
+        "title": "Keyboard Shortcuts",
+        "description": "Pro tip: Use keyboard shortcuts for faster navigation:<br>• Shift+Alt+D for Dashboard<br>• Shift+Alt+I for Items<br>• Shift+Alt+V for Deliveries<br>• Shift+Alt+P for Payments"
+      }
+    },
+    "items": {
+      "addButton": {
+        "title": "Add New Items",
+        "description": "Click here to add new construction materials and items to your inventory. You can also use Shift+Alt+N as a shortcut."
+      },
+      "search": {
+        "title": "Search Items",
+        "description": "Quickly find items by name, category, or tags. The search updates in real-time as you type."
+      },
+      "table": {
+        "title": "Items List",
+        "description": "View all your items here. Click on any item to see details or edit. The table is mobile-responsive."
+      }
+    },
+    "delivery": {
+      "recordButton": {
+        "title": "Record Delivery",
+        "description": "Click here to record new deliveries from vendors. Track what materials arrived and when."
+      },
+      "filters": {
+        "title": "Filter Deliveries",
+        "description": "Filter deliveries by date range, vendor, or payment status to find what you need quickly."
+      }
+    }
   },
   "units": {
     "pcs": "Pieces",

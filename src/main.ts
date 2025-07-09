@@ -1,6 +1,8 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import './style.css';
+import './styles/driver-overrides.css';
+import './utils/onboardingTest'; // Load test utilities
 import App from './App.vue';
 import router from './router';
 import { useTheme } from './composables/useTheme';
