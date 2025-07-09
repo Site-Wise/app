@@ -3239,11 +3239,23 @@ class VendorCreditNoteService {
     if (!siteId) throw new Error('No site selected');
 
     const records = await pb.collection('vendor_credit_notes').getFullList({
-      filter: `site="${siteId}" && vendor="${vendorId}" && status="active" && balance > 0`,
+      filter: `site="${siteId}" && vendor="${vendorId}" && status="active"`,
       expand: 'vendor,return',
       sort: '-created'
     });
-    return records.map(record => this.mapRecordToCreditNote(record));
+    
+    // Calculate actual balance for each credit note based on usage
+    const creditNotes = [];
+    for (const record of records) {
+      const creditNote = this.mapRecordToCreditNote(record);
+      const actualBalance = await this.calculateActualBalance(creditNote.id);
+      if (actualBalance > 0) {
+        creditNote.balance = actualBalance;
+        creditNotes.push(creditNote);
+      }
+    }
+    
+    return creditNotes;
   }
 
   async getById(id: string): Promise<VendorCreditNote | null> {
@@ -3255,7 +3267,12 @@ class VendorCreditNoteService {
         filter: `site="${siteId}"`,
         expand: 'vendor,return'
       });
-      return this.mapRecordToCreditNote(record);
+      const creditNote = this.mapRecordToCreditNote(record);
+      
+      // Calculate actual balance based on usage records
+      creditNote.balance = await this.calculateActualBalanceFromRecord(creditNote);
+      
+      return creditNote;
     } catch (error) {
       return null;
     }
@@ -3289,6 +3306,53 @@ class VendorCreditNoteService {
     return this.mapRecordToCreditNote(record);
   }
 
+  async calculateActualBalance(creditNoteId: string): Promise<number> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    // Get the credit note details directly without triggering circular call
+    const record = await pb.collection('vendor_credit_notes').getOne(creditNoteId, {
+      filter: `site="${siteId}"`
+    });
+    
+    if (!record) return 0;
+
+    // Get all usage records for this credit note directly from PocketBase
+    const usageRecords = await pb.collection('credit_note_usage').getFullList({
+      filter: `site="${siteId}" && credit_note="${creditNoteId}"`,
+      sort: '-created'
+    });
+    
+    const totalUsed = usageRecords.reduce((sum, record) => sum + record.used_amount, 0);
+    
+    const balance = record.credit_amount - totalUsed;
+    if (balance < 0) {
+      console.warn(`Credit note ${creditNoteId} has negative balance: ${balance}. This indicates over-usage.`);
+      return 0;
+    }
+    return balance;
+  }
+
+  async calculateActualBalanceFromRecord(creditNote: VendorCreditNote): Promise<number> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    // Get all usage records for this credit note directly from PocketBase
+    const usageRecords = await pb.collection('credit_note_usage').getFullList({
+      filter: `site="${siteId}" && credit_note="${creditNote.id}"`,
+      sort: '-created'
+    });
+    
+    const totalUsed = usageRecords.reduce((sum, record) => sum + record.used_amount, 0);
+    
+    const balance = creditNote.credit_amount - totalUsed;
+    if (balance < 0) {
+      console.warn(`Credit note ${creditNote.id} has negative balance: ${balance}. This indicates over-usage.`);
+      return 0;
+    }
+    return balance;
+  }
+
   async updateBalance(id: string, usedAmount: number): Promise<VendorCreditNote> {
     const creditNote = await this.getById(id);
     if (!creditNote) throw new Error('Credit note not found');
@@ -3296,8 +3360,9 @@ class VendorCreditNoteService {
     const newBalance = creditNote.balance - usedAmount;
     if (newBalance < 0) throw new Error('Insufficient credit balance');
 
+    // Only update status if balance becomes zero
     const status = newBalance === 0 ? 'fully_used' : creditNote.status;
-    return this.update(id, { balance: newBalance, status });
+    return this.update(id, { status });
   }
 
   mapRecordToCreditNote(record: RecordModel): VendorCreditNote {

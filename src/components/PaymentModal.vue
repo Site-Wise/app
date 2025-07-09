@@ -71,33 +71,36 @@
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.availableCreditNotes') }}</label>
               <div class="mt-2 space-y-2 max-h-32 overflow-y-auto">
                 <div 
-                  v-for="(creditNote, index) in availableCreditNotes" 
+                  v-for="creditNote in availableCreditNotes" 
                   :key="creditNote.id"
-                  class="flex items-center space-x-3 p-2 border border-gray-200 dark:border-gray-600 rounded-md"
+                  :class="[
+                    'p-2 rounded transition-colors cursor-pointer',
+                    'hover:bg-gray-50 dark:hover:bg-gray-700',
+                    loading ? 'cursor-not-allowed' : 'cursor-pointer'
+                  ]"
+                  @click="handleCreditNoteRowClick(creditNote.id)"
                 >
-                  <input
+                  <TriStateCheckbox
                     :id="`credit-note-${creditNote.id}`"
-                    v-model="form.credit_notes[index]"
-                    :value="creditNote.id"
-                    type="checkbox"
-                    class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                    :label="creditNote.reference || `CN-${creditNote.id?.slice(-6)}`"
+                    :secondary-text="`${creditNote.reason} • ${formatDate(creditNote.issue_date)}`"
+                    :due-amount="creditNote.balance"
+                    :allocated-amount="form.credit_note_allocations[creditNote.id]?.amount || 0"
                     :disabled="loading"
-                    @change="handleCreditNoteChange()"
-                  />
-                  <label :for="`credit-note-${creditNote.id}`" class="flex-1 text-sm">
-                    <div class="flex justify-between">
-                      <span class="text-gray-900 dark:text-white">{{ creditNote.reference || `CN-${creditNote.id?.slice(-6)}` }}</span>
+                    :allow-partial-clicks="true"
+                    :clickable-row="true"
+                    :aria-label="`Select credit note ${creditNote.reference || creditNote.id?.slice(-6)}`"
+                    @change="handleCreditNoteTriStateChange(creditNote.id, $event)"
+                  >
+                    <template #amount-display>
                       <div class="text-right">
                         <span class="text-green-600 dark:text-green-400 font-medium">₹{{ creditNote.balance.toFixed(2) }}</span>
                         <div class="text-xs text-gray-500 dark:text-gray-400">
                           of ₹{{ creditNote.credit_amount.toFixed(2) }}
                         </div>
                       </div>
-                    </div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">
-                      {{ creditNote.reason }} • {{ formatDate(creditNote.issue_date) }}
-                    </div>
-                  </label>
+                    </template>
+                  </TriStateCheckbox>
                 </div>
               </div>
               <div v-if="selectedCreditNoteAmount > 0" class="mt-2 text-sm text-green-600 dark:text-green-400">
@@ -154,22 +157,29 @@
               <div v-if="selectedCreditNoteAmount > 0" class="mt-2 text-sm bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
                 <div class="flex justify-between">
                   <span class="text-gray-700 dark:text-gray-300">Account payment:</span>
-                  <span :class="accountPaymentAmount >= 0 ? 'text-gray-900 dark:text-white' : 'text-red-600 dark:text-red-400'">
+                  <span :class="[
+                    accountPaymentAmount >= 0 ? 'text-gray-900 dark:text-white' : 'text-red-600 dark:text-red-400',
+                    accountPaymentAmount === 0 ? 'italic' : ''
+                  ]">
                     ₹{{ accountPaymentAmount.toFixed(2) }}
+                    <span v-if="accountPaymentAmount === 0" class="text-xs text-gray-500 dark:text-gray-400 ml-1">(covered by credit notes)</span>
                   </span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-700 dark:text-gray-300">Credit notes:</span>
-                  <span class="text-green-600 dark:text-green-400">₹{{ selectedCreditNoteAmount.toFixed(2) }}</span>
+                  <span class="text-green-600 dark:text-green-400">
+                    ₹{{ selectedCreditNoteAmount.toFixed(2) }}
+                    <span v-if="hasPartialCreditNoteUsage" class="text-xs ml-1">(partial usage)</span>
+                  </span>
                 </div>
                 <hr class="my-1 border-gray-300 dark:border-gray-600">
                 <div class="flex justify-between font-medium">
                   <span class="text-gray-900 dark:text-white">Total payment:</span>
                   <span class="text-gray-900 dark:text-white">₹{{ form.amount.toFixed(2) }}</span>
                 </div>
-                <!-- Warning if credit notes exceed payment amount -->
-                <div v-if="selectedCreditNoteAmount > form.amount" class="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                  ⚠️ Credit notes exceed payment amount. Only ₹{{ form.amount.toFixed(2) }} will be used.
+                <!-- Info message for credit note priority -->
+                <div v-if="accountPaymentAmount === 0 && selectedCreditNoteAmount >= form.amount" class="mt-2 text-xs text-green-600 dark:text-green-400">
+                  ✓ Payment fully covered by credit notes (priority over account)
                 </div>
               </div>
             </div>
@@ -467,12 +477,73 @@ const form = reactive({
   service_bookings: [] as string[],
   credit_notes: [] as string[],
   delivery_allocations: {} as Record<string, { state: 'unchecked' | 'partial' | 'checked', amount: number }>,
-  service_booking_allocations: {} as Record<string, { state: 'unchecked' | 'partial' | 'checked', amount: number }>
+  service_booking_allocations: {} as Record<string, { state: 'unchecked' | 'partial' | 'checked', amount: number }>,
+  credit_note_allocations: {} as Record<string, { state: 'unchecked' | 'partial' | 'checked', amount: number, manuallyDeselected: boolean }>
 });
 
 // Track whether amount changes are manual (user input) or selection-driven (checkbox clicks)
 const isAmountManuallySet = ref(false);
 const isUpdatingAmountFromSelections = ref(false);
+
+// Credit note handlers
+const handleCreditNoteRowClick = (creditNoteId: string) => {
+  if (loading.value) return;
+  
+  // Simulate the tri-state checkbox behavior
+  const currentAmount = form.credit_note_allocations[creditNoteId]?.amount || 0;
+  const creditNote = availableCreditNotes.value.find(cn => cn.id === creditNoteId);
+  if (!creditNote) return;
+  
+  let newAllocatedAmount: number;
+  
+  if (currentAmount <= 0) {
+    newAllocatedAmount = creditNote.balance; // Full amount
+  } else if (currentAmount >= creditNote.balance) {
+    newAllocatedAmount = 0; // No amount - mark as manually deselected
+  } else {
+    newAllocatedAmount = creditNote.balance; // Full amount
+  }
+  
+  handleCreditNoteTriStateChange(creditNoteId, { allocatedAmount: newAllocatedAmount });
+};
+
+const handleCreditNoteTriStateChange = (creditNoteId: string, data: { allocatedAmount: number }) => {
+  const creditNote = availableCreditNotes.value.find(cn => cn.id === creditNoteId);
+  if (!creditNote) return;
+  
+  // Determine state based on allocated amount vs due amount
+  let state: 'unchecked' | 'partial' | 'checked' = 'unchecked';
+  let manuallyDeselected = false;
+  
+  if (data.allocatedAmount <= 0) {
+    state = 'unchecked';
+    // If user is deselecting a previously selected credit note, mark as manually deselected
+    if (form.credit_note_allocations[creditNoteId]?.amount > 0) {
+      manuallyDeselected = true;
+    }
+  } else if (data.allocatedAmount >= creditNote.balance) {
+    state = 'checked';
+  } else {
+    state = 'partial';
+  }
+  
+  // Update the allocation state
+  form.credit_note_allocations[creditNoteId] = {
+    state: state,
+    amount: data.allocatedAmount,
+    manuallyDeselected: manuallyDeselected
+  };
+  
+  // Update the credit_notes array based on state
+  if (state === 'unchecked') {
+    form.credit_notes = form.credit_notes.filter(id => id !== creditNoteId);
+  } else if (!form.credit_notes.includes(creditNoteId)) {
+    form.credit_notes.push(creditNoteId);
+  }
+  
+  // Trigger recomputation of payment amounts with credit note priority
+  handlePaymentAmountRecomputation();
+};
 
 // Row click handlers
 const handleDeliveryRowClick = (deliveryId: string) => {
@@ -620,14 +691,24 @@ const autoSelectAccount = () => {
 };
 
 const selectedCreditNoteAmount = computed(() => {
-  return form.credit_notes.reduce((total, creditNoteId) => {
-    const creditNote = availableCreditNotes.value.find(cn => cn.id === creditNoteId);
-    return total + (creditNote?.balance || 0);
+  return Object.values(form.credit_note_allocations).reduce((total, allocation) => {
+    return total + allocation.amount;
   }, 0);
 });
 
 const accountPaymentAmount = computed(() => {
-  return form.amount - selectedCreditNoteAmount.value;
+  const amount = form.amount - selectedCreditNoteAmount.value;
+  if (amount < 0) {
+    console.warn('Credit notes exceed payment amount. This should not happen with proper validation.');
+    return 0;
+  }
+  return amount;
+});
+
+const hasPartialCreditNoteUsage = computed(() => {
+  return Object.values(form.credit_note_allocations).some(allocation => 
+    allocation.state === 'partial' && allocation.amount > 0
+  );
 });
 
 const allocatedAmount = computed((): number => {
@@ -642,11 +723,19 @@ const allocatedAmount = computed((): number => {
 
 const unallocatedAmount = computed((): number => {
   if (props.mode === 'EDIT' && props.payment) {
-    return props.payment.amount - allocatedAmount.value;
+    const remaining = props.payment.amount - allocatedAmount.value;
+    if (remaining < 0) {
+      console.warn('Over-allocation detected in edit mode. This should be prevented by validation.');
+    }
+    return remaining;
   }
   
-  // For CREATE/PAY_NOW
-  return Math.max(0, form.amount - allocatedAmount.value);
+  // For CREATE/PAY_NOW - should never be negative with proper selection logic
+  const remaining = form.amount - allocatedAmount.value;
+  if (remaining < 0) {
+    console.warn('Over-allocation detected in create mode. This indicates a bug in selection logic.');
+  }
+  return remaining;
 });
 
 const allocationPercentage = computed(() => {
@@ -667,15 +756,15 @@ const showDeliverySelection = computed(() => {
 const calculatePaidAmount = (itemId: string, itemType: 'delivery' | 'service_booking'): number => {
   return props.payments
     .filter(payment => payment.expand?.payment_allocations)
-    .flatMap(payment => payment.expand.payment_allocations)
+    .flatMap(payment => payment.expand!.payment_allocations)
     .filter(allocation => {
       if (itemType === 'delivery') {
-        return allocation.delivery === itemId;
+        return allocation?.delivery === itemId;
       } else {
-        return allocation.service_booking === itemId;
+        return allocation?.service_booking === itemId;
       }
     })
-    .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
+    .reduce((sum, allocation) => sum + allocation!.allocated_amount, 0);
 };
 
 const selectableDeliveries = computed(() => {
@@ -877,6 +966,116 @@ const getTotalSelectedDeliveries = (): number => {
   return total;
 };
 
+// Handle payment amount recomputation with credit note priority
+const handlePaymentAmountRecomputation = () => {
+  if (props.mode === 'EDIT') return; // Only for CREATE/PAY_NOW modes
+  
+  const totalSelectedPayables = getTotalSelectedDeliveries();
+  
+  if (totalSelectedPayables === 0) {
+    // No payables selected, clear everything
+    form.amount = 0;
+    clearAllCreditNoteSelections();
+    return;
+  }
+  
+  // Credit notes have priority - automatically select/adjust credit notes to cover payables
+  autoSelectCreditNotesForPayables(totalSelectedPayables);
+  
+  // Total payment amount = payables selected
+  form.amount = totalSelectedPayables;
+  
+  // Account amount = remaining after credit notes
+  // (This is automatically calculated by the accountPaymentAmount computed property)
+};
+
+// Helper function to clear all credit note selections
+const clearAllCreditNoteSelections = () => {
+  form.credit_notes = [];
+  form.credit_note_allocations = {};
+};
+
+// Auto-select credit notes to cover payables (with priority logic)
+const autoSelectCreditNotesForPayables = (targetAmount: number) => {
+  if (targetAmount <= 0) {
+    clearAllCreditNoteSelections();
+    return;
+  }
+  
+  let remainingAmount = targetAmount;
+  
+  // Sort credit notes by date (oldest first) for FIFO usage
+  const sortedCreditNotes = [...availableCreditNotes.value].sort((a, b) => 
+    new Date(a.issue_date).getTime() - new Date(b.issue_date).getTime()
+  );
+  
+  // First pass: keep existing selections that aren't manually deselected
+  for (const creditNote of sortedCreditNotes) {
+    const allocation = form.credit_note_allocations[creditNote.id];
+    if (allocation && !allocation.manuallyDeselected && allocation.amount > 0) {
+      // Determine usable amount without exceeding remaining amount or credit note balance
+      let usableAmount = allocation.amount;
+      if (usableAmount > remainingAmount) {
+        usableAmount = remainingAmount;
+      }
+      if (usableAmount > creditNote.balance) {
+        console.warn(`Credit note allocation exceeds available balance: ${usableAmount} > ${creditNote.balance}`);
+        usableAmount = creditNote.balance;
+      }
+      
+      // Update allocation to fit remaining amount
+      form.credit_note_allocations[creditNote.id] = {
+        ...allocation,
+        amount: usableAmount,
+        state: usableAmount >= creditNote.balance ? 'checked' : 'partial'
+      };
+      
+      remainingAmount -= usableAmount;
+      
+      if (remainingAmount <= 0) break;
+    }
+  }
+  
+  // Second pass: add new credit notes for remaining amount (skip manually deselected ones)
+  if (remainingAmount > 0) {
+    for (const creditNote of sortedCreditNotes) {
+      const allocation = form.credit_note_allocations[creditNote.id];
+      
+      // Skip if manually deselected or already allocated
+      if (allocation?.manuallyDeselected || (allocation?.amount || 0) > 0) {
+        continue;
+      }
+      
+      // Calculate usable amount without exceeding remaining amount or credit note balance
+      let usableAmount = remainingAmount;
+      if (usableAmount > creditNote.balance) {
+        usableAmount = creditNote.balance;
+      }
+      
+      form.credit_note_allocations[creditNote.id] = {
+        state: usableAmount >= creditNote.balance ? 'checked' : 'partial',
+        amount: usableAmount,
+        manuallyDeselected: false
+      };
+      
+      // Add to credit_notes array if not already present
+      if (!form.credit_notes.includes(creditNote.id)) {
+        form.credit_notes.push(creditNote.id);
+      }
+      
+      remainingAmount -= usableAmount;
+      
+      if (remainingAmount <= 0) break;
+    }
+  }
+  
+  // Clean up unused allocations and credit_notes array
+  form.credit_notes = form.credit_notes.filter(creditNoteId => {
+    const allocation = form.credit_note_allocations[creditNoteId];
+    return allocation && allocation.amount > 0;
+  });
+};
+
 // Auto-select credit notes based on deliveries (oldest first)
 const autoSelectCreditNotes = () => {
   const totalNeeded = getTotalSelectedDeliveries();
@@ -921,6 +1120,7 @@ const clearAllSelections = () => {
   form.service_bookings = [];
   form.delivery_allocations = {};
   form.service_booking_allocations = {};
+  clearAllCreditNoteSelections();
 };
 
 // Auto-select deliveries with tri-state logic when amount changes
@@ -947,7 +1147,11 @@ const autoSelectDeliveriesWithTriState = (availableAmount?: number) => {
   for (const item of allItems) {
     if (remainingAmount <= 0) break;
     
-    const allocatedAmount = Math.min(remainingAmount, item.outstanding);
+    // Allocate amount without exceeding remaining amount or item outstanding
+    let allocatedAmount = remainingAmount;
+    if (allocatedAmount > item.outstanding) {
+      allocatedAmount = item.outstanding;
+    }
     
     if (item.type === 'delivery') {
       form.deliveries.push(item.id);
@@ -1124,11 +1328,14 @@ const updateDeliverySelectionFromAmount = () => {
   }
   
   // Calculate available amount for allocation (considering credit notes)
-  const availableForAllocation = Math.max(0, form.amount - selectedCreditNoteAmount.value);
+  const availableForAllocation = form.amount - selectedCreditNoteAmount.value;
   
   if (availableForAllocation <= 0) {
-    // Only credit notes are being used, clear delivery selections
+    // Credit notes cover the entire amount or exceed it, clear delivery selections
     clearAllSelections();
+    if (availableForAllocation < 0) {
+      console.warn('Credit notes exceed form amount. This should not happen with proper validation.');
+    }
     return;
   }
   
@@ -1136,18 +1343,7 @@ const updateDeliverySelectionFromAmount = () => {
   autoSelectDeliveriesWithTriState(availableForAllocation);
 };
 
-const handlePayableSelectionChange = () => {
-  if (props.mode === 'CREATE' || props.mode === 'PAY_NOW') {
-    // Auto-select credit notes based on selected deliveries
-    autoSelectCreditNotes();
-    
-    // Update amount based on selections only if amount was not manually set
-    if (!isAmountManuallySet.value) {
-      updateAmountFromSelections();
-    }
-  }
-  // Note: Edit mode validation is now handled in the individual change handlers
-};
+// Old handlePayableSelectionChange function replaced by handlePaymentAmountRecomputation
 
 // Update amount based on current selections (when driven by checkbox clicks)
 const updateAmountFromSelections = () => {
@@ -1208,8 +1404,8 @@ const handleDeliveryTriStateChange = (deliveryId: string, data: { allocatedAmoun
     form.deliveries.push(deliveryId);
   }
   
-  // Trigger the existing delivery selection logic
-  handlePayableSelectionChange();
+  // Trigger the payment amount recomputation with credit note priority
+  handlePaymentAmountRecomputation();
 };
 
 const handleServiceBookingTriStateChange = (bookingId: string, data: { allocatedAmount: number }) => {
@@ -1253,8 +1449,8 @@ const handleServiceBookingTriStateChange = (bookingId: string, data: { allocated
     form.service_bookings.push(bookingId);
   }
   
-  // Trigger the existing delivery selection logic
-  handlePayableSelectionChange();
+  // Trigger the payment amount recomputation with credit note priority
+  handlePaymentAmountRecomputation();
 };
 
 const loadVendorCreditNotes = async () => {
@@ -1273,7 +1469,7 @@ const loadVendorCreditNotes = async () => {
       .sort((a, b) => new Date(a.issue_date).getTime() - new Date(b.issue_date).getTime());
     // Recalculate outstanding after loading credit notes
     calculateVendorOutstanding();
-  } catch (err) {
+  } catch (err: any) {
     console.error('Error loading credit notes:', err);
     availableCreditNotes.value = [];
     calculateVendorOutstanding(); // Recalculate without credit notes
@@ -1282,18 +1478,7 @@ const loadVendorCreditNotes = async () => {
   }
 };
 
-// TODO - The display for remaining payment is incorrectly tied
-const handleCreditNoteChange = () => {
-  // When credit notes are selected/deselected, recalculate if needed
-  calculateVendorOutstanding();
-  
-  // In CREATE mode, if the current amount was auto-set to outstanding,
-  // keep it synchronized with the vendor outstanding
-  if (props.mode === 'CREATE' && form.amount === vendorOutstanding.value) {
-    // Keep amount in sync with outstanding if it was auto-set
-    form.amount = vendorOutstanding.value;
-  }
-};
+// Credit note change handling is now done through handleCreditNoteTriStateChange
 
 // TODO - This needs to account for the credit notes better, esp. partial usage
 const payAllOutstanding = () => {
@@ -1331,7 +1516,8 @@ const initializeForm = () => {
     service_bookings: [],
     credit_notes: [],
     delivery_allocations: {},
-    service_booking_allocations: {}
+    service_booking_allocations: {},
+    credit_note_allocations: {}
   });
   
   // Reset manual tracking flags
