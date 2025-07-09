@@ -62,7 +62,7 @@
           <div class="flex items-center">
             <div class="flex-shrink-0 w-2 h-2 bg-green-500 rounded-full mr-3"></div>
             <span class="text-sm font-medium text-gray-900 dark:text-white">
-              {{ selectedVendor.name }}
+              {{ selectedVendor.contact_person }}
             </span>
           </div>
           <div class="text-right">
@@ -94,7 +94,7 @@
           :class="{ 'bg-gray-50 dark:bg-gray-700': highlightedIndex === index }"
         >
           <div class="flex items-center justify-between">
-            <span class="text-gray-900 dark:text-white">{{ vendor.name }}</span>
+            <span class="text-gray-900 dark:text-white">{{ vendor.contact_person }}</span>
             <div class="text-right">
               <div v-if="getVendorBalance(vendor).amount > 0" class="text-xs"
                    :class="{
@@ -184,7 +184,7 @@ const inputDisplayValue = computed(() => {
     return searchQuery.value;
   }
   if (selectedVendor.value) {
-    return selectedVendor.value.name;
+    return selectedVendor.value.contact_person;
   }
   return '';
 });
@@ -194,7 +194,7 @@ const filteredVendors = computed(() => {
   
   const query = searchQuery.value.toLowerCase();
   return props.vendors.filter(vendor => 
-    vendor.name?.toLowerCase().includes(query) &&
+    vendor.contact_person?.toLowerCase().includes(query) &&
     vendor.id !== props.modelValue // Don't show already selected vendor
   );
 });

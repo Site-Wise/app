@@ -141,13 +141,13 @@
                   @input="handleAmountChange" 
                 />
                 <button 
-                  v-if="form.vendor && vendorOutstanding > 0 && form.amount !== vendorOutstanding"
+                  v-if="form.vendor && actualVendorOutstanding > 0 && form.amount !== actualVendorOutstanding"
                   type="button"
                   @click="payAllOutstanding"
                   :disabled="loading"
                   class="mt-1 px-3 py-2 text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 border border-primary-300 dark:border-primary-600 rounded-md hover:bg-primary-50 dark:hover:bg-primary-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Pay All (₹{{ vendorOutstanding.toFixed(2) }})
+                  Pay All (₹{{ actualVendorOutstanding.toFixed(2) }})
                 </button>
               </div>
               <!-- Payment breakdown when credit notes are involved -->
@@ -280,20 +280,30 @@
             <div v-if="selectableDeliveries.length > 0">
               <h4 class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{{ t('common.deliveries') }}</h4>
               <div class="space-y-2 max-h-40 overflow-y-auto">
-                <div v-for="delivery in selectableDeliveries" :key="delivery.id" :class="[
-                  'p-2 rounded transition-colors',
-                  isAccountRequiredForSelection 
-                    ? 'opacity-50' 
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-700'
-                ]">
+                <div 
+                  v-for="delivery in selectableDeliveries" 
+                  :key="delivery.id" 
+                  :class="[
+                    'p-2 rounded transition-colors cursor-pointer',
+                    isAccountRequiredForSelection 
+                      ? 'opacity-50 cursor-not-allowed' 
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-700',
+                    (loading || isAccountRequiredForSelection || isDeliveryDisabled(delivery.id))
+                      ? 'cursor-not-allowed'
+                      : 'cursor-pointer'
+                  ]"
+                  @click="handleDeliveryRowClick(delivery.id)"
+                >
                   <TriStateCheckbox
                     :id="`delivery-${delivery.id}`"
                     :label="formatDate(delivery.delivery_date)"
-                    :secondary-text="`Total: ₹${delivery.total_amount.toFixed(2)} | Paid: ₹${(delivery.paid_amount || 0).toFixed(2)}`"
+                    :secondary-text="`Total: ₹${delivery.total_amount.toFixed(2)} | Paid: ₹${delivery.paid_amount.toFixed(2)} | Outstanding: ₹${delivery.outstanding.toFixed(2)}`"
                     :due-amount="delivery.outstanding"
                     :allocated-amount="form.delivery_allocations[delivery.id]?.amount || 0"
                     :disabled="loading || isAccountRequiredForSelection || isDeliveryDisabled(delivery.id)"
+                    :allow-partial-clicks="isAmountManuallySet"
                     :aria-label="`Select delivery from ${formatDate(delivery.delivery_date)}`"
+                    :clickable-row="true"
                     @change="handleDeliveryTriStateChange(delivery.id, $event)"
                   />
                 </div>
@@ -304,18 +314,28 @@
             <div v-if="selectableBookings.length > 0">
               <h4 class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{{ t('common.serviceBookings') }}</h4>
               <div class="space-y-2 max-h-40 overflow-y-auto">
-                <div v-for="booking in selectableBookings" :key="booking.id" :class="[
-                  'p-2 rounded transition-colors',
-                  isAccountRequiredForSelection 
-                    ? 'opacity-50' 
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-700'
-                ]">
+                <div 
+                  v-for="booking in selectableBookings" 
+                  :key="booking.id" 
+                  :class="[
+                    'p-2 rounded transition-colors cursor-pointer',
+                    isAccountRequiredForSelection 
+                      ? 'opacity-50 cursor-not-allowed' 
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-700',
+                    (loading || isAccountRequiredForSelection || isBookingDisabled(booking.id))
+                      ? 'cursor-not-allowed'
+                      : 'cursor-pointer'
+                  ]"
+                  @click="handleBookingRowClick(booking.id)"
+                >
                   <TriStateCheckbox
                     :id="`booking-${booking.id}`"
                     :label="booking.expand?.service?.name || 'Service'"
-                    :secondary-text="`${formatDate(booking.start_date)} | Total: ₹${booking.total_amount.toFixed(2)}`"
+                    :secondary-text="`${formatDate(booking.start_date)} | Total: ₹${booking.total_amount.toFixed(2)} | Paid: ₹${booking.paid_amount.toFixed(2)} | Outstanding: ₹${booking.outstanding.toFixed(2)}`"
                     :due-amount="booking.outstanding"
                     :allocated-amount="form.service_booking_allocations[booking.id]?.amount || 0"
+                    :allow-partial-clicks="isAmountManuallySet"
+                    :clickable-row="true"
                     :disabled="loading || isAccountRequiredForSelection || isBookingDisabled(booking.id)"
                     :aria-label="`Select service booking for ${booking.expand?.service?.name || 'Service'}`"
                     @change="handleServiceBookingTriStateChange(booking.id, $event)"
@@ -454,6 +474,73 @@ const form = reactive({
 const isAmountManuallySet = ref(false);
 const isUpdatingAmountFromSelections = ref(false);
 
+// Row click handlers
+const handleDeliveryRowClick = (deliveryId: string) => {
+  if (loading.value || isAccountRequiredForSelection.value || isDeliveryDisabled(deliveryId)) {
+    return; // Don't handle click if disabled
+  }
+  
+  // Simulate the tri-state checkbox behavior
+  const currentAmount = form.delivery_allocations[deliveryId]?.amount || 0;
+  const delivery = selectableDeliveries.value.find(d => d.id === deliveryId);
+  if (!delivery) return;
+  
+  let newAllocatedAmount: number;
+  
+  if (isAmountManuallySet.value) {
+    // Amount-driven mode: cycle through states
+    if (currentAmount <= 0) {
+      newAllocatedAmount = delivery.outstanding; // Full amount
+    } else if (currentAmount >= delivery.outstanding) {
+      newAllocatedAmount = delivery.outstanding * 0.5; // Half amount (partial)
+    } else {
+      newAllocatedAmount = 0; // No amount
+    }
+  } else {
+    // Selection-driven mode: simple toggle
+    if (currentAmount <= 0) {
+      newAllocatedAmount = delivery.outstanding; // Full amount
+    } else {
+      newAllocatedAmount = 0; // No amount
+    }
+  }
+  
+  handleDeliveryTriStateChange(deliveryId, { allocatedAmount: newAllocatedAmount });
+};
+
+const handleBookingRowClick = (bookingId: string) => {
+  if (loading.value || isAccountRequiredForSelection.value || isBookingDisabled(bookingId)) {
+    return; // Don't handle click if disabled
+  }
+  
+  // Simulate the tri-state checkbox behavior
+  const currentAmount = form.service_booking_allocations[bookingId]?.amount || 0;
+  const booking = selectableBookings.value.find(b => b.id === bookingId);
+  if (!booking) return;
+  
+  let newAllocatedAmount: number;
+  
+  if (isAmountManuallySet.value) {
+    // Amount-driven mode: cycle through states
+    if (currentAmount <= 0) {
+      newAllocatedAmount = booking.outstanding; // Full amount
+    } else if (currentAmount >= booking.outstanding) {
+      newAllocatedAmount = booking.outstanding * 0.5; // Half amount (partial)
+    } else {
+      newAllocatedAmount = 0; // No amount
+    }
+  } else {
+    // Selection-driven mode: simple toggle
+    if (currentAmount <= 0) {
+      newAllocatedAmount = booking.outstanding; // Full amount
+    } else {
+      newAllocatedAmount = 0; // No amount
+    }
+  }
+  
+  handleServiceBookingTriStateChange(bookingId, { allocatedAmount: newAllocatedAmount });
+};
+
 // Vendor data
 const vendorOutstanding = ref(0);
 const vendorPendingItems = ref(0);
@@ -573,17 +660,29 @@ const showAllocationProgress = computed(() => {
 });
 
 const showDeliverySelection = computed(() => {
-  return form.vendor && (
-    (props.mode !== 'EDIT' && form.amount > 0) || 
-    (props.mode === 'EDIT')
-  );
+  return form.vendor; // Show delivery selection whenever a vendor is selected
 });
+
+// Helper function to calculate actual paid amount from payment allocations
+const calculatePaidAmount = (itemId: string, itemType: 'delivery' | 'service_booking'): number => {
+  return props.payments
+    .filter(payment => payment.expand?.payment_allocations)
+    .flatMap(payment => payment.expand.payment_allocations)
+    .filter(allocation => {
+      if (itemType === 'delivery') {
+        return allocation.delivery === itemId;
+      } else {
+        return allocation.service_booking === itemId;
+      }
+    })
+    .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
+};
 
 const selectableDeliveries = computed(() => {
   if (!form.vendor) return [];
   
   const vendorDeliveries = props.deliveries.filter(delivery => 
-    delivery.vendor === form.vendor && delivery.payment_status !== 'paid'
+    delivery.vendor === form.vendor
   );
   
   if (props.mode === 'EDIT') {
@@ -594,30 +693,40 @@ const selectableDeliveries = computed(() => {
     
     return vendorDeliveries
       .filter(delivery => !allocatedDeliveryIds.includes(delivery.id!))
-      .map(delivery => ({
-        id: delivery.id!,
-        delivery_date: delivery.delivery_date,
-        total_amount: delivery.total_amount,
-        paid_amount: delivery.paid_amount || 0,
-        outstanding: delivery.total_amount - (delivery.paid_amount || 0)
-      }))
-      .filter(d => d.outstanding > 0);
+      .map(delivery => {
+        const paidAmount = calculatePaidAmount(delivery.id!, 'delivery');
+        const outstanding = delivery.total_amount - paidAmount;
+        return {
+          id: delivery.id!,
+          delivery_date: delivery.delivery_date,
+          total_amount: delivery.total_amount,
+          paid_amount: paidAmount,
+          outstanding: outstanding
+        };
+      })
+      .filter(d => d.outstanding > 0)
+      .sort((a, b) => new Date(a.delivery_date).getTime() - new Date(b.delivery_date).getTime());
   }
   
-  return vendorDeliveries.map(delivery => ({
-    id: delivery.id!,
-    delivery_date: delivery.delivery_date,
-    total_amount: delivery.total_amount,
-    paid_amount: delivery.paid_amount || 0,
-    outstanding: delivery.total_amount - (delivery.paid_amount || 0)
-  })).filter(d => d.outstanding > 0);
+  return vendorDeliveries.map(delivery => {
+    const paidAmount = calculatePaidAmount(delivery.id!, 'delivery');
+    const outstanding = delivery.total_amount - paidAmount;
+    return {
+      id: delivery.id!,
+      delivery_date: delivery.delivery_date,
+      total_amount: delivery.total_amount,
+      paid_amount: paidAmount,
+      outstanding: outstanding
+    };
+  }).filter(d => d.outstanding > 0)
+    .sort((a, b) => new Date(a.delivery_date).getTime() - new Date(b.delivery_date).getTime());
 });
 
 const selectableBookings = computed(() => {
   if (!form.vendor) return [];
   
   const vendorBookings = props.serviceBookings.filter(booking => 
-    booking.vendor === form.vendor && booking.payment_status !== 'paid'
+    booking.vendor === form.vendor
   );
   
   if (props.mode === 'EDIT') {
@@ -628,25 +737,35 @@ const selectableBookings = computed(() => {
     
     return vendorBookings
       .filter(booking => !allocatedBookingIds.includes(booking.id!))
-      .map(booking => ({
-        id: booking.id!,
-        start_date: booking.start_date,
-        total_amount: booking.total_amount,
-        paid_amount: booking.paid_amount || 0,
-        outstanding: booking.total_amount - (booking.paid_amount || 0),
-        expand: booking.expand
-      }))
-      .filter(b => b.outstanding > 0);
+      .map(booking => {
+        const paidAmount = calculatePaidAmount(booking.id!, 'service_booking');
+        const outstanding = booking.total_amount - paidAmount;
+        return {
+          id: booking.id!,
+          start_date: booking.start_date,
+          total_amount: booking.total_amount,
+          paid_amount: paidAmount,
+          outstanding: outstanding,
+          expand: booking.expand
+        };
+      })
+      .filter(b => b.outstanding > 0)
+      .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
   }
   
-  return vendorBookings.map(booking => ({
-    id: booking.id!,
-    start_date: booking.start_date,
-    total_amount: booking.total_amount,
-    paid_amount: booking.paid_amount || 0,
-    outstanding: booking.total_amount - (booking.paid_amount || 0),
-    expand: booking.expand
-  })).filter(b => b.outstanding > 0);
+  return vendorBookings.map(booking => {
+    const paidAmount = calculatePaidAmount(booking.id!, 'service_booking');
+    const outstanding = booking.total_amount - paidAmount;
+    return {
+      id: booking.id!,
+      start_date: booking.start_date,
+      total_amount: booking.total_amount,
+      paid_amount: paidAmount,
+      outstanding: outstanding,
+      expand: booking.expand
+    };
+  }).filter(b => b.outstanding > 0)
+    .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
 });
 
 const submitButtonText = computed(() => {
@@ -922,6 +1041,23 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
 };
 
+// Computed property for actual vendor outstanding amount based on current selectable items
+const actualVendorOutstanding = computed(() => {
+  if (!form.vendor) return 0;
+  
+  // Calculate outstanding from selectable deliveries (already filtered and calculated correctly)
+  const deliveryOutstanding = selectableDeliveries.value.reduce((sum, delivery) => {
+    return sum + delivery.outstanding;
+  }, 0);
+  
+  // Calculate outstanding from selectable bookings (already filtered and calculated correctly)
+  const serviceOutstanding = selectableBookings.value.reduce((sum, booking) => {
+    return sum + booking.outstanding;
+  }, 0);
+  
+  return deliveryOutstanding + serviceOutstanding;
+});
+
 const calculateVendorOutstanding = () => {
   if (!form.vendor) {
     vendorOutstanding.value = 0;
@@ -929,32 +1065,9 @@ const calculateVendorOutstanding = () => {
     return;
   }
   
-  // Calculate outstanding from deliveries
-  const vendorDeliveries = props.deliveries.filter(delivery => 
-    delivery.vendor === form.vendor
-  );
-  const deliveryOutstanding = vendorDeliveries.reduce((sum, delivery) => {
-    const outstanding = delivery.total_amount - (delivery.paid_amount || 0);
-    return sum + (outstanding > 0 ? outstanding : 0);
-  }, 0);
-  
-  // Calculate outstanding from service bookings
-  const vendorBookings = props.serviceBookings.filter(booking => 
-    booking.vendor === form.vendor
-  );
-  const serviceOutstanding = vendorBookings.reduce((sum, booking) => {
-    const outstanding = booking.total_amount - (booking.paid_amount || 0);
-    return sum + (outstanding > 0 ? outstanding : 0);
-  }, 0);
-  
-  // Total outstanding before credit notes
-  const totalOutstanding = deliveryOutstanding + serviceOutstanding;
-  
-  // Note: Don't automatically subtract all available credit notes from outstanding
-  // as user should explicitly choose which credit notes to use
-  vendorOutstanding.value = totalOutstanding;
-  vendorPendingItems.value = vendorDeliveries.filter(d => d.payment_status !== 'paid').length + 
-                            vendorBookings.filter(b => b.payment_status !== 'paid').length;
+  // Use the computed actual outstanding amount
+  vendorOutstanding.value = actualVendorOutstanding.value;
+  vendorPendingItems.value = selectableDeliveries.value.length + selectableBookings.value.length;
 };
 
 const handleVendorChange = () => {
@@ -965,14 +1078,24 @@ const handleVendorChange = () => {
   isAmountManuallySet.value = false;
   isUpdatingAmountFromSelections.value = false;
   
-  // For PAY_NOW mode or when suggested, auto-fill the amount
-  if (props.mode === 'PAY_NOW' || (props.mode === 'CREATE' && form.amount === 0)) {
-    form.amount = vendorOutstanding.value;
-  }
-  
   // Clear selections when vendor changes
   clearAllSelections();
   form.credit_notes = [];
+  
+  // For PAY_NOW mode or when suggested, auto-fill the amount
+  if (props.mode === 'PAY_NOW' || (props.mode === 'CREATE' && form.amount === 0)) {
+    form.amount = actualVendorOutstanding.value;
+    
+    // Auto-select deliveries/bookings when amount is set programmatically
+    if (form.amount > 0) {
+      // Mark as NOT manually set since this is programmatic
+      isAmountManuallySet.value = false;
+      isUpdatingAmountFromSelections.value = false;
+      
+      // Trigger auto-selection
+      updateDeliverySelectionFromAmount();
+    }
+  }
 };
 
 const handleVendorSelected = (vendor: Vendor) => {
@@ -1174,11 +1297,18 @@ const handleCreditNoteChange = () => {
 
 // TODO - This needs to account for the credit notes better, esp. partial usage
 const payAllOutstanding = () => {
-  // Calculate total payment needed
-  const totalPaymentNeeded = vendorOutstanding.value;
+  // Calculate total payment needed using actual outstanding amount
+  const totalPaymentNeeded = actualVendorOutstanding.value;
+  
+  // Reset manual amount state - this switches to selection-driven mode
+  isAmountManuallySet.value = false;
+  isUpdatingAmountFromSelections.value = false;
   
   // The form amount should be the total needed payment
   form.amount = totalPaymentNeeded;
+  
+  // Auto-select deliveries/bookings to match the amount (selection-driven behavior)
+  updateDeliverySelectionFromAmount();
   
   // Auto-select all available credit notes if not already selected
   if (availableCreditNotes.value.length > 0 && form.credit_notes.length === 0) {

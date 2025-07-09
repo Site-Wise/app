@@ -2,12 +2,12 @@
   <div class="flex items-center space-x-3">
     <button
       type="button"
-      @click="handleClick"
+      @click="clickableRow ? undefined : handleClick"
       :disabled="disabled"
       :class="[
         'relative w-5 h-5 rounded border-2 transition-all duration-200',
         'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500',
-        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+        disabled ? 'opacity-50 cursor-not-allowed' : clickableRow ? 'cursor-default' : 'cursor-pointer',
         checkboxClasses
       ]"
       :aria-checked="state === 'checked' ? 'true' : state === 'partial' ? 'mixed' : 'false'"
@@ -38,10 +38,11 @@
           v-if="label"
           :for="id"
           :class="[
-            'text-sm font-medium cursor-pointer',
+            'text-sm font-medium',
+            clickableRow ? 'cursor-default' : 'cursor-pointer',
             disabled ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
           ]"
-          @click="handleClick"
+          @click="clickableRow ? undefined : handleClick"
         >
           {{ label }}
         </label>
@@ -97,6 +98,8 @@ interface Props {
   allocatedAmount?: number;
   disabled?: boolean;
   ariaLabel?: string;
+  allowPartialClicks?: boolean; // If true, allows cycling through partial state
+  clickableRow?: boolean; // If true, the parent row handles clicks
 }
 
 interface Emits {
@@ -110,7 +113,9 @@ const props = withDefaults(defineProps<Props>(), {
   secondaryText: '',
   allocatedAmount: 0,
   disabled: false,
-  ariaLabel: ''
+  ariaLabel: '',
+  allowPartialClicks: false,
+  clickableRow: false
 });
 
 const emit = defineEmits<Emits>();
@@ -155,24 +160,40 @@ const statusIndicatorClasses = computed(() => {
 
 // Methods
 const handleClick = () => {
-  if (props.disabled) return;
+  if (props.disabled || props.clickableRow) return; // Don't handle click if row is clickable
   
-  // Cycle through allocation amounts: 0 → full → half → 0
-  // State is automatically determined by the amounts
   let newAllocatedAmount: number;
   
-  switch (state.value) {
-    case 'unchecked':
-      newAllocatedAmount = props.dueAmount; // Full amount
-      break;
-    case 'checked':
-      newAllocatedAmount = props.dueAmount * 0.5; // Half amount (partial)
-      break;
-    case 'partial':
-      newAllocatedAmount = 0; // No amount
-      break;
-    default:
-      newAllocatedAmount = 0;
+  if (props.allowPartialClicks) {
+    // Cycle through allocation amounts: 0 → full → half → 0
+    // Used when manually adjusting amounts
+    switch (state.value) {
+      case 'unchecked':
+        newAllocatedAmount = props.dueAmount; // Full amount
+        break;
+      case 'checked':
+        newAllocatedAmount = props.dueAmount * 0.5; // Half amount (partial)
+        break;
+      case 'partial':
+        newAllocatedAmount = 0; // No amount
+        break;
+      default:
+        newAllocatedAmount = 0;
+    }
+  } else {
+    // Simple toggle: 0 → full → 0
+    // Used when selections drive the amount
+    switch (state.value) {
+      case 'unchecked':
+        newAllocatedAmount = props.dueAmount; // Full amount
+        break;
+      case 'checked':
+      case 'partial':
+        newAllocatedAmount = 0; // No amount
+        break;
+      default:
+        newAllocatedAmount = 0;
+    }
   }
   
   emit('update:allocatedAmount', newAllocatedAmount);
