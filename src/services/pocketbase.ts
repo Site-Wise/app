@@ -242,8 +242,8 @@ export interface ServiceBooking {
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   completion_photos?: string[];
   notes?: string;
-  payment_status: 'pending' | 'partial' | 'paid';
-  paid_amount: number;
+  payment_status: 'pending' | 'partial' | 'paid'; // Calculated from allocations
+  paid_amount: number; // Calculated from allocations
   site: string; // Site ID
   created?: string;
   updated?: string;
@@ -262,8 +262,8 @@ export interface Delivery {
   photos?: string[];
   notes?: string;
   total_amount: number; // Sum of all items
-  payment_status: 'pending' | 'partial' | 'paid';
-  paid_amount: number;
+  payment_status: 'pending' | 'partial' | 'paid'; // Calculated from allocations
+  paid_amount: number; // Calculated from allocations
   delivery_items?: string[]; // Array of delivery_item IDs
   site: string; // Site ID
   created?: string;
@@ -342,17 +342,17 @@ export interface AccountTransaction {
   reference?: string;
   notes?: string;
   vendor?: string; // Vendor ID (optional, for payment-related transactions)
+  payment?: string; // Payment ID (optional, for debit transactions linked to payments)
+  vendor_refund?: string; // VendorRefund ID (optional, for credit transactions linked to vendor refunds)
   transaction_category?: 'payment' | 'refund' | 'credit_adjustment' | 'manual'; // Category of transaction
-  related_return?: string; // VendorReturn ID for refund transactions
-  credit_note?: string; // VendorCreditNote ID for credit-related transactions
   site: string; // Site ID
   created?: string;
   updated?: string;
   expand?: {
     account?: Account;
     vendor?: Vendor;
-    related_return?: VendorReturn;
-    credit_note?: VendorCreditNote;
+    payment?: Payment;
+    vendor_refund?: VendorRefund;
   };
 }
 
@@ -421,7 +421,7 @@ export interface VendorRefund {
 }
 
 export interface VendorCreditNote {
-  id?: string;
+  id: string;
   vendor: string; // Vendor ID
   credit_amount: number; // Original credit amount
   balance: number; // Remaining balance
@@ -1586,7 +1586,19 @@ export class ServiceBookingService {
     return record.completion_photos[record.completion_photos.length - 1];
   }
 
-  private mapRecordToServiceBooking(record: RecordModel): ServiceBooking {
+  async calculatePaidAmount(bookingId: string): Promise<number> {
+    const allocations = await paymentAllocationService.getByServiceBooking(bookingId);
+    return allocations.reduce((total, allocation) => total + allocation.allocated_amount, 0);
+  }
+
+  async calculatePaymentStatus(bookingId: string, totalAmount: number): Promise<'pending' | 'partial' | 'paid'> {
+    const paidAmount = await this.calculatePaidAmount(bookingId);
+    if (paidAmount === 0) return 'pending';
+    if (paidAmount >= totalAmount) return 'paid';
+    return 'partial';
+  }
+
+  mapRecordToServiceBooking(record: RecordModel): ServiceBooking {
     return {
       id: record.id,
       service: record.service,
@@ -1599,8 +1611,8 @@ export class ServiceBookingService {
       status: record.status,
       completion_photos: record.completion_photos,
       notes: record.notes,
-      payment_status: record.payment_status,
-      paid_amount: record.paid_amount,
+      payment_status: 'pending' as const, // Will be calculated when needed
+      paid_amount: 0, // Will be calculated when needed
       site: record.site,
       created: record.created,
       updated: record.updated,
@@ -1719,7 +1731,9 @@ export class PaymentService {
         description: `Payment to ${vendorName}`,
         reference: data.reference,
         notes: data.notes,
-        vendor: data.vendor
+        vendor: data.vendor,
+        payment: record.id,
+        transaction_category: 'payment'
       });
     }
 
@@ -1740,7 +1754,8 @@ export class PaymentService {
       if (remainingAmount <= 0) break;
       
       const delivery = await pb.collection('deliveries').getOne(deliveryId);
-      const outstandingAmount = delivery.total_amount - delivery.paid_amount;
+      const currentPaidAmount = await deliveryService.calculatePaidAmount(deliveryId);
+      const outstandingAmount = delivery.total_amount - currentPaidAmount;
       const allocatedAmount = Math.min(remainingAmount, outstandingAmount);
       
       // Create payment allocation record
@@ -1751,15 +1766,6 @@ export class PaymentService {
         site: siteId
       });
       
-      // Update delivery payment status
-      const newPaidAmount = delivery.paid_amount + allocatedAmount;
-      const newStatus = newPaidAmount >= delivery.total_amount ? 'paid' : 'partial';
-      
-      await pb.collection('deliveries').update(deliveryId, {
-        paid_amount: newPaidAmount,
-        payment_status: newStatus
-      });
-      
       remainingAmount -= allocatedAmount;
     }
     
@@ -1768,7 +1774,8 @@ export class PaymentService {
       if (remainingAmount <= 0) break;
       
       const booking = await pb.collection('service_bookings').getOne(bookingId);
-      const outstandingAmount = booking.total_amount - booking.paid_amount;
+      const currentPaidAmount = await serviceBookingService.calculatePaidAmount(bookingId);
+      const outstandingAmount = booking.total_amount - currentPaidAmount;
       const allocatedAmount = Math.min(remainingAmount, outstandingAmount);
       
       // Create payment allocation record
@@ -1777,15 +1784,6 @@ export class PaymentService {
         service_booking: bookingId,
         allocated_amount: allocatedAmount,
         site: siteId
-      });
-      
-      // Update service booking payment status
-      const newPaidAmount = booking.paid_amount + allocatedAmount;
-      const newStatus = newPaidAmount >= booking.total_amount ? 'paid' : 'partial';
-      
-      await pb.collection('service_bookings').update(bookingId, {
-        paid_amount: newPaidAmount,
-        payment_status: newStatus
       });
       
       remainingAmount -= allocatedAmount;
@@ -1802,6 +1800,23 @@ export class PaymentService {
     }
   }
 
+  async updateAllocations(paymentId: string, deliveryIds: string[], serviceBookingIds: string[]): Promise<void> {
+    // Get the payment to determine total amount
+    const payment = await this.getById(paymentId);
+    if (!payment) throw new Error('Payment not found');
+    
+    // Get existing allocations
+    const existingAllocations = await paymentAllocationService.getByPayment(paymentId);
+    
+    // No need to reverse allocations since we're using calculated values now
+    
+    // Delete all existing allocations
+    await paymentAllocationService.deleteByPayment(paymentId);
+    
+    // Create new allocations with the full payment amount
+    await this.handlePaymentAllocations(paymentId, deliveryIds, serviceBookingIds, payment.amount);
+  }
+
   async delete(id: string): Promise<boolean> {
     // Check permissions
     const userRole = getCurrentUserRole();
@@ -1810,36 +1825,50 @@ export class PaymentService {
       throw new Error('Permission denied: Cannot delete payments');
     }
 
-    // Get payment allocations to reverse them
+    // Get payment allocations - payment can only be deleted if no allocations exist
     const allocations = await paymentAllocationService.getByPayment(id);
-    
-    // Reverse payment status updates
-    for (const allocation of allocations) {
-      if (allocation.delivery) {
-        const delivery = await pb.collection('deliveries').getOne(allocation.delivery);
-        const newPaidAmount = delivery.paid_amount - allocation.allocated_amount;
-        const newStatus = newPaidAmount <= 0 ? 'pending' : (newPaidAmount >= delivery.total_amount ? 'paid' : 'partial');
-        
-        await pb.collection('deliveries').update(allocation.delivery, {
-          paid_amount: Math.max(0, newPaidAmount),
-          payment_status: newStatus
-        });
-      }
-      
-      if (allocation.service_booking) {
-        const booking = await pb.collection('service_bookings').getOne(allocation.service_booking);
-        const newPaidAmount = booking.paid_amount - allocation.allocated_amount;
-        const newStatus = newPaidAmount <= 0 ? 'pending' : (newPaidAmount >= booking.total_amount ? 'paid' : 'partial');
-        
-        await pb.collection('service_bookings').update(allocation.service_booking, {
-          paid_amount: Math.max(0, newPaidAmount),
-          payment_status: newStatus
-        });
-      }
+    if (allocations.length > 0) {
+      throw new Error('Cannot delete payment with existing allocations. Please remove all allocations first.');
     }
     
-    // Delete payment allocations
-    await paymentAllocationService.deleteByPayment(id);
+    // Get the payment to find related account transaction
+    const payment = await this.getById(id);
+    if (!payment) {
+      throw new Error('Payment not found');
+    }
+    
+    // Get credit note usage records to restore balances before deletion
+    try {
+      const creditNoteUsages = await creditNoteUsageService.getByPayment(id);
+      
+      // Restore credit note balances
+      for (const usage of creditNoteUsages) {
+        if (usage.credit_note) {
+          await vendorCreditNoteService.updateBalance(usage.credit_note, usage.used_amount);
+        }
+      }
+      
+      // Delete credit note usage records
+      await creditNoteUsageService.deleteByPayment(id);
+    } catch (error) {
+      console.error('Error deleting credit note usage records:', error);
+      // Continue with payment deletion even if credit note usage deletion fails
+    }
+    
+    // Find and delete the related account transaction
+    try {
+      const accountTransactions = await accountTransactionService.getByAccount(payment.account);
+      const relatedTransaction = accountTransactions.find(
+        transaction => transaction.payment === id && transaction.type === 'debit'
+      );
+      
+      if (relatedTransaction && relatedTransaction.id) {
+        await pb.collection('account_transactions').delete(relatedTransaction.id);
+      }
+    } catch (error) {
+      console.error('Error deleting related account transaction:', error);
+      // Continue with payment deletion even if account transaction deletion fails
+    }
     
     // Delete the payment
     await pb.collection('payments').delete(id);
@@ -1868,7 +1897,7 @@ export class PaymentService {
         deliveries: record.expand.deliveries ?
           record.expand.deliveries.map((delivery: RecordModel) => deliveryService.mapRecordToDelivery(delivery)) : undefined,
         service_bookings: record.expand.service_bookings ?
-          record.expand.service_bookings.map((booking: RecordModel) => this.mapRecordToServiceBooking(booking)) : undefined,
+          record.expand.service_bookings.map((booking: RecordModel) => serviceBookingService.mapRecordToServiceBooking(booking)) : undefined,
         payment_allocations: record.expand.payment_allocations ?
           record.expand.payment_allocations.map((allocation: RecordModel) => paymentAllocationService.mapRecordToPaymentAllocation(allocation)) : undefined,
         credit_notes: record.expand.credit_notes ?
@@ -1910,26 +1939,6 @@ export class PaymentService {
   }
 
 
-  private mapRecordToServiceBooking(record: RecordModel): ServiceBooking {
-    return {
-      id: record.id,
-      service: record.service,
-      vendor: record.vendor,
-      start_date: record.start_date,
-      end_date: record.end_date,
-      duration: record.duration,
-      unit_rate: record.unit_rate,
-      total_amount: record.total_amount,
-      status: record.status,
-      completion_photos: record.completion_photos,
-      notes: record.notes,
-      payment_status: record.payment_status,
-      paid_amount: record.paid_amount,
-      site: record.site,
-      created: record.created,
-      updated: record.updated
-    };
-  }
 
   private async validateAndCalculateCreditNoteAmount(creditNoteIds: string[]): Promise<number> {
     let totalCreditAmount = 0;
@@ -2194,7 +2203,7 @@ export class AccountTransactionService {
 
     const records = await pb.collection('account_transactions').getFullList({
       filter: `site="${siteId}"`,
-      expand: 'account,vendor,related_return,credit_note',
+      expand: 'account,vendor,payment,vendor_refund',
       sort: '-transaction_date'
     });
     return records.map(record => this.mapRecordToAccountTransaction(record));
@@ -2207,7 +2216,7 @@ export class AccountTransactionService {
     try {
       const record = await pb.collection('account_transactions').getOne(id, {
         filter: `site="${siteId}"`,
-        expand: 'account,vendor,related_return,credit_note'
+        expand: 'account,vendor,payment,vendor_refund,credit_note'
       });
       return this.mapRecordToAccountTransaction(record);
     } catch (error) {
@@ -2221,7 +2230,7 @@ export class AccountTransactionService {
 
     const records = await pb.collection('account_transactions').getFullList({
       filter: `site="${siteId}" && account="${accountId}"`,
-      expand: 'account,vendor,related_return,credit_note',
+      expand: 'account,vendor,payment,vendor_refund',
       sort: '-transaction_date'
     });
     return records.map(record => this.mapRecordToAccountTransaction(record));
@@ -2322,51 +2331,6 @@ export class AccountTransactionService {
     });
   }
 
-  async createRefundTransaction(data: {
-    account: string;
-    amount: number;
-    vendor: string;
-    refund_date: string;
-    reference?: string;
-    notes?: string;
-    return_id?: string;
-  }): Promise<AccountTransaction> {
-    return this.create({
-      account: data.account,
-      type: 'credit',
-      amount: data.amount,
-      transaction_date: data.refund_date,
-      description: `Refund from vendor`,
-      reference: data.reference,
-      notes: data.notes,
-      vendor: data.vendor,
-      transaction_category: 'refund',
-      related_return: data.return_id
-    });
-  }
-
-  async createCreditAdjustmentTransaction(data: {
-    account: string;
-    amount: number;
-    vendor: string;
-    transaction_date: string;
-    reference?: string;
-    notes?: string;
-    credit_note_id?: string;
-  }): Promise<AccountTransaction> {
-    return this.create({
-      account: data.account,
-      type: 'debit',
-      amount: data.amount,
-      transaction_date: data.transaction_date,
-      description: `Credit note applied`,
-      reference: data.reference,
-      notes: data.notes,
-      vendor: data.vendor,
-      transaction_category: 'credit_adjustment',
-      credit_note: data.credit_note_id
-    });
-  }
 
   private mapRecordToAccountTransaction(record: RecordModel): AccountTransaction {
     return {
@@ -2379,39 +2343,18 @@ export class AccountTransactionService {
       reference: record.reference,
       notes: record.notes,
       vendor: record.vendor,
+      payment: record.payment,
+      vendor_refund: record.vendor_refund,
       transaction_category: record.transaction_category,
-      related_return: record.related_return,
-      credit_note: record.credit_note,
       site: record.site,
       created: record.created,
       updated: record.updated,
       expand: record.expand ? {
         account: record.expand.account ? this.mapRecordToAccount(record.expand.account) : undefined,
         vendor: record.expand.vendor ? this.mapRecordToVendor(record.expand.vendor) : undefined,
-        related_return: record.expand.related_return ? this.mapRecordToVendorReturn(record.expand.related_return) : undefined,
-        credit_note: record.expand.credit_note ? this.mapRecordToCreditNote(record.expand.credit_note) : undefined
+        payment: record.expand.payment ? paymentService.mapRecordToPayment(record.expand.payment) : undefined,
+        vendor_refund: record.expand.vendor_refund ? vendorRefundService.mapRecordToVendorRefund(record.expand.vendor_refund) : undefined
       } : undefined
-    };
-  }
-
-  private mapRecordToVendorReturn(record: RecordModel): VendorReturn {
-    return {
-      id: record.id,
-      vendor: record.vendor,
-      return_date: record.return_date,
-      reason: record.reason,
-      status: record.status,
-      notes: record.notes,
-      photos: record.photos,
-      approval_notes: record.approval_notes,
-      approved_by: record.approved_by,
-      approved_at: record.approved_at,
-      total_return_amount: record.total_return_amount,
-      actual_refund_amount: record.actual_refund_amount,
-      completion_date: record.completion_date,
-      site: record.site,
-      created: record.created,
-      updated: record.updated
     };
   }
 
@@ -3054,10 +2997,12 @@ export class VendorRefundService {
       type: 'credit',
       amount: data.refund_amount,
       transaction_date: data.refund_date,
-      description: `Refund to ${vendorName}`,
+      description: `Refund from ${vendorName}`,
       reference: data.reference,
       notes: data.notes,
-      vendor: data.vendor
+      vendor: data.vendor,
+      vendor_refund: record.id,
+      transaction_category: 'refund'
     });
 
     // Update the vendor return status
@@ -3078,7 +3023,7 @@ export class VendorRefundService {
     }
   }
 
-  private mapRecordToVendorRefund(record: RecordModel): VendorRefund {
+  mapRecordToVendorRefund(record: RecordModel): VendorRefund {
     return {
       id: record.id,
       vendor_return: record.vendor_return,
@@ -3377,6 +3322,20 @@ class CreditNoteUsageService {
     return this.mapRecordToUsage(record);
   }
 
+  async delete(id: string): Promise<boolean> {
+    await pb.collection('credit_note_usage').delete(id);
+    return true;
+  }
+
+  async deleteByPayment(paymentId: string): Promise<void> {
+    const usageRecords = await this.getByPayment(paymentId);
+    for (const usage of usageRecords) {
+      if (usage.id) {
+        await pb.collection('credit_note_usage').delete(usage.id);
+      }
+    }
+  }
+
   private mapRecordToUsage(record: RecordModel): CreditNoteUsage {
     return {
       id: record.id,
@@ -3526,6 +3485,18 @@ export class DeliveryService {
     return record.photos.slice(-files.length);
   }
 
+  async calculatePaidAmount(deliveryId: string): Promise<number> {
+    const allocations = await paymentAllocationService.getByDelivery(deliveryId);
+    return allocations.reduce((total, allocation) => total + allocation.allocated_amount, 0);
+  }
+
+  async calculatePaymentStatus(deliveryId: string, totalAmount: number): Promise<'pending' | 'partial' | 'paid'> {
+    const paidAmount = await this.calculatePaidAmount(deliveryId);
+    if (paidAmount === 0) return 'pending';
+    if (paidAmount >= totalAmount) return 'paid';
+    return 'partial';
+  }
+
   mapRecordToDelivery(record: RecordModel): Delivery {
     return {
       id: record.id,
@@ -3535,8 +3506,8 @@ export class DeliveryService {
       photos: record.photos || [],
       notes: record.notes,
       total_amount: record.total_amount,
-      payment_status: record.payment_status,
-      paid_amount: record.paid_amount,
+      payment_status: 'pending' as const, // Will be calculated when needed
+      paid_amount: 0, // Will be calculated when needed
       delivery_items: record.delivery_items || [],
       site: record.site,
       created: record.created,

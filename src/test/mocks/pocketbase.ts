@@ -338,7 +338,10 @@ export const mockDeliveryService = {
   getById: vi.fn().mockResolvedValue(mockDelivery),
   create: vi.fn().mockResolvedValue(mockDelivery),
   update: vi.fn().mockResolvedValue(mockDelivery),
-  delete: vi.fn().mockResolvedValue(true)
+  delete: vi.fn().mockResolvedValue(true),
+  calculatePaidAmount: vi.fn().mockResolvedValue(0),
+  calculatePaymentStatus: vi.fn().mockResolvedValue('pending'),
+  mapRecordToDelivery: vi.fn().mockResolvedValue(mockDelivery)
 }
 
 export const mockDeliveryItemService = {
@@ -354,7 +357,10 @@ export const mockServiceBookingService = {
   getById: vi.fn().mockResolvedValue(mockServiceBooking),
   create: vi.fn().mockResolvedValue(mockServiceBooking),
   update: vi.fn().mockResolvedValue(mockServiceBooking),
-  delete: vi.fn().mockResolvedValue(true)
+  delete: vi.fn().mockResolvedValue(true),
+  calculatePaidAmount: vi.fn().mockResolvedValue(0),
+  calculatePaymentStatus: vi.fn().mockResolvedValue('pending'),
+  mapRecordToServiceBooking: vi.fn().mockResolvedValue(mockServiceBooking)
 }
 
 export const mockPaymentService = {
@@ -362,7 +368,9 @@ export const mockPaymentService = {
   getById: vi.fn().mockResolvedValue(mockPayment),
   create: vi.fn().mockResolvedValue(mockPayment),
   update: vi.fn().mockResolvedValue(mockPayment),
-  delete: vi.fn().mockResolvedValue(true)
+  delete: vi.fn().mockResolvedValue(true),
+  updateAllocations: vi.fn().mockResolvedValue(undefined),
+  mapRecordToPayment: vi.fn().mockResolvedValue(mockPayment)
 }
 
 export const mockAccountService = {
@@ -387,6 +395,19 @@ export const mockTagService = {
   incrementUsage: vi.fn().mockResolvedValue(undefined)
 }
 
+export const mockPaymentAllocationService = {
+  getAll: vi.fn().mockResolvedValue([]),
+  getById: vi.fn().mockResolvedValue(null),
+  create: vi.fn().mockResolvedValue({}),
+  update: vi.fn().mockResolvedValue({}),
+  delete: vi.fn().mockResolvedValue(true),
+  getByPayment: vi.fn().mockResolvedValue([]),
+  getByDelivery: vi.fn().mockResolvedValue([]),
+  getByServiceBooking: vi.fn().mockResolvedValue([]),
+  deleteByPayment: vi.fn().mockResolvedValue(true),
+  mapRecordToPaymentAllocation: vi.fn().mockReturnValue({})
+}
+
 // PocketBase instance
 export const pb = {
   collection: vi.fn(() => ({
@@ -409,5 +430,6 @@ export const deliveryService = mockDeliveryService
 export const deliveryItemService = mockDeliveryItemService
 export const serviceBookingService = mockServiceBookingService
 export const paymentService = mockPaymentService
+export const paymentAllocationService = mockPaymentAllocationService
 export const accountService = mockAccountService
 export const tagService = mockTagService

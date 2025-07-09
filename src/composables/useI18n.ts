@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue';
+import { translations } from '../locales';
 
 type Language = 'en' | 'hi';
 
@@ -482,5 +483,3 @@ export function useI18n() {
   };
 }
 
-// Import translations
-import { translations } from '../locales';

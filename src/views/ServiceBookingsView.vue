@@ -434,9 +434,7 @@ const form = reactive({
   unit_rate: 0,
   total_amount: 0,
   status: 'scheduled' as ServiceBooking['status'],
-  notes: '',
-  payment_status: 'pending' as 'pending' | 'partial' | 'paid',
-  paid_amount: 0
+  notes: ''
 });
 
 const activeServices = computed(() => {
@@ -512,9 +510,7 @@ const editBooking = (booking: ServiceBooking) => {
     unit_rate: booking.unit_rate,
     total_amount: booking.total_amount,
     status: booking.status,
-    notes: booking.notes || '',
-    payment_status: booking.payment_status,
-    paid_amount: booking.paid_amount
+    notes: booking.notes || ''
   });
 };
 
@@ -592,9 +588,7 @@ const closeModal = () => {
     unit_rate: 0,
     total_amount: 0,
     status: 'scheduled',
-    notes: '',
-    payment_status: 'pending',
-    paid_amount: 0
+    notes: ''
   });
 };
 

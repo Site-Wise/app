@@ -69,17 +69,17 @@
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.availableCreditNotes') }}</label>
               <div class="mt-2 space-y-2 max-h-32 overflow-y-auto">
                 <div 
-                  v-for="creditNote in availableCreditNotes" 
+                  v-for="(creditNote, index) in availableCreditNotes" 
                   :key="creditNote.id"
                   class="flex items-center space-x-3 p-2 border border-gray-200 dark:border-gray-600 rounded-md"
                 >
                   <input
                     :id="`credit-note-${creditNote.id}`"
-                    v-model="form.credit_notes"
+                    v-model="form.credit_notes[index]"
                     :value="creditNote.id"
                     type="checkbox"
                     class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                    @change="handleCreditNoteChange"
+                    @change="handleCreditNoteChange()"
                   />
                   <label :for="`credit-note-${creditNote.id}`" class="flex-1 text-sm">
                     <div class="flex justify-between">
@@ -150,12 +150,12 @@
                 <div class="flex justify-between">
                   <span class="text-gray-700 dark:text-gray-300">Account payment:</span>
                   <span :class="accountPaymentAmount >= 0 ? 'text-gray-900 dark:text-white' : 'text-red-600 dark:text-red-400'">
-                    ₹{{ Math.max(0, accountPaymentAmount).toFixed(2) }}
+                    ₹{{ accountPaymentAmount.toFixed(2) }}
                   </span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-700 dark:text-gray-300">Credit notes:</span>
-                  <span class="text-green-600 dark:text-green-400">₹{{ Math.min(selectedCreditNoteAmount, form.amount).toFixed(2) }}</span>
+                  <span class="text-green-600 dark:text-green-400">₹{{ selectedCreditNoteAmount.toFixed(2) }}</span>
                 </div>
                 <hr class="my-1 border-gray-300 dark:border-gray-600">
                 <div class="flex justify-between font-medium">
@@ -261,7 +261,7 @@
             </div>
             
             <!-- Warning when account is required but not selected -->
-            <div v-if="isAccountRequiredForDeliverySelection" class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+            <div v-if="isAccountRequiredForSelection" class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
               <div class="flex items-center">
                 <svg class="w-5 h-5 text-yellow-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
@@ -277,7 +277,7 @@
               <div class="space-y-2 max-h-40 overflow-y-auto">
                 <div v-for="delivery in selectableDeliveries" :key="delivery.id" :class="[
                   'p-2 rounded transition-colors',
-                  isAccountRequiredForDeliverySelection 
+                  isAccountRequiredForSelection 
                     ? 'opacity-50' 
                     : 'hover:bg-gray-50 dark:hover:bg-gray-700'
                 ]">
@@ -288,7 +288,7 @@
                     :state="form.delivery_allocations[delivery.id]?.state || 'unchecked'"
                     :total-amount="delivery.outstanding"
                     :allocated-amount="form.delivery_allocations[delivery.id]?.amount || 0"
-                    :disabled="isAccountRequiredForDeliverySelection"
+                    :disabled="isAccountRequiredForSelection"
                     :allow-partial-edit="true"
                     :aria-label="`Select delivery from ${formatDate(delivery.delivery_date)}`"
                     @change="handleDeliveryTriStateChange(delivery.id, $event)"
@@ -303,7 +303,7 @@
               <div class="space-y-2 max-h-40 overflow-y-auto">
                 <div v-for="booking in selectableBookings" :key="booking.id" :class="[
                   'p-2 rounded transition-colors',
-                  isAccountRequiredForDeliverySelection 
+                  isAccountRequiredForSelection 
                     ? 'opacity-50' 
                     : 'hover:bg-gray-50 dark:hover:bg-gray-700'
                 ]">
@@ -314,7 +314,7 @@
                     :state="form.service_booking_allocations[booking.id]?.state || 'unchecked'"
                     :total-amount="booking.outstanding"
                     :allocated-amount="form.service_booking_allocations[booking.id]?.amount || 0"
-                    :disabled="isAccountRequiredForDeliverySelection"
+                    :disabled="isAccountRequiredForSelection"
                     :allow-partial-edit="true"
                     :aria-label="`Select service booking for ${booking.expand?.service?.name || 'Service'}`"
                     @change="handleServiceBookingTriStateChange(booking.id, $event)"
@@ -333,7 +333,7 @@
           </div>
 
           <!-- Additional Fields -->
-          <div v-if="mode !== 'EDIT'" class="space-y-4">
+          <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reference</label>
               <input v-model="form.reference" type="text" class="input mt-1" placeholder="Check number, transfer ID, etc." />
@@ -342,18 +342,6 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
               <textarea v-model="form.notes" class="input mt-1" rows="3" placeholder="Payment notes"></textarea>
-            </div>
-          </div>
-          
-          <!-- Additional Fields Display (EDIT mode) -->
-          <div v-else class="space-y-3">
-            <div v-if="payment?.reference" class="flex justify-between">
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Reference:</span>
-              <span class="text-sm text-gray-900 dark:text-white">{{ payment.reference }}</span>
-            </div>
-            <div v-if="payment?.notes" class="flex justify-between">
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Notes:</span>
-              <span class="text-sm text-gray-900 dark:text-white">{{ payment.notes }}</span>
             </div>
           </div>
           
@@ -499,6 +487,44 @@ const modalIconColor = computed(() => {
 const activeAccounts = computed(() => {
   return props.accounts.filter(account => account.is_active);
 });
+
+// Auto-select account based on usage frequency
+const autoSelectAccount = () => {
+  if (props.mode === 'EDIT' || form.account) {
+    return; // Don't auto-select in edit mode or if already selected
+  }
+  
+  const accounts = activeAccounts.value;
+  if (accounts.length === 0) return;
+  
+  if (accounts.length === 1) {
+    // Auto-select the only account
+    form.account = accounts[0].id!;
+    return;
+  }
+  
+  // Find the most frequently used account
+  // We'll use multiple heuristics to make a smart selection:
+  // 1. Prefer accounts with 'cash' type (most commonly used)
+  // 2. Among same types, prefer accounts with higher balances
+  // 3. Prefer accounts with shorter names (likely primary accounts)
+  
+  const sortedAccounts = [...accounts].sort((a, b) => {
+    // First priority: cash accounts
+    if (a.type === 'cash' && b.type !== 'cash') return -1;
+    if (b.type === 'cash' && a.type !== 'cash') return 1;
+    
+    // Second priority: higher balance (more actively used)
+    if (Math.abs(a.current_balance - b.current_balance) > 1000) {
+      return b.current_balance - a.current_balance;
+    }
+    
+    // Third priority: shorter names (likely primary accounts)
+    return a.name.length - b.name.length;
+  });
+  
+  form.account = sortedAccounts[0].id!;
+};
 
 const selectedCreditNoteAmount = computed(() => {
   return form.credit_notes.reduce((total, creditNoteId) => {
@@ -822,7 +848,7 @@ const validationError = computed(() => {
 });
 
 // Check if account is required for delivery selection
-const isAccountRequiredForDeliverySelection = computed(() => {
+const isAccountRequiredForSelection = computed(() => {
   if (props.mode === 'EDIT' || !form.vendor) return false;
   
   // Calculate total available credit
@@ -921,14 +947,16 @@ const handleAmountChange = () => {
   updateDeliverySelectionFromAmount();
 };
 
+// TODO - here we will need to send the credit note amounts so deliveries are selected accordingly
 const updateDeliverySelectionFromAmount = () => {
-  if (props.mode === 'PAY_NOW' && form.amount > 0) {
+  if (form.amount > 0) {
     // Use the new tri-state logic
     autoSelectDeliveriesWithTriState();
   }
 };
 
-const handleDeliverySelectionChange = () => {
+// TODO - need to fix properly for edit mode
+const handlePayableSelectionChange = () => {
   if (props.mode === 'CREATE') {
     // Auto-select credit notes based on selected deliveries
     autoSelectCreditNotes();
@@ -959,7 +987,7 @@ const handleDeliveryTriStateChange = (deliveryId: string, data: { state: 'unchec
   }
   
   // Trigger the existing delivery selection logic
-  handleDeliverySelectionChange();
+  handlePayableSelectionChange();
 };
 
 const handleServiceBookingTriStateChange = (bookingId: string, data: { state: 'unchecked' | 'partial' | 'checked', allocatedAmount: number }) => {
@@ -977,7 +1005,7 @@ const handleServiceBookingTriStateChange = (bookingId: string, data: { state: 'u
   }
   
   // Trigger the existing delivery selection logic
-  handleDeliverySelectionChange();
+  handlePayableSelectionChange();
 };
 
 const loadVendorCreditNotes = async () => {
@@ -1005,6 +1033,7 @@ const loadVendorCreditNotes = async () => {
   }
 };
 
+// TODO - The display for remaining payment is incorrectly tied
 const handleCreditNoteChange = () => {
   // When credit notes are selected/deselected, recalculate if needed
   calculateVendorOutstanding();
@@ -1017,6 +1046,7 @@ const handleCreditNoteChange = () => {
   }
 };
 
+// TODO - This needs to account for the credit notes better, esp. partial usage
 const payAllOutstanding = () => {
   // Calculate total payment needed
   const totalPaymentNeeded = vendorOutstanding.value;
@@ -1066,8 +1096,14 @@ const initializeForm = () => {
     // Don't pre-fill deliveries/bookings for edit mode
     calculateVendorOutstanding();
   }
+  
+  // Auto-select account after form initialization
+  if (props.mode !== 'EDIT') {
+    autoSelectAccount();
+  }
 };
 
+// TODO - ensure that all relevant payment markings are being sent correctly!
 const handleSubmit = async () => {
   if (!isFormValid.value) return;
   
@@ -1119,4 +1155,10 @@ watch(() => props.mode, () => {
     initializeForm();
   }
 });
+
+watch(() => props.accounts, () => {
+  if (props.isVisible && props.mode !== 'EDIT') {
+    autoSelectAccount();
+  }
+}, { deep: true });
 </script>

@@ -130,6 +130,14 @@
                 >
                   <Edit2 class="h-4 w-4" />
                 </button>
+                <button
+                  v-if="canPaymentBeDeleted(payment, payment.expand?.payment_allocations || [])"
+                  @click="deletePayment(payment)"
+                  class="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  :title="t('common.delete')"
+                >
+                  <Trash2 class="h-4 w-4" />
+                </button>
               </div>
 
               <!-- Mobile Dropdown Menu -->
@@ -219,6 +227,14 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                       </svg>
                       {{ t('common.edit') }}
+                    </button>
+                    <button 
+                      v-if="canPaymentBeDeleted(payment, payment.expand?.payment_allocations || [])"
+                      @click="deletePayment(payment); closeMobileMenu()"
+                      class="w-full flex items-center px-3 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
+                    >
+                      <Trash2 class="h-4 w-4 mr-2" />
+                      {{ t('common.delete') }}
                     </button>
                   </div>
                 </Transition>
@@ -342,14 +358,6 @@
               </div>
             </div>
             
-            <!-- Related return info if available -->
-            <div v-if="(viewingPayment.expand as any)?.related_return">
-              <span class="font-medium text-gray-700 dark:text-gray-300">Related Return:</span>
-              <div class="ml-2 mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                <p class="text-sm font-medium text-gray-900 dark:text-white">Return Date: {{ formatDate((viewingPayment.expand as any).related_return.return_date) }}</p>
-                <p class="text-xs text-gray-600 dark:text-gray-400">Amount: ₹{{ (viewingPayment.expand as any).related_return.total_return_amount.toFixed(2) }}</p>
-              </div>
-            </div>
           </div>
           
           <!-- Payment Allocations -->
@@ -401,8 +409,15 @@
             >
               {{ t('common.edit') }}
             </button>
+            <button 
+              v-if="viewingPayment && canPaymentBeDeleted(viewingPayment, viewingPaymentAllocations)" 
+              @click="deletePayment(viewingPayment)" 
+              class="flex-1 btn-danger"
+            >
+              {{ t('common.delete') }}
+            </button>
             <button @click="viewingPayment = null" :class="[
-              viewingPayment && canPaymentBeEdited(viewingPayment, viewingPaymentAllocations) ? 'flex-1' : 'w-full',
+              viewingPayment && (canPaymentBeEdited(viewingPayment, viewingPaymentAllocations) || canPaymentBeDeleted(viewingPayment, viewingPaymentAllocations)) ? 'flex-1' : 'w-full',
               'btn-outline'
             ]">
               {{ t('common.close') }}
@@ -423,6 +438,7 @@ import {
   Plus, 
   Eye, 
   Edit2,
+  Trash2,
   Loader2,
   Banknote,
   Wallet,
@@ -446,10 +462,7 @@ import {
   deliveryService,
   serviceBookingService,
   getCurrentUserRole,
-  getCurrentSiteId,
-  pb,
   type Payment,
- 
   type Vendor,
   type Account,
   type PaymentAllocation
@@ -529,6 +542,10 @@ const canPaymentBeEdited = (payment: Payment, allocations: PaymentAllocation[]):
   return unallocatedAmount > 0;
 };
 
+const canPaymentBeDeleted = (payment: Payment, allocations: PaymentAllocation[]): boolean => {
+  if (!canEditPayment.value) return false;
+  return allocations.length === 0;
+};
 
 const vendorsWithOutstanding = computed(() => {
   if (!vendors.value) return [];
@@ -672,7 +689,29 @@ const startEditPayment = async (payment: Payment) => {
   showPaymentModal.value = true;
 };
 
-
+const deletePayment = async (payment: Payment) => {
+  if (!payment.id) return;
+  
+  const confirmed = confirm(`Are you sure you want to delete the payment of ₹${payment.amount.toFixed(2)} to ${payment.expand?.vendor?.name || 'Unknown Vendor'}? This action cannot be undone.`);
+  
+  if (!confirmed) return;
+  
+  try {
+    await paymentService.delete(payment.id);
+    success(t('messages.deleteSuccess', { item: t('common.payment') }));
+    
+    // Close view modal if it's open for this payment
+    if (viewingPayment.value?.id === payment.id) {
+      viewingPayment.value = null;
+    }
+    
+    // Reload data
+    await reloadAllData();
+  } catch (err: any) {
+    console.error('Error deleting payment:', err);
+    error(err.message || t('messages.error'));
+  }
+};
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
@@ -732,70 +771,8 @@ const handlePaymentModalSubmit = async (data: any) => {
       await paymentService.create(paymentData);
       success(t('messages.createSuccess', { item: t('common.payment') }));
     } else if (mode === 'EDIT') {
-      // Update payment allocations
-      const unallocatedAmount = getUnallocatedAmount(payment, currentAllocations.value);
-      let remainingAmount = unallocatedAmount;
-      
-      // Handle delivery allocations
-      for (const deliveryId of form.deliveries) {
-        if (remainingAmount <= 0) break;
-        
-        const delivery = deliveries.value.find(d => d.id === deliveryId);
-        if (!delivery) continue;
-        
-        const outstanding = delivery.total_amount - delivery.paid_amount;
-        const allocatedAmount = Math.min(remainingAmount, outstanding);
-        
-        // Create payment allocation record
-        await paymentAllocationService.create({
-          payment: payment.id!,
-          delivery: deliveryId,
-          allocated_amount: allocatedAmount,
-          site: getCurrentSiteId()!
-        });
-        
-        // Update delivery payment status
-        const newPaidAmount = delivery.paid_amount + allocatedAmount;
-        const newStatus = newPaidAmount >= delivery.total_amount ? 'paid' : 'partial';
-        
-        await pb.collection('deliveries').update(deliveryId, {
-          paid_amount: newPaidAmount,
-          payment_status: newStatus
-        });
-        
-        remainingAmount -= allocatedAmount;
-      }
-      
-      // Handle service booking allocations
-      for (const bookingId of form.service_bookings) {
-        if (remainingAmount <= 0) break;
-        
-        const booking = serviceBookings.value.find(b => b.id === bookingId);
-        if (!booking) continue;
-        
-        const outstanding = booking.total_amount - booking.paid_amount;
-        const allocatedAmount = Math.min(remainingAmount, outstanding);
-        
-        // Create payment allocation record
-        await paymentAllocationService.create({
-          payment: payment.id!,
-          service_booking: bookingId,
-          allocated_amount: allocatedAmount,
-          site: getCurrentSiteId()!
-        });
-        
-        // Update service booking payment status
-        const newPaidAmount = booking.paid_amount + allocatedAmount;
-        const newStatus = newPaidAmount >= booking.total_amount ? 'paid' : 'partial';
-        
-        await pb.collection('service_bookings').update(bookingId, {
-          paid_amount: newPaidAmount,
-          payment_status: newStatus
-        });
-        
-        remainingAmount -= allocatedAmount;
-      }
-      
+      // Use the service method to update allocations (deletes old and creates new)
+      await paymentService.updateAllocations(payment.id!, form.deliveries, form.service_bookings);
       success(t('messages.updateSuccess', { item: t('common.payment') }));
     }
     
@@ -837,6 +814,13 @@ const getPaymentActions = (payment: Payment) => {
       icon: Edit2,
       variant: 'default' as const,
       hidden: !canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])
+    },
+    {
+      key: 'delete',
+      label: t('common.delete'),
+      icon: Trash2,
+      variant: 'danger' as const,
+      hidden: !canPaymentBeDeleted(payment, payment.expand?.payment_allocations || [])
     }
   ];
 };
@@ -848,6 +832,9 @@ const handlePaymentAction = (payment: Payment, action: string) => {
       break;
     case 'edit':
       startEditPayment(payment);
+      break;
+    case 'delete':
+      deletePayment(payment);
       break;
   }
 };
