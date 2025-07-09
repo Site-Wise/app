@@ -293,6 +293,7 @@
       :accounts="accounts"
       :deliveries="deliveries"
       :service-bookings="serviceBookings"
+      :payments="payments"
       :vendor-id="vendorIdForPayNow"
       :outstanding-amount="outstandingAmountForPayNow"
       @submit="handlePaymentModalSubmit"
@@ -462,6 +463,7 @@ import {
   deliveryService,
   serviceBookingService,
   getCurrentUserRole,
+  VendorService,
   type Payment,
   type Vendor,
   type Account,
@@ -542,7 +544,7 @@ const canPaymentBeEdited = (payment: Payment, allocations: PaymentAllocation[]):
   return unallocatedAmount > 0;
 };
 
-const canPaymentBeDeleted = (payment: Payment, allocations: PaymentAllocation[]): boolean => {
+const canPaymentBeDeleted = (_payment: Payment, allocations: PaymentAllocation[]): boolean => {
   if (!canEditPayment.value) return false;
   return allocations.length === 0;
 };
@@ -550,25 +552,16 @@ const canPaymentBeDeleted = (payment: Payment, allocations: PaymentAllocation[])
 const vendorsWithOutstanding = computed(() => {
   if (!vendors.value) return [];
   return vendors.value.map(vendor => {
-    // Calculate outstanding from deliveries
-    const vendorDeliveries = deliveries.value.filter(delivery => 
-      delivery.vendor === vendor.id
+    const outstandingAmount = VendorService.calculateOutstandingFromData(
+      vendor.id!,
+      deliveries.value,
+      serviceBookings.value,
+      payments.value
     );
-    const deliveryOutstanding = vendorDeliveries.reduce((sum, delivery) => {
-      const outstanding = delivery.total_amount - delivery.paid_amount;
-      return sum + (outstanding > 0 ? outstanding : 0);
-    }, 0);
     
-    // Calculate outstanding from service bookings
-    const vendorBookings = serviceBookings.value.filter(booking => 
-      booking.vendor === vendor.id
-    );
-    const serviceOutstanding = vendorBookings.reduce((sum, booking) => {
-      const outstanding = booking.total_amount - booking.paid_amount;
-      return sum + (outstanding > 0 ? outstanding : 0);
-    }, 0);
-    
-    const outstandingAmount = deliveryOutstanding + serviceOutstanding;
+    // Calculate pending items (temporarily keep this until payment_status is fully removed)
+    const vendorDeliveries = deliveries.value.filter(delivery => delivery.vendor === vendor.id);
+    const vendorBookings = serviceBookings.value.filter(booking => booking.vendor === vendor.id);
     const pendingItems = vendorDeliveries.filter(d => d.payment_status !== 'paid').length + vendorBookings.filter(b => b.payment_status !== 'paid').length;
     
     return {

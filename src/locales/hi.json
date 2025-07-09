@@ -83,7 +83,9 @@
     "image": "इमेज",
     "thumbnail": "थंबनेल",
     "useArrowKeys": "नेविगेट करने के लिए ← → कीज़ का उपयोग करें",
-    "version": "संस्करण"
+    "version": "संस्करण",
+    "amountDue": "बकाया राशि",
+    "extraAdvance": "अतिरिक्त अग्रिम"
   },
   "vendors": "विक्रेता",
   "vendor_returns": "विक्रेता वापसी",
@@ -262,6 +264,7 @@
     "equipmentServices": "उपकरण सेवाएं",
     "laborServices": "श्रम सेवाएं",
     "serviceName": "सेवा का नाम",
+    "vendor": "पूर्तिकार",
     "totalServices": "कुल सेवाएं",
     "serviceDescription": "सेवा विवरण",
     "unit": "इकाई",
@@ -492,9 +495,6 @@
     "finalBalance": "अंतिम बैलेंस",
     "totalOutstanding": "कुल बकाया",
     "balance": "बैलेंस",
-    "amountDue": "बकाया राशि",
-    "AmountDue": "बकाया राशि",
-    "extraAdvance": "अतिरिक्त अग्रिम",
     "particulars": "विवरण",
     "debit": "नामे",
     "paymentMade": "भुगतान किया गया"

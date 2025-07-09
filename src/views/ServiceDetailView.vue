@@ -279,7 +279,7 @@ const generateServiceReportCSV = () => {
   
   const rows = serviceBookings.value.map(booking => [
     booking.start_date,
-    booking.expand?.vendor?.name || 'Unknown Vendor',
+    booking.expand?.vendor?.contact_person || 'Unknown Vendor',
     booking.duration,
     booking.unit_rate,
     booking.total_amount,

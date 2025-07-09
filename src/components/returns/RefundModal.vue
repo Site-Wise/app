@@ -23,7 +23,7 @@
               <div class="flex justify-between">
                 <span class="text-gray-500 dark:text-gray-400">Vendor:</span>
                 <span class="text-gray-900 dark:text-white">
-                  {{ returnData?.expand?.vendor?.name || returnData?.expand?.vendor?.contact_person || 'Unknown Vendor' }}
+                  {{ returnData?.expand?.vendor?.contact_person || returnData?.expand?.vendor?.name || 'Unknown Vendor' }}
                 </span>
               </div>
               <div class="flex justify-between">

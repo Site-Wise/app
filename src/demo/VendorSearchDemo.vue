@@ -10,6 +10,7 @@
           :vendors="vendors"
           :deliveries="deliveries"
           :serviceBookings="serviceBookings"
+          :payments="payments"
           :outstanding-amount="vendorOutstanding"
           :pending-items-count="vendorPendingCount"
           placeholder="Search and select a vendor..."
@@ -42,7 +43,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import VendorSearchBox from '../components/VendorSearchBox.vue';
-import type { Vendor, Delivery, ServiceBooking } from '../services/pocketbase';
+import type { Vendor, Delivery, ServiceBooking, Payment } from '../services/pocketbase';
 
 const selectedVendor = ref('');
 
@@ -150,6 +151,69 @@ const serviceBookings: ServiceBooking[] = [
   },
 ];
 
+const payments: Payment[] = [
+  {
+    id: 'payment1',
+    vendor: 'vendor1',
+    account: 'account1',
+    amount: 5000,
+    payment_date: '2024-01-15',
+    reference: 'PAY-001',
+    notes: 'Partial payment for delivery',
+    deliveries: ['delivery1'],
+    service_bookings: [],
+    credit_notes: [],
+    site: 'site1',
+    created: '',
+    updated: ''
+  },
+  {
+    id: 'payment2',
+    vendor: 'vendor1',
+    account: 'account1',
+    amount: 8000,
+    payment_date: '2024-01-20',
+    reference: 'PAY-002',
+    notes: 'Payment for service booking',
+    deliveries: [],
+    service_bookings: ['booking1'],
+    credit_notes: [],
+    site: 'site1',
+    created: '',
+    updated: ''
+  },
+  {
+    id: 'payment3',
+    vendor: 'vendor2',
+    account: 'account1',
+    amount: 12000,
+    payment_date: '2024-01-17',
+    reference: 'PAY-003',
+    notes: 'Full payment for delivery',
+    deliveries: ['delivery3'],
+    service_bookings: [],
+    credit_notes: [],
+    site: 'site1',
+    created: '',
+    updated: ''
+  },
+  {
+    id: 'payment4',
+    vendor: 'vendor2',
+    account: 'account1',
+    amount: 2000,
+    payment_date: '2024-01-18',
+    reference: 'PAY-004',
+    notes: 'Partial payment for delivery',
+    deliveries: ['delivery4'],
+    service_bookings: [],
+    credit_notes: [],
+    site: 'site1',
+    created: '',
+    updated: ''
+  }
+];
+
 const selectedVendorData = computed(() => {
   if (!selectedVendor.value) return null;
   return vendors.find(v => v.id === selectedVendor.value);
@@ -162,12 +226,12 @@ const vendorOutstanding = computed(() => {
   const vendorBookings = serviceBookings.filter(b => b.vendor === selectedVendor.value);
   
   const deliveryOutstanding = vendorDeliveries.reduce((sum, delivery) => {
-    const outstanding = delivery.total_amount - delivery.paid_amount;
+    const outstanding = delivery.total_amount - (delivery.paid_amount || 0);
     return sum + (outstanding > 0 ? outstanding : 0);
   }, 0);
   
   const serviceOutstanding = vendorBookings.reduce((sum, booking) => {
-    const outstanding = booking.total_amount - booking.paid_amount;
+    const outstanding = booking.total_amount - (booking.paid_amount || 0);
     return sum + (outstanding > 0 ? outstanding : 0);
   }, 0);
   

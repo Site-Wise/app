@@ -216,10 +216,8 @@ import {
   serviceBookingService,
   paymentService,
   tagService,
+  VendorService,
   type Vendor,
-  type Delivery,
-  type ServiceBooking,
-  type Payment,
   type Tag as TagType
 } from '../services/pocketbase';
 import { usePermissions } from '../composables/usePermissions';
@@ -286,29 +284,16 @@ const form = reactive({
 });
 
 const getVendorOutstanding = (vendorId: string) => {
-  // Include deliveries outstanding
-  const deliveriesOutstanding = deliveries.value
-    ?.filter((delivery: Delivery) => delivery.vendor === vendorId)
-    ?.reduce((sum: number, delivery: Delivery) => {
-      const outstanding = delivery.total_amount - delivery.paid_amount;
-      return sum + (outstanding > 0 ? outstanding : 0);
-    }, 0) || 0;
-  
-  // Include service bookings outstanding
-  const serviceOutstanding = serviceBookings.value
-    ?.filter((booking: ServiceBooking) => booking.vendor === vendorId)
-    ?.reduce((sum: number, booking: ServiceBooking) => {
-      const outstanding = booking.total_amount - booking.paid_amount;
-      return sum + (outstanding > 0 ? outstanding : 0);
-    }, 0) || 0;
-    
-  return deliveriesOutstanding + serviceOutstanding;
+  return VendorService.calculateOutstandingFromData(
+    vendorId,
+    deliveries.value || [],
+    serviceBookings.value || [],
+    payments.value || []
+  );
 };
 
 const getVendorPaid = (vendorId: string) => {
-  return payments.value
-    ?.filter((payment: Payment) => payment.vendor === vendorId)
-    ?.reduce((sum: number, payment: Payment) => sum + payment.amount, 0) || 0;
+  return VendorService.calculateTotalPaidFromData(vendorId, payments.value || []);
 };
 
 const viewVendorDetail = (vendorId: string) => {

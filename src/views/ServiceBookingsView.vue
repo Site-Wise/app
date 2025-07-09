@@ -57,7 +57,7 @@
         <thead class="bg-gray-50 dark:bg-gray-700 hidden lg:table-header-group">
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('services.service') }}</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.vendor') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('services.vendor') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('serviceBookings.startDate') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('serviceBookings.duration') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('serviceBookings.rate') }}</th>
@@ -84,7 +84,7 @@
               <div class="text-sm text-gray-500 dark:text-gray-400">{{ booking.expand?.service?.category || 'Unknown Type' }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-              <div class="text-sm text-gray-900 dark:text-white">{{ booking.expand?.vendor?.name || 'Unknown Vendor' }}</div>
+              <div class="text-sm text-gray-900 dark:text-white">{{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
               {{ formatDate(booking.start_date) }}
@@ -97,8 +97,8 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="text-sm text-gray-900 dark:text-white">₹{{ booking.total_amount.toFixed(2) }}</div>
-              <div v-if="booking.paid_amount > 0" class="text-xs text-green-600 dark:text-green-400">
-                {{ t('serviceBookings.paid') }}: ₹{{ booking.paid_amount.toFixed(2) }}
+              <div v-if="(booking.paid_amount || 0) > 0" class="text-xs text-green-600 dark:text-green-400">
+                {{ t('serviceBookings.paid') }}: ₹{{ (booking.paid_amount || 0).toFixed(2) }}
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
@@ -107,8 +107,8 @@
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-              <span :class="`status-${booking.payment_status}`">
-                {{ t(`common.${booking.payment_status}`) }}
+              <span class="status-pending">
+                {{ t(`common.pending`) }}
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium hidden lg:table-cell">
@@ -156,21 +156,14 @@
             <!-- Mobile Row -->
             <td class="px-4 py-4 lg:hidden">
               <div class="text-sm font-medium text-gray-900 dark:text-white">{{ booking.expand?.service?.name || 'Unknown Service' }}</div>
-              <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ booking.expand?.vendor?.name || 'Unknown Vendor' }}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}</div>
               <div class="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">
                 {{ formatDate(booking.start_date) }}
               </div>
             </td>
             <td class="px-4 py-4 lg:hidden">
               <div class="text-right">
-                <div :class="[
-                  'text-sm font-semibold',
-                  booking.payment_status === 'paid' 
-                    ? 'text-green-600 dark:text-green-400' 
-                    : booking.payment_status === 'partial'
-                    ? 'text-yellow-600 dark:text-yellow-400'
-                    : 'text-red-600 dark:text-red-400'
-                ]">
+                <div class="text-sm font-semibold text-gray-600 dark:text-gray-400">
                   ₹{{ booking.total_amount.toFixed(2) }}
                 </div>
                 <div class="mt-1">
@@ -219,11 +212,11 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.vendor') }}</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.vendor') }}</label>
               <select v-model="form.vendor" required class="input mt-1">
                 <option value="">{{ t('forms.selectProvider') }}</option>
                 <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
-                  {{ vendor.name }}
+                  {{ vendor.contact_person }} | {{ vendor.name }}
                 </option>
               </select>
             </div>
@@ -268,10 +261,6 @@
               </select>
             </div> -->
             
-            <div v-if="form.payment_status !== 'pending'">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.paidAmount') }}</label>
-              <input v-model.number="form.paid_amount" type="number" step="0.01" class="input mt-1" placeholder="0.00" />
-            </div>
             
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.notes') }}</label>
@@ -311,8 +300,8 @@
                 <span class="ml-2 text-gray-900 dark:text-white">{{ viewingBooking.expand?.service?.name || 'Unknown Service' }}</span>
               </div>
               <div>
-                <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('common.vendor') }}:</span>
-                <span class="ml-2 text-gray-900 dark:text-white">{{ viewingBooking.expand?.vendor?.name || 'Unknown Vendor' }}</span>
+                <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('services.vendor') }}:</span>
+                <span class="ml-2 text-gray-900 dark:text-white">{{ viewingBooking.expand?.vendor?.contact_person || 'Unknown Vendor' }}</span>
               </div>
               <div>
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.startDate') }}:</span>
@@ -330,12 +319,6 @@
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('common.status') }}:</span>
                 <span :class="`ml-2 status-${viewingBooking.status === 'scheduled' ? 'pending' : viewingBooking.status === 'completed' ? 'paid' : 'partial'}`">
                   {{ t(`serviceBookings.statuses.${viewingBooking.status}`) }}
-                </span>
-              </div>
-              <div>
-                <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.paymentStatus') }}:</span>
-                <span :class="`ml-2 status-${viewingBooking.payment_status}`">
-                  {{ t(`common.${viewingBooking.payment_status}`) }}
                 </span>
               </div>
               <div v-if="viewingBooking.notes">
@@ -469,9 +452,6 @@ const saveBooking = async () => {
   loading.value = true;
   try {
     const data = { ...form };
-    if (data.payment_status === 'pending') {
-      data.paid_amount = 0;
-    }
     
     // Ensure dates are in proper format (keep as date strings)
     if (data.start_date) {

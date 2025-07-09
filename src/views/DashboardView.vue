@@ -178,10 +178,10 @@ const stats = computed(() => {
   const expensePerSqft = Math.round(totalExpenses / totalSqft);
   
   const outstandingAmount = deliveries.value.reduce((sum, delivery) => {
-    const outstanding = delivery.total_amount - delivery.paid_amount;
+    const outstanding = delivery.total_amount - (delivery.paid_amount || 0);
     return sum + (outstanding > 0 ? outstanding : 0);
   }, 0) + serviceBookings.value.reduce((sum, booking) => {
-    const outstanding = booking.total_amount - booking.paid_amount;
+    const outstanding = booking.total_amount - (booking.paid_amount || 0);
     return sum + (outstanding > 0 ? outstanding : 0);
   }, 0);
 

@@ -83,7 +83,9 @@
     "image": "Image",
     "thumbnail": "Thumbnail",
     "useArrowKeys": "Use ← → keys to navigate",
-    "version": "Version"
+    "version": "Version",
+    "amountDue": "Amount Due",
+    "extraAdvance": "Extra Advance"
   },
   "vendors": "Vendors",
   "vendor_returns": "Vendor Returns",
@@ -262,6 +264,7 @@
     "equipmentServices": "Equipment services",
     "laborServices": "Labor services",
     "serviceName": "Service Name",
+    "vendor": "Provider",
     "totalServices": "Total services",
     "serviceDescription": "Service Description",
     "unit": "Unit",
@@ -490,8 +493,6 @@
     "finalBalance": "Final Balance",
     "totalOutstanding": "Total Outstanding",
     "balance": "Balance",
-    "amountDue": "Amount Due",
-    "extraAdvance": "Extra Advance",
     "particulars": "Particulars",
     "debit": "Debit",
     "paymentMade": "Payment made"

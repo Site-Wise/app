@@ -193,25 +193,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Quick Stats -->
-      <div class="mt-6 card">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">{{ t('vendors.paymentStatusBreakdown') }}</h3>
-        <div class="grid grid-cols-3 gap-4">
-          <div class="text-center">
-            <p class="text-2xl font-bold text-red-600 dark:text-red-400">{{ pendingDeliveries }}</p>
-            <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('vendors.pending') }}</p>
-          </div>
-          <div class="text-center">
-            <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ partialDeliveries }}</p>
-            <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('vendors.partial') }}</p>
-          </div>
-          <div class="text-center">
-            <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ paidDeliveries }}</p>
-            <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('vendors.paid') }}</p>
-          </div>
-        </div>
-      </div>
     </div>
 
 
@@ -231,8 +212,8 @@
               <h4 class="font-medium text-gray-900 dark:text-white">Delivery #{{ delivery.id?.slice(-6) }}</h4>
               <p class="text-sm text-gray-600 dark:text-gray-400">{{ formatDate(delivery.delivery_date) }}</p>
             </div>
-            <span :class="`status-${delivery.payment_status}`">
-              {{ delivery.payment_status }}
+            <span class="status-pending">
+              {{ t('common.pending') }}
             </span>
           </div>
           <div class="flex justify-between items-center text-sm">
@@ -410,10 +391,13 @@ import {
   vendorCreditNoteService,
   creditNoteUsageService,
   accountTransactionService,
+  serviceBookingService,
+  VendorService,
   type Vendor,
   type Delivery,
   type Payment,
   type Account,
+  type ServiceBooking,
   type Tag as TagType,
   type VendorReturn,
   type VendorCreditNote,
@@ -428,6 +412,7 @@ const { t } = useI18n();
 
 const vendor = ref<Vendor | null>(null);
 const vendorDeliveries = ref<Delivery[]>([]);
+const vendorServiceBookings = ref<ServiceBooking[]>([]);
 const vendorPayments = ref<Payment[]>([]);
 const vendorReturns = ref<VendorReturn[]>([]);
 const vendorCreditNotes = ref<VendorCreditNote[]>([]);
@@ -453,30 +438,36 @@ const activeAccounts = computed(() => {
 });
 
 const outstandingAmount = computed(() => {
-  const deliveryOutstanding = vendorDeliveries.value.reduce((sum, delivery) => {
-    const outstanding = delivery.total_amount - delivery.paid_amount;
-    return sum + (outstanding > 0 ? outstanding : 0);
-  }, 0);
+  if (!vendor.value) return 0;
+  
+  // Use centralized calculation that considers total payments made to vendor
+  const outstanding = VendorService.calculateOutstandingFromData(
+    vendor.value.id!,
+    vendorDeliveries.value,
+    vendorServiceBookings.value,
+    vendorPayments.value
+  );
   
   const creditBalance = vendorCreditNotes.value.reduce((sum, note) => sum + note.balance, 0);
-  return deliveryOutstanding - creditBalance; // Outstanding minus available credit
+  return outstanding - creditBalance; // Outstanding minus available credit
 });
 
 const totalPaid = computed(() => {
   return vendorPayments.value.reduce((sum, payment) => sum + payment.amount, 0);
 });
 
-const pendingDeliveries = computed(() => {
-  return vendorDeliveries.value.filter(delivery => delivery.payment_status === 'pending').length;
-});
+// These computed properties are deprecated as we're moving away from payment_status field
+// const pendingDeliveries = computed(() => {
+//   return vendorDeliveries.value.filter(delivery => delivery.payment_status === 'pending').length;
+// });
 
-const partialDeliveries = computed(() => {
-  return vendorDeliveries.value.filter(delivery => delivery.payment_status === 'partial').length;
-});
+// const partialDeliveries = computed(() => {
+//   return vendorDeliveries.value.filter(delivery => delivery.payment_status === 'partial').length;
+// });
 
-const paidDeliveries = computed(() => {
-  return vendorDeliveries.value.filter(delivery => delivery.payment_status === 'paid').length;
-});
+// const paidDeliveries = computed(() => {
+//   return vendorDeliveries.value.filter(delivery => delivery.payment_status === 'paid').length;
+// });
 
 // Comprehensive ledger entries with proper accounting principles
 const ledgerEntries = computed(() => {
@@ -674,9 +665,10 @@ const loadVendorData = async () => {
   const vendorId = route.params.id as string;
 
   try {
-    const [vendorData, allDeliveries, allPayments, allReturns, allCreditNotes, allCreditNoteUsages, allTransactions, accountsData, allTags] = await Promise.all([
+    const [vendorData, allDeliveries, allServiceBookings, allPayments, allReturns, allCreditNotes, allCreditNoteUsages, allTransactions, accountsData, allTags] = await Promise.all([
       vendorService.getAll(),
       deliveryService.getAll(),
+      serviceBookingService.getAll(),
       paymentService.getAll(),
       vendorReturnService.getByVendor(vendorId),
       vendorCreditNoteService.getByVendor(vendorId),
@@ -690,6 +682,9 @@ const loadVendorData = async () => {
     vendorDeliveries.value = allDeliveries
       .filter(delivery => delivery.vendor === vendorId)
       .sort((a, b) => new Date(b.delivery_date).getTime() - new Date(a.delivery_date).getTime());
+    vendorServiceBookings.value = allServiceBookings
+      .filter(booking => booking.vendor === vendorId)
+      .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
     vendorPayments.value = allPayments
       .filter(payment => payment.vendor === vendorId)
       .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime());

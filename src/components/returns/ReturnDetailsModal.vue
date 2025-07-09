@@ -26,7 +26,7 @@
                 <div>
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Vendor</label>
                   <div class="text-sm text-gray-900 dark:text-white">
-                    {{ returnData?.expand?.vendor?.name || returnData?.expand?.vendor?.contact_person || 'Unknown Vendor' }}
+                    {{ returnData?.expand?.vendor?.contact_person || returnData?.expand?.vendor?.name || 'Unknown Vendor' }}
                   </div>
                 </div>
                 <div>

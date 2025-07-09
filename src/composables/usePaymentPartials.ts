@@ -79,13 +79,13 @@ export function usePaymentPartials() {
     deliveries
       .filter(delivery => delivery.vendor === vendorId && delivery.payment_status !== 'paid')
       .forEach(delivery => {
-        const outstanding = delivery.total_amount - delivery.paid_amount;
+        const outstanding = delivery.total_amount - (delivery.paid_amount || 0);
         if (outstanding > 0) {
           allocations.push({
             id: delivery.id!,
             type: 'delivery',
             totalAmount: delivery.total_amount,
-            paidAmount: delivery.paid_amount,
+            paidAmount: delivery.paid_amount || 0,
             outstandingAmount: outstanding,
             allocatedAmount: 0,
             state: 'unchecked',
@@ -98,13 +98,13 @@ export function usePaymentPartials() {
     serviceBookings
       .filter(booking => booking.vendor === vendorId && booking.payment_status !== 'paid')
       .forEach(booking => {
-        const outstanding = booking.total_amount - booking.paid_amount;
+        const outstanding = booking.total_amount - (booking.paid_amount || 0);
         if (outstanding > 0) {
           allocations.push({
             id: booking.id!,
             type: 'service_booking',
             totalAmount: booking.total_amount,
-            paidAmount: booking.paid_amount,
+            paidAmount: booking.paid_amount || 0,
             outstandingAmount: outstanding,
             allocatedAmount: 0,
             state: 'unchecked',

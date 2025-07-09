@@ -242,8 +242,8 @@ export interface ServiceBooking {
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   completion_photos?: string[];
   notes?: string;
-  payment_status: 'pending' | 'partial' | 'paid'; // Calculated from allocations
-  paid_amount: number; // Calculated from allocations
+  payment_status?: 'pending' | 'partial' | 'paid'; // Deprecated - calculated from allocations
+  paid_amount?: number; // Deprecated - calculated from allocations
   site: string; // Site ID
   created?: string;
   updated?: string;
@@ -262,8 +262,8 @@ export interface Delivery {
   photos?: string[];
   notes?: string;
   total_amount: number; // Sum of all items
-  payment_status: 'pending' | 'partial' | 'paid'; // Calculated from allocations
-  paid_amount: number; // Calculated from allocations
+  payment_status?: 'pending' | 'partial' | 'paid'; // Deprecated - calculated from allocations
+  paid_amount?: number; // Deprecated - calculated from allocations
   delivery_items?: string[]; // Array of delivery_item IDs
   site: string; // Site ID
   created?: string;
@@ -1355,6 +1355,80 @@ export class VendorService {
     return true;
   }
 
+  async calculateOutstandingAmount(vendorId: string): Promise<number> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) return 0;
+
+    // Get all deliveries for this vendor
+    const deliveries = await deliveryService.getAll();
+    const deliveriesTotal = deliveries
+      .filter(delivery => delivery.vendor === vendorId)
+      .reduce((sum, delivery) => sum + delivery.total_amount, 0);
+
+    // Get all service bookings for this vendor
+    const serviceBookings = await serviceBookingService.getAll();
+    const serviceBookingsTotal = serviceBookings
+      .filter(booking => booking.vendor === vendorId)
+      .reduce((sum, booking) => sum + booking.total_amount, 0);
+
+    // Get all payments for this vendor
+    const payments = await paymentService.getAll();
+    const totalPaid = payments
+      .filter(payment => payment.vendor === vendorId)
+      .reduce((sum, payment) => sum + payment.amount, 0);
+
+    // Outstanding = Total Due - Total Paid
+    const totalDue = deliveriesTotal + serviceBookingsTotal;
+    const outstanding = totalDue - totalPaid;
+
+    return outstanding > 0 ? outstanding : 0;
+  }
+
+  async calculateTotalPaid(vendorId: string): Promise<number> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) return 0;
+
+    const payments = await paymentService.getAll();
+    return payments
+      .filter(payment => payment.vendor === vendorId)
+      .reduce((sum, payment) => sum + payment.amount, 0);
+  }
+
+  // Synchronous calculation methods for use with existing data
+  static calculateOutstandingFromData(
+    vendorId: string,
+    deliveries: Delivery[],
+    serviceBookings: ServiceBooking[],
+    payments: Payment[]
+  ): number {
+    // Calculate total amount due from deliveries
+    const deliveriesTotal = deliveries
+      .filter(delivery => delivery.vendor === vendorId)
+      .reduce((sum, delivery) => sum + delivery.total_amount, 0);
+
+    // Calculate total amount due from service bookings
+    const serviceBookingsTotal = serviceBookings
+      .filter(booking => booking.vendor === vendorId)
+      .reduce((sum, booking) => sum + booking.total_amount, 0);
+
+    // Calculate total payments made to this vendor
+    const totalPaid = payments
+      .filter(payment => payment.vendor === vendorId)
+      .reduce((sum, payment) => sum + payment.amount, 0);
+
+    // Outstanding = Total Due - Total Paid
+    const totalDue = deliveriesTotal + serviceBookingsTotal;
+    const outstanding = totalDue - totalPaid;
+
+    return outstanding > 0 ? outstanding : 0;
+  }
+
+  static calculateTotalPaidFromData(vendorId: string, payments: Payment[]): number {
+    return payments
+      .filter(payment => payment.vendor === vendorId)
+      .reduce((sum, payment) => sum + payment.amount, 0);
+  }
+
   private mapRecordToVendor(record: RecordModel): Vendor {
     return {
       id: record.id,
@@ -1804,11 +1878,6 @@ export class PaymentService {
     // Get the payment to determine total amount
     const payment = await this.getById(paymentId);
     if (!payment) throw new Error('Payment not found');
-    
-    // Get existing allocations
-    const existingAllocations = await paymentAllocationService.getByPayment(paymentId);
-    
-    // No need to reverse allocations since we're using calculated values now
     
     // Delete all existing allocations
     await paymentAllocationService.deleteByPayment(paymentId);
@@ -3813,7 +3882,7 @@ export class DeliveryItemService {
       notes: record.notes,
       total_amount: record.total_amount,
       payment_status: record.payment_status,
-      paid_amount: record.paid_amount,
+      paid_amount: record.paid_amount || 0,
       site: record.site,
       created: record.created,
       updated: record.updated

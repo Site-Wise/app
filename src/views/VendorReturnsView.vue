@@ -168,7 +168,7 @@
               </td>
               <td class="px-6 py-4">
                 <div class="text-sm font-medium text-gray-900 dark:text-white">
-                  {{ returnItem.expand?.vendor?.name || returnItem.expand?.vendor?.contact_person || t('common.unknownVendor') }}
+                  {{ returnItem.expand?.vendor?.contact_person || returnItem.expand?.vendor?.contact_person || t('common.unknownVendor') }}
                 </div>
                 <div v-if="returnItem.expand?.vendor?.contact_person && returnItem.expand?.vendor?.name" 
                      class="text-sm text-gray-500 dark:text-gray-400">
@@ -243,7 +243,7 @@
             <div class="flex justify-between">
               <span class="text-gray-500 dark:text-gray-400">{{ t('common.vendor') }}:</span>
               <span class="text-gray-900 dark:text-white font-medium">
-                {{ returnItem.expand?.vendor?.name || returnItem.expand?.vendor?.contact_person || t('common.unknownVendor') }}
+                {{ returnItem.expand?.vendor?.contact_person || returnItem.expand?.vendor?.name || t('common.unknownVendor') }}
               </span>
             </div>
             <div class="flex justify-between">
@@ -401,6 +401,7 @@ const filteredReturns = computed(() => {
     const query = searchQuery.value.toLowerCase();
     filtered = filtered.filter(r => 
       r.id?.toLowerCase().includes(query) ||
+      r.expand?.vendor?.contact_person?.toLowerCase().includes(query) ||
       r.expand?.vendor?.name?.toLowerCase().includes(query) ||
       r.reason?.toLowerCase().includes(query)
     );

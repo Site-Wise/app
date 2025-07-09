@@ -338,7 +338,7 @@
               </div>
               <div>
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('delivery.paidAmount') }}:</span>
-                <span class="ml-2 text-gray-900 dark:text-white">₹{{ viewingDelivery.paid_amount.toFixed(2) }}</span>
+                <span class="ml-2 text-gray-900 dark:text-white">₹{{ (viewingDelivery.paid_amount || 0).toFixed(2) }}</span>
               </div>
               <div v-if="viewingDelivery.notes">
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('common.notes') }}:</span>
@@ -827,7 +827,7 @@ const getPhotoUrls = (delivery: Delivery) => {
 const getOverlayInfo = (delivery: Delivery) => {
   if (!delivery.photos || delivery.photos.length === 0) return [];
   
-  const vendorName = delivery.expand?.vendor?.name || 'Unknown Vendor';
+  const vendorName = delivery.expand?.vendor?.contact_person || 'Unknown Vendor';
   const items = delivery.expand?.delivery_items?.map(item => {
     const itemName = item.expand?.item?.name || 'Unknown Item';
     const quantity = item.quantity || 0;

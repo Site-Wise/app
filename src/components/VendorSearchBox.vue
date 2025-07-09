@@ -125,7 +125,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { Loader2 } from 'lucide-vue-next';
-import type { Vendor, Delivery, ServiceBooking } from '../services/pocketbase';
+import type { Vendor, Delivery, ServiceBooking, Payment } from '../services/pocketbase';
+import { VendorService } from '../services/pocketbase';
 import { useI18n } from '../composables/useI18n';
 
 interface Props {
@@ -133,6 +134,7 @@ interface Props {
   vendors: Vendor[];
   deliveries: Delivery[];
   serviceBookings: ServiceBooking[];
+  payments: Payment[];
   placeholder?: string;
   loading?: boolean;
   autofocus?: boolean;
@@ -199,23 +201,17 @@ const filteredVendors = computed(() => {
 
 // Helper functions
 const getVendorBalance = (vendor: Vendor): { amount: number; type: 'due' | 'advance' | 'settled' } => {
-  const vendorDeliveries = props.deliveries.filter(d => d.vendor === vendor.id);
-  const vendorBookings = props.serviceBookings.filter(b => b.vendor === vendor.id);
+  const outstandingAmount = VendorService.calculateOutstandingFromData(
+    vendor.id!,
+    props.deliveries,
+    props.serviceBookings,
+    props.payments
+  );
   
-  const deliveryBalance = vendorDeliveries.reduce((sum, delivery) => {
-    return sum + (delivery.total_amount - delivery.paid_amount);
-  }, 0);
-  
-  const serviceBalance = vendorBookings.reduce((sum, booking) => {
-    return sum + (booking.total_amount - booking.paid_amount);
-  }, 0);
-  
-  const totalBalance = deliveryBalance + serviceBalance;
-  
-  if (totalBalance > 0) {
-    return { amount: totalBalance, type: 'due' };
-  } else if (totalBalance < 0) {
-    return { amount: Math.abs(totalBalance), type: 'advance' };
+  if (outstandingAmount > 0) {
+    return { amount: outstandingAmount, type: 'due' };
+  } else if (outstandingAmount < 0) {
+    return { amount: Math.abs(outstandingAmount), type: 'advance' };
   } else {
     return { amount: 0, type: 'settled' };
   }
@@ -223,12 +219,10 @@ const getVendorBalance = (vendor: Vendor): { amount: number; type: 'due' | 'adva
 
 
 const getVendorPendingCount = (vendor: Vendor): number => {
-  const vendorDeliveries = props.deliveries.filter(d => 
-    d.vendor === vendor.id && d.payment_status !== 'paid'
-  );
-  const vendorBookings = props.serviceBookings.filter(b => 
-    b.vendor === vendor.id && b.payment_status !== 'paid'
-  );
+  // For now, return the count of all deliveries and bookings for this vendor
+  // TODO: Remove this function once payment_status is fully deprecated
+  const vendorDeliveries = props.deliveries.filter(d => d.vendor === vendor.id);
+  const vendorBookings = props.serviceBookings.filter(b => b.vendor === vendor.id);
   
   return vendorDeliveries.length + vendorBookings.length;
 };

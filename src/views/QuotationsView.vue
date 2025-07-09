@@ -68,7 +68,7 @@
               <div class="text-sm text-gray-500 dark:text-gray-400">{{ getUnitDisplay(quotation.expand?.item?.unit || 'units') }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-900 dark:text-white">{{ quotation.expand?.vendor?.name }}</div>
+              <div class="text-sm text-gray-900 dark:text-white">{{ quotation.expand?.vendor?.contact_person }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
               ₹{{ quotation.unit_price.toFixed(2) }}
