@@ -72,7 +72,7 @@
               <div class="flex items-center">
                 <div class="text-sm font-medium text-gray-900 dark:text-white">₹{{ payment.amount.toFixed(2) }}</div>
                 <!-- Allocation Status Indicator -->
-                <div v-if="payment.expand?.payment_allocations" class="ml-2">
+                <div v-if="payment.expand?.payment_allocations && payment.expand.payment_allocations.length > 0" class="ml-2">
                   <span 
                     v-if="getAllocatedAmount(payment, payment.expand.payment_allocations) === payment.amount"
                     class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
@@ -161,7 +161,7 @@
                 <div class="flex items-center justify-end">
                   <div class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{ payment.amount.toFixed(2) }}</div>
                   <!-- Mobile Allocation Status Indicator -->
-                  <div v-if="payment.expand?.payment_allocations" class="ml-2">
+                  <div v-if="payment.expand?.payment_allocations && payment.expand.payment_allocations.length > 0" class="ml-2">
                     <span 
                       v-if="getAllocatedAmount(payment, payment.expand.payment_allocations) === payment.amount"
                       class="inline-flex w-2 h-2 bg-green-500 rounded-full"
@@ -563,10 +563,14 @@ const vendorsWithOutstanding = computed(() => {
       payments.value
     );
     
-    // Calculate pending items (temporarily keep this until payment_status is fully removed)
+    // Calculate pending items based on outstanding amounts
     const vendorDeliveries = deliveries.value.filter(delivery => delivery.vendor === vendor.id);
     const vendorBookings = serviceBookings.value.filter(booking => booking.vendor === vendor.id);
-    const pendingItems = vendorDeliveries.filter(d => d.payment_status !== 'paid').length + vendorBookings.filter(b => b.payment_status !== 'paid').length;
+    
+    // Count items with outstanding amounts (items that have work done but not fully paid)
+    const pendingDeliveries = vendorDeliveries.filter(d => d.total_amount > 0).length;
+    const pendingBookings = vendorBookings.filter(b => (b.percent_completed || 0) > 0).length;
+    const pendingItems = pendingDeliveries + pendingBookings;
     
     return {
       ...vendor,
@@ -750,26 +754,26 @@ const closeMobileMenu = () => {
 const handlePaymentModalSubmit = async (data: any) => {
   const { mode, form, payment } = data;
   
+  // Prepare payment data outside try block for error handling access
+  const paymentData = mode === 'CREATE' || mode === 'PAY_NOW' ? {
+    vendor: form.vendor,
+    account: form.account,
+    amount: form.amount,
+    payment_date: form.transaction_date,
+    reference: form.reference,
+    notes: form.notes,
+    deliveries: form.deliveries,
+    service_bookings: form.service_bookings,
+    credit_notes: form.credit_notes || [],
+    // Include detailed allocation data for proper handling
+    delivery_allocations: form.delivery_allocations || {},
+    service_booking_allocations: form.service_booking_allocations || {},
+    credit_note_allocations: form.credit_note_allocations || {}
+  } : null;
+  
   try {
     if (mode === 'CREATE' || mode === 'PAY_NOW') {
-      // Create new payment with detailed allocation data
-      const paymentData = {
-        vendor: form.vendor,
-        account: form.account,
-        amount: form.amount,
-        payment_date: form.transaction_date,
-        reference: form.reference,
-        notes: form.notes,
-        deliveries: form.deliveries,
-        service_bookings: form.service_bookings,
-        credit_notes: form.credit_notes || [],
-        // Include detailed allocation data for proper handling
-        delivery_allocations: form.delivery_allocations || {},
-        service_booking_allocations: form.service_booking_allocations || {},
-        credit_note_allocations: form.credit_note_allocations || {}
-      };
-      
-      await paymentService.create(paymentData);
+      await paymentService.create(paymentData!);
       success(t('messages.createSuccess', { item: t('common.payment') }));
     } else if (mode === 'EDIT') {
       // Use the service method to update allocations (deletes old and creates new)
@@ -783,11 +787,46 @@ const handlePaymentModalSubmit = async (data: any) => {
   } catch (err: any) {
     console.error('Error saving payment:', err);
     
-    // Check if this is a credit note validation error
-    if (err.message && err.message.includes('not available for this amount')) {
-      // This is a credit note balance issue - provide helpful error message
+    // Check if this is a credit note balance change error
+    if (err.message === 'CREDIT_NOTE_BALANCE_CHANGED' && err.details) {
+      const details = err.details;
+      const shouldProceed = confirm(
+        `Credit note ${details.reference} balance has changed:\n\n` +
+        `Originally planned: ₹${details.requestedAmount.toFixed(2)}\n` +
+        `Currently available: ₹${details.availableAmount.toFixed(2)}\n\n` +
+        `Would you like to proceed with:\n` +
+        `• Reduced credit note usage: ₹${details.availableAmount.toFixed(2)}\n` +
+        `• Increased account payment: ₹${(details.requestedAmount - details.availableAmount).toFixed(2)}\n\n` +
+        `Click OK to proceed with adjusted amounts, or Cancel to go back and review.`
+      );
+      
+      if (shouldProceed) {
+        // Retry payment creation with balance adjustment allowed
+        const adjustedPaymentData = {
+          ...paymentData,
+          allowBalanceAdjustment: true
+        };
+        
+        try {
+          await paymentService.create(adjustedPaymentData);
+          success(t('messages.createSuccess', { item: t('common.payment') }));
+          
+          // Reload data and close modal
+          await reloadAllData();
+          showPaymentModal.value = false;
+        } catch (retryErr: any) {
+          console.error('Error saving payment after adjustment:', retryErr);
+          error(t('messages.createError', { item: t('common.payment') }));
+        }
+      }
+      // If user cancels, do nothing - they can adjust manually
+    } else if (err.message && (err.message.includes('not available for this amount') || 
+                        err.message.includes('balance changed during processing') ||
+                        err.message.includes('Insufficient credit balance'))) {
+      // Other credit note balance issues - provide helpful error message
       error(
         'Credit note information has changed since the modal was opened. ' +
+        'This can happen if another payment used the same credit note. ' +
         'Please close and reopen the payment modal to get updated credit note balances.\n\n' +
         'Details: ' + err.message.split('\n')[0]
       );

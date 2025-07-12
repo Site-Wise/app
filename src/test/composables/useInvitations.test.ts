@@ -242,6 +242,32 @@ describe('useInvitations', () => {
       expect(mockSiteUserService.getBySite).toHaveBeenCalledWith('site-1')
     })
 
+    it('should prevent users from inviting themselves', async () => {
+      const { sendInvitation } = useInvitations()
+      
+      // Attempt to send invitation to self should throw error
+      await expect(
+        sendInvitation('site-1', 'test@example.com', 'supervisor')
+      ).rejects.toThrow('You cannot send an invitation to yourself')
+      
+      // Should not check for existing members or create invitation
+      expect(mockSiteUserService.getBySite).not.toHaveBeenCalled()
+      expect(mockSiteInvitationService.create).not.toHaveBeenCalled()
+    })
+
+    it('should prevent self-invitation with different email casing', async () => {
+      const { sendInvitation } = useInvitations()
+      
+      // Attempt to send invitation to self with uppercase email should throw error
+      await expect(
+        sendInvitation('site-1', 'TEST@EXAMPLE.COM', 'supervisor')
+      ).rejects.toThrow('You cannot send an invitation to yourself')
+      
+      // Should not check for existing members or create invitation
+      expect(mockSiteUserService.getBySite).not.toHaveBeenCalled()
+      expect(mockSiteInvitationService.create).not.toHaveBeenCalled()
+    })
+
     it('should require authentication', async () => {
       const { sendInvitation } = useInvitations()
       

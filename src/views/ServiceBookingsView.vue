@@ -62,7 +62,7 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('serviceBookings.duration') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('serviceBookings.rate') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.total') }}</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.status') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('serviceBookings.progress') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('serviceBookings.paymentStatus') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.actions') }}</th>
           </tr>
@@ -102,13 +102,21 @@
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-              <span :class="`status-${booking.status === 'scheduled' ? 'pending' : booking.status === 'completed' ? 'paid' : 'partial'}`">
-                {{ t(`serviceBookings.statuses.${booking.status}`) }}
-              </span>
+              <div class="flex items-center space-x-2">
+                <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div 
+                    class="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300"
+                    :style="{ width: `${booking.percent_completed || 0}%` }"
+                  ></div>
+                </div>
+                <span class="text-sm text-gray-600 dark:text-gray-400 font-medium min-w-[3rem]">
+                  {{ booking.percent_completed || 0 }}%
+                </span>
+              </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <span :class="`status-${booking.payment_status}`">
-                {{ t(`common.${booking.payment_status}`) }}
+                {{ booking.payment_status === 'currently_paid_up' ? t('serviceBookings.currentlyPaidUp') : t(`common.${booking.payment_status}`) }}
               </span>
               <!-- Show outstanding amount for partial payments -->
               <div v-if="booking.payment_status === 'partial'" class="text-xs text-gray-500 dark:text-gray-400">
@@ -126,7 +134,7 @@
                   <Eye class="h-4 w-4" />
                 </button>
                 <button 
-                  v-if="canUpdate"
+                  v-if="canEditBooking(booking)"
                   @click="editBooking(booking)" 
                   class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" 
                   :title="t('common.edit')"
@@ -135,14 +143,14 @@
                 </button>
                 <button 
                   @click="deleteBooking(booking.id!)" 
-                  :disabled="!canDelete"
+                  :disabled="!canDeleteBooking(booking)"
                   :class="[
-                    canDelete 
+                    canDeleteBooking(booking) 
                       ? 'text-red-400 hover:text-red-600 dark:hover:text-red-300' 
                       : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
                     'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
                   ]"
-                  :title="t('common.delete')"
+                  :title="hasPayments(booking) ? t('serviceBookings.cannotDeleteWithPayments') : t('common.delete')"
                 >
                   <Trash2 class="h-4 w-4" />
                 </button>
@@ -170,15 +178,24 @@
                 <div class="text-sm font-semibold text-gray-600 dark:text-gray-400">
                   ₹{{ booking.total_amount.toFixed(2) }}
                 </div>
-                <div class="mt-1">
-                  <span :class="`text-xs status-${booking.status === 'scheduled' ? 'pending' : booking.status === 'completed' ? 'paid' : 'partial'}`">
-                    {{ t(`serviceBookings.statuses.${booking.status}`) }}
-                  </span>
+                <!-- Progress for Mobile -->
+                <div class="mt-2">
+                  <div class="flex items-center space-x-2">
+                    <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                      <div 
+                        class="bg-blue-600 dark:bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                        :style="{ width: `${booking.percent_completed || 0}%` }"
+                      ></div>
+                    </div>
+                    <span class="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                      {{ booking.percent_completed || 0 }}%
+                    </span>
+                  </div>
                 </div>
                 <!-- Payment Status for Mobile -->
                 <div class="mt-1">
-                  <span :class="`text-xs status-${booking.payment_status}`">
-                    {{ t(`common.${booking.payment_status}`) }}
+                  <span :class="`status-${booking.payment_status}`">
+                    {{ booking.payment_status === 'currently_paid_up' ? t('serviceBookings.currentlyPaidUp') : t(`common.${booking.payment_status}`) }}
                   </span>
                   <span v-if="booking.payment_status === 'partial'" class="text-xs text-gray-500 dark:text-gray-400 ml-1">
                     (₹{{ booking.outstanding.toFixed(2) }} pending)
@@ -216,27 +233,64 @@
           <form @submit.prevent="saveBooking" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.service') }}</label>
-              <select ref="serviceInputRef" v-model="form.service" required class="input mt-1" @change="updateRateFromService" autofocus>
+              <select 
+                ref="serviceInputRef" 
+                v-model="form.service" 
+                required 
+                :class="[
+                  'input mt-1',
+                  editingBooking && hasPayments(editingBooking) ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''
+                ]"
+                @change="updateRateFromService" 
+                :disabled="editingBooking && hasPayments(editingBooking)"
+                autofocus
+              >
                 <option value="">{{ t('forms.selectService') }}</option>
                 <option v-for="service in activeServices" :key="service.id" :value="service.id">
                   {{ service.name }} ({{ service.category }})
                 </option>
               </select>
+              <p v-if="editingBooking && hasPayments(editingBooking)" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('serviceBookings.cannotChangeServiceWithPayments') }}
+              </p>
             </div>
             
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.vendor') }}</label>
-              <select v-model="form.vendor" required class="input mt-1">
+              <select 
+                v-model="form.vendor" 
+                required 
+                :class="[
+                  'input mt-1',
+                  editingBooking && hasPayments(editingBooking) ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''
+                ]"
+                :disabled="editingBooking && hasPayments(editingBooking)"
+              >
                 <option value="">{{ t('forms.selectProvider') }}</option>
                 <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
                   {{ vendor.contact_person }} | {{ vendor.name }}
                 </option>
               </select>
+              <p v-if="editingBooking && hasPayments(editingBooking)" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('serviceBookings.cannotChangeVendorWithPayments') }}
+              </p>
             </div>
             
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.startDate') }}</label>
-              <input v-model="form.start_date" type="date" required class="input mt-1" />
+              <input 
+                v-model="form.start_date" 
+                type="date" 
+                required 
+                :class="[
+                  'input mt-1',
+                  editingBooking && hasPayments(editingBooking) ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''
+                ]"
+                :disabled="editingBooking && hasPayments(editingBooking)"
+              />
+              <p v-if="editingBooking && hasPayments(editingBooking)" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('serviceBookings.cannotChangeDateWithPayments') }}
+              </p>
             </div>
             
             <div class="grid grid-cols-2 gap-4">
@@ -246,7 +300,20 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.unitRate') }}</label>
-                <input v-model.number="form.unit_rate" type="number" step="0.01" required class="input mt-1" placeholder="0.00" @input="calculateTotal" />
+                <input 
+                  v-model.number="form.unit_rate" 
+                  type="number" 
+                  step="0.01" 
+                  required 
+                  class="input mt-1" 
+                  placeholder="0.00" 
+                  @input="handleUnitRateChange" 
+                />
+                <div v-if="showUnitRateWarning && editingBooking && hasPayments(editingBooking)" class="mt-1 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                  <p class="text-xs text-yellow-800 dark:text-yellow-300">
+                    ⚠️ {{ t('serviceBookings.unitRateChangeWarning') }}
+                  </p>
+                </div>
               </div>
             </div>
             
@@ -256,13 +323,20 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.status') }}</label>
-              <select v-model="form.status" required class="input mt-1">
-                <option value="scheduled">{{ t('serviceBookings.statuses.scheduled') }}</option>
-                <option value="in_progress">{{ t('serviceBookings.statuses.in_progress') }}</option>
-                <option value="completed">{{ t('serviceBookings.statuses.completed') }}</option>
-                <option value="cancelled">{{ t('serviceBookings.statuses.cancelled') }}</option>
-              </select>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.percentCompleted') }}</label>
+              <div class="relative">
+                <input 
+                  v-model.number="form.percent_completed" 
+                  type="number" 
+                  min="0" 
+                  max="100" 
+                  step="1" 
+                  required 
+                  class="input mt-1 pr-8" 
+                  placeholder="0"
+                />
+                <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 text-sm mt-0.5">%</span>
+              </div>
             </div>
             
             <!-- <div>
@@ -329,10 +403,18 @@
                 <span class="ml-2 text-gray-900 dark:text-white">₹{{ viewingBooking.total_amount.toFixed(2) }}</span>
               </div>
               <div>
-                <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('common.status') }}:</span>
-                <span :class="`ml-2 status-${viewingBooking.status === 'scheduled' ? 'pending' : viewingBooking.status === 'completed' ? 'paid' : 'partial'}`">
-                  {{ t(`serviceBookings.statuses.${viewingBooking.status}`) }}
-                </span>
+                <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.progress') }}:</span>
+                <div class="mt-2 flex items-center space-x-3">
+                  <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                    <div 
+                      class="bg-blue-600 dark:bg-blue-500 h-3 rounded-full transition-all duration-300"
+                      :style="{ width: `${viewingBooking.percent_completed || 0}%` }"
+                    ></div>
+                  </div>
+                  <span class="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                    {{ viewingBooking.percent_completed || 0 }}%
+                  </span>
+                </div>
               </div>
               <div v-if="viewingBooking.notes">
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('common.notes') }}:</span>
@@ -385,6 +467,7 @@ import {
   serviceService,
   vendorService,
   paymentAllocationService,
+  ServiceBookingService,
   type ServiceBooking 
 } from '../services/pocketbase';
 
@@ -399,28 +482,27 @@ const { searchQuery, loading: searchLoading, results: searchResults, loadAll } =
 const paymentAllocations = computed(() => paymentAllocationsData.value || []);
 
 // Helper function to calculate payment status based on allocations
-const calculatePaymentStatus = (serviceBooking: ServiceBooking): 'pending' | 'partial' | 'paid' => {
+const calculatePaymentStatus = (serviceBooking: ServiceBooking): 'pending' | 'partial' | 'paid' | 'currently_paid_up' => {
   if (!paymentAllocations.value.length) return 'pending';
   
   const allocatedAmount = paymentAllocations.value
     .filter(allocation => allocation.service_booking === serviceBooking.id)
     .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
   
-  if (allocatedAmount <= 0) return 'pending';
-  if (allocatedAmount >= serviceBooking.total_amount) return 'paid';
-  return 'partial';
+  return ServiceBookingService.calculatePaymentStatusFromData(serviceBooking, allocatedAmount);
 };
 
-// Helper function to calculate outstanding amount
+// Helper function to calculate outstanding amount based on progress
 const calculateOutstandingAmount = (serviceBooking: ServiceBooking): number => {
-  if (!paymentAllocations.value.length) return serviceBooking.total_amount;
+  if (!paymentAllocations.value.length) {
+    return ServiceBookingService.calculateProgressBasedAmount(serviceBooking);
+  }
   
   const allocatedAmount = paymentAllocations.value
     .filter(allocation => allocation.service_booking === serviceBooking.id)
     .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
   
-  const outstanding = serviceBooking.total_amount - allocatedAmount;
-  return outstanding > 0 ? outstanding : 0;
+  return ServiceBookingService.calculateOutstandingAmountFromData(serviceBooking, allocatedAmount);
 };
 
 // Display items: use search results if searching, otherwise all items with calculated payment status
@@ -467,6 +549,8 @@ const showAddModal = ref(false);
 const editingBooking = ref<ServiceBooking | null>(null);
 const viewingBooking = ref<ServiceBooking | null>(null);
 const loading = ref(false);
+const showUnitRateWarning = ref(false);
+const originalUnitRate = ref(0);
 
 const serviceInputRef = ref<HTMLInputElement>();
 
@@ -477,7 +561,7 @@ const form = reactive({
   duration: 0,
   unit_rate: 0,
   total_amount: 0,
-  status: 'scheduled' as ServiceBooking['status'],
+  percent_completed: 0,
   notes: ''
 });
 
@@ -508,6 +592,16 @@ const updateRateFromService = () => {
     calculateTotal();
   }
 };
+
+const handleUnitRateChange = () => {
+  calculateTotal();
+  
+  // Show warning if editing a booking with payments and unit rate has changed
+  if (editingBooking.value && hasPayments(editingBooking.value)) {
+    showUnitRateWarning.value = form.unit_rate !== originalUnitRate.value;
+  }
+};
+
 
 const saveBooking = async () => {
   loading.value = true;
@@ -543,6 +637,8 @@ const formatDateForInput = (dateString: string) => {
 
 const editBooking = (booking: ServiceBooking) => {
   editingBooking.value = booking;
+  originalUnitRate.value = booking.unit_rate;
+  showUnitRateWarning.value = false;
   Object.assign(form, {
     service: booking.service,
     vendor: booking.vendor,
@@ -550,7 +646,7 @@ const editBooking = (booking: ServiceBooking) => {
     duration: booking.duration,
     unit_rate: booking.unit_rate,
     total_amount: booking.total_amount,
-    status: booking.status,
+    percent_completed: booking.percent_completed || 0,
     notes: booking.notes || ''
   });
 };
@@ -566,7 +662,12 @@ const deleteBooking = async (id: string) => {
       await reloadAllData();
     } catch (error) {
       console.error('Error deleting service booking:', error);
-      alert(t('messages.error'));
+      // Show specific error message if it's about payments
+      if (error instanceof Error && error.message.includes('payments assigned')) {
+        alert(t('serviceBookings.cannotDeleteWithPayments'));
+      } else {
+        alert(t('messages.error'));
+      }
     }
   }
 };
@@ -579,7 +680,20 @@ const formatDateTime = (dateString: string) => {
   return new Date(dateString).toLocaleString();
 };
 
-const getBookingActions = (_booking: ServiceBooking) => {
+const canEditBooking = (booking: ServiceBooking) => {
+  return canUpdate.value && (booking.percent_completed || 0) < 100;
+};
+
+const hasPayments = (booking: ServiceBooking) => {
+  if (!paymentAllocations.value.length) return false;
+  return paymentAllocations.value.some(allocation => allocation.service_booking === booking.id);
+};
+
+const canDeleteBooking = (booking: ServiceBooking) => {
+  return canDelete.value && !hasPayments(booking);
+};
+
+const getBookingActions = (booking: ServiceBooking) => {
   return [
     {
       key: 'view',
@@ -592,14 +706,14 @@ const getBookingActions = (_booking: ServiceBooking) => {
       label: t('common.edit'),
       icon: Edit2,
       variant: 'default' as const,
-      disabled: !canUpdate.value
+      disabled: !canEditBooking(booking)
     },
     {
       key: 'delete',
       label: t('common.delete'),
       icon: Trash2,
       variant: 'danger' as const,
-      disabled: !canDelete.value
+      disabled: !canDeleteBooking(booking)
     }
   ];
 };
@@ -621,6 +735,8 @@ const handleBookingAction = (booking: ServiceBooking, action: string) => {
 const closeModal = () => {
   showAddModal.value = false;
   editingBooking.value = null;
+  showUnitRateWarning.value = false;
+  originalUnitRate.value = 0;
   Object.assign(form, {
     service: '',
     vendor: '',
@@ -628,7 +744,7 @@ const closeModal = () => {
     duration: 0,
     unit_rate: 0,
     total_amount: 0,
-    status: 'scheduled',
+    percent_completed: 0,
     notes: ''
   });
 };

@@ -91,6 +91,11 @@ export function useInvitations() {
 
     const trimmedEmail = email.toLowerCase().trim();
 
+    // Prevent users from inviting themselves
+    if (user.email && user.email.toLowerCase() === trimmedEmail) {
+      throw new Error('You cannot send an invitation to yourself');
+    }
+
     // Check if there's already a user with this email who is a member of this site
     // Use the same approach as siteUserService.getBySite to ensure consistency
     try {

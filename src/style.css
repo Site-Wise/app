@@ -57,6 +57,10 @@
     @apply status-badge bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300;
   }
   
+  .status-currently_paid_up {
+    @apply status-badge bg-success-100 dark:bg-success-900/30 text-success-800 dark:text-success-300;
+  }
+  
   .status-overdue {
     @apply status-badge bg-error-100 dark:bg-error-900/30 text-error-800 dark:text-error-300;
   }

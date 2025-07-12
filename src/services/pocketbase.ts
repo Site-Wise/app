@@ -239,11 +239,9 @@ export interface ServiceBooking {
   duration: number; // in hours or days based on service unit
   unit_rate: number;
   total_amount: number;
-  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  percent_completed: number; // Progress percentage 0-100
   completion_photos?: string[];
   notes?: string;
-  payment_status?: 'pending' | 'partial' | 'paid'; // Deprecated - calculated from allocations
-  paid_amount?: number; // Deprecated - calculated from allocations
   site: string; // Site ID
   created?: string;
   updated?: string;
@@ -1370,7 +1368,7 @@ export class VendorService {
     const serviceBookings = await serviceBookingService.getAll();
     const serviceBookingsTotal = serviceBookings
       .filter(booking => booking.vendor === vendorId)
-      .reduce((sum, booking) => sum + booking.total_amount, 0);
+      .reduce((sum, booking) => sum + ServiceBookingService.calculateProgressBasedAmount(booking), 0);
 
     // Get all payments for this vendor
     const payments = await paymentService.getAll();
@@ -1407,10 +1405,10 @@ export class VendorService {
       .filter(delivery => delivery.vendor === vendorId)
       .reduce((sum, delivery) => sum + delivery.total_amount, 0);
 
-    // Calculate total amount due from service bookings
+    // Calculate total amount due from service bookings based on progress percentage
     const serviceBookingsTotal = serviceBookings
       .filter(booking => booking.vendor === vendorId)
-      .reduce((sum, booking) => sum + booking.total_amount, 0);
+      .reduce((sum, booking) => sum + ServiceBookingService.calculateProgressBasedAmount(booking), 0);
 
     // Calculate total payments made to this vendor
     const totalPaid = payments
@@ -1650,6 +1648,12 @@ export class ServiceBookingService {
       throw new Error('Permission denied: Cannot delete service bookings');
     }
 
+    // Check if service booking has any payment allocations
+    const allocations = await paymentAllocationService.getByServiceBooking(id);
+    if (allocations.length > 0) {
+      throw new Error('Cannot delete service booking: It has payments assigned to it. Please remove all payments before deleting.');
+    }
+
     await pb.collection('service_bookings').delete(id);
     return true;
   }
@@ -1666,10 +1670,52 @@ export class ServiceBookingService {
     return allocations.reduce((total, allocation) => total + allocation.allocated_amount, 0);
   }
 
-  async calculatePaymentStatus(bookingId: string, totalAmount: number): Promise<'pending' | 'partial' | 'paid'> {
+  async calculatePaymentStatus(bookingId: string, totalAmount: number, percentCompleted: number): Promise<'pending' | 'partial' | 'paid' | 'currently_paid_up'> {
     const paidAmount = await this.calculatePaidAmount(bookingId);
+    
+    // Calculate the amount due based on percent completion
+    const amountDueBasedOnProgress = (totalAmount * percentCompleted) / 100;
+    
     if (paidAmount === 0) return 'pending';
     if (paidAmount >= totalAmount) return 'paid';
+    
+    // If paid amount covers the progress-based due amount, it's "currently paid up"
+    if (paidAmount >= amountDueBasedOnProgress && percentCompleted < 100) {
+      return 'currently_paid_up';
+    }
+    
+    return 'partial';
+  }
+
+  // Centralized calculation methods
+  static calculateProgressBasedAmount(serviceBooking: ServiceBooking): number {
+    return (serviceBooking.total_amount * (serviceBooking.percent_completed || 0)) / 100;
+  }
+
+  static async calculateOutstandingAmount(serviceBooking: ServiceBooking): Promise<number> {
+    const progressAmount = this.calculateProgressBasedAmount(serviceBooking);
+    const paidAmount = await serviceBookingService.calculatePaidAmount(serviceBooking.id!);
+    const outstanding = progressAmount - paidAmount;
+    return outstanding > 0 ? outstanding : 0;
+  }
+
+  static calculateOutstandingAmountFromData(serviceBooking: ServiceBooking, paidAmount: number): number {
+    const progressAmount = this.calculateProgressBasedAmount(serviceBooking);
+    const outstanding = progressAmount - paidAmount;
+    return outstanding > 0 ? outstanding : 0;
+  }
+
+  static calculatePaymentStatusFromData(serviceBooking: ServiceBooking, paidAmount: number): 'pending' | 'partial' | 'paid' | 'currently_paid_up' {
+    const progressAmount = this.calculateProgressBasedAmount(serviceBooking);
+    
+    if (paidAmount === 0) return 'pending';
+    if (paidAmount >= serviceBooking.total_amount) return 'paid';
+    
+    // If paid amount covers the progress-based due amount, it's "currently paid up"
+    if (paidAmount >= progressAmount && (serviceBooking.percent_completed || 0) < 100) {
+      return 'currently_paid_up';
+    }
+    
     return 'partial';
   }
 
@@ -1683,11 +1729,9 @@ export class ServiceBookingService {
       duration: record.duration,
       unit_rate: record.unit_rate,
       total_amount: record.total_amount,
-      status: record.status,
+      percent_completed: record.percent_completed || 0,
       completion_photos: record.completion_photos,
       notes: record.notes,
-      payment_status: 'pending' as const, // Will be calculated when needed
-      paid_amount: 0, // Will be calculated when needed
       site: record.site,
       created: record.created,
       updated: record.updated,
@@ -1769,15 +1813,33 @@ export class PaymentService {
       throw new Error('Permission denied: Cannot create payments');
     }
 
-    // Calculate credit note amount from detailed allocations
+    // Calculate credit note amount from detailed allocations and validate BEFORE creating payment
     let creditNoteAmount = 0;
+    let adjustedCreditNoteAllocations = data.credit_note_allocations;
+    
     if (data.credit_note_allocations) {
-      creditNoteAmount = Object.values(data.credit_note_allocations).reduce((sum: number, allocation: any) => {
+      // Check for balance changes BEFORE any creation starts
+      const balanceCheckResult = await this.checkCreditNoteBalancesBeforePayment(data.credit_note_allocations);
+      
+      if (balanceCheckResult.hasChanges && !data.allowBalanceAdjustment) {
+        // Throw error with balance change details for user confirmation
+        const balanceChangeError = new Error('CREDIT_NOTE_BALANCE_CHANGED');
+        (balanceChangeError as any).details = balanceCheckResult.details;
+        throw balanceChangeError;
+      } else if (balanceCheckResult.hasChanges && data.allowBalanceAdjustment) {
+        // User has confirmed - use adjusted allocations
+        adjustedCreditNoteAllocations = balanceCheckResult.adjustedAllocations;
+      }
+      
+      creditNoteAmount = Object.values(adjustedCreditNoteAllocations).reduce((sum: number, allocation: any) => {
         return sum + (allocation.amount || 0);
       }, 0);
       
-      // Validate credit note allocations
-      await this.validateCreditNoteAllocations(data.credit_note_allocations);
+      // Validate adjusted credit note allocations
+      await this.validateCreditNoteAllocations(adjustedCreditNoteAllocations);
+      
+      // Validate credit note priority rule
+      await this.validateCreditNotePriority(adjustedCreditNoteAllocations, data.vendor);
     }
 
     // Calculate actual account payment amount
@@ -1786,43 +1848,217 @@ export class PaymentService {
     if (accountPaymentAmount < 0) {
       throw new Error('Credit note amount exceeds total payment amount. This should not happen with proper validation.');
     }
+    
+    // Validate account is provided when account payment is needed
+    if (accountPaymentAmount > 0 && !data.account) {
+      throw new Error('Account selection is required when credit notes do not cover the full payment amount.');
+    }
+    
+    // Additional validation: ensure credit notes are fully utilized before using account
+    if (accountPaymentAmount > 0 && data.credit_note_allocations) {
+      await this.validateCreditNotesFullyUtilizedBeforeAccount(data.credit_note_allocations, data.vendor);
+    }
 
-    // Create the payment
+    // Create the payment first
     const record = await pb.collection('payments').create({
       ...data,
       site: siteId
     });
 
-    // Process credit notes with detailed allocations
-    if (data.credit_note_allocations && Object.keys(data.credit_note_allocations).length > 0) {
-      await this.processCreditNoteAllocations(record.id, data.credit_note_allocations, data.vendor);
+    try {
+      // Process credit notes with validated allocations (no race conditions now)
+      if (adjustedCreditNoteAllocations && Object.keys(adjustedCreditNoteAllocations).length > 0) {
+        await this.processCreditNoteAllocationsAfterValidation(
+          record.id, 
+          adjustedCreditNoteAllocations, 
+          data.vendor
+        );
+      }
+
+      // Create corresponding debit transaction only for actual account payment amount
+      if (accountPaymentAmount > 0) {
+        const vendorName = await this.getVendorName(data.vendor);
+        await accountTransactionService.create({
+          account: data.account,
+          type: 'debit',
+          amount: accountPaymentAmount,
+          transaction_date: data.payment_date,
+          description: `Payment to ${vendorName}`,
+          reference: data.reference,
+          notes: data.notes,
+          vendor: data.vendor,
+          payment: record.id,
+          transaction_category: 'payment'
+        });
+      }
+
+      // Handle payment allocations with detailed allocation amounts
+      await this.handleDetailedPaymentAllocations(
+        record.id, 
+        data.delivery_allocations || {}, 
+        data.service_booking_allocations || {}
+      );
+
+      return this.mapRecordToPayment(record);
+    } catch (error) {
+      // If any step fails, clean up the payment record and any partial data
+      console.error('Payment creation failed, cleaning up:', error);
+      
+      try {
+        // Delete any credit note usage records that were created
+        await creditNoteUsageService.deleteByPayment(record.id);
+        
+        // Delete the payment record
+        await pb.collection('payments').delete(record.id);
+      } catch (cleanupError) {
+        console.error('Error during cleanup:', cleanupError);
+      }
+      
+      throw error; // Re-throw the original error
+    }
+  }
+
+  private async checkCreditNoteBalancesBeforePayment(creditNoteAllocations: Record<string, any>): Promise<{
+    hasChanges: boolean;
+    adjustedAllocations: Record<string, any>;
+    details?: any;
+  }> {
+    const adjustedAllocations: Record<string, any> = {};
+    let hasChanges = false;
+    let changeDetails = null;
+
+    for (const [creditNoteId, allocation] of Object.entries(creditNoteAllocations)) {
+      if (allocation.amount <= 0) {
+        adjustedAllocations[creditNoteId] = allocation;
+        continue;
+      }
+      
+      // Check current balance
+      const freshCreditNote = await vendorCreditNoteService.getById(creditNoteId);
+      if (!freshCreditNote) {
+        throw new Error(`Credit note ${creditNoteId} not found`);
+      }
+      
+      if (allocation.amount > freshCreditNote.balance) {
+        // Balance has changed
+        hasChanges = true;
+        changeDetails = {
+          creditNoteId,
+          reference: freshCreditNote.reference || creditNoteId.slice(-6),
+          requestedAmount: allocation.amount,
+          availableAmount: freshCreditNote.balance,
+          originalAllocations: creditNoteAllocations
+        };
+        
+        // Adjust to available balance
+        adjustedAllocations[creditNoteId] = {
+          ...allocation,
+          amount: freshCreditNote.balance
+        };
+      } else {
+        // No change needed
+        adjustedAllocations[creditNoteId] = allocation;
+      }
     }
 
-    // Create corresponding debit transaction only for actual account payment amount
-    if (accountPaymentAmount > 0) {
-      const vendorName = await this.getVendorName(data.vendor);
-      await accountTransactionService.create({
-        account: data.account,
-        type: 'debit',
-        amount: accountPaymentAmount,
-        transaction_date: data.payment_date,
-        description: `Payment to ${vendorName}`,
-        reference: data.reference,
-        notes: data.notes,
-        vendor: data.vendor,
-        payment: record.id,
-        transaction_category: 'payment'
+    return {
+      hasChanges,
+      adjustedAllocations,
+      details: changeDetails
+    };
+  }
+
+  private async processCreditNoteAllocationsAfterValidation(
+    paymentId: string, 
+    creditNoteAllocations: Record<string, any>, 
+    vendorId: string
+  ): Promise<void> {
+    for (const [creditNoteId, allocation] of Object.entries(creditNoteAllocations)) {
+      if (allocation.amount <= 0) continue;
+      
+      // Create credit note usage record (no more validation needed)
+      await creditNoteUsageService.create({
+        credit_note: creditNoteId,
+        payment: paymentId,
+        vendor: vendorId,
+        used_amount: allocation.amount,
+        used_date: new Date().toISOString().split('T')[0],
+        description: `Applied to payment ${paymentId} (${allocation.state} usage)`
       });
+      
+      // Check if credit note is now fully used and update status
+      const updatedCreditNote = await vendorCreditNoteService.getById(creditNoteId);
+      if (updatedCreditNote && updatedCreditNote.balance <= 0) {
+        await vendorCreditNoteService.update(creditNoteId, { status: 'fully_used' });
+      }
     }
+  }
 
-    // Handle payment allocations with detailed allocation amounts
-    await this.handleDetailedPaymentAllocations(
-      record.id, 
-      data.delivery_allocations || {}, 
-      data.service_booking_allocations || {}
-    );
+  private async validateCreditNotesFullyUtilizedBeforeAccount(creditNoteAllocations: Record<string, any>, vendorId: string): Promise<void> {
+    // Get all available credit notes for this vendor
+    const availableCreditNotes = await vendorCreditNoteService.getByVendor(vendorId);
+    
+    // Check if any credit note being used is not fully utilized
+    for (const [creditNoteId, allocation] of Object.entries(creditNoteAllocations)) {
+      if (allocation.amount <= 0) continue;
+      
+      const creditNote = availableCreditNotes.find(cn => cn.id === creditNoteId);
+      if (!creditNote) continue;
+      
+      if (allocation.amount < creditNote.balance) {
+        throw new Error(
+          `Credit note priority violation: Credit note ${creditNote.reference || creditNoteId.slice(-6)} ` +
+          `must be fully utilized (₹${creditNote.balance.toFixed(2)}) before using account payment. ` +
+          `Currently allocated: ₹${allocation.amount.toFixed(2)}`
+        );
+      }
+    }
+    
+    // Check if there are any unused credit notes while account payment is being made
+    const unusedCreditNotes = availableCreditNotes.filter(cn => {
+      const allocation = creditNoteAllocations[cn.id];
+      return !allocation || allocation.amount <= 0;
+    });
+    
+    if (unusedCreditNotes.length > 0) {
+      const unusedRefs = unusedCreditNotes.map(cn => cn.reference || cn.id?.slice(-6)).join(', ');
+      throw new Error(
+        `Credit note priority violation: All available credit notes must be used before account payment. ` +
+        `Unused credit notes: ${unusedRefs}`
+      );
+    }
+  }
 
-    return this.mapRecordToPayment(record);
+  private async validateCreditNotePriority(creditNoteAllocations: Record<string, any>, vendorId: string): Promise<void> {
+    // Get all available credit notes for this vendor
+    const availableCreditNotes = await vendorCreditNoteService.getByVendor(vendorId);
+    
+    // Check if any credit note is being used partially while others remain unused
+    for (const [creditNoteId, allocation] of Object.entries(creditNoteAllocations)) {
+      if (allocation.amount <= 0) continue;
+      
+      const creditNote = availableCreditNotes.find(cn => cn.id === creditNoteId);
+      if (!creditNote) continue;
+      
+      // If this credit note is being used partially
+      if (allocation.amount < creditNote.balance) {
+        // Check if there are older unused credit notes
+        const olderUnusedCreditNotes = availableCreditNotes.filter(cn => {
+          const cnDate = new Date(cn.issue_date);
+          const currentDate = new Date(creditNote.issue_date);
+          const isOlder = cnDate < currentDate;
+          const isUnused = !creditNoteAllocations[cn.id] || creditNoteAllocations[cn.id].amount <= 0;
+          return isOlder && isUnused && cn.balance > 0;
+        });
+        
+        if (olderUnusedCreditNotes.length > 0) {
+          throw new Error(
+            `Credit note priority violation: Cannot partially use credit note ${creditNote.reference || creditNoteId.slice(-6)} ` +
+            `while older credit notes remain unused. Please use credit notes in chronological order (oldest first).`
+          );
+        }
+      }
+    }
   }
 
   private async validateCreditNoteAllocations(creditNoteAllocations: Record<string, any>): Promise<void> {
@@ -1851,23 +2087,71 @@ export class PaymentService {
     }
   }
 
-  private async processCreditNoteAllocations(paymentId: string, creditNoteAllocations: Record<string, any>, vendorId: string): Promise<void> {
+  private async processCreditNoteAllocations(
+    paymentId: string, 
+    creditNoteAllocations: Record<string, any>, 
+    vendorId: string,
+    allowBalanceAdjustment = false
+  ): Promise<{ adjustedAllocations?: Record<string, any>, balanceChanged?: boolean }> {
+    const adjustedAllocations: Record<string, any> = {};
+    let balanceChanged = false;
+    
     for (const [creditNoteId, allocation] of Object.entries(creditNoteAllocations)) {
       if (allocation.amount <= 0) continue;
       
-      // Create credit note usage record with exact allocation amount
-      await creditNoteUsageService.create({
-        credit_note: creditNoteId,
-        payment: paymentId,
-        vendor: vendorId,
-        used_amount: allocation.amount,
-        used_date: new Date().toISOString().split('T')[0],
-        description: `Applied to payment ${paymentId} (${allocation.state} usage)`
-      });
+      // Re-validate credit note balance at the time of usage
+      const freshCreditNote = await vendorCreditNoteService.getById(creditNoteId);
+      if (!freshCreditNote) {
+        throw new Error(`Credit note ${creditNoteId} not found during processing`);
+      }
       
-      // Update credit note balance (this will also update status if fully used)
-      await vendorCreditNoteService.updateBalance(creditNoteId, allocation.amount);
+      let actualUsageAmount = allocation.amount;
+      
+      if (allocation.amount > freshCreditNote.balance) {
+        if (!allowBalanceAdjustment) {
+          // Throw error with balance change details for user confirmation
+          const balanceChangeError = new Error('CREDIT_NOTE_BALANCE_CHANGED');
+          (balanceChangeError as any).details = {
+            creditNoteId,
+            reference: freshCreditNote.reference || creditNoteId.slice(-6),
+            requestedAmount: allocation.amount,
+            availableAmount: freshCreditNote.balance,
+            originalAllocations: creditNoteAllocations
+          };
+          throw balanceChangeError;
+        } else {
+          // User confirmed - adjust to available balance
+          actualUsageAmount = freshCreditNote.balance;
+          balanceChanged = true;
+        }
+      }
+      
+      if (actualUsageAmount > 0) {
+        // Create credit note usage record with actual amount
+        await creditNoteUsageService.create({
+          credit_note: creditNoteId,
+          payment: paymentId,
+          vendor: vendorId,
+          used_amount: actualUsageAmount,
+          used_date: new Date().toISOString().split('T')[0],
+          description: `Applied to payment ${paymentId} (${allocation.state} usage${balanceChanged ? ' - adjusted' : ''})`
+        });
+        
+        // Track adjusted allocation
+        adjustedAllocations[creditNoteId] = {
+          ...allocation,
+          amount: actualUsageAmount
+        };
+        
+        // Check if credit note is now fully used and update status
+        const updatedCreditNote = await vendorCreditNoteService.getById(creditNoteId);
+        if (updatedCreditNote && updatedCreditNote.balance <= 0) {
+          await vendorCreditNoteService.update(creditNoteId, { status: 'fully_used' });
+        }
+      }
     }
+    
+    return { adjustedAllocations, balanceChanged };
   }
 
   private async handleDetailedPaymentAllocations(
@@ -1939,7 +2223,8 @@ export class PaymentService {
       
       const booking = await pb.collection('service_bookings').getOne(bookingId);
       const currentPaidAmount = await serviceBookingService.calculatePaidAmount(bookingId);
-      const outstandingAmount = booking.total_amount - currentPaidAmount;
+      const progressAmount = ServiceBookingService.calculateProgressBasedAmount(booking);
+      const outstandingAmount = progressAmount - currentPaidAmount;
       const allocatedAmount = Math.min(remainingAmount, outstandingAmount);
       
       // Create payment allocation record
@@ -1966,7 +2251,7 @@ export class PaymentService {
   private async getVendorName(vendorId: string): Promise<string> {
     try {
       const vendor = await pb.collection('vendors').getOne(vendorId);
-      return vendor.name || 'Unknown Vendor';
+      return vendor.contact_person || 'Unknown Vendor';
     } catch (error) {
       return 'Unknown Vendor';
     }
@@ -2061,13 +2346,13 @@ export class PaymentService {
       expand: record.expand ? {
         vendor: record.expand.vendor ? this.mapRecordToVendor(record.expand.vendor) : undefined,
         account: record.expand.account ? this.mapRecordToAccount(record.expand.account) : undefined,
-        deliveries: record.expand.deliveries ?
+        deliveries: record.expand.deliveries && Array.isArray(record.expand.deliveries) ?
           record.expand.deliveries.map((delivery: RecordModel) => deliveryService.mapRecordToDelivery(delivery)) : undefined,
-        service_bookings: record.expand.service_bookings ?
+        service_bookings: record.expand.service_bookings && Array.isArray(record.expand.service_bookings) ?
           record.expand.service_bookings.map((booking: RecordModel) => serviceBookingService.mapRecordToServiceBooking(booking)) : undefined,
-        payment_allocations: record.expand.payment_allocations ?
+        payment_allocations: record.expand.payment_allocations && Array.isArray(record.expand.payment_allocations) ?
           record.expand.payment_allocations.map((allocation: RecordModel) => paymentAllocationService.mapRecordToPaymentAllocation(allocation)) : undefined,
-        credit_notes: record.expand.credit_notes ?
+        credit_notes: record.expand.credit_notes && Array.isArray(record.expand.credit_notes) ?
           record.expand.credit_notes.map((creditNote: RecordModel) => vendorCreditNoteService.mapRecordToCreditNote(creditNote)) : undefined
       } : undefined
     };
@@ -3211,7 +3496,7 @@ export class VendorRefundService {
   private async getVendorName(vendorId: string): Promise<string> {
     try {
       const vendor = await pb.collection('vendors').getOne(vendorId);
-      return vendor.name || vendor.contact_person || 'Unknown Vendor';
+      return vendor.contact_person || 'Unknown Vendor';
     } catch (error) {
       return 'Unknown Vendor';
     }
@@ -3441,14 +3726,16 @@ class VendorCreditNoteService {
   }
 
   async updateBalance(id: string, usedAmount: number): Promise<VendorCreditNote> {
+    // Since we now calculate balance dynamically from usage records,
+    // we just need to update the status based on the new calculated balance
     const creditNote = await this.getById(id);
     if (!creditNote) throw new Error('Credit note not found');
 
+    // Calculate what the new balance would be after this usage
     const newBalance = creditNote.balance - usedAmount;
-    if (newBalance < 0) throw new Error('Insufficient credit balance');
-
-    // Only update status if balance becomes zero
-    const status = newBalance === 0 ? 'fully_used' : creditNote.status;
+    
+    // Update status if balance becomes zero or negative
+    const status = newBalance <= 0 ? 'fully_used' : creditNote.status;
     return this.update(id, { status });
   }
 

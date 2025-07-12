@@ -129,7 +129,7 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Duration</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Rate</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Amount</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Progress</th>
             </tr>
           </thead>
           <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -150,9 +150,17 @@
                 ₹{{ booking.total_amount.toFixed(2) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span :class="`status-${booking.status}`">
-                  {{ booking.status }}
-                </span>
+                <div class="flex items-center space-x-2">
+                  <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2 max-w-[100px]">
+                    <div 
+                      class="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300"
+                      :style="{ width: `${booking.percent_completed || 0}%` }"
+                    ></div>
+                  </div>
+                  <span class="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                    {{ booking.percent_completed || 0 }}%
+                  </span>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -275,7 +283,7 @@ const exportServiceReport = () => {
 const generateServiceReportCSV = () => {
   if (!service.value) return '';
   
-  const headers = ['Date', 'Vendor', 'Duration', 'Rate', 'Total Amount', 'Status', 'Notes'];
+  const headers = ['Date', 'Vendor', 'Duration', 'Rate', 'Total Amount', 'Progress %', 'Notes'];
   
   const rows = serviceBookings.value.map(booking => [
     booking.start_date,
@@ -283,7 +291,7 @@ const generateServiceReportCSV = () => {
     booking.duration,
     booking.unit_rate,
     booking.total_amount,
-    booking.status,
+    `${booking.percent_completed || 0}%`,
     booking.notes || ''
   ]);
   

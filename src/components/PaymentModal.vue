@@ -341,7 +341,7 @@
                   <TriStateCheckbox
                     :id="`booking-${booking.id}`"
                     :label="booking.expand?.service?.name || 'Service'"
-                    :secondary-text="`${formatDate(booking.start_date)} | Total: ₹${booking.total_amount.toFixed(2)} | Paid: ₹${booking.paid_amount.toFixed(2)} | Outstanding: ₹${booking.outstanding.toFixed(2)}`"
+                    :secondary-text="`${formatDate(booking.start_date)} | Progress: ${booking.percent_completed || 0}% | Due: ₹${ServiceBookingService.calculateProgressBasedAmount(booking).toFixed(2)} | Paid: ₹${booking.paid_amount.toFixed(2)} | Outstanding: ₹${booking.outstanding.toFixed(2)}`"
                     :due-amount="booking.outstanding"
                     :allocated-amount="form.service_booking_allocations[booking.id]?.amount || 0"
                     :allow-partial-clicks="isAmountManuallySet"
@@ -425,7 +425,7 @@ import type {
   ServiceBooking,
   VendorCreditNote
 } from '../services/pocketbase';
-import { vendorCreditNoteService } from '../services/pocketbase';
+import { vendorCreditNoteService, ServiceBookingService } from '../services/pocketbase';
 
 // Props
 interface Props {
@@ -828,11 +828,12 @@ const selectableBookings = computed(() => {
       .filter(booking => !allocatedBookingIds.includes(booking.id!))
       .map(booking => {
         const paidAmount = calculatePaidAmount(booking.id!, 'service_booking');
-        const outstanding = booking.total_amount - paidAmount;
+        const outstanding = ServiceBookingService.calculateOutstandingAmountFromData(booking, paidAmount);
         return {
           id: booking.id!,
           start_date: booking.start_date,
           total_amount: booking.total_amount,
+          percent_completed: booking.percent_completed,
           paid_amount: paidAmount,
           outstanding: outstanding,
           expand: booking.expand
@@ -844,11 +845,12 @@ const selectableBookings = computed(() => {
   
   return vendorBookings.map(booking => {
     const paidAmount = calculatePaidAmount(booking.id!, 'service_booking');
-    const outstanding = booking.total_amount - paidAmount;
+    const outstanding = ServiceBookingService.calculateOutstandingAmountFromData(booking, paidAmount);
     return {
       id: booking.id!,
       start_date: booking.start_date,
       total_amount: booking.total_amount,
+      percent_completed: booking.percent_completed,
       paid_amount: paidAmount,
       outstanding: outstanding,
       expand: booking.expand
@@ -1463,13 +1465,30 @@ const handleServiceBookingTriStateChange = (bookingId: string, data: { allocated
   handlePaymentAmountRecomputation();
 };
 
+// Request deduplication for credit notes
+let loadCreditNotesPromise: Promise<void> | null = null;
+
 const loadVendorCreditNotes = async (forceRefresh = false) => {
   if (!form.vendor) {
     availableCreditNotes.value = [];
     calculateVendorOutstanding(); // Recalculate without credit notes
     return;
   }
+
+  // If already loading for the same vendor, return the existing promise
+  if (loadCreditNotesPromise) {
+    return loadCreditNotesPromise;
+  }
   
+  loadCreditNotesPromise = loadVendorCreditNotesInternal(forceRefresh);
+  try {
+    await loadCreditNotesPromise;
+  } finally {
+    loadCreditNotesPromise = null;
+  }
+};
+
+const loadVendorCreditNotesInternal = async (forceRefresh = false) => {
   try {
     loadingCreditNotes.value = true;
     const creditNotes = await vendorCreditNoteService.getByVendor(form.vendor);
