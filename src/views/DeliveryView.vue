@@ -106,7 +106,7 @@
     </div>
 
     <!-- Desktop Search (if needed) -->
-    <div class="hidden md:block mb-6">
+    <div class="hidden md:block mb-6" data-tour="search-bar">
       <div class="max-w-md">
         <SearchBox
           v-model="searchQuery"

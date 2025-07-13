@@ -458,120 +458,14 @@ const goToSubscription = () => {
 const restartTour = () => {
   userMenuOpen.value = false;
   
-  // Reset the current page's tour
+  // Reset the current page's tour and use the centralized composable to restart it
   const tourId = route.name?.toString().toLowerCase() || 'dashboard';
   resetTour(tourId);
   
-  // Get the tour config based on current route
-  let tourConfig = null;
-  switch (route.name) {
-    case 'Dashboard':
-      tourConfig = {
-        id: 'dashboard',
-        steps: [
-          {
-            popover: {
-              title: 'onboarding.dashboard.welcome.title',
-              description: 'onboarding.dashboard.welcome.description',
-              side: 'bottom' as const,
-              align: 'center' as const
-            }
-          },
-          {
-            element: '[data-tour="site-selector"]',
-            popover: {
-              title: 'onboarding.dashboard.siteSelector.title',
-              description: 'onboarding.dashboard.siteSelector.description',
-              side: 'bottom' as const
-            }
-          },
-          {
-            element: '[data-tour="quick-stats"]',
-            popover: {
-              title: 'onboarding.dashboard.quickStats.title',
-              description: 'onboarding.dashboard.quickStats.description',
-              side: 'top' as const
-            }
-          },
-          {
-            element: '[data-tour="recent-activities"]',
-            popover: {
-              title: 'onboarding.dashboard.recentActivities.title',
-              description: 'onboarding.dashboard.recentActivities.description',
-              side: 'top' as const
-            }
-          },
-          {
-            popover: {
-              title: 'onboarding.dashboard.shortcuts.title',
-              description: 'onboarding.dashboard.shortcuts.description',
-              side: 'bottom' as const
-            }
-          }
-        ],
-        showOnce: true
-      };
-      break;
-    case 'Items':
-      tourConfig = {
-        id: 'items',
-        steps: [
-          {
-            element: '[data-tour="add-item-btn"]',
-            popover: {
-              title: 'onboarding.items.addButton.title',
-              description: 'onboarding.items.addButton.description',
-              side: 'left' as const
-            }
-          },
-          {
-            element: '[data-tour="search-bar"]',
-            popover: {
-              title: 'onboarding.items.search.title',
-              description: 'onboarding.items.search.description',
-              side: 'bottom' as const
-            }
-          },
-          {
-            element: '[data-tour="items-table"]',
-            popover: {
-              title: 'onboarding.items.table.title',
-              description: 'onboarding.items.table.description',
-              side: 'top' as const
-            }
-          }
-        ],
-        showOnce: true
-      };
-      break;
-    case 'Deliveries':
-      tourConfig = {
-        id: 'delivery',
-        steps: [
-          {
-            element: '[data-tour="record-delivery-btn"]',
-            popover: {
-              title: 'onboarding.delivery.recordButton.title',
-              description: 'onboarding.delivery.recordButton.description',
-              side: 'left' as const
-            }
-          }
-        ],
-        showOnce: true
-      };
-      break;
-    default:
-      console.log('No tour available for current route:', route.name);
-      return;
-  }
-  
-  if (tourConfig) {
-    // Small delay to ensure DOM is ready, then force start the tour
-    setTimeout(() => {
-      const { startTour } = useOnboarding();
-      startTour(tourConfig, true); // Force show with true
-    }, 100);
-  }
+  // Trigger the centralized autoStartTour which has all routes properly defined
+  setTimeout(() => {
+    autoStartTour();
+  }, 100);
 };
 
 onMounted(() => {

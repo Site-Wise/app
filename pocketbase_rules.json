@@ -1,92 +1,92 @@
 {
   "users": {
     "create": "",
-    "read": "@request.auth.id = id",
-    "update": "@request.auth.id = id",
-    "delete": ""
+    "read": "id = @request.auth.id",
+    "update": "id = @request.auth.id",
+    "delete": "@request.admin.id != null"
   },
   "sites": {
-    "create": "@request.auth.id != null",
-    "read": "@request.auth.id && @collection.site_users.user.id ?= @request.auth.id",
-    "update": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "delete": "@request.auth.id && @collection.site_users.role = \"owner\""
+    "create": "@request.auth.id != ''",
+    "read": "id ?~ @collection.site_users.site && @collection.site_users.user ?= @request.auth.id",
+    "update": "(@collection.site_users.site = id && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "delete": "(@collection.site_users.site = id && @collection.site_users.user = @request.auth.id && @collection.site_users.role = 'owner')"
   },
   "site_users": {
-    "create": "@request.auth.id && (@collection.sites.admin_user = @request.auth.id || @collection.site_users.role = \"supervisor\")",
-    "read": "@request.auth.id && @collection.site_users.user.id ?= @request.auth.id",
-    "update": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "delete": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")"
-  },
-  "subscription_plans": {
-    "create": "@request.admin.id != null",
-    "read": "@request.admin.id != null",
-    "update": "@request.admin.id != null",
-    "delete": "@request.admin.id != null"
-  },
-  "site_subscriptions": {
-    "create": "@request.admin.id != null",
-    "read": "@request.auth.id && @collection.site_users.user.id ?= @request.auth.id",
-    "update": "@request.admin.id != null",
-    "delete": "@request.admin.id != null"
-  },
-  "subscription_usage": {
-    "create": "@request.admin.id != null",
-    "read": "@request.auth.id && @collection.site_users.user.id ?= @request.auth.id",
-    "update": "@request.admin.id != null",
-    "delete": "@request.admin.id != null"
+    "create": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "read": "site.id ?~ @collection.site_users.site && @collection.site_users.user ?= @request.auth.id",
+    "update": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "delete": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))"
   },
   "site_invitations": {
-    "create": "@request.auth.id && (@collection.sites.admin_user = @request.auth.id || @collection.site_users.role = \"supervisor\")",
-    "read": "@request.auth.id && (@request.auth.email = email || @collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "update": "@request.auth.id && @request.auth.email = email",
-    "delete": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")"
+    "create": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "read": "email = @request.auth.email || (@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "update": "email = @request.auth.email && @request.auth.id != ''",
+    "delete": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))"
+  },
+  "subscription_plans": {
+    "create": "@request.admin.id != ''",
+    "read": "@request.admin.id != ''",
+    "update": "@request.admin.id != ''",
+    "delete": "@request.admin.id != ''"
+  },
+  "site_subscriptions": {
+    "create": "@request.admin.id != ''",
+    "read": "site.id ?~ @collection.site_users.site && @collection.site_users.user ?= @request.auth.id",
+    "update": "@request.admin.id != ''",
+    "delete": "@request.admin.id != ''"
+  },
+  "subscription_usage": {
+    "create": "@request.admin.id != ''",
+    "read": "site.id ?~ @collection.site_users.site && @collection.site_users.user ?= @request.auth.id",
+    "update": "@request.admin.id != ''",
+    "delete": "@request.admin.id != ''"
   },
   "items": {
-    "create": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "read": "@request.auth.id && @collection.site_users.user.id ?= @request.auth.id",
-    "update": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "delete": "@request.auth.id && @collection.site_users.role = \"owner\""
+    "create": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "read": "site.id ?~ @collection.site_users.site && @collection.site_users.user ?= @request.auth.id",
+    "update": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "delete": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && @collection.site_users.role = 'owner')"
   },
   "accounts": {
-    "create": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "read": "@request.auth.id && @collection.site_users.user.id ?= @request.auth.id",
-    "update": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "delete": "@request.auth.id && @collection.site_users.role = \"owner\""
+    "create": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "read": "site.id ?~ @collection.site_users.site && @collection.site_users.user ?= @request.auth.id",
+    "update": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "delete": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && @collection.site_users.role = 'owner')"
   },
   "vendors": {
-    "create": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "read": "@request.auth.id && @collection.site_users.user.id ?= @request.auth.id",
-    "update": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "delete": "@request.auth.id && @collection.site_users.role = \"owner\""
+    "create": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "read": "site.id ?~ @collection.site_users.site && @collection.site_users.user ?= @request.auth.id",
+    "update": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "delete": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && @collection.site_users.role = 'owner')"
   },
   "deliveries": {
-    "create": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "read": "@request.auth.id && @collection.site_users.user.id ?= @request.auth.id",
-    "update": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "delete": "@request.auth.id && @collection.site_users.role = \"owner\""
+    "create": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "read": "site.id ?~ @collection.site_users.site && @collection.site_users.user ?= @request.auth.id",
+    "update": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "delete": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && @collection.site_users.role = 'owner')"
   },
   "services": {
-    "create": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "read": "@request.auth.id && @collection.site_users.user.id ?= @request.auth.id",
-    "update": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "delete": "@request.auth.id && @collection.site_users.role = \"owner\""
+    "create": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "read": "site.id ?~ @collection.site_users.site && @collection.site_users.user ?= @request.auth.id",
+    "update": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "delete": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && @collection.site_users.role = 'owner')"
   },
   "service_bookings": {
-    "create": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "read": "@request.auth.id && @collection.site_users.user.id ?= @request.auth.id",
-    "update": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "delete": "@request.auth.id && @collection.site_users.role = \"owner\""
+    "create": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "read": "site.id ?~ @collection.site_users.site && @collection.site_users.user ?= @request.auth.id",
+    "update": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "delete": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && @collection.site_users.role = 'owner')"
   },
   "payments": {
-    "create": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "read": "@request.auth.id && @collection.site_users.user.id ?= @request.auth.id",
-    "update": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "delete": "@request.auth.id && @collection.site_users.role = \"owner\""
+    "create": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "read": "site.id ?~ @collection.site_users.site && @collection.site_users.user ?= @request.auth.id",
+    "update": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "delete": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && @collection.site_users.role = 'owner')"
   },
   "quotations": {
-    "create": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "read": "@request.auth.id && @collection.site_users.user.id ?= @request.auth.id",
-    "update": "@request.auth.id && (@collection.site_users.role = \"owner\" || @collection.site_users.role = \"supervisor\")",
-    "delete": "@request.auth.id && @collection.site_users.role = \"owner\""
+    "create": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "read": "site.id ?~ @collection.site_users.site && @collection.site_users.user ?= @request.auth.id",
+    "update": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && (@collection.site_users.role = 'owner' || @collection.site_users.role = 'supervisor'))",
+    "delete": "(@collection.site_users.site = site && @collection.site_users.user = @request.auth.id && @collection.site_users.role = 'owner')"
   }
 }

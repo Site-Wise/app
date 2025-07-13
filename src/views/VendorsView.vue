@@ -23,7 +23,7 @@
     </div>
 
     <!-- Search Box -->
-    <div class="mb-6">
+    <div class="mb-6" data-tour="search-bar">
       <div class="max-w-md">
         <SearchBox
           v-model="searchQuery"

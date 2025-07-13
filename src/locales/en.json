@@ -1049,7 +1049,9 @@
       "services": "Services",
       "serviceBookings": "Service Bookings",
       "service_bookings": "Service Bookings",
-      "payments": "Payments"
+      "payments": "Payments",
+      "accounts": "Accounts",
+      "vendor_returns": "Vendor Returns"
     },
     "plans": {
       "free": {
@@ -1194,7 +1196,13 @@
       },
       "table": {
         "title": "Items List",
-        "description": "View all your items here. Click on any item to see details or edit. The table is mobile-responsive."
+        "description": "View all your items here. Click on any item to see details or edit. The table is mobile-responsive.",
+        "descriptionWithClone": "View all your items here. Click on any item to see details. Each item has action buttons - use the Clone button (copy icon) to quickly duplicate items with all their details. On mobile, access these actions through the three-dot menu."
+      },
+      "cloneButton": {
+        "title": "Clone Items Quickly",
+        "description": "Use the clone button to quickly create similar items. It copies all details from an existing item and adds '(Copy)' to the name, saving you time when adding variations of the same material.",
+        "mobileDescription": "Tap the three-dot menu on any item card to access actions like Edit, Clone, and Delete. The Clone option lets you quickly create similar items by copying all details from an existing item."
       }
     },
     "delivery": {
@@ -1202,9 +1210,115 @@
         "title": "Record Delivery",
         "description": "Click here to record new deliveries from vendors. Track what materials arrived and when."
       },
+      "search": {
+        "title": "Search Deliveries",
+        "description": "Quickly find deliveries by vendor name, reference number, or notes. The search updates in real-time as you type."
+      },
+      "list": {
+        "title": "Deliveries List",
+        "description": "View all your deliveries here. Each delivery shows vendor, items, total amount, and payment status. Use the action buttons to view delivery details, edit information, or delete deliveries (if you have permission). Click on any delivery row to see full details."
+      },
       "filters": {
         "title": "Filter Deliveries",
         "description": "Filter deliveries by date range, vendor, or payment status to find what you need quickly."
+      }
+    },
+    "vendors": {
+      "addButton": {
+        "title": "Add New Vendors",
+        "description": "Click here to add new vendors and suppliers. You can also use Shift+Alt+V as a shortcut."
+      },
+      "search": {
+        "title": "Search Vendors",
+        "description": "Quickly find vendors by name, contact, or specialties. The search updates in real-time as you type."
+      },
+      "list": {
+        "title": "Vendors List",
+        "description": "View all your vendors here. Click on any vendor to see details, payment history, and outstanding amounts. You can edit, delete, or record payments directly from the action buttons."
+      }
+    },
+    "services": {
+      "addButton": {
+        "title": "Add New Services",
+        "description": "Click here to add new services like labor, equipment, or professional services. You can also use Shift+Alt+S as a shortcut."
+      },
+      "search": {
+        "title": "Search Services",
+        "description": "Quickly find services by name, category, or description. The search updates in real-time as you type."
+      },
+      "list": {
+        "title": "Services List",
+        "description": "View all your services here. You can see service details, rates, and booking history. Use the action buttons to edit, activate/deactivate, or delete services."
+      }
+    },
+    "accounts": {
+      "addButton": {
+        "title": "Add New Accounts",
+        "description": "Click here to add new payment accounts like bank accounts, cash, or digital wallets. You can also use Shift+Alt+A as a shortcut."
+      },
+      "search": {
+        "title": "Search Accounts",
+        "description": "Quickly find accounts by name or account number. The search updates in real-time as you type."
+      },
+      "list": {
+        "title": "Accounts List",
+        "description": "View all your payment accounts here. Monitor account balances, track transactions, and manage your financial accounts. Click on any account to see detailed transaction history."
+      }
+    },
+    "payments": {
+      "recordButton": {
+        "title": "Record New Payments",
+        "description": "Click here to record payments made to vendors or for services. You can also use Shift+Alt+P as a shortcut."
+      },
+      "search": {
+        "title": "Search Payments",
+        "description": "Quickly find payments by vendor, account, or reference. The search updates in real-time as you type."
+      },
+      "list": {
+        "title": "Payments List",
+        "description": "View all your payments here. Track payment status, allocated amounts, and outstanding balances. You can edit payment details or delete payments if needed."
+      }
+    },
+    "serviceBookings": {
+      "bookButton": {
+        "title": "Book New Services",
+        "description": "Click here to book services from your vendors. Schedule labor, equipment, or professional services. You can also use Shift+Alt+B as a shortcut."
+      },
+      "search": {
+        "title": "Search Bookings",
+        "description": "Quickly find service bookings by service name, vendor, or booking status. The search updates in real-time as you type."
+      },
+      "list": {
+        "title": "Service Bookings List",
+        "description": "View all your service bookings here. Track booking progress, payment status, and completion photos. You can edit booking details, update progress, or manage payments."
+      }
+    },
+    "quotations": {
+      "addButton": {
+        "title": "Add New Quotations",
+        "description": "Click here to add price quotations from vendors for items or services. You can also use Shift+Alt+Q as a shortcut."
+      },
+      "search": {
+        "title": "Search Quotations",
+        "description": "Quickly find quotations by item, vendor, or service. The search updates in real-time as you type."
+      },
+      "list": {
+        "title": "Quotations List",
+        "description": "View all your quotations here. Compare prices from different vendors, check validity dates, and manage your price quotes. You can edit or delete quotations as needed."
+      }
+    },
+    "vendorReturns": {
+      "addButton": {
+        "title": "Add New Vendor Returns",
+        "description": "Click here to record returns of materials to vendors. Track what was returned and when. You can also use Shift+Alt+R as a shortcut."
+      },
+      "search": {
+        "title": "Search Returns",
+        "description": "Quickly find vendor returns by vendor name, reference number, or notes. The search updates in real-time as you type."
+      },
+      "list": {
+        "title": "Vendor Returns List",
+        "description": "View all your vendor returns here. Track what materials were returned, to which vendor, and the return status. You can edit return details or delete returns if needed."
       }
     }
   },

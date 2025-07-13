@@ -100,6 +100,7 @@
                 'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
               ]"
               :title="t('items.cloneItem')"
+              data-tour="clone-item-btn"
             >
               <Copy class="h-4 w-4" />
             </button>
@@ -119,7 +120,7 @@
           </div>
 
           <!-- Mobile Dropdown Menu -->
-          <div class="lg:hidden">
+          <div class="lg:hidden" data-tour="mobile-actions-menu">
             <CardDropdownMenu
               :actions="getItemActions(item)"
               @action="handleItemAction(item, $event)"

@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, getCurrentInstance } from 'vue';
 import { driver, type Config as DriverConfig } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import { useI18n } from './useI18n';
@@ -25,8 +25,19 @@ const ONBOARDING_DISABLED_KEY = 'sitewise_onboarding_disabled';
 const FEATURE_TOUR_PREFIX = 'sitewise_feature_';
 
 export function useOnboarding() {
+  // Check if we're in a component context
+  const instance = getCurrentInstance();
+  
   const { t } = useI18n();
-  const route = useRoute();
+  
+  // Only use route if in component context to avoid inject warnings
+  let route;
+  try {
+    route = instance ? useRoute() : null;
+  } catch (error) {
+    // Fallback if useRoute fails outside component context
+    route = null;
+  }
   
   const isOnboardingDisabled = ref(false);
   const currentTourId = ref<string | null>(null);
@@ -124,23 +135,25 @@ export function useOnboarding() {
 
     currentTourId.value = tourConfig.id;
 
-    // Add skip onboarding option to first step
-    const stepsWithSkip = [...tourConfig.steps];
-    if (stepsWithSkip.length > 0 && tourConfig.showOnce) {
-      stepsWithSkip[0].popover.description += `<br><br><button class="driver-skip-all" onclick="window.dispatchEvent(new CustomEvent('skip-all-onboarding'))">${t('onboarding.skipAll')}</button>`;
-    }
-
     try {
+      // First translate all steps
+      const translatedSteps = tourConfig.steps.map(step => ({
+        ...step,
+        popover: {
+          ...step.popover,
+          title: t(step.popover.title),
+          description: t(step.popover.description)
+        }
+      }));
+
+      // Add skip onboarding option to first step AFTER translation
+      if (translatedSteps.length > 0 && tourConfig.showOnce) {
+        translatedSteps[0].popover.description += `<br><br><button class="driver-skip-all" onclick="window.dispatchEvent(new CustomEvent('skip-all-onboarding'))">${t('onboarding.skipAll')}</button>`;
+      }
+
       const driverObj = driver({
         ...getDriverConfig(),
-        steps: stepsWithSkip.map(step => ({
-          ...step,
-          popover: {
-            ...step.popover,
-            title: t(step.popover.title),
-            description: t(step.popover.description)
-          }
-        }))
+        steps: translatedSteps
       });
 
       // Listen for skip all event
@@ -203,9 +216,10 @@ export function useOnboarding() {
     showOnce: true
   });
 
-  const getItemsViewTour = (): TourConfig => ({
-    id: 'items',
-    steps: [
+  const getItemsViewTour = (): TourConfig => {
+    const isMobile = window.innerWidth < 1024; // lg breakpoint
+    
+    const steps: OnboardingStep[] = [
       {
         element: '[data-tour="add-item-btn"]',
         popover: {
@@ -223,16 +237,43 @@ export function useOnboarding() {
         }
       },
       {
-        element: '[data-tour="items-table"]',
         popover: {
           title: 'onboarding.items.table.title',
           description: 'onboarding.items.table.description',
-          side: 'top'
+          side: 'top',
+          align: 'center'
         }
       }
-    ],
-    showOnce: true
-  });
+    ];
+    
+    // Add clone button step for desktop only (mobile users see it in the dropdown)
+    if (!isMobile) {
+      steps.push({
+        element: '[data-tour="clone-item-btn"]:first-of-type',
+        popover: {
+          title: 'onboarding.items.cloneButton.title',
+          description: 'onboarding.items.cloneButton.description',
+          side: 'left'
+        }
+      });
+    } else {
+      // For mobile, add a step pointing to the dropdown menu
+      steps.push({
+        element: '[data-tour="mobile-actions-menu"]:first-of-type',
+        popover: {
+          title: 'onboarding.items.cloneButton.title',
+          description: 'onboarding.items.cloneButton.mobileDescription',
+          side: 'left'
+        }
+      });
+    }
+    
+    return {
+      id: 'items',
+      steps,
+      showOnce: true
+    };
+  };
 
   const getDeliveryViewTour = (): TourConfig => ({
     id: 'delivery',
@@ -246,11 +287,228 @@ export function useOnboarding() {
         }
       },
       {
-        element: '[data-tour="delivery-filters"]',
+        element: '[data-tour="search-bar"]',
         popover: {
-          title: 'onboarding.delivery.filters.title',
-          description: 'onboarding.delivery.filters.description',
+          title: 'onboarding.delivery.search.title',
+          description: 'onboarding.delivery.search.description',
           side: 'bottom'
+        }
+      },
+      {
+        popover: {
+          title: 'onboarding.delivery.list.title',
+          description: 'onboarding.delivery.list.description',
+          side: 'top',
+          align: 'center'
+        }
+      }
+    ],
+    showOnce: true
+  });
+
+  const getVendorsViewTour = (): TourConfig => ({
+    id: 'vendors',
+    steps: [
+      {
+        element: '[data-keyboard-shortcut="n"]',
+        popover: {
+          title: 'onboarding.vendors.addButton.title',
+          description: 'onboarding.vendors.addButton.description',
+          side: 'left'
+        }
+      },
+      {
+        element: '[data-tour="search-bar"]',
+        popover: {
+          title: 'onboarding.vendors.search.title',
+          description: 'onboarding.vendors.search.description',
+          side: 'bottom'
+        }
+      },
+      {
+        popover: {
+          title: 'onboarding.vendors.list.title',
+          description: 'onboarding.vendors.list.description',
+          side: 'top',
+          align: 'center'
+        }
+      }
+    ],
+    showOnce: true
+  });
+
+  const getServicesViewTour = (): TourConfig => ({
+    id: 'services',
+    steps: [
+      {
+        element: '[data-keyboard-shortcut="n"]',
+        popover: {
+          title: 'onboarding.services.addButton.title',
+          description: 'onboarding.services.addButton.description',
+          side: 'left'
+        }
+      },
+      {
+        popover: {
+          title: 'onboarding.services.list.title',
+          description: 'onboarding.services.list.description',
+          side: 'top',
+          align: 'center'
+        }
+      }
+    ],
+    showOnce: true
+  });
+
+  const getAccountsViewTour = (): TourConfig => ({
+    id: 'accounts',
+    steps: [
+      {
+        element: '[data-keyboard-shortcut="a"]',
+        popover: {
+          title: 'onboarding.accounts.addButton.title',
+          description: 'onboarding.accounts.addButton.description',
+          side: 'left'
+        }
+      },
+      {
+        element: '[data-tour="search-bar"]',
+        popover: {
+          title: 'onboarding.accounts.search.title',
+          description: 'onboarding.accounts.search.description',
+          side: 'bottom'
+        }
+      },
+      {
+        popover: {
+          title: 'onboarding.accounts.list.title',
+          description: 'onboarding.accounts.list.description',
+          side: 'top',
+          align: 'center'
+        }
+      }
+    ],
+    showOnce: true
+  });
+
+  const getPaymentsViewTour = (): TourConfig => ({
+    id: 'payments',
+    steps: [
+      {
+        element: '[data-keyboard-shortcut="p"]',
+        popover: {
+          title: 'onboarding.payments.recordButton.title',
+          description: 'onboarding.payments.recordButton.description',
+          side: 'left'
+        }
+      },
+      {
+        element: '[data-tour="search-bar"]',
+        popover: {
+          title: 'onboarding.payments.search.title',
+          description: 'onboarding.payments.search.description',
+          side: 'bottom'
+        }
+      },
+      {
+        popover: {
+          title: 'onboarding.payments.list.title',
+          description: 'onboarding.payments.list.description',
+          side: 'top',
+          align: 'center'
+        }
+      }
+    ],
+    showOnce: true
+  });
+
+  const getServiceBookingsViewTour = (): TourConfig => ({
+    id: 'serviceBookings',
+    steps: [
+      {
+        element: '[data-keyboard-shortcut="b"]',
+        popover: {
+          title: 'onboarding.serviceBookings.bookButton.title',
+          description: 'onboarding.serviceBookings.bookButton.description',
+          side: 'left'
+        }
+      },
+      {
+        element: '[data-tour="search-bar"]',
+        popover: {
+          title: 'onboarding.serviceBookings.search.title',
+          description: 'onboarding.serviceBookings.search.description',
+          side: 'bottom'
+        }
+      },
+      {
+        popover: {
+          title: 'onboarding.serviceBookings.list.title',
+          description: 'onboarding.serviceBookings.list.description',
+          side: 'top',
+          align: 'center'
+        }
+      }
+    ],
+    showOnce: true
+  });
+
+  const getQuotationsViewTour = (): TourConfig => ({
+    id: 'quotations',
+    steps: [
+      {
+        element: '[data-keyboard-shortcut="q"]',
+        popover: {
+          title: 'onboarding.quotations.addButton.title',
+          description: 'onboarding.quotations.addButton.description',
+          side: 'left'
+        }
+      },
+      {
+        element: '[data-tour="search-bar"]',
+        popover: {
+          title: 'onboarding.quotations.search.title',
+          description: 'onboarding.quotations.search.description',
+          side: 'bottom'
+        }
+      },
+      {
+        popover: {
+          title: 'onboarding.quotations.list.title',
+          description: 'onboarding.quotations.list.description',
+          side: 'top',
+          align: 'center'
+        }
+      }
+    ],
+    showOnce: true
+  });
+
+  const getVendorReturnsViewTour = (): TourConfig => ({
+    id: 'vendorReturns',
+    steps: [
+      {
+        element: '[data-keyboard-shortcut="r"]',
+        popover: {
+          title: 'onboarding.vendorReturns.addButton.title',
+          description: 'onboarding.vendorReturns.addButton.description',
+          side: 'left'
+        }
+      },
+      {
+        element: '[data-tour="search-bar"]',
+        popover: {
+          title: 'onboarding.vendorReturns.search.title',
+          description: 'onboarding.vendorReturns.search.description',
+          side: 'bottom'
+        }
+      },
+      {
+        popover: {
+          title: 'onboarding.vendorReturns.list.title',
+          description: 'onboarding.vendorReturns.list.description',
+          side: 'top',
+          align: 'center'
         }
       }
     ],
@@ -273,21 +531,42 @@ export function useOnboarding() {
 
   // Auto-start tour based on current route
   const autoStartTour = () => {
-    if (isOnboardingDisabled.value) {
+    if (isOnboardingDisabled.value || !route) {
       return;
     }
 
     let tour: TourConfig | null = null;
     
-    switch (route?.name) {
-      case 'Dashboard': // Fix: Use correct route name
+    switch (route.name) {
+      case 'Dashboard':
         tour = getDashboardTour();
         break;
       case 'Items':
         tour = getItemsViewTour();
         break;
-      case 'Deliveries': // Fix: Use correct route name  
+      case 'Deliveries':
         tour = getDeliveryViewTour();
+        break;
+      case 'Vendors':
+        tour = getVendorsViewTour();
+        break;
+      case 'Services':
+        tour = getServicesViewTour();
+        break;
+      case 'Accounts':
+        tour = getAccountsViewTour();
+        break;
+      case 'Payments':
+        tour = getPaymentsViewTour();
+        break;
+      case 'ServiceBookings':
+        tour = getServiceBookingsViewTour();
+        break;
+      case 'Quotations':
+        tour = getQuotationsViewTour();
+        break;
+      case 'VendorReturns':
+        tour = getVendorReturnsViewTour();
         break;
     }
 
@@ -311,18 +590,22 @@ export function useOnboarding() {
     }
   };
 
-  // Initialize on mount
-  onMounted(() => {
-    checkOnboardingDisabled();
-    setTimeout(() => autoStartTour(), 1000);
-  });
+  // Initialize on mount (only if in component context)
+  if (instance) {
+    onMounted(() => {
+      checkOnboardingDisabled();
+      setTimeout(() => autoStartTour(), 1000);
+    });
 
-  // Watch for route changes to trigger tours
-  watch(() => route?.name, (newRouteName) => {
-    if (newRouteName) {
-      autoStartTour();
+    // Watch for route changes to trigger tours (only if in component context and route exists)
+    if (route) {
+      watch(() => route.name, (newRouteName) => {
+        if (newRouteName) {
+          autoStartTour();
+        }
+      });
     }
-  });
+  }
 
   // Debug utility to check onboarding status
   const getOnboardingDebugInfo = () => {
@@ -335,7 +618,7 @@ export function useOnboarding() {
     
     return {
       isDisabled: isOnboardingDisabled.value,
-      currentRoute: String(route.name),
+      currentRoute: route ? String(route.name) : 'unknown',
       dashboardShown: hasTourBeenShown('dashboard'),
       itemsShown: hasTourBeenShown('items'),
       deliveryShown: hasTourBeenShown('delivery'),
