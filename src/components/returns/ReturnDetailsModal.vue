@@ -549,10 +549,6 @@ const getConditionClass = (condition: string) => {
   return classes[condition as keyof typeof classes] || 'status-pending';
 };
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString();
-};
-
 const getPhotoUrl = (filename: string) => {
   if (!props.returnData?.id) return '';
   const baseUrl = import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090';

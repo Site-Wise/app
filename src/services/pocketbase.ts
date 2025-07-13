@@ -1912,6 +1912,12 @@ export class PaymentService {
         // Delete any credit note usage records that were created
         await creditNoteUsageService.deleteByPayment(record.id);
         
+        // Delete any payment allocation records that were created
+        await paymentAllocationService.deleteByPayment(record.id);
+        
+        // Delete any account transaction records that were created
+        await accountTransactionService.deleteByPayment(record.id);
+        
         // Delete the payment record
         await pb.collection('payments').delete(record.id);
       } catch (cleanupError) {
@@ -2096,21 +2102,27 @@ export class PaymentService {
     paymentId: string, 
     deliveryAllocations: Record<string, any>, 
     serviceBookingAllocations: Record<string, any>
-  ): Promise<void> {
+  ): Promise<string[]> {
     const siteId = getCurrentSiteId();
-    if (!siteId) return;
+    if (!siteId) return [];
+
+    const createdAllocationIds: string[] = [];
 
     // Handle delivery allocations with exact amounts
     for (const [deliveryId, allocation] of Object.entries(deliveryAllocations)) {
       if (allocation.amount <= 0) continue;
       
       // Create payment allocation record with exact amount
-      await paymentAllocationService.create({
+      const allocationRecord = await paymentAllocationService.create({
         payment: paymentId,
         delivery: deliveryId,
         allocated_amount: allocation.amount,
         site: siteId
       });
+      
+      if (allocationRecord.id) {
+        createdAllocationIds.push(allocationRecord.id);
+      }
     }
     
     // Handle service booking allocations with exact amounts
@@ -2118,13 +2130,26 @@ export class PaymentService {
       if (allocation.amount <= 0) continue;
       
       // Create payment allocation record with exact amount
-      await paymentAllocationService.create({
+      const allocationRecord = await paymentAllocationService.create({
         payment: paymentId,
         service_booking: bookingId,
         allocated_amount: allocation.amount,
         site: siteId
       });
+      
+      if (allocationRecord.id) {
+        createdAllocationIds.push(allocationRecord.id);
+      }
     }
+
+    // Update payment record with allocation IDs so expand works properly
+    if (createdAllocationIds.length > 0) {
+      await pb.collection('payments').update(paymentId, {
+        payment_allocations: createdAllocationIds
+      });
+    }
+
+    return createdAllocationIds;
   }
 
   private async handlePaymentAllocations(paymentId: string, deliveryIds: string[], serviceBookingIds: string[], totalAmount: number) {

@@ -58,11 +58,11 @@
                 </option>
               </select>
             </div>
-            <div v-else class="flex justify-between">
+            <div v-else-if="payment?.expand?.account" class="flex justify-between">
               <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.paymentAccount') }}:</span>
               <div class="flex items-center">
-                <component :is="getAccountIcon(payment?.expand?.account?.type)" class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <span class="text-sm text-gray-900 dark:text-white">{{ payment?.expand?.account?.name }}</span>
+                <component :is="getAccountIcon(payment.expand.account.type)" class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <span class="text-sm text-gray-900 dark:text-white">{{ payment.expand.account.name }}</span>
               </div>
             </div>
 
@@ -183,9 +183,48 @@
                 </div>
               </div>
             </div>
-            <div v-else class="flex justify-between">
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.amount') }}:</span>
-              <span class="text-sm font-semibold text-gray-900 dark:text-white">₹{{ payment?.amount.toFixed(2) }}</span>
+            <div v-else>
+              <!-- Payment Amount Breakdown in View Mode -->
+              <div class="space-y-2">
+                <div class="flex justify-between">
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.amount') }}:</span>
+                  <span class="text-sm font-semibold text-gray-900 dark:text-white">₹{{ payment?.amount.toFixed(2) }}</span>
+                </div>
+                
+                <!-- Show breakdown if payment uses credit notes -->
+                <div v-if="payment?.credit_notes && payment.credit_notes.length > 0" class="ml-4 space-y-1 text-xs">
+                  <!-- Credit Note Usage Amount -->
+                  <div class="flex justify-between">
+                    <span class="text-green-600 dark:text-green-400">Credit Notes Used:</span>
+                    <span class="text-green-600 dark:text-green-400">₹{{ totalCreditNoteUsed.toFixed(2) }}</span>
+                  </div>
+                  
+                  <!-- Account Payment Amount (only if payment has account and amount > 0) -->
+                  <div v-if="payment?.expand?.account && accountPaymentAmountInView > 0" class="flex justify-between">
+                    <span class="text-blue-600 dark:text-blue-400">Account Payment:</span>
+                    <span class="text-blue-600 dark:text-blue-400">₹{{ accountPaymentAmountInView.toFixed(2) }}</span>
+                  </div>
+                  
+                  <!-- Payment Method Indicator -->
+                  <div class="flex justify-between">
+                    <span class="text-gray-600 dark:text-gray-400 italic">Payment Method:</span>
+                    <span class="text-gray-600 dark:text-gray-400 italic">
+                      {{ !payment?.expand?.account ? 'Credit Note Only' : 'Mixed (Account + Credit Notes)' }}
+                    </span>
+                  </div>
+                  
+                  <!-- Individual Credit Note Details -->
+                  <div v-if="creditNoteUsageData.length > 0" class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">Credit Note Details:</div>
+                    <div v-for="usage in creditNoteUsageData" :key="usage.id" class="flex justify-between">
+                      <span class="text-gray-600 dark:text-gray-400">
+                        {{ usage.expand?.credit_note?.reference || `CN-${usage.credit_note?.slice(-6)}` }}:
+                      </span>
+                      <span class="text-gray-600 dark:text-gray-400">₹{{ usage.amount_used.toFixed(2) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -425,7 +464,7 @@ import type {
   ServiceBooking,
   VendorCreditNote
 } from '../services/pocketbase';
-import { vendorCreditNoteService, ServiceBookingService } from '../services/pocketbase';
+import { vendorCreditNoteService, ServiceBookingService, creditNoteUsageService } from '../services/pocketbase';
 
 // Props
 interface Props {
@@ -619,6 +658,7 @@ const vendorPendingItems = ref(0);
 // Credit notes data
 const availableCreditNotes = ref<VendorCreditNote[]>([]);
 const loadingCreditNotes = ref(false);
+const creditNoteUsageData = ref<any[]>([]);
 
 // Computed properties
 const modalTitle = computed(() => {
@@ -1600,10 +1640,45 @@ const handleEscape = () => {
   emit('close');
 };
 
+// Load credit note usage data for view mode
+const loadCreditNoteUsage = async () => {
+  if (!props.payment?.id || props.mode !== 'EDIT') return;
+  
+  try {
+    const usageData = await creditNoteUsageService.getByPayment(props.payment.id);
+    creditNoteUsageData.value = usageData;
+  } catch (error) {
+    console.error('Error loading credit note usage:', error);
+    creditNoteUsageData.value = [];
+  }
+};
+
+// Calculate total credit note amount used in this payment
+const totalCreditNoteUsed = computed(() => {
+  if (props.mode !== 'EDIT' || !creditNoteUsageData.value.length) {
+    return 0;
+  }
+  
+  return creditNoteUsageData.value.reduce((sum, usage) => sum + usage.amount_used, 0);
+});
+
+// Calculate account payment amount
+const accountPaymentAmountInView = computed(() => {
+  if (props.mode !== 'EDIT' || !props.payment) {
+    return 0;
+  }
+  
+  return props.payment.amount - totalCreditNoteUsed.value;
+});
+
+
 // Lifecycle
 onMounted(() => {
   if (props.isVisible) {
     initializeForm();
+    if (props.mode === 'EDIT') {
+      loadCreditNoteUsage();
+    }
   }
 });
 
@@ -1611,6 +1686,9 @@ onMounted(() => {
 watch(() => props.isVisible, (newValue) => {
   if (newValue) {
     initializeForm();
+    if (props.mode === 'EDIT') {
+      loadCreditNoteUsage();
+    }
     nextTick(() => {
       vendorInputRef.value?.focus();
     });

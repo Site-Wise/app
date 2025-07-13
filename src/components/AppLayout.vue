@@ -144,6 +144,8 @@
                       <div class="font-medium text-sm truncate">{{ t('nav.manage_users') }}</div>
                     </div>
                   </button>
+                  <!-- Subscription menu temporarily hidden -->
+                  <!--
                   <button v-if="isOwner" @click="goToSubscription"
                     class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300"
                     role="menuitem">
@@ -152,6 +154,7 @@
                       <div class="font-medium text-sm truncate">{{ t('subscription.title') }}</div>
                     </div>
                   </button>
+                  -->
                   <button @click="restartTour"
                     class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300"
                     role="menuitem">

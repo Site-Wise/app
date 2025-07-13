@@ -64,10 +64,10 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="space-y-1">
-                <!-- Account -->
-                <div class="flex items-center">
-                  <component :is="getAccountIcon(payment.expand?.account?.type)" class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                  <div class="text-sm text-gray-900 dark:text-white">{{ payment.expand?.account?.name || t('common.unknown') + ' ' + t('common.account') }}</div>
+                <!-- Account (only show if payment has an account) -->
+                <div v-if="payment.expand?.account" class="flex items-center">
+                  <component :is="getAccountIcon(payment.expand.account.type)" class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  <div class="text-sm text-gray-900 dark:text-white">{{ payment.expand.account.name }}</div>
                 </div>
                 <!-- Credit Notes -->
                 <div v-if="payment.credit_notes && payment.credit_notes.length > 0" class="flex items-center">
@@ -76,6 +76,15 @@
                   </svg>
                   <div class="text-xs text-green-600 dark:text-green-400">
                     {{ payment.credit_notes.length }} Credit Note{{ payment.credit_notes.length > 1 ? 's' : '' }}
+                  </div>
+                </div>
+                <!-- Show "Credit Note Only" when no account is used -->
+                <div v-if="!payment.expand?.account && payment.credit_notes && payment.credit_notes.length > 0" class="flex items-center">
+                  <svg class="mr-2 h-4 w-4 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <div class="text-xs text-blue-600 dark:text-blue-400 italic">
+                    Credit Note Only
                   </div>
                 </div>
               </div>
@@ -192,10 +201,10 @@
                   </div>
                 </div>
                 <div class="space-y-1 mt-1">
-                  <!-- Account -->
-                  <div class="flex items-center justify-end">
-                    <component :is="getAccountIcon(payment.expand?.account?.type)" class="mr-1 h-3 w-3 text-gray-500 dark:text-gray-400" />
-                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ payment.expand?.account?.name || t('common.unknown') }}</div>
+                  <!-- Account (only show if payment has an account) -->
+                  <div v-if="payment.expand?.account" class="flex items-center justify-end">
+                    <component :is="getAccountIcon(payment.expand.account.type)" class="mr-1 h-3 w-3 text-gray-500 dark:text-gray-400" />
+                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ payment.expand.account.name }}</div>
                   </div>
                   <!-- Credit Notes -->
                   <div v-if="payment.credit_notes && payment.credit_notes.length > 0" class="flex items-center justify-end">
@@ -204,6 +213,15 @@
                     </svg>
                     <div class="text-xs text-green-600 dark:text-green-400">
                       {{ payment.credit_notes.length }} Credit Note{{ payment.credit_notes.length > 1 ? 's' : '' }}
+                    </div>
+                  </div>
+                  <!-- Show "Credit Note Only" when no account is used -->
+                  <div v-if="!payment.expand?.account && payment.credit_notes && payment.credit_notes.length > 0" class="flex items-center justify-end">
+                    <svg class="mr-1 h-3 w-3 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div class="text-xs text-blue-600 dark:text-blue-400 italic">
+                      Credit Note Only
                     </div>
                   </div>
                 </div>
@@ -794,6 +812,16 @@ const handlePaymentModalSubmit = async (data: any) => {
     service_booking_allocations: form.service_booking_allocations || {},
     credit_note_allocations: form.credit_note_allocations || {}
   } : null;
+
+  // If payment is fully covered by credit notes, remove account from payment data
+  if (paymentData) {
+    const totalCreditNoteAmount = Object.values(form.credit_note_allocations || {})
+      .reduce((sum: number, allocation: any) => sum + (allocation?.amount || 0), 0);
+    
+    if (totalCreditNoteAmount >= form.amount) {
+      delete paymentData.account; // Remove account when fully covered by credit notes
+    }
+  }
   
   try {
     if (mode === 'CREATE' || mode === 'PAY_NOW') {
@@ -844,6 +872,15 @@ const handlePaymentModalSubmit = async (data: any) => {
         }
       }
       // If user cancels, do nothing - they can adjust manually
+    } else if (err.message && err.message.includes('Credit note priority violation')) {
+      // Credit note priority violation - provide clear guidance
+      error(
+        'Payment cannot be processed due to credit note usage rules:\n\n' +
+        err.message.split(':')[1].trim() + '\n\n' +
+        'Please either:\n' +
+        '• Use all available credit notes completely before paying from account, or\n' +
+        '• Remove unused credit notes from this payment'
+      );
     } else if (err.message && (err.message.includes('not available for this amount') || 
                         err.message.includes('balance changed during processing') ||
                         err.message.includes('Insufficient credit balance'))) {
