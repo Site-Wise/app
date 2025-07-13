@@ -104,8 +104,12 @@
               </button>
 
               <div v-if="userMenuOpen"
+                ref="userMenuRef"
                 class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50"
-                role="menu">
+                role="menu"
+                tabindex="-1"
+                @keydown="handleUserMenuKeydown"
+                @click="handleUserMenuClick">
                 <!-- Invitations Section -->
                 <div v-if="receivedInvitationsCount > 0"
                   class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
@@ -129,16 +133,18 @@
                 <!-- User Menu Items -->
                 <div class="py-2 max-h-60 overflow-y-auto">
                   <button @click="goToProfile"
-                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300"
-                    role="menuitem">
+                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300 focus:bg-gray-50 dark:focus:bg-gray-700 focus:outline-none"
+                    role="menuitem"
+                    tabindex="-1">
                     <User class="mr-3 h-4 w-4 md:h-5 md:w-5" />
                     <div class="flex-1 min-w-0">
                       <div class="font-medium text-sm truncate">{{ t('nav.profile') }}</div>
                     </div>
                   </button>
                   <button v-if="canManageUsers" @click="goToUserManagement"
-                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300"
-                    role="menuitem">
+                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300 focus:bg-gray-50 dark:focus:bg-gray-700 focus:outline-none"
+                    role="menuitem"
+                    tabindex="-1">
                     <Users class="mr-3 h-4 w-4 md:h-5 md:w-5" />
                     <div class="flex-1 min-w-0">
                       <div class="font-medium text-sm truncate">{{ t('nav.manage_users') }}</div>
@@ -156,16 +162,18 @@
                   </button>
                   -->
                   <button @click="restartTour"
-                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300"
-                    role="menuitem">
+                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300 focus:bg-gray-50 dark:focus:bg-gray-700 focus:outline-none"
+                    role="menuitem"
+                    tabindex="-1">
                     <HelpCircle class="mr-3 h-4 w-4 md:h-5 md:w-5" />
                     <div class="flex-1 min-w-0">
                       <div class="font-medium text-sm truncate">{{ t('nav.helpTour') }}</div>
                     </div>
                   </button>
                   <button @click="handleLogout"
-                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300"
-                    role="menuitem">
+                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300 focus:bg-gray-50 dark:focus:bg-gray-700 focus:outline-none"
+                    role="menuitem"
+                    tabindex="-1">
                     <LogOut class="mr-3 h-4 w-4 md:h-5 md:w-5" />
                     <div class="flex-1 min-w-0">
                       <div class="font-medium text-sm truncate">{{ t('nav.logout') }}</div>
@@ -251,7 +259,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { useSite } from '../composables/useSite';
@@ -301,7 +309,7 @@ const showUpdateDuringDev = () => {
 const route = useRoute();
 const router = useRouter();
 const { user, logout } = useAuth();
-const { hasSiteAccess, canManageUsers, currentUserRole } = useSite();
+const { hasSiteAccess, canManageUsers } = useSite();
 const { t } = useI18n();
 const { autoStartTour, resetTour, getOnboardingDebugInfo } = useOnboarding();
 const { receivedInvitationsCount, loadReceivedInvitations } = useInvitations();
@@ -364,7 +372,6 @@ const userInitials = computed(() => {
     .slice(0, 2);
 });
 
-const isOwner = computed(() => currentUserRole.value === 'owner');
 
 
 // Conceptual FAB action for current route (complete object like baseFabActions elements)
@@ -453,10 +460,6 @@ const goToUserManagement = () => {
   router.push('/users');
 };
 
-const goToSubscription = () => {
-  userMenuOpen.value = false;
-  router.push('/subscription');
-};
 
 const restartTour = () => {
   userMenuOpen.value = false;
@@ -470,6 +473,60 @@ const restartTour = () => {
     autoStartTour();
   }, 100);
 };
+
+// Keyboard navigation for user menu
+const handleUserMenuKeydown = (event: KeyboardEvent) => {
+  if (!userMenuRef.value) return;
+  
+  const menuItems = userMenuRef.value.querySelectorAll('[role="menuitem"]');
+  const currentFocus = document.activeElement;
+  let currentIndex = Array.from(menuItems).indexOf(currentFocus as Element);
+  
+  switch (event.key) {
+    case 'ArrowDown':
+      event.preventDefault();
+      currentIndex = currentIndex < menuItems.length - 1 ? currentIndex + 1 : 0;
+      (menuItems[currentIndex] as HTMLElement).focus();
+      break;
+    case 'ArrowUp':
+      event.preventDefault();
+      currentIndex = currentIndex > 0 ? currentIndex - 1 : menuItems.length - 1;
+      (menuItems[currentIndex] as HTMLElement).focus();
+      break;
+    case 'Escape':
+      event.preventDefault();
+      userMenuOpen.value = false;
+      break;
+    case 'Tab':
+      // Allow normal tab behavior but close menu if tabbing out
+      if (event.shiftKey && currentIndex === 0) {
+        userMenuOpen.value = false;
+      } else if (!event.shiftKey && currentIndex === menuItems.length - 1) {
+        userMenuOpen.value = false;
+      }
+      break;
+  }
+};
+
+const handleUserMenuClick = (event: Event) => {
+  // Don't close menu if clicking inside it unless it's a menu item
+  const target = event.target as HTMLElement;
+  if (target.getAttribute('role') === 'menuitem') {
+    userMenuOpen.value = false;
+  }
+};
+
+// Focus management for user menu
+watch(userMenuOpen, (isOpen) => {
+  if (isOpen && userMenuRef.value) {
+    nextTick(() => {
+      const firstMenuItem = userMenuRef.value?.querySelector('[role="menuitem"]') as HTMLElement;
+      if (firstMenuItem) {
+        firstMenuItem.focus();
+      }
+    });
+  }
+});
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);

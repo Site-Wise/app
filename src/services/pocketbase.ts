@@ -2689,6 +2689,29 @@ export class AccountTransactionService {
     return true;
   }
 
+  async deleteByPayment(paymentId: string): Promise<void> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const transactions = await pb.collection('account_transactions').getFullList({
+      filter: `site="${siteId}" && payment="${paymentId}"`
+    });
+
+    const accountsToUpdate = new Set<string>();
+    
+    for (const transaction of transactions) {
+      await pb.collection('account_transactions').delete(transaction.id);
+      if (transaction.account) {
+        accountsToUpdate.add(transaction.account);
+      }
+    }
+
+    // Update account balances for all affected accounts
+    for (const accountId of accountsToUpdate) {
+      await this.updateAccountBalance(accountId);
+    }
+  }
+
   async calculateAccountBalance(accountId: string): Promise<number> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
