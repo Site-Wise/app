@@ -165,57 +165,6 @@
       </button>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
-      <div class="card bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700">
-        <div class="flex items-center">
-          <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-            <Wrench class="h-6 w-6 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-blue-700 dark:text-blue-300">{{ t('services.totalServices') }}</p>
-            <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ activeServicesCount }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="card bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700">
-        <div class="flex items-center">
-          <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-            <Users class="h-6 w-6 text-green-600 dark:text-green-400" />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-green-700 dark:text-green-300">{{ t('services.laborServices') }}</p>
-            <p class="text-2xl font-bold text-green-900 dark:text-green-100">{{ laborServicesCount }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="card bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700">
-        <div class="flex items-center">
-          <div class="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-            <Truck class="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-yellow-700 dark:text-yellow-300">{{ t('services.equipmentServices') }}</p>
-            <p class="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{{ equipmentServicesCount }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="card bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700">
-        <div class="flex items-center">
-          <div class="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-            <Calendar class="h-6 w-6 text-purple-600 dark:text-purple-400" />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-purple-700 dark:text-purple-300">{{ t('services.totalBookings') }}</p>
-            <p class="text-2xl font-bold text-purple-900 dark:text-purple-100">{{ totalBookingsCount }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Add/Edit Modal -->
     <div v-if="showAddModal || editingService" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
       <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700" @click.stop>
@@ -313,7 +262,6 @@ import {
   EyeOff,
   Users,
   Truck,
-  Calendar,
   Briefcase,
   Car,
   Settings
@@ -372,22 +320,6 @@ const form = reactive({
   description: '',
   tags: [] as string[],
   is_active: true
-});
-
-const activeServicesCount = computed(() => {
-  return services.value?.filter(service => service.is_active).length || 0;
-});
-
-const laborServicesCount = computed(() => {
-  return services.value?.filter(service => service.category === 'labor' && service.is_active).length || 0;
-});
-
-const equipmentServicesCount = computed(() => {
-  return services.value?.filter(service => service.category === 'equipment' && service.is_active).length || 0;
-});
-
-const totalBookingsCount = computed(() => {
-  return serviceBookings.value?.length || 0;
 });
 
 const getServiceIcon = (category: Service['category']) => {

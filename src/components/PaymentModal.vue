@@ -332,23 +332,23 @@
                     isAccountRequiredForSelection 
                       ? 'opacity-50 cursor-not-allowed' 
                       : 'hover:bg-gray-50 dark:hover:bg-gray-700',
-                    (loading || isAccountRequiredForSelection || isBookingDisabled(booking.id))
+                    (loading || isAccountRequiredForSelection || !!(booking.id && isBookingDisabled(booking.id)))
                       ? 'cursor-not-allowed'
                       : 'cursor-pointer'
                   ]"
-                  @click="handleBookingRowClick(booking.id)"
+                  @click="booking.id && handleBookingRowClick(booking.id)"
                 >
                   <TriStateCheckbox
                     :id="`booking-${booking.id}`"
                     :label="booking.expand?.service?.name || 'Service'"
                     :secondary-text="`${formatDate(booking.start_date)} | Progress: ${booking.percent_completed || 0}% | Due: ₹${ServiceBookingService.calculateProgressBasedAmount(booking).toFixed(2)} | Paid: ₹${booking.paid_amount.toFixed(2)} | Outstanding: ₹${booking.outstanding.toFixed(2)}`"
                     :due-amount="booking.outstanding"
-                    :allocated-amount="form.service_booking_allocations[booking.id]?.amount || 0"
+                    :allocated-amount="booking.id ? (form.service_booking_allocations[booking.id]?.amount || 0) : 0"
                     :allow-partial-clicks="isAmountManuallySet"
                     :clickable-row="true"
-                    :disabled="loading || isAccountRequiredForSelection || isBookingDisabled(booking.id)"
+                    :disabled="loading || isAccountRequiredForSelection || !!(booking.id && isBookingDisabled(booking.id))"
                     :aria-label="`Select service booking for ${booking.expand?.service?.name || 'Service'}`"
-                    @change="handleServiceBookingTriStateChange(booking.id, $event)"
+                    @change="booking.id && handleServiceBookingTriStateChange(booking.id, $event)"
                   />
                 </div>
               </div>
@@ -459,7 +459,7 @@ const emit = defineEmits<Emits>();
 
 // Composables
 const { t } = useI18n();
-const { error } = useToast();
+const { } = useToast();
 
 // Refs
 const vendorInputRef = ref<InstanceType<typeof VendorSearchBox>>();
@@ -830,13 +830,9 @@ const selectableBookings = computed(() => {
         const paidAmount = calculatePaidAmount(booking.id!, 'service_booking');
         const outstanding = ServiceBookingService.calculateOutstandingAmountFromData(booking, paidAmount);
         return {
-          id: booking.id!,
-          start_date: booking.start_date,
-          total_amount: booking.total_amount,
-          percent_completed: booking.percent_completed,
+          ...booking,
           paid_amount: paidAmount,
-          outstanding: outstanding,
-          expand: booking.expand
+          outstanding: outstanding
         };
       })
       .filter(b => b.outstanding > 0)
@@ -847,13 +843,9 @@ const selectableBookings = computed(() => {
     const paidAmount = calculatePaidAmount(booking.id!, 'service_booking');
     const outstanding = ServiceBookingService.calculateOutstandingAmountFromData(booking, paidAmount);
     return {
-      id: booking.id!,
-      start_date: booking.start_date,
-      total_amount: booking.total_amount,
-      percent_completed: booking.percent_completed,
+      ...booking,
       paid_amount: paidAmount,
-      outstanding: outstanding,
-      expand: booking.expand
+      outstanding: outstanding
     };
   }).filter(b => b.outstanding > 0)
     .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
@@ -1088,43 +1080,6 @@ const autoSelectCreditNotesForPayables = (targetAmount: number) => {
     .map(([creditNoteId, _]) => creditNoteId);
 };
 
-// Auto-select credit notes based on deliveries (oldest first)
-const autoSelectCreditNotes = () => {
-  const totalNeeded = getTotalSelectedDeliveries();
-  if (totalNeeded <= 0) {
-    form.credit_notes = [];
-    return;
-  }
-  
-  let remainingAmount = totalNeeded;
-  const selectedCreditNotes: string[] = [];
-  
-  // Sort available credit notes by date (oldest first)
-  const sortedCreditNotes = [...availableCreditNotes.value].sort((a, b) => 
-    new Date(a.issue_date).getTime() - new Date(b.issue_date).getTime()
-  );
-  
-  // Select credit notes until we have enough to cover the amount
-  for (const creditNote of sortedCreditNotes) {
-    if (remainingAmount <= 0) break;
-    
-    if (creditNote.balance > 0) {
-      selectedCreditNotes.push(creditNote.id!);
-      remainingAmount -= creditNote.balance;
-    }
-  }
-  
-  form.credit_notes = selectedCreditNotes;
-  
-  // If credit notes are insufficient and no account is selected, we need to require account selection
-  if (remainingAmount > 0 && !form.account) {
-    // This will be caught by validation
-    return;
-  }
-  
-  // Update the total amount to match the selected deliveries
-  form.amount = totalNeeded;
-};
 
 // Helper function to clear all selections
 const clearAllSelections = () => {
@@ -1171,7 +1126,7 @@ const autoSelectDeliveriesWithTriState = (availableAmount?: number) => {
         state: allocatedAmount >= item.outstanding ? 'checked' : 'partial',
         amount: allocatedAmount
       };
-    } else {
+    } else if (item.id) {
       form.service_bookings.push(item.id);
       form.service_booking_allocations[item.id] = {
         state: allocatedAmount >= item.outstanding ? 'checked' : 'partial',
@@ -1357,22 +1312,6 @@ const updateDeliverySelectionFromAmount = () => {
 
 // Old handlePayableSelectionChange function replaced by handlePaymentAmountRecomputation
 
-// Update amount based on current selections (when driven by checkbox clicks)
-const updateAmountFromSelections = () => {
-  const totalSelected = getTotalSelectedDeliveries();
-  const totalCreditNotes = selectedCreditNoteAmount.value;
-  
-  // Prevent recursive updates
-  isUpdatingAmountFromSelections.value = true;
-  
-  // Set amount to total selected deliveries/bookings + credit notes
-  form.amount = totalSelected + totalCreditNotes;
-  
-  // Reset flag after update
-  nextTick(() => {
-    isUpdatingAmountFromSelections.value = false;
-  });
-};
 
 // TriStateCheckbox handlers
 const handleDeliveryTriStateChange = (deliveryId: string, data: { allocatedAmount: number }) => {

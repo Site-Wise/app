@@ -19,9 +19,23 @@ export function resetOnboardingForTesting() {
 export function forceShowDashboardTour() {
   // Import and force start dashboard tour
   import('../composables/useOnboarding').then(({ useOnboarding }) => {
-    const { startTour, getDashboardTour } = useOnboarding();
-    const tour = getDashboardTour();
-    startTour(tour, true); // Force show
+    const { startTour } = useOnboarding();
+    // Create dashboard tour config manually
+    const dashboardTour = {
+      id: 'dashboard',
+      steps: [
+        {
+          popover: {
+            title: 'onboarding.dashboard.welcome.title',
+            description: 'onboarding.dashboard.welcome.description',
+            side: 'bottom' as const,
+            align: 'center' as const
+          }
+        }
+      ],
+      showOnce: true
+    };
+    startTour(dashboardTour, true); // Force show dashboard tour
   });
 }
 

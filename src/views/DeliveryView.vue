@@ -345,7 +345,7 @@
                 </span>
                 <!-- Show outstanding amount for partial payments -->
                 <div v-if="viewingDelivery.payment_status === 'partial'" class="text-xs text-gray-500 dark:text-gray-400">
-                  ₹{{ viewingDelivery.outstanding.toFixed(2) }} pending
+                  ₹{{ (viewingDelivery.total_amount - (viewingDelivery.paid_amount || 0)).toFixed(2) }} pending
                 </div>
               </div>
               <div>
@@ -510,6 +510,12 @@ import {
 } from '../services/pocketbase';
 import { usePermissions } from '../composables/usePermissions';
 
+// Extended Delivery with computed payment properties
+interface DeliveryWithPaymentStatus extends Delivery {
+  payment_status: 'pending' | 'partial' | 'paid';
+  outstanding: number;
+}
+
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
@@ -571,7 +577,7 @@ const calculateOutstandingAmount = (delivery: Delivery): number => {
 };
 
 // Display items: use search results if searching, otherwise all items with calculated payment status
-const deliveries = computed(() => {
+const deliveries = computed((): DeliveryWithPaymentStatus[] => {
   const baseDeliveries = searchQuery.value.trim() ? searchResults.value : (allDeliveriesData.value || []);
   
   // Add computed payment status and outstanding amount to each delivery

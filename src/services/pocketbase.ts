@@ -240,6 +240,8 @@ export interface ServiceBooking {
   unit_rate: number;
   total_amount: number;
   percent_completed: number; // Progress percentage 0-100
+  payment_status?: 'pending' | 'partial' | 'paid' | 'currently_paid_up'; // Deprecated - calculated from allocations
+  paid_amount?: number; // Deprecated - calculated from allocations
   completion_photos?: string[];
   notes?: string;
   site: string; // Site ID
@@ -1730,6 +1732,8 @@ export class ServiceBookingService {
       unit_rate: record.unit_rate,
       total_amount: record.total_amount,
       percent_completed: record.percent_completed || 0,
+      payment_status: 'pending' as const, // Will be calculated when needed
+      paid_amount: 0, // Will be calculated when needed
       completion_photos: record.completion_photos,
       notes: record.notes,
       site: record.site,
@@ -2087,72 +2091,6 @@ export class PaymentService {
     }
   }
 
-  private async processCreditNoteAllocations(
-    paymentId: string, 
-    creditNoteAllocations: Record<string, any>, 
-    vendorId: string,
-    allowBalanceAdjustment = false
-  ): Promise<{ adjustedAllocations?: Record<string, any>, balanceChanged?: boolean }> {
-    const adjustedAllocations: Record<string, any> = {};
-    let balanceChanged = false;
-    
-    for (const [creditNoteId, allocation] of Object.entries(creditNoteAllocations)) {
-      if (allocation.amount <= 0) continue;
-      
-      // Re-validate credit note balance at the time of usage
-      const freshCreditNote = await vendorCreditNoteService.getById(creditNoteId);
-      if (!freshCreditNote) {
-        throw new Error(`Credit note ${creditNoteId} not found during processing`);
-      }
-      
-      let actualUsageAmount = allocation.amount;
-      
-      if (allocation.amount > freshCreditNote.balance) {
-        if (!allowBalanceAdjustment) {
-          // Throw error with balance change details for user confirmation
-          const balanceChangeError = new Error('CREDIT_NOTE_BALANCE_CHANGED');
-          (balanceChangeError as any).details = {
-            creditNoteId,
-            reference: freshCreditNote.reference || creditNoteId.slice(-6),
-            requestedAmount: allocation.amount,
-            availableAmount: freshCreditNote.balance,
-            originalAllocations: creditNoteAllocations
-          };
-          throw balanceChangeError;
-        } else {
-          // User confirmed - adjust to available balance
-          actualUsageAmount = freshCreditNote.balance;
-          balanceChanged = true;
-        }
-      }
-      
-      if (actualUsageAmount > 0) {
-        // Create credit note usage record with actual amount
-        await creditNoteUsageService.create({
-          credit_note: creditNoteId,
-          payment: paymentId,
-          vendor: vendorId,
-          used_amount: actualUsageAmount,
-          used_date: new Date().toISOString().split('T')[0],
-          description: `Applied to payment ${paymentId} (${allocation.state} usage${balanceChanged ? ' - adjusted' : ''})`
-        });
-        
-        // Track adjusted allocation
-        adjustedAllocations[creditNoteId] = {
-          ...allocation,
-          amount: actualUsageAmount
-        };
-        
-        // Check if credit note is now fully used and update status
-        const updatedCreditNote = await vendorCreditNoteService.getById(creditNoteId);
-        if (updatedCreditNote && updatedCreditNote.balance <= 0) {
-          await vendorCreditNoteService.update(creditNoteId, { status: 'fully_used' });
-        }
-      }
-    }
-    
-    return { adjustedAllocations, balanceChanged };
-  }
 
   private async handleDetailedPaymentAllocations(
     paymentId: string, 
@@ -2221,7 +2159,8 @@ export class PaymentService {
     for (const bookingId of serviceBookingIds) {
       if (remainingAmount <= 0) break;
       
-      const booking = await pb.collection('service_bookings').getOne(bookingId);
+      const bookingRecord = await pb.collection('service_bookings').getOne(bookingId);
+      const booking = serviceBookingService.mapRecordToServiceBooking(bookingRecord);
       const currentPaidAmount = await serviceBookingService.calculatePaidAmount(bookingId);
       const progressAmount = ServiceBookingService.calculateProgressBasedAmount(booking);
       const outstandingAmount = progressAmount - currentPaidAmount;
@@ -2392,57 +2331,6 @@ export class PaymentService {
 
 
 
-  private async validateAndCalculateCreditNoteAmount(creditNoteIds: string[]): Promise<number> {
-    let totalCreditAmount = 0;
-    
-    for (const creditNoteId of creditNoteIds) {
-      const creditNote = await vendorCreditNoteService.getById(creditNoteId);
-      if (!creditNote) {
-        throw new Error(`Credit note ${creditNoteId} not found`);
-      }
-      if (creditNote.status !== 'active') {
-        throw new Error(`Credit note ${creditNoteId} is not active`);
-      }
-      if (creditNote.balance <= 0) {
-        throw new Error(`Credit note ${creditNoteId} has no remaining balance`);
-      }
-      totalCreditAmount += creditNote.balance;
-    }
-    
-    return totalCreditAmount;
-  }
-
-  private async processCreditNotes(paymentId: string, creditNoteIds: string[], vendorId: string, totalCreditAmount: number): Promise<void> {
-    let remainingCreditToUse = totalCreditAmount;
-    
-    for (const creditNoteId of creditNoteIds) {
-      if (remainingCreditToUse <= 0) break;
-      
-      const creditNote = await vendorCreditNoteService.getById(creditNoteId);
-      if (!creditNote) continue;
-      
-      // Use the minimum of: remaining credit needed OR credit note balance
-      const usageAmount = Math.min(remainingCreditToUse, creditNote.balance);
-      
-      if (usageAmount > 0) {
-        // Create credit note usage record (this serves as the audit trail)
-        await creditNoteUsageService.create({
-          credit_note: creditNoteId,
-          payment: paymentId,
-          vendor: vendorId,
-          used_amount: usageAmount,
-          used_date: new Date().toISOString().split('T')[0],
-          description: `Applied to payment ${paymentId}`
-        });
-        
-        // Update credit note balance
-        await vendorCreditNoteService.updateBalance(creditNoteId, -usageAmount);
-        
-        // Reduce remaining credit to use
-        remainingCreditToUse -= usageAmount;
-      }
-    }
-  }
 }
 
 export class PaymentAllocationService {

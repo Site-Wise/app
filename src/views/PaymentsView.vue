@@ -74,7 +74,7 @@
                 <!-- Allocation Status Indicator -->
                 <div v-if="payment.expand?.payment_allocations && payment.expand.payment_allocations.length > 0" class="ml-2">
                   <span 
-                    v-if="getAllocatedAmount(payment, payment.expand.payment_allocations) === payment.amount"
+                    v-if="getAllocatedAmount(payment.expand.payment_allocations) === payment.amount"
                     class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                     :title="t('payments.fullyAllocated')"
                   >
@@ -84,7 +84,7 @@
                     Allocated
                   </span>
                   <span 
-                    v-else-if="getAllocatedAmount(payment, payment.expand.payment_allocations) > 0"
+                    v-else-if="getAllocatedAmount(payment.expand.payment_allocations) > 0"
                     class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
                     :title="`${t('payments.partiallyAllocated')}: ₹${getUnallocatedAmount(payment, payment.expand.payment_allocations).toFixed(2)} remaining`"
                   >
@@ -163,12 +163,12 @@
                   <!-- Mobile Allocation Status Indicator -->
                   <div v-if="payment.expand?.payment_allocations && payment.expand.payment_allocations.length > 0" class="ml-2">
                     <span 
-                      v-if="getAllocatedAmount(payment, payment.expand.payment_allocations) === payment.amount"
+                      v-if="getAllocatedAmount(payment.expand.payment_allocations) === payment.amount"
                       class="inline-flex w-2 h-2 bg-green-500 rounded-full"
                       :title="t('payments.fullyAllocated')"
                     ></span>
                     <span 
-                      v-else-if="getAllocatedAmount(payment, payment.expand.payment_allocations) > 0"
+                      v-else-if="getAllocatedAmount(payment.expand.payment_allocations) > 0"
                       class="inline-flex w-2 h-2 bg-yellow-500 rounded-full"
                       :title="t('payments.partiallyAllocated')"
                     ></span>
@@ -538,7 +538,7 @@ const getUnallocatedAmount = (payment: Payment, allocations: PaymentAllocation[]
   return payment.amount - allocatedAmount;
 };
 
-const getAllocatedAmount = (payment: Payment, allocations: PaymentAllocation[]): number => {
+const getAllocatedAmount = (allocations: PaymentAllocation[]): number => {
   return allocations.reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
 };
 

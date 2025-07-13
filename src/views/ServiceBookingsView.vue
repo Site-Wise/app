@@ -242,7 +242,7 @@
                   editingBooking && hasPayments(editingBooking) ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''
                 ]"
                 @change="updateRateFromService" 
-                :disabled="editingBooking && hasPayments(editingBooking)"
+                :disabled="!!(editingBooking && hasPayments(editingBooking))"
                 autofocus
               >
                 <option value="">{{ t('forms.selectService') }}</option>
@@ -264,7 +264,7 @@
                   'input mt-1',
                   editingBooking && hasPayments(editingBooking) ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''
                 ]"
-                :disabled="editingBooking && hasPayments(editingBooking)"
+                :disabled="!!(editingBooking && hasPayments(editingBooking))"
               >
                 <option value="">{{ t('forms.selectProvider') }}</option>
                 <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
@@ -286,7 +286,7 @@
                   'input mt-1',
                   editingBooking && hasPayments(editingBooking) ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''
                 ]"
-                :disabled="editingBooking && hasPayments(editingBooking)"
+                :disabled="!!(editingBooking && hasPayments(editingBooking))"
               />
               <p v-if="editingBooking && hasPayments(editingBooking)" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 {{ t('serviceBookings.cannotChangeDateWithPayments') }}
@@ -471,6 +471,12 @@ import {
   type ServiceBooking 
 } from '../services/pocketbase';
 
+// Extended ServiceBooking with computed payment properties
+interface ServiceBookingWithPaymentStatus extends ServiceBooking {
+  payment_status: 'pending' | 'partial' | 'paid' | 'currently_paid_up';
+  outstanding: number;
+}
+
 const { t } = useI18n();
 const { canCreate, canUpdate, canDelete } = usePermissions();
 const { checkCreateLimit, isReadOnly } = useSubscription();
@@ -506,7 +512,7 @@ const calculateOutstandingAmount = (serviceBooking: ServiceBooking): number => {
 };
 
 // Display items: use search results if searching, otherwise all items with calculated payment status
-const serviceBookings = computed(() => {
+const serviceBookings = computed((): ServiceBookingWithPaymentStatus[] => {
   const baseBookings = searchQuery.value.trim() ? searchResults.value : (allServiceBookingsData.value || []);
   
   // Add computed payment status and outstanding amount to each booking
