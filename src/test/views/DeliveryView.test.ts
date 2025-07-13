@@ -34,7 +34,7 @@ vi.mock('../../composables/useI18n', () => ({
         'common.actions': 'Actions',
         'common.view': 'View',
         'common.edit': 'Edit',
-        'common.delete': 'Delete',
+        'common.deleteAction': 'Delete',
         'common.paid': 'Paid',
         'common.pending': 'Pending',
         'common.partial': 'Partial',

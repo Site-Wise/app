@@ -212,7 +212,7 @@ vi.mock('../../composables/useI18n', () => ({
         'common.reference': 'Reference',
         'common.actions': 'Actions',
         'common.view': 'View',
-        'common.delete': 'Delete',
+        'common.deleteAction': 'Delete',
         'common.payment': 'Payment',
         'common.unknown': 'Unknown',
         'messages.createSuccess': '{item} created successfully',

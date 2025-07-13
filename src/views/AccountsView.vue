@@ -110,7 +110,7 @@
                   : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
                 'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
               ]"
-              :title="t('common.delete')"
+              :title="t('common.deleteAction')"
             >
               <Trash2 class="h-4 w-4" />
             </button>
@@ -433,7 +433,7 @@ const getAccountActions = (account: Account) => {
     },
     {
       key: 'delete',
-      label: t('common.delete'),
+      label: t('common.deleteAction'),
       icon: Trash2,
       variant: 'danger' as const,
       disabled: !canDelete

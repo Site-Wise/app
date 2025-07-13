@@ -134,7 +134,7 @@
                   v-if="canPaymentBeDeleted(payment, payment.expand?.payment_allocations || [])"
                   @click="deletePayment(payment)"
                   class="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-                  :title="t('common.delete')"
+                  :title="t('common.deleteAction')"
                 >
                   <Trash2 class="h-4 w-4" />
                 </button>
@@ -234,7 +234,7 @@
                       class="w-full flex items-center px-3 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
                     >
                       <Trash2 class="h-4 w-4 mr-2" />
-                      {{ t('common.delete') }}
+                      {{ t('common.deleteAction') }}
                     </button>
                   </div>
                 </Transition>
@@ -415,7 +415,7 @@
               @click="deletePayment(viewingPayment)" 
               class="flex-1 btn-danger"
             >
-              {{ t('common.delete') }}
+              {{ t('common.deleteAction') }}
             </button>
             <button @click="viewingPayment = null" :class="[
               viewingPayment && (canPaymentBeEdited(viewingPayment, viewingPaymentAllocations) || canPaymentBeDeleted(viewingPayment, viewingPaymentAllocations)) ? 'flex-1' : 'w-full',
@@ -868,7 +868,7 @@ const getPaymentActions = (payment: Payment) => {
     },
     {
       key: 'delete',
-      label: t('common.delete'),
+      label: t('common.deleteAction'),
       icon: Trash2,
       variant: 'danger' as const,
       hidden: !canPaymentBeDeleted(payment, payment.expand?.payment_allocations || [])

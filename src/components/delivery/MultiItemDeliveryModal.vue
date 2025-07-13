@@ -115,7 +115,7 @@
                         type="button"
                         @click.stop="removeExistingPhoto(index)"
                         class="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
-                        :title="t('common.delete')"
+                        :title="t('common.deleteAction')"
                       >
                         <X class="h-3 w-3" />
                       </button>

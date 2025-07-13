@@ -215,7 +215,7 @@
                     v-if="canEditDelete && delivery.payment_status === 'pending'" 
                     @click="deleteDelivery(delivery)" 
                     class="p-2 text-red-400 hover:text-red-600 dark:hover:text-red-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-                    :title="t('common.delete')"
+                    :title="t('common.deleteAction')"
                   >
                     <Trash2 class="h-4 w-4" />
                   </button>
@@ -665,7 +665,7 @@ const getDeliveryActions = (delivery: Delivery) => {
     },
     {
       key: 'delete',
-      label: t('common.delete'),
+      label: t('common.deleteAction'),
       icon: Trash2,
       variant: 'danger' as const,
       disabled: !canEditDelete.value || delivery.payment_status !== 'pending'

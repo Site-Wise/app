@@ -73,7 +73,7 @@ vi.mock('../../composables/useI18n', () => ({
         'common.create': 'Create',
         'common.cancel': 'Cancel',
         'common.edit': 'Edit',
-        'common.delete': 'Delete',
+        'common.deleteAction': 'Delete',
         'common.inactive': 'Inactive',
         'messages.confirmDelete': 'Are you sure you want to delete this {item}?',
         'messages.error': 'An error occurred',

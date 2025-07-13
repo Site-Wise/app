@@ -9,6 +9,7 @@
         @input="handleInput"
         @focus="handleFocus"
         @blur="handleBlur"
+        @click="handleClick"
         @keydown.down="navigateDown"
         @keydown.up="navigateUp"
         @keydown.enter="selectCurrent"
@@ -248,14 +249,26 @@ const handleInput = (event: Event) => {
 const handleFocus = () => {
   emit('focus');
   
-  // Show dropdown with selected vendor or search results
-  if (selectedVendor.value || searchQuery.value) {
+  // Only show dropdown if user is actively searching
+  if (searchQuery.value) {
     showDropdown.value = true;
   }
   
-  // When focusing on a selected vendor, clear the search query to show the vendor in dropdown
+  // Don't automatically show dropdown when focusing on a pre-selected vendor
+  // User can start typing to search for a different vendor if needed
+};
+
+const handleClick = () => {
+  // When user clicks on input, show dropdown to allow vendor selection/change
+  // This allows users to see the current selection or search for a new vendor
   if (selectedVendor.value && !searchQuery.value) {
     showDropdown.value = true;
+    
+    // Select all text to make it easy to replace the vendor name
+    // Use nextTick to ensure the input is focused first
+    setTimeout(() => {
+      inputRef.value?.select();
+    }, 0);
   }
 };
 

@@ -20,7 +20,7 @@ vi.mock('../../composables/useI18n', () => ({
         'common.actions': 'Actions',
         'common.view': 'View',
         'common.edit': 'Edit',
-        'common.delete': 'Delete',
+        'common.deleteAction': 'Delete',
         'search.vendors': 'Search vendors by name, contact person, email, or phone...'
       }
       let result = translations[key] || key
