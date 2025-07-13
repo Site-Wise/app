@@ -327,6 +327,23 @@ const handleSubmit = async () => {
         status: 'active'
       });
     } else {
+      // If switching to refund and a credit note was previously created, delete it
+      if (props.returnData.processing_option === 'credit_note') {
+        try {
+          // Find and delete any existing credit note for this return
+          const existingCreditNotes = await vendorCreditNoteService.getByReturn(props.returnData.id);
+          for (const creditNote of existingCreditNotes) {
+            // Only delete if the credit note hasn't been used (balance equals original amount)
+            if (creditNote.balance === creditNote.credit_amount) {
+              await vendorCreditNoteService.delete(creditNote.id!);
+            }
+          }
+        } catch (error) {
+          console.warn('Error checking/deleting existing credit notes:', error);
+          // Continue with refund processing even if credit note deletion fails
+        }
+      }
+      
       // Create refund record
       await vendorRefundService.create({
         vendor_return: props.returnData.id,

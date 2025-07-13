@@ -179,7 +179,10 @@
                 <div class="text-sm font-medium text-gray-900 dark:text-white">
                   ₹{{ returnItem.total_return_amount.toFixed(2) }}
                 </div>
-                <div v-if="returnItem.actual_refund_amount" class="text-sm text-green-600 dark:text-green-400">
+                <div v-if="returnItem.processing_option === 'credit_note'" class="text-sm text-blue-600 dark:text-blue-400">
+                  {{ t('vendors.noteGenerated') }}
+                </div>
+                <div v-else-if="returnItem.actual_refund_amount" class="text-sm text-green-600 dark:text-green-400">
                   {{ t('vendors.refunded') }}: ₹{{ returnItem.actual_refund_amount.toFixed(2) }}
                 </div>
               </td>
@@ -204,7 +207,7 @@
                     <Check class="h-4 w-4" />
                   </button>
                   <button 
-                    v-if="returnItem.status === 'approved'" 
+                    v-if="returnItem.status === 'approved' && returnItem.processing_option !== 'credit_note'" 
                     @click="processRefund(returnItem)"
                     class="text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300"
                   >
@@ -258,7 +261,13 @@
                 ₹{{ returnItem.total_return_amount.toFixed(2) }}
               </span>
             </div>
-            <div v-if="returnItem.actual_refund_amount" class="flex justify-between">
+            <div v-if="returnItem.processing_option === 'credit_note'" class="flex justify-between">
+              <span class="text-gray-500 dark:text-gray-400">{{ t('vendors.status') }}:</span>
+              <span class="text-blue-600 dark:text-blue-400 font-medium">
+                {{ t('vendors.noteGenerated') }}
+              </span>
+            </div>
+            <div v-else-if="returnItem.actual_refund_amount" class="flex justify-between">
               <span class="text-gray-500 dark:text-gray-400">{{ t('vendors.refunded') }}:</span>
               <span class="text-green-600 dark:text-green-400 font-medium">
                 ₹{{ returnItem.actual_refund_amount.toFixed(2) }}
@@ -283,7 +292,7 @@
               {{ t('common.approve') }}
             </button>
             <button 
-              v-if="returnItem.status === 'approved'" 
+              v-if="returnItem.status === 'approved' && returnItem.processing_option !== 'credit_note'" 
               @click="processRefund(returnItem)"
               class="btn-primary text-xs py-1 px-2 bg-purple-600 hover:bg-purple-700"
             >

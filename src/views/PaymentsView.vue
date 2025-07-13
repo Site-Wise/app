@@ -63,9 +63,21 @@
               <div class="text-sm font-medium text-gray-900 dark:text-white">{{ payment.expand?.vendor?.contact_person || t('common.unknown') + ' ' + t('common.vendor') }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-              <div class="flex items-center">
-                <component :is="getAccountIcon(payment.expand?.account?.type)" class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <div class="text-sm text-gray-900 dark:text-white">{{ payment.expand?.account?.name || t('common.unknown') + ' ' + t('common.account') }}</div>
+              <div class="space-y-1">
+                <!-- Account -->
+                <div class="flex items-center">
+                  <component :is="getAccountIcon(payment.expand?.account?.type)" class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  <div class="text-sm text-gray-900 dark:text-white">{{ payment.expand?.account?.name || t('common.unknown') + ' ' + t('common.account') }}</div>
+                </div>
+                <!-- Credit Notes -->
+                <div v-if="payment.credit_notes && payment.credit_notes.length > 0" class="flex items-center">
+                  <svg class="mr-2 h-4 w-4 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <div class="text-xs text-green-600 dark:text-green-400">
+                    {{ payment.credit_notes.length }} Credit Note{{ payment.credit_notes.length > 1 ? 's' : '' }}
+                  </div>
+                </div>
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
@@ -179,9 +191,21 @@
                     ></span>
                   </div>
                 </div>
-                <div class="flex items-center justify-end mt-1">
-                  <component :is="getAccountIcon(payment.expand?.account?.type)" class="mr-1 h-3 w-3 text-gray-500 dark:text-gray-400" />
-                  <div class="text-xs text-gray-500 dark:text-gray-400">{{ payment.expand?.account?.name || t('common.unknown') }}</div>
+                <div class="space-y-1 mt-1">
+                  <!-- Account -->
+                  <div class="flex items-center justify-end">
+                    <component :is="getAccountIcon(payment.expand?.account?.type)" class="mr-1 h-3 w-3 text-gray-500 dark:text-gray-400" />
+                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ payment.expand?.account?.name || t('common.unknown') }}</div>
+                  </div>
+                  <!-- Credit Notes -->
+                  <div v-if="payment.credit_notes && payment.credit_notes.length > 0" class="flex items-center justify-end">
+                    <svg class="mr-1 h-3 w-3 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div class="text-xs text-green-600 dark:text-green-400">
+                      {{ payment.credit_notes.length }} Credit Note{{ payment.credit_notes.length > 1 ? 's' : '' }}
+                    </div>
+                  </div>
                 </div>
               </div>
             </td>

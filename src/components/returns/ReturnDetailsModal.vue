@@ -247,6 +247,69 @@
               </div>
             </div>
 
+            <!-- Credit Note Usage (only if processing_option is credit_note) -->
+            <div v-if="returnData?.processing_option === 'credit_note'" class="card">
+              <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Credit Note Usage</h4>
+              
+              <!-- Credit Note Details -->
+              <div v-if="creditNotes.length > 0" class="space-y-4">
+                <div v-for="creditNote in creditNotes" :key="creditNote.id" class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                  <div class="flex justify-between items-start mb-3">
+                    <div>
+                      <div class="font-medium text-gray-900 dark:text-white">
+                        {{ creditNote.reference || `CN-${creditNote.id?.slice(-6)}` }}
+                      </div>
+                      <div class="text-sm text-gray-500 dark:text-gray-400">
+                        Created: {{ formatDate(creditNote.issue_date) }}
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-sm font-medium text-blue-600 dark:text-blue-400">
+                        ₹{{ creditNote.credit_amount.toFixed(2) }}
+                      </div>
+                      <div class="text-xs text-gray-500 dark:text-gray-400">
+                        Balance: ₹{{ creditNote.balance.toFixed(2) }}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Usage History -->
+                  <div v-if="creditNoteUsage.length > 0" class="mt-3">
+                    <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Used In Payments:</h5>
+                    <div class="space-y-2">
+                      <div 
+                        v-for="usage in creditNoteUsage.filter(u => u.payment.credit_notes?.includes(creditNote.id!))" 
+                        :key="usage.payment.id"
+                        class="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm"
+                      >
+                        <div>
+                          <div class="font-medium text-gray-900 dark:text-white">
+                            Payment to {{ usage.payment.expand?.vendor?.contact_person }}
+                          </div>
+                          <div class="text-xs text-gray-500 dark:text-gray-400">
+                            {{ formatDate(usage.payment.payment_date) }} • {{ usage.payment.reference || 'No reference' }}
+                          </div>
+                        </div>
+                        <div class="text-green-600 dark:text-green-400 font-medium">
+                          -₹{{ usage.usedAmount.toFixed(2) }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- No usage message -->
+                  <div v-else class="mt-3 p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm text-gray-500 dark:text-gray-400 text-center">
+                    Credit note not yet used in any payments
+                  </div>
+                </div>
+              </div>
+              
+              <!-- No credit notes message -->
+              <div v-else class="text-center py-8 text-gray-500 dark:text-gray-400">
+                <div class="text-sm">No credit notes found for this return</div>
+              </div>
+            </div>
+
             <!-- Approval Notes -->
             <div v-if="returnData?.approval_notes" class="card">
               <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -352,8 +415,12 @@ import { useModalEscape } from '../../composables/useModalEscape';
 import {
   vendorReturnService,
   vendorReturnItemService,
+  vendorCreditNoteService,
+  paymentService,
   type VendorReturn,
-  type VendorReturnItem
+  type VendorReturnItem,
+  type VendorCreditNote,
+  type Payment
 } from '../../services/pocketbase';
 
 interface Props {
@@ -376,6 +443,8 @@ useModalEscape(() => emit('close'))
 
 // Data
 const returnItems = ref<VendorReturnItem[]>([]);
+const creditNotes = ref<VendorCreditNote[]>([]);
+const creditNoteUsage = ref<{ payment: Payment; usedAmount: number }[]>([]);
 const loading = ref(false);
 
 // Modals
@@ -388,18 +457,77 @@ const selectedPhoto = ref('');
 const approvalNotes = ref('');
 const rejectionNotes = ref('');
 
-// Load return items
-const loadReturnItems = async () => {
+// Load return items and credit notes
+const loadReturnData = async () => {
   if (!props.returnData?.id) return;
   
   try {
+    // Load return items
     returnItems.value = await vendorReturnItemService.getByReturn(props.returnData.id);
+    
+    // Load credit notes for this return (if processing_option is credit_note)
+    if (props.returnData.processing_option === 'credit_note') {
+      await loadCreditNoteUsage();
+    }
   } catch (error) {
-    console.error('Error loading return items:', error);
+    console.error('Error loading return data:', error);
+  }
+};
+
+// Load credit note usage information
+const loadCreditNoteUsage = async () => {
+  if (!props.returnData?.id) return;
+  
+  try {
+    // Get credit notes created for this return
+    creditNotes.value = await vendorCreditNoteService.getByReturn(props.returnData.id);
+    
+    // For each credit note, find payments where it was used
+    const usageData: { payment: Payment; usedAmount: number }[] = [];
+    
+    for (const creditNote of creditNotes.value) {
+      if (creditNote.id) {
+        // Get all payments to check which ones used this credit note
+        const payments = await paymentService.getAll();
+        
+        for (const payment of payments) {
+          if (payment.credit_notes && payment.credit_notes.includes(creditNote.id)) {
+            // For payments that used this credit note, we need to determine the used amount
+            // This would ideally come from payment allocation records or credit note usage records
+            // For now, we'll show that the credit note was used in the payment
+            // The actual used amount would need to be tracked separately
+            const totalUsed = creditNote.credit_amount - creditNote.balance;
+            if (totalUsed > 0) {
+              usageData.push({
+                payment,
+                usedAmount: totalUsed // This is the total used, not per-payment
+              });
+            }
+          }
+        }
+      }
+    }
+    
+    creditNoteUsage.value = usageData;
+  } catch (error) {
+    console.error('Error loading credit note usage:', error);
   }
 };
 
 // Methods
+const formatDate = (dateString: string) => {
+  if (!dateString) return '';
+  try {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch {
+    return dateString;
+  }
+};
+
 const getStatusClass = (status: string) => {
   const classes = {
     initiated: 'status-pending',
@@ -481,6 +609,6 @@ const handleComplete = async () => {
 };
 
 onMounted(() => {
-  loadReturnItems();
+  loadReturnData();
 });
 </script>

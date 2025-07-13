@@ -3518,6 +3518,19 @@ class VendorCreditNoteService {
     return creditNotes;
   }
 
+  async getByReturn(returnId: string): Promise<VendorCreditNote[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('vendor_credit_notes').getFullList({
+      filter: `site="${siteId}" && return_id="${returnId}"`,
+      expand: 'vendor,return',
+      sort: '-created'
+    });
+    
+    return records.map(record => this.mapRecordToCreditNote(record));
+  }
+
   async getById(id: string): Promise<VendorCreditNote | null> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
@@ -3564,6 +3577,22 @@ class VendorCreditNoteService {
 
     const record = await pb.collection('vendor_credit_notes').update(id, data);
     return this.mapRecordToCreditNote(record);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canDelete) {
+      throw new Error('Permission denied: Cannot delete credit notes');
+    }
+
+    try {
+      await pb.collection('vendor_credit_notes').delete(id);
+      return true;
+    } catch (error) {
+      console.error('Error deleting credit note:', error);
+      return false;
+    }
   }
 
   async calculateActualBalance(creditNoteId: string): Promise<number> {
