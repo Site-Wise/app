@@ -212,14 +212,20 @@
               <h4 class="font-medium text-gray-900 dark:text-white">Delivery #{{ delivery.id?.slice(-6) }}</h4>
               <p class="text-sm text-gray-600 dark:text-gray-400">{{ formatDate(delivery.delivery_date) }}</p>
             </div>
-            <span class="status-pending">
-              {{ t('common.pending') }}
+            <span :class="DeliveryPaymentCalculator.getPaymentStatusClass(delivery.payment_status)">
+              {{ t(DeliveryPaymentCalculator.getPaymentStatusTextKey(delivery.payment_status)) }}
             </span>
           </div>
           <div class="flex justify-between items-center text-sm">
             <span class="text-gray-600 dark:text-gray-400">{{ delivery.delivery_reference || t('vendors.noReference') }}</span>
             <div class="text-right">
               <p class="font-medium text-gray-900 dark:text-white">₹{{ delivery.total_amount.toFixed(2) }}</p>
+              <p v-if="delivery.outstanding > 0" class="text-xs text-orange-600 dark:text-orange-400">
+                Outstanding: ₹{{ delivery.outstanding.toFixed(2) }}
+              </p>
+              <p v-else-if="delivery.paid_amount > 0" class="text-xs text-green-600 dark:text-green-400">
+                Fully Paid
+              </p>
             </div>
           </div>
         </div>
@@ -291,65 +297,22 @@
     </div>
     </div>
 
-    <!-- Record Payment Modal -->
-    <div v-if="showPaymentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="showPaymentModal = false" @keydown.esc="showPaymentModal = false" tabindex="-1">
-      <div
-        class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700" @click.stop>
-        <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">{{ t('vendors.recordPaymentFor') }} {{ vendor?.contact_person || vendor?.name || t('vendors.vendor') }}</h3>
-
-          <form @submit.prevent="savePayment" class="space-y-4">
-            <div class="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-              <p class="text-sm text-yellow-800 dark:text-yellow-300">
-                {{ t('vendors.outstandingAmount') }}: <strong>₹{{ outstandingAmount.toFixed(2) }}</strong>
-              </p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.paymentAccount') }}</label>
-              <select v-model="paymentForm.account" required class="input mt-1">
-                <option value="">{{ t('vendors.selectAccount') }}</option>
-                <option v-for="account in activeAccounts" :key="account.id" :value="account.id">
-                  {{ account.name }} ({{ account.type.replace('_', ' ') }}) - ₹{{ account.current_balance.toFixed(2) }}
-                </option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.amount') }}</label>
-              <input v-model.number="paymentForm.amount" type="number" step="0.01" required class="input mt-1"
-                placeholder="0.00" />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.paymentDate') }}</label>
-              <input v-model="paymentForm.payment_date" type="date" required class="input mt-1" />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.reference') }}</label>
-              <input v-model="paymentForm.reference" type="text" class="input mt-1"
-                :placeholder="t('vendors.referencePlaceholder')" />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.notes') }}</label>
-              <textarea v-model="paymentForm.notes" class="input mt-1" rows="3" :placeholder="t('vendors.paymentNotesPlaceholder')"></textarea>
-            </div>
-
-            <div class="flex space-x-3 pt-4">
-              <button type="submit" :disabled="paymentLoading" class="flex-1 btn-primary">
-                <Loader2 v-if="paymentLoading" class="mr-2 h-4 w-4 animate-spin" />
-                {{ t('vendors.recordPayment') }}
-              </button>
-              <button type="button" @click="showPaymentModal = false" class="flex-1 btn-outline">
-                {{ t('vendors.cancel') }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+    <!-- Payment Modal -->
+    <PaymentModal
+      :is-visible="showPaymentModal"
+      :mode="paymentModalMode"
+      :payment="currentPayment"
+      :current-allocations="currentAllocations"
+      :vendors="allVendors"
+      :accounts="accounts"
+      :deliveries="allDeliveries"
+      :service-bookings="allServiceBookings"
+      :payments="allPayments"
+      :vendor-id="vendor?.id"
+      :outstanding-amount="outstandingAmount"
+      @submit="handlePaymentModalSubmit"
+      @close="handlePaymentModalClose"
+    />
   </div>
 
   <div v-else class="flex items-center justify-center min-h-96">
@@ -377,14 +340,19 @@ import {
   FileText,
   FileSpreadsheet,
   ChevronDown,
-  MoreVertical
+  MoreVertical,
+  AlertCircle,
+  CheckCircle
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
+import { useToast } from '../composables/useToast';
 import StatusBadge from '../components/StatusBadge.vue';
+import PaymentModal from '../components/PaymentModal.vue';
 import {
   vendorService,
   deliveryService,
   paymentService,
+  paymentAllocationService,
   accountService,
   tagService,
   vendorReturnService,
@@ -396,6 +364,7 @@ import {
   type Vendor,
   type Delivery,
   type Payment,
+  type PaymentAllocation,
   type Account,
   type ServiceBooking,
   type Tag as TagType,
@@ -404,16 +373,23 @@ import {
   type CreditNoteUsage,
   type AccountTransaction
 } from '../services/pocketbase';
+import { DeliveryPaymentCalculator, type DeliveryWithPaymentStatus } from '../services/deliveryUtils';
 import { TallyXmlExporter } from '../utils/tallyXmlExport';
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const { success, error } = useToast();
 
 const vendor = ref<Vendor | null>(null);
-const vendorDeliveries = ref<Delivery[]>([]);
+const vendorDeliveries = ref<DeliveryWithPaymentStatus[]>([]);
 const vendorServiceBookings = ref<ServiceBooking[]>([]);
 const vendorPayments = ref<Payment[]>([]);
+const allPayments = ref<Payment[]>([]);
+const allVendors = ref<Vendor[]>([]);
+const allDeliveries = ref<Delivery[]>([]);
+const allServiceBookings = ref<ServiceBooking[]>([]);
+const paymentAllocations = ref<PaymentAllocation[]>([]);
 const vendorReturns = ref<VendorReturn[]>([]);
 const vendorCreditNotes = ref<VendorCreditNote[]>([]);
 const vendorCreditNoteUsages = ref<CreditNoteUsage[]>([]);
@@ -425,17 +401,11 @@ const paymentLoading = ref(false);
 const showExportDropdown = ref(false);
 const showMobileMenu = ref(false);
 
-const paymentForm = reactive({
-  account: '',
-  amount: 0,
-  payment_date: new Date().toISOString().split('T')[0],
-  reference: '',
-  notes: ''
-});
+// Payment modal state
+const paymentModalMode = ref<'CREATE' | 'PAY_NOW' | 'EDIT'>('PAY_NOW');
+const currentPayment = ref<Payment | null>(null);
+const currentAllocations = ref<PaymentAllocation[]>([]);
 
-const activeAccounts = computed(() => {
-  return accounts.value.filter(account => account.is_active);
-});
 
 const outstandingAmount = computed(() => {
   if (!vendor.value) return 0;
@@ -473,13 +443,13 @@ const totalPaid = computed(() => {
 const ledgerEntries = computed(() => {
   const entries: Array<{
     id: string;
-    type: 'opening_balance' | 'delivery' | 'payment' | 'credit_note' | 'credit_note_usage' | 'refund';
+    type: 'opening_balance' | 'delivery' | 'payment' | 'credit_note' | 'refund';
     date: string;
     description: string;
     details?: string;
     reference: string;
     particulars: string;
-    debit: number;  // Purchases on credit, credit note usage
+    debit: number;  // Purchases on credit
     credit: number; // Payments, credit notes, refunds
     runningBalance: number;
   }> = [];
@@ -520,10 +490,100 @@ const ledgerEntries = computed(() => {
     });
   });
 
-  // 3️⃣ Add return entries (only if credit note generated)
+  // 3️⃣ Add return entries 
+  vendorReturns.value.forEach(returnItem => {
+    if (returnItem.status === 'completed' || returnItem.status === 'refunded') {
+      if (returnItem.processing_option === 'credit_note') {
+        // CREDIT NOTE SCENARIO: Return processed as credit note
+        // Shows ONLY in credit column - no debit entry for usage
+        const relatedCreditNote = vendorCreditNotes.value.find(cn => 
+          cn.reason === returnItem.reason && 
+          cn.credit_amount === returnItem.total_return_amount
+        );
+        
+        let details = `Return processed as credit note`;
+        let particulars = `Credit Note: ${relatedCreditNote?.reference || `Return #${returnItem.id?.slice(-6)}`}`;
+        
+        if (returnItem.reason) {
+          details += ` - ${returnItem.reason}`;
+          particulars += ` - ${returnItem.reason}`;
+        }
+
+        entries.push({
+          id: returnItem.id || '',
+          type: 'credit_note',
+          date: returnItem.completion_date || returnItem.return_date,
+          description: 'Credit Note for Return',
+          details,
+          reference: relatedCreditNote?.reference || `RET-${returnItem.id?.slice(-6)}`,
+          particulars,
+          debit: 0,
+          credit: returnItem.total_return_amount,  // CREDIT: reduces vendor liability
+          runningBalance: 0 // Will be calculated below
+        });
+        
+      } else if (returnItem.processing_option === 'refund') {
+        // REFUND SCENARIO: Return processed as refund (TWO ENTRIES)
+        
+        // 1. Return entry - CREDIT column (reduces liability for returned goods)
+        let returnDetails = `Goods returned for refund`;
+        let returnParticulars = `Return: Return #${returnItem.id?.slice(-6)}`;
+        
+        if (returnItem.reason) {
+          returnDetails += ` - ${returnItem.reason}`;
+          returnParticulars += ` - ${returnItem.reason}`;
+        }
+
+        entries.push({
+          id: `${returnItem.id}_return` || '',
+          type: 'credit_note',
+          date: returnItem.completion_date || returnItem.return_date,
+          description: 'Goods Returned',
+          details: returnDetails,
+          reference: `RET-${returnItem.id?.slice(-6)}`,
+          particulars: returnParticulars,
+          debit: 0,
+          credit: returnItem.total_return_amount,  // CREDIT: reduces liability for returned goods
+          runningBalance: 0 // Will be calculated below
+        });
+
+        // 2. Refund transaction entry - DEBIT column (vendor gave us money back)
+        if (returnItem.actual_refund_amount && returnItem.actual_refund_amount > 0) {
+          let refundDetails = `Refund received for returned goods`;
+          let refundParticulars = `Refund Received: Return #${returnItem.id?.slice(-6)}`;
+          
+          if (returnItem.reason) {
+            refundDetails += ` - ${returnItem.reason}`;
+            refundParticulars += ` - ${returnItem.reason}`;
+          }
+
+          entries.push({
+            id: `${returnItem.id}_refund` || '',
+            type: 'refund',
+            date: returnItem.completion_date || returnItem.return_date,
+            description: 'Refund Transaction',
+            details: refundDetails,
+            reference: `REF-${returnItem.id?.slice(-6)}`,
+            particulars: refundParticulars,
+            debit: returnItem.actual_refund_amount,  // DEBIT: vendor gave us money back
+            credit: 0,
+            runningBalance: 0 // Will be calculated below
+          });
+        }
+      }
+    }
+  });
+
+  // Also add standalone credit notes (not related to returns)
   vendorCreditNotes.value.forEach(creditNote => {
-    // Only show credit notes that have been issued (returns with credit notes)
-    if (creditNote.credit_amount > 0) {
+    // Only show credit notes that are not already processed above via returns
+    const isReturnRelated = vendorReturns.value.some(returnItem => 
+      returnItem.processing_option === 'credit_note' &&
+      returnItem.reason === creditNote.reason &&
+      returnItem.total_return_amount === creditNote.credit_amount
+    );
+    
+    if (creditNote.credit_amount > 0 && !isReturnRelated) {
       let details = '';
       let particulars = `Credit Note: ${creditNote.reference || `CN-${creditNote.id?.slice(-6)}`}`;
       
@@ -547,32 +607,9 @@ const ledgerEntries = computed(() => {
     }
   });
 
-  // Add credit note usage entries (debits) - when credits are applied to payments
-  vendorCreditNoteUsages.value.forEach(usage => {
-    let details = `Applied to payment`;
-    let particulars = `Credit Applied: ${usage.expand?.credit_note?.reference || `CN-${usage.credit_note?.slice(-6)}`}`;
-    
-    if (usage.expand?.payment?.reference) {
-      details += ` ${usage.expand.payment.reference}`;
-      particulars += ` to ${usage.expand.payment.reference}`;
-    }
-    if (usage.description) {
-      details = usage.description;
-    }
-
-    entries.push({
-      id: usage.id || '',
-      type: 'credit_note_usage',
-      date: usage.used_date,
-      description: t('vendors.creditNoteUsed'),
-      details,
-      reference: usage.expand?.credit_note?.reference || `CN-${usage.credit_note?.slice(-6)}`,
-      particulars,
-      debit: usage.used_amount, // Debit when credit is used (reduces available credit)
-      credit: 0,
-      runningBalance: 0 // Will be calculated below
-    });
-  });
+  // Note: Credit note usage should NOT appear as a separate entry in the ledger
+  // The credit note already reduced our liability when issued
+  // Usage is just internal tracking of which payments utilized the credit
 
   // 4️⃣ Add payment entries (credits - reduces what we owe)
   vendorPayments.value.forEach(payment => {
@@ -595,32 +632,32 @@ const ledgerEntries = computed(() => {
     });
   });
 
-  // Add refund entries (credits) - from processed returns with refunds
-  vendorReturns.value.forEach(returnItem => {
-    if (returnItem.status === 'refunded' && returnItem.actual_refund_amount && returnItem.actual_refund_amount > 0) {
-      let details = '';
-      let particulars = `Refund: REF-${returnItem.id?.slice(-6)}`;
-      
-      // Try to get delivery and item details  
-      details = `${t('vendors.refundForReturn')} #${returnItem.id?.slice(-6)}`;
-      if (returnItem.reason) {
-        details += ` - ${t(`vendors.returnReasons.${returnItem.reason}`)}`;
-        particulars += ` - ${returnItem.reason}`;
-      }
-
-      entries.push({
-        id: returnItem.id || '',
-        type: 'refund',
-        date: returnItem.completion_date || returnItem.return_date,
-        description: t('vendors.refundProcessed'),
-        details,
-        reference: `REF-${returnItem.id?.slice(-6)}`,
-        particulars,
-        debit: 0,
-        credit: returnItem.actual_refund_amount,  // Credit reduces vendor liability
-        runningBalance: 0 // Will be calculated below
-      });
+  // Additional refund entries from account transactions (if any)
+  // These would be standalone refunds not related to returns
+  vendorRefunds.value.forEach(refund => {
+    let details = refund.description || '';
+    let particulars = `Refund Received`;
+    
+    if (refund.reference) {
+      particulars += `: ${refund.reference}`;
     }
+    if (refund.expand?.account?.name) {
+      details += details ? ` - ` : '';
+      details += `To ${refund.expand.account.name}`;
+    }
+
+    entries.push({
+      id: refund.id || '',
+      type: 'refund',
+      date: refund.transaction_date,
+      description: 'Standalone Refund Received',
+      details,
+      reference: refund.reference || '',
+      particulars,
+      debit: 0,
+      credit: refund.amount,  // Credit reduces vendor liability
+      runningBalance: 0 // Will be calculated below
+    });
   });
 
   // Sort entries by date
@@ -665,11 +702,12 @@ const loadVendorData = async () => {
   const vendorId = route.params.id as string;
 
   try {
-    const [vendorData, allDeliveries, allServiceBookings, allPayments, allReturns, allCreditNotes, allCreditNoteUsages, allTransactions, accountsData, allTags] = await Promise.all([
+    const [vendorData, allDeliveriesData, allServiceBookingsData, allPaymentsData, allPaymentAllocationsData, allReturns, allCreditNotes, allCreditNoteUsages, allTransactions, accountsData, allTags] = await Promise.all([
       vendorService.getAll(),
       deliveryService.getAll(),
       serviceBookingService.getAll(),
       paymentService.getAll(),
+      paymentAllocationService.getAll(),
       vendorReturnService.getByVendor(vendorId),
       vendorCreditNoteService.getByVendor(vendorId),
       creditNoteUsageService.getByVendor(vendorId),
@@ -678,14 +716,26 @@ const loadVendorData = async () => {
       tagService.getAll()
     ]);
 
+    allVendors.value = vendorData;
+    allDeliveries.value = allDeliveriesData;
+    allServiceBookings.value = allServiceBookingsData;
+    paymentAllocations.value = allPaymentAllocationsData;
     vendor.value = vendorData.find(v => v.id === vendorId) || null;
-    vendorDeliveries.value = allDeliveries
+    
+    // Filter vendor deliveries and enhance with payment status
+    const filteredDeliveries = allDeliveriesData
       .filter(delivery => delivery.vendor === vendorId)
       .sort((a, b) => new Date(b.delivery_date).getTime() - new Date(a.delivery_date).getTime());
-    vendorServiceBookings.value = allServiceBookings
+    
+    vendorDeliveries.value = DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus(
+      filteredDeliveries,
+      allPaymentAllocationsData
+    );
+    vendorServiceBookings.value = allServiceBookingsData
       .filter(booking => booking.vendor === vendorId)
       .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
-    vendorPayments.value = allPayments
+    allPayments.value = allPaymentsData;
+    vendorPayments.value = allPaymentsData
       .filter(payment => payment.vendor === vendorId)
       .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime());
     vendorReturns.value = allReturns;
@@ -714,42 +764,58 @@ const loadVendorData = async () => {
 };
 
 const recordPayment = () => {
-  paymentForm.amount = outstandingAmount.value;
+  paymentModalMode.value = 'PAY_NOW';
+  currentPayment.value = null;
+  currentAllocations.value = [];
   showPaymentModal.value = true;
 };
 
-const savePayment = async () => {
-  if (!vendor.value) return;
-
+const handlePaymentModalSubmit = async (data: any) => {
+  const { mode, form, payment } = data;
+  
   paymentLoading.value = true;
   try {
-    await paymentService.create({
-      vendor: vendor.value.id!,
-      account: paymentForm.account,
-      amount: paymentForm.amount,
-      payment_date: paymentForm.payment_date,
-      reference: paymentForm.reference,
-      notes: paymentForm.notes,
-      deliveries: [],
-      service_bookings: [],
-    });
+    // Prepare payment data
+    const paymentData = {
+      vendor: form.vendor,
+      account: form.account,
+      amount: form.amount,
+      payment_date: form.transaction_date,
+      reference: form.reference,
+      notes: form.notes,
+      deliveries: form.deliveries,
+      service_bookings: form.service_bookings,
+      credit_notes: form.credit_notes || [],
+      delivery_allocations: form.delivery_allocations || {},
+      service_booking_allocations: form.service_booking_allocations || {},
+      credit_note_allocations: form.credit_note_allocations || {}
+    };
 
+    // If payment is fully covered by credit notes, remove account from payment data
+    const totalCreditNoteAmount = Object.values(form.credit_note_allocations || {})
+      .reduce((sum: number, allocation: any) => sum + (allocation?.amount || 0), 0);
+    
+    if (totalCreditNoteAmount >= form.amount) {
+      delete paymentData.account;
+    }
+
+    await paymentService.create(paymentData);
+    success(t('messages.createSuccess', { item: t('common.payment') }));
     await loadVendorData();
     showPaymentModal.value = false;
-
-    // Reset form
-    Object.assign(paymentForm, {
-      account: '',
-      amount: 0,
-      payment_date: new Date().toISOString().split('T')[0],
-      reference: '',
-      notes: ''
-    });
-  } catch (error) {
-    console.error('Error saving payment:', error);
+  } catch (err: any) {
+    console.error('Error saving payment:', err);
+    error(t('messages.createError', { item: t('common.payment') }));
   } finally {
     paymentLoading.value = false;
   }
+};
+
+const handlePaymentModalClose = () => {
+  showPaymentModal.value = false;
+  paymentModalMode.value = 'PAY_NOW';
+  currentPayment.value = null;
+  currentAllocations.value = [];
 };
 
 const exportLedger = () => {
@@ -1179,3 +1245,17 @@ onMounted(() => {
   loadVendorData();
 });
 </script>
+
+<style scoped>
+.status-pending {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300;
+}
+
+.status-partial {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300;
+}
+
+.status-paid {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300;
+}
+</style>

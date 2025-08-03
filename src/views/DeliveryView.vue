@@ -509,12 +509,7 @@ import {
   type Delivery
 } from '../services/pocketbase';
 import { usePermissions } from '../composables/usePermissions';
-
-// Extended Delivery with computed payment properties
-interface DeliveryWithPaymentStatus extends Delivery {
-  payment_status: 'pending' | 'partial' | 'paid';
-  outstanding: number;
-}
+import { DeliveryPaymentCalculator, type DeliveryWithPaymentStatus } from '../services/deliveryUtils';
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
@@ -551,41 +546,12 @@ const { searchQuery, loading: searchLoading, results: searchResults, loadAll } =
 // Client-side payment status calculation
 const paymentAllocations = computed(() => paymentAllocationsData.value || []);
 
-// Helper function to calculate payment status based on allocations
-const calculatePaymentStatus = (delivery: Delivery): 'pending' | 'partial' | 'paid' => {
-  if (!paymentAllocations.value.length) return 'pending';
-  
-  const allocatedAmount = paymentAllocations.value
-    .filter(allocation => allocation.delivery === delivery.id)
-    .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
-  
-  if (allocatedAmount <= 0) return 'pending';
-  if (allocatedAmount >= delivery.total_amount) return 'paid';
-  return 'partial';
-};
-
-// Helper function to calculate outstanding amount
-const calculateOutstandingAmount = (delivery: Delivery): number => {
-  if (!paymentAllocations.value.length) return delivery.total_amount;
-  
-  const allocatedAmount = paymentAllocations.value
-    .filter(allocation => allocation.delivery === delivery.id)
-    .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
-  
-  const outstanding = delivery.total_amount - allocatedAmount;
-  return outstanding > 0 ? outstanding : 0;
-};
-
 // Display items: use search results if searching, otherwise all items with calculated payment status
 const deliveries = computed((): DeliveryWithPaymentStatus[] => {
   const baseDeliveries = searchQuery.value.trim() ? searchResults.value : (allDeliveriesData.value || []);
+  const allocations = paymentAllocations.value || [];
   
-  // Add computed payment status and outstanding amount to each delivery
-  return baseDeliveries.map(delivery => ({
-    ...delivery,
-    payment_status: calculatePaymentStatus(delivery),
-    outstanding: calculateOutstandingAmount(delivery)
-  }));
+  return DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus(baseDeliveries, allocations);
 });
 
 // Removed unused allDeliveries computed property

@@ -36,7 +36,7 @@
                 :required="true"
                 :outstanding-amount="vendorOutstanding"
                 :pending-items-count="vendorPendingItems"
-                :disabled="loading"
+                :disabled="loading || (mode === 'PAY_NOW' && !!vendorId)"
                 name="vendor"
                 @vendor-selected="handleVendorSelected"
                 @focus="handleVendorFocus"

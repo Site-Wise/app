@@ -17,11 +17,13 @@
         class="w-full px-4 py-3 pl-10 pr-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
         :class="{ 
           'border-red-500 dark:border-red-500': hasError,
-          'pr-20': selectedVendor && !searchQuery && getVendorBalance(selectedVendor).amount > 0 // Add padding for outstanding amount
+          'pr-20': selectedVendor && !searchQuery && getVendorBalance(selectedVendor).amount > 0, // Add padding for outstanding amount
+          'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-700': disabled
         }"
         :autofocus="autofocus"
         :required="required"
         :name="name"
+        :disabled="disabled"
       />
       <!-- Outstanding amount display in input -->
       <div v-if="selectedVendor && !searchQuery && getVendorBalance(selectedVendor).amount > 0" class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -144,6 +146,7 @@ interface Props {
   hasError?: boolean;
   outstandingAmount?: number;
   pendingItemsCount?: number;
+  disabled?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -154,7 +157,8 @@ const props = withDefaults(defineProps<Props>(), {
   name: 'vendor',
   hasError: false,
   outstandingAmount: 0,
-  pendingItemsCount: 0
+  pendingItemsCount: 0,
+  disabled: false
 });
 
 interface Emits {
@@ -230,6 +234,8 @@ const getVendorPendingCount = (vendor: Vendor): number => {
 
 // Event handlers
 const handleInput = (event: Event) => {
+  if (props.disabled) return;
+  
   const target = event.target as HTMLInputElement;
   searchQuery.value = target.value;
   highlightedIndex.value = -1;
@@ -247,6 +253,8 @@ const handleInput = (event: Event) => {
 };
 
 const handleFocus = () => {
+  if (props.disabled) return;
+  
   emit('focus');
   
   // Only show dropdown if user is actively searching
@@ -259,6 +267,8 @@ const handleFocus = () => {
 };
 
 const handleClick = () => {
+  if (props.disabled) return;
+  
   // When user clicks on input, show dropdown to allow vendor selection/change
   // This allows users to see the current selection or search for a new vendor
   if (selectedVendor.value && !searchQuery.value) {
