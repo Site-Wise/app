@@ -486,25 +486,31 @@ const nextStep = () => {
 };
 
 const handleDeliveryItemChanges = async (deliveryId: string) => {
-  // Handle deleted items
+  // Handle deleted items using batch delete
   const deletedItems = deliveryItems.value.filter(item => item.isDeleted && item.id && !item.isNew);
-  for (const item of deletedItems) {
-    await deliveryItemService.delete(item.id!);
+  if (deletedItems.length > 0) {
+    const idsToDelete = deletedItems.map(item => item.id!);
+    await deliveryItemService.deleteMultiple(idsToDelete);
   }
 
-  // Handle modified existing items
+  // Handle modified existing items using batch update
   const modifiedItems = deliveryItems.value.filter(item => item.isModified && item.id && !item.isNew && !item.isDeleted);
-  for (const item of modifiedItems) {
-    await deliveryItemService.update(item.id!, {
-      item: item.item,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      total_amount: item.total_amount,
-      notes: item.notes
-    });
+  if (modifiedItems.length > 0) {
+    const updates = modifiedItems.map(item => ({
+      id: item.id!,
+      data: {
+        item: item.item,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_amount: item.total_amount,
+        notes: item.notes
+      }
+    }));
+    
+    await deliveryItemService.updateMultiple(updates);
   }
 
-  // Handle new items
+  // Handle new items using batch create (already using createMultiple)
   const newItems = deliveryItems.value.filter(item => item.isNew && !item.isDeleted);
   if (newItems.length > 0) {
     const newItemsData = newItems.map(item => ({

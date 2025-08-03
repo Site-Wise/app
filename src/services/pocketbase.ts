@@ -1,4 +1,5 @@
 import PocketBase, { type RecordModel } from 'pocketbase';
+import { batchCreate, batchUpdate, batchDelete } from './pocketbaseBatch';
 
 // Get PocketBase URL from environment variables with fallback
 const POCKETBASE_URL = import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090' || 'http://127.0.0.1:8090';
@@ -4264,23 +4265,21 @@ export class DeliveryItemService {
       throw new Error('Access denied: Cannot create delivery items for delivery in different site');
     }
 
-    const createdItems: DeliveryItem[] = [];
-    const createdItemIds: string[] = [];
-    
-    for (const itemData of items) {
-      const total_amount = itemData.quantity * itemData.unit_price;
-      const record = await pb.collection('delivery_items').create({
-        delivery: deliveryId,
-        item: itemData.item,
-        quantity: itemData.quantity,
-        unit_price: itemData.unit_price,
-        total_amount,
-        notes: itemData.notes,
-        site: currentSite
-      });
-      createdItems.push(this.mapRecordToDeliveryItem(record));
-      createdItemIds.push(record.id);
-    }
+    // Prepare batch data
+    const batchData = items.map(itemData => ({
+      delivery: deliveryId,
+      item: itemData.item,
+      quantity: itemData.quantity,
+      unit_price: itemData.unit_price,
+      total_amount: itemData.quantity * itemData.unit_price,
+      notes: itemData.notes,
+      site: currentSite
+    }));
+
+    // Use batch API to create all items at once
+    const createdRecords = await batchCreate<any>('delivery_items', batchData);
+    const createdItems = createdRecords.map(record => this.mapRecordToDeliveryItem(record as RecordModel));
+    const createdItemIds = createdItems.map(item => item.id!);
     
     // Update the parent delivery with the new item IDs
     try {
@@ -4342,6 +4341,67 @@ export class DeliveryItemService {
       created: record.created,
       updated: record.updated
     };
+  }
+
+  async updateMultiple(updates: Array<{ id: string; data: Partial<DeliveryItem> }>): Promise<DeliveryItem[]> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canUpdate) {
+      throw new Error('Permission denied: Cannot update delivery items');
+    }
+
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    // Validate that all items belong to the current site before updating
+    for (const update of updates) {
+      const record = await pb.collection('delivery_items').getOne(update.id);
+      if (record.site !== currentSite) {
+        throw new Error(`Access denied: Cannot update delivery item ${update.id} from different site`);
+      }
+    }
+
+    // Prepare batch update data
+    const batchUpdates = updates.map(update => ({
+      id: update.id,
+      data: {
+        ...update.data,
+        total_amount: update.data.quantity && update.data.unit_price 
+          ? update.data.quantity * update.data.unit_price 
+          : undefined
+      }
+    }));
+
+    // Use batch API to update all items at once
+    const updatedRecords = await batchUpdate<any>('delivery_items', batchUpdates);
+    return updatedRecords.map(record => this.mapRecordToDeliveryItem(record as RecordModel));
+  }
+
+  async deleteMultiple(ids: string[]): Promise<boolean> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canDelete) {
+      throw new Error('Permission denied: Cannot delete delivery items');
+    }
+
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    // Validate that all items belong to the current site before deleting
+    for (const id of ids) {
+      const record = await pb.collection('delivery_items').getOne(id);
+      if (record.site !== currentSite) {
+        throw new Error(`Access denied: Cannot delete delivery item ${id} from different site`);
+      }
+    }
+
+    // Use batch API to delete all items at once
+    await batchDelete('delivery_items', ids);
+    return true;
   }
 }
 
