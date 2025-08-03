@@ -24,7 +24,7 @@ export function usePWA() {
     updateServiceWorker,
     offlineReady
   } = useRegisterSW({
-    immediate: true,
+    immediate: true, // Auto-register on mount
     onRegistered(r) {
       console.log('PWA: Service Worker registered', r);
       // Check for updates periodically (every hour)

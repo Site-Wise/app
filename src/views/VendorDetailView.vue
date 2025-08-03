@@ -321,7 +321,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { useRoute, useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
@@ -774,7 +774,7 @@ const recordPayment = () => {
 };
 
 const handlePaymentModalSubmit = async (data: any) => {
-  const { mode, form, payment } = data;
+  const { form } = data;
   
   paymentLoading.value = true;
   try {

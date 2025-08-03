@@ -1335,5 +1335,20 @@
     "square meter": "Square Meter",
     "liter": "Liter",
     "meter": "Meter"
+  },
+  "pwa": {
+    "installTitle": "Install SiteWise App",
+    "installMessage": "Add SiteWise to your home screen for quick access and better performance",
+    "install": "Install",
+    "installing": "Installing...",
+    "later": "Later",
+    "updateTitle": "Update Available",
+    "updateMessage": "A new version of SiteWise is available",
+    "updateNow": "Update Now",
+    "updating": "Updating...",
+    "updateInstalled": "App updated successfully",
+    "updateAvailable": "New update available",
+    "updateDescription": "A new version of the app is ready to install",
+    "youreOffline": "You're offline"
   }
 }

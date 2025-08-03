@@ -54,6 +54,11 @@ import SiteSelectionView from './views/SiteSelectionView.vue';
 import ToastContainer from './components/ToastContainer.vue';
 import PWAUpdateNotification from './components/PWAUpdateNotification.vue';
 
+// PWA Debug utility (development only)
+if (import.meta.env.DEV) {
+  import('./utils/pwaTest');
+}
+
 const { isAuthenticated } = useAuth();
 const { hasSiteAccess, isReadyForRouting, loadUserSites } = useSite();
 const { platformInfo } = usePlatform();

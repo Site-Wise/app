@@ -82,10 +82,7 @@ export default defineConfig({
               }
             }
           }
-        ],
-        // Remove problematic options that might cause the AJV validation error
-        skipWaiting: true,
-        clientsClaim: true
+        ]
       },
       devOptions: {
         enabled: true // Enable PWA in development for testing

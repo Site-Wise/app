@@ -1340,5 +1340,20 @@
     "square meter": "वर्ग मीटर",
     "liter": "लीटर",
     "meter": "मीटर"
+  },
+  "pwa": {
+    "installTitle": "SiteWise ऐप इंस्टॉल करें",
+    "installMessage": "तुरंत पहुंच और बेहतर प्रदर्शन के लिए SiteWise को अपनी होम स्क्रीन पर जोड़ें",
+    "install": "इंस्टॉल करें",
+    "installing": "इंस्टॉल हो रहा है...",
+    "later": "बाद में",
+    "updateTitle": "अपडेट उपलब्ध",
+    "updateMessage": "SiteWise का नया संस्करण उपलब्ध है",
+    "updateNow": "अभी अपडेट करें",
+    "updating": "अपडेट हो रहा है...",
+    "updateInstalled": "ऐप सफलतापूर्वक अपडेट हुआ",
+    "updateAvailable": "नया अपडेट उपलब्ध",
+    "updateDescription": "ऐप का नया संस्करण इंस्टॉल के लिए तैयार है",
+    "youreOffline": "आप ऑफलाइन हैं"
   }
 }
