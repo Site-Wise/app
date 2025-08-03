@@ -346,6 +346,7 @@ import {
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useToast } from '../composables/useToast';
+import { useModalState } from '../composables/useModalState';
 import StatusBadge from '../components/StatusBadge.vue';
 import PaymentModal from '../components/PaymentModal.vue';
 import {
@@ -380,6 +381,7 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const { success, error } = useToast();
+const { openModal, closeModal: closeModalState } = useModalState();
 
 const vendor = ref<Vendor | null>(null);
 const vendorDeliveries = ref<DeliveryWithPaymentStatus[]>([]);
@@ -768,6 +770,7 @@ const recordPayment = () => {
   currentPayment.value = null;
   currentAllocations.value = [];
   showPaymentModal.value = true;
+  openModal('vendor-detail-payment-modal');
 };
 
 const handlePaymentModalSubmit = async (data: any) => {
@@ -803,6 +806,7 @@ const handlePaymentModalSubmit = async (data: any) => {
     success(t('messages.createSuccess', { item: t('common.payment') }));
     await loadVendorData();
     showPaymentModal.value = false;
+    closeModalState('vendor-detail-payment-modal');
   } catch (err: any) {
     console.error('Error saving payment:', err);
     error(t('messages.createError', { item: t('common.payment') }));
@@ -816,6 +820,7 @@ const handlePaymentModalClose = () => {
   paymentModalMode.value = 'PAY_NOW';
   currentPayment.value = null;
   currentAllocations.value = [];
+  closeModalState('vendor-detail-payment-modal');
 };
 
 const exportLedger = () => {

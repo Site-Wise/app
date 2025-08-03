@@ -271,10 +271,12 @@ import { useAccountSearch } from '../composables/useSearch';
 import { useSiteData } from '../composables/useSiteData';
 import { usePermissions } from '../composables/usePermissions';
 import { useSubscription } from '../composables/useSubscription';
+import { useModalState } from '../composables/useModalState';
 
 const { t } = useI18n();
 const { canDelete } = usePermissions();
 const { checkCreateLimit, isReadOnly } = useSubscription();
+const { openModal, closeModal: closeModalState } = useModalState();
 const router = useRouter();
 // Use site-aware data loading
 const { data: accountsData, reload: reloadAccounts } = useSiteData(async () => {
@@ -381,6 +383,8 @@ const editAccount = (account: Account) => {
     is_active: account.is_active,
     opening_balance: account.opening_balance
   });
+  showAddModal.value = true;
+  openModal('accounts-edit-modal');
 };
 
 const toggleAccountStatus = async (account: Account) => {
@@ -415,6 +419,8 @@ const closeModal = () => {
     is_active: true,
     opening_balance: 0
   });
+  closeModalState('accounts-add-modal');
+  closeModalState('accounts-edit-modal');
 };
 
 const getAccountActions = (account: Account) => {
@@ -457,6 +463,7 @@ const handleAccountAction = (account: Account, action: string) => {
 
 const handleAddAccount = async () => {
   showAddModal.value = true;
+  openModal('accounts-add-modal');
   await nextTick();
   firstInputRef.value?.focus();
 };

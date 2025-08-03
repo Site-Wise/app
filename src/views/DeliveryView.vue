@@ -309,12 +309,12 @@
     />
 
     <!-- View Modal -->
-    <div v-if="viewingDelivery" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @keydown.esc="viewingDelivery = null" tabindex="-1">
+    <div v-if="viewingDelivery" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @keydown.esc="closeViewModal" tabindex="-1">
       <div class="relative top-20 mx-auto p-5 border w-full max-w-6xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto">
         <div class="mt-3">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ t('delivery.deliveryDetails') }}</h3>
-            <button @click="viewingDelivery = null" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <button @click="closeViewModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
               <X class="h-6 w-6" />
             </button>
           </div>
@@ -510,11 +510,13 @@ import {
 } from '../services/pocketbase';
 import { usePermissions } from '../composables/usePermissions';
 import { DeliveryPaymentCalculator, type DeliveryWithPaymentStatus } from '../services/deliveryUtils';
+import { useModalState } from '../composables/useModalState';
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
 const { canDelete } = usePermissions();
+const { openModal, closeModal } = useModalState();
 
 // Use site data management
 // Load deliveries data
@@ -721,16 +723,19 @@ const reloadAllData = async () => {
 const handleAddDelivery = () => {
   editingDelivery.value = null;
   showAddModal.value = true;
+  openModal('delivery-add-modal');
 };
 
 const editDelivery = (delivery: Delivery) => {
   editingDelivery.value = delivery;
   showAddModal.value = true;
+  openModal('delivery-edit-modal');
 };
 
 const viewDelivery = async (delivery: Delivery) => {
   try {
     loadingDeliveryDetails.value = true;
+    openModal('delivery-view-modal');
     // Fetch the full delivery with all expanded relationships
     const fullDelivery = await deliveryService.getById(delivery.id!);
     
@@ -768,11 +773,17 @@ const viewDelivery = async (delivery: Delivery) => {
 
 const loadReturnInfo = async (deliveryItems: any[]) => {
   try {
-    for (const item of deliveryItems) {
-      if (item.id) {
-        const info = await vendorReturnService.getReturnInfoForDeliveryItem(item.id);
-        returnInfo.value[item.id] = info;
-      }
+    // Extract all delivery item IDs
+    const deliveryItemIds = deliveryItems
+      .filter(item => item.id)
+      .map(item => item.id);
+    
+    if (deliveryItemIds.length > 0) {
+      // Fetch all return info in one batch request
+      const batchReturnInfo = await vendorReturnService.getReturnInfoForDeliveryItems(deliveryItemIds);
+      
+      // Update the returnInfo reactive object with the batch results
+      Object.assign(returnInfo.value, batchReturnInfo);
     }
   } catch (err) {
     console.error('Error loading return information:', err);
@@ -818,6 +829,8 @@ const deleteDelivery = async (delivery: Delivery) => {
 const closeAddModal = () => {
   showAddModal.value = false;
   editingDelivery.value = null;
+  closeModal('delivery-add-modal');
+  closeModal('delivery-edit-modal');
 };
 
 const handleDeliverySaved = () => {
@@ -883,6 +896,11 @@ const openPhotoGallery = (delivery: Delivery, index: number) => {
   galleryIndex.value = index;
   showAllImagesMode.value = false;
   showPhotoGallery.value = true;
+};
+
+const closeViewModal = () => {
+  viewingDelivery.value = null;
+  closeModal('delivery-view-modal');
 };
 
 

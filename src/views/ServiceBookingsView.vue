@@ -9,7 +9,7 @@
         </p>
       </div>
       <button 
-        @click="showAddModal = true" 
+        @click="handleAddServiceBooking" 
         :disabled="!canCreateServiceBooking"
         :class="[
           canCreateServiceBooking ? 'btn-primary' : 'btn-disabled'
@@ -457,6 +457,7 @@ import {
 import { useI18n } from '../composables/useI18n';
 import { usePermissions } from '../composables/usePermissions';
 import { useSubscription } from '../composables/useSubscription';
+import { useModalState } from '../composables/useModalState';
 import { useSiteData } from '../composables/useSiteData';
 import { useServiceBookingSearch } from '../composables/useSearch';
 import PhotoGallery from '../components/PhotoGallery.vue';
@@ -480,6 +481,7 @@ interface ServiceBookingWithPaymentStatus extends ServiceBooking {
 const { t } = useI18n();
 const { canCreate, canUpdate, canDelete } = usePermissions();
 const { checkCreateLimit, isReadOnly } = useSubscription();
+const { openModal, closeModal: closeModalState } = useModalState();
 
 // Search functionality
 const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useServiceBookingSearch();
@@ -643,6 +645,8 @@ const formatDateForInput = (dateString: string) => {
 
 const editBooking = (booking: ServiceBooking) => {
   editingBooking.value = booking;
+  showAddModal.value = true;
+  openModal('service-bookings-edit-modal');
   originalUnitRate.value = booking.unit_rate;
   showUnitRateWarning.value = false;
   Object.assign(form, {
@@ -738,8 +742,17 @@ const handleBookingAction = (booking: ServiceBooking, action: string) => {
   }
 };
 
+const handleAddServiceBooking = () => {
+  if (canCreateServiceBooking.value) {
+    showAddModal.value = true;
+    openModal('service-bookings-add-modal');
+  }
+};
+
 const closeModal = () => {
   showAddModal.value = false;
+  closeModalState('service-bookings-add-modal');
+  closeModalState('service-bookings-edit-modal');
   editingBooking.value = null;
   showUnitRateWarning.value = false;
   originalUnitRate.value = 0;

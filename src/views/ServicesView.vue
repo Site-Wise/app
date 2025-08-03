@@ -271,6 +271,7 @@ import { usePermissions } from '../composables/usePermissions';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
+import { useModalState } from '../composables/useModalState';
 import TagSelector from '../components/TagSelector.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import { 
@@ -285,6 +286,7 @@ const { t } = useI18n();
 const { canUpdate, canDelete } = usePermissions();
 const { success, error } = useToast();
 const { checkCreateLimit, isReadOnly } = useSubscription();
+const { openModal, closeModal: closeModalState } = useModalState();
 const router = useRouter();
 
 // Use reactive site data management
@@ -403,6 +405,8 @@ const editService = (service: Service) => {
     tags: service.tags ? [...service.tags] : [],
     is_active: service.is_active
   });
+  showAddModal.value = true;
+  openModal('services-edit-modal');
 };
 
 const toggleServiceStatus = async (service: Service) => {
@@ -441,6 +445,8 @@ const closeModal = () => {
     tags: [],
     is_active: true
   });
+  closeModalState('services-add-modal');
+  closeModalState('services-edit-modal');
 };
 
 const getServiceActions = (service: Service) => {
@@ -490,6 +496,7 @@ const handleAddService = async () => {
   }
 
   showAddModal.value = true;
+  openModal('services-add-modal');
   await nextTick();
   nameInputRef.value?.focus();
 };
@@ -497,6 +504,7 @@ const handleAddService = async () => {
 const handleQuickAction = async () => {
   if (canCreateService.value) {
     showAddModal.value = true;
+    openModal('services-add-modal');
     await nextTick();
     nameInputRef.value?.focus();
   }

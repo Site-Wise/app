@@ -360,6 +360,7 @@ import {
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useSiteData } from '../composables/useSiteData';
+import { useModalState } from '../composables/useModalState';
 import {
   vendorReturnService,
   vendorService,
@@ -373,6 +374,7 @@ import SearchBox from '../components/SearchBox.vue';
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
+const { openModal, closeModal: closeModalState } = useModalState();
 
 // State
 const searchQuery = ref('');
@@ -468,25 +470,31 @@ const openCreateModal = () => {
   isEditMode.value = false;
   selectedReturn.value = null;
   showReturnModal.value = true;
+  openModal('vendor-returns-add-modal');
 };
 
 const closeReturnModal = () => {
   showReturnModal.value = false;
   selectedReturn.value = null;
+  closeModalState('vendor-returns-add-modal');
+  closeModalState('vendor-returns-edit-modal');
 };
 
 const closeDetailsModal = () => {
   showDetailsModal.value = false;
   selectedReturn.value = null;
+  closeModalState('vendor-returns-details-modal');
 };
 
 const closeRefundModal = () => {
   showRefundModal.value = false;
+  closeModalState('vendor-returns-refund-modal');
 };
 
 const viewReturn = (returnItem: VendorReturn) => {
   selectedReturn.value = returnItem;
   showDetailsModal.value = true;
+  openModal('vendor-returns-details-modal');
 };
 
 const approveReturn = async (returnItem: VendorReturn) => {
@@ -501,6 +509,7 @@ const approveReturn = async (returnItem: VendorReturn) => {
 const processRefund = (returnItem: VendorReturn) => {
   selectedReturn.value = returnItem;
   showRefundModal.value = true;
+  openModal('vendor-returns-refund-modal');
 };
 
 const handleReturnSave = async () => {

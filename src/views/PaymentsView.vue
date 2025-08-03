@@ -343,7 +343,7 @@
     />
 
     <!-- View Payment Modal -->
-    <div v-if="viewingPayment" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="viewingPayment = null" @keydown.esc="viewingPayment = null" tabindex="-1">
+    <div v-if="viewingPayment" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="viewingPayment = null; closeModalState('payments-view-modal')" @keydown.esc="viewingPayment = null; closeModalState('payments-view-modal')" tabindex="-1">
       <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700" @click.stop>
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Payment Details</h3>
@@ -459,7 +459,7 @@
             >
               {{ t('common.deleteAction') }}
             </button>
-            <button @click="viewingPayment = null" :class="[
+            <button @click="viewingPayment = null; closeModalState('payments-view-modal')" :class="[
               viewingPayment && (canPaymentBeEdited(viewingPayment, viewingPaymentAllocations) || canPaymentBeDeleted(viewingPayment, viewingPaymentAllocations)) ? 'flex-1' : 'w-full',
               'btn-outline'
             ]">
@@ -494,6 +494,7 @@ import { useToast } from '../composables/useToast';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { useSiteData } from '../composables/useSiteData';
 import { usePaymentSearch } from '../composables/useSearch';
+import { useModalState } from '../composables/useModalState';
 import SearchBox from '../components/SearchBox.vue';
 import PaymentModal from '../components/PaymentModal.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
@@ -517,6 +518,7 @@ const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
 const { registerShortcut } = useKeyboardShortcuts();
+const { openModal, closeModal: closeModalState } = useModalState();
 
 // Search functionality
 const { searchQuery, loading: searchLoading } = usePaymentSearch();
@@ -650,6 +652,7 @@ const handleAddPayment = () => {
   currentPayment.value = null;
   currentAllocations.value = [];
   showPaymentModal.value = true;
+  openModal('payments-add-modal');
 };
 
 
@@ -664,10 +667,12 @@ const quickPayment = (vendor: VendorWithOutstanding) => {
   currentPayment.value = null;
   currentAllocations.value = [];
   showPaymentModal.value = true;
+  openModal('payments-paynow-modal');
 };
 
 const viewPayment = async (payment: Payment) => {
   viewingPayment.value = payment;
+  openModal('payments-view-modal');
   // Use allocations from expand data if available, otherwise load them
   if (payment.expand?.payment_allocations) {
     viewingPaymentAllocations.value = payment.expand.payment_allocations;
@@ -728,8 +733,10 @@ const startEditPayment = async (payment: Payment) => {
   outstandingAmountForPayNow.value = 0;
   
   // Close view modal and open edit modal
+  closeModalState('payments-view-modal');
   viewingPayment.value = null;
   showPaymentModal.value = true;
+  openModal('payments-edit-modal');
 };
 
 const deletePayment = async (payment: Payment) => {
@@ -745,6 +752,7 @@ const deletePayment = async (payment: Payment) => {
     
     // Close view modal if it's open for this payment
     if (viewingPayment.value?.id === payment.id) {
+      closeModalState('payments-view-modal');
       viewingPayment.value = null;
     }
     
@@ -904,6 +912,9 @@ const handlePaymentModalClose = () => {
   currentAllocations.value = [];
   vendorIdForPayNow.value = '';
   outstandingAmountForPayNow.value = 0;
+  closeModalState('payments-add-modal');
+  closeModalState('payments-paynow-modal');
+  closeModalState('payments-edit-modal');
 };
 
 const handleQuickAction = () => {

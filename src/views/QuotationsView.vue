@@ -212,10 +212,12 @@ import { useI18n } from '../composables/useI18n';
 import { usePermissions } from '../composables/usePermissions';
 import { useSiteData } from '../composables/useSiteData';
 import { useQuotationSearch } from '../composables/useSearch';
+import { useModalState } from '../composables/useModalState';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 
 const { t } = useI18n();
 const { canDelete } = usePermissions();
+const { openModal, closeModal: closeModalState } = useModalState();
 // Search functionality
 const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useQuotationSearch();
 
@@ -315,6 +317,8 @@ const editQuotation = (quotation: Quotation) => {
     notes: quotation.notes || '',
     status: quotation.status
   });
+  showAddModal.value = true;
+  openModal('quotations-edit-modal');
 };
 
 const deleteQuotation = async (id: string) => {
@@ -357,10 +361,13 @@ const closeModal = () => {
     notes: '',
     status: 'pending'
   });
+  closeModalState('quotations-add-modal');
+  closeModalState('quotations-edit-modal');
 };
 
 const handleAddQuotation = async () => {
   showAddModal.value = true;
+  openModal('quotations-add-modal');
   await nextTick();
   firstInputRef.value?.focus();
 };

@@ -224,11 +224,13 @@ import {
   type Tag as TagType
 } from '../services/pocketbase';
 import { usePermissions } from '../composables/usePermissions';
+import { useModalState } from '../composables/useModalState';
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
 const { canDelete } = usePermissions();
+const { openModal, closeModal: closeModalState } = useModalState();
 
 const router = useRouter();
 
@@ -376,6 +378,7 @@ const handleAddItem = async () => {
     return;
   }
   showAddModal.value = true;
+  openModal('items-add-modal');
   await nextTick();
   nameInputRef.value?.focus();
 };
@@ -413,6 +416,8 @@ const editItem = (item: Item) => {
     unit: item.unit,
     tags: item.tags || []
   });
+  showAddModal.value = true;
+  openModal('items-edit-modal');
 };
 
 const cloneItem = async (item: Item) => {
@@ -434,6 +439,7 @@ const cloneItem = async (item: Item) => {
   
   // Show the modal
   showAddModal.value = true;
+  openModal('items-clone-modal');
   await nextTick();
   nameInputRef.value?.focus();
 };
@@ -465,10 +471,14 @@ const closeModal = () => {
     unit: '',
     tags: []
   });
+  closeModalState('items-add-modal');
+  closeModalState('items-edit-modal');
+  closeModalState('items-clone-modal');
 };
 
 const handleQuickAction = async () => {
   showAddModal.value = true;
+  openModal('items-add-modal');
   await nextTick();
   nameInputRef.value?.focus();
 };
