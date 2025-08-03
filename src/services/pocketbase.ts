@@ -3201,6 +3201,104 @@ export class VendorReturnService {
       updated: record.updated
     };
   }
+
+  async getReturnInfoForDeliveryItems(deliveryItemIds: string[]): Promise<Record<string, {
+    totalReturned: number;
+    availableForReturn: number;
+    returns: Array<{
+      id: string;
+      returnDate: string;
+      quantityReturned: number;
+      status: string;
+      reason: string;
+    }>;
+  }>> {
+    if (deliveryItemIds.length === 0) return {};
+
+    try {
+      // Build filter for all delivery item IDs
+      const deliveryItemFilters = deliveryItemIds.map(id => `delivery_item="${id}"`).join(' || ');
+      
+      // Get all delivery items in one request
+      const deliveryItems = await pb.collection('delivery_items').getFullList({
+        filter: deliveryItemIds.map(id => `id="${id}"`).join(' || ')
+      });
+
+      // Create a map of delivery item quantities
+      const itemQuantities: Record<string, number> = {};
+      deliveryItems.forEach(item => {
+        itemQuantities[item.id] = item.quantity;
+      });
+
+      // Get all return items for these delivery items in one request
+      const returnItems = await pb.collection('vendor_return_items').getFullList({
+        filter: deliveryItemFilters,
+        expand: 'vendor_return',
+        sort: '-created'
+      });
+
+      // Group return items by delivery item ID
+      const returnsByDeliveryItem: Record<string, any[]> = {};
+      deliveryItemIds.forEach(id => {
+        returnsByDeliveryItem[id] = [];
+      });
+
+      returnItems.forEach(item => {
+        if (returnsByDeliveryItem[item.delivery_item]) {
+          returnsByDeliveryItem[item.delivery_item].push(item);
+        }
+      });
+
+      // Calculate return info for each delivery item
+      const result: Record<string, any> = {};
+      
+      for (const deliveryItemId of deliveryItemIds) {
+        const originalQuantity = itemQuantities[deliveryItemId] || 0;
+        const itemReturns = returnsByDeliveryItem[deliveryItemId] || [];
+        
+        let totalReturned = 0;
+        const returns = [];
+
+        for (const item of itemReturns) {
+          const returnRecord = item.expand?.vendor_return;
+          if (returnRecord) {
+            // Count quantities for completed/approved returns towards total returned
+            if (returnRecord.status === 'completed' || returnRecord.status === 'approved' || returnRecord.status === 'refunded') {
+              totalReturned += item.quantity_returned;
+            }
+
+            returns.push({
+              id: returnRecord.id,
+              returnDate: returnRecord.return_date,
+              quantityReturned: item.quantity_returned,
+              status: returnRecord.status,
+              reason: returnRecord.reason
+            });
+          }
+        }
+
+        result[deliveryItemId] = {
+          totalReturned,
+          availableForReturn: Math.max(0, originalQuantity - totalReturned),
+          returns
+        };
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error getting batch return info for delivery items:', error);
+      // Return empty info for all items on error
+      const result: Record<string, any> = {};
+      deliveryItemIds.forEach(id => {
+        result[id] = {
+          totalReturned: 0,
+          availableForReturn: 0,
+          returns: []
+        };
+      });
+      return result;
+    }
+  }
 }
 
 export class VendorReturnItemService {

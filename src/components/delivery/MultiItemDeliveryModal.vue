@@ -282,12 +282,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import { 
   X, ArrowLeft, ArrowRight, CheckCircle, Loader2, Plus
 } from 'lucide-vue-next';
 import { useI18n } from '../../composables/useI18n';
 import { useToast } from '../../composables/useToast';
+import { useModalState } from '../../composables/useModalState';
 import FileUploadComponent from '../FileUploadComponent.vue';
 import DeliveryItemRow from './DeliveryItemRow.vue';
 import ImageSlider from '../ImageSlider.vue';
@@ -327,6 +328,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const { success, error } = useToast();
+const { openModal, closeModal } = useModalState();
 
 // Component state
 const currentStep = ref(0);
@@ -691,5 +693,10 @@ const loadData = async () => {
 onMounted(() => {
   loadData();
   vendorInputRef.value?.focus();
+  openModal('multi-item-delivery-modal');
+});
+
+onUnmounted(() => {
+  closeModal('multi-item-delivery-modal');
 });
 </script>

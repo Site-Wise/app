@@ -209,7 +209,7 @@
     </div>
 
     <!-- Mobile Floating Action Button -->
-    <div class="md:hidden fixed bottom-6 right-6 z-50">
+    <div v-if="!isAnyModalOpen" class="md:hidden fixed bottom-6 right-6 z-50">
       <!-- FAB Menu Options -->
       <div v-if="fabMenuOpen" class="absolute bottom-16 right-0 mb-2 space-y-2 min-w-max">
         <button v-for="(action, index) in fabActions" :key="action.type" @click="quickAction(action.type)" :class="[
@@ -242,7 +242,7 @@
     </div>
 
     <!-- FAB Overlay for mobile -->
-    <div v-if="fabMenuOpen" @click="fabMenuOpen = false" class="md:hidden fixed inset-0 bg-transparent z-40"></div>
+    <div v-if="fabMenuOpen && !isAnyModalOpen" @click="fabMenuOpen = false" class="md:hidden fixed inset-0 bg-transparent z-40"></div>
     
     <!-- Keyboard Shortcut Tooltip System -->
     <KeyboardShortcutTooltip />
@@ -295,6 +295,7 @@ import {
 } from 'lucide-vue-next';
 
 import { usePWAUpdate } from '../composables/usePWAUpdate';
+import { useModalState } from '../composables/useModalState';
 
 const pwaUpdate = usePWAUpdate();
 
@@ -314,6 +315,7 @@ const { t } = useI18n();
 const { autoStartTour, resetTour, getOnboardingDebugInfo } = useOnboarding();
 const { receivedInvitationsCount, loadReceivedInvitations } = useInvitations();
 const { } = useKeyboardShortcuts(); // Initialize keyboard shortcuts system
+const { isAnyModalOpen } = useModalState();
 
 const sidebarOpen = ref(false);
 const userMenuOpen = ref(false);
