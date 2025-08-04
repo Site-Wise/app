@@ -38,6 +38,7 @@ export function usePWA() {
     },
     onNeedRefresh() {
       console.log('PWA: New content available, update needed');
+      // updateAvailable will be set to true automatically
     },
     onOfflineReady() {
       console.log('PWA: App ready to work offline');
@@ -75,6 +76,7 @@ export function usePWA() {
   // Update the app using Vite PWA plugin's built-in functionality
   const updateApp = async () => {
     try {
+      // With autoUpdate mode, this will reload the page to apply the update
       await updateServiceWorker(true);
     } catch (error) {
       console.error('PWA: Error updating app:', error);

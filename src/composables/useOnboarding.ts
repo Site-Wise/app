@@ -209,7 +209,7 @@ export function useOnboarding() {
       {
         popover: {
           title: 'onboarding.dashboard.shortcuts.title',
-          description: 'onboarding.dashboard.shortcuts.description'
+          description: window.innerWidth < 1024 ? 'onboarding.dashboard.shortcuts.mobileDescription' : 'onboarding.dashboard.shortcuts.description'
         }
       }
     ],
@@ -306,14 +306,15 @@ export function useOnboarding() {
     showOnce: true
   });
 
-  const getVendorsViewTour = (): TourConfig => ({
-    id: 'vendors',
-    steps: [
+  const getVendorsViewTour = (): TourConfig => {
+    const isMobile = window.innerWidth < 1024; // lg breakpoint
+    
+    const steps: OnboardingStep[] = [
       {
-        element: '[data-keyboard-shortcut="n"]',
+        element: isMobile ? '[data-tour="add-vendor-btn"]' : '[data-keyboard-shortcut="n"]',
         popover: {
           title: 'onboarding.vendors.addButton.title',
-          description: 'onboarding.vendors.addButton.description',
+          description: isMobile ? 'onboarding.vendors.addButton.mobileDescription' : 'onboarding.vendors.addButton.description',
           side: 'left'
         }
       },
@@ -333,18 +334,24 @@ export function useOnboarding() {
           align: 'center'
         }
       }
-    ],
-    showOnce: true
-  });
+    ];
+    
+    return {
+      id: 'vendors',
+      steps,
+      showOnce: true
+    };
+  };
 
-  const getServicesViewTour = (): TourConfig => ({
-    id: 'services',
-    steps: [
+  const getServicesViewTour = (): TourConfig => {
+    const isMobile = window.innerWidth < 1024; // lg breakpoint
+    
+    const steps: OnboardingStep[] = [
       {
-        element: '[data-keyboard-shortcut="n"]',
+        element: isMobile ? '[data-tour="add-service-btn"]' : '[data-keyboard-shortcut="n"]',
         popover: {
           title: 'onboarding.services.addButton.title',
-          description: 'onboarding.services.addButton.description',
+          description: isMobile ? 'onboarding.services.addButton.mobileDescription' : 'onboarding.services.addButton.description',
           side: 'left'
         }
       },
@@ -356,18 +363,24 @@ export function useOnboarding() {
           align: 'center'
         }
       }
-    ],
-    showOnce: true
-  });
+    ];
+    
+    return {
+      id: 'services',
+      steps,
+      showOnce: true
+    };
+  };
 
-  const getAccountsViewTour = (): TourConfig => ({
-    id: 'accounts',
-    steps: [
+  const getAccountsViewTour = (): TourConfig => {
+    const isMobile = window.innerWidth < 1024; // lg breakpoint
+    
+    const steps: OnboardingStep[] = [
       {
-        element: '[data-keyboard-shortcut="a"]',
+        element: isMobile ? '[data-tour="add-account-btn"]' : '[data-keyboard-shortcut="a"]',
         popover: {
           title: 'onboarding.accounts.addButton.title',
-          description: 'onboarding.accounts.addButton.description',
+          description: isMobile ? 'onboarding.accounts.addButton.mobileDescription' : 'onboarding.accounts.addButton.description',
           side: 'left'
         }
       },
@@ -387,18 +400,24 @@ export function useOnboarding() {
           align: 'center'
         }
       }
-    ],
-    showOnce: true
-  });
+    ];
+    
+    return {
+      id: 'accounts',
+      steps,
+      showOnce: true
+    };
+  };
 
-  const getPaymentsViewTour = (): TourConfig => ({
-    id: 'payments',
-    steps: [
+  const getPaymentsViewTour = (): TourConfig => {
+    const isMobile = window.innerWidth < 1024; // lg breakpoint
+    
+    const steps: OnboardingStep[] = [
       {
-        element: '[data-keyboard-shortcut="p"]',
+        element: isMobile ? '[data-tour="record-payment-btn"]' : '[data-keyboard-shortcut="p"]',
         popover: {
           title: 'onboarding.payments.recordButton.title',
-          description: 'onboarding.payments.recordButton.description',
+          description: isMobile ? 'onboarding.payments.recordButton.mobileDescription' : 'onboarding.payments.recordButton.description',
           side: 'left'
         }
       },
@@ -418,18 +437,24 @@ export function useOnboarding() {
           align: 'center'
         }
       }
-    ],
-    showOnce: true
-  });
+    ];
+    
+    return {
+      id: 'payments',
+      steps,
+      showOnce: true
+    };
+  };
 
-  const getServiceBookingsViewTour = (): TourConfig => ({
-    id: 'serviceBookings',
-    steps: [
+  const getServiceBookingsViewTour = (): TourConfig => {
+    const isMobile = window.innerWidth < 1024; // lg breakpoint
+    
+    const steps: OnboardingStep[] = [
       {
-        element: '[data-keyboard-shortcut="b"]',
+        element: isMobile ? '[data-tour="book-service-btn"]' : '[data-keyboard-shortcut="b"]',
         popover: {
           title: 'onboarding.serviceBookings.bookButton.title',
-          description: 'onboarding.serviceBookings.bookButton.description',
+          description: isMobile ? 'onboarding.serviceBookings.bookButton.mobileDescription' : 'onboarding.serviceBookings.bookButton.description',
           side: 'left'
         }
       },
@@ -449,18 +474,24 @@ export function useOnboarding() {
           align: 'center'
         }
       }
-    ],
-    showOnce: true
-  });
+    ];
+    
+    return {
+      id: 'serviceBookings',
+      steps,
+      showOnce: true
+    };
+  };
 
-  const getQuotationsViewTour = (): TourConfig => ({
-    id: 'quotations',
-    steps: [
+  const getQuotationsViewTour = (): TourConfig => {
+    const isMobile = window.innerWidth < 1024; // lg breakpoint
+    
+    const steps: OnboardingStep[] = [
       {
-        element: '[data-keyboard-shortcut="q"]',
+        element: isMobile ? '[data-tour="add-quotation-btn"]' : '[data-keyboard-shortcut="q"]',
         popover: {
           title: 'onboarding.quotations.addButton.title',
-          description: 'onboarding.quotations.addButton.description',
+          description: isMobile ? 'onboarding.quotations.addButton.mobileDescription' : 'onboarding.quotations.addButton.description',
           side: 'left'
         }
       },
@@ -480,18 +511,24 @@ export function useOnboarding() {
           align: 'center'
         }
       }
-    ],
-    showOnce: true
-  });
+    ];
+    
+    return {
+      id: 'quotations',
+      steps,
+      showOnce: true
+    };
+  };
 
-  const getVendorReturnsViewTour = (): TourConfig => ({
-    id: 'vendorReturns',
-    steps: [
+  const getVendorReturnsViewTour = (): TourConfig => {
+    const isMobile = window.innerWidth < 1024; // lg breakpoint
+    
+    const steps: OnboardingStep[] = [
       {
-        element: '[data-keyboard-shortcut="r"]',
+        element: isMobile ? '[data-tour="add-return-btn"]' : '[data-keyboard-shortcut="r"]',
         popover: {
           title: 'onboarding.vendorReturns.addButton.title',
-          description: 'onboarding.vendorReturns.addButton.description',
+          description: isMobile ? 'onboarding.vendorReturns.addButton.mobileDescription' : 'onboarding.vendorReturns.addButton.description',
           side: 'left'
         }
       },
@@ -511,9 +548,14 @@ export function useOnboarding() {
           align: 'center'
         }
       }
-    ],
-    showOnce: true
-  });
+    ];
+    
+    return {
+      id: 'vendorReturns',
+      steps,
+      showOnce: true
+    };
+  };
 
   // Feature tour for new features
   const showFeatureTour = (featureId: string, steps: OnboardingStep[]) => {

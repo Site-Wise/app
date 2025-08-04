@@ -1167,8 +1167,9 @@
         "description": "See the latest deliveries, payments, and other activities at your site."
       },
       "shortcuts": {
-        "title": "Keyboard Shortcuts",
-        "description": "Pro tip: Use keyboard shortcuts for faster navigation:<br>• Shift+Alt+D for Dashboard<br>• Shift+Alt+I for Items<br>• Shift+Alt+V for Deliveries<br>• Shift+Alt+P for Payments"
+        "title": "Quick Navigation",
+        "description": "Pro tip: Use keyboard shortcuts for faster navigation:<br>• Shift+Alt+D for Dashboard<br>• Shift+Alt+I for Items<br>• Shift+Alt+V for Deliveries<br>• Shift+Alt+P for Payments",
+        "mobileDescription": "Pro tip: Use the navigation menu to quickly switch between different sections of the app. All your main features are accessible from the sidebar."
       }
     },
     "items": {
@@ -1212,7 +1213,8 @@
     "vendors": {
       "addButton": {
         "title": "Add New Vendors",
-        "description": "Click here to add new vendors and suppliers. You can also use Shift+Alt+V as a shortcut."
+        "description": "Click here to add new vendors and suppliers. You can also use Shift+Alt+V as a shortcut.",
+        "mobileDescription": "Tap here to add new vendors and suppliers to your project."
       },
       "search": {
         "title": "Search Vendors",
@@ -1226,7 +1228,8 @@
     "services": {
       "addButton": {
         "title": "Add New Services",
-        "description": "Click here to add new services like labor, equipment, or professional services. You can also use Shift+Alt+S as a shortcut."
+        "description": "Click here to add new services like labor, equipment, or professional services. You can also use Shift+Alt+S as a shortcut.",
+        "mobileDescription": "Tap here to add new services like labor, equipment, or professional services."
       },
       "search": {
         "title": "Search Services",
@@ -1240,7 +1243,8 @@
     "accounts": {
       "addButton": {
         "title": "Add New Accounts",
-        "description": "Click here to add new payment accounts like bank accounts, cash, or digital wallets. You can also use Shift+Alt+A as a shortcut."
+        "description": "Click here to add new payment accounts like bank accounts, cash, or digital wallets. You can also use Shift+Alt+A as a shortcut.",
+        "mobileDescription": "Tap here to add new payment accounts like bank accounts, cash, or digital wallets."
       },
       "search": {
         "title": "Search Accounts",
@@ -1254,7 +1258,8 @@
     "payments": {
       "recordButton": {
         "title": "Record New Payments",
-        "description": "Click here to record payments made to vendors or for services. You can also use Shift+Alt+P as a shortcut."
+        "description": "Click here to record payments made to vendors or for services. You can also use Shift+Alt+P as a shortcut.",
+        "mobileDescription": "Tap here to record payments made to vendors or for services."
       },
       "search": {
         "title": "Search Payments",
@@ -1268,7 +1273,8 @@
     "serviceBookings": {
       "bookButton": {
         "title": "Book New Services",
-        "description": "Click here to book services from your vendors. Schedule labor, equipment, or professional services. You can also use Shift+Alt+B as a shortcut."
+        "description": "Click here to book services from your vendors. Schedule labor, equipment, or professional services. You can also use Shift+Alt+B as a shortcut.",
+        "mobileDescription": "Tap here to book services from your vendors. Schedule labor, equipment, or professional services."
       },
       "search": {
         "title": "Search Bookings",
@@ -1282,7 +1288,8 @@
     "quotations": {
       "addButton": {
         "title": "Add New Quotations",
-        "description": "Click here to add price quotations from vendors for items or services. You can also use Shift+Alt+Q as a shortcut."
+        "description": "Click here to add price quotations from vendors for items or services. You can also use Shift+Alt+Q as a shortcut.",
+        "mobileDescription": "Tap here to add price quotations from vendors for items or services."
       },
       "search": {
         "title": "Search Quotations",
@@ -1296,7 +1303,8 @@
     "vendorReturns": {
       "addButton": {
         "title": "Add New Vendor Returns",
-        "description": "Click here to record returns of materials to vendors. Track what was returned and when. You can also use Shift+Alt+R as a shortcut."
+        "description": "Click here to record returns of materials to vendors. Track what was returned and when. You can also use Shift+Alt+R as a shortcut.",
+        "mobileDescription": "Tap here to record returns of materials to vendors. Track what was returned and when."
       },
       "search": {
         "title": "Search Returns",
