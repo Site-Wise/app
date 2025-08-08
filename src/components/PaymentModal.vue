@@ -1711,4 +1711,9 @@ watch(() => props.accounts, () => {
     autoSelectAccount();
   }
 }, { deep: true });
+
+// Expose functions for testing
+defineExpose({
+  autoSelectCreditNotes
+});
 </script>
