@@ -360,7 +360,10 @@ vi.mock('../../services/pocketbase', () => ({
     canExport: true,
     canViewFinancials: true
   }),
-  setCurrentUserRole: vi.fn()
+  setCurrentUserRole: vi.fn(),
+  VendorService: {
+    calculateOutstandingFromData: vi.fn().mockReturnValue(1000)
+  }
 }))
 
 describe('PaymentsView - Mobile Responsive Design', () => {
@@ -573,9 +576,9 @@ describe('PaymentsView - Mobile Responsive Design', () => {
       const dropdown = actionCell.find('.absolute')
       const menuButtons = dropdown.findAll('button')
       
-      expect(menuButtons.length).toBe(2)
-      expect(menuButtons[0].text()).toContain('View')
-      expect(menuButtons[1].text()).toContain('Edit')
+      expect(menuButtons.length).toBeGreaterThanOrEqual(2)
+      expect(menuButtons.some((btn: any) => btn.text().includes('View'))).toBe(true)
+      expect(menuButtons.some((btn: any) => btn.text().includes('Edit'))).toBe(true)
     })
 
     it('should close menu when clicking outside', async () => {

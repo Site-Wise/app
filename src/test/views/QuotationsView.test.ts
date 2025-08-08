@@ -102,7 +102,7 @@ vi.mock('../../services/pocketbase', () => {
     status: 'pending',
     site: 'site-1',
     expand: {
-      vendor: { id: 'vendor-1', name: 'Test Vendor' },
+      vendor: { id: 'vendor-1', name: 'Test Vendor', contact_person: 'Test Vendor' },
       item: { id: 'item-1', name: 'Steel Rebar', unit: 'kg' }
     }
   }
@@ -195,7 +195,7 @@ describe('QuotationsView', () => {
       status: 'pending',
       site: 'site-1',
       expand: {
-        vendor: { id: 'vendor-1', name: 'Test Vendor' },
+        vendor: { id: 'vendor-1', name: 'Test Vendor', contact_person: 'Test Vendor' },
         item: { id: 'item-1', name: 'Steel Rebar', unit: 'kg' }
       }
     }]

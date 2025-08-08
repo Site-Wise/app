@@ -3,6 +3,12 @@ import { mount } from '@vue/test-utils'
 import { setupTestPinia } from '../utils/test-setup'
 
 // All mocks must be at the top before any imports
+
+// Mock useSiteData to return controlled data
+vi.mock('../../composables/useSiteData', () => ({
+  useSiteData: vi.fn()
+}))
+
 vi.mock('../../composables/useI18n', () => ({
   useI18n: () => ({
     t: (key: string, params?: any) => {
@@ -90,6 +96,10 @@ vi.mock('../../services/pocketbase', () => ({
   tagService: {
     getAll: vi.fn().mockResolvedValue([])
   },
+  VendorService: {
+    calculateOutstandingFromData: vi.fn().mockReturnValue(0),
+    calculateTotalPaidFromData: vi.fn().mockReturnValue(0)
+  },
   getCurrentSiteId: vi.fn(() => 'site-1'),
   setCurrentSiteId: vi.fn(),
   getCurrentUserRole: vi.fn(() => 'owner'),
@@ -165,6 +175,86 @@ describe('VendorsView', () => {
     siteStore = testSiteStore
     
     router = createMockRouter()
+    
+    // Mock vendors data
+    const mockVendors = [
+      {
+        id: 'vendor-1',
+        name: 'ABC Construction',
+        contact_person: 'John Doe',
+        email: 'john@abc.com',
+        phone: '+1234567890',
+        address: '123 Main St',
+        payment_details: 'Bank Transfer',
+        is_active: true,
+        site: 'site-1'
+      },
+      {
+        id: 'vendor-2',
+        name: 'XYZ Materials',
+        contact_person: 'Jane Smith',
+        email: 'jane@xyz.com',
+        phone: '+0987654321',
+        address: '456 Oak Ave',
+        payment_details: 'Cash',
+        is_active: true,
+        site: 'site-1'
+      }
+    ]
+    
+    // Mock useSiteData to return different data based on the service function passed
+    const { useSiteData } = await import('../../composables/useSiteData')
+    const { ref } = await import('vue')
+    
+    vi.mocked(useSiteData).mockImplementation((serviceFunction) => {
+      // Check the function to determine which data to return
+      const funcString = serviceFunction.toString()
+      
+      if (funcString.includes('vendorService.getAll')) {
+        return {
+          data: ref(mockVendors),
+          loading: ref(false),
+          error: ref(null),
+          reload: vi.fn()
+        }
+      } else if (funcString.includes('deliveryService.getAll')) {
+        return {
+          data: ref([]),
+          loading: ref(false),
+          error: ref(null),
+          reload: vi.fn()
+        }
+      } else if (funcString.includes('serviceBookingService.getAll')) {
+        return {
+          data: ref([]),
+          loading: ref(false),
+          error: ref(null),
+          reload: vi.fn()
+        }
+      } else if (funcString.includes('paymentService.getAll')) {
+        return {
+          data: ref([]),
+          loading: ref(false),
+          error: ref(null),
+          reload: vi.fn()
+        }
+      } else if (funcString.includes('tagService.getAll')) {
+        return {
+          data: ref([]),
+          loading: ref(false),
+          error: ref(null),
+          reload: vi.fn()
+        }
+      }
+      
+      // Default fallback
+      return {
+        data: ref([]),
+        loading: ref(false),
+        error: ref(null),
+        reload: vi.fn()
+      }
+    })
     
     wrapper = mount(VendorsView, {
       global: {

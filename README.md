@@ -87,7 +87,7 @@ SiteWise is a modern, open-source construction site management application that 
 
 ### 🔧 **Prerequisites**
 
-- **Node.js** 18+ 
+- **Node.js** 20+ 
 - **PocketBase** for backend
 - Modern web browser
 

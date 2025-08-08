@@ -137,20 +137,21 @@
 
           <!-- Step 2: Items -->
           <div v-if="currentStep === 1" class="space-y-6">
-            <div class="flex items-center justify-between">
+            <div>
               <h4 class="font-medium text-gray-900 dark:text-white">{{ t('delivery.addItems') }}</h4>
+            </div>
+
+            <div v-if="activeDeliveryItems.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+              <p class="mb-4">{{ t('delivery.noItemsAdded') }}</p>
               <button 
                 @click="addNewItem" 
                 class="btn-primary"
                 :disabled="!canAddMoreItems"
+                :class="{ 'opacity-50 cursor-not-allowed': !canAddMoreItems }"
               >
                 <Plus class="mr-2 h-4 w-4" />
                 {{ t('delivery.addItem') }}
               </button>
-            </div>
-
-            <div v-if="activeDeliveryItems.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
-              {{ t('delivery.noItemsAdded') }}
             </div>
 
             <div v-else class="space-y-4">
@@ -164,6 +165,19 @@
                 @update="updateDeliveryItem"
                 @remove="removeDeliveryItem"
               />
+
+              <!-- Add Item Button at Bottom -->
+              <div class="flex justify-center pt-2">
+                <button 
+                  @click="addNewItem" 
+                  class="btn-primary"
+                  :disabled="!canAddMoreItems"
+                  :class="{ 'opacity-50 cursor-not-allowed': !canAddMoreItems }"
+                >
+                  <Plus class="mr-2 h-4 w-4" />
+                  {{ t('delivery.addItem') }}
+                </button>
+              </div>
             </div>
 
             <!-- Delivery Totals -->
@@ -251,6 +265,7 @@
               @click="nextStep" 
               :disabled="!canProceedToNextStep || loading"
               class="btn-primary"
+              :class="{ 'opacity-50 cursor-not-allowed': !canProceedToNextStep || loading }"
             >
               {{ t('common.next') }}
               <ArrowRight class="ml-2 h-4 w-4" />
@@ -261,6 +276,7 @@
               @click="saveDelivery" 
               :disabled="loading || !canSubmit"
               class="btn-primary bg-green-600 hover:bg-green-700"
+              :class="{ 'opacity-50 cursor-not-allowed': loading || !canSubmit }"
             >
               <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
               <CheckCircle v-else class="mr-2 h-4 w-4" />

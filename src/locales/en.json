@@ -356,6 +356,7 @@
     "addSpecialty": "Add specialty (e.g., Steel, Concrete)",
     "returns": "Returns",
     "returnsSubtitle": "Manage vendor returns and refunds",
+    "status": "Status",
     "totalReturns": "Total Returns",
     "pendingApproval": "Pending Approval",
     "totalRefunded": "Total Refunded",

@@ -92,6 +92,15 @@ vi.mock('../../services/pocketbase', () => ({
   accountTransactionService: {
     getAll: vi.fn().mockResolvedValue([])
   },
+  serviceBookingService: {
+    getAll: vi.fn().mockResolvedValue([])
+  },
+  paymentAllocationService: {
+    getAll: vi.fn().mockResolvedValue([])
+  },
+  VendorService: {
+    calculateOutstandingFromData: vi.fn().mockReturnValue(0)
+  },
   getCurrentSiteId: vi.fn(() => 'site-1'),
   setCurrentSiteId: vi.fn(),
   getCurrentUserRole: vi.fn(() => 'owner'),
@@ -131,6 +140,39 @@ vi.mock('vue-router', async (importOriginal) => {
   }
 })
 
+// Mock DeliveryPaymentCalculator
+vi.mock('../../utils/deliveryPaymentCalculator', () => ({
+  DeliveryPaymentCalculator: {
+    enhanceDeliveriesWithPaymentStatus: vi.fn((deliveries) => deliveries)
+  }
+}))
+
+// Mock jsPDF
+vi.mock('jspdf', () => ({
+  jsPDF: vi.fn().mockImplementation(() => ({
+    internal: {
+      pageSize: {
+        getHeight: vi.fn().mockReturnValue(297),
+        getWidth: vi.fn().mockReturnValue(210)
+      }
+    },
+    setFontSize: vi.fn(),
+    setFont: vi.fn(),
+    text: vi.fn(),
+    addImage: vi.fn(),
+    autoTable: vi.fn(),
+    lastAutoTable: { finalY: 100 },
+    save: vi.fn()
+  }))
+}))
+
+// Mock TallyXmlExporter  
+vi.mock('../../utils/tallyXmlExport', () => ({
+  TallyXmlExporter: {
+    exportVendorLedger: vi.fn()
+  }
+}))
+
 // Import after mocks
 import VendorDetailView from '../../views/VendorDetailView.vue'
 import { createMockRouter } from '../utils/test-utils'
@@ -150,6 +192,9 @@ describe('VendorDetailView', () => {
     
     router = createMockRouter()
     
+    // Mock route params
+    router.currentRoute.value.params = { id: 'vendor-1' }
+    
     wrapper = mount(VendorDetailView, {
       global: {
         plugins: [router, pinia],
@@ -157,6 +202,11 @@ describe('VendorDetailView', () => {
           'router-link': true,
           'AlertCircle': true,
           'CheckCircle': true
+        },
+        mocks: {
+          $route: {
+            params: { id: 'vendor-1' }
+          }
         }
       }
     })

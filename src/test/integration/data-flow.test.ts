@@ -132,6 +132,31 @@ vi.mock('../../services/pocketbase', () => {
       canExport: true,
       canViewFinancials: true
     }),
+    VendorService: {
+      calculateOutstandingFromData: vi.fn().mockImplementation((vendorId, deliveries, serviceBookings, payments) => {
+        // Mock calculation logic similar to other tests
+        let outstanding = 0
+        
+        // Calculate delivery outstanding
+        const vendorDeliveries = deliveries.filter((d: any) => d.vendor === vendorId)
+        vendorDeliveries.forEach((delivery: any) => {
+          outstanding += (delivery.total_amount - (delivery.paid_amount || 0))
+        })
+        
+        // Calculate service booking outstanding  
+        const vendorBookings = serviceBookings.filter((b: any) => b.vendor === vendorId)
+        vendorBookings.forEach((booking: any) => {
+          outstanding += (booking.total_amount - (booking.paid_amount || 0))
+        })
+        
+        return outstanding
+      }),
+      calculateTotalPaidFromData: vi.fn().mockImplementation((vendorId, payments) => {
+        return payments
+          .filter((p: any) => p.vendor === vendorId)
+          .reduce((sum: number, payment: any) => sum + payment.amount, 0)
+      })
+    },
     pb: {
       collection: vi.fn((_name: string) => ({
         getFirstListItem: vi.fn().mockRejectedValue(new Error('Not found')),

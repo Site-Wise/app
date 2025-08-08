@@ -20,6 +20,18 @@ vi.mock('../../services/pocketbase', () => ({
   vendorCreditNoteService: {
     getByVendor: vi.fn(() => Promise.resolve([])),
   },
+  creditNoteUsageService: {
+    getByVendor: vi.fn(() => Promise.resolve([])),
+    getByPayment: vi.fn(() => Promise.resolve([])),
+  },
+  VendorService: {
+    calculateOutstandingFromData: vi.fn().mockReturnValue(0),
+    calculateTotalPaidFromData: vi.fn().mockReturnValue(0)
+  },
+  ServiceBookingService: {
+    calculateOutstandingAmountFromData: vi.fn().mockReturnValue(100),
+    calculateProgressBasedAmount: vi.fn().mockReturnValue(500)
+  }
 }));
 
 describe('PaymentModal - Editing Functionality', () => {
@@ -51,10 +63,15 @@ describe('PaymentModal - Editing Functionality', () => {
     reference: 'REF123',
     notes: 'Test payment',
     expand: {
-      vendor: { name: 'Vendor A' },
+      vendor: { name: 'Vendor A', contact_person: 'Vendor A' },
       account: { name: 'Cash Account', type: 'cash' },
     },
   };
+
+  const mockPayments = [
+    { id: 'payment-1', vendor: 'vendor1', amount: 100, payment_date: '2024-01-01' },
+    { id: 'payment-2', vendor: 'vendor1', amount: 200, payment_date: '2024-01-02' }
+  ];
 
   const mockAllocations = [
     { 
@@ -93,14 +110,23 @@ describe('PaymentModal - Editing Functionality', () => {
         accounts: mockAccounts,
         deliveries: mockDeliveries,
         serviceBookings: mockServiceBookings,
+        payments: mockPayments,
       },
     });
 
+    // Wait for form initialization to complete
+    await nextTick();
+    await new Promise(resolve => setTimeout(resolve, 10));
+    
     expect(wrapper.find('h3').text()).toBe('payments.editPayment');
     expect(wrapper.html()).toContain('Vendor A');
     expect(wrapper.html()).toContain('Cash Account');
     expect(wrapper.html()).toContain('₹300.00');
-    expect(wrapper.html()).toContain('REF123');
+    
+    // Check if reference input has the correct value
+    const referenceInput = wrapper.find('input[placeholder="Check number, transfer ID, etc."]');
+    expect(referenceInput.exists()).toBe(true);
+    expect(referenceInput.element.value).toBe('REF123');
     
     // Should show current allocations table
     expect(wrapper.html()).toContain('payments.currentAllocations');
@@ -119,6 +145,7 @@ describe('PaymentModal - Editing Functionality', () => {
         accounts: mockAccounts,
         deliveries: mockDeliveries,
         serviceBookings: mockServiceBookings,
+        payments: mockPayments,
       },
     });
 
@@ -142,6 +169,7 @@ describe('PaymentModal - Editing Functionality', () => {
         accounts: mockAccounts,
         deliveries: mockDeliveries,
         serviceBookings: mockServiceBookings,
+        payments: mockPayments,
       },
     });
 
@@ -160,6 +188,7 @@ describe('PaymentModal - Editing Functionality', () => {
         accounts: mockAccounts,
         deliveries: mockDeliveries,
         serviceBookings: mockServiceBookings,
+        payments: mockPayments,
       },
     });
 

@@ -758,4 +758,141 @@ describe('MultiItemDeliveryModal', () => {
       expect(wrapper.vm.selectedFilesForUpload.length).toBe(0)
     })
   })
+
+  describe('Delivery Items Association', () => {
+    it('should properly associate delivery items with delivery record', async () => {
+      const { deliveryService, deliveryItemService } = await import('../../../services/pocketbase')
+      
+      // Mock the createMultiple to return items with IDs
+      const mockCreatedItems = [
+        { id: 'di-1', item: 'item-1', quantity: 5, unit_price: 100, total_amount: 500 },
+        { id: 'di-2', item: 'item-2', quantity: 10, unit_price: 50, total_amount: 500 }
+      ]
+      deliveryItemService.createMultiple.mockResolvedValueOnce(mockCreatedItems)
+      
+      wrapper = createWrapper()
+      await nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      // Complete form
+      await wrapper.find('select').setValue('vendor-1')
+      await wrapper.find('input[type="date"]').setValue('2024-01-15')
+      await nextTick()
+      
+      // Move to items step
+      let nextButton = wrapper.find('button[class*="btn-primary"]')
+      await nextButton.trigger('click')
+      await nextTick()
+      
+      // Add multiple items
+      wrapper.vm.updateDeliveryItem(0, {
+        tempId: 'temp-1',
+        item: 'item-1',
+        quantity: 5,
+        unit_price: 100,
+        total_amount: 500,
+        notes: ''
+      })
+      
+      wrapper.vm.addNewItem()
+      await nextTick()
+      
+      wrapper.vm.updateDeliveryItem(1, {
+        tempId: 'temp-2',
+        item: 'item-2',
+        quantity: 10,
+        unit_price: 50,
+        total_amount: 500,
+        notes: ''
+      })
+      
+      // Move to review step
+      wrapper.vm.currentStep = 2
+      await nextTick()
+      
+      // Submit using the component method directly
+      await wrapper.vm.saveDelivery()
+      await nextTick()
+      
+      // Verify deliveryItemService.createMultiple was called with correct data
+      expect(deliveryItemService.createMultiple).toHaveBeenCalledWith(
+        'delivery-1',
+        [
+          { item: 'item-1', quantity: 5, unit_price: 100, notes: '' },
+          { item: 'item-2', quantity: 10, unit_price: 50, notes: '' }
+        ]
+      )
+    })
+
+    it('should handle delivery items association even with photo upload', async () => {
+      const { deliveryService, deliveryItemService } = await import('../../../services/pocketbase')
+      
+      // Mock the createMultiple to return items with IDs
+      const mockCreatedItems = [
+        { id: 'di-1', item: 'item-1', quantity: 5, unit_price: 100, total_amount: 500 }
+      ]
+      deliveryItemService.createMultiple.mockResolvedValueOnce(mockCreatedItems)
+      
+      wrapper = createWrapper()
+      await nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      // Set up photo files
+      const mockFiles = [
+        new File(['photo1'], 'photo1.jpg', { type: 'image/jpeg' }),
+        new File(['photo2'], 'photo2.jpg', { type: 'image/jpeg' })
+      ]
+      
+      wrapper.vm.selectedFilesForUpload = mockFiles
+      
+      // Complete form
+      await wrapper.find('select').setValue('vendor-1')
+      await wrapper.find('input[type="date"]').setValue('2024-01-15')
+      await nextTick()
+      
+      // Move to items step
+      let nextButton = wrapper.find('button[class*="btn-primary"]')
+      await nextButton.trigger('click')
+      await nextTick()
+      
+      // Add item
+      wrapper.vm.updateDeliveryItem(0, {
+        tempId: 'temp-1',
+        item: 'item-1',
+        quantity: 5,
+        unit_price: 100,
+        total_amount: 500,
+        notes: ''
+      })
+      
+      // Move to review step
+      wrapper.vm.currentStep = 2
+      await nextTick()
+      
+      // Submit using the component method directly
+      await wrapper.vm.saveDelivery()
+      await nextTick()
+      
+      // Verify order of operations: 
+      // 1. Delivery created
+      expect(deliveryService.create).toHaveBeenCalled()
+      
+      // 2. Delivery items created and associated
+      expect(deliveryItemService.createMultiple).toHaveBeenCalledWith(
+        'delivery-1',
+        [{ item: 'item-1', quantity: 5, unit_price: 100, notes: '' }]
+      )
+      
+      // 3. Photos uploaded AFTER items association
+      expect(deliveryService.uploadPhotos).toHaveBeenCalledWith('delivery-1', mockFiles)
+      
+      // Verify the order by checking the call order
+      const createCallOrder = deliveryService.create.mock.invocationCallOrder[0]
+      const itemsCallOrder = deliveryItemService.createMultiple.mock.invocationCallOrder[0]
+      const photosCallOrder = deliveryService.uploadPhotos.mock.invocationCallOrder[0]
+      
+      expect(createCallOrder).toBeLessThan(itemsCallOrder)
+      expect(itemsCallOrder).toBeLessThan(photosCallOrder)
+    })
+  })
 })

@@ -524,11 +524,13 @@ describe('ServicesView', () => {
     await wrapper.vm.$nextTick()
     await new Promise(resolve => setTimeout(resolve, 50))
     
-    // Check computed properties
-    expect(wrapper.vm.activeServicesCount).toBe(1)
-    expect(wrapper.vm.laborServicesCount).toBe(1)
-    expect(wrapper.vm.equipmentServicesCount).toBe(0)
-    expect(wrapper.vm.totalBookingsCount).toBe(1)
+    // Check that services and bookings are loaded
+    expect(wrapper.vm.services).toHaveLength(1)
+    expect(wrapper.vm.serviceBookings).toHaveLength(1)
+    
+    // Check that getServiceBookingsCount works correctly
+    const bookingsCount = wrapper.vm.getServiceBookingsCount('service-1')
+    expect(bookingsCount).toBe(1)
   })
 
   it('should handle service bookings count calculation', async () => {
@@ -608,9 +610,12 @@ describe('ServicesView', () => {
     await wrapper.vm.$nextTick()
     await new Promise(resolve => setTimeout(resolve, 50))
     
-    expect(wrapper.text()).toContain('Total Services')
-    expect(wrapper.text()).toContain('Labor Services')
-    expect(wrapper.text()).toContain('Equipment Services')
+    // Check that service data is displayed in the grid
+    expect(wrapper.text()).toContain('Test Service')
+    expect(wrapper.text()).toContain('Construction')
+    
+    // Check that individual service stats are shown
     expect(wrapper.text()).toContain('Total Bookings')
+    expect(wrapper.text()).toContain('Avg. Rate')
   })
 })

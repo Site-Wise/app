@@ -70,6 +70,28 @@ vi.mock('../../services/pocketbase', async () => {
     },
     tagService: {
       getAll: vi.fn().mockResolvedValue([]) // Empty tags array
+    },
+    VendorService: {
+      calculateOutstandingFromData: vi.fn().mockImplementation((vendorId, deliveries, serviceBookings, payments) => {
+        if (vendorId === 'non-existent-vendor') return 0;
+        
+        let outstanding = 0;
+        
+        // Calculate delivery outstanding
+        const vendorDeliveries = deliveries.filter(d => d.vendor === vendorId);
+        vendorDeliveries.forEach(delivery => {
+          outstanding += (delivery.total_amount - delivery.paid_amount);
+        });
+        
+        // Calculate service booking outstanding  
+        const vendorBookings = serviceBookings.filter(b => b.vendor === vendorId);
+        vendorBookings.forEach(booking => {
+          outstanding += (booking.total_amount - booking.paid_amount);
+        });
+        
+        return outstanding;
+      }),
+      calculateTotalPaidFromData: vi.fn().mockReturnValue(300)
     }
   }
 })

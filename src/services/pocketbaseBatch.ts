@@ -33,9 +33,10 @@ export async function executeBatch(requests: BatchRequest[]): Promise<BatchResul
       }
     });
 
+    // The response is the array directly, not wrapped in a 'responses' property
     return {
       success: true,
-      responses: response.responses || []
+      responses: response || []
     };
   } catch (error: any) {
     console.error('Batch operation failed:', error);

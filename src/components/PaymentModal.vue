@@ -1352,6 +1352,11 @@ const updateDeliverySelectionFromAmount = () => {
 
 // Old handlePayableSelectionChange function replaced by handlePaymentAmountRecomputation
 
+// Helper method for tests - auto-select credit notes based on current payable selections
+const autoSelectCreditNotes = () => {
+  const totalSelectedPayables = getTotalSelectedDeliveries();
+  autoSelectCreditNotesForPayables(totalSelectedPayables);
+};
 
 // TriStateCheckbox handlers
 const handleDeliveryTriStateChange = (deliveryId: string, data: { allocatedAmount: number }) => {

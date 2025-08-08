@@ -4387,6 +4387,8 @@ export class DeliveryItemService {
       });
     } catch (err) {
       console.error('Failed to update delivery with item IDs:', err);
+      // Throw the error so the caller knows the operation failed
+      throw new Error(`Failed to associate delivery items with delivery: ${err}`);
     }
     
     return createdItems;

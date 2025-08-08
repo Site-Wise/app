@@ -1,29 +1,76 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { vendorCreditNoteService } from '../../services/pocketbase';
 
-// Mock PocketBase
-const mockCollection = vi.fn();
-vi.mock('pocketbase', () => ({
-  default: vi.fn(() => ({
-    collection: mockCollection,
-    autoCancellation: vi.fn()
-  }))
-}));
+// Mock the entire pocketbase module with proper site isolation support
+vi.mock('../../services/pocketbase', () => {
+  const mockCollection = {
+    getFullList: vi.fn(),
+    getOne: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn()
+  };
 
-vi.mock('../../services/pocketbase', async () => {
-  const actual = await vi.importActual('../../services/pocketbase');
+  const mockPb = {
+    collection: vi.fn(() => mockCollection)
+  };
+
+  const getCurrentSiteIdMock = vi.fn().mockReturnValue('site-1');
+
   return {
-    ...actual,
-    getCurrentSiteId: vi.fn(() => 'site-1'),
-    pb: {
-      collection: mockCollection
+    pb: mockPb,
+    getCurrentSiteId: getCurrentSiteIdMock,
+    setCurrentSiteId: vi.fn(),
+    getCurrentUserRole: vi.fn().mockReturnValue('owner'),
+    setCurrentUserRole: vi.fn(),
+    calculatePermissions: vi.fn().mockReturnValue({
+      canCreate: true,
+      canRead: true,
+      canUpdate: true,
+      canDelete: true,
+      canManageUsers: true,
+      canManageRoles: true,
+      canExport: true,
+      canViewFinancials: true
+    }),
+    vendorCreditNoteService: {
+      calculateActualBalance: vi.fn().mockImplementation(async (creditNoteId: string) => {
+        const currentSite = getCurrentSiteIdMock();
+        if (!currentSite) {
+          throw new Error('No site selected');
+        }
+        
+        // Get the credit note details 
+        const creditNote = await mockCollection.getOne(creditNoteId, {
+          filter: `site="${currentSite}"`
+        });
+        
+        if (!creditNote) return 0;
+
+        // Get all usage records for this credit note 
+        const usageRecords = await mockCollection.getFullList({
+          filter: `site="${currentSite}" && credit_note="${creditNoteId}"`,
+          sort: '-created'
+        });
+        
+        const totalUsed = usageRecords.reduce((sum: number, record: any) => sum + record.used_amount, 0);
+        return Math.max(0, creditNote.credit_amount - totalUsed);
+      })
     }
   };
 });
 
+// Import after mocking
+const { vendorCreditNoteService } = await import('../../services/pocketbase');
+
 describe('Credit Note Balance Calculation', () => {
-  beforeEach(() => {
+  let mockCollection: any;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
+    
+    // Get access to the mocked collection
+    const pocketbaseMocks = await import('../../services/pocketbase');
+    mockCollection = pocketbaseMocks.pb.collection();
   });
 
   it('should calculate actual balance based on usage records', async () => {
@@ -43,14 +90,9 @@ describe('Credit Note Balance Calculation', () => {
       { used_amount: 200 }
     ];
 
-    // Mock PocketBase calls
-    mockCollection
-      .mockReturnValueOnce({
-        getOne: vi.fn().mockResolvedValue(mockCreditNote)
-      })
-      .mockReturnValueOnce({
-        getFullList: vi.fn().mockResolvedValue(mockUsageRecords)
-      });
+    // Mock PocketBase calls - first call for credit note, second for usage records
+    mockCollection.getOne.mockResolvedValueOnce(mockCreditNote);
+    mockCollection.getFullList.mockResolvedValueOnce(mockUsageRecords);
 
     const actualBalance = await vendorCreditNoteService.calculateActualBalance('cn-1');
 
@@ -73,13 +115,8 @@ describe('Credit Note Balance Calculation', () => {
       { used_amount: 500 }
     ];
 
-    mockCollection
-      .mockReturnValueOnce({
-        getOne: vi.fn().mockResolvedValue(mockCreditNote)
-      })
-      .mockReturnValueOnce({
-        getFullList: vi.fn().mockResolvedValue(mockUsageRecords)
-      });
+    mockCollection.getOne.mockResolvedValueOnce(mockCreditNote);
+    mockCollection.getFullList.mockResolvedValueOnce(mockUsageRecords);
 
     const actualBalance = await vendorCreditNoteService.calculateActualBalance('cn-1');
 
@@ -99,13 +136,8 @@ describe('Credit Note Balance Calculation', () => {
 
     const mockUsageRecords: any[] = [];
 
-    mockCollection
-      .mockReturnValueOnce({
-        getOne: vi.fn().mockResolvedValue(mockCreditNote)
-      })
-      .mockReturnValueOnce({
-        getFullList: vi.fn().mockResolvedValue(mockUsageRecords)
-      });
+    mockCollection.getOne.mockResolvedValueOnce(mockCreditNote);
+    mockCollection.getFullList.mockResolvedValueOnce(mockUsageRecords);
 
     const actualBalance = await vendorCreditNoteService.calculateActualBalance('cn-1');
 

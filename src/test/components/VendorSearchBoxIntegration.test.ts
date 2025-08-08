@@ -16,6 +16,33 @@ vi.mock('../../composables/useI18n', () => ({
   })
 }));
 
+// Mock VendorService
+vi.mock('../../services/pocketbase', async () => {
+  const actual = await vi.importActual('../../services/pocketbase');
+  return {
+    ...actual,
+    VendorService: {
+      calculateOutstandingFromData: vi.fn().mockImplementation((vendorId, deliveries, serviceBookings, payments) => {
+        let outstanding = 0;
+        
+        // Calculate delivery outstanding
+        const vendorDeliveries = deliveries.filter((d: any) => d.vendor === vendorId);
+        vendorDeliveries.forEach((delivery: any) => {
+          outstanding += (delivery.total_amount - delivery.paid_amount);
+        });
+        
+        // Calculate service booking outstanding  
+        const vendorBookings = serviceBookings.filter((b: any) => b.vendor === vendorId);
+        vendorBookings.forEach((booking: any) => {
+          outstanding += (booking.total_amount - booking.paid_amount);
+        });
+        
+        return outstanding;
+      })
+    }
+  };
+});
+
 describe('VendorSearchBox Integration', () => {
   const mockVendors = [
     { id: 'vendor1', name: 'Vendor A', contact_person: 'John Doe', phone: '1234567890' },
@@ -66,6 +93,7 @@ describe('VendorSearchBox Integration', () => {
         vendors: mockVendors,
         deliveries: mockDeliveries,
         serviceBookings: mockServiceBookings,
+        payments: [],
         outstandingAmount: 1200,
         pendingItemsCount: 3,
       },
@@ -73,8 +101,8 @@ describe('VendorSearchBox Integration', () => {
 
     await nextTick();
 
-    // Should show vendor name in input
-    expect(wrapper.find('input').element.value).toBe('Vendor A');
+    // Should show vendor contact_person in input (component uses contact_person, not name)
+    expect(wrapper.find('input').element.value).toBe('John Doe');
   });
 
   it('shows outstanding amount when vendor is selected', async () => {
@@ -84,6 +112,7 @@ describe('VendorSearchBox Integration', () => {
         vendors: mockVendors,
         deliveries: mockDeliveries,
         serviceBookings: mockServiceBookings,
+        payments: [],
         outstandingAmount: 1200,
         pendingItemsCount: 3,
       },
@@ -103,13 +132,14 @@ describe('VendorSearchBox Integration', () => {
         vendors: mockVendors,
         deliveries: mockDeliveries,
         serviceBookings: mockServiceBookings,
+        payments: [],
         outstandingAmount: 1200,
         pendingItemsCount: 3,
       },
     });
 
     await nextTick();
-    expect(wrapper.find('input').element.value).toBe('Vendor A');
+    expect(wrapper.find('input').element.value).toBe('John Doe');
 
     // Clear selection
     await wrapper.setProps({ modelValue: '' });
@@ -125,6 +155,7 @@ describe('VendorSearchBox Integration', () => {
         vendors: mockVendors,
         deliveries: mockDeliveries,
         serviceBookings: mockServiceBookings,
+        payments: [],
         outstandingAmount: 0,
         pendingItemsCount: 0,
       },
@@ -132,14 +163,14 @@ describe('VendorSearchBox Integration', () => {
 
     const input = wrapper.find('input');
     
-    // Type to search
-    await input.setValue('Vendor A');
+    // Type to search for contact_person (component searches by contact_person)
+    await input.setValue('John Doe');
     await input.trigger('input');
     await nextTick();
 
     // Should show search results
     expect(wrapper.vm.filteredVendors).toHaveLength(1);
-    expect(wrapper.vm.filteredVendors[0].name).toBe('Vendor A');
+    expect(wrapper.vm.filteredVendors[0].contact_person).toBe('John Doe');
 
     // Select vendor
     await wrapper.vm.selectVendor(mockVendors[0]);
@@ -157,18 +188,19 @@ describe('VendorSearchBox Integration', () => {
         vendors: mockVendors,
         deliveries: mockDeliveries,
         serviceBookings: mockServiceBookings,
+        payments: [],
         outstandingAmount: 1200,
         pendingItemsCount: 3,
       },
     });
 
     await nextTick();
-    expect(wrapper.find('input').element.value).toBe('Vendor A');
+    expect(wrapper.find('input').element.value).toBe('John Doe');
 
     const input = wrapper.find('input');
     
     // Start typing
-    await input.setValue('Vendor B');
+    await input.setValue('Jane Smith');
     await input.trigger('input');
     await nextTick();
 
@@ -184,13 +216,14 @@ describe('VendorSearchBox Integration', () => {
         vendors: mockVendors,
         deliveries: mockDeliveries,
         serviceBookings: mockServiceBookings,
+        payments: [],
         outstandingAmount: 0,
         pendingItemsCount: 0,
       },
     });
 
-    // Set search query to show dropdown for vendor1
-    await wrapper.find('input').setValue('Vendor A');
+    // Set search query to show dropdown for vendor1 (search by contact_person)
+    await wrapper.find('input').setValue('John Doe');
     await wrapper.vm.$nextTick();
     
     // delivery1: 1000 - 300 = 700

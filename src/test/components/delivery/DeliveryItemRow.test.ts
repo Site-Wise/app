@@ -357,11 +357,12 @@ describe('DeliveryItemRow', () => {
       wrapper = createWrapper()
 
       const labels = wrapper.findAll('label')
-      // Note: ItemSelector component has its own label, so we check visible labels
+      // Note: ItemSelector component has its own label, and Actions has invisible label
       expect(labels[0].text()).toBe('Quantity *')
       expect(labels[1].text()).toBe('Unit Price *')  
       expect(labels[2].text()).toBe('Total *')
-      expect(labels[3].text()).toBe('Item Notes')
+      expect(labels[3].text()).toBe('common.actions') // Invisible Actions label
+      expect(labels[4].text()).toBe('Item Notes')
     })
 
     it('should have required attributes on mandatory fields', () => {

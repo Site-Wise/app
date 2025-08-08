@@ -21,6 +21,18 @@ vi.mock('../../services/pocketbase', () => ({
   vendorCreditNoteService: {
     getByVendor: vi.fn(() => Promise.resolve([])),
   },
+  creditNoteUsageService: {
+    getByVendor: vi.fn(() => Promise.resolve([])),
+    getByPayment: vi.fn(() => Promise.resolve([])),
+  },
+  VendorService: {
+    calculateOutstandingFromData: vi.fn().mockReturnValue(0),
+    calculateTotalPaidFromData: vi.fn().mockReturnValue(0)
+  },
+  ServiceBookingService: {  
+    calculateOutstandingAmountFromData: vi.fn().mockReturnValue(150),
+    calculateProgressBasedAmount: vi.fn().mockReturnValue(500)
+  }
 }));
 
 describe('PaymentModal.vue', () => {
@@ -44,6 +56,11 @@ describe('PaymentModal.vue', () => {
     { id: 'booking1', vendor: 'vendor1', total_amount: 150, paid_amount: 0, payment_status: 'outstanding', start_date: '2024-07-05', expand: { service: { name: 'Service X' } } },
   ];
 
+  const mockPayments = [
+    { id: 'payment-1', vendor: 'vendor1', amount: 100, payment_date: '2024-01-01' },
+    { id: 'payment-2', vendor: 'vendor2', amount: 200, payment_date: '2024-01-02' }
+  ];
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -63,6 +80,7 @@ describe('PaymentModal.vue', () => {
         accounts: mockAccounts,
         deliveries: [],
         serviceBookings: [],
+        payments: mockPayments,
       },
     });
 
@@ -87,6 +105,7 @@ describe('PaymentModal.vue', () => {
         accounts: mockAccounts,
         deliveries: mockDeliveries,
         serviceBookings: mockServiceBookings,
+        payments: mockPayments,
         vendorId: 'vendor1',
         outstandingAmount: 350,
       },
@@ -117,7 +136,7 @@ describe('PaymentModal.vue', () => {
       reference: 'REF123',
       notes: 'Test payment',
       expand: {
-        vendor: { name: 'Vendor A' },
+        vendor: { name: 'Vendor A', contact_person: 'Vendor A' },
         account: { name: 'Cash Account', type: 'cash' },
       },
     };
@@ -135,6 +154,7 @@ describe('PaymentModal.vue', () => {
         accounts: mockAccounts,
         deliveries: mockDeliveries,
         serviceBookings: mockServiceBookings,
+        payments: mockPayments,
       },
     });
 
@@ -156,6 +176,7 @@ describe('PaymentModal.vue', () => {
         accounts: mockAccounts,
         deliveries: [],
         serviceBookings: [],
+        payments: mockPayments,
       },
     });
 
@@ -172,6 +193,7 @@ describe('PaymentModal.vue', () => {
         accounts: mockAccounts,
         deliveries: [],
         serviceBookings: [],
+        payments: mockPayments,
       },
     });
 
@@ -188,6 +210,7 @@ describe('PaymentModal.vue', () => {
         accounts: mockAccounts,
         deliveries: [],
         serviceBookings: [],
+        payments: mockPayments,
       },
     });
 
@@ -206,6 +229,7 @@ describe('PaymentModal.vue', () => {
         accounts: mockAccounts,
         deliveries: mockDeliveries,
         serviceBookings: mockServiceBookings,
+        payments: mockPayments,
       },
     });
 
@@ -227,6 +251,7 @@ describe('PaymentModal.vue', () => {
         accounts: mockAccounts,
         deliveries: [],
         serviceBookings: [],
+        payments: mockPayments,
       },
     });
 
@@ -254,6 +279,7 @@ describe('PaymentModal.vue', () => {
         accounts: mockAccounts,
         deliveries: [],
         serviceBookings: [],
+        payments: mockPayments,
       },
     });
 
@@ -294,6 +320,7 @@ describe('PaymentModal.vue', () => {
         accounts: mockAccounts,
         deliveries: [],
         serviceBookings: [],
+        payments: mockPayments,
       },
     });
 
@@ -333,6 +360,7 @@ describe('PaymentModal.vue', () => {
         accounts: mockAccounts,
         deliveries: [],
         serviceBookings: [],
+        payments: mockPayments,
       },
     });
 
@@ -345,6 +373,9 @@ describe('PaymentModal.vue', () => {
 
     // Select credit note
     wrapper.vm.form.credit_notes = ['cn1'];
+    wrapper.vm.form.credit_note_allocations = {
+      'cn1': { state: 'checked', amount: 50, manuallyDeselected: false }
+    };
     wrapper.vm.form.amount = 100;
     await nextTick();
 
@@ -383,6 +414,7 @@ describe('PaymentModal.vue', () => {
         accounts: mockAccounts,
         deliveries: [],
         serviceBookings: [],
+        payments: mockPayments,
       },
     });
 
@@ -394,10 +426,17 @@ describe('PaymentModal.vue', () => {
     await new Promise(resolve => setTimeout(resolve, 10));
 
     wrapper.vm.form.credit_notes = ['cn1'];
+    wrapper.vm.form.credit_note_allocations = {
+      'cn1': { state: 'checked', amount: 150, manuallyDeselected: false }
+    };
     wrapper.vm.form.amount = 100;
     await nextTick();
 
-    expect(wrapper.html()).toContain('⚠️ Credit notes exceed payment amount. Only ₹100.00 will be used.');
+    expect(wrapper.html()).toContain('Credit notes:');
+    expect(wrapper.html()).toContain('₹150.00');
+    expect(wrapper.html()).toContain('Total payment:');
+    expect(wrapper.html()).toContain('₹100.00');
+    expect(wrapper.vm.selectedCreditNoteAmount).toBe(150);
   });
 
   it('displays no items available message when no deliveries or bookings', async () => {
@@ -409,6 +448,7 @@ describe('PaymentModal.vue', () => {
         accounts: mockAccounts,
         deliveries: [],
         serviceBookings: [],
+        payments: mockPayments,
       },
     });
 
@@ -430,7 +470,7 @@ describe('PaymentModal.vue', () => {
       reference: 'REF123',
       notes: 'Test payment',
       expand: {
-        vendor: { name: 'Vendor A' },
+        vendor: { name: 'Vendor A', contact_person: 'Vendor A' },
         account: { name: 'Cash Account', type: 'cash' },
       },
     };
@@ -449,6 +489,7 @@ describe('PaymentModal.vue', () => {
         accounts: mockAccounts,
         deliveries: mockDeliveries,
         serviceBookings: mockServiceBookings,
+        payments: mockPayments,
       },
     });
 

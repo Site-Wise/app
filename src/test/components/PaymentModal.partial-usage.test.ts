@@ -20,6 +20,18 @@ vi.mock('../../services/pocketbase', () => ({
   vendorCreditNoteService: {
     getByVendor: vi.fn(() => Promise.resolve([])),
   },
+  creditNoteUsageService: {
+    getByVendor: vi.fn(() => Promise.resolve([])),
+    getByPayment: vi.fn(() => Promise.resolve([])),
+  },
+  VendorService: {
+    calculateOutstandingFromData: vi.fn().mockReturnValue(0),
+    calculateTotalPaidFromData: vi.fn().mockReturnValue(0)
+  },
+  ServiceBookingService: {
+    calculateOutstandingAmountFromData: vi.fn().mockReturnValue(100),
+    calculateProgressBasedAmount: vi.fn().mockReturnValue(500)
+  }
 }));
 
 describe('PaymentModal - Partial Usage Tracking', () => {
@@ -31,6 +43,11 @@ describe('PaymentModal - Partial Usage Tracking', () => {
   
   const mockAccounts = [
     { id: 'account1', name: 'Cash Account', type: 'cash', current_balance: 1000, is_active: true },
+  ];
+
+  const mockPayments = [
+    { id: 'payment-1', vendor: 'vendor1', amount: 100, payment_date: '2024-01-01' },
+    { id: 'payment-2', vendor: 'vendor1', amount: 200, payment_date: '2024-01-02' }
   ];
 
   beforeEach(() => {
@@ -68,6 +85,7 @@ describe('PaymentModal - Partial Usage Tracking', () => {
         accounts: mockAccounts,
         deliveries: [],
         serviceBookings: [],
+        payments: mockPayments,
       },
     });
 
@@ -79,8 +97,10 @@ describe('PaymentModal - Partial Usage Tracking', () => {
     await new Promise(resolve => setTimeout(resolve, 10));
 
     expect(wrapper.html()).toContain(new Date('2024-01-01').toLocaleDateString());
-    expect(wrapper.html()).toContain('₹75.00'); // remaining balance
-    expect(wrapper.html()).toContain('of ₹100.00'); // original amount
+    expect(wrapper.html()).toContain('payments.availableCreditNotes'); // credit notes section is rendered
+    expect(wrapper.vm.availableCreditNotes).toHaveLength(1);
+    expect(wrapper.vm.availableCreditNotes[0].balance).toBe(75);
+    expect(wrapper.vm.availableCreditNotes[0].credit_amount).toBe(100);
   });
 
   it('handles credit note with zero balance (fully used)', async () => {
@@ -108,6 +128,7 @@ describe('PaymentModal - Partial Usage Tracking', () => {
         accounts: mockAccounts,
         deliveries: [],
         serviceBookings: [],
+        payments: mockPayments,
       },
     });
 
@@ -159,6 +180,7 @@ describe('PaymentModal - Partial Usage Tracking', () => {
           { id: 'delivery1', vendor: 'vendor1', total_amount: 125, paid_amount: 0, payment_status: 'outstanding', delivery_date: '2024-07-01' }
         ],
         serviceBookings: [],
+        payments: mockPayments,
       },
     });
 
@@ -220,6 +242,7 @@ describe('PaymentModal - Partial Usage Tracking', () => {
           { id: 'delivery1', vendor: 'vendor1', total_amount: 100, paid_amount: 0, payment_status: 'outstanding', delivery_date: '2024-07-01' }
         ],
         serviceBookings: [],
+        payments: mockPayments,
       },
     });
 
@@ -271,6 +294,7 @@ describe('PaymentModal - Partial Usage Tracking', () => {
           { id: 'delivery1', vendor: 'vendor1', total_amount: 100, paid_amount: 0, payment_status: 'outstanding', delivery_date: '2024-07-01' }
         ],
         serviceBookings: [],
+        payments: mockPayments,
       },
     });
 
@@ -292,11 +316,11 @@ describe('PaymentModal - Partial Usage Tracking', () => {
     await nextTick();
 
     expect(wrapper.vm.form.credit_notes).toEqual(['cn1']);
-    expect(wrapper.vm.selectedCreditNoteAmount).toBe(150);
+    expect(wrapper.vm.selectedCreditNoteAmount).toBe(100); // Only allocate what's needed
     expect(wrapper.vm.form.amount).toBe(100);
     
     // Account payment should be 0 because credit note covers it all
-    expect(wrapper.vm.accountPaymentAmount).toBe(-50);
+    expect(wrapper.vm.accountPaymentAmount).toBe(0);
   });
 
   it('maintains correct sort order for partially used credit notes by date', async () => {
@@ -346,6 +370,7 @@ describe('PaymentModal - Partial Usage Tracking', () => {
           { id: 'delivery1', vendor: 'vendor1', total_amount: 180, paid_amount: 0, payment_status: 'outstanding', delivery_date: '2024-07-01' }
         ],
         serviceBookings: [],
+        payments: mockPayments,
       },
     });
 
@@ -396,6 +421,7 @@ describe('PaymentModal - Partial Usage Tracking', () => {
         accounts: mockAccounts,
         deliveries: [],
         serviceBookings: [],
+        payments: mockPayments,
       },
     });
 
@@ -407,8 +433,10 @@ describe('PaymentModal - Partial Usage Tracking', () => {
     await new Promise(resolve => setTimeout(resolve, 10));
 
     expect(wrapper.html()).toContain('CN-001');
-    expect(wrapper.html()).toContain('₹25.00'); // remaining balance
-    expect(wrapper.html()).toContain('of ₹100.00'); // original amount
-    expect(wrapper.html()).toContain('Return'); // reason
+    expect(wrapper.html()).toContain('payments.availableCreditNotes'); // credit notes section is rendered
+    expect(wrapper.vm.availableCreditNotes).toHaveLength(1);
+    expect(wrapper.vm.availableCreditNotes[0].balance).toBe(25);
+    expect(wrapper.vm.availableCreditNotes[0].credit_amount).toBe(100);
+    expect(wrapper.vm.availableCreditNotes[0].reason).toBe('Return');
   });
 });

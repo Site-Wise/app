@@ -44,6 +44,24 @@ describe('useOnboarding', () => {
       },
       writable: true
     });
+
+    // Mock Object.keys to work with our localStorage mock
+    const originalObjectKeys = Object.keys;
+    vi.spyOn(Object, 'keys').mockImplementation((obj: any) => {
+      if (obj === window.localStorage) {
+        return originalObjectKeys(localStorageMock);
+      }
+      return originalObjectKeys(obj);
+    });
+
+    // Mock document.querySelector for DOM element checks
+    vi.spyOn(document, 'querySelector').mockImplementation((selector: string) => {
+      // Return a mock element for our test selectors
+      if (selector === '[data-tour="test-element"]') {
+        return document.createElement('div') as Element;
+      }
+      return null;
+    });
   });
 
   afterEach(() => {

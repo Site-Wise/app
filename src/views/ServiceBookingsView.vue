@@ -175,7 +175,14 @@
             </td>
             <td class="px-4 py-4 lg:hidden">
               <div class="text-right">
-                <div class="text-sm font-semibold text-gray-600 dark:text-gray-400">
+                <div :class="[
+                  'text-sm font-semibold',
+                  booking.payment_status === 'paid' 
+                    ? 'text-green-600 dark:text-green-400'
+                    : booking.payment_status === 'pending'
+                    ? 'text-red-600 dark:text-red-400' 
+                    : 'text-gray-600 dark:text-gray-400'
+                ]">
                   ₹{{ booking.total_amount.toFixed(2) }}
                 </div>
                 <!-- Progress for Mobile -->

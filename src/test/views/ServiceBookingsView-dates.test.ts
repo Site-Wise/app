@@ -60,6 +60,16 @@ vi.mock('../../services/pocketbase', () => {
     vendorService: {
       getAll: vi.fn().mockResolvedValue(mockVendors)
     },
+    paymentAllocationService: {
+      getAll: vi.fn().mockResolvedValue([]),
+      getByServiceBooking: vi.fn().mockResolvedValue([]),
+      create: vi.fn().mockResolvedValue({}),
+      deleteByServiceBooking: vi.fn().mockResolvedValue()
+    },
+    ServiceBookingService: {
+      calculateOutstandingFromData: vi.fn().mockReturnValue(0),
+      calculateProgressBasedAmount: vi.fn().mockReturnValue(500)
+    },
     getCurrentSiteId: vi.fn(() => 'site-1'),
     setCurrentSiteId: vi.fn(),
     getCurrentUserRole: vi.fn(() => 'owner'),
