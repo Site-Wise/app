@@ -10,7 +10,7 @@
   [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
   [![CI](https://github.com/site-wise/app/workflows/CI/badge.svg)](https://github.com/site-wise/app/actions/workflows/ci.yml)
   [![Security](https://github.com/site-wise/app/workflows/Security/badge.svg)](https://github.com/site-wise/app/actions/workflows/security.yml)
-  [![Coverage](https://codecov.io/gh/site-wise/app/branch/main/graph/badge.svg)](https://codecov.io/gh/site-wise/app)
+  [![codecov](https://codecov.io/gh/site-wise/app/graph/badge.svg?token=4H3X8FWNTV)](https://codecov.io/gh/site-wise/app)
   [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
   [![Join Discord](https://img.shields.io/discord/YOUR_DISCORD_SERVER_ID?color=7289da&label=Discord&logo=discord)](https://discord.gg/YOUR_INVITE_LINK)
 
