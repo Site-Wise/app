@@ -178,6 +178,28 @@ vi.mock('../../services/pocketbase', () => {
     deliveryItemService: {
       getAll: vi.fn().mockResolvedValue([])
     },
+    vendorCreditNoteService: {
+      getAll: vi.fn().mockResolvedValue([]),
+      getById: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue({ id: 'credit-note-1', amount: 500 }),
+      update: vi.fn().mockResolvedValue({}),
+      delete: vi.fn().mockResolvedValue(true),
+      getByVendor: vi.fn().mockResolvedValue([]),
+      getByReturn: vi.fn().mockResolvedValue([]),
+      updateBalance: vi.fn().mockResolvedValue({}),
+      calculateActualBalance: vi.fn().mockResolvedValue(500),
+      mapRecordToCreditNote: vi.fn().mockReturnValue({})
+    },
+    creditNoteUsageService: {
+      getAll: vi.fn().mockResolvedValue([]),
+      getById: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue({ id: 'usage-1' }),
+      update: vi.fn().mockResolvedValue({}),
+      delete: vi.fn().mockResolvedValue(true),
+      getByPayment: vi.fn().mockResolvedValue([]),
+      getByCreditNote: vi.fn().mockResolvedValue([]),
+      mapRecordToCreditNoteUsage: vi.fn().mockReturnValue({})
+    },
     getCurrentSiteId: vi.fn().mockReturnValue('site-1'),
     setCurrentSiteId: vi.fn(),
     getCurrentUserRole: vi.fn().mockReturnValue('owner'),
@@ -570,19 +592,13 @@ describe('VendorReturnsView', () => {
       expect((wrapper as any).reloadReturns).toHaveBeenCalled()
     })
 
-    it('should reject return when confirmed', async () => {
+    it('should handle reject through modal', async () => {
       const { vendorReturnService } = await import('../../services/pocketbase')
       const mockUpdate = vi.mocked(vendorReturnService.update)
       
-      const mockReturn = { id: 'return-1', status: 'initiated' }
-      
-      // Create a mock reject method that updates status to rejected
-      const rejectReturn = async (returnItem: any) => {
-        await vendorReturnService.update(returnItem.id, { status: 'rejected' })
-        await (wrapper as any).reloadReturns()
-      }
-      
-      await rejectReturn(mockReturn)
+      // Set up the selected return
+      wrapper.vm.selectedReturn = { id: 'return-1', status: 'initiated' }
+      await wrapper.vm.handleReject()
       
       expect(mockUpdate).toHaveBeenCalledWith('return-1', { status: 'rejected' })
       expect((wrapper as any).reloadReturns).toHaveBeenCalled()
@@ -604,6 +620,18 @@ describe('VendorReturnsView', () => {
       expect(consoleSpy).toHaveBeenCalledWith('Error approving return:', expect.any(Error))
       
       consoleSpy.mockRestore()
+    })
+
+    it('should handle complete return', async () => {
+      const { vendorReturnService } = await import('../../services/pocketbase')
+      const mockUpdate = vi.mocked(vendorReturnService.update)
+      
+      wrapper.vm.selectedReturn = { id: 'return-1', status: 'approved' }
+      await wrapper.vm.handleComplete()
+      
+      expect(mockUpdate).toHaveBeenCalledWith('return-1', { status: 'completed' })
+      expect((wrapper as any).reloadReturns).toHaveBeenCalled()
+      expect(wrapper.vm.showDetailsModal).toBe(false)
     })
   })
 
@@ -683,6 +711,9 @@ describe('VendorReturnsView', () => {
     })
 
     it('should handle approve and reject through details modal', async () => {
+      const { vendorReturnService } = await import('../../services/pocketbase')
+      const mockUpdate = vi.mocked(vendorReturnService.update)
+      
       const mockReturn = { id: 'return-1', status: 'initiated' }
       wrapper.vm.selectedReturn = mockReturn
       wrapper.vm.showDetailsModal = true
@@ -692,15 +723,47 @@ describe('VendorReturnsView', () => {
       await wrapper.vm.handleApprove()
       await wrapper.vm.$nextTick()
       
+      expect(mockUpdate).toHaveBeenCalledWith('return-1', { status: 'approved' })
       expect(wrapper.vm.showDetailsModal).toBe(false)
       
-      // Test reject
+      // Reset for reject test
+      mockUpdate.mockClear()
       wrapper.vm.selectedReturn = mockReturn
       wrapper.vm.showDetailsModal = true
+      
+      // Test reject
       await wrapper.vm.handleReject()
       await wrapper.vm.$nextTick()
       
+      expect(mockUpdate).toHaveBeenCalledWith('return-1', { status: 'rejected' })
       expect(wrapper.vm.showDetailsModal).toBe(false)
+    })
+
+    it('should handle refund process through modal', async () => {
+      const mockReturn = { id: 'return-1', status: 'approved', processing_option: 'refund' }
+      
+      // Test opening refund modal directly
+      wrapper.vm.processRefund(mockReturn)
+      await wrapper.vm.$nextTick()
+      
+      expect(wrapper.vm.showRefundModal).toBe(true)
+      expect(wrapper.vm.selectedReturn).toEqual(mockReturn)
+      
+      // Test that handleRefund closes details modal and opens refund modal
+      wrapper.vm.showDetailsModal = true
+      wrapper.vm.selectedReturn = mockReturn
+      wrapper.vm.handleRefund()
+      await wrapper.vm.$nextTick()
+      
+      expect(wrapper.vm.showDetailsModal).toBe(false)
+      expect(wrapper.vm.showRefundModal).toBe(true)
+      
+      // Test saving refund
+      await wrapper.vm.handleRefundSave()
+      await wrapper.vm.$nextTick()
+      
+      expect(wrapper.vm.showRefundModal).toBe(false)
+      expect((wrapper as any).reloadReturns).toHaveBeenCalled()
     })
   })
 

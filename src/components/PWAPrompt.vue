@@ -136,9 +136,11 @@
 import { ref, onMounted, watch } from 'vue';
 import { Download, X, RefreshCw, WifiOff, Loader2 } from 'lucide-vue-next';
 import { usePWA } from '../composables/usePWA';
+import { usePWAUpdate } from '../composables/usePWAUpdate';
 import { useI18n } from '../composables/useI18n';
 
-const { isInstallable, updateAvailable, isOnline, installApp, updateApp } = usePWA();
+const { isInstallable, isOnline, installApp } = usePWA();
+const { showUpdatePrompt: updateAvailable, applyUpdate } = usePWAUpdate();
 const { t } = useI18n();
 
 const dismissed = ref(false);
@@ -163,7 +165,7 @@ const handleInstall = async () => {
 const handleUpdate = async () => {
   updating.value = true;
   try {
-    await updateApp();
+    await applyUpdate();
   } catch (error) {
     console.error('Failed to update app:', error);
   } finally {

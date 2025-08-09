@@ -64,6 +64,11 @@ const { hasSiteAccess, isReadyForRouting, loadUserSites } = useSite();
 const { platformInfo } = usePlatform();
 const { requestPermission } = useNativeNotifications();
 
+// Import PWA testing utilities in development
+if (import.meta.env.DEV) {
+  import('./utils/pwa-test');
+}
+
 // Watch for authentication changes to handle login/logout
 watch(() => isAuthenticated.value, async (newValue, oldValue) => {
   // Handle login

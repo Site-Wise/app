@@ -1,5 +1,4 @@
 import { ref, onMounted } from 'vue';
-import { useRegisterSW } from 'virtual:pwa-register/vue';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -18,32 +17,8 @@ export function usePWA() {
   const isOnline = ref(navigator.onLine);
   const installPrompt = ref<BeforeInstallPromptEvent | null>(null);
   
-  // Use Vite PWA plugin's built-in registration
-  const {
-    needRefresh: updateAvailable,
-    updateServiceWorker,
-    offlineReady
-  } = useRegisterSW({
-    immediate: true, // Auto-register on mount
-    onRegistered(r) {
-      console.log('PWA: Service Worker registered', r);
-      // Check for updates periodically (every hour)
-      r && setInterval(() => {
-        console.log('PWA: Checking for updates...');
-        r.update();
-      }, 60 * 60 * 1000);
-    },
-    onRegisterError(error) {
-      console.error('PWA: Service Worker registration error', error);
-    },
-    onNeedRefresh() {
-      console.log('PWA: New content available, update needed');
-      // updateAvailable will be set to true automatically
-    },
-    onOfflineReady() {
-      console.log('PWA: App ready to work offline');
-    }
-  });
+  // Note: Service worker registration is handled by usePWAUpdate composable
+  // This composable focuses on install prompts and other PWA features
 
   // Check if app is installed
   const checkInstallStatus = () => {
@@ -73,14 +48,10 @@ export function usePWA() {
     }
   };
 
-  // Update the app using Vite PWA plugin's built-in functionality
+  // Update the app - delegate to usePWAUpdate composable
   const updateApp = async () => {
-    try {
-      // With autoUpdate mode, this will reload the page to apply the update
-      await updateServiceWorker(true);
-    } catch (error) {
-      console.error('PWA: Error updating app:', error);
-    }
+    // Updates are handled by the usePWAUpdate composable
+    console.log('PWA: Update app called - should use usePWAUpdate composable instead');
   };
 
   // Service worker is automatically registered by Vite PWA plugin
@@ -135,14 +106,37 @@ export function usePWA() {
 
   // Initialize PWA features
   const initializePWA = () => {
+    console.log('🔧 PWA: Initializing PWA features...');
     checkInstallStatus();
 
     // Listen for install prompt
     window.addEventListener('beforeinstallprompt', (e: Event) => {
+      console.log('🎯 PWA: beforeinstallprompt event received!', e);
       e.preventDefault();
       installPrompt.value = e as BeforeInstallPromptEvent;
       isInstallable.value = true;
+      console.log('✅ PWA: App is now installable');
     });
+
+    // Debug: Check if service worker is ready
+    if ('serviceWorker' in navigator) {
+      console.log('🔧 PWA: Service worker support available');
+      navigator.serviceWorker.ready.then((registration) => {
+        console.log('✅ PWA: Service worker is ready', registration);
+      }).catch((error) => {
+        console.error('❌ PWA: Service worker ready error', error);
+      });
+    } else {
+      console.warn('⚠️ PWA: Service worker not supported');
+    }
+
+    // Debug: Check manifest
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    if (manifestLink) {
+      console.log('✅ PWA: Manifest link found', manifestLink.getAttribute('href'));
+    } else {
+      console.warn('⚠️ PWA: No manifest link found');
+    }
 
     // Listen for app installed
     window.addEventListener('appinstalled', () => {
@@ -174,8 +168,6 @@ export function usePWA() {
     isInstallable,
     isInstalled,
     isOnline,
-    updateAvailable,
-    offlineReady,
     installApp,
     updateApp,
     requestNotificationPermission,

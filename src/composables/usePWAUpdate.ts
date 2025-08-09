@@ -8,25 +8,42 @@ const showUpdatePrompt = ref(false);
 const updateAvailable = ref(false);
 const isUpdating = ref(false);
 
+// Single service worker registration instance
+let swRegistration: ReturnType<typeof useRegisterSW> | null = null;
+
 export function usePWAUpdate() {
   const { t } = useI18n();
   const { info } = useToast();
   
-  // Use Vite PWA plugin's built-in registration - get instance without registering again
-  const {
-    updateServiceWorker
-  } = useRegisterSW({
-    immediate: false, // Don't auto-register (usePWA handles this)
-    onNeedRefresh() {
-      console.log('PWA Update: New content available, showing update prompt');
-      updateAvailable.value = true;
-      showUpdatePrompt.value = true;
-    },
-    onOfflineReady() {
-      console.log('PWA Update: App ready to work offline');
-      info(t('pwa.updateInstalled'));
-    }
-  });
+  // Use shared service worker registration or create one
+  if (!swRegistration) {
+    console.log('🔧 PWA Update: Creating service worker registration...');
+    swRegistration = useRegisterSW({
+      immediate: true, // Auto-register on first use
+      onNeedRefresh() {
+        console.log('🎯 PWA Update: New content available, showing update prompt');
+        updateAvailable.value = true;
+        showUpdatePrompt.value = true;
+      },
+      onOfflineReady() {
+        console.log('PWA Update: App ready to work offline');
+        info(t('pwa.updateInstalled'));
+      },
+      onRegistered(r) {
+        console.log('PWA: Service Worker registered for updates', r);
+        // Check for updates periodically (every hour)
+        r && setInterval(() => {
+          console.log('PWA: Checking for updates...');
+          r.update();
+        }, 60 * 60 * 1000);
+      },
+      onRegisterError(error) {
+        console.error('PWA: Service Worker registration error', error);
+      }
+    });
+  }
+  
+  const { updateServiceWorker } = swRegistration;
   
   const applyUpdate = async () => {
     isUpdating.value = true;

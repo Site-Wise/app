@@ -5,21 +5,27 @@ import { nextTick } from 'vue'
 import PWAPrompt from '../../components/PWAPrompt.vue'
 
 const mockInstallApp = vi.fn()
-const mockUpdateApp = vi.fn()
+const mockApplyUpdate = vi.fn()
 
 // Mock reactive PWA state
 const mockIsInstallable = ref(false)
-const mockUpdateAvailable = ref(false)
+const mockShowUpdatePrompt = ref(false)
 const mockIsOnline = ref(true)
 
 // Mock the usePWA composable
 vi.mock('../../composables/usePWA', () => ({
   usePWA: () => ({
     isInstallable: mockIsInstallable,
-    updateAvailable: mockUpdateAvailable,
     isOnline: mockIsOnline,
-    installApp: mockInstallApp,
-    updateApp: mockUpdateApp
+    installApp: mockInstallApp
+  })
+}))
+
+// Mock the usePWAUpdate composable
+vi.mock('../../composables/usePWAUpdate', () => ({
+  usePWAUpdate: () => ({
+    showUpdatePrompt: mockShowUpdatePrompt,
+    applyUpdate: mockApplyUpdate
   })
 }))
 
@@ -38,7 +44,7 @@ describe('PWAPrompt', () => {
     
     // Reset mock state
     mockIsInstallable.value = false
-    mockUpdateAvailable.value = false
+    mockShowUpdatePrompt.value = false
     mockIsOnline.value = true
     
     // Mock sessionStorage
@@ -179,7 +185,7 @@ describe('PWAPrompt', () => {
 
   describe('Update Prompt', () => {
     it('should render update prompt when update is available', async () => {
-      mockUpdateAvailable.value = true
+      mockShowUpdatePrompt.value = true
       
       wrapper = mount(PWAPrompt)
       await nextTick()
@@ -190,7 +196,7 @@ describe('PWAPrompt', () => {
     })
 
     it('should not render update prompt when no update available', async () => {
-      mockUpdateAvailable.value = false
+      mockShowUpdatePrompt.value = false
       
       wrapper = mount(PWAPrompt)
       await nextTick()
@@ -198,9 +204,9 @@ describe('PWAPrompt', () => {
       expect(wrapper.find('.fixed.top-4').exists()).toBe(false)
     })
 
-    it('should call updateApp when update button is clicked', async () => {
-      mockUpdateAvailable.value = true
-      mockUpdateApp.mockResolvedValue()
+    it('should call applyUpdate when update button is clicked', async () => {
+      mockShowUpdatePrompt.value = true
+      mockApplyUpdate.mockResolvedValue()
       
       wrapper = mount(PWAPrompt)
       await nextTick()
@@ -211,13 +217,13 @@ describe('PWAPrompt', () => {
       expect(updateButton).toBeDefined()
       
       await updateButton!.trigger('click')
-      expect(mockUpdateApp).toHaveBeenCalledOnce()
+      expect(mockApplyUpdate).toHaveBeenCalledOnce()
     })
 
     it('should show loading state during update', async () => {
-      mockUpdateAvailable.value = true
+      mockShowUpdatePrompt.value = true
       let resolveUpdate: any
-      mockUpdateApp.mockImplementation(() => new Promise(resolve => {
+      mockApplyUpdate.mockImplementation(() => new Promise(resolve => {
         resolveUpdate = resolve
       }))
       
@@ -239,7 +245,7 @@ describe('PWAPrompt', () => {
     })
 
     it('should dismiss update prompt when later button is clicked', async () => {
-      mockUpdateAvailable.value = true
+      mockShowUpdatePrompt.value = true
       
       wrapper = mount(PWAPrompt)
       await nextTick()
@@ -317,8 +323,8 @@ describe('PWAPrompt', () => {
     })
 
     it('should handle update errors gracefully', async () => {
-      mockUpdateAvailable.value = true
-      mockUpdateApp.mockRejectedValue(new Error('Update failed'))
+      mockShowUpdatePrompt.value = true
+      mockApplyUpdate.mockRejectedValue(new Error('Update failed'))
       
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
       
@@ -355,7 +361,7 @@ describe('PWAPrompt', () => {
     })
 
     it('should have responsive classes for update prompt', async () => {
-      mockUpdateAvailable.value = true
+      mockShowUpdatePrompt.value = true
       
       wrapper = mount(PWAPrompt)
       await nextTick()

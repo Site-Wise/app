@@ -14,7 +14,7 @@ export default defineConfig({
     vue(),
     // Only include PWA plugin when not building for Tauri
     ...(isTauri ? [] : [VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       disable: false,
       manifest: {
