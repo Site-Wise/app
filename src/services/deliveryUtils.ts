@@ -55,6 +55,11 @@ export class DeliveryPaymentCalculator {
     deliveries: Delivery[], 
     paymentAllocations: PaymentAllocation[]
   ): DeliveryWithPaymentStatus[] {
+    // Safety check to ensure deliveries is an array
+    if (!Array.isArray(deliveries)) {
+      return [];
+    }
+    
     return deliveries.map(delivery => ({
       ...delivery,
       payment_status: this.calculatePaymentStatus(delivery, paymentAllocations),

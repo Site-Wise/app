@@ -670,7 +670,12 @@
     },
     "noItemsInDelivery": "No individual items found for this delivery",
     "oldDataNotice": "This delivery was created with the old system. New deliveries will show detailed item breakdowns.",
-    "photoUploadError": "Failed to upload photo. Please try again."
+    "photoUploadError": "Failed to upload photo. Please try again.",
+    "orphanedItemsDetected": "Items found but not linked",
+    "reconnectItems": "Reconnect Items",
+    "reconnecting": "Reconnecting items...",
+    "itemsReconnected": "Items successfully reconnected",
+    "reconnectError": "Failed to reconnect items"
   },
   "payments": {
     "title": "Payments",

@@ -4036,6 +4036,38 @@ export class DeliveryService {
     return this.mapRecordToDelivery(record);
   }
 
+  async reconnectDeliveryItems(deliveryId: string): Promise<Delivery> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canUpdate) {
+      throw new Error('Permission denied: Cannot update deliveries');
+    }
+
+    // Find all delivery_items that point to this delivery
+    const deliveryItems = await pb.collection('delivery_items').getFullList({
+      filter: `delivery="${deliveryId}" && site="${siteId}"`
+    });
+
+    if (deliveryItems.length === 0) {
+      throw new Error('No delivery items found to reconnect');
+    }
+
+    // Get the item IDs
+    const itemIds = deliveryItems.map(item => item.id);
+
+    // Update the delivery's delivery_items array field
+    const updatedDelivery = await pb.collection('deliveries').update(deliveryId, {
+      delivery_items: itemIds
+    }, {
+      expand: 'vendor,delivery_items,delivery_items.item'
+    });
+
+    return this.mapRecordToDelivery(updatedDelivery);
+  }
+
   async delete(id: string): Promise<boolean> {
     const userRole = getCurrentUserRole();
     const permissions = calculatePermissions(userRole);

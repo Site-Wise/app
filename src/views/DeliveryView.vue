@@ -387,7 +387,30 @@
 
           <!-- Delivery Items -->
           <div class="mt-6">
-            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-3">{{ t('delivery.items') }}</h4>
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-medium text-gray-700 dark:text-gray-300">{{ t('delivery.items') }}</h4>
+              
+              <!-- Reconnect button for orphaned items -->
+              <div v-if="orphanedItemsFound && !reconnectingItems" class="flex items-center gap-2">
+                <div class="text-xs text-amber-600 dark:text-amber-400">
+                  <AlertCircle class="w-4 h-4 inline mr-1" />
+                  {{ t('delivery.orphanedItemsDetected') }}
+                </div>
+                <button
+                  @click="reconnectOrphanedItems"
+                  class="px-3 py-1 text-xs bg-amber-600 hover:bg-amber-700 text-white rounded-md transition-colors flex items-center gap-1"
+                >
+                  <Link2 class="w-3 h-3" />
+                  {{ t('delivery.reconnectItems') }}
+                </button>
+              </div>
+              
+              <!-- Reconnecting state -->
+              <div v-if="reconnectingItems" class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <Loader2 class="w-4 h-4 animate-spin" />
+                {{ t('delivery.reconnecting') }}
+              </div>
+            </div>
             
             <!-- Loading state -->
             <div v-if="loadingDeliveryDetails" class="flex justify-center py-8">
@@ -492,7 +515,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useEventListener } from '@vueuse/core';
-import { Plus, Edit2, Trash2, Loader2, Eye, X, Images, MoreVertical } from 'lucide-vue-next';
+import { Plus, Edit2, Trash2, Loader2, Eye, X, Images, MoreVertical, AlertCircle, Link2 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
@@ -732,9 +755,13 @@ const editDelivery = (delivery: Delivery) => {
   openModal('delivery-edit-modal');
 };
 
+const orphanedItemsFound = ref(false);
+const reconnectingItems = ref(false);
+
 const viewDelivery = async (delivery: Delivery) => {
   try {
     loadingDeliveryDetails.value = true;
+    orphanedItemsFound.value = false;
     openModal('delivery-view-modal');
     // Fetch the full delivery with all expanded relationships
     const fullDelivery = await deliveryService.getById(delivery.id!);
@@ -746,6 +773,8 @@ const viewDelivery = async (delivery: Delivery) => {
         const separateItems = await deliveryItemService.getByDelivery(delivery.id!);
         
         if (separateItems.length > 0) {
+          // We found orphaned items - mark this so we can show the reconnect button
+          orphanedItemsFound.value = true;
           // If we found items separately, add them to the delivery object
           if (!fullDelivery.expand) fullDelivery.expand = {};
           fullDelivery.expand.delivery_items = separateItems;
@@ -768,6 +797,29 @@ const viewDelivery = async (delivery: Delivery) => {
     viewingDelivery.value = delivery;
   } finally {
     loadingDeliveryDetails.value = false;
+  }
+};
+
+const reconnectOrphanedItems = async () => {
+  if (!viewingDelivery.value?.id) return;
+  
+  try {
+    reconnectingItems.value = true;
+    const updatedDelivery = await deliveryService.reconnectDeliveryItems(viewingDelivery.value.id);
+    
+    // Update the viewing delivery with the reconnected data
+    viewingDelivery.value = updatedDelivery;
+    orphanedItemsFound.value = false;
+    
+    // Also reload the main deliveries list to reflect the change
+    await reloadDeliveries();
+    
+    success(t('delivery.itemsReconnected'));
+  } catch (err) {
+    console.error('Error reconnecting delivery items:', err);
+    error(t('delivery.reconnectError'));
+  } finally {
+    reconnectingItems.value = false;
   }
 };
 
