@@ -376,7 +376,7 @@
     </div>
 
     <!-- View Modal -->
-    <div v-if="viewingBooking" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="viewingBooking = null">
+    <div v-if="viewingBooking" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="viewingBooking = null" @keydown.esc="viewingBooking = null" tabindex="-1">
       <div class="relative top-20 mx-auto p-5 border w-full max-w-4xl m-4 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto" @click.stop>
         <div class="mt-3">
           <div class="flex items-center justify-between mb-4">

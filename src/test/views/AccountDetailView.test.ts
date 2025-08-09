@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setupTestPinia } from '../utils/test-setup'
+import { jsPDF } from 'jspdf'
 
 // All mocks must be at the top before any imports
 vi.mock('../../composables/useI18n', () => ({
@@ -21,9 +22,8 @@ vi.mock('../../composables/useI18n', () => ({
         'accounts.date': 'Date',
         'accounts.description': 'Description',
         'accounts.reference': 'Reference',
-        'accounts.dues': 'Dues',
-        'accounts.payments': 'Payments',
-        'accounts.balance': 'Balance',
+        'accounts.debit': 'Debit',
+        'accounts.credit': 'Credit',
         'accounts.finalBalance': 'Final Balance',
         'common.name': 'Name',
         'common.cancel': 'Cancel'
@@ -571,6 +571,266 @@ describe('AccountDetailView', () => {
       
       expect(wrapper.vm.showExportDropdown).toBe(false)
       expect(wrapper.vm.showMobileMenu).toBe(false)
+    })
+  })
+
+  describe('PDF Export with Debit/Credit Format', () => {
+    let mockPdfInstance: any
+
+    beforeEach(() => {
+      // Create a more comprehensive mock for jsPDF
+      mockPdfInstance = {
+        internal: {
+          pageSize: { width: 210, height: 297 },
+          getCurrentPageInfo: () => ({ pageNumber: 1 }),
+          pages: [null, {}]
+        },
+        setFontSize: vi.fn(),
+        setFont: vi.fn(),
+        setTextColor: vi.fn(),
+        setDrawColor: vi.fn(),
+        text: vi.fn(),
+        line: vi.fn(),
+        addImage: vi.fn(),
+        addPage: vi.fn(),
+        setPage: vi.fn(),
+        save: vi.fn()
+      }
+      
+      // Update the jsPDF mock to return our instance
+      vi.mocked(jsPDF).mockImplementation(() => mockPdfInstance)
+    })
+
+    it('should generate PDF headers with Date, Description, Debit, Credit columns', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      // Mock Image to avoid logo loading issues - simulate immediate error
+      global.Image = vi.fn().mockImplementation(() => {
+        const img = {
+          onload: null as any,
+          onerror: null as any,
+          src: '',
+          crossOrigin: ''
+        }
+        setTimeout(() => {
+          if (img.onerror) img.onerror(new Error('Mock image error'))
+        }, 0)
+        return img
+      }) as any
+
+      // Call the PDF export function
+      await wrapper.vm.exportStatementPDF()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      // Check that headers were set correctly
+      const textCalls = mockPdfInstance.text.mock.calls
+      
+      // Find the headers call (should contain 'Date')
+      const headerCall = textCalls.find((call: any[]) => call[0] === 'Date')
+      expect(headerCall).toBeDefined()
+      
+      // Check all headers are present
+      expect(textCalls.some((call: any[]) => call[0] === 'Description')).toBe(true)
+      expect(textCalls.some((call: any[]) => call[0] === 'Debit')).toBe(true)
+      expect(textCalls.some((call: any[]) => call[0] === 'Credit')).toBe(true)
+      
+      // Should NOT have old headers
+      expect(textCalls.some((call: any[]) => call[0] === 'Reference')).toBe(false)
+      expect(textCalls.some((call: any[]) => call[0] === 'Dues')).toBe(false)
+      expect(textCalls.some((call: any[]) => call[0] === 'Payments')).toBe(false)
+      expect(textCalls.some((call: any[]) => call[0] === 'Balance')).toBe(false)
+    })
+
+    it('should format reference as subtext with gray color', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      // Mock Image - simulate immediate error
+      global.Image = vi.fn().mockImplementation(() => {
+        const img = {
+          onload: null as any,
+          onerror: null as any,
+          src: '',
+          crossOrigin: ''
+        }
+        setTimeout(() => {
+          if (img.onerror) img.onerror(new Error('Mock image error'))
+        }, 0)
+        return img
+      }) as any
+
+      await wrapper.vm.exportStatementPDF()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      // Check setTextColor calls for gray (107, 114, 128)
+      const colorCalls = mockPdfInstance.setTextColor.mock.calls
+      const grayColorCall = colorCalls.find((call: any[]) => 
+        call[0] === 107 && call[1] === 114 && call[2] === 128
+      )
+      expect(grayColorCall).toBeDefined()
+      
+      // Check that reference is formatted with "Ref: " prefix
+      const textCalls = mockPdfInstance.text.mock.calls
+      const refCall = textCalls.find((call: any[]) => 
+        typeof call[0] === 'string' && call[0].startsWith('Ref: ')
+      )
+      expect(refCall).toBeDefined()
+      expect(refCall[0]).toBe('Ref: REF123') // From our mock data
+      
+      // Check font size changes for subtext
+      const fontSizeCalls = mockPdfInstance.setFontSize.mock.calls
+      expect(fontSizeCalls.some((call: any[]) => call[0] === 8)).toBe(true) // Subtext size
+      expect(fontSizeCalls.some((call: any[]) => call[0] === 10)).toBe(true) // Normal text size
+    })
+
+    it('should calculate and display totals for debits and credits', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      // Mock Image - simulate immediate error
+      global.Image = vi.fn().mockImplementation(() => {
+        const img = {
+          onload: null as any,
+          onerror: null as any,
+          src: '',
+          crossOrigin: ''
+        }
+        setTimeout(() => {
+          if (img.onerror) img.onerror(new Error('Mock image error'))
+        }, 0)
+        return img
+      }) as any
+
+      await wrapper.vm.exportStatementPDF()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      const textCalls = mockPdfInstance.text.mock.calls
+      
+      // Check for total debits (we have one debit of 500 in mock data)
+      const totalDebitsCall = textCalls.find((call: any[]) => 
+        typeof call[0] === 'string' && call[0].includes('Total Debits:')
+      )
+      expect(totalDebitsCall).toBeDefined()
+      expect(totalDebitsCall[0]).toBe('Total Debits: 500.00')
+      
+      // Check for total credits (we have one credit of 1000 in mock data)
+      const totalCreditsCall = textCalls.find((call: any[]) => 
+        typeof call[0] === 'string' && call[0].includes('Total Credits:')
+      )
+      expect(totalCreditsCall).toBeDefined()
+      expect(totalCreditsCall[0]).toBe('Total Credits: 1000.00')
+      
+      // Check for current balance
+      const balanceCall = textCalls.find((call: any[]) => 
+        typeof call[0] === 'string' && call[0].includes('Current Balance:')
+      )
+      expect(balanceCall).toBeDefined()
+      expect(balanceCall[0]).toBe('Current Balance: 5000.00 Dr') // From mock account data
+    })
+
+    it('should not include reference column in PDF table', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      // Mock Image - simulate immediate error
+      global.Image = vi.fn().mockImplementation(() => {
+        const img = {
+          onload: null as any,
+          onerror: null as any,
+          src: '',
+          crossOrigin: ''
+        }
+        setTimeout(() => {
+          if (img.onerror) img.onerror(new Error('Mock image error'))
+        }, 0)
+        return img
+      }) as any
+
+      await wrapper.vm.exportStatementPDF()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      // Check column widths array (should be 4 columns now, not 5)
+      const textCalls = mockPdfInstance.text.mock.calls
+      
+      // Count unique x-positions for headers to verify column count
+      const headerCalls = textCalls.filter((call: any[]) => 
+        ['Date', 'Description', 'Debit', 'Credit'].includes(call[0])
+      )
+      
+      expect(headerCalls.length).toBe(4) // Should have exactly 4 column headers
+    })
+  })
+
+  describe('CSV Export with Debit/Credit Format', () => {
+    it('should generate CSV with debit/credit columns instead of dues/payments/balance', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      const csvContent = wrapper.vm.generateStatementCSV()
+      
+      // Check headers
+      expect(csvContent).toContain('Date,Description,Reference,Debit,Credit,Notes')
+      
+      // Should NOT contain old headers as column names
+      expect(csvContent).not.toContain('Dues')
+      expect(csvContent).not.toContain('Payments')
+      // Note: "Balance" might appear in the text "Current Balance" so we check the header line specifically
+      const headerLine = csvContent.split('\n')[0]
+      expect(headerLine).not.toContain(',Balance,')
+      
+      // Check that data rows are formatted correctly
+      const lines = csvContent.split('\n')
+      expect(lines.length).toBeGreaterThan(2) // Headers + at least one data row + summary
+      
+      // Check data formatting (transaction 1 is credit, transaction 2 is debit)
+      expect(csvContent).toContain('Test credit,REF123,,1000,') // Credit in credit column
+      expect(csvContent).toContain('Test debit,REF456,500,,') // Debit in debit column
+    })
+
+    it('should include totals row with calculated sums', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      const csvContent = wrapper.vm.generateStatementCSV()
+      
+      // Check for TOTALS row
+      expect(csvContent).toContain('TOTALS')
+      
+      // Check that totals are calculated correctly
+      const lines = csvContent.split('\n')
+      const totalsLine = lines.find(line => line.includes('TOTALS'))
+      
+      expect(totalsLine).toBeDefined()
+      expect(totalsLine).toContain('500.00') // Total debits
+      expect(totalsLine).toContain('1000.00') // Total credits
+      expect(totalsLine).toContain('Current Balance: 5000.00') // Balance in notes
+    })
+
+    it('should keep reference as separate column in CSV', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      const csvContent = wrapper.vm.generateStatementCSV()
+      
+      // CSV should still have Reference as a separate column
+      expect(csvContent).toContain('Reference')
+      
+      // Check that references are in their own column
+      expect(csvContent).toContain('REF123')
+      expect(csvContent).toContain('REF456')
+    })
+
+    it('should format dates in en-CA format (YYYY-MM-DD)', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      const csvContent = wrapper.vm.generateStatementCSV()
+      
+      // Check date formatting
+      expect(csvContent).toMatch(/\d{4}-\d{2}-\d{2}/) // YYYY-MM-DD format
+      expect(csvContent).toContain('2024-01-15') // From mock transaction 1
+      expect(csvContent).toContain('2024-01-20') // From mock transaction 2
     })
   })
 })

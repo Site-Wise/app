@@ -142,12 +142,12 @@ export const searchConfigs = {
   },
   deliveries: {
     collection: 'deliveries' as const,
-    searchFields: ['vendor.name', 'delivery_reference', 'notes'],
+    searchFields: ['expand.vendor.name', 'expand.vendor.contact_person', 'delivery_reference', 'notes'],
     expand: 'vendor,delivery_items,delivery_items.item'
   },
   service_bookings: {
     collection: 'service_bookings' as const,
-    searchFields: ['expand.service.name', 'expand.vendor.name', 'notes'],
+    searchFields: ['expand.service.name', 'expand.vendor.name', 'expand.vendor.contact_person', 'notes'],
     expand: 'vendor,service'
   },
   accounts: {

@@ -711,8 +711,8 @@ const exportStatementPDF = async () => {
   
   // Table headers
   doc.setFont('helvetica', 'bold');
-  const headers = ['Date', 'Description', 'Reference', 'Dues', 'Payments', 'Balance'];
-  const colWidths = [25, 40, 25, 25, 25, 30];
+  const headers = ['Date', 'Description', 'Debit', 'Credit'];
+  const colWidths = [30, 90, 35, 35];
   let xPos = margin;
   
   headers.forEach((header, i) => {
@@ -738,21 +738,32 @@ const exportStatementPDF = async () => {
     }
     
     xPos = margin;
-    const rowData = [
-      new Date(transaction.transaction_date).toLocaleDateString('en-CA'),
-      transaction.description.substring(0, 30), // Adjust for new column width
-      transaction.reference || '',
-      transaction.type === 'debit' ? transaction.amount.toFixed(2) : '',
-      transaction.type === 'credit' ? transaction.amount.toFixed(2) : '',
-      Math.abs(((transaction as any).running_balance || 0)).toFixed(2) + (((transaction as any).running_balance || 0) >= 0 ? ' Dr' : ' Cr')
-    ];
     
-    rowData.forEach((data, i) => {
-      doc.text(data, xPos, yPosition);
-      xPos += colWidths[i];
-    });
+    // Date column
+    doc.setTextColor(0, 0, 0);
+    doc.text(new Date(transaction.transaction_date).toLocaleDateString('en-CA'), xPos, yPosition);
+    xPos += colWidths[0];
     
-    yPosition += 6;
+    // Description column with reference as subtext
+    doc.setTextColor(0, 0, 0);
+    doc.text(transaction.description.substring(0, 50), xPos, yPosition);
+    if (transaction.reference) {
+      doc.setFontSize(8);
+      doc.setTextColor(107, 114, 128); // Gray color
+      doc.text(`Ref: ${transaction.reference}`, xPos, yPosition + 4);
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+    }
+    xPos += colWidths[1];
+    
+    // Debit column
+    doc.text(transaction.type === 'debit' ? transaction.amount.toFixed(2) : '', xPos, yPosition);
+    xPos += colWidths[2];
+    
+    // Credit column
+    doc.text(transaction.type === 'credit' ? transaction.amount.toFixed(2) : '', xPos, yPosition);
+    
+    yPosition += transaction.reference ? 10 : 6; // Extra space if reference exists
   });
   
   // Summary
@@ -766,9 +777,22 @@ const exportStatementPDF = async () => {
   yPosition += 8;
   
   doc.setFont('helvetica', 'bold');
+  
+  // Calculate totals
+  const totalDebits = ascendingTransactions
+    .filter(t => t.type === 'debit')
+    .reduce((sum, t) => sum + t.amount, 0);
+  const totalCredits = ascendingTransactions
+    .filter(t => t.type === 'credit')
+    .reduce((sum, t) => sum + t.amount, 0);
+  
+  doc.text(`Total Debits: ${totalDebits.toFixed(2)}`, margin, yPosition);
+  yPosition += 6;
+  doc.text(`Total Credits: ${totalCredits.toFixed(2)}`, margin, yPosition);
+  yPosition += 6;
   const balanceText = account.value.current_balance >= 0 
-    ? `Final Balance: ${account.value.current_balance.toFixed(2)} Dr`
-    : `Final Balance: ${Math.abs(account.value.current_balance).toFixed(2)} Cr`;
+    ? `Current Balance: ${account.value.current_balance.toFixed(2)} Dr`
+    : `Current Balance: ${Math.abs(account.value.current_balance).toFixed(2)} Cr`;
   doc.text(balanceText, margin, yPosition);
   
   // Add footer to all pages
@@ -785,27 +809,32 @@ const exportStatementPDF = async () => {
 const generateStatementCSV = () => {
   if (!account.value) return '';
   
-  const headers = ['Date', 'Description', 'Reference', 'Dues', 'Payments', 'Balance', 'Notes'];
+  const headers = ['Date', 'Description', 'Reference', 'Debit', 'Credit', 'Notes'];
   
   const rows = filteredTransactions.value.map(transaction => [
     new Date(transaction.transaction_date).toLocaleDateString('en-CA'),
     transaction.description,
     transaction.reference || '',
-    transaction.type === 'debit' ? transaction.amount : '', // Dues (debits)
-    transaction.type === 'credit' ? transaction.amount : '', // Payments (credits)
-    (transaction as any).running_balance || 0,
+    transaction.type === 'debit' ? transaction.amount : '', // Debit
+    transaction.type === 'credit' ? transaction.amount : '', // Credit
     transaction.notes || ''
   ]);
   
-  // Add summary row
+  // Add summary row with total debits and credits
+  const totalDebits = filteredTransactions.value
+    .filter(t => t.type === 'debit')
+    .reduce((sum, t) => sum + t.amount, 0);
+  const totalCredits = filteredTransactions.value
+    .filter(t => t.type === 'credit')
+    .reduce((sum, t) => sum + t.amount, 0);
+  
   rows.push([
     '',
-    'ACCOUNT SUMMARY',
+    'TOTALS',
     '',
-    '', // Empty dues column
-    '', // Empty payments column
-    account.value.current_balance,
-    `Statement generated on ${new Date().toISOString().split('T')[0]}`
+    totalDebits.toFixed(2),
+    totalCredits.toFixed(2),
+    `Current Balance: ${account.value.current_balance.toFixed(2)}`
   ]);
   
   // Convert to CSV
