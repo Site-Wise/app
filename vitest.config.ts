@@ -14,13 +14,15 @@ export default defineConfig({
       reporter: ['text', 'json', 'html', 'lcov'],
       exclude: [
         'node_modules/',
+        'src-tauri',
         'src/test/',
         '**/*.d.ts',
         '**/*.config.*',
         'dist/',
         'coverage/',
         'public/',
-        'dev-dist/'
+        'dev-dist/',
+        'external_services/'
       ],
       all: true,
       reportsDirectory: './coverage'

@@ -127,7 +127,8 @@ import { useI18n } from '../composables/useI18n';
 import { 
   paymentService, 
   deliveryService,
-  serviceBookingService
+  serviceBookingService,
+  ServiceBookingService
 } from '../services/pocketbase';
 
 const { t } = useI18n();
@@ -177,13 +178,20 @@ const stats = computed(() => {
   const totalSqft = currentSite.value?.total_planned_area || 1;
   const expensePerSqft = Math.round(totalExpenses / totalSqft);
   
-  const outstandingAmount = deliveries.value.reduce((sum, delivery) => {
-    const outstanding = delivery.total_amount - (delivery.paid_amount || 0);
-    return sum + (outstanding > 0 ? outstanding : 0);
-  }, 0) + serviceBookings.value.reduce((sum, booking) => {
-    const outstanding = booking.total_amount - (booking.paid_amount || 0);
-    return sum + (outstanding > 0 ? outstanding : 0);
+  // Calculate total amount due from deliveries
+  const deliveriesTotal = deliveries.value.reduce((sum, delivery) => sum + delivery.total_amount, 0);
+  
+  // Calculate total amount due from service bookings based on progress percentage
+  const serviceBookingsTotal = serviceBookings.value.reduce((sum, booking) => {
+    return sum + ServiceBookingService.calculateProgressBasedAmount(booking);
   }, 0);
+  
+  // Calculate total payments made
+  const totalPaid = payments.value.reduce((sum, payment) => sum + payment.amount, 0);
+  
+  // Outstanding = Total Due - Total Paid
+  const totalDue = deliveriesTotal + serviceBookingsTotal;
+  const outstandingAmount = totalDue - totalPaid > 0 ? totalDue - totalPaid : 0;
 
   return {
     totalExpenses,

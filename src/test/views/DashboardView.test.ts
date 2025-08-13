@@ -91,6 +91,19 @@ vi.mock('../../composables/useSite', () => ({
   }
 }))
 
+// Mock PocketBase services with centralized mock
+vi.mock('../../services/pocketbase', async () => {
+  const mocks = await import('../mocks/pocketbase')
+  return {
+    ...mocks,
+    ServiceBookingService: {
+      calculateProgressBasedAmount: vi.fn().mockImplementation((booking) => {
+        return (booking.total_amount * (booking.percent_completed || 0)) / 100;
+      })
+    }
+  }
+})
+
 import DashboardView from '../../views/DashboardView.vue'
 import { createMockRouter } from '../utils/test-utils'
 
@@ -145,6 +158,7 @@ vi.mock('../../composables/useSiteData', () => ({
           duration: 10,
           unit_rate: 1000,
           total_amount: 10000,
+          percent_completed: 100,
           status: 'completed',
           completion_photos: [],
           notes: 'Work completed successfully',
