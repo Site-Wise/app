@@ -1,4 +1,4 @@
-import { ref, computed, watch } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import { pb, getCurrentSiteId } from '../services/pocketbase'
 import type { 
   Delivery,
@@ -31,11 +31,6 @@ export function useSearch<T = any>(options: SearchOptions) {
   const error = ref<string | null>(null)
   const results = ref<T[]>([])
   const debounceTimer = ref<ReturnType<typeof setTimeout> | null>(null)
-
-  // Debounced search
-  const debouncedSearch = computed(() => {
-    return searchQuery.value.trim()
-  })
 
   const buildSearchFilter = (query: string): string => {
     const siteId = getCurrentSiteId()
@@ -71,15 +66,25 @@ export function useSearch<T = any>(options: SearchOptions) {
     error.value = null
     
     try {
-      const filter = buildSearchFilter(query)
-      
-      const records = await pb.collection(options.collection).getFullList({
-        filter,
-        expand: options.expand,
-        sort: '-created' // Most recent first
-      })
-      
-      results.value = records as T[]
+      // Special handling for collections with vendor search
+      if (options.collection === 'deliveries' && query.trim()) {
+        await performDeliverySearch(query.trim())
+      } else if (options.collection === 'service_bookings' && query.trim()) {
+        await performServiceBookingSearch(query.trim())
+      } else if (options.collection === 'payments' && query.trim()) {
+        await performPaymentSearch(query.trim())
+      } else {
+        // Standard search for other collections
+        const filter = buildSearchFilter(query)
+        
+        const records = await pb.collection(options.collection).getFullList({
+          filter,
+          expand: options.expand,
+          sort: '-created' // Most recent first
+        })
+        
+        results.value = records as T[]
+      }
     } catch (err) {
       console.error('Search error:', err)
       error.value = err instanceof Error ? err.message : 'Search failed'
@@ -89,17 +94,167 @@ export function useSearch<T = any>(options: SearchOptions) {
     }
   }
 
-  // Watch for search query changes with debouncing
-  watch(debouncedSearch, (newQuery) => {
+  const performDeliverySearch = async (query: string) => {
+    const siteId = getCurrentSiteId()
+    if (!siteId) throw new Error('No site selected')
+
+    // Step 1: Search for vendors that match the query
+    const vendorRecords = await pb.collection('vendors').getFullList({
+      filter: `site="${siteId}" && (name~"${query}" || contact_person~"${query}")`
+    })
+    
+    const vendorIds = vendorRecords.map(vendor => vendor.id)
+    
+    // Step 2: Build delivery filter combining vendor IDs with direct field searches
+    let deliveryFilter = `site="${siteId}"`
+    
+    const searchConditions = []
+    
+    // Add vendor ID conditions if we found matching vendors
+    if (vendorIds.length > 0) {
+      const vendorConditions = vendorIds.map(id => `vendor="${id}"`).join(' || ')
+      searchConditions.push(`(${vendorConditions})`)
+    }
+    
+    // Add direct field searches (delivery_reference and notes)
+    searchConditions.push(`delivery_reference~"${query}"`)
+    searchConditions.push(`notes~"${query}"`)
+    
+    if (searchConditions.length > 0) {
+      deliveryFilter += ` && (${searchConditions.join(' || ')})`
+    }
+    
+    // Step 3: Get deliveries with the combined filter
+    const deliveryRecords = await pb.collection('deliveries').getFullList({
+      filter: deliveryFilter,
+      expand: options.expand,
+      sort: '-delivery_date' // Most recent first for deliveries
+    })
+    
+    results.value = deliveryRecords as T[]
+  }
+
+  const performServiceBookingSearch = async (query: string) => {
+    const siteId = getCurrentSiteId()
+    if (!siteId) throw new Error('No site selected')
+
+    // Step 1: Search for vendors that match the query
+    const vendorRecords = await pb.collection('vendors').getFullList({
+      filter: `site="${siteId}" && (name~"${query}" || contact_person~"${query}")`
+    })
+    
+    const vendorIds = vendorRecords.map(vendor => vendor.id)
+    
+    // Step 2: Search for services that match the query
+    const serviceRecords = await pb.collection('services').getFullList({
+      filter: `site="${siteId}" && name~"${query}"`
+    })
+    
+    const serviceIds = serviceRecords.map(service => service.id)
+    
+    // Step 3: Build service booking filter combining vendor IDs, service IDs, and direct field searches
+    let serviceBookingFilter = `site="${siteId}"`
+    
+    const searchConditions = []
+    
+    // Add vendor ID conditions if we found matching vendors
+    if (vendorIds.length > 0) {
+      const vendorConditions = vendorIds.map(id => `vendor="${id}"`).join(' || ')
+      searchConditions.push(`(${vendorConditions})`)
+    }
+    
+    // Add service ID conditions if we found matching services
+    if (serviceIds.length > 0) {
+      const serviceConditions = serviceIds.map(id => `service="${id}"`).join(' || ')
+      searchConditions.push(`(${serviceConditions})`)
+    }
+    
+    // Add direct field searches (notes)
+    searchConditions.push(`notes~"${query}"`)
+    
+    if (searchConditions.length > 0) {
+      serviceBookingFilter += ` && (${searchConditions.join(' || ')})`
+    }
+    
+    // Step 4: Get service bookings with the combined filter
+    const serviceBookingRecords = await pb.collection('service_bookings').getFullList({
+      filter: serviceBookingFilter,
+      expand: options.expand,
+      sort: '-start_date' // Most recent first for service bookings
+    })
+    
+    results.value = serviceBookingRecords as T[]
+  }
+
+  const performPaymentSearch = async (query: string) => {
+    const siteId = getCurrentSiteId()
+    if (!siteId) throw new Error('No site selected')
+
+    // Step 1: Search for vendors that match the query
+    const vendorRecords = await pb.collection('vendors').getFullList({
+      filter: `site="${siteId}" && (name~"${query}" || contact_person~"${query}")`
+    })
+    
+    const vendorIds = vendorRecords.map(vendor => vendor.id)
+    
+    // Step 2: Build payment filter combining vendor IDs with direct field searches
+    let paymentFilter = `site="${siteId}"`
+    
+    const searchConditions = []
+    
+    // Add vendor ID conditions if we found matching vendors
+    if (vendorIds.length > 0) {
+      const vendorConditions = vendorIds.map(id => `vendor="${id}"`).join(' || ')
+      searchConditions.push(`(${vendorConditions})`)
+    }
+    
+    // Add direct field searches (reference and notes)
+    searchConditions.push(`reference~"${query}"`)
+    searchConditions.push(`notes~"${query}"`)
+    
+    if (searchConditions.length > 0) {
+      paymentFilter += ` && (${searchConditions.join(' || ')})`
+    }
+    
+    // Step 3: Get payments with the combined filter
+    const paymentRecords = await pb.collection('payments').getFullList({
+      filter: paymentFilter,
+      expand: options.expand,
+      sort: '-created' // Most recent first for payments
+    })
+    
+    results.value = paymentRecords as T[]
+  }
+
+  // Improved debouncing with proper cleanup and longer delay
+  watch(searchQuery, (newQuery) => {
     // Clear existing timer
     if (debounceTimer.value) {
       clearTimeout(debounceTimer.value)
+      debounceTimer.value = null
     }
     
-    // Set new timer
+    const trimmedQuery = newQuery.trim()
+    
+    // For empty queries, just clear the results to show all data from useSiteData
+    if (!trimmedQuery) {
+      results.value = []
+      loading.value = false
+      error.value = null
+      return
+    }
+    
+    // Skip search for very short queries (less than 2 characters) to reduce backend load
+    if (trimmedQuery.length < 2) {
+      results.value = []
+      return
+    }
+    
+    // For non-empty queries, debounce with 600ms delay to prevent backend flooding
     debounceTimer.value = setTimeout(() => {
-      performSearch(newQuery)
-    }, 300) // 300ms debounce
+      performSearch(trimmedQuery)
+      debounceTimer.value = null
+    }, 600)
   })
 
   const search = (query: string) => {
@@ -120,6 +275,14 @@ export function useSearch<T = any>(options: SearchOptions) {
   const loadAll = () => {
     performSearch('')
   }
+
+  // Cleanup timer on unmount to prevent memory leaks
+  onUnmounted(() => {
+    if (debounceTimer.value) {
+      clearTimeout(debounceTimer.value)
+      debounceTimer.value = null
+    }
+  })
 
   return {
     searchQuery,
@@ -142,12 +305,12 @@ export const searchConfigs = {
   },
   deliveries: {
     collection: 'deliveries' as const,
-    searchFields: ['expand.vendor.name', 'expand.vendor.contact_person', 'delivery_reference', 'notes'],
+    searchFields: ['delivery_reference', 'notes'],
     expand: 'vendor,delivery_items,delivery_items.item'
   },
   service_bookings: {
     collection: 'service_bookings' as const,
-    searchFields: ['expand.service.name', 'expand.vendor.name', 'expand.vendor.contact_person', 'notes'],
+    searchFields: ['notes'],
     expand: 'vendor,service'
   },
   accounts: {
@@ -156,7 +319,7 @@ export const searchConfigs = {
   },
   quotations: {
     collection: 'quotations' as const,
-    searchFields: ['expand.item.name', 'expand.vendor.name', 'expand.service.name', 'notes'],
+    searchFields: ['notes'],
     expand: 'vendor,item,service'
   },
   vendors: {
@@ -173,8 +336,8 @@ export const searchConfigs = {
   },
   payments: {
     collection: 'payments' as const,
-    searchFields: ['expand.vendor.name', 'expand.account.name', 'description'],
-    expand: 'vendor,account,deliveries,service_bookings'
+    searchFields: ['reference', 'notes'],
+    expand: 'vendor,account,deliveries,service_bookings,payment_allocations,payment_allocations.delivery,payment_allocations.service_booking,payment_allocations.service_booking.service,credit_notes'
   }
 }
 

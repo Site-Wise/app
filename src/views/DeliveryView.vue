@@ -117,33 +117,17 @@
     </div>
 
     <!-- Table Desktop View -->
-    <div class="hidden lg:block">
-      <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
-        <!-- Desktop Table Headers -->
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead class="bg-gray-50 dark:bg-gray-900">
+    <div class="card overflow-x-auto hidden lg:block">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {{ t('common.vendor') }}
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {{ t('delivery.reference') }}
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {{ t('delivery.itemCount') }}
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {{ t('common.total') }}
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {{ t('delivery.paymentStatus') }}
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {{ t('delivery.deliveryDate') }}
-              </th>
-              <th scope="col" class="relative px-6 py-3">
-                <span class="sr-only">{{ t('common.actions') }}</span>
-              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.vendor') }}</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('delivery.reference') }}</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('delivery.itemCount') }}</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.total') }}</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('delivery.paymentStatus') }}</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('delivery.deliveryDate') }}</th>
+              <th class="relative px-6 py-3"><span class="sr-only">{{ t('common.actions') }}</span></th>
             </tr>
           </thead>
           <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -160,8 +144,13 @@
             <tr v-else v-for="delivery in deliveries" :key="delivery.id" 
                 class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
               <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900 dark:text-white">
-                  {{ delivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}
+                <div>
+                  <div class="text-sm font-medium text-gray-900 dark:text-white">
+                    {{ delivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}
+                  </div>
+                  <div v-if="delivery.expand?.vendor?.name" class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ delivery.expand.vendor.name }}
+                  </div>
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
@@ -232,7 +221,6 @@
             </tr>
           </tbody>
         </table>
-      </div>
     </div>
 
     <!-- Mobile/Tablet List View -->
@@ -250,9 +238,14 @@
           <!-- Mobile Card Header -->
           <div class="flex items-start justify-between mb-3">
             <div class="flex-1">
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
-                {{ delivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}
-              </h3>
+              <div class="flex items-center gap-2">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                  {{ delivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}
+                </h3>
+                <span v-if="delivery.expand?.vendor?.name" class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {{ delivery.expand.vendor.name }}
+                </span>
+              </div>
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 {{ formatDate(delivery.delivery_date) }}
                 <span v-if="delivery.delivery_reference" class="ml-2">
@@ -324,7 +317,12 @@
             <div class="space-y-4">
               <div>
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('common.vendor') }}:</span>
-                <span class="ml-2 text-gray-900 dark:text-white">{{ viewingDelivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}</span>
+                <div class="ml-2 inline-block">
+                  <span class="text-gray-900 dark:text-white">{{ viewingDelivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}</span>
+                  <div v-if="viewingDelivery.expand?.vendor?.name" class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ viewingDelivery.expand.vendor.name }}
+                  </div>
+                </div>
               </div>
               <div>
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('delivery.deliveryDate') }}:</span>

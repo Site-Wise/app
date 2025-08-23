@@ -12,14 +12,27 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
     </div>
-    <div v-if="searchLoading" class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-      <Loader2 class="h-4 w-4 animate-spin text-gray-400" />
+    <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+      <!-- Clear button - shows when there's text and not loading -->
+      <button
+        v-if="modelValue && !searchLoading"
+        @click="clearSearch"
+        class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+        type="button"
+        :title="'Clear search'"
+      >
+        <X class="h-4 w-4" />
+      </button>
+      <!-- Loading spinner - shows when loading -->
+      <div v-if="searchLoading" class="pointer-events-none">
+        <Loader2 class="h-4 w-4 animate-spin text-gray-400" />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Loader2 } from 'lucide-vue-next';
+import { Loader2, X } from 'lucide-vue-next';
 
 defineProps<{
   modelValue: string;
@@ -27,7 +40,11 @@ defineProps<{
   searchLoading?: boolean;
 }>();
 
-defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue']);
+
+const clearSearch = () => {
+  emit('update:modelValue', '');
+};
 </script>
 
 <style scoped>

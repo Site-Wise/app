@@ -84,7 +84,14 @@
               <div class="text-sm text-gray-500 dark:text-gray-400">{{ booking.expand?.service?.category || 'Unknown Type' }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-              <div class="text-sm text-gray-900 dark:text-white">{{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}</div>
+              <div>
+                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                  {{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}
+                </div>
+                <div v-if="booking.expand?.vendor?.name" class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ booking.expand.vendor.name }}
+                </div>
+              </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
               {{ formatDate(booking.start_date) }}
@@ -115,7 +122,7 @@
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-              <span :class="`status-${booking.payment_status}`">
+              <span :class="`status-${booking.payment_status === 'currently_paid_up' ? 'paid' : booking.payment_status}`">
                 {{ booking.payment_status === 'currently_paid_up' ? t('serviceBookings.currentlyPaidUp') : t(`common.${booking.payment_status}`) }}
               </span>
               <!-- Show outstanding amount for partial payments -->
@@ -167,8 +174,15 @@
 
             <!-- Mobile Row -->
             <td class="px-4 py-4 lg:hidden">
-              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ booking.expand?.service?.name || 'Unknown Service' }}</div>
-              <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}</div>
+              <div class="flex items-center gap-2 mb-1">
+                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                  {{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}
+                </div>
+                <span v-if="booking.expand?.vendor?.name" class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {{ booking.expand.vendor.name }}
+                </span>
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ booking.expand?.service?.name || 'Unknown Service' }}</div>
               <div class="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">
                 {{ formatDate(booking.start_date) }}
               </div>
@@ -201,7 +215,7 @@
                 </div>
                 <!-- Payment Status for Mobile -->
                 <div class="mt-1">
-                  <span :class="`status-${booking.payment_status}`">
+                  <span :class="`status-${booking.payment_status === 'currently_paid_up' ? 'paid' : booking.payment_status}`">
                     {{ booking.payment_status === 'currently_paid_up' ? t('serviceBookings.currentlyPaidUp') : t(`common.${booking.payment_status}`) }}
                   </span>
                   <span v-if="booking.payment_status === 'partial'" class="text-xs text-gray-500 dark:text-gray-400 ml-1">
@@ -395,7 +409,12 @@
               </div>
               <div>
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('services.vendor') }}:</span>
-                <span class="ml-2 text-gray-900 dark:text-white">{{ viewingBooking.expand?.vendor?.contact_person || 'Unknown Vendor' }}</span>
+                <div class="ml-2 inline-block">
+                  <span class="text-gray-900 dark:text-white">{{ viewingBooking.expand?.vendor?.contact_person || 'Unknown Vendor' }}</span>
+                  <div v-if="viewingBooking.expand?.vendor?.name" class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ viewingBooking.expand.vendor.name }}
+                  </div>
+                </div>
               </div>
               <div>
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.startDate') }}:</span>

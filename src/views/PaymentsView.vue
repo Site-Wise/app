@@ -60,7 +60,14 @@
           <tr v-for="payment in payments" :key="payment.id">
             <!-- Desktop Row -->
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ payment.expand?.vendor?.contact_person || t('common.unknown') + ' ' + t('common.vendor') }}</div>
+              <div>
+                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                  {{ payment.expand?.vendor?.contact_person || t('common.unknown') + ' ' + t('common.vendor') }}
+                </div>
+                <div v-if="payment.expand?.vendor?.name" class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ payment.expand.vendor.name }}
+                </div>
+              </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="space-y-1">
@@ -172,7 +179,14 @@
 
             <!-- Mobile Row -->
             <td class="px-4 py-4 lg:hidden">
-              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ payment.expand?.vendor?.contact_person || t('common.unknown') + ' ' + t('common.vendor') }}</div>
+              <div>
+                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                  {{ payment.expand?.vendor?.contact_person || t('common.unknown') + ' ' + t('common.vendor') }}
+                </div>
+                <div v-if="payment.expand?.vendor?.name" class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ payment.expand.vendor.name }}
+                </div>
+              </div>
               <div class="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">
                 {{ formatDate(payment.payment_date) }}
               </div>
@@ -351,7 +365,12 @@
           <div class="space-y-4">
             <div>
               <span class="font-medium text-gray-700 dark:text-gray-300">Vendor:</span>
-              <span class="ml-2 text-gray-900 dark:text-white">{{ viewingPayment.expand?.vendor?.contact_person || 'Unknown Vendor' }}</span>
+              <div class="ml-2 inline-block">
+                <span class="text-gray-900 dark:text-white">{{ viewingPayment.expand?.vendor?.contact_person || 'Unknown Vendor' }}</span>
+                <div v-if="viewingPayment.expand?.vendor?.name" class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ viewingPayment.expand.vendor.name }}
+                </div>
+              </div>
             </div>
             <div>
               <span class="font-medium text-gray-700 dark:text-gray-300">Account:</span>
@@ -521,7 +540,7 @@ const { registerShortcut } = useKeyboardShortcuts();
 const { openModal, closeModal: closeModalState } = useModalState();
 
 // Search functionality
-const { searchQuery, loading: searchLoading } = usePaymentSearch();
+const { searchQuery, loading: searchLoading, results: searchResults } = usePaymentSearch();
 
 interface VendorWithOutstanding extends Vendor {
   outstandingAmount: number;
@@ -548,7 +567,14 @@ const { data: paymentsData, reload: reloadPayments } = useSiteData(async () => {
 });
 
 // Computed properties from consolidated useSiteData
-const payments = computed<Payment[]>(() => paymentsData.value?.payments || []);
+const payments = computed<Payment[]>(() => {
+  // If there's a search query, use search results; otherwise use all payments from useSiteData
+  if (searchQuery.value.trim()) {
+    return searchResults.value || [];
+  } else {
+    return paymentsData.value?.payments || [];
+  }
+});
 const vendors = computed(() => paymentsData.value?.vendors || []);
 const accounts = computed(() => paymentsData.value?.accounts || []);
 const deliveries = computed(() => paymentsData.value?.deliveries || []);
