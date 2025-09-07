@@ -323,7 +323,9 @@
       "in_progress": "प्रगति में",
       "completed": "पूर्ण",
       "cancelled": "रद्द"
-    }
+    },
+    "result": "परिणाम",
+    "results": "परिणाम"
   },
   "vendors": {
     "title": "विक्रेता",
@@ -677,7 +679,9 @@
     "reconnectItems": "वस्तुओं को पुनः कनेक्ट करें",
     "reconnecting": "वस्तुओं को पुनः कनेक्ट किया जा रहा है...",
     "itemsReconnected": "वस्तुएं सफलतापूर्वक पुनः कनेक्ट हो गईं",
-    "reconnectError": "वस्तुओं को पुनः कनेक्ट करने में विफल"
+    "reconnectError": "वस्तुओं को पुनः कनेक्ट करने में विफल",
+    "result": "परिणाम",
+    "results": "परिणाम"
   },
   "payments": {
     "title": "भुगतान",
@@ -704,7 +708,9 @@
     "fullyAllocated": "पूर्णतः आवंटित",
     "partiallyAllocated": "आंशिक रूप से आवंटित",
     "currentAllocations": "वर्तमान आवंटन",
-    "allocationStatus": "आवंटन स्थिति"
+    "allocationStatus": "आवंटन स्थिति",
+    "result": "परिणाम",
+    "results": "परिणाम"
   },
   "site": {
     "selectSite": "साइट चुनें",

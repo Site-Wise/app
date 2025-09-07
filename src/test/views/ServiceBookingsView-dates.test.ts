@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { nextTick } from 'vue'
+import { nextTick, ref } from 'vue'
 import ServiceBookingsView from '../../views/ServiceBookingsView.vue'
 import { setupTestPinia } from '../utils/test-setup'
 
@@ -109,9 +109,9 @@ vi.mock('../../composables/useSubscription', () => ({
 
 vi.mock('../../composables/useSearch', () => ({
   useServiceBookingSearch: () => ({
-    searchQuery: { value: '' },
-    loading: { value: false },
-    results: { value: [] },
+    searchQuery: ref(''),
+    loading: ref(false),
+    results: ref([]),
     loadAll: vi.fn()
   })
 }))

@@ -37,16 +37,44 @@
         :placeholder="t('search.serviceBookings')"
         :search-loading="searchLoading"
       />
+      
+      <!-- Mobile Search Results Summary -->
+      <div v-if="searchQuery.trim() && !searchLoading" class="mt-3 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+        <div class="flex items-center gap-1">
+          <span class="font-medium text-gray-900 dark:text-white">{{ searchResultsCount }}</span>
+          <span>{{ searchResultsCount === 1 ? t('serviceBookings.result') : t('serviceBookings.results') }}</span>
+        </div>
+        <div class="h-4 border-l border-gray-300 dark:border-gray-600"></div>
+        <div class="flex items-center gap-1">
+          <span class="text-xs">{{ t('common.total') }}:</span>
+          <span class="font-semibold text-gray-900 dark:text-white">₹{{ searchResultsTotal.toFixed(2) }}</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Desktop Search -->
+    <!-- Desktop Search with Results Summary -->
     <div class="hidden md:block mb-6">
-      <div class="max-w-md">
-        <SearchBox
-          v-model="searchQuery"
-          :placeholder="t('search.serviceBookings')"
-          :search-loading="searchLoading"
-        />
+      <div class="flex items-center gap-6">
+        <div class="w-96">
+          <SearchBox
+            v-model="searchQuery"
+            :placeholder="t('search.serviceBookings')"
+            :search-loading="searchLoading"
+          />
+        </div>
+        
+        <!-- Search Results Summary -->
+        <div v-if="searchQuery.trim() && !searchLoading" class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+          <div class="flex items-center gap-1">
+            <span class="font-medium text-gray-900 dark:text-white">{{ searchResultsCount }}</span>
+            <span>{{ searchResultsCount === 1 ? t('serviceBookings.result') : t('serviceBookings.results') }}</span>
+          </div>
+          <div class="h-4 border-l border-gray-300 dark:border-gray-600"></div>
+          <div class="flex items-center gap-1">
+            <span class="text-xs">{{ t('common.total') }}:</span>
+            <span class="font-semibold text-gray-900 dark:text-white">₹{{ searchResultsTotal.toFixed(2) }}</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -605,6 +633,19 @@ const activeServices = computed(() => {
 
 const canCreateServiceBooking = computed(() => {
   return canCreate.value && checkCreateLimit('service_bookings') && !isReadOnly.value;
+});
+
+// Search results summary computed properties
+const searchResultsCount = computed(() => {
+  return searchQuery.value.trim() ? serviceBookings.value.length : 0;
+});
+
+const searchResultsTotal = computed(() => {
+  if (!searchQuery.value.trim() || serviceBookings.value.length === 0) return 0;
+  
+  return serviceBookings.value.reduce((total, booking) => {
+    return total + (booking.total_amount || 0);
+  }, 0);
 });
 
 const reloadAllData = async () => {

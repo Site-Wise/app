@@ -22,14 +22,52 @@
       </button>
     </div>
 
-    <!-- Search Box -->
+    <!-- Search Box with Results Summary -->
     <div class="mb-6">
-      <div class="max-w-md">
+      <!-- Desktop: side-by-side layout -->
+      <div class="hidden md:flex items-center gap-6">
+        <div class="w-96">
+          <SearchBox
+            v-model="searchQuery"
+            :placeholder="t('search.payments')"
+            :search-loading="searchLoading"
+          />
+        </div>
+        
+        <!-- Desktop Search Results Summary -->
+        <div v-if="searchQuery.trim() && !searchLoading" class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+          <div class="flex items-center gap-1">
+            <span class="font-medium text-gray-900 dark:text-white">{{ searchResultsCount }}</span>
+            <span>{{ searchResultsCount === 1 ? t('payments.result') : t('payments.results') }}</span>
+          </div>
+          <div class="h-4 border-l border-gray-300 dark:border-gray-600"></div>
+          <div class="flex items-center gap-1">
+            <span class="text-xs">{{ t('common.total') }}:</span>
+            <span class="font-semibold text-gray-900 dark:text-white">₹{{ searchResultsTotal.toFixed(2) }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Mobile: stacked layout -->
+      <div class="md:hidden">
         <SearchBox
           v-model="searchQuery"
           :placeholder="t('search.payments')"
           :search-loading="searchLoading"
         />
+        
+        <!-- Mobile Search Results Summary -->
+        <div v-if="searchQuery.trim() && !searchLoading" class="mt-3 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+          <div class="flex items-center gap-1">
+            <span class="font-medium text-gray-900 dark:text-white">{{ searchResultsCount }}</span>
+            <span>{{ searchResultsCount === 1 ? t('payments.result') : t('payments.results') }}</span>
+          </div>
+          <div class="h-4 border-l border-gray-300 dark:border-gray-600"></div>
+          <div class="flex items-center gap-1">
+            <span class="text-xs">{{ t('common.total') }}:</span>
+            <span class="font-semibold text-gray-900 dark:text-white">₹{{ searchResultsTotal.toFixed(2) }}</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -601,6 +639,19 @@ const canCreatePayment = computed(() => {
 
 const canEditPayment = computed(() => {
   return !isReadOnly.value && getCurrentUserRole() === 'owner';
+});
+
+// Search results summary computed properties
+const searchResultsCount = computed(() => {
+  return searchQuery.value.trim() ? payments.value.length : 0;
+});
+
+const searchResultsTotal = computed(() => {
+  if (!searchQuery.value.trim() || payments.value.length === 0) return 0;
+  
+  return payments.value.reduce((total, payment) => {
+    return total + (payment.amount || 0);
+  }, 0);
 });
 
 const getUnallocatedAmount = (payment: Payment, allocations: PaymentAllocation[]): number => {

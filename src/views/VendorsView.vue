@@ -24,7 +24,7 @@
 
     <!-- Search Box -->
     <div class="mb-6" data-tour="search-bar">
-      <div class="max-w-md">
+      <div class="w-96">
         <SearchBox
           v-model="searchQuery"
           :placeholder="t('search.vendors')"

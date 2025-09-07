@@ -323,7 +323,9 @@
       "in_progress": "In Progress",
       "completed": "Completed",
       "cancelled": "Cancelled"
-    }
+    },
+    "result": "result",
+    "results": "results"
   },
   "vendors": {
     "title": "Vendors",
@@ -675,7 +677,9 @@
     "reconnectItems": "Reconnect Items",
     "reconnecting": "Reconnecting items...",
     "itemsReconnected": "Items successfully reconnected",
-    "reconnectError": "Failed to reconnect items"
+    "reconnectError": "Failed to reconnect items",
+    "result": "result",
+    "results": "results"
   },
   "payments": {
     "title": "Payments",
@@ -702,7 +706,9 @@
     "fullyAllocated": "Fully Allocated",
     "partiallyAllocated": "Partially Allocated",
     "currentAllocations": "Current Allocations",
-    "allocationStatus": "Allocation Status"
+    "allocationStatus": "Allocation Status",
+    "result": "result",
+    "results": "results"
   },
   "site": {
     "selectSite": "Select a Site",
