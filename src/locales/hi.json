@@ -670,6 +670,11 @@
     "itemNotes": "वस्तु टिप्पणी",
     "itemNotesPlaceholder": "इस विशिष्ट वस्तु के लिए वैकल्पिक टिप्पणी...",
     "deliveryReferencePlaceholder": "चालान संख्या, डिलीवरी नोट, आदि।",
+    "roundOff": "राउंड ऑफ",
+    "roundOffAmount": "राउंड-ऑफ राशि",
+    "itemsTotal": "वस्तुओं का कुल",
+    "finalTotal": "अंतिम कुल",
+    "enterRoundOff": "राउंड-ऑफ राशि दर्ज करें (+ या -)",
     "steps": {
       "deliveryInfo": "डिलीवरी जानकारी",
       "items": "वस्तुएं",
@@ -684,7 +689,8 @@
     "itemsReconnected": "वस्तुएं सफलतापूर्वक पुनः कनेक्ट हो गईं",
     "reconnectError": "वस्तुओं को पुनः कनेक्ट करने में विफल",
     "result": "परिणाम",
-    "results": "परिणाम"
+    "results": "परिणाम",
+    "addTax": "कर जोड़ें"
   },
   "payments": {
     "title": "भुगतान",

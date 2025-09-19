@@ -668,6 +668,11 @@
     "itemNotes": "Item Notes",
     "itemNotesPlaceholder": "Optional notes for this specific item...",
     "deliveryReferencePlaceholder": "Invoice number, delivery note, etc.",
+    "roundOff": "Round Off",
+    "roundOffAmount": "Round-off Amount",
+    "itemsTotal": "Items Total",
+    "finalTotal": "Final Total",
+    "enterRoundOff": "Enter round-off amount (+ or -)",
     "steps": {
       "deliveryInfo": "Delivery Info",
       "items": "Items", 
@@ -682,7 +687,8 @@
     "itemsReconnected": "Items successfully reconnected",
     "reconnectError": "Failed to reconnect items",
     "result": "result",
-    "results": "results"
+    "results": "results",
+    "addTax": "Add Tax"
   },
   "payments": {
     "title": "Payments",

@@ -125,8 +125,8 @@
                   ({{ completedDeliveryItems.length }} {{ completedDeliveryItems.length === 1 ? t('common.item') :
                     t('common.items') }})
                 </span>
-                <span v-if="totalAmount > 0" class="ml-3 text-sm font-semibold text-green-600 dark:text-green-400">
-                  • {{ t('common.total') }}: ₹{{ totalAmount.toFixed(2) }}
+                <span v-if="itemsTotal > 0" class="ml-3 text-sm font-semibold text-green-600 dark:text-green-400">
+                  • {{ t('common.total') }}: ₹{{ itemsTotal.toFixed(2) }}
                 </span>
               </h4>
             </div>
@@ -197,9 +197,29 @@
                     item.unit_price }}/{{ getItemUnit(item.item) }})</span>
                   <span class="font-medium">₹{{ item.total_amount.toFixed(2) }}</span>
                 </div>
-                <div class="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
-                  <div class="flex justify-between font-medium text-base">
-                    <span class="text-gray-900 dark:text-white">{{ t('common.total') }}:</span>
+                <div class="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2 space-y-2">
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-700 dark:text-gray-300">{{ t('delivery.itemsTotal') }}:</span>
+                    <span class="text-gray-700 dark:text-gray-300">₹{{ itemsTotal.toFixed(2) }}</span>
+                  </div>
+
+                  <!-- Round-off Section -->
+                  <div class="flex items-center justify-between text-sm">
+                    <label class="text-gray-700 dark:text-gray-300">{{ t('delivery.roundOff') }}:</label>
+                    <div class="flex items-center space-x-2">
+                      <span class="text-gray-500 dark:text-gray-400">₹</span>
+                      <input
+                        v-model.number="deliveryForm.rounded_off_with"
+                        type="number"
+                        step="0.01"
+                        class="w-20 px-2 py-1 text-center text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        :placeholder="t('delivery.enterRoundOff')"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="flex justify-between font-medium text-base border-t border-gray-300 dark:border-gray-500 pt-2">
+                    <span class="text-gray-900 dark:text-white">{{ t('delivery.finalTotal') }}:</span>
                     <span class="text-gray-900 dark:text-white">₹{{ totalAmount.toFixed(2) }}</span>
                   </div>
                 </div>
@@ -358,7 +378,8 @@ const deliveryForm = reactive<Omit<Delivery, 'id' | 'site' | 'created' | 'update
   delivery_date: new Date().toISOString().split('T')[0],
   delivery_reference: '',
   photos: [],
-  notes: ''
+  notes: '',
+  rounded_off_with: 0
 });
 
 const deliveryItems = ref<DeliveryItemForm[]>([]);
@@ -367,10 +388,14 @@ const newItemForm = ref<DeliveryItemForm | null>(null);
 const newItemRowRef = ref();
 
 // Computed properties
-const totalAmount = computed(() => {
+const itemsTotal = computed(() => {
   return deliveryItems.value
     .filter(item => !item.isDeleted)
     .reduce((total, item) => total + item.total_amount, 0);
+});
+
+const totalAmount = computed(() => {
+  return itemsTotal.value + (deliveryForm.rounded_off_with || 0);
 });
 
 const usedItemIds = computed(() => {
@@ -697,7 +722,8 @@ const saveDelivery = async () => {
       delivery_date: deliveryForm.delivery_date,
       delivery_reference: deliveryForm.delivery_reference,
       notes: deliveryForm.notes,
-      total_amount: totalAmount.value
+      total_amount: totalAmount.value,
+      rounded_off_with: deliveryForm.rounded_off_with || 0
     } as Partial<Delivery>;
 
     // For edits, handle existing photo changes (removals)
@@ -788,6 +814,7 @@ const resetForm = async () => {
   // Reset delivery form but keep vendor and date for convenience
   deliveryForm.delivery_reference = '';
   deliveryForm.notes = '';
+  deliveryForm.rounded_off_with = 0;
 
   // Clear items and new item form
   deliveryItems.value = [];
@@ -825,7 +852,8 @@ const loadData = async () => {
         vendor: props.editingDelivery.vendor,
         delivery_date: new Date(props.editingDelivery.delivery_date).toISOString().split('T')[0],
         delivery_reference: props.editingDelivery.delivery_reference,
-        notes: props.editingDelivery.notes
+        notes: props.editingDelivery.notes,
+        rounded_off_with: props.editingDelivery.rounded_off_with || 0
       });
 
       // Load existing photos

@@ -262,7 +262,8 @@ export interface Delivery {
   delivery_reference?: string; // Invoice/delivery note number
   photos?: string[];
   notes?: string;
-  total_amount: number; // Sum of all items
+  total_amount: number; // Sum of all items + rounded_off_with
+  rounded_off_with?: number; // Round-off amount (can be positive or negative)
   payment_status?: 'pending' | 'partial' | 'paid'; // Deprecated - calculated from allocations
   paid_amount?: number; // Deprecated - calculated from allocations
   delivery_items?: string[]; // Array of delivery_item IDs
