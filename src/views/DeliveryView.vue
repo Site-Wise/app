@@ -366,17 +366,17 @@
               </div>
               <div>
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('delivery.paymentStatus') }}:</span>
-                <span :class="`ml-2 status-${viewingDelivery.payment_status}`">
-                  {{ t(`common.${viewingDelivery.payment_status}`) }}
+                <span :class="`ml-2 status-${viewingDeliveryPaymentStatus || 'pending'}`">
+                  {{ t(`common.${viewingDeliveryPaymentStatus || 'pending'}`) }}
                 </span>
                 <!-- Show outstanding amount for partial payments -->
-                <div v-if="viewingDelivery.payment_status === 'partial'" class="text-xs text-gray-500 dark:text-gray-400">
-                  ₹{{ (viewingDelivery.total_amount - (viewingDelivery.paid_amount || 0)).toFixed(2) }} pending
+                <div v-if="viewingDeliveryPaymentStatus === 'partial'" class="text-xs text-gray-500 dark:text-gray-400">
+                  ₹{{ (viewingDelivery.total_amount - viewingDeliveryAllocatedAmount).toFixed(2) }} pending
                 </div>
               </div>
               <div>
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('delivery.paidAmount') }}:</span>
-                <span class="ml-2 text-gray-900 dark:text-white">₹{{ (viewingDelivery.paid_amount || 0).toFixed(2) }}</span>
+                <span class="ml-2 text-gray-900 dark:text-white">₹{{ viewingDeliveryAllocatedAmount.toFixed(2) }}</span>
               </div>
               <div v-if="viewingDelivery.notes">
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('common.notes') }}:</span>
@@ -596,6 +596,20 @@ const { searchQuery, loading: searchLoading, results: searchResults, loadAll } =
 
 // Client-side payment status calculation
 const paymentAllocations = computed(() => paymentAllocationsData.value || []);
+
+// Calculate payment status for currently viewed delivery
+const viewingDeliveryPaymentStatus = computed(() => {
+  if (!viewingDelivery.value) return null;
+  return DeliveryPaymentCalculator.calculatePaymentStatus(viewingDelivery.value, paymentAllocations.value);
+});
+
+// Calculate allocated amount for currently viewed delivery
+const viewingDeliveryAllocatedAmount = computed(() => {
+  if (!viewingDelivery.value) return 0;
+  return paymentAllocations.value
+    .filter(allocation => allocation.delivery === viewingDelivery.value!.id)
+    .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
+});
 
 // Display items: use search results if searching, otherwise all items with calculated payment status
 const deliveries = computed((): DeliveryWithPaymentStatus[] => {
