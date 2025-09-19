@@ -3,6 +3,7 @@
     "loading": "Loading",
     "save": "Save",
     "cancel": "Cancel",
+    "continue": "Continue",
     "deleteAction": "Delete",
     "edit": "Edit",
     "view": "View",
@@ -1157,7 +1158,17 @@
     "invalidFileType": "{name} has an invalid file type",
     "removeFile": "Remove file",
     "dropZone": "File upload area",
-    "previewOf": "Preview of {filename}"
+    "previewOf": "Preview of {filename}",
+    "cameraPermission": "Camera access required to take photos",
+    "useCamera": "Use camera to capture images directly",
+    "browseFiles": "Browse your device files",
+    "pdfConversion": "PDF Conversion",
+    "pdfConversionMessage": "This PDF will be converted to images for upload. Continue?",
+    "convertingPdf": "Converting PDF... Page {current} of {total}",
+    "pdfConversionError": "Failed to convert PDF. Please try again.",
+    "pdfNotAccepted": "PDF files are not accepted for this upload.",
+    "pdfPageCount": "{count} page | {count} pages",
+    "estimatedSize": "Estimated size: {size}"
   },
   "badges": {
     "new": "New",

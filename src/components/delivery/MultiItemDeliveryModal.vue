@@ -80,14 +80,14 @@
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('common.notes')
-                }}</label>
+              }}</label>
               <textarea v-model="deliveryForm.notes" class="input" rows="3"
                 :placeholder="t('forms.deliveryNotes')"></textarea>
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('delivery.photos')
-                }}</label>
+              }}</label>
 
               <!-- Existing Photos Display -->
               <div v-if="existingPhotos.length > 0" class="mb-4">
@@ -110,7 +110,7 @@
               </div>
 
               <!-- Add New Photos -->
-              <FileUploadComponent v-model="selectedFilesForUpload" accept-types="image/*" :multiple="true"
+              <FileUploadComponent v-model="selectedFilesForUpload" accept-types="image/*,application/pdf" :multiple="true"
                 :allow-camera="true" @files-selected="handleFilesSelected" />
             </div>
           </div>
@@ -208,17 +208,14 @@
                     <label class="text-gray-700 dark:text-gray-300">{{ t('delivery.roundOff') }}:</label>
                     <div class="flex items-center space-x-2">
                       <span class="text-gray-500 dark:text-gray-400">₹</span>
-                      <input
-                        v-model.number="deliveryForm.rounded_off_with"
-                        type="number"
-                        step="0.01"
+                      <input v-model.number="deliveryForm.rounded_off_with" type="number" step="0.01"
                         class="w-20 px-2 py-1 text-center text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        :placeholder="t('delivery.enterRoundOff')"
-                      />
+                        :placeholder="t('delivery.enterRoundOff')" />
                     </div>
                   </div>
 
-                  <div class="flex justify-between font-medium text-base border-t border-gray-300 dark:border-gray-500 pt-2">
+                  <div
+                    class="flex justify-between font-medium text-base border-t border-gray-300 dark:border-gray-500 pt-2">
                     <span class="text-gray-900 dark:text-white">{{ t('delivery.finalTotal') }}:</span>
                     <span class="text-gray-900 dark:text-white">₹{{ totalAmount.toFixed(2) }}</span>
                   </div>

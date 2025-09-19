@@ -3,6 +3,7 @@
     "loading": "लोड हो रहा है",
     "save": "सेव करें",
     "cancel": "रद्द करें",
+    "continue": "जारी रखें",
     "deleteAction": "हटाएं",
     "edit": "संपादित करें",
     "view": "देखें",
@@ -1159,7 +1160,17 @@
     "invalidFileType": "{name} का फाइल प्रकार अमान्य है",
     "removeFile": "फाइल हटाएं",
     "dropZone": "फाइल अपलोड क्षेत्र",
-    "previewOf": "{filename} का पूर्वावलोकन"
+    "previewOf": "{filename} का पूर्वावलोकन",
+    "cameraPermission": "फोटो लेने के लिए कैमरा एक्सेस आवश्यक है",
+    "useCamera": "सीधे छवियां कैप्चर करने के लिए कैमरा का उपयोग करें",
+    "browseFiles": "अपने डिवाइस की फ़ाइलें ब्राउज़ करें",
+    "pdfConversion": "पीडीएफ रूपांतरण",
+    "pdfConversionMessage": "यह PDF छवियों में परिवर्तित किया जाएगा। जारी रखें?",
+    "convertingPdf": "PDF परिवर्तित हो रहा है... पृष्ठ {current} का {total}",
+    "pdfConversionError": "PDF परिवर्तित करने में विफल। कृपया पुनः प्रयास करें।",
+    "pdfNotAccepted": "इस अपलोड के लिए PDF फ़ाइलें स्वीकार नहीं की जाती हैं।",
+    "pdfPageCount": "{count} पृष्ठ | {count} पृष्ठ",
+    "estimatedSize": "अनुमानित आकार: {size}"
   },
   "badges": {
     "new": "नया",
