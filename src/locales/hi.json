@@ -231,7 +231,8 @@
     "noDeliveryData": "प्रदर्शित करने के लिए कोई डिलीवरी डेटा नहीं",
     "noDeliveriesRecorded": "कोई डिलीवरी रिकॉर्ड नहीं",
     "startTracking": "डिलीवरी रिकॉर्ड करके ट्रैकिंग शुरू करें।",
-    "noItemsFound": "कोई वस्तु नहीं मिली"
+    "noItemsFound": "कोई वस्तु नहीं मिली",
+    "createNewItem": "नई वस्तु बनाएं"
   },
   "services": {
     "title": "सेवाएं",
@@ -557,6 +558,8 @@
     "addItem": "वस्तु जोड़ें",
     "removeItem": "वस्तु हटाएं",
     "noItemsAdded": "अभी तक कोई वस्तु नहीं जोड़ी गई। शुरुआत करने के लिए 'वस्तु जोड़ें' पर क्लिक करें।",
+    "newItem": "नई वस्तु",
+    "addedItems": "जोड़ी गई वस्तुएं",
     "deliveryTotals": "डिलीवरी कुल",
     "reviewDelivery": "डिलीवरी समीक्षा",
     "itemsSummary": "वस्तुओं का सारांश",

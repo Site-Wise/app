@@ -8,6 +8,7 @@
     <div class="relative">
       <div class="relative">
         <input
+          ref="searchInputRef"
           v-model="searchQuery"
           type="text"
           class="input pr-10"
@@ -15,6 +16,8 @@
           @input="handleSearch"
           @keydown.enter.prevent="handleEnterKey"
           @keydown.escape="hideDropdown"
+          @keydown.up.prevent="handleArrowUp"
+          @keydown.down.prevent="handleArrowDown"
           @focus="showDropdown = true"
           @click="showDropdown = true"
           :readonly="readonly"
@@ -40,9 +43,14 @@
       >
         <!-- Available Items -->
         <div
-          v-for="item in filteredItems"
+          v-for="(item, index) in filteredItems"
           :key="item.id"
-          class="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer touch-manipulation"
+          :class="[
+            'flex items-center px-3 py-2 cursor-pointer touch-manipulation',
+            index === highlightedIndex
+              ? 'bg-primary-50 dark:bg-primary-900/20'
+              : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+          ]"
           @click="selectItem(item)"
         >
           <Package class="h-4 w-4 text-gray-500 dark:text-gray-400 mr-3 flex-shrink-0" />
@@ -53,12 +61,21 @@
           <span class="text-xs text-gray-500 dark:text-gray-400 ml-2">({{ item.unit }})</span>
         </div>
 
-        <!-- No Results -->
-        <div
-          v-if="filteredItems.length === 0 && searchQuery.trim()"
-          class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
-        >
-          {{ t('items.noItemsFound') }}
+        <!-- No Results / Create New Item -->
+        <div v-if="filteredItems.length === 0 && searchQuery.trim()">
+          <div class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-600">
+            {{ t('items.noItemsFound') }}
+          </div>
+          <div
+            class="flex items-center px-3 py-2 hover:bg-primary-50 dark:hover:bg-primary-900/20 cursor-pointer touch-manipulation text-primary-600 dark:text-primary-400"
+            @click="handleCreateNewItem"
+          >
+            <Plus class="h-4 w-4 mr-3 flex-shrink-0" />
+            <div class="flex-1">
+              <div class="text-sm font-medium">{{ t('items.createNewItem') }}</div>
+              <div class="text-xs opacity-80">"{{ searchQuery.trim() }}"</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -66,8 +83,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { Search, Package, X } from 'lucide-vue-next'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { Search, Package, X, Plus } from 'lucide-vue-next'
 import { useI18n } from '../composables/useI18n'
 import { type Item } from '../services/pocketbase'
 
@@ -83,6 +100,7 @@ interface Props {
 interface Emits {
   (e: 'update:modelValue', value: string): void
   (e: 'itemSelected', item: Item | null): void
+  (e: 'createNewItem', searchQuery: string): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -96,6 +114,8 @@ const { t } = useI18n()
 
 const searchQuery = ref('')
 const showDropdown = ref(false)
+const searchInputRef = ref<HTMLInputElement>()
+const highlightedIndex = ref(-1)
 
 const selectedItem = computed(() => {
   return props.items.find(item => item.id === props.modelValue) || null
@@ -130,6 +150,7 @@ const selectItem = (item: Item) => {
   emit('itemSelected', item)
   searchQuery.value = item.name
   showDropdown.value = false
+  highlightedIndex.value = -1
 }
 
 const clearSelection = () => {
@@ -139,8 +160,31 @@ const clearSelection = () => {
   showDropdown.value = false
 }
 
+// Keyboard navigation
+const handleArrowDown = () => {
+  if (!showDropdown.value || filteredItems.value.length === 0) return
+
+  highlightedIndex.value = highlightedIndex.value < filteredItems.value.length - 1
+    ? highlightedIndex.value + 1
+    : 0
+}
+
+const handleArrowUp = () => {
+  if (!showDropdown.value || filteredItems.value.length === 0) return
+
+  highlightedIndex.value = highlightedIndex.value > 0
+    ? highlightedIndex.value - 1
+    : filteredItems.value.length - 1
+}
 
 const handleEnterKey = () => {
+  // If an item is highlighted, select it
+  if (highlightedIndex.value >= 0 && filteredItems.value[highlightedIndex.value]) {
+    selectItem(filteredItems.value[highlightedIndex.value])
+    return
+  }
+
+  // Fallback: if only one item matches, select it
   if (filteredItems.value.length === 1) {
     selectItem(filteredItems.value[0])
   }
@@ -148,6 +192,12 @@ const handleEnterKey = () => {
 
 const hideDropdown = () => {
   showDropdown.value = false
+  highlightedIndex.value = -1
+}
+
+const handleCreateNewItem = () => {
+  emit('createNewItem', searchQuery.value.trim())
+  hideDropdown()
 }
 
 const handleClickOutside = (event: Event) => {
@@ -169,6 +219,28 @@ watch(() => props.modelValue, (newValue) => {
   }
 }, { immediate: true })
 
+// Reset highlighted index when search query changes
+watch(searchQuery, () => {
+  highlightedIndex.value = -1
+})
+
+// Reset highlighted index when dropdown is opened
+watch(showDropdown, (isOpen) => {
+  if (isOpen) {
+    highlightedIndex.value = -1
+  }
+})
+
+// Auto-focus method for parent components to call
+const focus = async () => {
+  await nextTick()
+  searchInputRef.value?.focus()
+}
+
+// Expose the focus method
+defineExpose({
+  focus
+})
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)

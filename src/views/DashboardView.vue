@@ -10,7 +10,8 @@
         </div>
         <div v-if="currentSite" class="text-right">
           <div class="text-sm text-gray-500 dark:text-gray-400">
-            {{ currentSite.total_units }} {{ t('dashboard.units') }} • {{ currentSite.total_planned_area.toLocaleString() }} {{ t('dashboard.sqft') }}
+            {{ currentSite.total_units }} {{ t('dashboard.units') }} • {{
+              currentSite.total_planned_area.toLocaleString() }} {{ t('dashboard.sqft') }}
           </div>
         </div>
       </div>
@@ -30,7 +31,9 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.totalExpenses') }}</p>
-            <p class="text-2xl font-semibold text-gray-900 dark:text-white">₹{{ stats.totalExpenses.toLocaleString() }}</p>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-white">₹{{
+              stats.totalExpenses.toLocaleString(undefined, { maximumFractionDigits: 0 }) }}
+            </p>
           </div>
         </div>
       </div>
@@ -41,8 +44,10 @@
             <Calendar class="h-8 w-8 text-secondary-600 dark:text-secondary-400" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.currentMonthExpenses') }}</p>
-            <p class="text-2xl font-semibold text-gray-900 dark:text-white">₹{{ stats.currentMonthExpenses.toLocaleString() }}</p>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.currentMonthExpenses') }}
+            </p>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-white">₹{{
+              stats.currentMonthExpenses.toLocaleString(undefined, { maximumFractionDigits: 0 }) }}</p>
           </div>
         </div>
       </div>
@@ -66,7 +71,9 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.outstandingAmount') }}</p>
-            <p class="text-2xl font-semibold text-gray-900 dark:text-white">₹{{ stats.outstandingAmount.toLocaleString() }}</p>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-white">₹{{
+              stats.outstandingAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })
+              }}</p>
           </div>
         </div>
       </div>
@@ -84,7 +91,8 @@
       </div>
       <div class="w-full">
         <!-- Chart Container -->
-        <div class="relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+        <div
+          class="relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
           <!-- Chart.js Line Chart -->
           <div class="h-64">
             <Line :data="chartData" :options="chartOptions" />
@@ -124,8 +132,8 @@ ChartJS.register(
 import { useSite } from '../composables/useSite';
 import { useSiteData } from '../composables/useSiteData';
 import { useI18n } from '../composables/useI18n';
-import { 
-  paymentService, 
+import {
+  paymentService,
   deliveryService,
   serviceBookingService,
   ServiceBookingService
@@ -142,7 +150,7 @@ const { data: dashboardData, loading } = useSiteData(async () => {
     deliveryService.getAll(),
     serviceBookingService.getAll(),
   ]);
-  
+
   return { payments, deliveries, serviceBookings };
 });
 
@@ -155,13 +163,13 @@ const stats = computed(() => {
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
-  
+
   const totalExpenses = deliveries.value.reduce((sum, delivery) => {
     return sum + delivery.total_amount;
   }, 0) + serviceBookings.value.reduce((sum, booking) => {
     return sum + booking.total_amount;
   }, 0);
-  
+
   const currentMonthExpenses = deliveries.value
     .filter(delivery => {
       const deliveryDate = new Date(delivery.delivery_date);
@@ -174,21 +182,21 @@ const stats = computed(() => {
         return bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
       })
       .reduce((sum, booking) => sum + booking.total_amount, 0);
-  
+
   const totalSqft = currentSite.value?.total_planned_area || 1;
   const expensePerSqft = Math.round(totalExpenses / totalSqft);
-  
+
   // Calculate total amount due from deliveries
   const deliveriesTotal = deliveries.value.reduce((sum, delivery) => sum + delivery.total_amount, 0);
-  
+
   // Calculate total amount due from service bookings based on progress percentage
   const serviceBookingsTotal = serviceBookings.value.reduce((sum, booking) => {
     return sum + ServiceBookingService.calculateProgressBasedAmount(booking);
   }, 0);
-  
+
   // Calculate total payments made
   const totalPaid = payments.value.reduce((sum, payment) => sum + payment.amount, 0);
-  
+
   // Outstanding = Total Due - Total Paid
   const totalDue = deliveriesTotal + serviceBookingsTotal;
   const outstandingAmount = totalDue - totalPaid > 0 ? totalDue - totalPaid : 0;
@@ -204,7 +212,7 @@ const stats = computed(() => {
 const paymentChartData = computed(() => {
   const days = [];
   const today = new Date();
-  
+
   // Get last 7 days of payment data
   for (let i = 6; i >= 0; i--) {
     const date = new Date();
@@ -213,21 +221,21 @@ const paymentChartData = computed(() => {
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(date);
     dayEnd.setHours(23, 59, 59, 999);
-    
+
     const dayPayments = payments.value.filter(payment => {
       if (!payment.created) return false;
       const paymentDate = new Date(payment.created);
       return paymentDate >= dayStart && paymentDate <= dayEnd;
     });
-    
+
     const amount = dayPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
-    
+
     days.push({
       label: date.toLocaleDateString('en-US', { weekday: 'short' }),
       amount
     });
   }
-  
+
   return days;
 });
 
@@ -269,7 +277,7 @@ const chartOptions = computed(() => {
         borderWidth: 1,
         cornerRadius: 8,
         callbacks: {
-          label: function(context: any) {
+          label: function (context: any) {
             return `₹${context.parsed.y.toLocaleString()}`;
           }
         }
@@ -299,7 +307,7 @@ const chartOptions = computed(() => {
           font: {
             size: 12
           },
-          callback: function(value: any) {
+          callback: function (value: any) {
             return '₹' + formatAmount(value);
           }
         }

@@ -7,36 +7,26 @@
           {{ t('items.subtitle') }}
         </p>
       </div>
-      <button 
-        @click="handleAddItem" 
-        :disabled="!canCreateItem"
-        :class="[
-          canCreateItem ? 'btn-primary' : 'btn-disabled',
-          'hidden md:flex items-center'
-        ]"
+      <button @click="handleAddItem" :disabled="!canCreateItem" :class="[
+        canCreateItem ? 'btn-primary' : 'btn-disabled',
+        'hidden md:flex items-center'
+      ]"
         :title="!canCreateItem ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
-        data-keyboard-shortcut="n"
-        data-tour="add-item-btn"
-      >
+        data-keyboard-shortcut="n" data-tour="add-item-btn">
         <Plus class="mr-2 h-4 w-4" />
         {{ t('items.addItem') }}
       </button>
     </div>
 
     <!-- Search Box -->
-    <div class="mb-6" data-tour="search-bar">
-      <div class="w-96">
-        <SearchBox
-          v-model="searchQuery"
-          :placeholder="t('search.items')"
-          :search-loading="searchLoading"
-        />
-      </div>
+    <div class="w-full md:w-96 mb-6" data-tour="search-bar">
+      <SearchBox v-model="searchQuery" :placeholder="t('search.items')" :search-loading="searchLoading" />
     </div>
 
     <!-- Items Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-tour="items-table">
-      <div v-for="item in items" :key="item.id" class="card hover:shadow-md transition-shadow duration-200 cursor-pointer" @click="viewItemDetail(item.id!)">
+      <div v-for="item in items" :key="item.id"
+        class="card hover:shadow-md transition-shadow duration-200 cursor-pointer" @click="viewItemDetail(item.id!)">
         <div class="flex items-start justify-between">
           <div class="flex-1">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ item.name }}</h3>
@@ -51,84 +41,65 @@
             <!-- Tags -->
             <div v-if="itemTags.get(item.id!)?.length" class="mt-3">
               <div class="flex flex-wrap gap-1">
-                <span
-                  v-for="tag in itemTags.get(item.id!)"
-                  :key="tag.id"
+                <span v-for="tag in itemTags.get(item.id!)" :key="tag.id"
                   class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium text-white"
-                  :style="{ backgroundColor: tag.color }"
-                >
+                  :style="{ backgroundColor: tag.color }">
                   {{ tag.name }}
                 </span>
               </div>
             </div>
-            
+
             <!-- Delivery Summary -->
             <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div class="flex justify-between items-center mb-2">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.totalDelivered') }}</span>
-                <span class="text-sm font-semibold text-blue-600 dark:text-blue-400">{{ getItemDeliveredQuantity(item.id!) }} {{ getUnitDisplay(item.unit) }}</span>
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.totalDelivered')
+                }}</span>
+                <span class="text-sm font-semibold text-blue-600 dark:text-blue-400">{{
+                  getItemDeliveredQuantity(item.id!) }} {{ getUnitDisplay(item.unit) }}</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.avgPrice') }}</span>
-                <span class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{ getItemAveragePrice(item.id!).toFixed(2) }}</span>
+                <span class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{
+                  getItemAveragePrice(item.id!).toFixed(2) }}</span>
               </div>
             </div>
           </div>
-          
+
           <!-- Desktop Action Buttons -->
           <div class="hidden lg:flex items-center space-x-2" @click.stop>
-            <button
-              @click="editItem(item)"
-              :disabled="!canEditDelete"
-              :class="[
-                canEditDelete 
-                  ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200' 
-                  : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
-                'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
-              ]"
-              :title="t('items.editItem')"
-            >
+            <button @click="editItem(item)" :disabled="!canEditDelete" :class="[
+              canEditDelete
+                ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+              'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+            ]" :title="t('items.editItem')">
               <Edit2 class="h-4 w-4" />
             </button>
-            <button
-              @click="cloneItem(item)"
-              :disabled="!canCreateItem"
-              :class="[
-                canCreateItem 
-                  ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200' 
-                  : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
-                'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
-              ]"
-              :title="t('items.cloneItem')"
-              data-tour="clone-item-btn"
-            >
+            <button @click="cloneItem(item)" :disabled="!canCreateItem" :class="[
+              canCreateItem
+                ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+              'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+            ]" :title="t('items.cloneItem')" data-tour="clone-item-btn">
               <Copy class="h-4 w-4" />
             </button>
-            <button
-              @click="deleteItem(item.id!)"
-              :disabled="!canEditDelete"
-              :class="[
-                canEditDelete 
-                  ? 'text-red-400 hover:text-red-600 dark:hover:text-red-300' 
-                  : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
-                'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
-              ]"
-              :title="t('items.deleteItem')"
-            >
+            <button @click="deleteItem(item.id!)" :disabled="!canEditDelete" :class="[
+              canEditDelete
+                ? 'text-red-400 hover:text-red-600 dark:hover:text-red-300'
+                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+              'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+            ]" :title="t('items.deleteItem')">
               <Trash2 class="h-4 w-4" />
             </button>
           </div>
 
           <!-- Mobile Dropdown Menu -->
           <div class="lg:hidden" data-tour="mobile-actions-menu">
-            <CardDropdownMenu
-              :actions="getItemActions(item)"
-              @action="handleItemAction(item, $event)"
-            />
+            <CardDropdownMenu :actions="getItemActions(item)" @action="handleItemAction(item, $event)" />
           </div>
         </div>
       </div>
-      
+
       <div v-if="items.length === 0" class="col-span-full">
         <div class="text-center py-12">
           <Package class="mx-auto h-12 w-12 text-gray-400" />
@@ -139,24 +110,31 @@
     </div>
 
     <!-- Add/Edit Modal -->
-    <div v-if="showAddModal || editingItem" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4" @click.stop>
+    <div v-if="showAddModal || editingItem"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal"
+      @keydown.esc="closeModal" tabindex="-1">
+      <div
+        class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4"
+        @click.stop>
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
             {{ editingItem ? t('items.editItem') : t('items.addItem') }}
           </h3>
-          
+
           <form @submit.prevent="saveItem" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.name') }}</label>
-              <input ref="nameInputRef" v-model="form.name" type="text" required class="input mt-1" :placeholder="t('forms.enterItemName')" autofocus />
+              <input ref="nameInputRef" v-model="form.name" type="text" required class="input mt-1"
+                :placeholder="t('forms.enterItemName')" autofocus />
             </div>
-            
+
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.description') }}</label>
-              <textarea v-model="form.description" class="input mt-1" rows="3" :placeholder="t('forms.enterDescription')"></textarea>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.description')
+              }}</label>
+              <textarea v-model="form.description" class="input mt-1" rows="3"
+                :placeholder="t('forms.enterDescription')"></textarea>
             </div>
-            
+
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.unit') }}</label>
               <select v-model="form.unit" required class="input mt-1">
@@ -179,13 +157,9 @@
             </div>
 
             <!-- Tags -->
-            <TagSelector
-              v-model="form.tags"
-              :label="t('tags.itemTags')"
-              tag-type="item_category"
-              :placeholder="t('tags.searchItemTags')"
-            />
-            
+            <TagSelector v-model="form.tags" :label="t('tags.itemTags')" tag-type="item_category"
+              :placeholder="t('tags.searchItemTags')" />
+
             <div class="flex space-x-3 pt-4">
               <button type="submit" :disabled="formLoading" class="flex-1 btn-primary">
                 <Loader2 v-if="formLoading" class="mr-2 h-4 w-4 animate-spin" />
@@ -216,8 +190,8 @@ import TagSelector from '../components/TagSelector.vue';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import { useItemSearch } from '../composables/useSearch';
-import { 
-  itemService, 
+import {
+  itemService,
   deliveryService,
   tagService,
   type Item,
@@ -244,7 +218,7 @@ const { data: itemsData, reload: reloadItems } = useSiteData(async () => {
     deliveryService.getAll(),
     tagService.getAll()
   ]);
-  
+
   // Map tags for each item
   const tagMap = new Map<string, TagType[]>();
   for (const item of items) {
@@ -253,7 +227,7 @@ const { data: itemsData, reload: reloadItems } = useSiteData(async () => {
       tagMap.set(item.id!, itemTagObjects);
     }
   }
-  
+
   return { items, deliveries, itemTags: tagMap };
 });
 
@@ -299,7 +273,7 @@ const getItemDeliveredQuantity = (itemId: string) => {
 const getItemAveragePrice = (itemId: string) => {
   let totalValue = 0;
   let totalQuantity = 0;
-  
+
   deliveries.value.forEach(delivery => {
     if (delivery.expand?.delivery_items) {
       delivery.expand.delivery_items.forEach(deliveryItem => {
@@ -310,7 +284,7 @@ const getItemAveragePrice = (itemId: string) => {
       });
     }
   });
-  
+
   return totalQuantity > 0 ? totalValue / totalQuantity : 0;
 };
 
@@ -318,12 +292,12 @@ const getUnitDisplay = (unitKey: string) => {
   // If translation exists, show "Translation (key)", otherwise just show the key
   const translationKey = `units.${unitKey}`;
   const translation = t(translationKey);
-  
+
   // If translation is the same as the key, it means translation doesn't exist
   if (translation === translationKey) {
     return unitKey;
   }
-  
+
   // return `${translation} (${unitKey})`;
   return `(${translation})`;
 };
@@ -428,7 +402,7 @@ const cloneItem = async (item: Item) => {
 
   // Reset editingItem to null so it creates a new item
   editingItem.value = null;
-  
+
   // Pre-fill form with cloned item data, appending "(Copy)" to the name
   Object.assign(form, {
     name: `${item.name} (${t('common.copy')})`,
@@ -436,7 +410,7 @@ const cloneItem = async (item: Item) => {
     unit: item.unit,
     tags: item.tags || []
   });
-  
+
   // Show the modal
   showAddModal.value = true;
   openModal('items-clone-modal');

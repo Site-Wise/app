@@ -1,6 +1,9 @@
 <template>
-  <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="$emit('close')" @keydown.esc="$emit('close')" tabindex="-1">
-    <div class="relative top-4 mx-auto p-5 border w-full max-w-5xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700" @click.stop>
+  <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="$emit('close')"
+    @keydown.esc="$emit('close')" tabindex="-1">
+    <div
+      class="relative top-4 mx-auto p-5 border w-full max-w-5xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+      @click.stop>
       <div class="mt-3">
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
@@ -21,26 +24,22 @@
         <div class="mb-8">
           <div class="flex items-center justify-center space-x-4">
             <div v-for="(step, index) in steps" :key="index" class="flex items-center">
-              <div 
-                :class="[
-                  'flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium',
-                  currentStep > index 
-                    ? 'bg-green-500 text-white' 
-                    : currentStep === index 
-                      ? 'bg-primary-500 text-white' 
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
-                ]"
-              >
+              <div :class="[
+                'flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium',
+                currentStep > index
+                  ? 'bg-green-500 text-white'
+                  : currentStep === index
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
+              ]">
                 {{ index + 1 }}
               </div>
-              <span 
-                :class="[
-                  'ml-2 text-sm font-medium',
-                  currentStep >= index 
-                    ? 'text-gray-900 dark:text-white' 
-                    : 'text-gray-500 dark:text-gray-400'
-                ]"
-              >
+              <span :class="[
+                'ml-2 text-sm font-medium',
+                currentStep >= index
+                  ? 'text-gray-900 dark:text-white'
+                  : 'text-gray-500 dark:text-gray-400'
+              ]">
                 {{ step }}
               </span>
               <div v-if="index < steps.length - 1" class="ml-4 h-px w-8 bg-gray-200 dark:bg-gray-600"></div>
@@ -53,155 +52,120 @@
           <!-- Step 1: Delivery Info -->
           <div v-if="currentStep === 0" class="space-y-6">
             <h4 class="font-medium text-gray-900 dark:text-white mb-4">{{ t('delivery.deliveryInfo') }}</h4>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('common.vendor') }} *</label>
-                <select ref="vendorInputRef" v-model="deliveryForm.vendor" required class="input" >
-                  <option value="">{{ t('forms.selectVendor') }}</option>
-                  <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
-                    {{ vendor.contact_person }} | {{ vendor.name }}
-                  </option>
-                </select>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('common.vendor') }}
+                  *</label>
+                <VendorSearchBox ref="vendorInputRef" v-model="deliveryForm.vendor" :vendors="vendors"
+                  :deliveries="deliveries" :service-bookings="serviceBookings" :payments="payments"
+                  :placeholder="t('forms.selectVendor')" :autofocus="true" :required="true"
+                  @vendor-selected="handleVendorSelected" />
               </div>
-              
+
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('delivery.deliveryDate') }} *</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{
+                  t('delivery.deliveryDate') }} *</label>
                 <input v-model="deliveryForm.delivery_date" type="date" required class="input" />
               </div>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('delivery.deliveryReference') }}</label>
-              <input 
-                v-model="deliveryForm.delivery_reference" 
-                type="text" 
-                class="input" 
-                :placeholder="t('delivery.deliveryReferencePlaceholder')"
-              />
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{
+                t('delivery.deliveryReference') }}</label>
+              <input v-model="deliveryForm.delivery_reference" type="text" class="input"
+                :placeholder="t('delivery.deliveryReferencePlaceholder')" />
             </div>
 
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('common.notes') }}</label>
-              <textarea 
-                v-model="deliveryForm.notes" 
-                class="input" 
-                rows="3" 
-                :placeholder="t('forms.deliveryNotes')"
-              ></textarea>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('common.notes')
+                }}</label>
+              <textarea v-model="deliveryForm.notes" class="input" rows="3"
+                :placeholder="t('forms.deliveryNotes')"></textarea>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('delivery.photos') }}</label>
-              
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('delivery.photos')
+                }}</label>
+
               <!-- Existing Photos Display -->
               <div v-if="existingPhotos.length > 0" class="mb-4">
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">{{ t('delivery.existingPhotos') }}</p>
-                <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
-                  <div 
-                    v-for="(photo, index) in existingPhotos" 
-                    :key="photo"
-                    class="relative group flex-shrink-0"
-                  >
-                    <img
-                      :src="getPhotoUrl(props.editingDelivery!.id!, photo)"
-                      :alt="`Existing photo ${index + 1}`"
+                <div
+                  class="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
+                  <div v-for="(photo, index) in existingPhotos" :key="photo" class="relative group flex-shrink-0">
+                    <img :src="getPhotoUrl(props.editingDelivery!.id!, photo)" :alt="`Existing photo ${index + 1}`"
                       class="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-75 transition-opacity hover:scale-105"
-                      @click="openPhotoGallery(index)"
-                    />
+                      @click="openPhotoGallery(index)" />
                     <div class="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        type="button"
-                        @click.stop="removeExistingPhoto(index)"
+                      <button type="button" @click.stop="removeExistingPhoto(index)"
                         class="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
-                        :title="t('common.deleteAction')"
-                      >
+                        :title="t('common.deleteAction')">
                         <X class="h-3 w-3" />
                       </button>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               <!-- Add New Photos -->
-              <FileUploadComponent
-                v-model="selectedFilesForUpload"
-                accept-types="image/*"
-                :multiple="true"
-                :allow-camera="true"
-                @files-selected="handleFilesSelected"
-              />
+              <FileUploadComponent v-model="selectedFilesForUpload" accept-types="image/*" :multiple="true"
+                :allow-camera="true" @files-selected="handleFilesSelected" />
             </div>
           </div>
 
           <!-- Step 2: Items -->
           <div v-if="currentStep === 1" class="space-y-6">
-            <div>
-              <h4 class="font-medium text-gray-900 dark:text-white">{{ t('delivery.addItems') }}</h4>
+            <div class="flex items-center justify-between">
+              <h4 class="font-medium text-gray-900 dark:text-white">
+                {{ t('delivery.addItems') }}
+                <span v-if="completedDeliveryItems.length > 0"
+                  class="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+                  ({{ completedDeliveryItems.length }} {{ completedDeliveryItems.length === 1 ? t('common.item') :
+                    t('common.items') }})
+                </span>
+                <span v-if="totalAmount > 0" class="ml-3 text-sm font-semibold text-green-600 dark:text-green-400">
+                  • {{ t('common.total') }}: ₹{{ totalAmount.toFixed(2) }}
+                </span>
+              </h4>
             </div>
 
-            <div v-if="activeDeliveryItems.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
-              <p class="mb-4">{{ t('delivery.noItemsAdded') }}</p>
-              <button 
-                @click="addNewItem" 
-                class="btn-primary"
-                :disabled="!canAddMoreItems"
-                :class="{ 'opacity-50 cursor-not-allowed': !canAddMoreItems }"
-              >
-                <Plus class="mr-2 h-4 w-4" />
-                {{ t('delivery.addItem') }}
-              </button>
-            </div>
-
-            <div v-else class="space-y-4">
-              <DeliveryItemRow
-                v-for="item in activeDeliveryItems"
-                :key="item.tempId"
-                :item="item"
-                :index="deliveryItems.indexOf(item)"
-                :items="items"
-                :used-items="usedItemIds"
-                @update="updateDeliveryItem"
-                @remove="removeDeliveryItem"
-              />
-
-              <!-- Add Item Button at Bottom -->
-              <div class="flex justify-center pt-2">
-                <button 
-                  @click="addNewItem" 
-                  class="btn-primary"
-                  :disabled="!canAddMoreItems"
-                  :class="{ 'opacity-50 cursor-not-allowed': !canAddMoreItems }"
-                >
+            <!-- New Item Form (Always at top) -->
+            <div v-if="newItemForm"
+              class="border-2 border-dashed border-primary-300 dark:border-primary-600 rounded-lg p-1">
+              <div class="text-sm font-medium text-primary-600 dark:text-primary-400 mb-3 px-3 pt-3">
+                {{ t('deliveryForm.newItem') }}
+              </div>
+              <DeliveryItemRow :key="newItemForm.tempId" :item="newItemForm" :index="-1" :items="items"
+                :used-items="usedItemIds" @update="updateNewItem" @remove="cancelNewItem"
+                @create-new-item="handleCreateNewItem" ref="newItemRowRef" />
+              <div class="flex justify-end space-x-2 p-3">
+                <button @click="cancelNewItem" class="btn-outline text-sm" v-if="completedDeliveryItems.length > 0">
+                  {{ t('common.cancel') }}
+                </button>
+                <button @click="saveNewItem" :disabled="!isNewItemValid" class="btn-primary text-sm"
+                  :class="{ 'opacity-50 cursor-not-allowed': !isNewItemValid }">
                   <Plus class="mr-2 h-4 w-4" />
-                  {{ t('delivery.addItem') }}
+                  {{ t('deliveryForm.addItem') }}
                 </button>
               </div>
             </div>
 
-            <!-- Delivery Totals -->
-            <div v-if="activeDeliveryItems.length > 0" class="border-t border-gray-200 dark:border-gray-600 pt-4 mt-6">
-              <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                <h5 class="font-medium text-gray-900 dark:text-white mb-3">{{ t('delivery.deliveryTotals') }}</h5>
-                <div class="space-y-2 text-sm">
-                  <div v-for="item in activeDeliveryItems" :key="item.tempId" class="flex justify-between">
-                    <span class="text-gray-600 dark:text-gray-400">
-                      {{ getItemName(item.item) }} ({{ item.quantity }} {{ getItemUnit(item.item) }})
-                    </span>
-                    <span class="text-gray-900 dark:text-white font-medium">
-                      ₹{{ item.total_amount.toFixed(2) }}
-                    </span>
-                  </div>
-                  <div class="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
-                    <div class="flex justify-between font-medium">
-                      <span class="text-gray-900 dark:text-white">{{ t('common.total') }}:</span>
-                      <span class="text-gray-900 dark:text-white">₹{{ totalAmount.toFixed(2) }}</span>
-                    </div>
-                  </div>
-                </div>
+            <!-- This section is no longer needed as we always show a new item form -->
+
+            <!-- Completed Items List -->
+            <div v-if="completedDeliveryItems.length > 0" class="space-y-4">
+              <div
+                class="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600 pb-2">
+                {{ t('deliveryForm.addedItems') }}
               </div>
+              <DeliveryItemRow v-for="item in completedDeliveryItems" :key="item.tempId" :item="item"
+                :index="deliveryItems.indexOf(item)" :items="items" :used-items="usedItemIds"
+                @update="updateDeliveryItem" @remove="removeDeliveryItem" @create-new-item="handleCreateNewItem" />
             </div>
+
+            <!-- Removed detailed delivery totals - now shown in header -->
           </div>
 
           <!-- Step 3: Review -->
@@ -213,7 +177,8 @@
               <h5 class="font-medium text-gray-900 dark:text-white mb-3">{{ t('delivery.deliveryInfo') }}</h5>
               <div class="space-y-2 text-sm">
                 <div><strong>{{ t('common.vendor') }}:</strong> {{ getVendorName(deliveryForm.vendor) }}</div>
-                <div><strong>{{ t('delivery.deliveryDate') }}:</strong> {{ formatDate(deliveryForm.delivery_date) }}</div>
+                <div><strong>{{ t('delivery.deliveryDate') }}:</strong> {{ formatDate(deliveryForm.delivery_date) }}
+                </div>
                 <div v-if="deliveryForm.delivery_reference">
                   <strong>{{ t('delivery.deliveryReference') }}:</strong> {{ deliveryForm.delivery_reference }}
                 </div>
@@ -228,7 +193,8 @@
               <h5 class="font-medium text-gray-900 dark:text-white mb-3">{{ t('delivery.itemsSummary') }}</h5>
               <div class="space-y-2 text-sm">
                 <div v-for="item in activeDeliveryItems" :key="item.tempId" class="flex justify-between">
-                  <span>{{ getItemName(item.item) }} ({{ item.quantity }} {{ getItemUnit(item.item) }} @ ₹{{ item.unit_price }}/{{ getItemUnit(item.item) }})</span>
+                  <span>{{ getItemName(item.item) }} ({{ item.quantity }} {{ getItemUnit(item.item) }} @ ₹{{
+                    item.unit_price }}/{{ getItemUnit(item.item) }})</span>
                   <span class="font-medium">₹{{ item.total_amount.toFixed(2) }}</span>
                 </div>
                 <div class="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
@@ -244,62 +210,73 @@
 
         <!-- Actions -->
         <div class="flex justify-between pt-6 border-t border-gray-200 dark:border-gray-600">
-          <button 
-            v-if="currentStep > 0" 
-            @click="currentStep--" 
-            class="btn-outline"
-            :disabled="loading"
-          >
-            <ArrowLeft class="mr-2 h-4 w-4" />
-            {{ t('common.back') }}
-          </button>
-          <div v-else></div>
+          <div class="flex items-center space-x-3">
+            <button v-if="currentStep > 0" @click="previousStep" class="btn-outline" :disabled="loading">
+              <ArrowLeft class="mr-2 h-4 w-4" />
+              {{ t('common.back') }}
+            </button>
+            <div v-if="currentStep > 0" class="hidden md:block text-xs text-gray-500 dark:text-gray-400">
+              Shift + ←
+            </div>
+          </div>
 
-          <div class="flex space-x-3">
-            <button @click="$emit('close')" class="btn-outline" :disabled="loading">
-              {{ t('common.cancel') }}
-            </button>
-            
-            <button 
-              v-if="currentStep < steps.length - 1"
-              @click="nextStep" 
-              :disabled="!canProceedToNextStep || loading"
-              class="btn-primary"
-              :class="{ 'opacity-50 cursor-not-allowed': !canProceedToNextStep || loading }"
-            >
-              {{ t('common.next') }}
-              <ArrowRight class="ml-2 h-4 w-4" />
-            </button>
-            
-            <button 
-              v-else
-              @click="saveDelivery" 
-              :disabled="loading || !canSubmit"
-              class="btn-primary bg-green-600 hover:bg-green-700"
-              :class="{ 'opacity-50 cursor-not-allowed': loading || !canSubmit }"
-            >
-              <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-              <CheckCircle v-else class="mr-2 h-4 w-4" />
-              {{ editingDelivery ? t('common.update') : t('common.create') }}
-            </button>
+          <div class="flex items-center space-x-4">
+            <!-- Keyboard shortcut hint for item creation -->
+            <div v-if="currentStep === 1 && newItemForm"
+              class="hidden md:block text-xs text-gray-500 dark:text-gray-400">
+              Ctrl + Enter to add item
+            </div>
+
+            <!-- Keyboard shortcut hint for delivery creation -->
+            <div v-if="currentStep === 2 && canSubmit && !loading"
+              class="hidden md:block text-xs text-gray-500 dark:text-gray-400">
+              Ctrl + Enter to create delivery
+            </div>
+
+            <div class="flex space-x-3">
+              <button @click="$emit('close')" class="btn-outline" :disabled="loading">
+                {{ t('common.cancel') }}
+              </button>
+
+              <button v-if="currentStep < steps.length - 1" @click="nextStep"
+                :disabled="!canProceedToNextStep || loading" class="btn-primary"
+                :class="{ 'opacity-50 cursor-not-allowed': !canProceedToNextStep || loading }">
+                {{ t('common.next') }}
+                <ArrowRight class="ml-2 h-4 w-4" />
+              </button>
+
+              <button v-else @click="saveDelivery" :disabled="loading || !canSubmit"
+                class="btn-primary bg-green-600 hover:bg-green-700"
+                :class="{ 'opacity-50 cursor-not-allowed': loading || !canSubmit }">
+                <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
+                <CheckCircle v-else class="mr-2 h-4 w-4" />
+                {{ editingDelivery ? t('common.update') : t('common.create') }}
+              </button>
+            </div>
+
+            <div v-if="currentStep < steps.length - 1" class="hidden md:block text-xs text-gray-500 dark:text-gray-400">
+              Shift + →
+            </div>
           </div>
         </div>
       </div>
     </div>
-    
+
     <!-- Image Slider -->
-    <ImageSlider
-      v-model:show="showPhotoGallery"
+    <ImageSlider v-model:show="showPhotoGallery"
       :images="existingPhotos.map(photo => getPhotoUrl(props.editingDelivery!.id!, photo))"
-      :initial-index="galleryIndex"
-      @close="showPhotoGallery = false"
-    />
+      :initial-index="galleryIndex" @close="showPhotoGallery = false" />
+
+    <!-- Item Create Modal -->
+    <ItemCreateModal :show="showItemCreateModal" :initial-name="newItemName" @close="closeItemCreateModal"
+      @created="handleItemCreated" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
-import { 
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { useEventListener } from '@vueuse/core';
+import {
   X, ArrowLeft, ArrowRight, CheckCircle, Loader2, Plus
 } from 'lucide-vue-next';
 import { useI18n } from '../../composables/useI18n';
@@ -308,14 +285,20 @@ import { useModalState } from '../../composables/useModalState';
 import FileUploadComponent from '../FileUploadComponent.vue';
 import DeliveryItemRow from './DeliveryItemRow.vue';
 import ImageSlider from '../ImageSlider.vue';
+import ItemCreateModal from '../ItemCreateModal.vue';
+import VendorSearchBox from '../VendorSearchBox.vue';
 import {
   deliveryService,
   deliveryItemService,
   vendorService,
   itemService,
+  paymentService,
+  serviceBookingService,
   type Delivery,
   type Vendor,
-  type Item
+  type Item,
+  type Payment,
+  type ServiceBooking
 } from '../../services/pocketbase';
 
 interface Props {
@@ -351,11 +334,16 @@ const currentStep = ref(0);
 const loading = ref(false);
 const vendors = ref<Vendor[]>([]);
 const items = ref<Item[]>([]);
-const vendorInputRef = ref<HTMLInputElement>();
+const payments = ref<Payment[]>([]);
+const serviceBookings = ref<ServiceBooking[]>([]);
+const deliveries = ref<Delivery[]>([]);
+const vendorInputRef = ref<InstanceType<typeof VendorSearchBox>>();
 const selectedFilesForUpload = ref<File[]>([]);
 const existingPhotos = ref<string[]>([]);
 const showPhotoGallery = ref(false);
 const galleryIndex = ref(0);
+const showItemCreateModal = ref(false);
+const newItemName = ref('');
 
 // Steps
 const steps = [
@@ -375,6 +363,8 @@ const deliveryForm = reactive<Omit<Delivery, 'id' | 'site' | 'created' | 'update
 
 const deliveryItems = ref<DeliveryItemForm[]>([]);
 const originalDeliveryItems = ref<DeliveryItemForm[]>([]); // Track original items for comparison
+const newItemForm = ref<DeliveryItemForm | null>(null);
+const newItemRowRef = ref();
 
 // Computed properties
 const totalAmount = computed(() => {
@@ -390,24 +380,34 @@ const usedItemIds = computed(() => {
     .filter(Boolean);
 });
 
-const canAddMoreItems = computed(() => {
-  const activeItems = deliveryItems.value.filter(item => !item.isDeleted);
-  return activeItems.length < items.value.length;
-});
+// Removed canAddMoreItems as we now always allow adding items via the new item form
 
 const activeDeliveryItems = computed(() => {
   return deliveryItems.value.filter(item => !item.isDeleted);
 });
+
+const completedDeliveryItems = computed(() => {
+  return deliveryItems.value.filter(item => !item.isDeleted);
+});
+
+const isNewItemValid = computed(() => {
+  if (!newItemForm.value) return false;
+  return newItemForm.value.item !== '' &&
+    newItemForm.value.quantity > 0 &&
+    newItemForm.value.unit_price > 0;
+});
+
+// Removed ensureNewItemForm as it's not currently used
 
 const canProceedToNextStep = computed(() => {
   switch (currentStep.value) {
     case 0: // Delivery Info
       return deliveryForm.vendor !== '' && deliveryForm.delivery_date !== '';
     case 1: // Items
-      return activeDeliveryItems.value.length > 0 && 
-             activeDeliveryItems.value.every(item => 
-               item.item !== '' && item.quantity > 0 && item.unit_price > 0
-             );
+      return activeDeliveryItems.value.length > 0 &&
+        activeDeliveryItems.value.every(item =>
+          item.item !== '' && item.quantity > 0 && item.unit_price > 0
+        );
     default:
       return true;
   }
@@ -437,9 +437,11 @@ const getItemUnit = (itemId: string) => {
   return item?.unit || 'units';
 };
 
-const addNewItem = () => {
-  const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  deliveryItems.value.push({
+const addNewItem = async () => {
+  if (newItemForm.value) return; // Already have a new item form open
+
+  const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+  newItemForm.value = {
     tempId,
     item: '',
     quantity: 1,
@@ -449,27 +451,68 @@ const addNewItem = () => {
     isNew: true,
     isModified: false,
     isDeleted: false
-  });
+  };
+
+  // Focus the item selector after Vue updates the DOM
+  await nextTick();
+  newItemRowRef.value?.focusItemSelector();
+};
+
+const updateNewItem = (_index: number, updatedItem: DeliveryItemForm) => {
+  newItemForm.value = { ...updatedItem };
+};
+
+const saveNewItem = async () => {
+  if (!newItemForm.value || !isNewItemValid.value) return;
+
+  // Add the new item to the deliveryItems array
+  deliveryItems.value.push({ ...newItemForm.value });
+
+  // Automatically create a new empty item form for the next entry
+  const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+  newItemForm.value = {
+    tempId,
+    item: '',
+    quantity: 1,
+    unit_price: 0,
+    total_amount: 0,
+    notes: '',
+    isNew: true,
+    isModified: false,
+    isDeleted: false
+  };
+
+  // Focus the item selector after Vue updates the DOM
+  await nextTick();
+  newItemRowRef.value?.focusItemSelector();
+};
+
+const cancelNewItem = () => {
+  // Only allow canceling if there are existing items
+  if (completedDeliveryItems.value.length > 0) {
+    newItemForm.value = null;
+  }
+  // If no completed items exist, keep the new item form visible
 };
 
 const updateDeliveryItem = (index: number, updatedItem: DeliveryItemForm) => {
   const originalItem = originalDeliveryItems.value.find(item => item.tempId === updatedItem.tempId);
-  
+
   // Mark as modified if values changed from original
   if (originalItem && !updatedItem.isNew) {
     const hasChanges = originalItem.item !== updatedItem.item ||
-                     originalItem.quantity !== updatedItem.quantity ||
-                     originalItem.unit_price !== updatedItem.unit_price ||
-                     originalItem.notes !== updatedItem.notes;
+      originalItem.quantity !== updatedItem.quantity ||
+      originalItem.unit_price !== updatedItem.unit_price ||
+      originalItem.notes !== updatedItem.notes;
     updatedItem.isModified = hasChanges;
   }
-  
+
   deliveryItems.value[index] = { ...updatedItem };
 };
 
-const removeDeliveryItem = (index: number) => {
+const removeDeliveryItem = async (index: number) => {
   const item = deliveryItems.value[index];
-  
+
   // If it's an existing item (has an ID), mark for deletion instead of removing
   if (item.id && !item.isNew) {
     item.isDeleted = true;
@@ -477,6 +520,11 @@ const removeDeliveryItem = (index: number) => {
   } else {
     // If it's a new item, just remove it from the array
     deliveryItems.value.splice(index, 1);
+  }
+
+  // Check if we need to show a new item form (if no items remain and no new item form is showing)
+  if (completedDeliveryItems.value.length === 0 && !newItemForm.value) {
+    await addNewItem();
   }
 };
 
@@ -497,9 +545,105 @@ const removeExistingPhoto = (index: number) => {
   existingPhotos.value.splice(index, 1);
 };
 
-const nextStep = () => {
+const handleCreateNewItem = (searchQuery: string) => {
+  newItemName.value = searchQuery;
+  showItemCreateModal.value = true;
+};
+
+const closeItemCreateModal = () => {
+  showItemCreateModal.value = false;
+  newItemName.value = '';
+};
+
+const handleItemCreated = async (newItem: Item) => {
+  // Add the new item to the items list
+  items.value.push(newItem);
+
+  // Close the modal
+  closeItemCreateModal();
+
+  // Auto-select the newly created item in the current new item form
+  if (newItemForm.value) {
+    updateNewItem(-1, {
+      ...newItemForm.value,
+      item: newItem.id!
+    });
+  }
+};
+
+const handleVendorSelected = (vendor: Vendor) => {
+  // Handle vendor selection - can add additional logic here if needed
+  deliveryForm.vendor = vendor.id!;
+};
+
+// Keyboard shortcuts
+const handleKeyboardShortcuts = (event: KeyboardEvent) => {
+  // SHIFT + Right Arrow - Next step
+  if (event.shiftKey && event.key === 'ArrowRight') {
+    event.preventDefault();
+    if (canProceedToNextStep.value && currentStep.value < steps.length - 1) {
+      nextStep();
+    }
+    return;
+  }
+
+  // SHIFT + Left Arrow - Previous step
+  if (event.shiftKey && event.key === 'ArrowLeft') {
+    event.preventDefault();
+    if (currentStep.value > 0) {
+      previousStep();
+    }
+    return;
+  }
+
+  // CTRL + ENTER - Add/Save item (only on Items step)
+  if (event.ctrlKey && event.key === 'Enter' && currentStep.value === 1) {
+    event.preventDefault();
+
+    // Check if we're in the new item form and it's valid
+    if (newItemForm.value && isNewItemValid.value) {
+      saveNewItem();
+    }
+    return;
+  }
+
+  // CTRL + ENTER - Create delivery (only on Review step)
+  if (event.ctrlKey && event.key === 'Enter' && currentStep.value === 2) {
+    event.preventDefault();
+
+    // Check if we can submit the delivery
+    if (canSubmit.value && !loading.value) {
+      saveDelivery();
+    }
+    return;
+  }
+};
+
+const nextStep = async () => {
   if (canProceedToNextStep.value && currentStep.value < steps.length - 1) {
     currentStep.value++;
+
+    // Auto-focus item selector when moving to step 1 (items step)
+    if (currentStep.value === 1) {
+      await nextTick();
+      setTimeout(() => {
+        newItemRowRef.value?.focusItemSelector();
+      }, 50);
+    }
+  }
+};
+
+const previousStep = async () => {
+  if (currentStep.value > 0) {
+    currentStep.value--;
+
+    // Auto-focus vendor input when going back to step 0
+    if (currentStep.value === 0) {
+      await nextTick();
+      setTimeout(() => {
+        vendorInputRef.value?.focus();
+      }, 50);
+    }
   }
 };
 
@@ -524,7 +668,7 @@ const handleDeliveryItemChanges = async (deliveryId: string) => {
         notes: item.notes
       }
     }));
-    
+
     await deliveryItemService.updateMultiple(updates);
   }
 
@@ -537,7 +681,7 @@ const handleDeliveryItemChanges = async (deliveryId: string) => {
       unit_price: item.unit_price,
       notes: item.notes
     }));
-    
+
     await deliveryItemService.createMultiple(deliveryId, newItemsData);
   }
 };
@@ -555,18 +699,18 @@ const saveDelivery = async () => {
       notes: deliveryForm.notes,
       total_amount: totalAmount.value
     } as Partial<Delivery>;
-    
+
     // For edits, handle existing photo changes (removals)
     if (props.editingDelivery) {
       const originalPhotoCount = (props.editingDelivery.photos || []).length;
       const currentPhotoCount = existingPhotos.value.length;
-      
+
       // If photos were removed, update the delivery with remaining photos
       if (currentPhotoCount !== originalPhotoCount) {
         deliveryData.photos = existingPhotos.value;
       }
     }
-    
+
     // Only set payment status for new deliveries - existing ones keep their current status
     if (!props.editingDelivery) {
       deliveryData.payment_status = 'pending';
@@ -596,7 +740,7 @@ const saveDelivery = async () => {
           unit_price: item.unit_price,
           notes: item.notes
         }));
-      
+
       if (newItemsData.length > 0) {
         await deliveryItemService.createMultiple(delivery.id!, newItemsData);
       }
@@ -607,7 +751,7 @@ const saveDelivery = async () => {
       try {
         const uploadedPhotos = await deliveryService.uploadPhotos(delivery.id!, selectedFilesForUpload.value);
         console.log(`Successfully uploaded ${uploadedPhotos.length} of ${selectedFilesForUpload.value.length} photos`);
-        
+
         // For editing, we need to fetch the updated delivery to get the final photo list
         if (props.editingDelivery) {
           // Update the existingPhotos list to reflect all photos (old + new)
@@ -621,7 +765,7 @@ const saveDelivery = async () => {
     }
 
     success(props.editingDelivery ? t('messages.updateSuccess', { item: 'Delivery' }) : t('messages.createSuccess', { item: 'Delivery' }));
-    
+
     // If creating a new delivery, reset the form for another entry
     if (!props.editingDelivery) {
       resetForm();
@@ -637,33 +781,43 @@ const saveDelivery = async () => {
   }
 };
 
-const resetForm = () => {
+const resetForm = async () => {
   // Reset to step 0
   currentStep.value = 0;
-  
+
   // Reset delivery form but keep vendor and date for convenience
   deliveryForm.delivery_reference = '';
   deliveryForm.notes = '';
-  
-  // Clear items and add one empty item
+
+  // Clear items and new item form
   deliveryItems.value = [];
-  addNewItem();
-  
+  newItemForm.value = null;
+
   // Clear selected files
   selectedFilesForUpload.value = [];
 
-  vendorInputRef.value?.focus();
+  // Focus vendor input after form reset
+  await nextTick();
+  setTimeout(() => {
+    vendorInputRef.value?.focus();
+  }, 50);
 };
 
 const loadData = async () => {
   try {
-    const [vendorsData, itemsData] = await Promise.all([
+    const [vendorsData, itemsData, paymentsData, serviceBookingsData, deliveriesData] = await Promise.all([
       vendorService.getAll(),
-      itemService.getAll()
+      itemService.getAll(),
+      paymentService.getAll(),
+      serviceBookingService.getAll(),
+      deliveryService.getAll()
     ]);
-    
+
     vendors.value = vendorsData;
     items.value = itemsData;
+    payments.value = paymentsData;
+    serviceBookings.value = serviceBookingsData;
+    deliveries.value = deliveriesData;
 
     // If editing, populate form
     if (props.editingDelivery) {
@@ -673,7 +827,7 @@ const loadData = async () => {
         delivery_reference: props.editingDelivery.delivery_reference,
         notes: props.editingDelivery.notes
       });
-      
+
       // Load existing photos
       existingPhotos.value = [...(props.editingDelivery.photos || [])];
 
@@ -691,13 +845,13 @@ const loadData = async () => {
           isModified: false,
           isDeleted: false
         }));
-        
+
         // Store a deep copy of original items for comparison
         originalDeliveryItems.value = JSON.parse(JSON.stringify(deliveryItems.value));
       }
     } else {
-      // Add one empty item for new deliveries
-      addNewItem();
+      // For new deliveries, start with a new item form visible by default
+      await addNewItem();
     }
   } catch (err) {
     console.error('Error loading data:', err);
@@ -706,10 +860,18 @@ const loadData = async () => {
 };
 
 // Initialize
-onMounted(() => {
+onMounted(async () => {
   loadData();
-  vendorInputRef.value?.focus();
   openModal('multi-item-delivery-modal');
+
+  // Focus vendor input after modal is opened and DOM is ready
+  await nextTick();
+  setTimeout(() => {
+    vendorInputRef.value?.focus();
+  }, 100);
+
+  // Add keyboard shortcuts
+  useEventListener('keydown', handleKeyboardShortcuts);
 });
 
 onUnmounted(() => {

@@ -231,7 +231,8 @@
     "noDeliveryData": "No delivery data to display",
     "noDeliveriesRecorded": "No deliveries recorded",
     "startTracking": "Start tracking by recording a delivery.",
-    "noItemsFound": "No items found"
+    "noItemsFound": "No items found",
+    "createNewItem": "Create new item"
   },
   "services": {
     "title": "Services",
@@ -555,6 +556,8 @@
     "addItem": "Add Item",
     "removeItem": "Remove Item",
     "noItemsAdded": "No items added yet. Click 'Add Item' to get started.",
+    "newItem": "New Item",
+    "addedItems": "Added Items",
     "deliveryTotals": "Delivery Totals",
     "reviewDelivery": "Review Delivery",
     "itemsSummary": "Items Summary",

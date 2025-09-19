@@ -4,9 +4,11 @@
       <!-- Item Selection -->
       <div class="md:col-span-4">
         <ItemSelector
+          ref="itemSelectorRef"
           :model-value="item.item"
           @update:model-value="handleItemChange"
           @item-selected="handleItemSelected"
+          @create-new-item="$emit('createNewItem', $event)"
           :items="props.items"
           :used-items="props.usedItems"
           :label="t('common.item') + ' *'"
@@ -22,14 +24,15 @@
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           {{ t('common.quantity') }} *
         </label>
-        <input 
+        <input
+          ref="quantityInputRef"
           :value="item.quantity"
           @input="handleQuantityChange"
           @blur="validateQuantity"
-          type="number" 
+          type="number"
           min="0.01"
           step="0.01"
-          required 
+          required
           class="input"
           :class="{ 'border-red-300': errors.quantity }"
           placeholder="0"
@@ -129,7 +132,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive } from 'vue';
+import { computed, reactive, ref, nextTick } from 'vue';
 import { Trash2 } from 'lucide-vue-next';
 import { useI18n } from '../../composables/useI18n';
 import type { Item } from '../../services/pocketbase';
@@ -155,9 +158,14 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   update: [index: number, item: DeliveryItemForm];
   remove: [index: number];
+  createNewItem: [searchQuery: string];
 }>();
 
 const { t } = useI18n();
+
+// Refs
+const quantityInputRef = ref<HTMLInputElement>();
+const itemSelectorRef = ref();
 
 // Validation errors
 const errors = reactive({
@@ -265,10 +273,13 @@ const handleItemChange = (itemId: string) => {
   }
 };
 
-const handleItemSelected = (item: Item | null) => {
+const handleItemSelected = async (item: Item | null) => {
   // Additional logic when item is selected, if needed
   if (item) {
-    // Could auto-populate unit price based on item history, etc.
+    // Auto-focus quantity input when item is selected
+    await nextTick();
+    quantityInputRef.value?.focus();
+    quantityInputRef.value?.select(); // Select all text for easy overwriting
   }
 };
 
@@ -306,4 +317,15 @@ const handleNotesChange = (event: Event) => {
   const target = event.target as HTMLTextAreaElement;
   updateItem({ notes: target.value });
 };
+
+// Method to auto-focus the item selector (to be called from parent)
+const focusItemSelector = async () => {
+  await nextTick();
+  itemSelectorRef.value?.focus();
+};
+
+// Expose methods for parent component to call
+defineExpose({
+  focusItemSelector
+});
 </script>
