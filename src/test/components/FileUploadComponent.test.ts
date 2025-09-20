@@ -103,13 +103,13 @@ describe('FileUploadComponent', () => {
 
     it('should show desktop text on desktop devices', () => {
       wrapper = createWrapper()
-      
-      // Check for desktop-specific text in hidden/shown spans
-      const desktopText = wrapper.find('.hidden.sm\\:inline')
-      const mobileText = wrapper.find('.sm\\:hidden')
-      
-      expect(desktopText.exists()).toBe(true)
-      expect(mobileText.exists()).toBe(true)
+
+      // Check for desktop upload component (not mobile)
+      const desktopUploadArea = wrapper.find('.file-upload-component')
+      const mobileUploadArea = wrapper.find('.mobile-upload-options')
+
+      expect(desktopUploadArea.exists()).toBe(true)
+      expect(mobileUploadArea.exists()).toBe(false)
       expect(wrapper.text()).toContain('Click to select files or drag and drop here')
     })
 
@@ -123,8 +123,14 @@ describe('FileUploadComponent', () => {
       wrapper = createWrapper()
       await nextTick()
 
-      // Mobile displays both texts but mobile text should be visible
-      expect(wrapper.text()).toContain('Tap to select files')
+      // Check for mobile upload buttons
+      const mobileUploadArea = wrapper.find('.mobile-upload-options')
+      const desktopUploadArea = wrapper.find('.file-upload-component')
+
+      expect(mobileUploadArea.exists()).toBe(true)
+      expect(desktopUploadArea.exists()).toBe(false)
+      expect(wrapper.text()).toContain('fileUpload.takePhoto')
+      expect(wrapper.text()).toContain('fileUpload.chooseFiles')
     })
 
     it('should display max file size information', () => {
@@ -155,8 +161,10 @@ describe('FileUploadComponent', () => {
       wrapper = createWrapper({ allowCamera: true })
       await nextTick()
 
-      const fileInput = wrapper.find('input[type="file"]')
-      expect(fileInput.attributes('capture')).toBe('environment')
+      // Camera input should have capture attribute
+      const cameraInput = wrapper.find('input[capture="environment"]')
+      expect(cameraInput.exists()).toBe(true)
+      expect(cameraInput.attributes('capture')).toBe('environment')
     })
 
     it('should not add capture attribute on desktop', () => {
@@ -309,18 +317,20 @@ describe('FileUploadComponent', () => {
     })
 
     it('should reject files with invalid types', async () => {
-      wrapper = createWrapper({ acceptTypes: 'image/*' })
-      
+      wrapper = createWrapper({ acceptTypes: 'image/jpeg' })
+
+      // Create a truly invalid file type (not PDF which gets converted)
+      const invalidFile = new File(['text content'], 'test.txt', { type: 'text/plain' })
       const fileInput = wrapper.find('input[type="file"]')
       Object.defineProperty(fileInput.element, 'files', {
-        value: [mockFiles[1]], // PDF file
+        value: [invalidFile],
         writable: false
       })
-      
+
       await fileInput.trigger('change')
       await nextTick()
-      
-      expect(wrapper.vm.error).toContain('invalid file type')
+
+      expect(wrapper.vm.error).toContain('has an invalid file type')
       expect(wrapper.vm.previews).toHaveLength(0)
     })
 
@@ -343,18 +353,20 @@ describe('FileUploadComponent', () => {
     })
 
     it('should clear previous errors when valid files are selected', async () => {
-      wrapper = createWrapper({ acceptTypes: 'image/*' })
-      
-      // First, add invalid file directly
-      await wrapper.vm.processFiles([mockFiles[1]]) // PDF file
+      wrapper = createWrapper({ acceptTypes: 'image/jpeg' })
+
+      // First add invalid file to trigger error
+      const invalidFile = new File([''], 'test.txt', { type: 'text/plain' })
+      await wrapper.vm.processFiles([invalidFile])
       await nextTick()
-      
+
       expect(wrapper.vm.error).toBeTruthy()
-      
+
       // Then add valid file
-      await wrapper.vm.processFiles([mockFiles[0]]) // JPEG file
+      const validFile = new File([''], 'test.jpg', { type: 'image/jpeg' })
+      await wrapper.vm.processFiles([validFile])
       await nextTick()
-      
+
       expect(wrapper.vm.error).toBe('')
     })
   })
@@ -566,10 +578,12 @@ describe('FileUploadComponent', () => {
 
     it('should be keyboard accessible', () => {
       wrapper = createWrapper()
-      
+
       const uploadArea = wrapper.find('.file-upload-component')
-      expect(uploadArea.element.tagName).toBe('LABEL')
-      
+      expect(uploadArea.element.tagName).toBe('DIV')
+      expect(uploadArea.attributes('role')).toBe('button')
+      expect(uploadArea.attributes('tabindex')).toBe('0')
+
       const fileInput = wrapper.find('input[type="file"]')
       expect(fileInput.exists()).toBe(true)
     })

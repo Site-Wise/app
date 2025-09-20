@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
+import { createPinia } from 'pinia'
 import MultiItemDeliveryModal from '../../../components/delivery/MultiItemDeliveryModal.vue'
 
 // Mock external dependencies
@@ -65,7 +66,8 @@ vi.mock('../../../services/pocketbase', () => ({
     create: vi.fn().mockResolvedValue({ id: 'delivery-1' }),
     update: vi.fn().mockResolvedValue({ id: 'delivery-1' }),
     uploadPhoto: vi.fn().mockResolvedValue('photo-filename.jpg'),
-    uploadPhotos: vi.fn().mockResolvedValue(['photo1.jpg', 'photo2.jpg', 'photo3.jpg'])
+    uploadPhotos: vi.fn().mockResolvedValue(['photo1.jpg', 'photo2.jpg', 'photo3.jpg']),
+    getAll: vi.fn().mockResolvedValue([])
   },
   deliveryItemService: {
     createMultiple: vi.fn().mockResolvedValue(true)
@@ -82,6 +84,39 @@ vi.mock('../../../services/pocketbase', () => ({
       { id: 'item-2', name: 'Bricks', unit: 'pieces' },
       { id: 'item-3', name: 'Steel', unit: 'kg' }
     ])
+  },
+  paymentService: {
+    getAll: vi.fn().mockResolvedValue([])
+  },
+  serviceBookingService: {
+    getAll: vi.fn().mockResolvedValue([])
+  },
+  VendorService: {
+    calculateOutstandingFromData: vi.fn().mockReturnValue(0),
+    calculateTotalPaidFromData: vi.fn().mockReturnValue(0)
+  },
+  // Required functions for Pinia store compatibility
+  getCurrentSiteId: vi.fn(() => 'site-1'),
+  setCurrentSiteId: vi.fn(),
+  getCurrentUserRole: vi.fn(() => 'owner'),
+  setCurrentUserRole: vi.fn(),
+  calculatePermissions: vi.fn().mockReturnValue({
+    canCreate: true,
+    canRead: true,
+    canUpdate: true,
+    canDelete: true,
+    canManageUsers: true,
+    canManageRoles: true,
+    canExport: true,
+    canViewFinancials: true
+  }),
+  // PocketBase client for subscription store
+  pb: {
+    authStore: { isValid: true, model: { id: 'user-1' } },
+    collection: vi.fn(() => ({
+      getFirstListItem: vi.fn().mockResolvedValue({}),
+      getFullList: vi.fn().mockResolvedValue([])
+    }))
   }
 }))
 
@@ -97,7 +132,12 @@ const DeliveryItemRowStub = {
   name: 'DeliveryItemRow',
   template: '<div class="mock-delivery-item-row" :data-testid="`item-row-${index}`">Item Row {{ index }}</div>',
   props: ['item', 'index', 'items', 'usedItems'],
-  emits: ['update', 'remove']
+  emits: ['update', 'remove'],
+  methods: {
+    focusItemSelector() {
+      // Mock method for focus functionality
+    }
+  }
 }
 
 const ItemSelectorStub = {
@@ -107,19 +147,46 @@ const ItemSelectorStub = {
   emits: ['update:modelValue', 'itemSelected']
 }
 
+const VendorSearchBoxStub = {
+  name: 'VendorSearchBox',
+  template: '<input class="mock-vendor-search" :value="modelValue" @input="updateValue" placeholder="Search vendors..." />',
+  props: ['modelValue', 'vendors', 'deliveries', 'service-bookings', 'payments', 'placeholder', 'autofocus', 'required'],
+  emits: ['update:modelValue', 'vendor-selected'],
+  methods: {
+    updateValue(event: any) {
+      this.$emit('update:modelValue', event.target.value)
+      if (event.target.value === 'vendor-1') {
+        this.$emit('vendor-selected', { id: 'vendor-1', name: 'Test Vendor' })
+      }
+    }
+  }
+}
+
 describe('MultiItemDeliveryModal', () => {
   let wrapper: any
 
+  // Helper function to fill vendor and proceed to next step
+  const fillVendorInfo = async (wrapper: any, vendor = 'vendor-1', date = '2024-01-15') => {
+    const vendorInput = wrapper.find('.mock-vendor-search')
+    await vendorInput.setValue(vendor)
+    await vendorInput.trigger('input')
+    await wrapper.find('input[type="date"]').setValue(date)
+    await nextTick()
+  }
+
   const createWrapper = (props = {}) => {
+    const pinia = createPinia()
     return mount(MultiItemDeliveryModal, {
       props: {
         ...props
       },
       global: {
+        plugins: [pinia],
         stubs: {
           'FileUploadComponent': FileUploadComponentStub,
           'DeliveryItemRow': DeliveryItemRowStub,
-          'ItemSelector': ItemSelectorStub
+          'ItemSelector': ItemSelectorStub,
+          'VendorSearchBox': VendorSearchBoxStub
         }
       },
       attachTo: document.body
@@ -171,12 +238,14 @@ describe('MultiItemDeliveryModal', () => {
       await new Promise(resolve => setTimeout(resolve, 50))
       await nextTick()
 
-      const vendorSelect = wrapper.find('select')
-      const options = vendorSelect.findAll('option')
-      
-      expect(options).toHaveLength(3) // 2 vendors + placeholder
-      expect(options[1].text()).toBe('| ABC Construction')
-      expect(options[2].text()).toBe('| XYZ Suppliers')
+      // Check that VendorSearchBox component is rendered (not select)
+      const vendorSearchBox = wrapper.find('.mock-vendor-search')
+      expect(vendorSearchBox.exists()).toBe(true)
+
+      // Verify vendor data is loaded in component
+      expect(wrapper.vm.vendors).toHaveLength(2)
+      expect(wrapper.vm.vendors[0].name).toBe('ABC Construction')
+      expect(wrapper.vm.vendors[1].name).toBe('XYZ Suppliers')
     })
   })
 
@@ -209,10 +278,8 @@ describe('MultiItemDeliveryModal', () => {
       wrapper = createWrapper()
       await nextTick()
 
-      // Fill required fields
-      await wrapper.find('select').setValue('vendor-1')
-      await wrapper.find('input[type="date"]').setValue('2024-01-15')
-      await nextTick()
+      // Fill required fields using the vendor search box
+      await fillVendorInfo(wrapper)
 
       const nextButton = wrapper.find('button[class*="btn-primary"]')
       expect(nextButton.attributes('disabled')).toBeUndefined()
@@ -230,9 +297,7 @@ describe('MultiItemDeliveryModal', () => {
       await nextTick()
 
       // Move to items step
-      await wrapper.find('select').setValue('vendor-1')
-      await wrapper.find('input[type="date"]').setValue('2024-01-15')
-      await nextTick()
+      await fillVendorInfo(wrapper)
       
       const nextButton = wrapper.find('button[class*="btn-primary"]')
       await nextButton.trigger('click')
@@ -243,27 +308,55 @@ describe('MultiItemDeliveryModal', () => {
       expect(wrapper.findAll('[data-testid^="item-row-"]')).toHaveLength(1)
     })
 
-    it('should add new item when add button is clicked', async () => {
-      const addButton = wrapper.find('button[class*="btn-primary"]')
-      await addButton.trigger('click')
+    it('should save new item and create another form when saveNewItem is called', async () => {
+      // Update the new item form with valid data
+      wrapper.vm.updateNewItem(-1, {
+        tempId: 'temp-1',
+        item: 'item-1',
+        quantity: 2,
+        unit_price: 50,
+        total_amount: 100,
+        notes: ''
+      })
       await nextTick()
 
-      expect(wrapper.findAll('[data-testid^="item-row-"]')).toHaveLength(2)
+      // Save the new item
+      await wrapper.vm.saveNewItem()
+      await nextTick()
+
+      // Should have one completed item and a new empty form
+      expect(wrapper.vm.completedDeliveryItems).toHaveLength(1)
+      expect(wrapper.vm.newItemForm).toBeTruthy()
+      expect(wrapper.vm.newItemForm.item).toBe('') // New form should be empty
+
+      // Should show both new item form and completed item
+      expect(wrapper.findAll('[data-testid^="item-row-"]')).toHaveLength(2) // One for new form (-1), one for completed (0)
     })
 
-    it('should remove item when remove event is emitted', async () => {
-      // First add another item
-      const addButton = wrapper.find('button[class*="btn-primary"]')
-      await addButton.trigger('click')
+    it('should remove completed item and keep new item form when removeDeliveryItem is called', async () => {
+      // First add a completed item
+      wrapper.vm.updateNewItem(-1, {
+        tempId: 'temp-1',
+        item: 'item-1',
+        quantity: 2,
+        unit_price: 50,
+        total_amount: 100,
+        notes: ''
+      })
+      await wrapper.vm.saveNewItem()
       await nextTick()
 
-      expect(wrapper.findAll('[data-testid^="item-row-"]')).toHaveLength(2)
+      expect(wrapper.vm.completedDeliveryItems).toHaveLength(1)
+      expect(wrapper.findAll('[data-testid^="item-row-"]')).toHaveLength(2) // New form + completed item
 
-      // Directly call the removeDeliveryItem method
+      // Remove the completed item
       wrapper.vm.removeDeliveryItem(0)
       await nextTick()
 
-      expect(wrapper.findAll('[data-testid^="item-row-"]')).toHaveLength(1)
+      // Should have no completed items but still have new item form
+      expect(wrapper.vm.completedDeliveryItems).toHaveLength(0)
+      expect(wrapper.vm.newItemForm).toBeTruthy()
+      expect(wrapper.findAll('[data-testid^="item-row-"]')).toHaveLength(1) // Only new form
     })
 
     it('should update total when item is updated', async () => {
@@ -323,9 +416,7 @@ describe('MultiItemDeliveryModal', () => {
       await nextTick()
 
       // Move to items step
-      await wrapper.find('select').setValue('vendor-1')
-      await wrapper.find('input[type="date"]').setValue('2024-01-15')
-      await nextTick()
+      await fillVendorInfo(wrapper)
       
       const nextButton = wrapper.find('button[class*="btn-primary"]')
       await nextButton.trigger('click')
@@ -410,7 +501,9 @@ describe('MultiItemDeliveryModal', () => {
       expect(wrapper.vm.canProceedToNextStep).toBe(false)
 
       // Fill vendor only (should still be false)
-      await wrapper.find('select').setValue('vendor-1')
+      const vendorInput = wrapper.find('.mock-vendor-search')
+      await vendorInput.setValue('vendor-1')
+      await vendorInput.trigger('input')
       await nextTick()
       expect(wrapper.vm.canProceedToNextStep).toBe(false)
 
@@ -429,9 +522,7 @@ describe('MultiItemDeliveryModal', () => {
       await nextTick()
 
       // Move to items step
-      await wrapper.find('select').setValue('vendor-1')
-      await wrapper.find('input[type="date"]').setValue('2024-01-15')
-      await nextTick()
+      await fillVendorInfo(wrapper)
       
       const nextButton = wrapper.find('button[class*="btn-primary"]')
       await nextButton.trigger('click')
@@ -463,8 +554,7 @@ describe('MultiItemDeliveryModal', () => {
       await nextTick()
 
       // Move to items step and add items
-      await wrapper.find('select').setValue('vendor-1')
-      await wrapper.find('input[type="date"]').setValue('2024-01-15')
+      await fillVendorInfo(wrapper, 'vendor-1', '2024-01-15')
       await nextTick()
       
       let nextButton = wrapper.find('button[class*="btn-primary"]')
@@ -523,17 +613,16 @@ describe('MultiItemDeliveryModal', () => {
       await new Promise(resolve => setTimeout(resolve, 50))
       await nextTick()
 
-      // Complete form
-      await wrapper.find('select').setValue('vendor-1')
-      await wrapper.find('input[type="date"]').setValue('2024-01-15')
+      // Complete form using VendorSearchBox
+      await fillVendorInfo(wrapper, 'vendor-1', '2024-01-15')
       await nextTick()
       
       let nextButton = wrapper.find('button[class*="btn-primary"]')
       await nextButton.trigger('click')
       await nextTick()
 
-      // Add item
-      wrapper.vm.updateDeliveryItem(0, {
+      // Add item through new item form
+      wrapper.vm.updateNewItem(-1, {
         tempId: 'temp-1',
         item: 'item-1',
         quantity: 5,
@@ -541,6 +630,7 @@ describe('MultiItemDeliveryModal', () => {
         total_amount: 500,
         notes: 'Test notes'
       })
+      await wrapper.vm.saveNewItem()
 
       await nextTick()
 
@@ -592,12 +682,17 @@ describe('MultiItemDeliveryModal', () => {
       
       wrapper.vm.selectedFilesForUpload = mockFiles
 
-      // Complete form for delivery creation
-      await wrapper.find('select').setValue('vendor-1')
-      await wrapper.find('input[type="date"]').setValue('2024-01-15')
-      
-      // Add item
-      wrapper.vm.updateDeliveryItem(0, {
+      // Complete form for delivery creation using VendorSearchBox
+      await fillVendorInfo(wrapper, 'vendor-1', '2024-01-15')
+      await nextTick()
+
+      // Move to items step
+      let nextButton = wrapper.find('button[class*="btn-primary"]')
+      await nextButton.trigger('click')
+      await nextTick()
+
+      // Add item through new item form
+      wrapper.vm.updateNewItem(-1, {
         tempId: 'temp-1',
         item: 'item-1',
         quantity: 10,
@@ -605,6 +700,8 @@ describe('MultiItemDeliveryModal', () => {
         total_amount: 500,
         notes: ''
       })
+      await wrapper.vm.saveNewItem()
+      await nextTick()
 
       // Navigate to final step and submit
       wrapper.vm.currentStep = 2
@@ -642,11 +739,17 @@ describe('MultiItemDeliveryModal', () => {
       
       wrapper.vm.selectedFilesForUpload = mockFiles
 
-      // Complete form
-      await wrapper.find('select').setValue('vendor-1')
-      await wrapper.find('input[type="date"]').setValue('2024-01-15')
-      
-      wrapper.vm.updateDeliveryItem(0, {
+      // Complete form using VendorSearchBox
+      await fillVendorInfo(wrapper, 'vendor-1', '2024-01-15')
+      await nextTick()
+
+      // Move to items step
+      let nextButton = wrapper.find('button[class*="btn-primary"]')
+      await nextButton.trigger('click')
+      await nextTick()
+
+      // Add item through new item form
+      wrapper.vm.updateNewItem(-1, {
         tempId: 'temp-1',
         item: 'item-1',
         quantity: 5,
@@ -654,6 +757,8 @@ describe('MultiItemDeliveryModal', () => {
         total_amount: 500,
         notes: ''
       })
+      await wrapper.vm.saveNewItem()
+      await nextTick()
 
       // Navigate to final step and submit
       wrapper.vm.currentStep = 2
@@ -724,7 +829,7 @@ describe('MultiItemDeliveryModal', () => {
       const { deliveryService } = await import('../../../services/pocketbase')
       expect(deliveryService.uploadPhotos).toHaveBeenCalledWith('delivery-1', mockNewFiles)
       
-      // Should update existingPhotos with new uploads
+      // Should update existingPhotos with new uploads (mock returns static array regardless of input)
       expect(wrapper.vm.existingPhotos).toEqual(['existing1.jpg', 'existing2.jpg', 'photo1.jpg', 'photo2.jpg', 'photo3.jpg'])
     })
 
@@ -774,18 +879,17 @@ describe('MultiItemDeliveryModal', () => {
       await nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       
-      // Complete form
-      await wrapper.find('select').setValue('vendor-1')
-      await wrapper.find('input[type="date"]').setValue('2024-01-15')
+      // Complete form using VendorSearchBox
+      await fillVendorInfo(wrapper, 'vendor-1', '2024-01-15')
       await nextTick()
-      
+
       // Move to items step
       let nextButton = wrapper.find('button[class*="btn-primary"]')
       await nextButton.trigger('click')
       await nextTick()
-      
-      // Add multiple items
-      wrapper.vm.updateDeliveryItem(0, {
+
+      // Add multiple items through new item form
+      wrapper.vm.updateNewItem(-1, {
         tempId: 'temp-1',
         item: 'item-1',
         quantity: 5,
@@ -793,11 +897,10 @@ describe('MultiItemDeliveryModal', () => {
         total_amount: 500,
         notes: ''
       })
-      
-      wrapper.vm.addNewItem()
+      await wrapper.vm.saveNewItem()
       await nextTick()
-      
-      wrapper.vm.updateDeliveryItem(1, {
+
+      wrapper.vm.updateNewItem(-1, {
         tempId: 'temp-2',
         item: 'item-2',
         quantity: 10,
@@ -805,6 +908,8 @@ describe('MultiItemDeliveryModal', () => {
         total_amount: 500,
         notes: ''
       })
+      await wrapper.vm.saveNewItem()
+      await nextTick()
       
       // Move to review step
       wrapper.vm.currentStep = 2
@@ -845,18 +950,17 @@ describe('MultiItemDeliveryModal', () => {
       
       wrapper.vm.selectedFilesForUpload = mockFiles
       
-      // Complete form
-      await wrapper.find('select').setValue('vendor-1')
-      await wrapper.find('input[type="date"]').setValue('2024-01-15')
+      // Complete form using VendorSearchBox
+      await fillVendorInfo(wrapper, 'vendor-1', '2024-01-15')
       await nextTick()
-      
+
       // Move to items step
       let nextButton = wrapper.find('button[class*="btn-primary"]')
       await nextButton.trigger('click')
       await nextTick()
-      
-      // Add item
-      wrapper.vm.updateDeliveryItem(0, {
+
+      // Add item through new item form
+      wrapper.vm.updateNewItem(-1, {
         tempId: 'temp-1',
         item: 'item-1',
         quantity: 5,
@@ -864,6 +968,8 @@ describe('MultiItemDeliveryModal', () => {
         total_amount: 500,
         notes: ''
       })
+      await wrapper.vm.saveNewItem()
+      await nextTick()
       
       // Move to review step
       wrapper.vm.currentStep = 2

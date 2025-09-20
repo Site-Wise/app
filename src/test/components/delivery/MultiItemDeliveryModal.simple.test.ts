@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
+import { createPinia } from 'pinia'
 import MultiItemDeliveryModal from '../../../components/delivery/MultiItemDeliveryModal.vue'
 
 // Mock composables
@@ -17,12 +18,28 @@ vi.mock('../../../composables/useToast', () => ({
   })
 }))
 
+vi.mock('../../../composables/useSubscription', () => ({
+  useSubscription: () => ({
+    checkCreateLimit: vi.fn().mockReturnValue(true),
+    isReadOnly: { value: false }
+  })
+}))
+
+vi.mock('../../../composables/useModalState', () => ({
+  useModalState: () => ({
+    openModal: vi.fn(),
+    closeModal: vi.fn()
+  })
+}))
+
 // Mock services - use vi.hoisted to ensure variables are available
 const mockServices = vi.hoisted(() => ({
   deliveryService: {
     create: vi.fn().mockResolvedValue({ id: 'delivery-1' }),
     update: vi.fn().mockResolvedValue({ id: 'delivery-1' }),
-    uploadPhoto: vi.fn().mockResolvedValue(true)
+    uploadPhoto: vi.fn().mockResolvedValue(true),
+    uploadPhotos: vi.fn().mockResolvedValue(['photo1.jpg', 'photo2.jpg', 'photo3.jpg']),
+    getAll: vi.fn().mockResolvedValue([])
   },
   deliveryItemService: {
     createMultiple: vi.fn().mockResolvedValue(true)
@@ -38,6 +55,39 @@ const mockServices = vi.hoisted(() => ({
       { id: 'item-1', name: 'Cement', unit: 'kg' },
       { id: 'item-2', name: 'Bricks', unit: 'pieces' }
     ])
+  },
+  paymentService: {
+    getAll: vi.fn().mockResolvedValue([])
+  },
+  serviceBookingService: {
+    getAll: vi.fn().mockResolvedValue([])
+  },
+  VendorService: {
+    calculateOutstandingFromData: vi.fn().mockReturnValue(0),
+    calculateTotalPaidFromData: vi.fn().mockReturnValue(0)
+  },
+  // Required functions for Pinia store compatibility
+  getCurrentSiteId: vi.fn(() => 'site-1'),
+  setCurrentSiteId: vi.fn(),
+  getCurrentUserRole: vi.fn(() => 'owner'),
+  setCurrentUserRole: vi.fn(),
+  calculatePermissions: vi.fn().mockReturnValue({
+    canCreate: true,
+    canRead: true,
+    canUpdate: true,
+    canDelete: true,
+    canManageUsers: true,
+    canManageRoles: true,
+    canExport: true,
+    canViewFinancials: true
+  }),
+  // PocketBase client for subscription store
+  pb: {
+    authStore: { isValid: true, model: { id: 'user-1' } },
+    collection: vi.fn(() => ({
+      getFirstListItem: vi.fn().mockResolvedValue({}),
+      getFullList: vi.fn().mockResolvedValue([])
+    }))
   }
 }))
 
@@ -58,7 +108,33 @@ vi.mock('../../../components/delivery/DeliveryItemRow.vue', () => ({
     name: 'DeliveryItemRow',
     template: '<div class="mock-delivery-item-row">Item Row</div>',
     props: ['item', 'index', 'items', 'usedItems'],
-    emits: ['update', 'remove']
+    emits: ['update', 'remove'],
+    methods: {
+      focusItemSelector() {
+        // Mock method for focus functionality
+      }
+    }
+  }
+}))
+
+vi.mock('../../../components/ImageSlider.vue', () => ({
+  default: {
+    name: 'ImageSlider',
+    template: '<div class="mock-image-slider">Image Slider</div>'
+  }
+}))
+
+vi.mock('../../../components/ItemCreateModal.vue', () => ({
+  default: {
+    name: 'ItemCreateModal',
+    template: '<div class="mock-item-create-modal">Item Create Modal</div>'
+  }
+}))
+
+vi.mock('../../../components/VendorSearchBox.vue', () => ({
+  default: {
+    name: 'VendorSearchBox',
+    template: '<input class="mock-vendor-search" />'
   }
 }))
 
@@ -66,9 +142,13 @@ describe('MultiItemDeliveryModal - Core Logic', () => {
   let wrapper: any
 
   const createWrapper = (props = {}) => {
+    const pinia = createPinia()
     return mount(MultiItemDeliveryModal, {
       props: {
         ...props
+      },
+      global: {
+        plugins: [pinia]
       },
       attachTo: document.body
     })
@@ -303,26 +383,28 @@ describe('MultiItemDeliveryModal - Core Logic', () => {
   })
 
   describe('Item Management Logic', () => {
-    it('should add new items correctly', async () => {
+    it('should create new item form correctly', async () => {
       wrapper = createWrapper()
       await nextTick()
-      
+
       await new Promise(resolve => setTimeout(resolve, 50))
       await nextTick()
 
-      const initialCount = wrapper.vm.deliveryItems.length
-      
+      // Clear any existing new item form
+      wrapper.vm.newItemForm = null
+      await nextTick()
+
       wrapper.vm.addNewItem()
       await nextTick()
 
-      expect(wrapper.vm.deliveryItems.length).toBe(initialCount + 1)
-      
-      const newItem = wrapper.vm.deliveryItems[wrapper.vm.deliveryItems.length - 1]
-      expect(newItem.tempId).toBeDefined()
-      expect(newItem.item).toBe('')
-      expect(newItem.quantity).toBe(1)
-      expect(newItem.unit_price).toBe(0)
-      expect(newItem.total_amount).toBe(0)
+      // Should create a new item form
+      expect(wrapper.vm.newItemForm).toBeTruthy()
+      expect(wrapper.vm.newItemForm.tempId).toBeDefined()
+      expect(wrapper.vm.newItemForm.item).toBe('')
+      expect(wrapper.vm.newItemForm.quantity).toBe(1)
+      expect(wrapper.vm.newItemForm.unit_price).toBe(0)
+      expect(wrapper.vm.newItemForm.total_amount).toBe(0)
+      expect(wrapper.vm.newItemForm.isNew).toBe(true)
     })
 
     it('should remove items correctly', async () => {

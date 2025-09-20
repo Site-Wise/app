@@ -74,13 +74,13 @@ describe('FileUploadComponent - Core Functionality', () => {
   })
 
   it('should validate file types', async () => {
-    wrapper = createWrapper({ acceptTypes: 'image/*' })
-    
-    // Test with PDF file (should fail)
-    const pdfFile = new File(['pdf content'], 'test.pdf', { type: 'application/pdf' })
-    await wrapper.vm.processFiles([pdfFile])
-    
-    expect(wrapper.vm.error).toContain('invalid file type')
+    wrapper = createWrapper({ acceptTypes: 'image/jpeg' })
+
+    // Test with text file (truly invalid type, not PDF which gets converted)
+    const textFile = new File(['text content'], 'test.txt', { type: 'text/plain' })
+    await wrapper.vm.processFiles([textFile])
+
+    expect(wrapper.vm.error).toContain('has an invalid file type')
     expect(wrapper.vm.previews).toHaveLength(0)
   })
 
@@ -137,10 +137,12 @@ describe('FileUploadComponent - Core Functionality', () => {
 
   it('should be accessible', () => {
     wrapper = createWrapper()
-    
+
     const uploadArea = wrapper.find('.file-upload-component')
-    expect(uploadArea.element.tagName).toBe('LABEL')
-    
+    expect(uploadArea.element.tagName).toBe('DIV')
+    expect(uploadArea.attributes('role')).toBe('button')
+    expect(uploadArea.attributes('tabindex')).toBe('0')
+
     const fileInput = wrapper.find('input[type="file"]')
     expect(fileInput.exists()).toBe(true)
   })

@@ -323,7 +323,8 @@ describe('DeliveryItemRow', () => {
     it('should emit remove event when remove button is clicked', async () => {
       wrapper = createWrapper()
 
-      const removeButton = wrapper.find('button')
+      // Find the remove button specifically (contains Trash2 icon)
+      const removeButton = wrapper.find('button[class*="text-red-600"]')
       await removeButton.trigger('click')
 
       expect(wrapper.emitted('remove')).toBeTruthy()
