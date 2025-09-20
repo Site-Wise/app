@@ -387,19 +387,15 @@
             <!-- Photos -->
             <div>
               <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-3">{{ t('delivery.photos') }}</h4>
-              <div v-if="viewingDelivery.photos && viewingDelivery.photos.length > 0" class="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
-                <div
-                  v-for="(photo, index) in viewingDelivery.photos"
-                  :key="index"
-                  class="flex-shrink-0 relative group"
-                >
+              <div v-if="viewingDelivery.photos && viewingDelivery.photos.length > 0" class="flex gap-2">
+                <div class="flex-shrink-0 relative group">
                   <img
-                    :src="getPhotoUrl(viewingDelivery.id!, photo)"
-                    :alt="`Photo ${index + 1}`"
+                    :src="getPhotoUrl(viewingDelivery.id!, viewingDelivery.photos[0])"
+                    :alt="'Photo 1'"
                     class="w-20 h-20 object-cover rounded-lg cursor-pointer border border-gray-200 dark:border-gray-600 hover:scale-105 transition-transform"
-                    @click="openPhotoGallery(viewingDelivery, index)"
+                    @click="openPhotoGallery(viewingDelivery, 0)"
                   />
-                  <div v-if="index === 0 && viewingDelivery.photos.length > 1" class="absolute -top-1 -right-1 bg-primary-500 text-white text-xs px-1.5 py-0.5 rounded-full shadow-lg">
+                  <div v-if="viewingDelivery.photos.length > 1" class="absolute -top-1 -right-1 bg-primary-500 text-white text-xs px-1.5 py-0.5 rounded-full shadow-lg">
                     +{{ viewingDelivery.photos.length - 1 }}
                   </div>
                 </div>

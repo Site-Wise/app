@@ -10,6 +10,16 @@
         'max-sm:top-4 max-sm:left-4 max-sm:right-4 max-sm:max-w-none'
       ]"
     >
+      <!-- Close All Button -->
+      <div v-if="showClearAll" class="mb-2">
+        <button
+          @click="clearAll"
+          class="w-full px-4 py-2 text-sm font-medium text-red-800 dark:text-red-100 bg-red-50/95 dark:bg-red-900/95 hover:bg-red-100 dark:hover:bg-red-800 border border-red-200 dark:border-red-700 rounded-lg transition-colors duration-200 backdrop-blur-sm"
+        >
+          {{ t('common.closeAll') }}
+        </button>
+      </div>
+
       <TransitionGroup
         name="toast"
         tag="div"
@@ -56,8 +66,16 @@ import {
   X 
 } from 'lucide-vue-next'
 import { useToast, type Toast } from '../composables/useToast'
+import { useI18n } from '../composables/useI18n'
+import { computed } from 'vue'
 
-const { toasts, removeToast } = useToast()
+const { toasts, removeToast, clearAll } = useToast()
+const { t } = useI18n()
+
+// Show clear all button if there are multiple toasts or any persistent toasts
+const showClearAll = computed(() => {
+  return toasts.value.length > 1 || toasts.value.some(toast => toast.persistent)
+})
 
 const getToastIcon = (type: Toast['type']) => {
   const icons = {

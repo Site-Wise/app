@@ -136,7 +136,8 @@ import {
   paymentService,
   deliveryService,
   serviceBookingService,
-  ServiceBookingService
+  ServiceBookingService,
+  vendorRefundService
 } from '../services/pocketbase';
 
 const { t } = useI18n();
@@ -145,18 +146,20 @@ const { currentSite } = useSite();
 
 // Use site-aware data loading
 const { data: dashboardData, loading } = useSiteData(async () => {
-  const [payments, deliveries, serviceBookings] = await Promise.all([
+  const [payments, deliveries, serviceBookings, vendorRefunds] = await Promise.all([
     paymentService.getAll(),
     deliveryService.getAll(),
     serviceBookingService.getAll(),
+    vendorRefundService.getAll(),
   ]);
 
-  return { payments, deliveries, serviceBookings };
+  return { payments, deliveries, serviceBookings, vendorRefunds };
 });
 
 const payments = computed(() => dashboardData.value?.payments || []);
 const deliveries = computed(() => dashboardData.value?.deliveries || []);
 const serviceBookings = computed(() => dashboardData.value?.serviceBookings || []);
+const vendorRefunds = computed(() => dashboardData.value?.vendorRefunds || []);
 
 
 const stats = computed(() => {
@@ -164,13 +167,23 @@ const stats = computed(() => {
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
 
-  const totalExpenses = deliveries.value.reduce((sum, delivery) => {
+  // Calculate gross expenses from deliveries and service bookings
+  const grossExpenses = deliveries.value.reduce((sum, delivery) => {
     return sum + delivery.total_amount;
   }, 0) + serviceBookings.value.reduce((sum, booking) => {
     return sum + booking.total_amount;
   }, 0);
 
-  const currentMonthExpenses = deliveries.value
+  // Calculate total refunds received
+  const totalRefunds = vendorRefunds.value.reduce((sum, refund) => {
+    return sum + refund.refund_amount;
+  }, 0);
+
+  // Net expenses = Gross expenses - Refunds
+  const totalExpenses = grossExpenses - totalRefunds;
+
+  // Calculate current month gross expenses
+  const currentMonthGrossExpenses = deliveries.value
     .filter(delivery => {
       const deliveryDate = new Date(delivery.delivery_date);
       return deliveryDate.getMonth() === currentMonth && deliveryDate.getFullYear() === currentYear;
@@ -182,6 +195,17 @@ const stats = computed(() => {
         return bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
       })
       .reduce((sum, booking) => sum + booking.total_amount, 0);
+
+  // Calculate current month refunds
+  const currentMonthRefunds = vendorRefunds.value
+    .filter(refund => {
+      const refundDate = new Date(refund.refund_date);
+      return refundDate.getMonth() === currentMonth && refundDate.getFullYear() === currentYear;
+    })
+    .reduce((sum, refund) => sum + refund.refund_amount, 0);
+
+  // Net current month expenses = Gross expenses - Refunds
+  const currentMonthExpenses = currentMonthGrossExpenses - currentMonthRefunds;
 
   const totalSqft = currentSite.value?.total_planned_area || 1;
   const expensePerSqft = Math.round(totalExpenses / totalSqft);
