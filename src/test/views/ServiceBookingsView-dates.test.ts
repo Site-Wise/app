@@ -70,6 +70,9 @@ vi.mock('../../services/pocketbase', () => {
       calculateOutstandingFromData: vi.fn().mockReturnValue(0),
       calculateProgressBasedAmount: vi.fn().mockReturnValue(500)
     },
+    VendorService: {
+      calculateOutstandingFromData: vi.fn().mockReturnValue(0)
+    },
     getCurrentSiteId: vi.fn(() => 'site-1'),
     setCurrentSiteId: vi.fn(),
     getCurrentUserRole: vi.fn(() => 'owner'),

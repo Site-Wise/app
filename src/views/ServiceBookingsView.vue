@@ -279,7 +279,7 @@
             {{ editingBooking ? t('serviceBookings.editBooking') : t('serviceBookings.bookService') }}
           </h3>
           
-          <form @submit.prevent="saveBooking" class="space-y-4">
+          <form @submit.prevent="saveBooking" @keydown="handleKeydown" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.service') }}</label>
               <select 
@@ -306,20 +306,22 @@
             
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.vendor') }}</label>
-              <select 
-                v-model="form.vendor" 
-                required 
+              <VendorSearchBox
+                ref="vendorSearchRef"
+                v-model="form.vendor"
+                :vendors="vendors"
+                :deliveries="[]"
+                :service-bookings="[]"
+                :payments="[]"
+                :placeholder="t('forms.selectProvider')"
+                :required="true"
+                :disabled="!!(editingBooking && hasPayments(editingBooking))"
                 :class="[
-                  'input mt-1',
+                  'mt-1',
                   editingBooking && hasPayments(editingBooking) ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''
                 ]"
-                :disabled="!!(editingBooking && hasPayments(editingBooking))"
-              >
-                <option value="">{{ t('forms.selectProvider') }}</option>
-                <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
-                  {{ vendor.contact_person }} | {{ vendor.name }}
-                </option>
-              </select>
+                @vendor-selected="handleVendorSelected"
+              />
               <p v-if="editingBooking && hasPayments(editingBooking)" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 {{ t('serviceBookings.cannotChangeVendorWithPayments') }}
               </p>
@@ -327,15 +329,17 @@
             
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.startDate') }}</label>
-              <input 
-                v-model="form.start_date" 
-                type="date" 
-                required 
+              <input
+                ref="startDateInputRef"
+                v-model="form.start_date"
+                type="date"
+                required
                 :class="[
                   'input mt-1',
                   editingBooking && hasPayments(editingBooking) ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''
                 ]"
                 :disabled="!!(editingBooking && hasPayments(editingBooking))"
+                @keydown="handleKeydown"
               />
               <p v-if="editingBooking && hasPayments(editingBooking)" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 {{ t('serviceBookings.cannotChangeDateWithPayments') }}
@@ -345,7 +349,19 @@
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.duration') }}</label>
-                <input v-model.number="form.duration" type="number" step="0.5" required class="input mt-1" placeholder="0" @input="calculateTotal" />
+                <div class="flex gap-2 mt-1">
+                  <input v-model.number="form.duration" type="number" step="0.5" required class="input flex-1" placeholder="0" @input="calculateTotal" />
+                  <button
+                    v-if="isHourlyService"
+                    type="button"
+                    @click="openTimeCalculator"
+                    class="btn-outline px-3 py-2 flex items-center gap-1 min-w-fit"
+                    :title="t('serviceBookings.calculateFromTime')"
+                  >
+                    <Clock class="h-4 w-4" />
+                    <span class="hidden sm:inline">{{ t('serviceBookings.calculate') }}</span>
+                  </button>
+                </div>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.unitRate') }}</label>
@@ -403,14 +419,21 @@
               <textarea v-model="form.notes" class="input mt-1" rows="3" :placeholder="t('forms.serviceNotes')"></textarea>
             </div>
             
-            <div class="flex space-x-3 pt-4">
-              <button type="submit" :disabled="loading" class="flex-1 btn-primary">
-                <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-                {{ editingBooking ? t('common.update') : t('common.create') }}
-              </button>
-              <button type="button" @click="closeModal" class="flex-1 btn-outline">
-                {{ t('common.cancel') }}
-              </button>
+            <div class="space-y-3 pt-4">
+              <!-- Keyboard shortcut hint for new bookings (desktop only) -->
+              <div v-if="!editingBooking" class="hidden sm:block text-xs text-gray-500 dark:text-gray-400 text-center">
+                {{ t('common.tip') }}: {{ t('common.keyboardShortcut', { keys: 'Ctrl+Enter' }) }} {{ t('serviceBookings.addAndContinue') }}
+              </div>
+
+              <div class="flex space-x-3">
+                <button type="submit" :disabled="loading" class="flex-1 btn-primary">
+                  <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
+                  {{ editingBooking ? t('common.update') : t('common.create') }}
+                </button>
+                <button type="button" @click="closeModal" class="flex-1 btn-outline">
+                  {{ t('common.cancel') }}
+                </button>
+              </div>
             </div>
           </form>
         </div>
@@ -493,30 +516,43 @@
         </div>
       </div>
     </div>
+
+    <!-- Time Calculator Modal -->
+    <TimeCalculatorModal
+      v-if="showTimeCalculator"
+      :current-date="form.start_date"
+      :current-duration="form.duration"
+      @close="closeTimeCalculator"
+      @apply="handleTimeCalculatorApply"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, nextTick } from 'vue';
 import { useEventListener } from '@vueuse/core';
-import { 
-  Calendar, 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  Loader2, 
-  Eye, 
-  X
+import {
+  Calendar,
+  Plus,
+  Edit2,
+  Trash2,
+  Loader2,
+  Eye,
+  X,
+  Clock
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { usePermissions } from '../composables/usePermissions';
 import { useSubscription } from '../composables/useSubscription';
+import { useToast } from '../composables/useToast';
 import { useModalState } from '../composables/useModalState';
 import { useSiteData } from '../composables/useSiteData';
 import { useServiceBookingSearch } from '../composables/useSearch';
 import PhotoGallery from '../components/PhotoGallery.vue';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
+import VendorSearchBox from '../components/VendorSearchBox.vue';
+import TimeCalculatorModal from '../components/TimeCalculatorModal.vue';
 import { 
   serviceBookingService, 
   serviceService,
@@ -534,6 +570,7 @@ interface ServiceBookingWithPaymentStatus extends ServiceBooking {
 
 const { t } = useI18n();
 const { canCreate, canUpdate, canDelete } = usePermissions();
+const { success: showSuccessToast } = useToast();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { openModal, closeModal: closeModalState } = useModalState();
 
@@ -610,11 +647,14 @@ const vendors = computed(() => vendorsData.value || []);
 const showAddModal = ref(false);
 const editingBooking = ref<ServiceBooking | null>(null);
 const viewingBooking = ref<ServiceBooking | null>(null);
+const showTimeCalculator = ref(false);
 const loading = ref(false);
 const showUnitRateWarning = ref(false);
 const originalUnitRate = ref(0);
 
 const serviceInputRef = ref<HTMLInputElement>();
+const vendorSearchRef = ref();
+const startDateInputRef = ref<HTMLInputElement>();
 
 const form = reactive({
   service: '',
@@ -642,10 +682,19 @@ const searchResultsCount = computed(() => {
 
 const searchResultsTotal = computed(() => {
   if (!searchQuery.value.trim() || serviceBookings.value.length === 0) return 0;
-  
+
   return serviceBookings.value.reduce((total, booking) => {
     return total + (booking.total_amount || 0);
   }, 0);
+});
+
+// Check if selected service uses hourly calculation
+const selectedService = computed(() => {
+  return services.value.find(service => service.id === form.service);
+});
+
+const isHourlyService = computed(() => {
+  return selectedService.value?.unit === 'hour';
 });
 
 const reloadAllData = async () => {
@@ -670,32 +719,75 @@ const updateRateFromService = () => {
 
 const handleUnitRateChange = () => {
   calculateTotal();
-  
+
   // Show warning if editing a booking with payments and unit rate has changed
   if (editingBooking.value && hasPayments(editingBooking.value)) {
     showUnitRateWarning.value = form.unit_rate !== originalUnitRate.value;
   }
 };
 
+const handleVendorSelected = (vendor: any) => {
+  if (vendor) {
+    form.vendor = vendor.id;
+  }
+};
 
-const saveBooking = async () => {
+const handleKeydown = async (event: KeyboardEvent) => {
+  // CTRL + ENTER to save and keep modal open (for multiple bookings)
+  if (event.ctrlKey && event.key === 'Enter') {
+    event.preventDefault();
+    if (!editingBooking.value && !loading.value) {
+      await saveBooking(true); // Keep modal open
+    }
+  }
+};
+
+
+const saveBooking = async (keepModalOpen = false) => {
   loading.value = true;
   try {
     const data = { ...form };
-    
+
     // Ensure dates are in proper format (keep as date strings)
     if (data.start_date) {
       data.start_date = data.start_date; // Keep YYYY-MM-DD format
     }
-    
+
     if (editingBooking.value) {
       await serviceBookingService.update(editingBooking.value.id!, data);
+      await reloadAllData();
+      showSuccessToast(t('messages.updateSuccess', { item: t('common.serviceBooking') }));
+      closeModal();
     } else {
       await serviceBookingService.create(data);
+      await reloadAllData();
+      showSuccessToast(t('messages.createSuccess', { item: t('common.serviceBooking') }));
+
+      if (keepModalOpen) {
+        // Keep modal open for multiple bookings
+        // Retain provider and service, clear other fields, focus start date
+        const retainedProvider = form.vendor;
+        const retainedService = form.service;
+        const retainedUnitRate = form.unit_rate;
+
+        Object.assign(form, {
+          service: retainedService,
+          vendor: retainedProvider,
+          start_date: '',
+          duration: 0,
+          unit_rate: retainedUnitRate,
+          total_amount: 0,
+          percent_completed: 0,
+          notes: ''
+        });
+
+        // Focus on start date for next booking
+        await nextTick();
+        startDateInputRef.value?.focus();
+      } else {
+        closeModal();
+      }
     }
-    
-    await reloadAllData();
-    closeModal();
   } catch (error) {
     console.error('Error saving service booking:', error);
     alert(t('messages.error'));
@@ -755,6 +847,22 @@ const formatDate = (dateString: string) => {
 
 const formatDateTime = (dateString: string) => {
   return new Date(dateString).toLocaleString();
+};
+
+// Time calculator functions
+const openTimeCalculator = () => {
+  showTimeCalculator.value = true;
+};
+
+const closeTimeCalculator = () => {
+  showTimeCalculator.value = false;
+};
+
+const handleTimeCalculatorApply = (duration: number, date: string) => {
+  form.duration = duration;
+  form.start_date = date;
+  calculateTotal();
+  closeTimeCalculator();
 };
 
 const canEditBooking = (booking: ServiceBooking) => {

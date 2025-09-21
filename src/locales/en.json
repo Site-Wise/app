@@ -78,6 +78,7 @@
     "unknownVendor": "Unknown Vendor",
     "approve": "Approve",
     "keyboardShortcut": "Keyboard shortcut: {keys}",
+    "tip": "Tip",
     "unnamedVendor": "Unnamed Vendor",
     "service": "Service",
     "serviceBooking": "Service Booking",
@@ -304,6 +305,7 @@
     "subtitle": "Manage and track your service bookings",
     "bookService": "Book Service",
     "editBooking": "Edit Booking",
+    "addAndContinue": "to add another booking",
     "startDate": "Start Date",
     "endDate": "End Date",
     "duration": "Quantity",
@@ -328,7 +330,17 @@
       "cancelled": "Cancelled"
     },
     "result": "result",
-    "results": "results"
+    "results": "results",
+    "timeCalculator": "Time Calculator",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "calculatedDuration": "Calculated Duration",
+    "nextDay": "next day",
+    "invalidTimeRange": "End time must be after start time",
+    "durationTooLong": "Duration cannot exceed 24 hours",
+    "applyDuration": "Apply Duration",
+    "calculate": "Calculate",
+    "calculateFromTime": "Calculate duration from start and end times"
   },
   "vendors": {
     "title": "Vendors",
@@ -1375,7 +1387,9 @@
     "kilogram": "Kilogram",
     "square meter": "Square Meter",
     "liter": "Liter",
-    "meter": "Meter"
+    "meter": "Meter",
+    "hour": "hour",
+    "hours": "hours"
   },
   "pwa": {
     "installTitle": "Install SiteWise App",
