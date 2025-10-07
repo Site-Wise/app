@@ -813,9 +813,9 @@ const resetForm = async () => {
   deliveryForm.notes = '';
   deliveryForm.rounded_off_with = 0;
 
-  // Clear items and new item form
+  // Clear items and create a fresh new item form
   deliveryItems.value = [];
-  newItemForm.value = null;
+  await addNewItem();
 
   // Clear selected files
   selectedFilesForUpload.value = [];

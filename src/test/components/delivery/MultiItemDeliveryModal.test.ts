@@ -859,7 +859,7 @@ describe('MultiItemDeliveryModal', () => {
       expect(wrapper.vm.selectedFilesForUpload.length).toBe(1)
 
       // Reset form
-      wrapper.vm.resetForm()
+      await wrapper.vm.resetForm()
       expect(wrapper.vm.selectedFilesForUpload.length).toBe(0)
     })
   })

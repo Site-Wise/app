@@ -279,7 +279,7 @@
             {{ editingBooking ? t('serviceBookings.editBooking') : t('serviceBookings.bookService') }}
           </h3>
           
-          <form @submit.prevent="saveBooking" @keydown="handleKeydown" class="space-y-4">
+          <form @submit.prevent="() => saveBooking()" @keydown="handleKeydown" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.service') }}</label>
               <select 

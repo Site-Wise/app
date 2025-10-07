@@ -2101,12 +2101,18 @@ export class PaymentService {
 
 
   private async handleDetailedPaymentAllocations(
-    paymentId: string, 
-    deliveryAllocations: Record<string, any>, 
+    paymentId: string,
+    deliveryAllocations: Record<string, any>,
     serviceBookingAllocations: Record<string, any>
   ): Promise<string[]> {
     const siteId = getCurrentSiteId();
     if (!siteId) return [];
+
+    console.log('handleDetailedPaymentAllocations called with:', {
+      paymentId,
+      deliveryAllocations,
+      serviceBookingAllocations
+    });
 
     const createdAllocationIds: string[] = [];
 

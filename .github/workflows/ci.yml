@@ -43,7 +43,7 @@ jobs:
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        slug: site-wise/app
+        slug: Site-Wise/app
 
   build:
     runs-on: ubuntu-latest
