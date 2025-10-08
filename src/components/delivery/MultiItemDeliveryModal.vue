@@ -723,15 +723,11 @@ const saveDelivery = async () => {
       rounded_off_with: deliveryForm.rounded_off_with || 0
     } as Partial<Delivery>;
 
-    // For edits, handle existing photo changes (removals)
+    // For edits, always include existing photos to preserve them during updates
     if (props.editingDelivery) {
-      const originalPhotoCount = (props.editingDelivery.photos || []).length;
-      const currentPhotoCount = existingPhotos.value.length;
-
-      // If photos were removed, update the delivery with remaining photos
-      if (currentPhotoCount !== originalPhotoCount) {
-        deliveryData.photos = existingPhotos.value;
-      }
+      // Include existing photos in the update to ensure they're preserved
+      // when new photos are uploaded later
+      deliveryData.photos = existingPhotos.value;
     }
 
     // Only set payment status for new deliveries - existing ones keep their current status

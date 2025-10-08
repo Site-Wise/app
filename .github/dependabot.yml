@@ -1,7 +1,4 @@
 version: 2
-ignore:
-  - dependency-name: "tailwindcss"
-    versions: [">=4.0.0"]
 updates:
   # Enable version updates for npm
   - package-ecosystem: "npm"
@@ -12,6 +9,9 @@ updates:
       time: "09:00"
       timezone: "UTC"
     open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: "tailwindcss"
+        versions: [">=4.0.0"]
     reviewers:
       - "site-wise/maintainers"
     assignees:
