@@ -29,7 +29,7 @@
     "pocketbase": "^0.26.2",
     "vue": "^3.5.22",
     "vue-chartjs": "^5.3.2",
-    "vue-router": "^4.2.5",
+    "vue-router": "^4.6.3",
     "vue-toastification": "^2.0.0-rc.5"
   },
   "devDependencies": {
