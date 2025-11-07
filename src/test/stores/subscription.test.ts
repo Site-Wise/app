@@ -668,7 +668,7 @@ describe('Subscription Store Logic', () => {
 
     it('should use fallback message for non-Error instances', () => {
       const err = 'String error'
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load subscription'
+      const errorMessage = (typeof err === 'object' && err instanceof Error) ? err.message : 'Failed to load subscription'
 
       expect(errorMessage).toBe('Failed to load subscription')
     })
