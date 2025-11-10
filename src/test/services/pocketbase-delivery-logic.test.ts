@@ -261,9 +261,9 @@ describe('Delivery & ServiceBooking Services Business Logic', () => {
       const progressBasedAmount = (booking.total_amount * booking.percent_completed) / 100
 
       const getPaymentStatus = () => {
-        if (allocatedAmount === 0) return 'pending'
-        if (allocatedAmount >= progressBasedAmount) return 'currently_paid_up'
-        if (allocatedAmount >= booking.total_amount) return 'paid'
+        if ((allocatedAmount ?? 0) === 0) return 'pending'
+        if ((allocatedAmount ?? 0) >= progressBasedAmount) return 'currently_paid_up'
+        if ((allocatedAmount ?? 0) >= booking.total_amount) return 'paid'
         return 'partial'
       }
 
@@ -277,9 +277,9 @@ describe('Delivery & ServiceBooking Services Business Logic', () => {
       const progressBasedAmount = (booking.total_amount * booking.percent_completed) / 100
 
       const getPaymentStatus = () => {
-        if (allocatedAmount === 0) return 'pending'
-        if (allocatedAmount >= progressBasedAmount) return 'currently_paid_up'
-        if (allocatedAmount >= booking.total_amount) return 'paid'
+        if ((allocatedAmount ?? 0) === 0) return 'pending'
+        if ((allocatedAmount ?? 0) >= progressBasedAmount) return 'currently_paid_up'
+        if ((allocatedAmount ?? 0) >= booking.total_amount) return 'paid'
         return 'partial'
       }
 
@@ -311,9 +311,9 @@ describe('Delivery & ServiceBooking Services Business Logic', () => {
       const progressBasedAmount = (booking.total_amount * booking.percent_completed) / 100
 
       const getPaymentStatus = () => {
-        if (allocatedAmount === 0) return 'pending'
-        if (allocatedAmount >= booking.total_amount) return 'paid'
-        if (allocatedAmount >= progressBasedAmount) return 'currently_paid_up'
+        if ((allocatedAmount ?? 0) === 0) return 'pending'
+        if ((allocatedAmount ?? 0) >= booking.total_amount) return 'paid'
+        if ((allocatedAmount ?? 0) >= progressBasedAmount) return 'currently_paid_up'
         return 'partial'
       }
 
