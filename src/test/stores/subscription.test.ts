@@ -216,7 +216,6 @@ describe('Subscription Store Logic', () => {
     })
 
     it('should return false when no plan features available', () => {
-      const plan = null
       const canCreate = false
 
       expect(canCreate).toBe(false)
