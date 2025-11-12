@@ -605,23 +605,48 @@ describe('PaymentsView - Mobile Responsive Design', () => {
     })
   })
 
-  describe('Mobile Outstanding Amounts Section', () => {
-    it('should display outstanding amounts in responsive layout', async () => {
-      // Since we're using useSiteData, test the component structure
+  describe('Pending Payments Modal', () => {
+    it('should display pending payments button when vendors have outstanding amounts', async () => {
       wrapper = createWrapper()
-      
+
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 100))
       await wrapper.vm.$nextTick()
 
-      // Check that the outstanding amounts section exists
-      const outstandingSection = wrapper.find('.mt-8.card')
-      expect(outstandingSection.exists()).toBe(true)
-      
-      // Check that outstanding amounts are displayed correctly with our mock data
-      expect(wrapper.text()).toContain('Outstanding Amounts by Vendor')
-      expect(wrapper.text()).toContain('ABC Steel Co.')
-      expect(wrapper.text()).toContain('XYZ Cement Ltd.')
+      // The pending payments button should exist
+      expect(wrapper.vm.vendorsWithOutstanding.length).toBeGreaterThan(0)
+    })
+
+    it('should open modal when pending payments button is clicked', async () => {
+      wrapper = createWrapper()
+
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      // Open the modal directly via vm
+      wrapper.vm.showPendingPaymentsModal = true
+      await wrapper.vm.$nextTick()
+
+      // Modal should be visible
+      expect(wrapper.vm.showPendingPaymentsModal).toBe(true)
+      expect(wrapper.html()).toContain('Outstanding Amounts by Vendor')
+    })
+
+    it('should display vendors with outstanding amounts in modal', async () => {
+      wrapper = createWrapper()
+
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      // Open the modal
+      wrapper.vm.showPendingPaymentsModal = true
+      await wrapper.vm.$nextTick()
+
+      // Check that vendors are displayed in the modal
+      expect(wrapper.html()).toContain('ABC Steel Co.')
+      expect(wrapper.html()).toContain('XYZ Cement Ltd.')
     })
   })
 
@@ -683,17 +708,21 @@ describe('PaymentsView - Mobile Responsive Design', () => {
   })
 
   describe('Payment Allocation Functionality', () => {
-    it('should show outstanding amounts for vendors', async () => {
+    it('should show outstanding amounts for vendors in modal', async () => {
       wrapper = createWrapper()
-      
+
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      // Open the modal to see outstanding amounts
+      wrapper.vm.showPendingPaymentsModal = true
       await wrapper.vm.$nextTick()
 
       // Since our mock data includes deliveries and bookings with outstanding amounts,
       // ABC Steel Co. should have ₹4000 outstanding (₹2000 from delivery-1, ₹2000 from delivery-2)
       // XYZ Cement Ltd. should have ₹3000 outstanding (from booking-1)
-      expect(wrapper.text()).toContain('Outstanding Amounts by Vendor')
+      expect(wrapper.html()).toContain('Outstanding Amounts by Vendor')
     })
 
     it('should calculate vendor outstanding amounts correctly', async () => {

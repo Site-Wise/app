@@ -7,19 +7,33 @@
           {{ t('payments.subtitle') }}
         </p>
       </div>
-      <button 
-        @click="handleAddPayment" 
-        :disabled="!canCreatePayment"
-        :class="[
-          canCreatePayment ? 'btn-primary' : 'btn-disabled',
-          'hidden md:flex items-center'
-        ]"
-        :title="!canCreatePayment ? t('subscription.banner.freeTierLimitReached') : ''"
-        data-keyboard-shortcut="n"
-      >
-        <Plus class="mr-2 h-4 w-4" />
-        {{ t('payments.recordPayment') }}
-      </button>
+      <div class="flex items-center space-x-3">
+        <button
+          @click="openPendingPaymentsModal"
+          :disabled="vendorsWithOutstanding.length === 0"
+          :class="[
+            vendorsWithOutstanding.length > 0 ? 'btn-outline' : 'btn-disabled',
+            'hidden md:flex items-center'
+          ]"
+          :title="vendorsWithOutstanding.length === 0 ? t('payments.noPendingPayments') : t('payments.viewPendingPayments')"
+        >
+          <CreditCard class="mr-2 h-4 w-4" />
+          {{ t('payments.pendingPayments') }} ({{ vendorsWithOutstanding.length }})
+        </button>
+        <button
+          @click="handleAddPayment"
+          :disabled="!canCreatePayment"
+          :class="[
+            canCreatePayment ? 'btn-primary' : 'btn-disabled',
+            'hidden md:flex items-center'
+          ]"
+          :title="!canCreatePayment ? t('subscription.banner.freeTierLimitReached') : ''"
+          data-keyboard-shortcut="n"
+        >
+          <Plus class="mr-2 h-4 w-4" />
+          {{ t('payments.recordPayment') }}
+        </button>
+      </div>
     </div>
 
     <!-- Search Box with Results Summary -->
@@ -345,34 +359,50 @@
       </div>
     </div>
 
-    <!-- Outstanding Amounts by Vendor -->
-    <div class="mt-8 card">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Outstanding Amounts by Vendor</h2>
-      <div class="space-y-4">
-        <div v-for="vendor in vendorsWithOutstanding" :key="vendor.id" class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <div class="mb-3 sm:mb-0">
-            <h3 class="font-medium text-gray-900 dark:text-white">{{ vendor.contact_person }}</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400">{{ vendor.pendingItems }} pending deliveries</p>
-          </div>
-          <div class="flex items-center justify-between sm:block sm:text-right">
-            <p class="text-lg font-semibold text-gray-900 dark:text-white">₹{{ vendor.outstandingAmount.toFixed(2) }}</p>
-            <button 
-              @click="quickPayment(vendor)" 
-              :disabled="!canCreatePayment"
-              :class="[
-                canCreatePayment 
-                  ? 'text-sm text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300' 
-                  : 'text-sm text-gray-300 dark:text-gray-600 cursor-not-allowed',
-                'ml-3 sm:ml-0'
-              ]"
-            >
-              Pay Now
+    <!-- Pending Payments Modal -->
+    <div v-if="showPendingPaymentsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closePendingPaymentsModal" @keydown.esc="closePendingPaymentsModal" tabindex="-1">
+      <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4" @click.stop>
+        <div class="mt-3">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('payments.outstandingByVendor') }}</h3>
+            <button @click="closePendingPaymentsModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+              <X class="h-6 w-6" />
             </button>
           </div>
-        </div>
-        
-        <div v-if="vendorsWithOutstanding.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
-          No outstanding amounts
+
+          <div class="space-y-4 max-h-[60vh] overflow-y-auto">
+            <div v-for="vendor in vendorsWithOutstanding" :key="vendor.id" class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div class="mb-3 sm:mb-0">
+                <h3 class="font-medium text-gray-900 dark:text-white">{{ vendor.contact_person }}</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400">{{ vendor.pendingItems }} {{ t('payments.pendingDeliveries') }}</p>
+              </div>
+              <div class="flex items-center justify-between sm:block sm:text-right">
+                <p class="text-lg font-semibold text-gray-900 dark:text-white">₹{{ vendor.outstandingAmount.toFixed(2) }}</p>
+                <button
+                  @click="quickPayment(vendor); closePendingPaymentsModal();"
+                  :disabled="!canCreatePayment"
+                  :class="[
+                    canCreatePayment
+                      ? 'text-sm text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300'
+                      : 'text-sm text-gray-300 dark:text-gray-600 cursor-not-allowed',
+                    'ml-3 sm:ml-0'
+                  ]"
+                >
+                  {{ t('payments.payNow') }}
+                </button>
+              </div>
+            </div>
+
+            <div v-if="vendorsWithOutstanding.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+              {{ t('payments.noOutstanding') }}
+            </div>
+          </div>
+
+          <div class="mt-6 flex justify-end">
+            <button @click="closePendingPaymentsModal" class="btn-outline">
+              {{ t('common.close') }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -533,17 +563,18 @@
 import { ref, computed, onMounted } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { useRoute } from 'vue-router';
-import { 
-  CreditCard, 
-  Plus, 
-  Eye, 
+import {
+  CreditCard,
+  Plus,
+  Eye,
   Edit2,
   Trash2,
   Loader2,
   Banknote,
   Wallet,
   Smartphone,
-  Building2
+  Building2,
+  X
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
@@ -624,6 +655,9 @@ const currentPayment = ref<Payment | null>(null);
 const currentAllocations = ref<PaymentAllocation[]>([]);
 const vendorIdForPayNow = ref('');
 const outstandingAmountForPayNow = ref(0);
+
+// Pending payments modal state
+const showPendingPaymentsModal = ref(false);
 
 // View payment modal state
 const viewingPayment = ref<Payment | null>(null);
@@ -992,6 +1026,16 @@ const handlePaymentModalClose = () => {
   closeModalState('payments-add-modal');
   closeModalState('payments-paynow-modal');
   closeModalState('payments-edit-modal');
+};
+
+const openPendingPaymentsModal = () => {
+  showPendingPaymentsModal.value = true;
+  openModal('payments-pending-modal');
+};
+
+const closePendingPaymentsModal = () => {
+  showPendingPaymentsModal.value = false;
+  closeModalState('payments-pending-modal');
 };
 
 const handleQuickAction = () => {
