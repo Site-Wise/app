@@ -366,17 +366,17 @@
               </div>
               <div>
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('delivery.paymentStatus') }}:</span>
-                <span :class="`ml-2 status-${viewingDeliveryPaymentStatus || 'pending'}`">
-                  {{ t(`common.${viewingDeliveryPaymentStatus || 'pending'}`) }}
+                <span :class="`ml-2 status-${viewingDelivery.payment_status || 'pending'}`">
+                  {{ t(`common.${viewingDelivery.payment_status || 'pending'}`) }}
                 </span>
                 <!-- Show outstanding amount for partial payments -->
-                <div v-if="viewingDeliveryPaymentStatus === 'partial'" class="text-xs text-gray-500 dark:text-gray-400">
-                  ₹{{ (viewingDelivery.total_amount - viewingDeliveryAllocatedAmount).toFixed(2) }} pending
+                <div v-if="viewingDelivery.payment_status === 'partial'" class="text-xs text-gray-500 dark:text-gray-400">
+                  ₹{{ viewingDelivery.outstanding?.toFixed(2) || '0.00' }} pending
                 </div>
               </div>
               <div>
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('delivery.paidAmount') }}:</span>
-                <span class="ml-2 text-gray-900 dark:text-white">₹{{ viewingDeliveryAllocatedAmount.toFixed(2) }}</span>
+                <span class="ml-2 text-gray-900 dark:text-white">₹{{ viewingDelivery.paid_amount?.toFixed(2) || '0.00' }}</span>
               </div>
               <div v-if="viewingDelivery.notes">
                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('common.notes') }}:</span>
@@ -593,20 +593,6 @@ const { searchQuery, loading: searchLoading, results: searchResults, loadAll } =
 // Client-side payment status calculation
 const paymentAllocations = computed(() => paymentAllocationsData.value || []);
 
-// Calculate payment status for currently viewed delivery
-const viewingDeliveryPaymentStatus = computed(() => {
-  if (!viewingDelivery.value) return null;
-  return DeliveryPaymentCalculator.calculatePaymentStatus(viewingDelivery.value, paymentAllocations.value);
-});
-
-// Calculate allocated amount for currently viewed delivery
-const viewingDeliveryAllocatedAmount = computed(() => {
-  if (!viewingDelivery.value) return 0;
-  return paymentAllocations.value
-    .filter(allocation => allocation.delivery === viewingDelivery.value!.id)
-    .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
-});
-
 // Display items: use search results if searching, otherwise all items with calculated payment status
 const deliveries = computed((): DeliveryWithPaymentStatus[] => {
   const baseDeliveries = searchQuery.value.trim() ? searchResults.value : (allDeliveriesData.value || []);
@@ -814,13 +800,13 @@ const viewDelivery = async (delivery: Delivery) => {
     openModal('delivery-view-modal');
     // Fetch the full delivery with all expanded relationships
     const fullDelivery = await deliveryService.getById(delivery.id!);
-    
+
     // If no delivery items found, try to fetch them separately as a fallback
     if (!fullDelivery.expand?.delivery_items || fullDelivery.expand.delivery_items.length === 0) {
       try {
         const { deliveryItemService } = await import('../services/pocketbase');
         const separateItems = await deliveryItemService.getByDelivery(delivery.id!);
-        
+
         if (separateItems.length > 0) {
           // We found orphaned items - mark this so we can show the reconnect button
           orphanedItemsFound.value = true;
@@ -832,9 +818,15 @@ const viewDelivery = async (delivery: Delivery) => {
         console.error('Failed to fetch delivery items separately:', separateErr);
       }
     }
-    
-    viewingDelivery.value = fullDelivery;
-    
+
+    // Enhance the delivery with calculated payment status (matching list view logic)
+    const enhancedDelivery = DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus(
+      [fullDelivery],
+      paymentAllocations.value
+    )[0];
+
+    viewingDelivery.value = enhancedDelivery;
+
     // Load return information for each delivery item
     if (fullDelivery.expand?.delivery_items) {
       await loadReturnInfo(fullDelivery.expand.delivery_items);
@@ -842,8 +834,12 @@ const viewDelivery = async (delivery: Delivery) => {
   } catch (err) {
     console.error('Error loading delivery details:', err);
     error(t('delivery.loadError'));
-    // Fallback to the delivery object we have
-    viewingDelivery.value = delivery;
+    // Fallback to the delivery object we have, but still enhance it
+    const enhancedFallback = DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus(
+      [delivery],
+      paymentAllocations.value
+    )[0];
+    viewingDelivery.value = enhancedFallback;
   } finally {
     loadingDeliveryDetails.value = false;
   }
