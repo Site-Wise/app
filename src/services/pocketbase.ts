@@ -2233,12 +2233,92 @@ export class PaymentService {
     // Get the payment to determine total amount
     const payment = await this.getById(paymentId);
     if (!payment) throw new Error('Payment not found');
-    
-    // Delete all existing allocations
-    await paymentAllocationService.deleteByPayment(paymentId);
-    
-    // Create new allocations with the full payment amount
-    await this.handlePaymentAllocations(paymentId, deliveryIds, serviceBookingIds, payment.amount);
+
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    // Get existing allocations to delete
+    const existingAllocations = await paymentAllocationService.getByPayment(paymentId);
+
+    // Prepare batch requests for deletions and creations
+    const batchRequests: any[] = [];
+
+    // Add delete requests for existing allocations
+    for (const allocation of existingAllocations) {
+      if (allocation.id) {
+        batchRequests.push({
+          method: 'DELETE',
+          url: `/api/collections/payment_allocations/records/${allocation.id}`
+        });
+      }
+    }
+
+    // Calculate allocations for new items
+    let remainingAmount = payment.amount;
+    const allocationData: Array<{delivery?: string, service_booking?: string, allocated_amount: number}> = [];
+
+    // Handle delivery allocations
+    for (const deliveryId of deliveryIds) {
+      if (remainingAmount <= 0) break;
+
+      const delivery = await pb.collection('deliveries').getOne(deliveryId);
+      const currentPaidAmount = await deliveryService.calculatePaidAmount(deliveryId);
+      const outstandingAmount = delivery.total_amount - currentPaidAmount;
+      const allocatedAmount = Math.min(remainingAmount, outstandingAmount);
+
+      if (allocatedAmount > 0) {
+        allocationData.push({
+          delivery: deliveryId,
+          allocated_amount: allocatedAmount
+        });
+        remainingAmount -= allocatedAmount;
+      }
+    }
+
+    // Handle service booking allocations
+    for (const bookingId of serviceBookingIds) {
+      if (remainingAmount <= 0) break;
+
+      const bookingRecord = await pb.collection('service_bookings').getOne(bookingId);
+      const booking = serviceBookingService.mapRecordToServiceBooking(bookingRecord);
+      const currentPaidAmount = await serviceBookingService.calculatePaidAmount(bookingId);
+      const progressAmount = ServiceBookingService.calculateProgressBasedAmount(booking);
+      const outstandingAmount = progressAmount - currentPaidAmount;
+      const allocatedAmount = Math.min(remainingAmount, outstandingAmount);
+
+      if (allocatedAmount > 0) {
+        allocationData.push({
+          service_booking: bookingId,
+          allocated_amount: allocatedAmount
+        });
+        remainingAmount -= allocatedAmount;
+      }
+    }
+
+    // Add create requests for new allocations
+    for (const data of allocationData) {
+      batchRequests.push({
+        method: 'POST',
+        url: '/api/collections/payment_allocations/records',
+        body: {
+          payment: paymentId,
+          delivery: data.delivery,
+          service_booking: data.service_booking,
+          allocated_amount: data.allocated_amount,
+          site: siteId
+        }
+      });
+    }
+
+    // Execute all operations in a single batch
+    if (batchRequests.length > 0) {
+      await pb.send('/api/batch', {
+        method: 'POST',
+        body: {
+          requests: batchRequests
+        }
+      });
+    }
   }
 
   async delete(id: string): Promise<boolean> {

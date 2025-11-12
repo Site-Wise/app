@@ -914,39 +914,23 @@ const handlePaymentModalSubmit = async (data: any) => {
       await paymentService.create(paymentData!);
       success(t('messages.createSuccess', { item: t('common.payment') }));
     } else if (mode === 'EDIT') {
-      // In EDIT mode, only create NEW allocations for newly selected items
-      // Existing allocations are preserved
-      const siteId = getCurrentSiteId();
-      if (!siteId) {
-        throw new Error('No site selected');
-      }
+      // In EDIT mode, merge existing allocations with new ones from the form
+      // Extract existing delivery and service booking IDs from current allocations
+      const existingDeliveryIds = currentAllocations.value
+        .filter(allocation => allocation.delivery)
+        .map(allocation => allocation.delivery!);
 
-      // Create new allocations for newly selected deliveries
-      for (const deliveryId of form.deliveries) {
-        const allocation = form.delivery_allocations[deliveryId];
-        if (allocation && allocation.amount > 0) {
-          await paymentAllocationService.create({
-            payment: payment.id!,
-            delivery: deliveryId,
-            allocated_amount: allocation.amount,
-            site: siteId
-          });
-        }
-      }
+      const existingServiceBookingIds = currentAllocations.value
+        .filter(allocation => allocation.service_booking)
+        .map(allocation => allocation.service_booking!);
 
-      // Create new allocations for newly selected service bookings
-      for (const serviceBookingId of form.service_bookings) {
-        const allocation = form.service_booking_allocations[serviceBookingId];
-        if (allocation && allocation.amount > 0) {
-          await paymentAllocationService.create({
-            payment: payment.id!,
-            service_booking: serviceBookingId,
-            allocated_amount: allocation.amount,
-            site: siteId
-          });
-        }
-      }
+      // Combine existing with new (form contains only newly added items in edit mode)
+      const allDeliveryIds = [...new Set([...existingDeliveryIds, ...form.deliveries])];
+      const allServiceBookingIds = [...new Set([...existingServiceBookingIds, ...form.service_bookings])];
 
+      // Use the batch service method to efficiently update all allocations at once
+      // This will delete old allocations and create new ones in a single batch operation
+      await paymentService.updateAllocations(payment.id!, allDeliveryIds, allServiceBookingIds);
       success(t('messages.updateSuccess', { item: t('common.payment') }));
     }
     
