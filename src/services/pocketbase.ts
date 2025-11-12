@@ -3150,8 +3150,20 @@ export class VendorReturnService {
   }
 
   async uploadPhoto(returnId: string, file: File): Promise<string> {
+    // First, fetch the current return to get existing photos
+    const currentRecord = await pb.collection('vendor_returns').getOne(returnId);
+    const existingPhotos = currentRecord.photos || [];
+
     const formData = new FormData();
+
+    // Include existing photo filenames to preserve them
+    existingPhotos.forEach((photoFilename: string) => {
+      formData.append('photos', photoFilename);
+    });
+
+    // Append new file
     formData.append('photos', file);
+
     const record = await pb.collection('vendor_returns').update(returnId, formData);
     return record.photos[record.photos.length - 1];
   }
@@ -4115,20 +4127,43 @@ export class DeliveryService {
   }
 
   async uploadPhoto(deliveryId: string, file: File): Promise<string> {
+    // First, fetch the current delivery to get existing photos
+    const currentRecord = await pb.collection('deliveries').getOne(deliveryId);
+    const existingPhotos = currentRecord.photos || [];
+
     const formData = new FormData();
+
+    // Include existing photo filenames to preserve them
+    existingPhotos.forEach((photoFilename: string) => {
+      formData.append('photos', photoFilename);
+    });
+
+    // Append new file
     formData.append('photos', file);
+
     const record = await pb.collection('deliveries').update(deliveryId, formData);
     return record.photos[record.photos.length - 1];
   }
 
   async uploadPhotos(deliveryId: string, files: File[]): Promise<string[]> {
     if (files.length === 0) return [];
-    
+
+    // First, fetch the current delivery to get existing photos
+    const currentRecord = await pb.collection('deliveries').getOne(deliveryId);
+    const existingPhotos = currentRecord.photos || [];
+
     const formData = new FormData();
+
+    // Include existing photo filenames to preserve them
+    existingPhotos.forEach((photoFilename: string) => {
+      formData.append('photos', photoFilename);
+    });
+
+    // Append new files
     files.forEach(file => {
       formData.append('photos', file);
     });
-    
+
     const record = await pb.collection('deliveries').update(deliveryId, formData);
     // Return the newly added photos (last N photos where N = files.length)
     return record.photos.slice(-files.length);
