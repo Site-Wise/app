@@ -555,14 +555,15 @@ import { useModalState } from '../composables/useModalState';
 import SearchBox from '../components/SearchBox.vue';
 import PaymentModal from '../components/PaymentModal.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
-import { 
-  paymentService, 
+import {
+  paymentService,
   paymentAllocationService,
   vendorService,
   accountService,
   deliveryService,
   serviceBookingService,
   getCurrentUserRole,
+  getCurrentSiteId,
   VendorService,
   type Payment,
   type Vendor,
@@ -913,8 +914,39 @@ const handlePaymentModalSubmit = async (data: any) => {
       await paymentService.create(paymentData!);
       success(t('messages.createSuccess', { item: t('common.payment') }));
     } else if (mode === 'EDIT') {
-      // Use the service method to update allocations (deletes old and creates new)
-      await paymentService.updateAllocations(payment.id!, form.deliveries, form.service_bookings);
+      // In EDIT mode, only create NEW allocations for newly selected items
+      // Existing allocations are preserved
+      const siteId = getCurrentSiteId();
+      if (!siteId) {
+        throw new Error('No site selected');
+      }
+
+      // Create new allocations for newly selected deliveries
+      for (const deliveryId of form.deliveries) {
+        const allocation = form.delivery_allocations[deliveryId];
+        if (allocation && allocation.amount > 0) {
+          await paymentAllocationService.create({
+            payment: payment.id!,
+            delivery: deliveryId,
+            allocated_amount: allocation.amount,
+            site: siteId
+          });
+        }
+      }
+
+      // Create new allocations for newly selected service bookings
+      for (const serviceBookingId of form.service_bookings) {
+        const allocation = form.service_booking_allocations[serviceBookingId];
+        if (allocation && allocation.amount > 0) {
+          await paymentAllocationService.create({
+            payment: payment.id!,
+            service_booking: serviceBookingId,
+            allocated_amount: allocation.amount,
+            site: siteId
+          });
+        }
+      }
+
       success(t('messages.updateSuccess', { item: t('common.payment') }));
     }
     
