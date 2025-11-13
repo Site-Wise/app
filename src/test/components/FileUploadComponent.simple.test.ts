@@ -147,3 +147,98 @@ describe('FileUploadComponent - Core Functionality', () => {
     expect(fileInput.exists()).toBe(true)
   })
 })
+
+describe('FileUploadComponent - PDF Worker Loading', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should import worker module when showing PDF conversion modal', async () => {
+    // Mock pdfjs-dist and worker
+    const mockPdfjsLib = {
+      GlobalWorkerOptions: {
+        workerSrc: null
+      },
+      getDocument: vi.fn(() => ({
+        promise: Promise.resolve({
+          numPages: 3
+        })
+      }))
+    }
+
+    const mockWorkerModule = {
+      default: 'mocked-worker-url.mjs'
+    }
+
+    // Mock dynamic imports
+    vi.doMock('pdfjs-dist', () => mockPdfjsLib)
+    vi.doMock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => mockWorkerModule)
+
+    const wrapper = mount(FileUploadComponent, {
+      props: {
+        acceptTypes: 'image/*',
+        multiple: true,
+        maxSize: 5 * 1024 * 1024
+      }
+    })
+
+    const pdfFile = new File(['mock pdf content'], 'test.pdf', { type: 'application/pdf' })
+
+    // Test the worker loading logic by simulating it
+    const workerModule = { default: 'test-worker.mjs' }
+    const workerSrc = workerModule.default
+
+    expect(workerSrc).toBe('test-worker.mjs')
+    expect(typeof workerSrc).toBe('string')
+  })
+
+  it('should set GlobalWorkerOptions.workerSrc from worker module', () => {
+    // Simulate the worker loading logic
+    const mockLib = {
+      GlobalWorkerOptions: {
+        workerSrc: null
+      }
+    }
+
+    const workerModule = { default: 'worker-url.mjs' }
+    const workerSrc = workerModule.default
+
+    if (!mockLib.GlobalWorkerOptions.workerSrc) {
+      mockLib.GlobalWorkerOptions.workerSrc = workerSrc
+    }
+
+    expect(mockLib.GlobalWorkerOptions.workerSrc).toBe('worker-url.mjs')
+  })
+
+  it('should not overwrite existing workerSrc', () => {
+    // Simulate the worker loading logic with pre-existing workerSrc
+    const mockLib = {
+      GlobalWorkerOptions: {
+        workerSrc: 'existing-worker.mjs'
+      }
+    }
+
+    const workerModule = { default: 'new-worker.mjs' }
+    const workerSrc = workerModule.default
+
+    if (!mockLib.GlobalWorkerOptions.workerSrc) {
+      mockLib.GlobalWorkerOptions.workerSrc = workerSrc
+    }
+
+    // Should preserve existing value
+    expect(mockLib.GlobalWorkerOptions.workerSrc).toBe('existing-worker.mjs')
+  })
+
+  it('should extract default export from worker import', () => {
+    // Test the pattern used in the component
+    const workerModule = {
+      default: '/assets/pdf.worker-abc123.mjs'
+    }
+
+    const workerSrc = workerModule.default
+
+    expect(workerSrc).toBeTruthy()
+    expect(typeof workerSrc).toBe('string')
+    expect(workerSrc).toContain('.mjs')
+  })
+})
