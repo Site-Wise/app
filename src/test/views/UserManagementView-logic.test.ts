@@ -271,9 +271,11 @@ describe('UserManagementView Logic', () => {
     })
 
     it('should format days for times 1 day or more away', () => {
-      const formatRelativeTime = (dateString: string) => {
+      // Use fixed timestamp to avoid timing race conditions
+      const fixedNow = Date.now()
+      const formatRelativeTime = (dateString: string, nowTimestamp: number) => {
         const date = new Date(dateString)
-        const now = new Date()
+        const now = new Date(nowTimestamp)
         const diffInSeconds = Math.floor((date.getTime() - now.getTime()) / 1000)
 
         if (diffInSeconds <= 0) return 'soon'
@@ -282,8 +284,8 @@ describe('UserManagementView Logic', () => {
         return `${Math.floor(diffInSeconds / 86400)}d`
       }
 
-      const futureDate = new Date(Date.now() + 259200000).toISOString() // 3 days from now
-      expect(formatRelativeTime(futureDate)).toBe('3d')
+      const futureDate = new Date(fixedNow + 259200000).toISOString() // 3 days from now
+      expect(formatRelativeTime(futureDate, fixedNow)).toBe('3d')
     })
 
     it('should handle exactly 1 hour', () => {
