@@ -604,7 +604,7 @@ const deliveries = computed((): DeliveryWithPaymentStatus[] => {
 // Removed unused allDeliveries computed property
 const showAddModal = ref(false);
 const editingDelivery = ref<Delivery | null>(null);
-const viewingDelivery = ref<Delivery | null>(null);
+const viewingDelivery = ref<DeliveryWithPaymentStatus | null>(null);
 const loadingDeliveryDetails = ref(false);
 const showMobileActionMenu = ref(false);
 
