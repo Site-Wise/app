@@ -74,8 +74,8 @@ vi.mock('../../../services/pocketbase', () => ({
   },
   vendorService: {
     getAll: vi.fn().mockResolvedValue([
-      { id: 'vendor-1', name: 'ABC Construction' },
-      { id: 'vendor-2', name: 'XYZ Suppliers' }
+      { id: 'vendor-1', contact_person: 'ABC Construction' },
+      { id: 'vendor-2', contact_person: 'XYZ Suppliers' }
     ])
   },
   itemService: {
@@ -156,7 +156,7 @@ const VendorSearchBoxStub = {
     updateValue(event: any) {
       this.$emit('update:modelValue', event.target.value)
       if (event.target.value === 'vendor-1') {
-        this.$emit('vendor-selected', { id: 'vendor-1', name: 'Test Vendor' })
+        this.$emit('vendor-selected', { id: 'vendor-1', contact_person: 'Test Vendor' })
       }
     }
   }
@@ -244,8 +244,8 @@ describe('MultiItemDeliveryModal', () => {
 
       // Verify vendor data is loaded in component
       expect(wrapper.vm.vendors).toHaveLength(2)
-      expect(wrapper.vm.vendors[0].name).toBe('ABC Construction')
-      expect(wrapper.vm.vendors[1].name).toBe('XYZ Suppliers')
+      expect(wrapper.vm.vendors[0].contact_person).toBe('ABC Construction')
+      expect(wrapper.vm.vendors[1].contact_person).toBe('XYZ Suppliers')
     })
   })
 
@@ -480,6 +480,52 @@ describe('MultiItemDeliveryModal', () => {
 
       await nextTick()
       expect(wrapper.vm.totalAmount).toBe(134.34) // 33.92 + 100.42
+    })
+  })
+
+  describe('Vendor Display in Review Step', () => {
+    it('should display correct vendor name in review step', async () => {
+      wrapper = createWrapper()
+      await nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // Fill vendor info and proceed through steps
+      await fillVendorInfo(wrapper, 'vendor-1', '2024-01-15')
+      await nextTick()
+
+      // Move to items step
+      let nextButton = wrapper.find('button[class*="btn-primary"]')
+      await nextButton.trigger('click')
+      await nextTick()
+
+      // Add item through new item form
+      wrapper.vm.updateNewItem(-1, {
+        tempId: 'temp-1',
+        item: 'item-1',
+        quantity: 5,
+        unit_price: 100,
+        total_amount: 500,
+        notes: ''
+      })
+      await wrapper.vm.saveNewItem()
+      await nextTick()
+
+      // Move to review step
+      const buttons = wrapper.findAll('button')
+      nextButton = buttons.find((btn: any) => btn.text().includes('Next'))
+      await nextButton.trigger('click')
+      await nextTick()
+
+      // Verify vendor name is displayed correctly using contact_person
+      expect(wrapper.text()).toContain('ABC Construction')
+      expect(wrapper.vm.getVendorName('vendor-1')).toBe('ABC Construction')
+    })
+
+    it('should display "Unknown Vendor" for invalid vendor ID', async () => {
+      wrapper = createWrapper()
+      await nextTick()
+
+      expect(wrapper.vm.getVendorName('invalid-vendor-id')).toBe('Unknown Vendor')
     })
   })
 

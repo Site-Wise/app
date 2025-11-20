@@ -447,12 +447,73 @@ describe('FileUploadComponent', () => {
   })
 
   describe('Props and Events', () => {
-    it('should update files when modelValue prop changes', async () => {
+    it('should update files when modelValue prop changes to empty', async () => {
       wrapper = createWrapper()
-      
+
       await wrapper.setProps({ modelValue: [] })
-      
+
       expect(wrapper.vm.previews).toHaveLength(0)
+    })
+
+    it('should repopulate previews when modelValue changes from empty to having files', async () => {
+      wrapper = createWrapper()
+
+      // Start with empty previews
+      expect(wrapper.vm.previews).toHaveLength(0)
+
+      // Simulate navigation back with already-selected files
+      await wrapper.setProps({ modelValue: [mockFiles[0]] })
+      await nextTick()
+      // Wait for FileReader to complete
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // Previews should be repopulated
+      expect(wrapper.vm.previews).toHaveLength(1)
+      expect(wrapper.vm.previews[0].name).toBe('test-image.jpg')
+    })
+
+    it('should repopulate previews with multiple files when navigating back', async () => {
+      wrapper = createWrapper({ acceptTypes: '*' })
+
+      // Start with empty previews
+      expect(wrapper.vm.previews).toHaveLength(0)
+
+      // Simulate navigation back with multiple already-selected files
+      await wrapper.setProps({ modelValue: [mockFiles[0], mockFiles[1]] })
+      await nextTick()
+      // Wait for FileReader to complete
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // Previews should be repopulated with both files (order may vary due to async FileReader)
+      expect(wrapper.vm.previews).toHaveLength(2)
+      const previewNames = wrapper.vm.previews.map((p: any) => p.name).sort()
+      expect(previewNames).toEqual(['test-doc.pdf', 'test-image.jpg'])
+    })
+
+    it('should not repopulate if previews already match modelValue', async () => {
+      wrapper = createWrapper()
+
+      // Add a file first
+      const fileInput = wrapper.find('input[type="file"]')
+      Object.defineProperty(fileInput.element, 'files', {
+        value: [mockFiles[0]],
+        writable: false
+      })
+
+      await fileInput.trigger('change')
+      await nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      expect(wrapper.vm.previews).toHaveLength(1)
+      const previewId = wrapper.vm.previews[0].id
+
+      // Set modelValue to same file (should not repopulate)
+      await wrapper.setProps({ modelValue: [mockFiles[0]] })
+      await nextTick()
+
+      // Should still have same preview (not recreated)
+      expect(wrapper.vm.previews).toHaveLength(1)
+      expect(wrapper.vm.previews[0].id).toBe(previewId) // Same preview object
     })
 
     it('should emit files-selected event with correct payload', async () => {
