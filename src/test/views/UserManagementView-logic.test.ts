@@ -282,7 +282,8 @@ describe('UserManagementView Logic', () => {
         return `${Math.floor(diffInSeconds / 86400)}d`
       }
 
-      const futureDate = new Date(Date.now() + 259200000).toISOString() // 3 days from now
+      // Add 1 second buffer to ensure we're safely in the 3-day range despite timing variations
+      const futureDate = new Date(Date.now() + 259201000).toISOString() // 3 days + 1 second from now
       expect(formatRelativeTime(futureDate)).toBe('3d')
     })
 

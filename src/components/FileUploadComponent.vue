@@ -427,6 +427,44 @@ const updateModelValue = () => {
 watch(() => props.modelValue, (newFiles) => {
   if (!newFiles || newFiles.length === 0) {
     previews.value = []
+  } else {
+    // Repopulate previews if modelValue has files but previews is empty or doesn't match
+    const currentFileNames = previews.value.map(p => p.file.name).sort().join(',')
+    const newFileNames = newFiles.map(f => f.name).sort().join(',')
+
+    if (currentFileNames !== newFileNames) {
+      // Clear existing previews and repopulate with new files
+      previews.value = []
+
+      newFiles.forEach(file => {
+        const reader = new FileReader()
+        const id = `${file.name}-${Date.now()}-${Math.random()}`
+
+        reader.onload = (e) => {
+          const preview: FilePreview = {
+            id,
+            file,
+            preview: e.target?.result as string,
+            name: file.name,
+            type: file.type
+          }
+          previews.value.push(preview)
+        }
+
+        if (file.type.startsWith('image/')) {
+          reader.readAsDataURL(file)
+        } else {
+          const preview: FilePreview = {
+            id,
+            file,
+            preview: '',
+            name: file.name,
+            type: file.type
+          }
+          previews.value.push(preview)
+        }
+      })
+    }
   }
 })
 </script>
