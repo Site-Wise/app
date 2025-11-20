@@ -10,10 +10,10 @@
         @focus="handleFocus"
         @blur="handleBlur"
         @click="handleClick"
-        @keydown.down="navigateDown"
-        @keydown.up="navigateUp"
-        @keydown.enter="selectCurrent"
-        @keydown.escape="closeDropdown"
+        @keydown.down.prevent="navigateDown"
+        @keydown.up.prevent="navigateUp"
+        @keydown.enter.prevent="selectCurrent"
+        @keydown.escape.prevent="closeDropdown"
         class="w-full px-4 py-3 pl-10 pr-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
         :class="{ 
           'border-red-500 dark:border-red-500': hasError,
