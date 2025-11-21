@@ -124,9 +124,13 @@ const selectedItem = computed(() => {
 const filteredItems = computed(() => {
   const query = searchQuery.value.toLowerCase().trim()
   let availableItems = props.items.filter(item => {
-    // Don't exclude the current item if modelValue is empty (item cleared)
+    // If the search query doesn't match the current item's name, allow it to appear
+    // This fixes the bug where deleting text doesn't show the item again
     const isCurrentItem = props.modelValue && item.id === props.modelValue
-    return !props.usedItems.includes(item.id!) && !isCurrentItem
+    const searchQueryMatchesCurrentItem = isCurrentItem && query === item.name.toLowerCase()
+
+    // Exclude used items and the current item ONLY if search query matches the current item
+    return !props.usedItems.includes(item.id!) && !(isCurrentItem && searchQueryMatchesCurrentItem)
   })
 
   if (!query) {
@@ -134,7 +138,7 @@ const filteredItems = computed(() => {
   }
 
   return availableItems
-    .filter(item => 
+    .filter(item =>
       item.name.toLowerCase().includes(query) ||
       (item.description && item.description.toLowerCase().includes(query))
     )

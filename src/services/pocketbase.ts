@@ -4379,6 +4379,29 @@ export class DeliveryItemService {
     return true;
   }
 
+  async getLastPriceForItem(itemId: string): Promise<number | null> {
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    try {
+      // Get the most recent delivery item for this item in the current site
+      const records = await pb.collection('delivery_items').getList(1, 1, {
+        filter: `item="${itemId}" && site="${currentSite}"`,
+        sort: '-created',
+      });
+
+      if (records.items.length > 0) {
+        return records.items[0].unit_price;
+      }
+      return null;
+    } catch (err) {
+      console.error('Error fetching last price for item:', err);
+      return null;
+    }
+  }
+
   async createMultiple(deliveryId: string, items: Array<{
     item: string;
     quantity: number;
