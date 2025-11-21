@@ -133,7 +133,6 @@ describe('ItemSelector - Clear Bug Fix Logic', () => {
       // This was the bug - item stayed excluded even when text was deleted
       const usedItems: string[] = []
       const modelValue = 'item-1'
-      const searchQuery = '' // User deleted all text
 
       // Old buggy logic (for reference)
       const oldBuggyFilter = (item: any) => {
