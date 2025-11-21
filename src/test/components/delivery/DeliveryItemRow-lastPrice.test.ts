@@ -90,7 +90,8 @@ describe('DeliveryItemRow - Last Price Logic', () => {
       const currentUnitPrice = 0
       const lastPrice = 150.50
 
-      const shouldAutoFill = lastPrice !== null && (!currentUnitPrice || currentUnitPrice === 0)
+      // Ensure lastPrice is either number or null (it's a number here, so comparison is safe)
+      const shouldAutoFill = typeof lastPrice === 'number' && (!currentUnitPrice || currentUnitPrice === 0)
       expect(shouldAutoFill).toBe(true)
 
       // Simulate the auto-fill
@@ -102,7 +103,7 @@ describe('DeliveryItemRow - Last Price Logic', () => {
       const currentUnitPrice = 200
       const lastPrice = 150.50
 
-      const shouldAutoFill = lastPrice !== null && (!currentUnitPrice || currentUnitPrice === 0)
+      const shouldAutoFill = typeof lastPrice === 'number' && (!currentUnitPrice || currentUnitPrice === 0)
       expect(shouldAutoFill).toBe(false)
 
       // Unit price should remain unchanged
@@ -114,7 +115,7 @@ describe('DeliveryItemRow - Last Price Logic', () => {
       const currentUnitPrice = 0
       const lastPrice = null
 
-      const shouldAutoFill = lastPrice !== null && (!currentUnitPrice || currentUnitPrice === 0)
+      const shouldAutoFill = typeof lastPrice === 'number' && (!currentUnitPrice || currentUnitPrice === 0)
       expect(shouldAutoFill).toBe(false)
 
       const newUnitPrice = shouldAutoFill && lastPrice !== null ? lastPrice : currentUnitPrice
