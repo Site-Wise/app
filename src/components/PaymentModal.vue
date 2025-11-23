@@ -695,23 +695,39 @@ const autoSelectAccount = () => {
     return;
   }
 
-  // Find the most frequently used account
-  // We'll use multiple heuristics to make a smart selection:
-  // 1. Prefer accounts with 'cash' type (most commonly used)
-  // 2. Among same types, prefer accounts with higher balances
-  // 3. Prefer accounts with shorter names (likely primary accounts)
+  // Count how many times each account has been used in previous payments
+  const accountUsageCount = new Map<string, number>();
+  accounts.forEach(account => {
+    accountUsageCount.set(account.id!, 0);
+  });
 
+  // Count usage from payment history
+  props.payments.forEach(payment => {
+    if (payment.account && accountUsageCount.has(payment.account)) {
+      accountUsageCount.set(payment.account, accountUsageCount.get(payment.account)! + 1);
+    }
+  });
+
+  // Sort accounts by usage frequency (descending)
   const sortedAccounts = [...accounts].sort((a, b) => {
-    // First priority: cash accounts
+    const usageA = accountUsageCount.get(a.id!) || 0;
+    const usageB = accountUsageCount.get(b.id!) || 0;
+
+    // Primary sort: usage frequency (most used first)
+    if (usageA !== usageB) {
+      return usageB - usageA;
+    }
+
+    // Tie-breaker 1: cash accounts (most commonly used)
     if (a.type === 'cash' && b.type !== 'cash') return -1;
     if (b.type === 'cash' && a.type !== 'cash') return 1;
 
-    // Second priority: higher balance (more actively used)
+    // Tie-breaker 2: higher balance (indicates more active use)
     if (Math.abs(a.current_balance - b.current_balance) > 1000) {
       return b.current_balance - a.current_balance;
     }
 
-    // Third priority: shorter names (likely primary accounts)
+    // Tie-breaker 3: shorter names (likely primary accounts)
     return a.name.length - b.name.length;
   });
 

@@ -446,7 +446,7 @@ const formatDate = (dateString: string) => {
 
 const getVendorName = (vendorId: string) => {
   const vendor = vendors.value.find(v => v.id === vendorId);
-  return vendor?.name || 'Unknown Vendor';
+  return vendor?.contact_person || 'Unknown Vendor';
 };
 
 const getItemName = (itemId: string) => {

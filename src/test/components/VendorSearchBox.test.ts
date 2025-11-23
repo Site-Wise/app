@@ -179,9 +179,39 @@ describe('VendorSearchBox', () => {
       const input = wrapper.find('input');
       await input.setValue('Bob Johnson'); // Search by contact_person, not name
       await input.trigger('input');
-      
+
       expect(wrapper.vm.filteredVendors).toHaveLength(1);
       expect(wrapper.vm.filteredVendors[0].contact_person).toBe('Bob Johnson');
+    });
+
+    it('filters vendors by contact person', async () => {
+      const input = wrapper.find('input');
+      await input.setValue('John Doe');
+      await input.trigger('input');
+
+      expect(wrapper.vm.filteredVendors).toHaveLength(1);
+      expect(wrapper.vm.filteredVendors[0].contact_person).toBe('John Doe');
+      expect(wrapper.vm.filteredVendors[0].name).toBe('Vendor A');
+    });
+
+    it('filters vendors by vendor name', async () => {
+      const input = wrapper.find('input');
+      await input.setValue('ABC Construction');
+      await input.trigger('input');
+
+      expect(wrapper.vm.filteredVendors).toHaveLength(1);
+      expect(wrapper.vm.filteredVendors[0].name).toBe('ABC Construction');
+      expect(wrapper.vm.filteredVendors[0].contact_person).toBe('Bob Johnson');
+    });
+
+    it('searches both name and contact person fields', async () => {
+      const input = wrapper.find('input');
+      await input.setValue('Vendor'); // This should match both "Vendor A" and "Vendor B" names
+      await input.trigger('input');
+
+      expect(wrapper.vm.filteredVendors).toHaveLength(2);
+      expect(wrapper.vm.filteredVendors.map((v: Vendor) => v.name)).toContain('Vendor A');
+      expect(wrapper.vm.filteredVendors.map((v: Vendor) => v.name)).toContain('Vendor B');
     });
 
     it('shows selected vendor with outstanding amount', async () => {
