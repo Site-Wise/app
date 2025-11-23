@@ -33,6 +33,8 @@ const {
   VendorReturnService,
   VendorReturnItemService,
   VendorRefundService,
+  vendorCreditNoteService,
+  creditNoteUsageService,
   DeliveryService,
   DeliveryItemService,
   calculatePermissions,
@@ -897,6 +899,123 @@ describe('PocketBase Services Comprehensive Tests', () => {
       const updateData = { quantity: 150 }
       const result = await deliveryItemService.update('deliveryitem-1', updateData)
       expect(result).toBeDefined()
+    })
+  })
+
+  describe('VendorCreditNoteService', () => {
+    it('should get all vendor credit notes for current site', async () => {
+      const creditNotes = await vendorCreditNoteService.getAll()
+      expect(creditNotes).toBeDefined()
+      expect(Array.isArray(creditNotes)).toBe(true)
+    })
+
+    it('should throw error when no site selected', async () => {
+      setCurrentSiteId(null)
+      await expect(vendorCreditNoteService.getAll()).rejects.toThrow('No site selected')
+    })
+
+    it('should create a new vendor credit note', async () => {
+      const newCreditNote = {
+        vendor: 'vendor-1',
+        vendor_refund: 'refund-1',
+        amount: 1000,
+        balance: 1000,
+        issue_date: '2024-01-01'
+      }
+      const result = await vendorCreditNoteService.create(newCreditNote)
+      expect(result).toBeDefined()
+    })
+
+    it('should get credit notes by vendor', async () => {
+      const creditNotes = await vendorCreditNoteService.getByVendor('vendor-1')
+      expect(creditNotes).toBeDefined()
+      expect(Array.isArray(creditNotes)).toBe(true)
+    })
+
+    it('should get available credit notes by vendor', async () => {
+      const creditNotes = await vendorCreditNoteService.getAvailableByVendor('vendor-1')
+      expect(creditNotes).toBeDefined()
+      expect(Array.isArray(creditNotes)).toBe(true)
+    })
+
+    it('should calculate total available credit for vendor', async () => {
+      const total = await vendorCreditNoteService.getTotalAvailableCredit('vendor-1')
+      expect(typeof total).toBe('number')
+      expect(total).toBeGreaterThanOrEqual(0)
+    })
+
+    it('should update credit note balance', async () => {
+      const updateData = { balance: 500 }
+      const result = await vendorCreditNoteService.update('creditnote-1', updateData)
+      expect(result).toBeDefined()
+    })
+
+    it('should handle fully used credit notes', async () => {
+      const creditNote = await vendorCreditNoteService.create({
+        vendor: 'vendor-1',
+        vendor_refund: 'refund-1',
+        amount: 1000,
+        balance: 0,
+        issue_date: '2024-01-01'
+      })
+      expect(creditNote.balance).toBe(0)
+    })
+  })
+
+  describe('CreditNoteUsageService', () => {
+    it('should get all credit note usages for current site', async () => {
+      const usages = await creditNoteUsageService.getAll()
+      expect(usages).toBeDefined()
+      expect(Array.isArray(usages)).toBe(true)
+    })
+
+    it('should throw error when no site selected', async () => {
+      setCurrentSiteId(null)
+      await expect(creditNoteUsageService.getAll()).rejects.toThrow('No site selected')
+    })
+
+    it('should create a new credit note usage', async () => {
+      const newUsage = {
+        credit_note: 'creditnote-1',
+        payment: 'payment-1',
+        amount: 500
+      }
+      const result = await creditNoteUsageService.create(newUsage)
+      expect(result).toBeDefined()
+    })
+
+    it('should get usages by credit note', async () => {
+      const usages = await creditNoteUsageService.getByCreditNote('creditnote-1')
+      expect(usages).toBeDefined()
+      expect(Array.isArray(usages)).toBe(true)
+    })
+
+    it('should get usages by payment', async () => {
+      const usages = await creditNoteUsageService.getByPayment('payment-1')
+      expect(usages).toBeDefined()
+      expect(Array.isArray(usages)).toBe(true)
+    })
+
+    it('should calculate total usage amount for credit note', async () => {
+      const usages = await creditNoteUsageService.getByCreditNote('creditnote-1')
+      const totalUsed = usages.reduce((sum: number, usage: any) => sum + (usage.amount || 0), 0)
+      expect(typeof totalUsed).toBe('number')
+      expect(totalUsed).toBeGreaterThanOrEqual(0)
+    })
+
+    it('should handle multiple usages for same credit note', async () => {
+      const usage1 = await creditNoteUsageService.create({
+        credit_note: 'creditnote-1',
+        payment: 'payment-1',
+        amount: 300
+      })
+      const usage2 = await creditNoteUsageService.create({
+        credit_note: 'creditnote-1',
+        payment: 'payment-2',
+        amount: 200
+      })
+      expect(usage1).toBeDefined()
+      expect(usage2).toBeDefined()
     })
   })
 })
