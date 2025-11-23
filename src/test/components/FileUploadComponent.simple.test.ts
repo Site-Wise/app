@@ -176,7 +176,6 @@ describe('FileUploadComponent - PDF Worker Loading', () => {
 
 
 
-    const pdfFile = new File(['mock pdf content'], 'test.pdf', { type: 'application/pdf' })
 
     // Test the worker loading logic by simulating it
     const workerModule = { default: 'test-worker.mjs' }
