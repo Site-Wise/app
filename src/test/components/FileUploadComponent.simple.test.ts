@@ -174,13 +174,7 @@ describe('FileUploadComponent - PDF Worker Loading', () => {
     vi.doMock('pdfjs-dist', () => mockPdfjsLib)
     vi.doMock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => mockWorkerModule)
 
-    const wrapper = mount(FileUploadComponent, {
-      props: {
-        acceptTypes: 'image/*',
-        multiple: true,
-        maxSize: 5 * 1024 * 1024
-      }
-    })
+
 
     const pdfFile = new File(['mock pdf content'], 'test.pdf', { type: 'application/pdf' })
 
