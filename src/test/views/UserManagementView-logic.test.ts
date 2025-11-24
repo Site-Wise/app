@@ -251,7 +251,9 @@ describe('UserManagementView Logic', () => {
       }
 
       const futureDate = new Date(Date.now() + 1800000).toISOString() // 30 minutes from now
-      expect(formatRelativeTime(futureDate)).toBe('30m')
+      const result = formatRelativeTime(futureDate)
+      // Account for test execution time - could be 29m or 30m
+      expect(['29m', '30m']).toContain(result)
     })
 
     it('should format hours for times less than 1 day away', () => {
