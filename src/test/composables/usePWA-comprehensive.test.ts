@@ -19,7 +19,11 @@ describe('usePWA Logic', () => {
 
   describe('Install Prompt Handling Logic', () => {
     it('should store beforeinstallprompt event', () => {
-      const mockEvent = { prompt: vi.fn(), userChoice: Promise.resolve({ outcome: 'accepted' }) }
+      const mockEvent = {
+        preventDefault: vi.fn(),
+        prompt: vi.fn(),
+        userChoice: Promise.resolve({ outcome: 'accepted' })
+      }
       let storedEvent: any = null
 
       const handleBeforeInstallPrompt = (e: any) => {
@@ -29,6 +33,7 @@ describe('usePWA Logic', () => {
 
       handleBeforeInstallPrompt(mockEvent)
 
+      expect(mockEvent.preventDefault).toHaveBeenCalled()
       expect(storedEvent).toBe(mockEvent)
     })
 

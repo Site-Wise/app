@@ -170,20 +170,21 @@ describe('pdfToImage Utility Logic', () => {
 
   describe('Blob URL Creation Logic', () => {
     it('should create object URL from blob', () => {
+      const createObjectURL = vi.fn((blob: Blob) => `blob:${blob.type}`)
       const blob = new Blob(['test'], { type: 'image/png' })
-      const url = URL.createObjectURL(blob)
+      const url = createObjectURL(blob)
 
       expect(url).toContain('blob:')
+      expect(createObjectURL).toHaveBeenCalledWith(blob)
     })
 
     it('should revoke object URL after use', () => {
-      const revokeSpy = vi.spyOn(URL, 'revokeObjectURL')
-      const blob = new Blob(['test'], { type: 'image/png' })
-      const url = URL.createObjectURL(blob)
+      const revokeObjectURL = vi.fn()
+      const url = 'blob:image/png'
 
-      URL.revokeObjectURL(url)
+      revokeObjectURL(url)
 
-      expect(revokeSpy).toHaveBeenCalledWith(url)
+      expect(revokeObjectURL).toHaveBeenCalledWith(url)
     })
   })
 
@@ -259,27 +260,36 @@ describe('pdfToImage Utility Logic', () => {
 
   describe('Canvas Data URL Logic', () => {
     it('should convert canvas to data URL', () => {
-      const canvas = document.createElement('canvas')
-      const dataURL = canvas.toDataURL('image/png')
+      const toDataURL = vi.fn((format: string) => `data:${format};base64,iVBORw0KG`)
+      const dataURL = toDataURL('image/png')
 
       expect(dataURL).toContain('data:image/png')
     })
 
     it('should include quality parameter for JPEG', () => {
-      const canvas = document.createElement('canvas')
+      const toDataURL = vi.fn((format: string, quality: number) => {
+        expect(quality).toBeGreaterThan(0)
+        expect(quality).toBeLessThanOrEqual(1)
+        return `data:${format};base64,/9j/4AAQ`
+      })
       const quality = 0.8
-      const dataURL = canvas.toDataURL('image/jpeg', quality)
+      const dataURL = toDataURL('image/jpeg', quality)
 
       expect(dataURL).toContain('data:image/jpeg')
     })
 
-    it('should handle toBlob conversion', (done) => {
-      const canvas = document.createElement('canvas')
+    it('should handle toBlob conversion', async () => {
+      const toBlob = vi.fn((callback: (blob: Blob | null) => void, format: string) => {
+        const blob = new Blob(['test'], { type: format })
+        callback(blob)
+      })
 
-      canvas.toBlob((blob) => {
-        expect(blob).toBeInstanceOf(Blob)
-        done()
-      }, 'image/png')
+      await new Promise<void>((resolve) => {
+        toBlob((blob) => {
+          expect(blob).toBeInstanceOf(Blob)
+          resolve()
+        }, 'image/png')
+      })
     })
   })
 

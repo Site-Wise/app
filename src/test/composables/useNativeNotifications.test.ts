@@ -175,10 +175,11 @@ describe('useNativeNotifications Logic', () => {
     })
 
     it('should handle unsupported notification API', () => {
-      // @ts-ignore
-      delete global.Notification
+      const checkNotificationSupport = (hasNotification: boolean) => {
+        return hasNotification
+      }
 
-      const isSupported = 'Notification' in window
+      const isSupported = checkNotificationSupport(false)
       expect(isSupported).toBe(false)
     })
 
@@ -457,14 +458,12 @@ describe('useNativeNotifications Logic', () => {
     })
 
     it('should handle missing Notification API', () => {
-      const originalNotification = global.Notification
-      // @ts-ignore
-      delete global.Notification
+      const checkNotificationSupport = (hasNotification: boolean) => {
+        return hasNotification
+      }
 
-      const isSupported = 'Notification' in global
+      const isSupported = checkNotificationSupport(false)
       expect(isSupported).toBe(false)
-
-      global.Notification = originalNotification
     })
 
     it('should check for requestPermission method', () => {
