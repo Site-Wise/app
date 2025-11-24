@@ -628,4 +628,276 @@ describe('DeliveryView', () => {
       // The error handling is tested implicitly by the function not throwing
     })
   })
+
+  describe('Delivery Preview Payment Status', () => {
+    beforeEach(async () => {
+      // Mock deliveryService.getById to return a delivery with database payment_status
+      const { deliveryService } = await import('../../services/pocketbase')
+      deliveryService.getById = vi.fn().mockResolvedValue({
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        delivery_reference: 'INV-001',
+        total_amount: 1500,
+        payment_status: 'pending', // Old database value that should be overridden
+        notes: 'Test delivery notes',
+        photos: ['photo1.jpg'],
+        expand: {
+          vendor: {
+            id: 'vendor-1',
+            contact_person: 'Test Vendor',
+            email: 'john@vendor.com',
+            phone: '9876543210'
+          },
+          delivery_items: [
+            {
+              id: 'item-1',
+              delivery: 'delivery-1',
+              item: 'item-1',
+              quantity: 10,
+              unit_price: 100,
+              total_amount: 1000,
+              expand: {
+                item: {
+                  id: 'item-1',
+                  name: 'Test Item',
+                  unit: 'pieces'
+                }
+              }
+            }
+          ]
+        }
+      })
+    })
+
+    it('should enhance delivery with calculated payment status when viewing', async () => {
+      // Wait for component initialization
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      const mockDelivery = {
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        total_amount: 1500,
+        payment_status: 'pending'
+      }
+
+      // Call viewDelivery function
+      await wrapper.vm.viewDelivery(mockDelivery)
+      await wrapper.vm.$nextTick()
+
+      // Verify that viewingDelivery has enhanced properties
+      expect(wrapper.vm.viewingDelivery).toBeDefined()
+      expect(wrapper.vm.viewingDelivery.payment_status).toBeDefined()
+      expect(wrapper.vm.viewingDelivery.outstanding).toBeDefined()
+      expect(wrapper.vm.viewingDelivery.paid_amount).toBeDefined()
+    })
+
+    it('should calculate pending status when no payment allocations exist', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      const mockDelivery = {
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        total_amount: 1500,
+        payment_status: 'paid' // Incorrect old value
+      }
+
+      // Mock paymentAllocations as empty array
+      await wrapper.vm.viewDelivery(mockDelivery)
+      await wrapper.vm.$nextTick()
+
+      // Should calculate as pending (no allocations)
+      expect(wrapper.vm.viewingDelivery.payment_status).toBe('pending')
+      expect(wrapper.vm.viewingDelivery.outstanding).toBe(1500)
+      expect(wrapper.vm.viewingDelivery.paid_amount).toBe(0)
+    })
+
+    it('should calculate paid status when fully paid', async () => {
+      // Mock payment allocations for full payment
+      const { useSiteData } = await import('../../composables/useSiteData')
+      const { ref } = await import('vue')
+
+      let callCount = 0
+      vi.mocked(useSiteData).mockImplementation(() => {
+        callCount++
+        if (callCount === 1) {
+          // First call is for deliveries
+          return {
+            data: ref([]),
+            loading: ref(false),
+            reload: vi.fn()
+          }
+        } else {
+          // Second call is for payment allocations - full payment
+          return {
+            data: ref([
+              {
+                id: 'alloc-1',
+                delivery: 'delivery-1',
+                allocated_amount: 1500
+              }
+            ]),
+            loading: ref(false),
+            reload: vi.fn()
+          }
+        }
+      })
+
+      // Remount component with new mock
+      wrapper.unmount()
+      const router = createMockRouter()
+      wrapper = mount(DeliveryView, {
+        global: {
+          plugins: [router, pinia],
+          stubs: {
+            'router-link': true,
+            'router-view': true
+          }
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      const mockDelivery = {
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        total_amount: 1500,
+        payment_status: 'pending' // Old value
+      }
+
+      await wrapper.vm.viewDelivery(mockDelivery)
+      await wrapper.vm.$nextTick()
+
+      // Should calculate as paid
+      expect(wrapper.vm.viewingDelivery.payment_status).toBe('paid')
+      expect(wrapper.vm.viewingDelivery.outstanding).toBe(0)
+      expect(wrapper.vm.viewingDelivery.paid_amount).toBe(1500)
+    })
+
+    it('should calculate partial status when partially paid', async () => {
+      // Mock payment allocations for partial payment
+      const { useSiteData } = await import('../../composables/useSiteData')
+      const { ref } = await import('vue')
+
+      let callCount = 0
+      vi.mocked(useSiteData).mockImplementation(() => {
+        callCount++
+        if (callCount === 1) {
+          // First call is for deliveries
+          return {
+            data: ref([]),
+            loading: ref(false),
+            reload: vi.fn()
+          }
+        } else {
+          // Second call is for payment allocations - partial payment
+          return {
+            data: ref([
+              {
+                id: 'alloc-1',
+                delivery: 'delivery-1',
+                allocated_amount: 750
+              }
+            ]),
+            loading: ref(false),
+            reload: vi.fn()
+          }
+        }
+      })
+
+      // Remount component with new mock
+      wrapper.unmount()
+      const router = createMockRouter()
+      wrapper = mount(DeliveryView, {
+        global: {
+          plugins: [router, pinia],
+          stubs: {
+            'router-link': true,
+            'router-view': true
+          }
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      const mockDelivery = {
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        total_amount: 1500,
+        payment_status: 'pending' // Old value
+      }
+
+      await wrapper.vm.viewDelivery(mockDelivery)
+      await wrapper.vm.$nextTick()
+
+      // Should calculate as partial
+      expect(wrapper.vm.viewingDelivery.payment_status).toBe('partial')
+      expect(wrapper.vm.viewingDelivery.outstanding).toBe(750)
+      expect(wrapper.vm.viewingDelivery.paid_amount).toBe(750)
+    })
+
+    it('should display payment status in modal preview', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      const mockDelivery = {
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        total_amount: 1500,
+        payment_status: 'pending'
+      }
+
+      // Open delivery preview
+      await wrapper.vm.viewDelivery(mockDelivery)
+      await wrapper.vm.$nextTick()
+
+      // Verify modal is shown
+      expect(wrapper.vm.viewingDelivery).toBeTruthy()
+
+      // Modal should display the status from viewingDelivery
+      const modalHTML = wrapper.html()
+
+      // Should contain payment status label
+      expect(modalHTML).toContain('Payment Status')
+
+      // Should use viewingDelivery properties in the template
+      expect(wrapper.vm.viewingDelivery.payment_status).toBeDefined()
+    })
+
+    it('should handle error fallback by still enhancing delivery', async () => {
+      // Mock deliveryService.getById to throw error
+      const { deliveryService } = await import('../../services/pocketbase')
+      deliveryService.getById = vi.fn().mockRejectedValue(new Error('Network error'))
+
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      const mockDelivery = {
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        total_amount: 1500,
+        payment_status: 'pending'
+      }
+
+      // Call viewDelivery - should fallback to passed delivery but still enhance it
+      await wrapper.vm.viewDelivery(mockDelivery)
+      await wrapper.vm.$nextTick()
+
+      // Should still have viewingDelivery with enhanced properties
+      expect(wrapper.vm.viewingDelivery).toBeDefined()
+      expect(wrapper.vm.viewingDelivery.payment_status).toBeDefined()
+      expect(wrapper.vm.viewingDelivery.outstanding).toBeDefined()
+      expect(wrapper.vm.viewingDelivery.paid_amount).toBeDefined()
+    })
+  })
 })
