@@ -1782,13 +1782,14 @@ export class ServiceBookingService {
 }
 
 export class PaymentService {
-  async getAll(): Promise<Payment[]> {
+  async getAll(options?: { sort?: string }): Promise<Payment[]> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
 
     const records = await pb.collection('payments').getFullList({
       filter: `site="${siteId}"`,
-      expand: 'vendor,account,deliveries,service_bookings,payment_allocations,payment_allocations.delivery,payment_allocations.service_booking,payment_allocations.service_booking.service,credit_notes'
+      expand: 'vendor,account,deliveries,service_bookings,payment_allocations,payment_allocations.delivery,payment_allocations.service_booking,payment_allocations.service_booking.service,credit_notes',
+      sort: options?.sort || '-payment_date' // Default sort by payment_date descending
     });
     return records.map(record => this.mapRecordToPayment(record));
   }
