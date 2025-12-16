@@ -280,6 +280,8 @@
     "noDeliveriesRecorded": "कोई डिलीवरी रिकॉर्ड नहीं",
     "startTracking": "डिलीवरी रिकॉर्ड करके ट्रैकिंग शुरू करें।",
     "service": "सेवा",
+    "perUnit": "प्रति इकाई",
+    "noServicesFound": "\"{query}\" से मिलती कोई सेवा नहीं मिली",
     "categories": {
       "labor": "श्रम",
       "equipment": "उपकरण",
