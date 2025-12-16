@@ -17,12 +17,18 @@
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ t('common.vendor') }} *
             </label>
-            <select v-model="form.vendor" required class="input mt-1" autofocus>
-              <option value="">Select a vendor</option>
-              <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
-                {{ vendor.name || vendor.contact_person || 'Unnamed Vendor' }}
-              </option>
-            </select>
+            <VendorSearchBox
+              ref="vendorSearchRef"
+              v-model="form.vendor"
+              :vendors="vendors"
+              :deliveries="deliveries"
+              :service-bookings="serviceBookings"
+              :payments="payments"
+              :placeholder="t('search.vendors')"
+              :required="true"
+              :autofocus="true"
+              class="mt-1"
+            />
           </div>
 
           <!-- Return Date -->
@@ -285,14 +291,21 @@ import {
   getCurrentSiteId,
   type VendorReturn,
   type Vendor,
-  type DeliveryItem
+  type DeliveryItem,
+  type Delivery,
+  type ServiceBooking,
+  type Payment
 } from '../../services/pocketbase';
 import FileUploadComponent from '../FileUploadComponent.vue';
+import VendorSearchBox from '../VendorSearchBox.vue';
 
 interface Props {
   isEdit: boolean;
   returnData?: VendorReturn | null;
   vendors: Vendor[];
+  deliveries?: Delivery[];
+  serviceBookings?: ServiceBooking[];
+  payments?: Payment[];
 }
 
 interface ReturnItemForm {
@@ -305,13 +318,20 @@ interface ReturnItemForm {
   item_notes: string;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  deliveries: () => [],
+  serviceBookings: () => [],
+  payments: () => []
+});
 const emit = defineEmits<{
   close: [];
   save: [];
 }>();
 
 const { t } = useI18n();
+
+// Refs
+const vendorSearchRef = ref<InstanceType<typeof VendorSearchBox> | null>(null);
 
 // Form data
 const form = reactive({
