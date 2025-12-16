@@ -631,7 +631,22 @@
     "validUntil": "तक वैध",
     "noQuotations": "कोई कोटेशन नहीं",
     "getStarted": "कोटेशन जोड़कर शुरुआत करें।",
-    "additionalNotes": "अतिरिक्त टिप्पणी"
+    "additionalNotes": "अतिरिक्त टिप्पणी",
+    "multiItemSubtitle": "एक विक्रेता से कई आइटम के लिए मूल्य कोटेशन जोड़ें",
+    "newItem": "नई वस्तु",
+    "addItem": "वस्तु जोड़ें",
+    "addedItems": "जोड़ी गई वस्तुएं",
+    "removeItem": "वस्तु हटाएं",
+    "itemsSummary": "वस्तुओं का सारांश",
+    "totalItems": "कुल वस्तुएं",
+    "perUnit": "प्रति {unit}",
+    "itemNotesPlaceholder": "इस वस्तु के लिए अतिरिक्त नोट्स...",
+    "steps": {
+      "quotationInfo": "कोटेशन जानकारी",
+      "items": "वस्तुएं",
+      "addItems": "वस्तुएं जोड़ें",
+      "review": "समीक्षा"
+    }
   },
   "delivery": {
     "title": "डिलीवरी",

@@ -629,7 +629,22 @@
     "validUntil": "Valid Until",
     "noQuotations": "No quotations",
     "getStarted": "Get started by adding a quotation.",
-    "additionalNotes": "Additional notes"
+    "additionalNotes": "Additional notes",
+    "multiItemSubtitle": "Add price quotations for multiple items from a vendor",
+    "newItem": "New Item",
+    "addItem": "Add Item",
+    "addedItems": "Added Items",
+    "removeItem": "Remove Item",
+    "itemsSummary": "Items Summary",
+    "totalItems": "Total Items",
+    "perUnit": "per {unit}",
+    "itemNotesPlaceholder": "Additional notes for this item...",
+    "steps": {
+      "quotationInfo": "Quotation Info",
+      "items": "Items",
+      "addItems": "Add Items",
+      "review": "Review"
+    }
   },
   "delivery": {
     "title": "Deliveries",
