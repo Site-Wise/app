@@ -639,6 +639,7 @@
     "totalItems": "Total Items",
     "perUnit": "per {unit}",
     "itemNotesPlaceholder": "Additional notes for this item...",
+    "noItems": "No items",
     "steps": {
       "quotationInfo": "Quotation Info",
       "items": "Items",

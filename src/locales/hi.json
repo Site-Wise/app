@@ -641,6 +641,7 @@
     "totalItems": "कुल वस्तुएं",
     "perUnit": "प्रति {unit}",
     "itemNotesPlaceholder": "इस वस्तु के लिए अतिरिक्त नोट्स...",
+    "noItems": "कोई वस्तु नहीं",
     "steps": {
       "quotationInfo": "कोटेशन जानकारी",
       "items": "वस्तुएं",

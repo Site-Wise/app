@@ -293,12 +293,14 @@ import ItemCreateModal from '../ItemCreateModal.vue';
 import VendorSearchBox from '../VendorSearchBox.vue';
 import {
   quotationService,
+  quotationItemService,
   vendorService,
   itemService,
   paymentService,
   serviceBookingService,
   deliveryService,
   type Quotation,
+  type QuotationItem,
   type Vendor,
   type Item,
   type Payment,
@@ -325,9 +327,12 @@ interface QuotationItemForm {
 const props = defineProps<Props>();
 const emit = defineEmits<{
   close: [];
-  success: [quotations: Quotation[]];
-  saved: [quotations: Quotation[]];
+  success: [quotation: Quotation];
+  saved: [quotation: Quotation];
 }>();
+
+// Track original items for edit comparison
+const originalQuotationItems = ref<QuotationItemForm[]>([]);
 
 const { t } = useI18n();
 const { success, error } = useToast();
@@ -474,6 +479,17 @@ const cancelNewItem = () => {
 };
 
 const updateQuotationItem = (index: number, updatedItem: QuotationItemForm) => {
+  const originalItem = originalQuotationItems.value.find(item => item.tempId === updatedItem.tempId);
+
+  // Mark as modified if values changed from original
+  if (originalItem && !updatedItem.isNew) {
+    const hasChanges = originalItem.item !== updatedItem.item ||
+      originalItem.unit_price !== updatedItem.unit_price ||
+      originalItem.minimum_quantity !== updatedItem.minimum_quantity ||
+      originalItem.notes !== updatedItem.notes;
+    updatedItem.isModified = hasChanges;
+  }
+
   quotationItems.value[index] = { ...updatedItem };
 };
 
@@ -579,72 +595,97 @@ const previousStep = async () => {
   }
 };
 
+const handleQuotationItemChanges = async (quotationId: string) => {
+  // Handle deleted items
+  const deletedItems = quotationItems.value.filter(item => item.isDeleted && item.id && !item.isNew);
+  if (deletedItems.length > 0) {
+    const idsToDelete = deletedItems.map(item => item.id!);
+    await quotationItemService.deleteMultiple(idsToDelete);
+  }
+
+  // Handle modified existing items
+  const modifiedItems = quotationItems.value.filter(item => item.isModified && item.id && !item.isNew && !item.isDeleted);
+  for (const item of modifiedItems) {
+    await quotationItemService.update(item.id!, {
+      item: item.item,
+      unit_price: item.unit_price,
+      minimum_quantity: item.minimum_quantity,
+      notes: item.notes
+    });
+  }
+
+  // Handle new items
+  const newItems = quotationItems.value.filter(item => item.isNew && !item.isDeleted);
+  if (newItems.length > 0) {
+    const newItemsData = newItems.map(item => ({
+      item: item.item,
+      unit_price: item.unit_price,
+      minimum_quantity: item.minimum_quantity,
+      notes: item.notes
+    }));
+    await quotationItemService.createMultiple(quotationId, newItemsData);
+  }
+};
+
 const saveQuotations = async () => {
   if (!canSubmit.value) return;
 
   loading.value = true;
   try {
-    const savedQuotations: Quotation[] = [];
+    let quotation: Quotation;
 
     if (props.editingQuotation) {
       // Update existing quotation
-      const item = activeQuotationItems.value[0];
       const quotationData: Partial<Quotation> = {
         vendor: quotationForm.vendor,
-        item: item.item,
-        quotation_type: 'item',
-        unit_price: item.unit_price,
         status: quotationForm.status
       };
 
-      if (item.minimum_quantity) {
-        quotationData.minimum_quantity = item.minimum_quantity;
-      }
       if (quotationForm.valid_until) {
         quotationData.valid_until = quotationForm.valid_until;
       }
-      if (item.notes || quotationForm.notes) {
-        quotationData.notes = [quotationForm.notes, item.notes].filter(Boolean).join('\n');
+      if (quotationForm.notes) {
+        quotationData.notes = quotationForm.notes;
       }
 
-      const updated = await quotationService.update(props.editingQuotation.id!, quotationData);
-      savedQuotations.push(updated);
+      quotation = await quotationService.update(props.editingQuotation.id!, quotationData);
+
+      // Handle quotation item changes
+      await handleQuotationItemChanges(quotation.id!);
 
       success(t('messages.updateSuccess', { item: t('quotations.title') }));
-      emit('success', savedQuotations);
+      emit('success', quotation);
     } else {
-      // Create new quotations - one per item
-      for (const item of activeQuotationItems.value) {
-        const quotationData: Omit<Quotation, 'id' | 'site'> = {
-          vendor: quotationForm.vendor,
-          item: item.item,
-          quotation_type: 'item',
-          unit_price: item.unit_price,
-          status: quotationForm.status
-        };
+      // Create new quotation
+      const quotationData = {
+        vendor: quotationForm.vendor,
+        valid_until: quotationForm.valid_until || undefined,
+        notes: quotationForm.notes || undefined,
+        status: quotationForm.status
+      };
 
-        if (item.minimum_quantity) {
-          quotationData.minimum_quantity = item.minimum_quantity;
-        }
-        if (quotationForm.valid_until) {
-          quotationData.valid_until = quotationForm.valid_until;
-        }
-        if (item.notes || quotationForm.notes) {
-          quotationData.notes = [quotationForm.notes, item.notes].filter(Boolean).join('\n');
-        }
+      quotation = await quotationService.create(quotationData);
 
-        const created = await quotationService.create(quotationData);
-        savedQuotations.push(created);
+      // Create quotation items
+      const itemsData = activeQuotationItems.value.map(item => ({
+        item: item.item,
+        unit_price: item.unit_price,
+        minimum_quantity: item.minimum_quantity,
+        notes: item.notes
+      }));
+
+      if (itemsData.length > 0) {
+        await quotationItemService.createMultiple(quotation.id!, itemsData);
       }
 
-      success(t('messages.createSuccess', { item: `${savedQuotations.length} ${t('quotations.title')}` }));
+      success(t('messages.createSuccess', { item: t('quotations.title') }));
 
       // Reset form for another entry
       resetForm();
-      emit('saved', savedQuotations);
+      emit('saved', quotation);
     }
   } catch (err) {
-    console.error('Error saving quotations:', err);
+    console.error('Error saving quotation:', err);
     error(t('messages.error'));
   } finally {
     loading.value = false;
@@ -691,19 +732,22 @@ const loadData = async () => {
         status: props.editingQuotation.status
       });
 
-      // Add the single item to the items list
-      if (props.editingQuotation.item) {
-        quotationItems.value = [{
-          tempId: 'edit_0',
-          id: props.editingQuotation.id,
-          item: props.editingQuotation.item,
-          unit_price: props.editingQuotation.unit_price,
-          minimum_quantity: props.editingQuotation.minimum_quantity,
-          notes: '',
+      // Load quotation items if editing
+      if (props.editingQuotation.expand?.quotation_items) {
+        quotationItems.value = props.editingQuotation.expand.quotation_items.map((qItem, index) => ({
+          tempId: `edit_${index}`,
+          id: qItem.id,
+          item: qItem.item,
+          unit_price: qItem.unit_price,
+          minimum_quantity: qItem.minimum_quantity,
+          notes: qItem.notes || '',
           isNew: false,
           isModified: false,
           isDeleted: false
-        }];
+        }));
+
+        // Store a deep copy of original items for comparison
+        originalQuotationItems.value = JSON.parse(JSON.stringify(quotationItems.value));
       }
     } else {
       await addNewItem();

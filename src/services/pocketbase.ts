@@ -212,24 +212,34 @@ export interface ItemWithTags extends Omit<Item, 'category'> {
 export interface Quotation {
   id?: string;
   vendor: string;
-  item?: string;
-  service?: string; // New field for service quotations
-  quotation_type: 'item' | 'service'; // New field to distinguish type
-  unit_price: number;
-  minimum_quantity?: number;
   valid_until?: string;
   notes?: string;
   status: 'pending' | 'approved' | 'rejected' | 'expired';
+  quotation_items?: string[]; // Array of quotation_item IDs
   site: string; // Site ID
   created?: string;
   updated?: string;
   expand?: {
     vendor?: Vendor;
-    item?: Item;
-    service?: Service;
+    quotation_items?: QuotationItem[];
   };
 }
 
+export interface QuotationItem {
+  id?: string;
+  quotation: string; // Quotation ID
+  item: string; // Item ID
+  unit_price: number;
+  minimum_quantity?: number;
+  notes?: string; // Item-specific notes
+  site: string; // Site ID
+  created?: string;
+  updated?: string;
+  expand?: {
+    quotation?: Quotation;
+    item?: Item;
+  };
+}
 
 export interface ServiceBooking {
   id?: string;
@@ -1455,7 +1465,8 @@ export class QuotationService {
 
     const records = await pb.collection('quotations').getFullList({
       filter: `site="${siteId}"`,
-      expand: 'vendor,item,service'
+      expand: 'vendor,quotation_items,quotation_items.item',
+      sort: '-created'
     });
     return records.map(record => this.mapRecordToQuotation(record));
   }
@@ -1466,16 +1477,21 @@ export class QuotationService {
 
     try {
       const record = await pb.collection('quotations').getOne(id, {
-        filter: `site="${siteId}"`,
-        expand: 'vendor,item,service'
+        expand: 'vendor,quotation_items,quotation_items.item'
       });
+
+      // Validate site access
+      if (record.site !== siteId) {
+        throw new Error('Access denied: Quotation not found in current site');
+      }
+
       return this.mapRecordToQuotation(record);
     } catch (error) {
       return null;
     }
   }
 
-  async create(data: Omit<Quotation, 'id' | 'site'>): Promise<Quotation> {
+  async create(data: Omit<Quotation, 'id' | 'site' | 'quotation_items'>): Promise<Quotation> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
 
@@ -1494,6 +1510,9 @@ export class QuotationService {
   }
 
   async update(id: string, data: Partial<Quotation>): Promise<Quotation> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
     // Check permissions
     const userRole = getCurrentUserRole();
     const permissions = calculatePermissions(userRole);
@@ -1501,16 +1520,39 @@ export class QuotationService {
       throw new Error('Permission denied: Cannot update quotations');
     }
 
+    // Validate site access
+    const existing = await pb.collection('quotations').getOne(id);
+    if (existing.site !== siteId) {
+      throw new Error('Access denied: Cannot update quotation from different site');
+    }
+
     const record = await pb.collection('quotations').update(id, data);
     return this.mapRecordToQuotation(record);
   }
 
   async delete(id: string): Promise<boolean> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
     // Check permissions
     const userRole = getCurrentUserRole();
     const permissions = calculatePermissions(userRole);
     if (!permissions.canDelete) {
       throw new Error('Permission denied: Cannot delete quotations');
+    }
+
+    // Validate site access
+    const existing = await pb.collection('quotations').getOne(id);
+    if (existing.site !== siteId) {
+      throw new Error('Access denied: Cannot delete quotation from different site');
+    }
+
+    // Delete associated quotation items first
+    const items = await pb.collection('quotation_items').getFullList({
+      filter: `quotation="${id}"`
+    });
+    for (const item of items) {
+      await pb.collection('quotation_items').delete(item.id);
     }
 
     await pb.collection('quotations').delete(id);
@@ -1521,21 +1563,34 @@ export class QuotationService {
     return {
       id: record.id,
       vendor: record.vendor,
-      item: record.item,
-      service: record.service,
-      quotation_type: record.quotation_type,
-      unit_price: record.unit_price,
-      minimum_quantity: record.minimum_quantity,
       valid_until: record.valid_until,
       notes: record.notes,
       status: record.status,
+      quotation_items: record.quotation_items || [],
       site: record.site,
       created: record.created,
       updated: record.updated,
       expand: record.expand ? {
         vendor: record.expand.vendor ? this.mapRecordToVendor(record.expand.vendor) : undefined,
-        item: record.expand.item ? this.mapRecordToItem(record.expand.item) : undefined,
-        service: record.expand.service ? this.mapRecordToService(record.expand.service) : undefined
+        quotation_items: record.expand.quotation_items ?
+          record.expand.quotation_items.map((item: RecordModel) => this.mapRecordToQuotationItem(item)) : undefined
+      } : undefined
+    };
+  }
+
+  private mapRecordToQuotationItem(record: RecordModel): QuotationItem {
+    return {
+      id: record.id,
+      quotation: record.quotation,
+      item: record.item,
+      unit_price: record.unit_price,
+      minimum_quantity: record.minimum_quantity,
+      notes: record.notes,
+      site: record.site,
+      created: record.created,
+      updated: record.updated,
+      expand: record.expand ? {
+        item: record.expand.item ? this.mapRecordToItem(record.expand.item) : undefined
       } : undefined
     };
   }
@@ -1567,17 +1622,249 @@ export class QuotationService {
       updated: record.updated
     };
   }
+}
 
-  private mapRecordToService(record: RecordModel): Service {
+export class QuotationItemService {
+  async getByQuotation(quotationId: string): Promise<QuotationItem[]> {
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    const records = await pb.collection('quotation_items').getFullList({
+      filter: `quotation="${quotationId}" && site="${currentSite}"`,
+      expand: 'quotation,item'
+    });
+    return records.map(record => this.mapRecordToQuotationItem(record));
+  }
+
+  async getById(id: string): Promise<QuotationItem> {
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    const record = await pb.collection('quotation_items').getOne(id, {
+      expand: 'quotation,item'
+    });
+
+    // Validate site access
+    if (record.site !== currentSite) {
+      throw new Error('Access denied: QuotationItem not found in current site');
+    }
+
+    return this.mapRecordToQuotationItem(record);
+  }
+
+  async create(data: Omit<QuotationItem, 'id' | 'site' | 'created' | 'updated'>): Promise<QuotationItem> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create quotation items');
+    }
+
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    // Ensure site is set in the data
+    const dataWithSite = { ...data, site: currentSite };
+
+    const record = await pb.collection('quotation_items').create(dataWithSite);
+
+    // Update the parent quotation with the new item ID
+    try {
+      const quotation = await pb.collection('quotations').getOne(data.quotation);
+      // Validate that the quotation belongs to the current site
+      if (quotation.site !== currentSite) {
+        throw new Error('Access denied: Cannot create quotation item for quotation in different site');
+      }
+      const existingItemIds = quotation.quotation_items || [];
+      await pb.collection('quotations').update(data.quotation, {
+        quotation_items: [...existingItemIds, record.id]
+      });
+    } catch (err) {
+      console.error('Failed to update quotation with item ID:', err);
+      throw new Error(`Failed to associate quotation item with quotation: ${err}`);
+    }
+
+    return this.mapRecordToQuotationItem(record);
+  }
+
+  async createMultiple(quotationId: string, items: Array<{
+    item: string;
+    unit_price: number;
+    minimum_quantity?: number;
+    notes?: string;
+  }>): Promise<QuotationItem[]> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canCreate) {
+      throw new Error('Permission denied: Cannot create quotation items');
+    }
+
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    // Validate that the quotation belongs to the current site
+    const quotation = await pb.collection('quotations').getOne(quotationId);
+    if (quotation.site !== currentSite) {
+      throw new Error('Access denied: Cannot create quotation items for quotation in different site');
+    }
+
+    // Prepare batch data
+    const batchData = items.map(itemData => ({
+      quotation: quotationId,
+      item: itemData.item,
+      unit_price: itemData.unit_price,
+      minimum_quantity: itemData.minimum_quantity,
+      notes: itemData.notes,
+      site: currentSite
+    }));
+
+    // Use batch API to create all items at once
+    const createdRecords = await batchCreate<any>('quotation_items', batchData);
+    const createdItems = createdRecords.map(record => this.mapRecordToQuotationItem(record as RecordModel));
+    const createdItemIds = createdItems.map(item => item.id!);
+
+    // Update the parent quotation with the new item IDs
+    try {
+      const existingItemIds = quotation.quotation_items || [];
+      await pb.collection('quotations').update(quotationId, {
+        quotation_items: [...existingItemIds, ...createdItemIds]
+      });
+    } catch (err) {
+      console.error('Failed to update quotation with item IDs:', err);
+      throw new Error(`Failed to associate quotation items with quotation: ${err}`);
+    }
+
+    return createdItems;
+  }
+
+  async update(id: string, data: Partial<QuotationItem>): Promise<QuotationItem> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canUpdate) {
+      throw new Error('Permission denied: Cannot update quotation items');
+    }
+
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    // Validate site access
+    const existing = await pb.collection('quotation_items').getOne(id);
+    if (existing.site !== currentSite) {
+      throw new Error('Access denied: Cannot update quotation item from different site');
+    }
+
+    const record = await pb.collection('quotation_items').update(id, data);
+    return this.mapRecordToQuotationItem(record);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canDelete) {
+      throw new Error('Permission denied: Cannot delete quotation items');
+    }
+
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    // Validate site access
+    const existing = await pb.collection('quotation_items').getOne(id);
+    if (existing.site !== currentSite) {
+      throw new Error('Access denied: Cannot delete quotation item from different site');
+    }
+
+    // Remove from parent quotation's quotation_items array
+    try {
+      const quotation = await pb.collection('quotations').getOne(existing.quotation);
+      const updatedItemIds = (quotation.quotation_items || []).filter((itemId: string) => itemId !== id);
+      await pb.collection('quotations').update(existing.quotation, {
+        quotation_items: updatedItemIds
+      });
+    } catch (err) {
+      console.error('Failed to update quotation after removing item:', err);
+    }
+
+    await pb.collection('quotation_items').delete(id);
+    return true;
+  }
+
+  async deleteMultiple(ids: string[]): Promise<boolean> {
+    const userRole = getCurrentUserRole();
+    const permissions = calculatePermissions(userRole);
+    if (!permissions.canDelete) {
+      throw new Error('Permission denied: Cannot delete quotation items');
+    }
+
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    // Validate that all items belong to the current site
+    for (const id of ids) {
+      const record = await pb.collection('quotation_items').getOne(id);
+      if (record.site !== currentSite) {
+        throw new Error(`Access denied: Cannot delete quotation item ${id} from different site`);
+      }
+    }
+
+    // Delete each item
+    for (const id of ids) {
+      await pb.collection('quotation_items').delete(id);
+    }
+
+    return true;
+  }
+
+  private mapRecordToQuotationItem(record: RecordModel): QuotationItem {
+    return {
+      id: record.id,
+      quotation: record.quotation,
+      item: record.item,
+      unit_price: record.unit_price,
+      minimum_quantity: record.minimum_quantity,
+      notes: record.notes,
+      site: record.site,
+      created: record.created,
+      updated: record.updated,
+      expand: record.expand ? {
+        quotation: record.expand.quotation ? this.mapRecordToQuotation(record.expand.quotation) : undefined,
+        item: record.expand.item ? this.mapRecordToItem(record.expand.item) : undefined
+      } : undefined
+    };
+  }
+
+  private mapRecordToQuotation(record: RecordModel): Quotation {
+    return {
+      id: record.id,
+      vendor: record.vendor,
+      valid_until: record.valid_until,
+      notes: record.notes,
+      status: record.status,
+      quotation_items: record.quotation_items || [],
+      site: record.site,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+
+  private mapRecordToItem(record: RecordModel): Item {
     return {
       id: record.id,
       name: record.name,
       description: record.description,
-      category: record.category,
-      service_type: record.service_type,
       unit: record.unit,
-      standard_rate: record.standard_rate,
-      is_active: record.is_active,
       tags: record.tags || [],
       site: record.site,
       created: record.created,
@@ -4588,6 +4875,7 @@ export const itemService = new ItemService();
 export const serviceService = new ServiceService();
 export const vendorService = new VendorService();
 export const quotationService = new QuotationService();
+export const quotationItemService = new QuotationItemService();
 export const serviceBookingService = new ServiceBookingService();
 export const paymentService = new PaymentService();
 export const paymentAllocationService = new PaymentAllocationService();

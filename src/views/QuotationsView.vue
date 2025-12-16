@@ -61,10 +61,8 @@
       <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead class="bg-gray-50 dark:bg-gray-700">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.item') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.vendor') }}</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('quotations.unitPrice') }}</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('quotations.minimumQuantity') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.items') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('quotations.validUntil') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.status') }}</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.actions') }}</th>
@@ -73,17 +71,23 @@
         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           <tr v-for="quotation in quotations" :key="quotation.id">
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ quotation.expand?.item?.name }}</div>
-              <div class="text-sm text-gray-500 dark:text-gray-400">{{ getUnitDisplay(quotation.expand?.item?.unit || 'units') }}</div>
+              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ quotation.expand?.vendor?.contact_person }}</div>
+              <div class="text-sm text-gray-500 dark:text-gray-400">{{ quotation.expand?.vendor?.name }}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-900 dark:text-white">{{ quotation.expand?.vendor?.contact_person }}</div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-              ₹{{ quotation.unit_price.toFixed(2) }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-              {{ quotation.minimum_quantity || '-' }}
+            <td class="px-6 py-4">
+              <div v-if="quotation.expand?.quotation_items?.length" class="space-y-1">
+                <div v-for="(qItem, idx) in quotation.expand.quotation_items.slice(0, 3)" :key="qItem.id" class="text-sm">
+                  <span class="font-medium text-gray-900 dark:text-white">{{ qItem.expand?.item?.name || 'Unknown Item' }}</span>
+                  <span class="text-gray-500 dark:text-gray-400 ml-2">₹{{ qItem.unit_price.toFixed(2) }}/{{ qItem.expand?.item?.unit || 'unit' }}</span>
+                  <span v-if="qItem.minimum_quantity" class="text-gray-400 dark:text-gray-500 ml-1">(min: {{ qItem.minimum_quantity }})</span>
+                </div>
+                <div v-if="quotation.expand.quotation_items.length > 3" class="text-xs text-gray-400 dark:text-gray-500">
+                  +{{ quotation.expand.quotation_items.length - 3 }} {{ t('delivery.moreItems') }}
+                </div>
+              </div>
+              <div v-else class="text-sm text-gray-400 dark:text-gray-500">
+                {{ t('quotations.noItems') }}
+              </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
               {{ quotation.valid_until ? formatDate(quotation.valid_until) : '-' }}
@@ -123,7 +127,7 @@
           </tr>
         </tbody>
       </table>
-      
+
       <div v-if="quotations.length === 0" class="text-center py-12">
         <FileText class="mx-auto h-12 w-12 text-gray-400" />
         <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('quotations.noQuotations') }}</h3>
@@ -211,19 +215,6 @@ const deleteQuotation = async (id: string) => {
       console.error('Error deleting quotation:', error);
     }
   }
-};
-
-const getUnitDisplay = (unitKey: string) => {
-  // If translation exists, show "Translation (key)", otherwise just show the key
-  const translationKey = `units.${unitKey}`;
-  const translation = t(translationKey);
-  
-  // If translation is the same as the key, it means translation doesn't exist
-  if (translation === translationKey) {
-    return unitKey;
-  }
-  
-  return `${translation} (${unitKey})`;
 };
 
 const formatDate = (dateString: string) => {
