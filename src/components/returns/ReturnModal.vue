@@ -284,6 +284,7 @@
 import { ref, reactive, computed, watch } from 'vue';
 import { X, Plus, Trash2, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '../../composables/useI18n';
+import { useToast } from '../../composables/useToast';
 import {
   vendorReturnService,
   vendorReturnItemService,
@@ -329,6 +330,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const toast = useToast();
 
 // Refs
 const vendorSearchRef = ref<InstanceType<typeof VendorSearchBox> | null>(null);
@@ -438,10 +440,9 @@ const updateReturnAmount = (index: number) => {
   item.return_amount = item.quantity_returned * item.return_rate;
 };
 
-const handlePhotosSelected = (files: File[]) => {
-  // FileUploadComponent emits File[], but we need to store file names or handle uploads
-  // For now, we'll store file names as placeholder
-  form.photos = files.map(file => file.name);
+const handlePhotosSelected = (_files: File[]) => {
+  // Files are stored in uploadedFiles via v-model
+  // Actual upload happens in handleSubmit after return is created
 };
 
 const formatDate = (dateString: string) => {
@@ -456,16 +457,28 @@ const handleSubmit = async () => {
   try {
     // Create or update the vendor return
     let vendorReturn: VendorReturn;
-    
+
+    // Prepare return data WITHOUT photos - photos will be uploaded separately
     const returnData = {
-      ...form,
-      reason: form.reason as 'damaged' | 'wrong_item' | 'excess_delivery' | 'quality_issue' | 'specification_mismatch' | 'other'
+      vendor: form.vendor,
+      return_date: form.return_date,
+      reason: form.reason as 'damaged' | 'wrong_item' | 'excess_delivery' | 'quality_issue' | 'specification_mismatch' | 'other',
+      notes: form.notes,
+      status: form.status,
+      total_return_amount: form.total_return_amount
     };
-    
+
     if (props.isEdit && props.returnData?.id) {
       vendorReturn = await vendorReturnService.update(props.returnData.id, returnData);
     } else {
       vendorReturn = await vendorReturnService.create(returnData);
+    }
+
+    // Upload photos if any were selected
+    if (uploadedFiles.value.length > 0) {
+      for (const file of uploadedFiles.value) {
+        await vendorReturnService.uploadPhoto(vendorReturn.id!, file);
+      }
     }
 
     // Create return items
@@ -482,9 +495,11 @@ const handleSubmit = async () => {
       });
     }
 
+    toast.success(props.isEdit ? t('vendors.returnUpdated') : t('vendors.returnCreated'));
     emit('save');
   } catch (error) {
     console.error('Error saving return:', error);
+    toast.error(t('common.errorSavingData'));
   } finally {
     loading.value = false;
   }
