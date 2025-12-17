@@ -1398,11 +1398,14 @@ export class VendorService {
   }
 
   // Synchronous calculation methods for use with existing data
+  // Outstanding = Deliveries + Service Bookings - Payments - Credit Note Balance - Completed Refund Returns
   static calculateOutstandingFromData(
     vendorId: string,
     deliveries: Delivery[],
     serviceBookings: ServiceBooking[],
-    payments: Payment[]
+    payments: Payment[],
+    vendorReturns?: VendorReturn[],
+    creditNotes?: VendorCreditNote[]
   ): number {
     // Calculate total amount due from deliveries
     const deliveriesTotal = deliveries
@@ -1419,9 +1422,26 @@ export class VendorService {
       .filter(payment => payment.vendor === vendorId)
       .reduce((sum, payment) => sum + payment.amount, 0);
 
-    // Outstanding = Total Due - Total Paid
+    // Calculate credit note balance (for returns processed as credit notes)
+    // Only count active credit notes with remaining balance
+    const creditNoteBalance = (creditNotes || [])
+      .filter(note => note.vendor === vendorId && note.status === 'active')
+      .reduce((sum, note) => sum + note.balance, 0);
+
+    // Calculate completed refund returns (returns processed as refunds, not credit notes)
+    // Only count returns with status 'completed' or 'refunded' AND processing_option = 'refund'
+    // This avoids double-counting with credit notes
+    const refundReturnsTotal = (vendorReturns || [])
+      .filter(returnItem =>
+        returnItem.vendor === vendorId &&
+        (returnItem.status === 'completed' || returnItem.status === 'refunded') &&
+        returnItem.processing_option === 'refund'
+      )
+      .reduce((sum, returnItem) => sum + returnItem.total_return_amount, 0);
+
+    // Outstanding = Total Due - Total Paid - Credit Note Balance - Refund Returns
     const totalDue = deliveriesTotal + serviceBookingsTotal;
-    const outstanding = totalDue - totalPaid;
+    const outstanding = totalDue - totalPaid - creditNoteBalance - refundReturnsTotal;
 
     return outstanding > 0 ? outstanding : 0;
   }
