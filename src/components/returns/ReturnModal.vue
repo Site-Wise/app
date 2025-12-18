@@ -271,6 +271,15 @@
         </div>
       </div>
     </div>
+
+    <!-- Loading Overlay -->
+    <LoadingOverlay
+      :show="showOverlay"
+      :state="overlayState"
+      :message="overlayMessage"
+      @close="handleOverlayClose"
+      @timeout="handleOverlayTimeout"
+    />
   </div>
 </template>
 
@@ -288,6 +297,7 @@ import {
   type DeliveryItem
 } from '../../services/pocketbase';
 import FileUploadComponent from '../FileUploadComponent.vue';
+import LoadingOverlay from '../LoadingOverlay.vue';
 
 interface Props {
   isEdit: boolean;
@@ -332,6 +342,22 @@ const loading = ref(false);
 const showItemSelection = ref(false);
 const vendorDeliveryItems = ref<DeliveryItem[]>([]);
 const loadingDeliveryItems = ref(false);
+
+// Loading overlay state
+const showOverlay = ref(false);
+const overlayState = ref<'loading' | 'success' | 'error' | 'timeout'>('loading');
+const overlayMessage = ref('');
+
+const handleOverlayClose = () => {
+  showOverlay.value = false;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+};
+
+const handleOverlayTimeout = () => {
+  overlayState.value = 'timeout';
+  overlayMessage.value = t('loading.timeout');
+};
 
 // Computed properties
 const availableDeliveryItems = computed(() => {
@@ -433,15 +459,19 @@ const handleSubmit = async () => {
   if (!form.reason) return; // Ensure reason is selected
 
   loading.value = true;
+  showOverlay.value = true;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+
   try {
     // Create or update the vendor return
     let vendorReturn: VendorReturn;
-    
+
     const returnData = {
       ...form,
       reason: form.reason as 'damaged' | 'wrong_item' | 'excess_delivery' | 'quality_issue' | 'specification_mismatch' | 'other'
     };
-    
+
     if (props.isEdit && props.returnData?.id) {
       vendorReturn = await vendorReturnService.update(props.returnData.id, returnData);
     } else {
@@ -462,9 +492,19 @@ const handleSubmit = async () => {
       });
     }
 
-    emit('save');
+    // Show success overlay
+    overlayState.value = 'success';
+    overlayMessage.value = props.isEdit ? t('messages.updateSuccess', { item: 'Return' }) : t('messages.createSuccess', { item: 'Return' });
+
+    // Wait for success animation then emit
+    setTimeout(() => {
+      showOverlay.value = false;
+      emit('save');
+    }, 1500);
   } catch (error) {
     console.error('Error saving return:', error);
+    overlayState.value = 'error';
+    overlayMessage.value = t('messages.error');
   } finally {
     loading.value = false;
   }

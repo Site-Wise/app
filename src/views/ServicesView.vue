@@ -240,6 +240,15 @@
         </div>
       </div>
     </div>
+
+    <!-- Loading Overlay -->
+    <LoadingOverlay
+      :show="showOverlay"
+      :state="overlayState"
+      :message="overlayMessage"
+      @close="handleOverlayClose"
+      @timeout="handleOverlayTimeout"
+    />
   </div>
 </template>
 
@@ -270,6 +279,7 @@ import { useModalState } from '../composables/useModalState';
 import TagSelector from '../components/TagSelector.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import SearchBox from '../components/SearchBox.vue';
+import LoadingOverlay from '../components/LoadingOverlay.vue';
 import {
   serviceService,
   serviceBookingService,
@@ -309,6 +319,22 @@ const showAddModal = ref(false);
 const editingService = ref<Service | null>(null);
 const saveLoading = ref(false);
 const nameInputRef = ref<HTMLInputElement>();
+
+// Loading overlay state
+const showOverlay = ref(false);
+const overlayState = ref<'loading' | 'success' | 'error' | 'timeout'>('loading');
+const overlayMessage = ref('');
+
+const handleOverlayClose = () => {
+  showOverlay.value = false;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+};
+
+const handleOverlayTimeout = () => {
+  overlayState.value = 'timeout';
+  overlayMessage.value = t('loading.timeout');
+};
 
 const canCreateService = computed(() => {
   return !isReadOnly.value && checkCreateLimit('services');
@@ -373,23 +399,37 @@ watch([services, allTags], () => {
 
 const saveService = async () => {
   saveLoading.value = true;
+  showOverlay.value = true;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+
   try {
     if (editingService.value) {
       await serviceService.update(editingService.value.id!, form);
-      success(t('messages.updateSuccess', { item: t('common.service') }));
+      overlayState.value = 'success';
+      overlayMessage.value = t('messages.updateSuccess', { item: t('common.service') });
     } else {
       if (!checkCreateLimit('services')) {
-        error(t('subscription.banner.freeTierLimitReached'));
+        overlayState.value = 'error';
+        overlayMessage.value = t('subscription.banner.freeTierLimitReached');
+        saveLoading.value = false;
         return;
       }
       await serviceService.create(form);
-      success(t('messages.createSuccess', { item: t('common.service') }));
+      overlayState.value = 'success';
+      overlayMessage.value = t('messages.createSuccess', { item: t('common.service') });
     }
     await reloadServices();
-    closeModal();
-  } catch (error) {
-    console.error('Error saving service:', error);
-    alert(t('messages.error'));
+
+    // Wait for success animation then close
+    setTimeout(() => {
+      showOverlay.value = false;
+      closeModal();
+    }, 1500);
+  } catch (err) {
+    console.error('Error saving service:', err);
+    overlayState.value = 'error';
+    overlayMessage.value = t('messages.error');
   } finally {
     saveLoading.value = false;
   }
