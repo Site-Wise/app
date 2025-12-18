@@ -1391,6 +1391,13 @@
     "hour": "hour",
     "hours": "hours"
   },
+  "loading": {
+    "pleaseWait": "Please wait...",
+    "success": "Operation completed successfully",
+    "error": "Something went wrong",
+    "timeout": "This is taking longer than expected",
+    "timeoutHint": "You may close this and try again"
+  },
   "pwa": {
     "installTitle": "Install SiteWise App",
     "installMessage": "Add SiteWise to your home screen for quick access and better performance",
