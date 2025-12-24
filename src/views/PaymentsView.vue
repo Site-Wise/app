@@ -555,8 +555,8 @@ import { useModalState } from '../composables/useModalState';
 import SearchBox from '../components/SearchBox.vue';
 import PaymentModal from '../components/PaymentModal.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
-import { 
-  paymentService, 
+import {
+  paymentService,
   paymentAllocationService,
   vendorService,
   accountService,
@@ -913,8 +913,22 @@ const handlePaymentModalSubmit = async (data: any) => {
       await paymentService.create(paymentData!);
       success(t('messages.createSuccess', { item: t('common.payment') }));
     } else if (mode === 'EDIT') {
-      // Use the service method to update allocations (deletes old and creates new)
-      await paymentService.updateAllocations(payment.id!, form.deliveries, form.service_bookings);
+      // In EDIT mode, merge existing allocations with new ones from the form
+      // Extract existing delivery and service booking IDs from current allocations
+      const existingDeliveryIds = currentAllocations.value
+        .filter(allocation => allocation.delivery)
+        .map(allocation => allocation.delivery!);
+
+      const existingServiceBookingIds = currentAllocations.value
+        .filter(allocation => allocation.service_booking)
+        .map(allocation => allocation.service_booking!);
+
+      // Combine existing with new (form contains only newly added items in edit mode)
+      const allDeliveryIds = [...new Set([...existingDeliveryIds, ...form.deliveries])];
+      const allServiceBookingIds = [...new Set([...existingServiceBookingIds, ...form.service_bookings])];
+
+      // Use the service method to add new allocations while preserving existing ones
+      await paymentService.updateAllocations(payment.id!, allDeliveryIds, allServiceBookingIds);
       success(t('messages.updateSuccess', { item: t('common.payment') }));
     }
     
