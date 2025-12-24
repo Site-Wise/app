@@ -271,9 +271,10 @@ describe('UserManagementView Logic', () => {
     })
 
     it('should format days for times 1 day or more away', () => {
-      const formatRelativeTime = (dateString: string) => {
+      // Use fixed timestamp to avoid timing race conditions
+      const formatRelativeTime = (dateString: string, nowTimestamp: number) => {
         const date = new Date(dateString)
-        const now = new Date()
+        const now = new Date(nowTimestamp)
         const diffInSeconds = Math.floor((date.getTime() - now.getTime()) / 1000)
 
         if (diffInSeconds <= 0) return 'soon'

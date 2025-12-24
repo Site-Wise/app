@@ -364,9 +364,14 @@ const showPdfConversionModal = async (pdfFile: File) => {
   try {
     // Get page count for display in modal
     const pdfjsLib = await import('pdfjs-dist')
-    // Set worker source to use static file from public directory
+
+    // Import worker using Vite's ?url suffix for proper module resolution
+    const workerModule = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+    const workerSrc = workerModule.default;
+
+    // Set worker source
     if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/pdf.worker.min.mjs';
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
     }
 
     const arrayBuffer = await pdfFile.arrayBuffer()
