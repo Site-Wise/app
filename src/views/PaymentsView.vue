@@ -927,8 +927,7 @@ const handlePaymentModalSubmit = async (data: any) => {
       const allDeliveryIds = [...new Set([...existingDeliveryIds, ...form.deliveries])];
       const allServiceBookingIds = [...new Set([...existingServiceBookingIds, ...form.service_bookings])];
 
-      // Use the batch service method to efficiently update all allocations at once
-      // This will delete old allocations and create new ones in a single batch operation
+      // Use the service method to add new allocations while preserving existing ones
       await paymentService.updateAllocations(payment.id!, allDeliveryIds, allServiceBookingIds);
       success(t('messages.updateSuccess', { item: t('common.payment') }));
     }
