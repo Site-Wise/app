@@ -137,7 +137,9 @@ import {
   deliveryService,
   serviceBookingService,
   ServiceBookingService,
-  vendorRefundService
+  vendorRefundService,
+  vendorReturnService,
+  vendorCreditNoteService
 } from '../services/pocketbase';
 
 const { t } = useI18n();
@@ -146,20 +148,24 @@ const { currentSite } = useSite();
 
 // Use site-aware data loading
 const { data: dashboardData, loading } = useSiteData(async () => {
-  const [payments, deliveries, serviceBookings, vendorRefunds] = await Promise.all([
+  const [payments, deliveries, serviceBookings, vendorRefunds, vendorReturns, creditNotes] = await Promise.all([
     paymentService.getAll(),
     deliveryService.getAll(),
     serviceBookingService.getAll(),
     vendorRefundService.getAll(),
+    vendorReturnService.getAll(),
+    vendorCreditNoteService.getAll(),
   ]);
 
-  return { payments, deliveries, serviceBookings, vendorRefunds };
+  return { payments, deliveries, serviceBookings, vendorRefunds, vendorReturns, creditNotes };
 });
 
 const payments = computed(() => dashboardData.value?.payments || []);
 const deliveries = computed(() => dashboardData.value?.deliveries || []);
 const serviceBookings = computed(() => dashboardData.value?.serviceBookings || []);
 const vendorRefunds = computed(() => dashboardData.value?.vendorRefunds || []);
+const vendorReturns = computed(() => dashboardData.value?.vendorReturns || []);
+const creditNotes = computed(() => dashboardData.value?.creditNotes || []);
 
 
 const stats = computed(() => {
@@ -221,9 +227,25 @@ const stats = computed(() => {
   // Calculate total payments made
   const totalPaid = payments.value.reduce((sum, payment) => sum + payment.amount, 0);
 
-  // Outstanding = Total Due - Total Paid
+  // Calculate credit note balance (for returns processed as credit notes)
+  // Only count active credit notes with remaining balance
+  const creditNoteBalance = creditNotes.value
+    .filter(note => note.status === 'active')
+    .reduce((sum, note) => sum + note.balance, 0);
+
+  // Calculate completed refund returns (returns processed as refunds, not credit notes)
+  // Only count returns with status 'completed' or 'refunded' AND processing_option = 'refund'
+  // This avoids double-counting with credit notes
+  const refundReturnsTotal = vendorReturns.value
+    .filter(returnItem =>
+      (returnItem.status === 'completed' || returnItem.status === 'refunded') &&
+      returnItem.processing_option === 'refund'
+    )
+    .reduce((sum, returnItem) => sum + returnItem.total_return_amount, 0);
+
+  // Outstanding = Total Due - Total Paid - Credit Note Balance - Refund Returns
   const totalDue = deliveriesTotal + serviceBookingsTotal;
-  const outstandingAmount = totalDue - totalPaid > 0 ? totalDue - totalPaid : 0;
+  const outstandingAmount = Math.max(0, totalDue - totalPaid - creditNoteBalance - refundReturnsTotal);
 
   return {
     totalExpenses,

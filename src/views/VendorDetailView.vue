@@ -411,17 +411,17 @@ const currentAllocations = ref<PaymentAllocation[]>([]);
 
 const outstandingAmount = computed(() => {
   if (!vendor.value) return 0;
-  
-  // Use centralized calculation that considers total payments made to vendor
-  const outstanding = VendorService.calculateOutstandingFromData(
+
+  // Use centralized calculation that considers:
+  // Total Due (deliveries + service bookings) - Payments - Credit Notes - Refund Returns
+  return VendorService.calculateOutstandingFromData(
     vendor.value.id!,
     vendorDeliveries.value,
     vendorServiceBookings.value,
-    vendorPayments.value
+    vendorPayments.value,
+    vendorReturns.value,
+    vendorCreditNotes.value
   );
-  
-  const creditBalance = vendorCreditNotes.value.reduce((sum, note) => sum + note.balance, 0);
-  return outstanding - creditBalance; // Outstanding minus available credit
 });
 
 const totalPaid = computed(() => {

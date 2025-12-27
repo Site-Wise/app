@@ -202,6 +202,8 @@ import {
   serviceBookingService,
   paymentService,
   tagService,
+  vendorReturnService,
+  vendorCreditNoteService,
   VendorService,
   type Vendor,
   type Tag as TagType
@@ -239,11 +241,21 @@ const { data: allTagsData } = useSiteData(
   async () => await tagService.getAll()
 );
 
+const { data: vendorReturnsData } = useSiteData(
+  async () => await vendorReturnService.getAll()
+);
+
+const { data: creditNotesData } = useSiteData(
+  async () => await vendorCreditNoteService.getAll()
+);
+
 // Computed properties from useSiteData
 const vendors = computed(() => searchQuery.value.trim() ? searchResults.value : (vendorsData.value || []));
 const deliveries = computed(() => deliveriesData.value || []);
 const serviceBookings = computed(() => serviceBookingsData.value || []);
 const payments = computed(() => paymentsData.value || []);
+const vendorReturns = computed(() => vendorReturnsData.value || []);
+const creditNotes = computed(() => creditNotesData.value || []);
 const vendorTags = ref<Map<string, TagType[]>>(new Map());
 const showAddModal = ref(false);
 const editingVendor = ref<Vendor | null>(null);
@@ -274,7 +286,9 @@ const getVendorOutstanding = (vendorId: string) => {
     vendorId,
     deliveries.value || [],
     serviceBookings.value || [],
-    payments.value || []
+    payments.value || [],
+    vendorReturns.value || [],
+    creditNotes.value || []
   );
 };
 
