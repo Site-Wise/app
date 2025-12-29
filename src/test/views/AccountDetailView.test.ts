@@ -112,26 +112,40 @@ vi.mock('../../services/pocketbase', () => ({
   }
 }))
 
-// Mock jsPDF for PDF export tests
-vi.mock('jspdf', () => ({
-  jsPDF: vi.fn().mockImplementation(() => ({
-    internal: {
+// Store the last jsPDF instance created for testing
+let lastJsPDFInstance: any = null
+
+// Mock jsPDF for PDF export tests - using a class to work as constructor in Vitest v4
+vi.mock('jspdf', () => {
+  // Use a getter on the module to access the instance tracker
+  const instanceTracker = { current: null as any }
+
+  class MockJsPDF {
+    internal = {
       pageSize: { width: 210, height: 297 },
       getCurrentPageInfo: () => ({ pageNumber: 1 }),
       pages: [null, {}] // Mock pages array for totalPages calculation
-    },
-    setFontSize: vi.fn(),
-    setFont: vi.fn(),
-    setTextColor: vi.fn(),
-    setDrawColor: vi.fn(),
-    text: vi.fn(),
-    line: vi.fn(),
-    addImage: vi.fn(),
-    addPage: vi.fn(),
-    setPage: vi.fn(),
-    save: vi.fn()
-  }))
-}))
+    }
+    setFontSize = vi.fn()
+    setFont = vi.fn()
+    setTextColor = vi.fn()
+    setDrawColor = vi.fn()
+    text = vi.fn()
+    line = vi.fn()
+    addImage = vi.fn()
+    addPage = vi.fn()
+    setPage = vi.fn()
+    save = vi.fn()
+    constructor() {
+      instanceTracker.current = this
+    }
+  }
+
+  return {
+    jsPDF: MockJsPDF,
+    __getLastInstance: () => instanceTracker.current
+  }
+})
 
 // Mock router
 const mockBack = vi.fn()
@@ -575,36 +589,16 @@ describe('AccountDetailView', () => {
   })
 
   describe('PDF Export with Debit/Credit Format', () => {
-    let mockPdfInstance: any
-
-    beforeEach(() => {
-      // Create a more comprehensive mock for jsPDF
-      mockPdfInstance = {
-        internal: {
-          pageSize: { width: 210, height: 297 },
-          getCurrentPageInfo: () => ({ pageNumber: 1 }),
-          pages: [null, {}]
-        },
-        setFontSize: vi.fn(),
-        setFont: vi.fn(),
-        setTextColor: vi.fn(),
-        setDrawColor: vi.fn(),
-        text: vi.fn(),
-        line: vi.fn(),
-        addImage: vi.fn(),
-        addPage: vi.fn(),
-        setPage: vi.fn(),
-        save: vi.fn()
-      }
-      
-      // Update the jsPDF mock to return our instance
-      vi.mocked(jsPDF).mockImplementation(() => mockPdfInstance)
-    })
+    // Import the mock helper to get the last instance
+    const getLastJsPDFInstance = async () => {
+      const jspdfModule = await import('jspdf') as any
+      return jspdfModule.__getLastInstance?.() || null
+    }
 
     it('should generate PDF headers with Date, Description, Debit, Credit columns', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
-      
+
       // Mock Image to avoid logo loading issues - simulate immediate error
       global.Image = vi.fn().mockImplementation(() => {
         const img = {
@@ -622,19 +616,23 @@ describe('AccountDetailView', () => {
       // Call the PDF export function
       await wrapper.vm.exportStatementPDF()
       await new Promise(resolve => setTimeout(resolve, 50))
-      
+
+      // Get the jsPDF instance that was created
+      const mockPdfInstance = await getLastJsPDFInstance()
+      expect(mockPdfInstance).toBeDefined()
+
       // Check that headers were set correctly
       const textCalls = mockPdfInstance.text.mock.calls
-      
+
       // Find the headers call (should contain 'Date')
       const headerCall = textCalls.find((call: any[]) => call[0] === 'Date')
       expect(headerCall).toBeDefined()
-      
+
       // Check all headers are present
       expect(textCalls.some((call: any[]) => call[0] === 'Description')).toBe(true)
       expect(textCalls.some((call: any[]) => call[0] === 'Debit')).toBe(true)
       expect(textCalls.some((call: any[]) => call[0] === 'Credit')).toBe(true)
-      
+
       // Should NOT have old headers
       expect(textCalls.some((call: any[]) => call[0] === 'Reference')).toBe(false)
       expect(textCalls.some((call: any[]) => call[0] === 'Dues')).toBe(false)
@@ -645,7 +643,7 @@ describe('AccountDetailView', () => {
     it('should format reference as subtext with gray color', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
-      
+
       // Mock Image - simulate immediate error
       global.Image = vi.fn().mockImplementation(() => {
         const img = {
@@ -662,22 +660,26 @@ describe('AccountDetailView', () => {
 
       await wrapper.vm.exportStatementPDF()
       await new Promise(resolve => setTimeout(resolve, 50))
-      
+
+      // Get the jsPDF instance that was created
+      const mockPdfInstance = await getLastJsPDFInstance()
+      expect(mockPdfInstance).toBeDefined()
+
       // Check setTextColor calls for gray (107, 114, 128)
       const colorCalls = mockPdfInstance.setTextColor.mock.calls
-      const grayColorCall = colorCalls.find((call: any[]) => 
+      const grayColorCall = colorCalls.find((call: any[]) =>
         call[0] === 107 && call[1] === 114 && call[2] === 128
       )
       expect(grayColorCall).toBeDefined()
-      
+
       // Check that reference is formatted with "Ref: " prefix
       const textCalls = mockPdfInstance.text.mock.calls
-      const refCall = textCalls.find((call: any[]) => 
+      const refCall = textCalls.find((call: any[]) =>
         typeof call[0] === 'string' && call[0].startsWith('Ref: ')
       )
       expect(refCall).toBeDefined()
       expect(refCall[0]).toBe('Ref: REF123') // From our mock data
-      
+
       // Check font size changes for subtext
       const fontSizeCalls = mockPdfInstance.setFontSize.mock.calls
       expect(fontSizeCalls.some((call: any[]) => call[0] === 8)).toBe(true) // Subtext size
@@ -687,7 +689,7 @@ describe('AccountDetailView', () => {
     it('should calculate and display totals for debits and credits', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
-      
+
       // Mock Image - simulate immediate error
       global.Image = vi.fn().mockImplementation(() => {
         const img = {
@@ -704,25 +706,29 @@ describe('AccountDetailView', () => {
 
       await wrapper.vm.exportStatementPDF()
       await new Promise(resolve => setTimeout(resolve, 50))
-      
+
+      // Get the jsPDF instance that was created
+      const mockPdfInstance = await getLastJsPDFInstance()
+      expect(mockPdfInstance).toBeDefined()
+
       const textCalls = mockPdfInstance.text.mock.calls
-      
+
       // Check for total debits (we have one debit of 500 in mock data)
-      const totalDebitsCall = textCalls.find((call: any[]) => 
+      const totalDebitsCall = textCalls.find((call: any[]) =>
         typeof call[0] === 'string' && call[0].includes('Total Debits:')
       )
       expect(totalDebitsCall).toBeDefined()
       expect(totalDebitsCall[0]).toBe('Total Debits: 500.00')
-      
+
       // Check for total credits (we have one credit of 1000 in mock data)
-      const totalCreditsCall = textCalls.find((call: any[]) => 
+      const totalCreditsCall = textCalls.find((call: any[]) =>
         typeof call[0] === 'string' && call[0].includes('Total Credits:')
       )
       expect(totalCreditsCall).toBeDefined()
       expect(totalCreditsCall[0]).toBe('Total Credits: 1000.00')
-      
+
       // Check for current balance
-      const balanceCall = textCalls.find((call: any[]) => 
+      const balanceCall = textCalls.find((call: any[]) =>
         typeof call[0] === 'string' && call[0].includes('Current Balance:')
       )
       expect(balanceCall).toBeDefined()
@@ -732,7 +738,7 @@ describe('AccountDetailView', () => {
     it('should not include reference column in PDF table', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
-      
+
       // Mock Image - simulate immediate error
       global.Image = vi.fn().mockImplementation(() => {
         const img = {
@@ -749,15 +755,19 @@ describe('AccountDetailView', () => {
 
       await wrapper.vm.exportStatementPDF()
       await new Promise(resolve => setTimeout(resolve, 50))
-      
+
+      // Get the jsPDF instance that was created
+      const mockPdfInstance = await getLastJsPDFInstance()
+      expect(mockPdfInstance).toBeDefined()
+
       // Check column widths array (should be 4 columns now, not 5)
       const textCalls = mockPdfInstance.text.mock.calls
-      
+
       // Count unique x-positions for headers to verify column count
-      const headerCalls = textCalls.filter((call: any[]) => 
+      const headerCalls = textCalls.filter((call: any[]) =>
         ['Date', 'Description', 'Debit', 'Credit'].includes(call[0])
       )
-      
+
       expect(headerCalls.length).toBe(4) // Should have exactly 4 column headers
     })
   })

@@ -80,17 +80,23 @@ vi.mock('../../services/pocketbase', () => {
   }
 })
 
-// Mock DOM methods for CSV export
+// Mock DOM methods for CSV export - URL needs to be a class with static methods
+class MockURL {
+  href: string
+  constructor(url: string, base?: string) {
+    this.href = base ? `${base}${url}` : url
+  }
+  static createObjectURL = vi.fn().mockReturnValue('mock-blob-url')
+  static revokeObjectURL = vi.fn()
+}
+
 Object.assign(global, {
   Blob: vi.fn().mockImplementation((content, options) => ({
     content,
     options,
     type: options?.type || 'text/plain'
   })),
-  URL: {
-    createObjectURL: vi.fn().mockReturnValue('mock-blob-url'),
-    revokeObjectURL: vi.fn()
-  }
+  URL: MockURL
 })
 
 // Mock document methods
