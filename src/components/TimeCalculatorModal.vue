@@ -16,7 +16,7 @@
           <!-- Date Selection -->
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.date') }}</label>
-            <input v-model="selectedDate" type="date" required class="input mt-1" ref="dateInputRef" />
+            <input v-model="selectedDate" type="date" required class="input mt-1"  />
           </div>
 
           <!-- Start Time -->
@@ -101,7 +101,6 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 // Refs
-const dateInputRef = ref<HTMLInputElement>();
 const startTimeInputRef = ref<HTMLInputElement>();
 
 // Form data

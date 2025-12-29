@@ -2180,66 +2180,6 @@ export class PaymentService {
     return createdAllocationIds;
   }
 
-  private async handlePaymentAllocations(paymentId: string, deliveryIds: string[], serviceBookingIds: string[], totalAmount: number) {
-    const siteId = getCurrentSiteId();
-    if (!siteId) return;
-
-    let remainingAmount = totalAmount;
-    const createdAllocationIds: string[] = [];
-    
-    // Handle delivery allocations
-    for (const deliveryId of deliveryIds) {
-      if (remainingAmount <= 0) break;
-      
-      const delivery = await pb.collection('deliveries').getOne(deliveryId);
-      const currentPaidAmount = await deliveryService.calculatePaidAmount(deliveryId);
-      const outstandingAmount = delivery.total_amount - currentPaidAmount;
-      const allocatedAmount = Math.min(remainingAmount, outstandingAmount);
-      
-      // Create payment allocation record
-      const allocationRecord = await paymentAllocationService.create({
-        payment: paymentId,
-        delivery: deliveryId,
-        allocated_amount: allocatedAmount,
-        site: siteId
-      });
-      
-      createdAllocationIds.push(allocationRecord.id!);
-      remainingAmount -= allocatedAmount;
-    }
-    
-    // Handle service booking allocations
-    for (const bookingId of serviceBookingIds) {
-      if (remainingAmount <= 0) break;
-      
-      const bookingRecord = await pb.collection('service_bookings').getOne(bookingId);
-      const booking = serviceBookingService.mapRecordToServiceBooking(bookingRecord);
-      const currentPaidAmount = await serviceBookingService.calculatePaidAmount(bookingId);
-      const progressAmount = ServiceBookingService.calculateProgressBasedAmount(booking);
-      const outstandingAmount = progressAmount - currentPaidAmount;
-      const allocatedAmount = Math.min(remainingAmount, outstandingAmount);
-      
-      // Create payment allocation record
-      const allocationRecord = await paymentAllocationService.create({
-        payment: paymentId,
-        service_booking: bookingId,
-        allocated_amount: allocatedAmount,
-        site: siteId
-      });
-      
-      createdAllocationIds.push(allocationRecord.id!);
-      remainingAmount -= allocatedAmount;
-    }
-    
-    // Update payment record with allocation IDs so expand works properly
-    if (createdAllocationIds.length > 0) {
-      await pb.collection('payments').update(paymentId, {
-        payment_allocations: createdAllocationIds
-      });
-    }
-  }
-
-
   private async getVendorName(vendorId: string): Promise<string> {
     try {
       const vendor = await pb.collection('vendors').getOne(vendorId);
@@ -2288,8 +2228,7 @@ export class PaymentService {
       return;
     }
 
-    // Prepare batch requests for new allocations only
-    const batchRequests: any[] = [];
+    // Prepare data for new allocations only
     const allocationData: Array<{delivery?: string, service_booking?: string, allocated_amount: number}> = [];
 
     // Handle new delivery allocations
