@@ -419,6 +419,17 @@ export const pb = {
   }))
 }
 
+// Token refresh functions
+export const initializeTokenRefresh = vi.fn().mockResolvedValue(true)
+export const stopTokenRefresh = vi.fn()
+export const getTokenStatus = vi.fn().mockReturnValue({
+  isValid: true,
+  isExpired: false,
+  needsRefresh: false,
+  expiresAt: new Date(Date.now() + 3600000), // 1 hour from now
+  timeUntilExpiry: 3600000
+})
+
 // Export services
 export const authService = mockAuthService
 export const siteService = mockSiteService

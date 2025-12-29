@@ -9,6 +9,184 @@ export const pb = new PocketBase(POCKETBASE_URL);
 // Enable auto cancellation for duplicate requests
 pb.autoCancellation(true);
 
+// ========================================
+// TOKEN REFRESH MANAGEMENT
+// ========================================
+
+// Token refresh configuration
+const TOKEN_REFRESH_THRESHOLD = 5 * 60 * 1000; // Refresh if token expires within 5 minutes
+const TOKEN_CHECK_INTERVAL = 60 * 1000; // Check token status every minute
+
+let tokenRefreshInterval: ReturnType<typeof setInterval> | null = null;
+let authChangeUnsubscribe: (() => void) | null = null;
+
+/**
+ * Parse JWT token to get expiration time
+ */
+function getTokenExpiration(token: string): number | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+
+    const payload = JSON.parse(atob(parts[1]));
+    return payload.exp ? payload.exp * 1000 : null; // Convert to milliseconds
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Check if token needs refresh (expires within threshold)
+ */
+function tokenNeedsRefresh(): boolean {
+  const token = pb.authStore.token;
+  if (!token) return false;
+
+  const expiration = getTokenExpiration(token);
+  if (!expiration) return false;
+
+  const now = Date.now();
+  const timeUntilExpiry = expiration - now;
+
+  return timeUntilExpiry > 0 && timeUntilExpiry < TOKEN_REFRESH_THRESHOLD;
+}
+
+/**
+ * Check if token is expired
+ */
+function isTokenExpired(): boolean {
+  const token = pb.authStore.token;
+  if (!token) return true;
+
+  const expiration = getTokenExpiration(token);
+  if (!expiration) return true;
+
+  return Date.now() >= expiration;
+}
+
+/**
+ * Refresh the authentication token
+ * Returns true if refresh was successful, false otherwise
+ */
+async function refreshAuthToken(): Promise<boolean> {
+  if (!pb.authStore.isValid) {
+    return false;
+  }
+
+  try {
+    await pb.collection('users').authRefresh();
+    console.debug('[TokenRefresh] Token refreshed successfully');
+    return true;
+  } catch (error) {
+    console.warn('[TokenRefresh] Failed to refresh token:', error);
+    return false;
+  }
+}
+
+/**
+ * Periodic token check and refresh
+ */
+async function checkAndRefreshToken(): Promise<void> {
+  if (!pb.authStore.isValid) {
+    return;
+  }
+
+  // If token is expired, clear auth (user needs to re-login)
+  if (isTokenExpired()) {
+    console.warn('[TokenRefresh] Token expired, clearing auth');
+    pb.authStore.clear();
+    return;
+  }
+
+  // If token is about to expire, refresh it
+  if (tokenNeedsRefresh()) {
+    await refreshAuthToken();
+  }
+}
+
+/**
+ * Initialize token refresh mechanism
+ * Should be called once when the app starts
+ */
+export async function initializeTokenRefresh(): Promise<boolean> {
+  // Clean up any existing interval
+  stopTokenRefresh();
+
+  // If not authenticated, nothing to do
+  if (!pb.authStore.isValid) {
+    return false;
+  }
+
+  // Check if token is expired
+  if (isTokenExpired()) {
+    console.warn('[TokenRefresh] Token expired on init, clearing auth');
+    pb.authStore.clear();
+    return false;
+  }
+
+  // Try to refresh token on init to validate it with the server
+  const refreshSuccess = await refreshAuthToken();
+
+  if (!refreshSuccess) {
+    // Token is invalid on server, clear it
+    console.warn('[TokenRefresh] Token invalid on server, clearing auth');
+    pb.authStore.clear();
+    return false;
+  }
+
+  // Start periodic token check
+  tokenRefreshInterval = setInterval(checkAndRefreshToken, TOKEN_CHECK_INTERVAL);
+
+  // Listen for auth state changes
+  authChangeUnsubscribe = pb.authStore.onChange(() => {
+    if (!pb.authStore.isValid && tokenRefreshInterval) {
+      // User logged out, stop refresh interval
+      stopTokenRefresh();
+    }
+  });
+
+  return true;
+}
+
+/**
+ * Stop the token refresh mechanism
+ * Should be called on logout
+ */
+export function stopTokenRefresh(): void {
+  if (tokenRefreshInterval) {
+    clearInterval(tokenRefreshInterval);
+    tokenRefreshInterval = null;
+  }
+
+  if (authChangeUnsubscribe) {
+    authChangeUnsubscribe();
+    authChangeUnsubscribe = null;
+  }
+}
+
+/**
+ * Get token status information (useful for debugging)
+ */
+export function getTokenStatus(): {
+  isValid: boolean;
+  isExpired: boolean;
+  needsRefresh: boolean;
+  expiresAt: Date | null;
+  timeUntilExpiry: number | null;
+} {
+  const token = pb.authStore.token;
+  const expiration = token ? getTokenExpiration(token) : null;
+  const now = Date.now();
+
+  return {
+    isValid: pb.authStore.isValid,
+    isExpired: isTokenExpired(),
+    needsRefresh: tokenNeedsRefresh(),
+    expiresAt: expiration ? new Date(expiration) : null,
+    timeUntilExpiry: expiration ? expiration - now : null
+  };
+}
+
 export interface User {
   id: string;
   email: string;

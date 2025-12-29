@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue';
-import { authService } from '../services/pocketbase';
+import { authService, initializeTokenRefresh, stopTokenRefresh } from '../services/pocketbase';
 import type { User } from '../services/pocketbase';
 
 const user = ref<User | null>(authService.currentUser);
@@ -16,6 +16,10 @@ export function useAuth() {
     try {
       const authData = await authService.login(email, password, turnstileToken);
       user.value = authData.record as unknown as User;
+
+      // Initialize token refresh after successful login
+      await initializeTokenRefresh();
+
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
@@ -41,9 +45,12 @@ export function useAuth() {
   };
 
   const logout = async () => {
+    // Stop token refresh mechanism
+    stopTokenRefresh();
+
     authService.logout();
     user.value = null;
-    
+
     // Clear site store to prevent race conditions
     try {
       const { useSiteStore } = await import('../stores/site');

@@ -17,7 +17,10 @@ vi.mock('../../services/pocketbase', () => ({
     login: vi.fn(),
     register: vi.fn(),
     logout: vi.fn()
-  }
+  },
+  // Token refresh functions
+  initializeTokenRefresh: vi.fn().mockResolvedValue(true),
+  stopTokenRefresh: vi.fn()
 }))
 
 describe('useAuth', () => {
@@ -34,17 +37,18 @@ describe('useAuth', () => {
 
   it('should handle successful login', async () => {
     const { login } = useAuth()
-    const { authService } = await import('../../services/pocketbase')
-    
+    const { authService, initializeTokenRefresh } = await import('../../services/pocketbase')
+
     vi.mocked(authService.login).mockResolvedValue({
       record: mockUser,
       token: 'mock-token'
     } as any)
-    
+
     const result = await login('test@example.com', 'password')
-    
+
     expect(result.success).toBe(true)
     expect(authService.login).toHaveBeenCalledWith('test@example.com', 'password', undefined)
+    expect(initializeTokenRefresh).toHaveBeenCalled()
   })
 
   it('should handle login failure', async () => {
@@ -85,10 +89,11 @@ describe('useAuth', () => {
 
   it('should logout user', async () => {
     const { logout } = useAuth()
-    const { authService } = await import('../../services/pocketbase')
-    
-    logout()
-    
+    const { authService, stopTokenRefresh } = await import('../../services/pocketbase')
+
+    await logout()
+
+    expect(stopTokenRefresh).toHaveBeenCalled()
     expect(authService.logout).toHaveBeenCalled()
   })
 })
