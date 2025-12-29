@@ -129,7 +129,8 @@
     "closeSidebar": "Close navigation menu",
     "mainNavigation": "Main navigation",
     "userMenu": "User menu",
-    "quickActions": "Quick actions menu"
+    "quickActions": "Quick actions menu",
+    "more": "More"
   },
   "auth": {
     "signIn": "Sign in",

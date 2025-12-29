@@ -1,15 +1,16 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-8">
+    <!-- Header - Mobile optimized -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('items.title') }}</h1>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{{ t('items.title') }}</h1>
+        <p class="mt-0.5 text-sm text-gray-600 dark:text-gray-400">
           {{ t('items.subtitle') }}
         </p>
       </div>
       <button @click="handleAddItem" :disabled="!canCreateItem" :class="[
         canCreateItem ? 'btn-primary' : 'btn-disabled',
-        'hidden md:flex items-center'
+        'hidden lg:flex items-center'
       ]"
         :title="!canCreateItem ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
         data-keyboard-shortcut="n" data-tour="add-item-btn">
@@ -19,14 +20,14 @@
     </div>
 
     <!-- Search Box -->
-    <div class="w-full md:w-96 mb-6" data-tour="search-bar">
+    <div class="w-full lg:w-96 mb-6" data-tour="search-bar">
       <SearchBox v-model="searchQuery" :placeholder="t('search.items')" :search-loading="searchLoading" />
     </div>
 
     <!-- Items Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-tour="items-table">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6" data-tour="items-table">
       <div v-for="item in items" :key="item.id"
-        class="card hover:shadow-md transition-shadow duration-200 cursor-pointer" @click="viewItemDetail(item.id!)">
+        class="card-interactive" @click="viewItemDetail(item.id!)">
         <div class="flex items-start justify-between">
           <div class="flex-1">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ item.name }}</h3>

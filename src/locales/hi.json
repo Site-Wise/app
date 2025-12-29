@@ -129,7 +129,8 @@
     "closeSidebar": "नेवीगेशन मेनू बंद करें",
     "mainNavigation": "मुख्य नेवीगेशन",
     "userMenu": "उपयोगकर्ता मेनू",
-    "quickActions": "त्वरित कार्य मेनू"
+    "quickActions": "त्वरित कार्य मेनू",
+    "more": "और"
   },
   "auth": {
     "signIn": "साइन इन",
