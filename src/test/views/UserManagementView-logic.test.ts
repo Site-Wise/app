@@ -239,9 +239,11 @@ describe('UserManagementView Logic', () => {
     })
 
     it('should format minutes for times less than 1 hour away', () => {
-      const formatRelativeTime = (dateString: string) => {
+      // Use a fixed reference time to avoid timing race conditions
+      const fixedNow = new Date('2024-01-15T10:00:00Z').getTime()
+      const formatRelativeTime = (dateString: string, referenceTime: number) => {
         const date = new Date(dateString)
-        const now = new Date()
+        const now = new Date(referenceTime)
         const diffInSeconds = Math.floor((date.getTime() - now.getTime()) / 1000)
 
         if (diffInSeconds <= 0) return 'soon'
@@ -250,8 +252,8 @@ describe('UserManagementView Logic', () => {
         return `${Math.floor(diffInSeconds / 86400)}d`
       }
 
-      const futureDate = new Date(Date.now() + 1800000).toISOString() // 30 minutes from now
-      expect(formatRelativeTime(futureDate)).toBe('30m')
+      const futureDate = new Date(fixedNow + 1800000).toISOString() // 30 minutes from fixed reference
+      expect(formatRelativeTime(futureDate, fixedNow)).toBe('30m')
     })
 
     it('should format hours for times less than 1 day away', () => {
