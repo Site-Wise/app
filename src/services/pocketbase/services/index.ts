@@ -16,11 +16,17 @@ export { AccountService, accountService, setAccountTransactionServiceRef } from 
 export { ItemService, itemService } from './item.service';
 export { ServiceService, serviceService } from './service.service';
 export { TagService, tagService } from './tag.service';
-
-// Note: The remaining services (VendorService, QuotationService, ServiceBookingService,
-// PaymentService, PaymentAllocationService, AccountTransactionService, DeliveryService,
-// DeliveryItemService, VendorReturnService, VendorReturnItemService, VendorRefundService,
-// VendorCreditNoteService, CreditNoteUsageService, SiteInvitationService) are still
-// being refactored and are currently exported from the main pocketbase.ts file.
-//
-// As the refactoring continues, they will be moved here one by one.
+export { VendorService, vendorService, setVendorServiceDependencies } from './vendor.service';
+export { QuotationService, quotationService } from './quotation.service';
+export { ServiceBookingService, serviceBookingService, setServiceBookingServiceDependencies } from './service-booking.service';
+export { PaymentAllocationService, paymentAllocationService } from './payment-allocation.service';
+export { AccountTransactionService, accountTransactionService } from './account-transaction.service';
+export { SiteInvitationService, siteInvitationService } from './site-invitation.service';
+export { DeliveryService, deliveryService, setDeliveryServiceDependencies } from './delivery.service';
+export { DeliveryItemService, deliveryItemService } from './delivery-item.service';
+export { VendorReturnService, vendorReturnService } from './vendor-return.service';
+export { VendorReturnItemService, vendorReturnItemService } from './vendor-return-item.service';
+export { VendorRefundService, vendorRefundService, setVendorRefundServiceDependencies } from './vendor-refund.service';
+export { VendorCreditNoteService, vendorCreditNoteService } from './vendor-credit-note.service';
+export { CreditNoteUsageService, creditNoteUsageService, setCreditNoteUsageServiceDependencies } from './credit-note-usage.service';
+export { PaymentService, paymentService, setPaymentServiceDependencies } from './payment.service';
