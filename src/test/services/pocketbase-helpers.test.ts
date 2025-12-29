@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { createMockPocketBase } from '../mocks/pocketbase'
 
 // Mock localStorage with a fresh object for each test
 let localStorageData: Record<string, string> = {}
@@ -16,10 +15,31 @@ Object.defineProperty(window, 'localStorage', {
   writable: true
 })
 
-// Mock PocketBase
-vi.mock('pocketbase', () => ({
-  default: vi.fn(() => createMockPocketBase())
-}))
+// Mock PocketBase - using a class for proper constructor behavior in Vitest v4
+vi.mock('pocketbase', () => {
+  class MockPocketBase {
+    authStore = {
+      isValid: true,
+      model: { id: 'user-1', email: 'test@example.com' },
+      record: { id: 'user-1', email: 'test@example.com' },
+      clear: vi.fn(),
+    }
+    baseUrl = 'http://localhost:8090'
+
+    collection = vi.fn(() => ({
+      getFullList: vi.fn().mockResolvedValue([]),
+      getOne: vi.fn().mockResolvedValue({}),
+      create: vi.fn().mockResolvedValue({}),
+      update: vi.fn().mockResolvedValue({}),
+      delete: vi.fn().mockResolvedValue({}),
+      getFirstListItem: vi.fn().mockRejectedValue(new Error('Not found')),
+    }))
+
+    autoCancellation = vi.fn()
+  }
+
+  return { default: MockPocketBase }
+})
 
 // Import the helper functions after mocking
 const {

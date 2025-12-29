@@ -307,8 +307,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.vendor') }}</label>
               <VendorSearchBox
-                ref="vendorSearchRef"
-                v-model="form.vendor"
+                                v-model="form.vendor"
                 :vendors="vendors"
                 :deliveries="[]"
                 :service-bookings="[]"
@@ -653,7 +652,6 @@ const showUnitRateWarning = ref(false);
 const originalUnitRate = ref(0);
 
 const serviceInputRef = ref<HTMLInputElement>();
-const vendorSearchRef = ref();
 const startDateInputRef = ref<HTMLInputElement>();
 
 const form = reactive({

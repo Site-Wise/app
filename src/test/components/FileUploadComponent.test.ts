@@ -40,24 +40,25 @@ describe('FileUploadComponent', () => {
       new File(['large content'.repeat(1000000)], 'large-file.jpg', { type: 'image/jpeg' })
     ]
 
-    // Mock FileReader
+    // Mock FileReader with a proper class
+    class MockFileReader {
+      result: string = ''
+      onload: ((event: any) => void) | null = null
+      onerror: ((event: any) => void) | null = null
+
+      readAsDataURL(file: File) {
+        setTimeout(() => {
+          this.result = `data:${file.type};base64,mockbase64-${file.name}`
+          if (this.onload) {
+            this.onload({ target: { result: this.result } })
+          }
+        }, 5)
+      }
+    }
+
     Object.defineProperty(global, 'FileReader', {
       writable: true,
-      value: vi.fn(() => {
-        const instance = {
-          readAsDataURL: vi.fn().mockImplementation(function(this: any, file: File) {
-            // Simulate async behavior with setTimeout
-            setTimeout(() => {
-              if (this.onload) {
-                this.onload({ target: { result: `data:${file.type};base64,mockbase64-${file.name}` } })
-              }
-            }, 5)
-          }),
-          result: '',
-          onload: null
-        }
-        return instance
-      })
+      value: MockFileReader
     })
 
     // Mock navigator.userAgent for mobile detection
