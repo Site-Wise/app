@@ -112,9 +112,6 @@ vi.mock('../../services/pocketbase', () => ({
   }
 }))
 
-// Store the last jsPDF instance created for testing
-let lastJsPDFInstance: any = null
-
 // Mock jsPDF for PDF export tests - using a class to work as constructor in Vitest v4
 vi.mock('jspdf', () => {
   // Use a getter on the module to access the instance tracker
