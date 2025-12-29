@@ -95,17 +95,30 @@
                   {{ t('auth.forgotPassword') }}?
                 </router-link>
               </div>
-              <div class="mt-1">
+              <div class="mt-1 relative">
                 <input
                   id="password"
                   v-model="form.password"
                   name="password"
-                  type="password"
+                  :type="showLoginPassword ? 'text' : 'password'"
                   autocomplete="current-password"
                   required
-                  class="input"
+                  class="input pr-10"
                   :placeholder="t('forms.enterPassword')"
                 />
+                <button
+                  type="button"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  @mousedown="showLoginPassword = true"
+                  @mouseup="showLoginPassword = false"
+                  @mouseleave="showLoginPassword = false"
+                  @touchstart.prevent="showLoginPassword = true"
+                  @touchend="showLoginPassword = false"
+                  tabindex="-1"
+                >
+                  <Eye v-if="showLoginPassword" class="h-5 w-5" />
+                  <EyeOff v-else class="h-5 w-5" />
+                </button>
               </div>
             </div>
 
@@ -230,16 +243,29 @@
               <label for="reg-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {{ t('auth.password') }}
               </label>
-              <div class="mt-1">
+              <div class="mt-1 relative">
                 <input
                   id="reg-password"
                   v-model="registerForm.password"
                   name="password"
-                  type="password"
+                  :type="showRegisterPassword ? 'text' : 'password'"
                   required
-                  class="input"
+                  class="input pr-10"
                   :placeholder="t('forms.createPassword')"
                 />
+                <button
+                  type="button"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  @mousedown="showRegisterPassword = true"
+                  @mouseup="showRegisterPassword = false"
+                  @mouseleave="showRegisterPassword = false"
+                  @touchstart.prevent="showRegisterPassword = true"
+                  @touchend="showRegisterPassword = false"
+                  tabindex="-1"
+                >
+                  <Eye v-if="showRegisterPassword" class="h-5 w-5" />
+                  <EyeOff v-else class="h-5 w-5" />
+                </button>
               </div>
             </div>
 
@@ -247,14 +273,14 @@
               <label for="reg-confirm-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {{ t('auth.confirmPassword') }}
               </label>
-              <div class="mt-1">
+              <div class="mt-1 relative">
                 <input
                   id="reg-confirm-password"
                   v-model="registerForm.confirmPassword"
                   name="confirmPassword"
-                  type="password"
+                  :type="showConfirmPassword ? 'text' : 'password'"
                   required
-                  class="input"
+                  class="input pr-10"
                   :class="[
                     registerForm.confirmPassword && !passwordsMatch
                       ? 'border-error-500 focus:border-error-500 focus:ring-error-500 dark:border-error-500'
@@ -262,6 +288,19 @@
                   ]"
                   :placeholder="t('forms.confirmPassword')"
                 />
+                <button
+                  type="button"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  @mousedown="showConfirmPassword = true"
+                  @mouseup="showConfirmPassword = false"
+                  @mouseleave="showConfirmPassword = false"
+                  @touchstart.prevent="showConfirmPassword = true"
+                  @touchend="showConfirmPassword = false"
+                  tabindex="-1"
+                >
+                  <Eye v-if="showConfirmPassword" class="h-5 w-5" />
+                  <EyeOff v-else class="h-5 w-5" />
+                </button>
               </div>
               <div v-if="registerForm.confirmPassword && !passwordsMatch" class="mt-1 text-sm text-error-600 dark:text-error-400">
                 {{ t('auth.passwordsDoNotMatch') }}
@@ -361,7 +400,7 @@ import { useAuth } from '../composables/useAuth';
 import { useSite } from '../composables/useSite';
 import { useI18n } from '../composables/useI18n';
 import { useTheme } from '../composables/useTheme';
-import { AlertCircle, Loader2 } from 'lucide-vue-next';
+import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-vue-next';
 import TurnstileWidget from '../components/TurnstileWidget.vue';
 import LegalModal from '../components/LegalModal.vue';
 
@@ -377,6 +416,11 @@ const activeTab = ref('login');
 const showValidationErrors = ref(false);
 const showTermsModal = ref(false);
 const showPrivacyModal = ref(false);
+
+// Password visibility states
+const showLoginPassword = ref(false);
+const showRegisterPassword = ref(false);
+const showConfirmPassword = ref(false);
 
 // Turnstile configuration
 const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
