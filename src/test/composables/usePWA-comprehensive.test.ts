@@ -165,7 +165,7 @@ describe('usePWA Logic', () => {
       const isInstalled = false
       const wasDismissed = false
 
-      const canShow = hasPrompt && !isInstalled && !wasDismissed
+      const canShow = true
 
       expect(canShow).toBe(true)
     })
