@@ -4121,14 +4121,21 @@ export class DeliveryService {
     return record.photos[record.photos.length - 1];
   }
 
-  async uploadPhotos(deliveryId: string, files: File[]): Promise<string[]> {
+  async uploadPhotos(deliveryId: string, files: File[], existingPhotos: string[] = []): Promise<string[]> {
     if (files.length === 0) return [];
-    
+
     const formData = new FormData();
+
+    // Include existing photos to tell PocketBase to keep them
+    existingPhotos.forEach(photo => {
+      formData.append('photos', photo);
+    });
+
+    // Append new files
     files.forEach(file => {
       formData.append('photos', file);
     });
-    
+
     const record = await pb.collection('deliveries').update(deliveryId, formData);
     // Return the newly added photos (last N photos where N = files.length)
     return record.photos.slice(-files.length);

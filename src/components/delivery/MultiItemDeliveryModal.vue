@@ -771,12 +771,16 @@ const saveDelivery = async () => {
     // Upload new photos if any (after main delivery update)
     if (selectedFilesForUpload.value.length > 0) {
       try {
-        const uploadedPhotos = await deliveryService.uploadPhotos(delivery.id!, selectedFilesForUpload.value);
+        // Pass existing photos to preserve them when uploading new ones
+        const uploadedPhotos = await deliveryService.uploadPhotos(
+          delivery.id!,
+          selectedFilesForUpload.value,
+          props.editingDelivery ? existingPhotos.value : []
+        );
         console.log(`Successfully uploaded ${uploadedPhotos.length} of ${selectedFilesForUpload.value.length} photos`);
 
-        // For editing, we need to fetch the updated delivery to get the final photo list
+        // For editing, update the existingPhotos list to reflect all photos (old + new)
         if (props.editingDelivery) {
-          // Update the existingPhotos list to reflect all photos (old + new)
           existingPhotos.value = [...existingPhotos.value, ...uploadedPhotos];
         }
       } catch (uploadError) {
