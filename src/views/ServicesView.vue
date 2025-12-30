@@ -281,7 +281,7 @@ import { useServiceSearch } from '../composables/useSearch';
 
 const { t } = useI18n();
 const { canUpdate, canDelete } = usePermissions();
-const { success, error } = useToast();
+const { success, error: showError } = useToast();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { openModal, closeModal: closeModalState } = useModalState();
 const router = useRouter();
@@ -379,7 +379,7 @@ const saveService = async () => {
       success(t('messages.updateSuccess', { item: t('common.service') }));
     } else {
       if (!checkCreateLimit('services')) {
-        error(t('subscription.banner.freeTierLimitReached'));
+        showError(t('subscription.banner.freeTierLimitReached'));
         return;
       }
       await serviceService.create(form);
@@ -387,9 +387,9 @@ const saveService = async () => {
     }
     await reloadServices();
     closeModal();
-  } catch (error) {
-    console.error('Error saving service:', error);
-    alert(t('messages.error'));
+  } catch (err) {
+    console.error('Error saving service:', err);
+    showError(t('messages.error'));
   } finally {
     saveLoading.value = false;
   }
@@ -415,9 +415,9 @@ const toggleServiceStatus = async (service: Service) => {
   try {
     await serviceService.update(service.id!, { is_active: !service.is_active });
     await reloadServices();
-  } catch (error) {
-    console.error('Error updating service status:', error);
-    alert(t('messages.error'));
+  } catch (err) {
+    console.error('Error updating service status:', err);
+    showError(t('messages.error'));
   }
 };
 
@@ -426,9 +426,9 @@ const deleteService = async (id: string) => {
     try {
       await serviceService.delete(id);
       await reloadServices();
-    } catch (error) {
-      console.error('Error deleting service:', error);
-      alert(t('messages.error'));
+    } catch (err) {
+      console.error('Error deleting service:', err);
+      showError(t('messages.error'));
     }
   }
 };
@@ -493,7 +493,7 @@ const handleServiceAction = (service: Service, action: string) => {
 
 const handleAddService = async () => {
   if (!canCreateService.value) {
-    error(t('subscription.banner.freeTierLimitReached'));
+    showError(t('subscription.banner.freeTierLimitReached'));
     return;
   }
 

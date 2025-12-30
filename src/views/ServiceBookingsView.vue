@@ -564,7 +564,7 @@ interface ServiceBookingWithPaymentStatus extends ServiceBooking {
 
 const { t } = useI18n();
 const { canCreate, canUpdate, canDelete } = usePermissions();
-const { success: showSuccessToast } = useToast();
+const { success: showSuccessToast, error: showErrorToast } = useToast();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { openModal, closeModal: closeModalState } = useModalState();
 
@@ -702,14 +702,6 @@ const calculateTotal = () => {
   form.total_amount = form.duration * form.unit_rate;
 };
 
-const updateRateFromService = () => {
-  const selectedService = services.value?.find(service => service.id === form.service);
-  if (selectedService && selectedService.standard_rate) {
-    form.unit_rate = selectedService.standard_rate;
-    calculateTotal();
-  }
-};
-
 const handleUnitRateChange = () => {
   calculateTotal();
 
@@ -793,7 +785,7 @@ const saveBooking = async (keepModalOpen = false) => {
     }
   } catch (error) {
     console.error('Error saving service booking:', error);
-    alert(t('messages.error'));
+    showErrorToast(t('messages.error'));
   } finally {
     loading.value = false;
   }
@@ -836,9 +828,9 @@ const deleteBooking = async (id: string) => {
       console.error('Error deleting service booking:', error);
       // Show specific error message if it's about payments
       if (error instanceof Error && error.message.includes('payments assigned')) {
-        alert(t('serviceBookings.cannotDeleteWithPayments'));
+        showErrorToast(t('serviceBookings.cannotDeleteWithPayments'));
       } else {
-        alert(t('messages.error'));
+        showErrorToast(t('messages.error'));
       }
     }
   }

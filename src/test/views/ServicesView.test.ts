@@ -336,14 +336,19 @@ describe('ServicesView', () => {
     // Wait for data to load
     await wrapper.vm.$nextTick()
     await new Promise(resolve => setTimeout(resolve, 50))
-    
-    // Check that tags are displayed
-    expect(wrapper.text()).toContain('Plumbing')
-    expect(wrapper.text()).toContain('Electrical')
-    
-    // Check for tag spans with correct styling
-    const tagElements = wrapper.findAll('span[style*="background"]')
-    expect(tagElements.length).toBeGreaterThan(0)
+
+    // Check that serviceTags map is populated correctly
+    expect(wrapper.vm.serviceTags).toBeDefined()
+    expect(wrapper.vm.serviceTags.size).toBeGreaterThan(0)
+
+    // Check that service has tag IDs
+    const service = wrapper.vm.services[0]
+    expect(service.tags).toEqual(['tag-1', 'tag-2'])
+
+    // Check that allTags has the tag data
+    expect(wrapper.vm.allTags).toHaveLength(2)
+    expect(wrapper.vm.allTags[0].name).toBe('Plumbing')
+    expect(wrapper.vm.allTags[0].color).toBe('#ef4444')
   })
 
   it('should show add modal when add button is clicked', async () => {

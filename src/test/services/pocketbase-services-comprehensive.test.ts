@@ -13,10 +13,13 @@ Object.defineProperty(window, 'localStorage', {
   writable: true
 })
 
-// Mock PocketBase
-vi.mock('pocketbase', () => ({
-  default: vi.fn(() => createMockPocketBase())
-}))
+// Mock PocketBase - must be a constructor function
+vi.mock('pocketbase', () => {
+  const MockPocketBase = function() {
+    return createMockPocketBase()
+  }
+  return { default: MockPocketBase }
+})
 
 // Import the services after mocking
 const {

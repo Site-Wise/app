@@ -332,8 +332,10 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const toast = useToast();
 
-// Refs
+// Refs - used in template via ref="vendorSearchRef"
 const vendorSearchRef = ref<InstanceType<typeof VendorSearchBox> | null>(null);
+// Ensure TypeScript knows this ref is used (template refs are not detected as used)
+void vendorSearchRef;
 
 // Form data
 const form = reactive({

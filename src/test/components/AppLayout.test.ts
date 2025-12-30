@@ -147,6 +147,17 @@ vi.mock('../../composables/useModalState', () => ({
   })
 }))
 
+// Mock toast functions
+const mockShowWarning = vi.fn()
+vi.mock('../../composables/useToast', () => ({
+  useToast: () => ({
+    warning: mockShowWarning,
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn()
+  })
+}))
+
 // Mock global __APP_VERSION__
 Object.defineProperty(global, '__APP_VERSION__', {
   value: '1.0.0',
@@ -236,19 +247,19 @@ describe('AppLayout.vue', () => {
 
   describe('Sidebar Functionality', () => {
     it('should toggle sidebar open/closed on mobile', async () => {
-      const sidebar = wrapper.find('.w-64.bg-white')
-      const openButton = wrapper.find('[aria-label="Open Sidebar"]')
+      const sidebar = wrapper.find('.w-64')
       const closeButton = wrapper.find('[aria-label="Close Sidebar"]')
 
-      // Initially closed on mobile
-      expect(sidebar.classes()).toContain('-translate-x-full')
+      // Initially closed on mobile (sidebarOpen defaults to false)
+      expect(wrapper.vm.sidebarOpen).toBe(false)
 
-      // Open sidebar
-      await openButton.trigger('click')
+      // Open sidebar by setting state directly (mobile now uses bottom nav instead of hamburger)
+      wrapper.vm.sidebarOpen = true
       await nextTick()
       expect(wrapper.vm.sidebarOpen).toBe(true)
+      expect(sidebar.classes()).toContain('translate-x-0')
 
-      // Close sidebar
+      // Close sidebar using close button
       await closeButton.trigger('click')
       await nextTick()
       expect(wrapper.vm.sidebarOpen).toBe(false)
@@ -438,21 +449,18 @@ describe('AppLayout.vue', () => {
   })
 
   describe('Quick Actions', () => {
-    it('should alert when no site access', async () => {
-      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {})
-      
-      // Test the alert path by checking the hasSiteAccess condition
+    it('should show warning toast when no site access', async () => {
+      // Test the warning path by checking the hasSiteAccess condition
       // Since hasSiteAccess.value is true in our mock, let's temporarily override it
       const originalValue = wrapper.vm.hasSiteAccess.value
       wrapper.vm.hasSiteAccess.value = false
-      
+
       wrapper.vm.quickAction('item')
-      
-      expect(alertSpy).toHaveBeenCalledWith('Please select a site first')
-      
+
+      expect(mockShowWarning).toHaveBeenCalledWith('Please select a site first')
+
       // Restore original value
       wrapper.vm.hasSiteAccess.value = originalValue
-      alertSpy.mockRestore()
     })
 
     it('should navigate and trigger modal for quick actions', async () => {
@@ -493,7 +501,7 @@ describe('AppLayout.vue', () => {
       expect(wrapper.find('[aria-label="Main Navigation"]').exists()).toBe(true)
       expect(wrapper.find('[aria-label="User Menu"]').exists()).toBe(true)
       expect(wrapper.find('[aria-label="Close Sidebar"]').exists()).toBe(true)
-      expect(wrapper.find('[aria-label="Open Sidebar"]').exists()).toBe(true)
+      // Note: "Open Sidebar" button was removed - mobile now uses bottom navigation
     })
 
     it('should have proper roles', async () => {

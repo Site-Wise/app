@@ -274,6 +274,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { useSite } from '../composables/useSite';
 import { useI18n } from '../composables/useI18n';
+import { useToast } from '../composables/useToast';
 import { useInvitations } from '../composables/useInvitations';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { useOnboarding } from '../composables/useOnboarding';
@@ -322,6 +323,7 @@ const router = useRouter();
 const { user, logout } = useAuth();
 const { hasSiteAccess, canManageUsers } = useSite();
 const { t } = useI18n();
+const { warning: showWarning } = useToast();
 const { autoStartTour, resetTour, getOnboardingDebugInfo } = useOnboarding();
 const { receivedInvitationsCount, loadReceivedInvitations } = useInvitations();
 const { } = useKeyboardShortcuts(); // Initialize keyboard shortcuts system
@@ -416,7 +418,7 @@ const currentRouteFabAction = computed(() => {
 
 const quickAction = (type: string) => {
   if (!hasSiteAccess.value) {
-    alert(t('messages.selectSiteFirst'));
+    showWarning(t('messages.selectSiteFirst'));
     return;
   }
 
