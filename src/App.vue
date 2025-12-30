@@ -43,12 +43,13 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch } from 'vue';
+import { onMounted, watch, ref } from 'vue';
 import { useAuth } from './composables/useAuth';
 import { useSite } from './composables/useSite';
 import { useSiteStore } from './stores/site';
 import { usePlatform } from './composables/usePlatform';
 import { useNativeNotifications } from './composables/useNativeNotifications';
+import { initializeTokenRefresh } from './services/pocketbase';
 import AppLayout from './components/AppLayout.vue';
 import SiteSelectionView from './views/SiteSelectionView.vue';
 import ToastContainer from './components/ToastContainer.vue';
@@ -59,10 +60,13 @@ if (import.meta.env.DEV) {
   import('./utils/pwaTest');
 }
 
-const { isAuthenticated } = useAuth();
+const { isAuthenticated, refreshAuth } = useAuth();
 const { hasSiteAccess, isReadyForRouting, loadUserSites } = useSite();
 const { platformInfo } = usePlatform();
 const { requestPermission } = useNativeNotifications();
+
+// Track if initial token validation has been attempted
+const tokenValidationComplete = ref(false);
 
 // Import PWA testing utilities in development
 if (import.meta.env.DEV) {
@@ -93,14 +97,29 @@ watch(() => isAuthenticated.value, async (newValue, oldValue) => {
 });
 
 onMounted(async () => {
-  // Only load if authenticated and not already initialized
-  if (isAuthenticated.value && !isReadyForRouting.value) {
-    await loadUserSites();
-    
-    // Request notification permission if supported
-    if (platformInfo.value.isTauri || 'Notification' in window) {
-      await requestPermission();
+  // If user appears authenticated (has stored token), validate it with the server
+  if (isAuthenticated.value) {
+    // Initialize token refresh - this validates the token with the server
+    // If token is invalid/expired, it will be cleared and isAuthenticated will become false
+    const tokenValid = await initializeTokenRefresh();
+
+    if (tokenValid) {
+      // Token is valid, proceed with normal initialization
+      if (!isReadyForRouting.value) {
+        await loadUserSites();
+
+        // Request notification permission if supported
+        if (platformInfo.value.isTauri || 'Notification' in window) {
+          await requestPermission();
+        }
+      }
+    } else {
+      // Token was invalid - user state will be cleared by initializeTokenRefresh
+      // The useAuth composable needs to be updated to reflect the cleared state
+      refreshAuth();
     }
   }
+
+  tokenValidationComplete.value = true;
 });
 </script>
