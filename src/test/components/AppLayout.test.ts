@@ -5,12 +5,7 @@ import AppLayout from '../../components/AppLayout.vue'
 import { setupTestPinia } from '../utils/test-setup'
 
 // Mock all child components
-vi.mock('../../components/PWAPrompt.vue', () => ({
-  default: {
-    name: 'PWAPrompt',
-    template: '<div data-testid="pwa-prompt"></div>'
-  }
-}))
+// Note: PWAPrompt is now in App.vue, not AppLayout
 
 vi.mock('../../components/SiteSelector.vue', () => ({
   default: {
@@ -212,7 +207,7 @@ describe('AppLayout.vue', () => {
 
   describe('Component Rendering', () => {
     it('should render the basic layout structure', () => {
-      expect(wrapper.find('[data-testid="pwa-prompt"]').exists()).toBe(true)
+      // Note: PWAPrompt is now in App.vue, not AppLayout
       expect(wrapper.find('[data-testid="site-selector"]').exists()).toBe(true)
       expect(wrapper.find('[data-testid="language-selector"]').exists()).toBe(true)
       expect(wrapper.find('[data-testid="theme-toggle"]').exists()).toBe(true)

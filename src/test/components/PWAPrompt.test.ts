@@ -183,84 +183,20 @@ describe('PWAPrompt', () => {
     })
   })
 
-  describe('Update Prompt', () => {
-    it('should render update prompt when update is available', async () => {
-      mockShowUpdatePrompt.value = true
-      
-      wrapper = mount(PWAPrompt)
-      await nextTick()
-      
-      expect(wrapper.find('.fixed.top-4').exists()).toBe(true)
-      expect(wrapper.text()).toContain('pwa.updateTitle')
-      expect(wrapper.text()).toContain('pwa.updateMessage')
-    })
+  describe('Update Prompt Delegation', () => {
+    // Note: Update prompts are handled by PWAUpdateNotification component
+    // PWAPrompt only handles install prompts and offline indicator
 
-    it('should not render update prompt when no update available', async () => {
-      mockShowUpdatePrompt.value = false
-      
-      wrapper = mount(PWAPrompt)
-      await nextTick()
-      
-      expect(wrapper.find('.fixed.top-4').exists()).toBe(false)
-    })
-
-    it('should call applyUpdate when update button is clicked', async () => {
+    it('should not render update prompt (handled by PWAUpdateNotification)', async () => {
       mockShowUpdatePrompt.value = true
-      mockApplyUpdate.mockResolvedValue()
-      
-      wrapper = mount(PWAPrompt)
-      await nextTick()
-      
-      const buttons = wrapper.findAll('button')
-      const updateButton = buttons.find((btn: any) => btn.text().includes('pwa.updateNow'))
-      
-      expect(updateButton).toBeDefined()
-      
-      await updateButton!.trigger('click')
-      expect(mockApplyUpdate).toHaveBeenCalledOnce()
-    })
 
-    it('should show loading state during update', async () => {
-      mockShowUpdatePrompt.value = true
-      let resolveUpdate: any
-      mockApplyUpdate.mockImplementation(() => new Promise(resolve => {
-        resolveUpdate = resolve
-      }))
-      
       wrapper = mount(PWAPrompt)
       await nextTick()
-      
-      const buttons = wrapper.findAll('button')
-      const updateButton = buttons.find((btn: any) => btn.text().includes('pwa.updateNow'))
-      
-      await updateButton!.trigger('click')
-      await nextTick()
-      
-      // Should show loading text
-      expect(wrapper.text()).toContain('pwa.updating')
-      
-      // Resolve the promise
-      resolveUpdate()
-      await nextTick()
-    })
 
-    it('should dismiss update prompt when later button is clicked', async () => {
-      mockShowUpdatePrompt.value = true
-      
-      wrapper = mount(PWAPrompt)
-      await nextTick()
-      
-      // Initially visible
-      expect(wrapper.find('.fixed.top-4').exists()).toBe(true)
-      
-      const buttons = wrapper.findAll('button')
-      const laterButton = buttons.find((btn: any) => btn.text().includes('pwa.later'))
-      
-      await laterButton!.trigger('click')
-      await nextTick()
-      
-      // Should be hidden
-      expect(wrapper.find('.fixed.top-4').exists()).toBe(false)
+      // PWAPrompt does not render update prompts - they are handled by PWAUpdateNotification
+      // The .fixed.top-4 selector for updates should NOT exist in PWAPrompt
+      // Only offline indicator uses top-4, but it has different classes (from-yellow-50)
+      expect(wrapper.find('.fixed.top-4.from-white').exists()).toBe(false)
     })
   })
 
@@ -322,27 +258,8 @@ describe('PWAPrompt', () => {
       consoleSpy.mockRestore()
     })
 
-    it('should handle update errors gracefully', async () => {
-      mockShowUpdatePrompt.value = true
-      mockApplyUpdate.mockRejectedValue(new Error('Update failed'))
-      
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      
-      wrapper = mount(PWAPrompt)
-      await nextTick()
-      
-      const buttons = wrapper.findAll('button')
-      const updateButton = buttons.find((btn: any) => btn.text().includes('pwa.updateNow'))
-      
-      await updateButton!.trigger('click')
-      await nextTick()
-      
-      // Should log error and not crash
-      expect(consoleSpy).toHaveBeenCalledWith('Failed to update app:', expect.any(Error))
-      expect(wrapper.exists()).toBe(true)
-      
-      consoleSpy.mockRestore()
-    })
+    // Note: Update error handling is tested in PWAUpdateNotification.test.ts
+    // PWAPrompt does not handle update functionality
   })
 
   describe('Responsive Design', () => {
@@ -360,19 +277,8 @@ describe('PWAPrompt', () => {
       expect(installPrompt.classes()).toContain('md:w-96')
     })
 
-    it('should have responsive classes for update prompt', async () => {
-      mockShowUpdatePrompt.value = true
-      
-      wrapper = mount(PWAPrompt)
-      await nextTick()
-      
-      const updatePrompt = wrapper.find('.fixed.top-4')
-      expect(updatePrompt.classes()).toContain('left-4')
-      expect(updatePrompt.classes()).toContain('right-4')
-      expect(updatePrompt.classes()).toContain('md:left-auto')
-      expect(updatePrompt.classes()).toContain('md:right-4')
-      expect(updatePrompt.classes()).toContain('md:w-96')
-    })
+    // Note: Update prompt responsive classes are tested in PWAUpdateNotification.test.ts
+    // PWAPrompt only handles install prompts and offline indicator
   })
 
   describe('Accessibility', () => {
