@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 describe('useOnboarding Logic', () => {
   let localStorageData: Record<string, string> = {}
