@@ -31,7 +31,6 @@ const {
   DeliveryService,
   DeliveryItemService,
   calculatePermissions,
-  getCurrentSiteId,
   setCurrentSiteId,
   getCurrentUserRole,
   setCurrentUserRole
