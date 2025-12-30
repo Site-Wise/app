@@ -30,6 +30,39 @@
           {{ t('payments.recordPayment') }}
         </button>
       </div>
+
+      <!-- Mobile Menu -->
+      <div class="md:hidden relative header-mobile-menu">
+        <button @click="showHeaderMobileMenu = !showHeaderMobileMenu" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <MoreVertical class="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        </button>
+
+        <!-- Mobile Dropdown Menu -->
+        <div v-if="showHeaderMobileMenu" class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+          <div class="py-1">
+            <button
+              v-if="hasOutstandingPayments"
+              @click="handleHeaderMobileAction('viewDuePayments')"
+              class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <AlertCircle class="mr-3 h-5 w-5 text-orange-500" />
+              {{ t('payments.viewDuePayments') }}
+            </button>
+            <button
+              @click="handleHeaderMobileAction('recordPayment')"
+              :disabled="!canCreatePayment"
+              :class="[
+                canCreatePayment
+                  ? 'flex items-center w-full px-4 py-3 text-sm text-white bg-blue-600 hover:bg-blue-700'
+                  : 'flex items-center w-full px-4 py-3 text-sm text-gray-400 bg-gray-100 dark:bg-gray-700 cursor-not-allowed'
+              ]"
+            >
+              <Plus class="mr-3 h-5 w-5" :class="canCreatePayment ? 'text-white' : 'text-gray-400'" />
+              {{ t('payments.recordPayment') }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Search Box with Results Summary -->
@@ -533,7 +566,8 @@ import {
   Wallet,
   Smartphone,
   Building2,
-  AlertCircle
+  AlertCircle,
+  MoreVertical
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
@@ -626,6 +660,9 @@ const openMobileMenuId = ref<string | null>(null);
 
 // Due Payments Modal state
 const showDuePaymentsModal = ref(false);
+
+// Header mobile menu state
+const showHeaderMobileMenu = ref(false);
 
 const canCreatePayment = computed(() => {
   return !isReadOnly.value && checkCreateLimit('payments');
@@ -750,6 +787,20 @@ const handleDuePaymentVendorClick = (vendor: VendorWithOutstanding) => {
   showDuePaymentsModal.value = false;
   // Then open the payment modal with this vendor pre-selected
   quickPayment(vendor);
+};
+
+const handleHeaderMobileAction = (action: string) => {
+  showHeaderMobileMenu.value = false;
+  switch (action) {
+    case 'viewDuePayments':
+      showDuePaymentsModal.value = true;
+      break;
+    case 'recordPayment':
+      if (canCreatePayment.value) {
+        handleAddPayment();
+      }
+      break;
+  }
 };
 
 const viewPayment = async (payment: Payment) => {
@@ -1078,6 +1129,10 @@ const handleClickOutside = (event: Event) => {
   const target = event.target as Element;
   if (!target.closest('.relative')) {
     closeMobileMenu();
+  }
+  // Close header mobile menu when clicking outside
+  if (!target.closest('.header-mobile-menu')) {
+    showHeaderMobileMenu.value = false;
   }
 };
 
