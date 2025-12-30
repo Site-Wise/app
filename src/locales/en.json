@@ -280,6 +280,8 @@
     "noDeliveriesRecorded": "No deliveries recorded",
     "startTracking": "Start tracking by recording a delivery.",
     "service": "Service",
+    "perUnit": "per unit",
+    "noServicesFound": "No services found matching \"{query}\"",
     "categories": {
       "labor": "Labor",
       "equipment": "Equipment",
@@ -731,7 +733,12 @@
     "currentAllocations": "Current Allocations",
     "allocationStatus": "Allocation Status",
     "result": "result",
-    "results": "results"
+    "results": "results",
+    "viewDuePayments": "View Due Payments",
+    "duePayments": "Due Payments",
+    "totalOutstanding": "Total Outstanding",
+    "payNow": "Pay Now",
+    "allPaymentsCurrent": "All payments are current"
   },
   "site": {
     "selectSite": "Select a Site",

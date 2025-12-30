@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { createMockPocketBase, mockUser, mockSite, mockItem, mockVendor } from '../mocks/pocketbase'
+import { mockUser, mockSite, mockItem, mockVendor } from '../mocks/pocketbase'
 
 // Mock localStorage
 const localStorageData: Record<string, string> = {}
@@ -13,10 +13,104 @@ Object.defineProperty(window, 'localStorage', {
   writable: true
 })
 
-// Mock PocketBase
-vi.mock('pocketbase', () => ({
-  default: vi.fn(() => createMockPocketBase())
-}))
+// Mock PocketBase - using a class for proper constructor behavior in Vitest v4
+vi.mock('pocketbase', () => {
+  const mockUserData = {
+    id: 'user-1',
+    email: 'test@example.com',
+    name: 'Test User',
+    sites: ['site-1'],
+    created: '2024-01-01T00:00:00Z',
+    updated: '2024-01-01T00:00:00Z'
+  }
+
+  const mockItemData = {
+    id: 'item-1',
+    name: 'Steel Rebar',
+    description: 'High-grade steel rebar',
+    unit: 'kg',
+    tags: ['tag-1', 'tag-2'],
+    site: 'site-1',
+    created: '2024-01-01T00:00:00Z',
+    updated: '2024-01-01T00:00:00Z'
+  }
+
+  const mockVendorData = {
+    id: 'vendor-1',
+    name: 'Steel Suppliers Inc',
+    contact_person: 'John Doe',
+    email: 'john@steelsuppliers.com',
+    phone: '+1234567890',
+    address: '123 Steel Street',
+    tags: ['Steel', 'Metal'],
+    site: 'site-1',
+    created: '2024-01-01T00:00:00Z',
+    updated: '2024-01-01T00:00:00Z'
+  }
+
+  const mockSiteData = {
+    id: 'site-1',
+    name: 'Test Construction Site',
+    description: 'A test construction site',
+    total_units: 100,
+    total_planned_area: 50000,
+    admin_user: 'user-1',
+    is_active: true,
+    created: '2024-01-01T00:00:00Z',
+    updated: '2024-01-01T00:00:00Z'
+  }
+
+  const mockSiteUserData = {
+    id: 'site-user-1',
+    site: 'site-1',
+    user: 'user-1',
+    role: 'owner',
+    is_active: true,
+    expand: {
+      site: mockSiteData
+    }
+  }
+
+  const collectionData: Record<string, any[]> = {
+    items: [mockItemData],
+    vendors: [mockVendorData],
+    sites: [mockSiteData],
+    site_users: [mockSiteUserData],
+    users: [mockUserData]
+  }
+
+  class MockPocketBase {
+    authStore = {
+      isValid: true,
+      model: mockUserData,
+      record: mockUserData,
+      clear: vi.fn(),
+    }
+    baseUrl = 'http://localhost:8090'
+
+    collection = vi.fn((name: string) => ({
+      getFullList: vi.fn().mockResolvedValue(collectionData[name] || []),
+      getOne: vi.fn().mockImplementation((id: string) => {
+        const items = collectionData[name] || []
+        const item = items.find((i: any) => i.id === id)
+        return Promise.resolve(item || { id, site: 'site-1' })
+      }),
+      create: vi.fn().mockImplementation((data: any) =>
+        Promise.resolve({ id: 'new-id', ...data, site: 'site-1' })
+      ),
+      update: vi.fn().mockImplementation((id: string, data: any) =>
+        Promise.resolve({ id, ...data, site: 'site-1' })
+      ),
+      delete: vi.fn().mockResolvedValue({}),
+      authWithPassword: vi.fn().mockResolvedValue({ record: mockUserData, token: 'mock-token' }),
+      getFirstListItem: vi.fn().mockRejectedValue(new Error('Not found')),
+    }))
+
+    autoCancellation = vi.fn()
+  }
+
+  return { default: MockPocketBase }
+})
 
 // Import the services after mocking
 const { 
