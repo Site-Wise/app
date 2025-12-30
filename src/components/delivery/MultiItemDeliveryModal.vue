@@ -603,6 +603,7 @@ const handleKeyboardShortcuts = (event: KeyboardEvent) => {
   // SHIFT + Right Arrow - Next step
   if (event.shiftKey && event.key === 'ArrowRight') {
     event.preventDefault();
+    event.stopPropagation();
     if (canProceedToNextStep.value && currentStep.value < steps.length - 1) {
       nextStep();
     }
@@ -612,32 +613,34 @@ const handleKeyboardShortcuts = (event: KeyboardEvent) => {
   // SHIFT + Left Arrow - Previous step
   if (event.shiftKey && event.key === 'ArrowLeft') {
     event.preventDefault();
+    event.stopPropagation();
     if (currentStep.value > 0) {
       previousStep();
     }
     return;
   }
 
-  // CTRL + ENTER - Add/Save item (only on Items step)
-  if (event.ctrlKey && event.key === 'Enter' && currentStep.value === 1) {
+  // CTRL + ENTER - Handle based on current step
+  if (event.ctrlKey && event.key === 'Enter') {
     event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
 
-    // Check if we're in the new item form and it's valid
-    if (newItemForm.value && isNewItemValid.value) {
-      saveNewItem();
+    // On Items step (1) - Add item
+    if (currentStep.value === 1) {
+      if (newItemForm.value && isNewItemValid.value) {
+        saveNewItem();
+      }
+      return;
     }
-    return;
-  }
 
-  // CTRL + ENTER - Create delivery (only on Review step)
-  if (event.ctrlKey && event.key === 'Enter' && currentStep.value === 2) {
-    event.preventDefault();
-
-    // Check if we can submit the delivery
-    if (canSubmit.value && !loading.value) {
-      saveDelivery();
+    // On Review step (2) - Create delivery
+    if (currentStep.value === 2) {
+      if (canSubmit.value && !loading.value) {
+        saveDelivery();
+      }
+      return;
     }
-    return;
   }
 };
 
