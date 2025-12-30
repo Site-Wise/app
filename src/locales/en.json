@@ -11,6 +11,8 @@
     "update": "Update",
     "close": "Close",
     "closeAll": "Close All",
+    "expandAll": "Expand All",
+    "collapseAll": "Collapse All",
     "yes": "Yes",
     "no": "No",
     "searchAction": "Search",
@@ -22,6 +24,7 @@
     "next": "Next",
     "previous": "Previous",
     "submit": "Submit",
+    "apply": "Apply",
     "reset": "Reset",
     "clear": "Clear",
     "copy": "Copy",
@@ -129,7 +132,8 @@
     "closeSidebar": "Close navigation menu",
     "mainNavigation": "Main navigation",
     "userMenu": "User menu",
-    "quickActions": "Quick actions menu"
+    "quickActions": "Quick actions menu",
+    "more": "More"
   },
   "auth": {
     "signIn": "Sign in",

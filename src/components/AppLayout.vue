@@ -45,13 +45,7 @@
       <div class="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
           <div class="flex items-center space-x-4">
-            <button @click="sidebarOpen = !sidebarOpen"
-              class="lg:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-              :aria-label="t('nav.openSidebar')" :aria-expanded="sidebarOpen">
-              <Menu class="h-6 w-6" />
-            </button>
-
-            <!-- Site Selector for mobile -->
+            <!-- Site Selector for mobile (hamburger menu removed - using bottom nav) -->
             <div class="lg:hidden">
               <SiteSelector />
             </div>
@@ -203,46 +197,62 @@
       </div>
 
       <!-- Page content -->
-      <main class="p-4 sm:p-6 lg:p-8 pb-20 md:pb-8">
+      <main class="p-4 sm:p-6 lg:p-8 pb-safe-nav lg:pb-8 scroll-smooth-touch">
         <router-view />
       </main>
     </div>
 
-    <!-- Mobile Floating Action Button -->
-    <div v-if="!isAnyModalOpen" class="md:hidden fixed bottom-6 right-6 z-50">
+    <!-- Bottom Navigation Bar for Mobile -->
+    <BottomNavBar />
+
+    <!-- Mobile Floating Action Button - Now positioned above bottom nav -->
+    <div v-if="!isAnyModalOpen && currentRouteFabAction" class="lg:hidden fixed bottom-20 right-4 z-40 mb-safe-bottom">
       <!-- FAB Menu Options -->
-      <div v-if="fabMenuOpen" class="absolute bottom-16 right-0 mb-2 space-y-2 min-w-max">
-        <button v-for="(action, index) in fabActions" :key="action.type" @click="quickAction(action.type)" :class="[
-          'flex items-center w-full px-4 py-3 rounded-lg shadow-lg border transition-all duration-200 transform hover:scale-105',
-          index === 0 && action.type === currentRouteFabAction?.type
-            ? 'bg-primary-600 dark:bg-primary-500 text-white border-primary-700 dark:border-primary-400 hover:bg-primary-700 dark:hover:bg-primary-600'
-            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-        ]">
-          <component :is="action.icon" :class="[
-            'mr-3 h-5 w-5',
-            index === 0 && action.type === currentRouteFabAction?.type ? 'text-white' : ''
-          ]" />
-          <span class="text-sm font-medium">{{ t(action.labelKey) }}</span>
-        </button>
-      </div>
+      <Transition
+        enter-active-class="transition-all duration-200 ease-out"
+        enter-from-class="opacity-0 translate-y-4 scale-95"
+        enter-to-class="opacity-100 translate-y-0 scale-100"
+        leave-active-class="transition-all duration-150 ease-in"
+        leave-from-class="opacity-100 translate-y-0 scale-100"
+        leave-to-class="opacity-0 translate-y-4 scale-95"
+      >
+        <div v-if="fabMenuOpen" class="absolute bottom-16 right-0 mb-2 space-y-2 min-w-max">
+          <button v-for="(action, index) in fabActions" :key="action.type" @click="quickAction(action.type)" :class="[
+            'flex items-center w-full px-4 py-3 rounded-xl shadow-lg border transition-all duration-200 touch-feedback',
+            index === 0 && action.type === currentRouteFabAction?.type
+              ? 'bg-primary-600 dark:bg-primary-500 text-white border-primary-700 dark:border-primary-400'
+              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700'
+          ]">
+            <component :is="action.icon" :class="[
+              'mr-3 h-5 w-5',
+              index === 0 && action.type === currentRouteFabAction?.type ? 'text-white' : ''
+            ]" />
+            <span class="text-sm font-medium">{{ t(action.labelKey) }}</span>
+          </button>
+        </div>
+      </Transition>
 
       <!-- FAB Button -->
       <button @click="fabMenuOpen = !fabMenuOpen" :class="[
-        'w-14 h-14 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-110 flex items-center justify-center relative',
+        'w-14 h-14 text-white rounded-full shadow-lg transition-all duration-200 touch-feedback flex items-center justify-center',
         { 'rotate-45': fabMenuOpen },
-        currentRouteFabAction
-          ? 'bg-primary-500 hover:bg-primary-600'
-          : 'bg-primary-600 hover:bg-primary-700'
+        'bg-primary-600 dark:bg-primary-500'
       ]" :aria-label="t('nav.quickActions')" :aria-expanded="fabMenuOpen" aria-haspopup="menu">
         <Plus class="h-6 w-6" />
-        <!-- Active indicator dot -->
-        <!-- <div v-if="currentRouteFabAction"
-          class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div> -->
       </button>
     </div>
 
     <!-- FAB Overlay for mobile -->
-    <div v-if="fabMenuOpen && !isAnyModalOpen" @click="fabMenuOpen = false" class="md:hidden fixed inset-0 bg-transparent z-40"></div>
+    <Transition
+      enter-active-class="transition-opacity duration-200"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition-opacity duration-150"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div v-if="fabMenuOpen && !isAnyModalOpen" @click="fabMenuOpen = false" class="lg:hidden fixed inset-0 bg-black/20 z-30"></div>
+    </Transition>
     
     <!-- Keyboard Shortcut Tooltip System -->
     <KeyboardShortcutTooltip />
@@ -272,6 +282,7 @@ import PWAPrompt from './PWAPrompt.vue';
 import SiteSelector from './SiteSelector.vue';
 import LanguageSelector from './LanguageSelector.vue';
 import KeyboardShortcutTooltip from './KeyboardShortcutTooltip.vue';
+import BottomNavBar from './BottomNavBar.vue';
 import {
   BarChart3,
   Package,
@@ -281,7 +292,6 @@ import {
   TruckIcon,
   CreditCard,
   BanknoteArrowDown,
-  Menu,
   ChevronDown,
   LogOut,
   Plus,

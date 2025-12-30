@@ -38,7 +38,7 @@
     <!-- Gallery Modal -->
     <div 
       v-if="showGallery" 
-      class="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
+      class="fixed inset-0 bg-black bg-opacity-90 z-[60] flex items-center justify-center"
       @click="closeGallery"
       @keydown.escape="closeGallery"
       tabindex="0"

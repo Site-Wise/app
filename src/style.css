@@ -14,31 +14,43 @@
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800;
+    @apply inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-xl shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 min-h-[44px] touch-feedback;
   }
-  
+
   .btn-primary {
-    @apply btn bg-primary-600 dark:bg-primary-500 text-white hover:bg-primary-700 dark:hover:bg-primary-600 focus:ring-primary-500 dark:focus:ring-primary-400;
+    @apply btn bg-primary-600 dark:bg-primary-500 text-white hover:bg-primary-700 dark:hover:bg-primary-600 active:bg-primary-800 dark:active:bg-primary-700 focus:ring-primary-500 dark:focus:ring-primary-400;
   }
-  
+
   .btn-secondary {
-    @apply btn bg-secondary-600 dark:bg-secondary-500 text-white hover:bg-secondary-700 dark:hover:bg-secondary-600 focus:ring-secondary-500 dark:focus:ring-secondary-400;
+    @apply btn bg-secondary-600 dark:bg-secondary-500 text-white hover:bg-secondary-700 dark:hover:bg-secondary-600 active:bg-secondary-800 dark:active:bg-secondary-700 focus:ring-secondary-500 dark:focus:ring-secondary-400;
   }
-  
+
   .btn-disabled {
-    @apply btn bg-gray-600 text-white;
+    @apply btn bg-gray-400 dark:bg-gray-600 text-white cursor-not-allowed opacity-60;
   }
-  
+
   .btn-outline {
-    @apply btn bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:ring-primary-500 dark:focus:ring-primary-400;
+    @apply btn bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 focus:ring-primary-500 dark:focus:ring-primary-400;
   }
-  
+
+  .btn-ghost {
+    @apply btn bg-transparent text-gray-700 dark:text-gray-300 border-transparent shadow-none hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-600 dark:bg-red-500 text-white hover:bg-red-700 dark:hover:bg-red-600 active:bg-red-800 dark:active:bg-red-700 focus:ring-red-500 dark:focus:ring-red-400;
+  }
+
   .input {
-    @apply block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-primary-500 dark:focus:border-primary-400 transition-colors duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100;
+    @apply block w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-primary-500 dark:focus:border-primary-400 transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 min-h-[44px] text-base sm:text-sm;
   }
-  
+
   .card {
-    @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6;
+    @apply bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 transition-all duration-200;
+  }
+
+  .card-interactive {
+    @apply card cursor-pointer hover:shadow-md active:scale-[0.99] touch-feedback;
   }
   
   .status-badge {
@@ -68,21 +80,128 @@
   .scrollbar-thin {
     scrollbar-width: thin;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-track {
     @apply bg-gray-100 dark:bg-gray-800;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-thumb {
     @apply bg-gray-300 dark:bg-gray-600 rounded-full;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     @apply bg-gray-400 dark:bg-gray-500;
+  }
+}
+
+/* Mobile-native utilities */
+@layer utilities {
+  /* Touch feedback for native feel */
+  .touch-feedback {
+    @apply transition-all duration-150 ease-out;
+  }
+
+  .touch-feedback:active {
+    @apply scale-[0.97] opacity-80;
+  }
+
+  /* Prevent text selection on touch */
+  .touch-none-select {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Smooth momentum scrolling */
+  .scroll-smooth-touch {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Safe area aware bottom padding */
+  .pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .pb-safe-nav {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+
+  /* Bottom nav height accounting for safe area */
+  .h-nav-safe {
+    height: calc(4rem + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Modal utilities - ensure modals appear above bottom nav */
+@layer components {
+  .modal-overlay {
+    @apply fixed inset-0 z-[60] overflow-y-auto;
+  }
+
+  .modal-content {
+    /* Add bottom padding on mobile to account for bottom nav */
+    @apply mb-20 lg:mb-4;
+  }
+}
+
+/* Bottom sheet modal animations */
+@layer components {
+  .bottom-sheet-enter-active {
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .bottom-sheet-leave-active {
+    transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .bottom-sheet-enter-from,
+  .bottom-sheet-leave-to {
+    transform: translateY(100%);
+  }
+
+  .bottom-sheet-overlay-enter-active,
+  .bottom-sheet-overlay-leave-active {
+    transition: opacity 0.3s ease;
+  }
+
+  .bottom-sheet-overlay-enter-from,
+  .bottom-sheet-overlay-leave-to {
+    opacity: 0;
+  }
+
+  /* Pull to refresh indicator */
+  .pull-indicator {
+    @apply flex items-center justify-center;
+    transition: transform 0.2s ease-out;
+  }
+
+  .pull-indicator.pulling {
+    transform: rotate(180deg);
+  }
+
+  .pull-indicator.refreshing {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 }
