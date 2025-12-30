@@ -196,10 +196,11 @@ const inputDisplayValue = computed(() => {
 
 const filteredVendors = computed(() => {
   if (!searchQuery.value) return [];
-  
+
   const query = searchQuery.value.toLowerCase();
-  return props.vendors.filter(vendor => 
-    vendor.contact_person?.toLowerCase().includes(query) &&
+  return props.vendors.filter(vendor =>
+    (vendor.contact_person?.toLowerCase().includes(query) ||
+     vendor.name?.toLowerCase().includes(query)) &&
     vendor.id !== props.modelValue // Don't show already selected vendor
   );
 });

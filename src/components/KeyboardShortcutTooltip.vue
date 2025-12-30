@@ -91,12 +91,14 @@ const updateElementTooltips = () => {
       const rect = element.getBoundingClientRect()
       
       if (shortcut && rect.width > 0 && rect.height > 0) {
+        // getBoundingClientRect() returns viewport-relative coordinates
+        // Since the parent container is fixed (also viewport-relative),
+        // we use the coordinates directly without scroll offsets
         tooltips.push({
           id: `tooltip-${index}`,
           key: shortcut.toUpperCase(),
-          top: rect.top + 24 + window.scrollY,
-          // left: rect.left + rect.width / 2 + window.scrollX
-          left: rect.left + 16 + window.scrollX
+          top: rect.top + 24,
+          left: rect.left + 16
         })
       }
     })

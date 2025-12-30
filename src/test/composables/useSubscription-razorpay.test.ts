@@ -2,13 +2,22 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useSubscription, type RazorpayCheckoutOptions } from '../../composables/useSubscription'
 
-// Mock Razorpay
-const mockRazorpayInstance = {
-  open: vi.fn(),
-  close: vi.fn()
-}
+// Mock Razorpay using a class for proper constructor behavior in Vitest v4
+class MockRazorpay {
+  static instances: MockRazorpay[] = []
+  options: any
+  open = vi.fn()
+  close = vi.fn()
 
-const MockRazorpay = vi.fn(() => mockRazorpayInstance)
+  constructor(options: any) {
+    this.options = options
+    MockRazorpay.instances.push(this)
+  }
+
+  static clear() {
+    MockRazorpay.instances = []
+  }
+}
 
 // Declare Razorpay on window
 declare global {
@@ -99,6 +108,9 @@ describe('useSubscription - Razorpay Integration', () => {
     vi.clearAllMocks()
     setActivePinia(createPinia())
 
+    // Clear previous Razorpay instances
+    MockRazorpay.clear()
+
     // Setup window.Razorpay
     window.Razorpay = MockRazorpay as any
 
@@ -123,7 +135,13 @@ describe('useSubscription - Razorpay Integration', () => {
       await initializeRazorpayCheckout('plan-pro')
 
       expect(getOneMock).toHaveBeenCalledWith('plan-pro')
-      expect(MockRazorpay).toHaveBeenCalledWith(
+
+      // Check that a Razorpay instance was created
+      expect(MockRazorpay.instances.length).toBe(1)
+      const instance = MockRazorpay.instances[0]
+
+      // Check the options passed to the constructor
+      expect(instance.options).toEqual(
         expect.objectContaining({
           key: 'test_razorpay_key',
           amount: 99900, // 999 * 100 (paise)
@@ -132,7 +150,7 @@ describe('useSubscription - Razorpay Integration', () => {
           description: 'Subscribe to Pro Plan'
         })
       )
-      expect(mockRazorpayInstance.open).toHaveBeenCalled()
+      expect(instance.open).toHaveBeenCalled()
     })
 
     it('should throw error when no site is selected', async () => {
@@ -170,7 +188,8 @@ describe('useSubscription - Razorpay Integration', () => {
 
       await initializeRazorpayCheckout('plan-pro')
 
-      expect(MockRazorpay).toHaveBeenCalledWith(
+      const instance = MockRazorpay.instances[0]
+      expect(instance.options).toEqual(
         expect.objectContaining({
           currency: 'INR'
         })
@@ -182,7 +201,8 @@ describe('useSubscription - Razorpay Integration', () => {
 
       await initializeRazorpayCheckout('plan-pro')
 
-      expect(MockRazorpay).toHaveBeenCalledWith(
+      const instance = MockRazorpay.instances[0]
+      expect(instance.options).toEqual(
         expect.objectContaining({
           theme: {
             color: '#f97316'
@@ -199,7 +219,8 @@ describe('useSubscription - Razorpay Integration', () => {
 
       await initializeRazorpayCheckout('plan-pro')
 
-      expect(MockRazorpay).toHaveBeenCalledWith(
+      const instance = MockRazorpay.instances[0]
+      expect(instance.options).toEqual(
         expect.objectContaining({
           amount: 149950 // 1499.50 * 100
         })
@@ -211,7 +232,8 @@ describe('useSubscription - Razorpay Integration', () => {
 
       await initializeRazorpayCheckout('plan-pro')
 
-      expect(mockRazorpayInstance.open).toHaveBeenCalled()
+      const instance = MockRazorpay.instances[0]
+      expect(instance.open).toHaveBeenCalled()
     })
   })
 
@@ -221,7 +243,7 @@ describe('useSubscription - Razorpay Integration', () => {
 
       await initializeRazorpayCheckout('plan-pro')
 
-      const razorpayOptions = MockRazorpay.mock.calls[0][0] as RazorpayCheckoutOptions
+      const razorpayOptions = MockRazorpay.instances[0].options as RazorpayCheckoutOptions
       expect(razorpayOptions.handler).toBeDefined()
       expect(typeof razorpayOptions.handler).toBe('function')
     })
@@ -231,7 +253,7 @@ describe('useSubscription - Razorpay Integration', () => {
 
       await initializeRazorpayCheckout('plan-pro')
 
-      const razorpayOptions = MockRazorpay.mock.calls[0][0] as RazorpayCheckoutOptions
+      const razorpayOptions = MockRazorpay.instances[0].options as RazorpayCheckoutOptions
       expect(razorpayOptions.modal?.ondismiss).toBeDefined()
       expect(typeof razorpayOptions.modal?.ondismiss).toBe('function')
     })
@@ -241,7 +263,7 @@ describe('useSubscription - Razorpay Integration', () => {
 
       await initializeRazorpayCheckout('plan-pro')
 
-      const razorpayOptions = MockRazorpay.mock.calls[0][0] as RazorpayCheckoutOptions
+      const razorpayOptions = MockRazorpay.instances[0].options as RazorpayCheckoutOptions
       const mockPaymentResponse = {
         razorpay_payment_id: 'pay_123',
         razorpay_order_id: 'order_123',
@@ -262,7 +284,7 @@ describe('useSubscription - Razorpay Integration', () => {
 
       await initializeRazorpayCheckout('plan-pro')
 
-      const razorpayOptions = MockRazorpay.mock.calls[0][0] as RazorpayCheckoutOptions
+      const razorpayOptions = MockRazorpay.instances[0].options as RazorpayCheckoutOptions
       const mockPaymentResponse = {
         razorpay_payment_id: 'pay_123',
         razorpay_order_id: 'order_123',
@@ -281,7 +303,8 @@ describe('useSubscription - Razorpay Integration', () => {
 
       await initializeRazorpayCheckout('plan-pro')
 
-      expect(MockRazorpay).toHaveBeenCalledWith(
+      const instance = MockRazorpay.instances[0]
+      expect(instance.options).toEqual(
         expect.objectContaining({
           key: 'custom_key_123'
         })
@@ -295,7 +318,8 @@ describe('useSubscription - Razorpay Integration', () => {
 
       await initializeRazorpayCheckout('plan-pro')
 
-      expect(MockRazorpay).toHaveBeenCalledWith(
+      const instance = MockRazorpay.instances[0]
+      expect(instance.options).toEqual(
         expect.objectContaining({
           key: ''
         })
@@ -307,17 +331,15 @@ describe('useSubscription - Razorpay Integration', () => {
     it('should generate unique receipt IDs', async () => {
       const { initializeRazorpayCheckout } = useSubscription()
 
-      const timestamp1 = Date.now()
       await initializeRazorpayCheckout('plan-pro')
 
-      // Mock second call
-      MockRazorpay.mockClear()
-      const timestamp2 = Date.now()
+      // Clear instances for second call
+      const firstInstanceCount = MockRazorpay.instances.length
       await initializeRazorpayCheckout('plan-pro')
 
       // Receipt IDs should be different (timestamp-based)
       // We can't directly test this, but we ensure the function completes without error
-      expect(MockRazorpay).toHaveBeenCalledTimes(1)
+      expect(MockRazorpay.instances.length).toBe(firstInstanceCount + 1)
     })
 
     it('should include site and plan IDs in notes', async () => {
