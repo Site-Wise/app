@@ -62,7 +62,7 @@
             required
             class="input pr-10"
             :class="{ 'border-red-300': errors.unit_price }"
-            placeholder="0.00"
+            :placeholder="lastPrice !== null ? `Last: ₹${lastPrice.toFixed(2)}` : '0.00'"
           />
           <button
             type="button"
@@ -223,7 +223,7 @@
 import { computed, reactive, ref, nextTick, onMounted, onUnmounted } from 'vue';
 import { Trash2, Percent } from 'lucide-vue-next';
 import { useI18n } from '../../composables/useI18n';
-import type { Item } from '../../services/pocketbase';
+import { deliveryItemService, type Item } from '../../services/pocketbase';
 import ItemSelector from '../ItemSelector.vue';
 
 interface DeliveryItemForm {
@@ -254,6 +254,7 @@ const { t } = useI18n();
 // Refs
 const quantityInputRef = ref<HTMLInputElement>();
 const itemSelectorRef = ref();
+const lastPrice = ref<number | null>(null);
 
 // Tax functionality state
 const showTaxInput = ref<'unit_price' | 'total_amount' | null>(null);
@@ -397,10 +398,28 @@ const handleItemChange = (itemId: string) => {
 const handleItemSelected = async (item: Item | null) => {
   // Additional logic when item is selected, if needed
   if (item) {
+    // Fetch the last price for this item
+    try {
+      const fetchedLastPrice = await deliveryItemService.getLastPriceForItem(item.id!);
+      lastPrice.value = fetchedLastPrice;
+
+      // Always auto-fill with last price when an item is selected/changed
+      // This ensures changing items updates the price to reflect the new item's history
+      if (fetchedLastPrice !== null) {
+        updateItem({ unit_price: fetchedLastPrice }, 'unit_price');
+      }
+    } catch (error) {
+      console.error('Error fetching last price:', error);
+      lastPrice.value = null;
+    }
+
     // Auto-focus quantity input when item is selected
     await nextTick();
     quantityInputRef.value?.focus();
     quantityInputRef.value?.select(); // Select all text for easy overwriting
+  } else {
+    // Clear last price when item is deselected
+    lastPrice.value = null;
   }
 };
 
