@@ -51,6 +51,42 @@
           </div>
         </div>
 
+        <!-- Mobile Top Navigation -->
+        <div class="flex justify-between items-center mb-4 sm:hidden">
+          <button
+            v-if="currentStep > 0"
+            @click="previousStep"
+            class="btn-outline btn-sm flex items-center"
+            :disabled="loading"
+          >
+            <ArrowLeft class="h-4 w-4 mr-1" />
+            {{ t('common.back') }}
+          </button>
+          <div v-else></div>
+
+          <button
+            v-if="currentStep < steps.length - 1"
+            @click="nextStep"
+            :disabled="!canProceedToNextStep || loading"
+            class="btn-primary btn-sm flex items-center"
+            :class="{ 'opacity-50 cursor-not-allowed': !canProceedToNextStep || loading }"
+          >
+            {{ t('common.next') }}
+            <ArrowRight class="h-4 w-4 ml-1" />
+          </button>
+          <button
+            v-else
+            @click="saveDelivery"
+            :disabled="loading || !canSubmit"
+            class="btn-primary btn-sm bg-green-600 hover:bg-green-700 flex items-center"
+            :class="{ 'opacity-50 cursor-not-allowed': loading || !canSubmit }"
+          >
+            <Loader2 v-if="loading" class="h-4 w-4 mr-1 animate-spin" />
+            <CheckCircle v-else class="h-4 w-4 mr-1" />
+            {{ editingDelivery ? t('common.update') : t('common.create') }}
+          </button>
+        </div>
+
         <!-- Step Content -->
         <div class="min-h-96">
           <!-- Step 1: Delivery Info -->
@@ -159,14 +195,85 @@
             <!-- This section is no longer needed as we always show a new item form -->
 
             <!-- Completed Items List -->
-            <div v-if="completedDeliveryItems.length > 0" class="space-y-4">
+            <div v-if="completedDeliveryItems.length > 0" class="space-y-2 sm:space-y-4">
               <div
-                class="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600 pb-2">
-                {{ t('deliveryForm.addedItems') }}
+                class="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600 pb-2 flex items-center justify-between">
+                <span>{{ t('deliveryForm.addedItems') }}</span>
+                <!-- Collapse/Expand all on mobile -->
+                <button
+                  @click="toggleAllItemsExpanded"
+                  class="sm:hidden text-xs text-primary-600 dark:text-primary-400 hover:underline"
+                >
+                  {{ allItemsExpanded ? t('common.collapseAll') : t('common.expandAll') }}
+                </button>
               </div>
-              <DeliveryItemRow v-for="item in completedDeliveryItems" :key="item.tempId" :item="item"
-                :index="deliveryItems.indexOf(item)" :items="items" :used-items="usedItemIds"
-                @update="updateDeliveryItem" @remove="removeDeliveryItem" @create-new-item="handleCreateNewItem" />
+
+              <!-- Mobile: Compact collapsible cards -->
+              <div class="sm:hidden space-y-2">
+                <div
+                  v-for="item in completedDeliveryItems"
+                  :key="item.tempId"
+                  class="border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 overflow-hidden"
+                >
+                  <!-- Compact summary header -->
+                  <div
+                    class="flex items-center justify-between p-3 cursor-pointer"
+                    @click="toggleItemExpanded(item.tempId)"
+                  >
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium text-gray-900 dark:text-white truncate">
+                        {{ getItemName(item.item) }}
+                      </div>
+                      <div class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ item.quantity }} {{ getItemUnit(item.item) }} × ₹{{ item.unit_price }} =
+                        <span class="font-medium text-gray-900 dark:text-white">₹{{ item.total_amount.toFixed(2) }}</span>
+                      </div>
+                    </div>
+                    <div class="flex items-center space-x-2 ml-2">
+                      <button
+                        @click.stop="removeDeliveryItem(deliveryItems.indexOf(item))"
+                        class="p-1.5 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                        :title="t('delivery.removeItem')"
+                      >
+                        <Trash2 class="h-4 w-4" />
+                      </button>
+                      <ChevronDown
+                        :class="[
+                          'h-5 w-5 text-gray-400 transition-transform',
+                          expandedItems.has(item.tempId) ? 'rotate-180' : ''
+                        ]"
+                      />
+                    </div>
+                  </div>
+                  <!-- Expanded content -->
+                  <div v-if="expandedItems.has(item.tempId)" class="border-t border-gray-200 dark:border-gray-600">
+                    <DeliveryItemRow
+                      :item="item"
+                      :index="deliveryItems.indexOf(item)"
+                      :items="items"
+                      :used-items="usedItemIds"
+                      @update="updateDeliveryItem"
+                      @remove="removeDeliveryItem"
+                      @create-new-item="handleCreateNewItem"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Desktop: Full item rows -->
+              <div class="hidden sm:block space-y-4">
+                <DeliveryItemRow
+                  v-for="item in completedDeliveryItems"
+                  :key="item.tempId"
+                  :item="item"
+                  :index="deliveryItems.indexOf(item)"
+                  :items="items"
+                  :used-items="usedItemIds"
+                  @update="updateDeliveryItem"
+                  @remove="removeDeliveryItem"
+                  @create-new-item="handleCreateNewItem"
+                />
+              </div>
             </div>
 
             <!-- Removed detailed delivery totals - now shown in header -->
@@ -298,7 +405,7 @@
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import {
-  X, ArrowLeft, ArrowRight, CheckCircle, Loader2, Plus
+  X, ArrowLeft, ArrowRight, CheckCircle, Loader2, Plus, ChevronDown, Trash2
 } from 'lucide-vue-next';
 import { useI18n } from '../../composables/useI18n';
 import { useToast } from '../../composables/useToast';
@@ -387,6 +494,34 @@ const deliveryItems = ref<DeliveryItemForm[]>([]);
 const originalDeliveryItems = ref<DeliveryItemForm[]>([]); // Track original items for comparison
 const newItemForm = ref<DeliveryItemForm | null>(null);
 const newItemRowRef = ref();
+
+// Mobile collapsible items state
+const expandedItems = ref<Set<string>>(new Set());
+
+const allItemsExpanded = computed(() => {
+  if (completedDeliveryItems.value.length === 0) return false;
+  return completedDeliveryItems.value.every(item => expandedItems.value.has(item.tempId));
+});
+
+const toggleItemExpanded = (tempId: string) => {
+  if (expandedItems.value.has(tempId)) {
+    expandedItems.value.delete(tempId);
+  } else {
+    expandedItems.value.add(tempId);
+  }
+  // Trigger reactivity
+  expandedItems.value = new Set(expandedItems.value);
+};
+
+const toggleAllItemsExpanded = () => {
+  if (allItemsExpanded.value) {
+    // Collapse all
+    expandedItems.value = new Set();
+  } else {
+    // Expand all
+    expandedItems.value = new Set(completedDeliveryItems.value.map(item => item.tempId));
+  }
+};
 
 // Computed properties
 const itemsTotal = computed(() => {
