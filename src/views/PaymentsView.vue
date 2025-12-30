@@ -8,24 +8,15 @@
         </p>
       </div>
       <div class="hidden md:flex items-center space-x-3">
-        <button
-          @click="showDuePaymentsModal = true"
-          v-if="hasOutstandingPayments"
-          class="btn-outline flex items-center"
-        >
+        <button @click="showDuePaymentsModal = true" v-if="hasOutstandingPayments"
+          class="btn-outline flex items-center">
           <AlertCircle class="mr-2 h-4 w-4 text-orange-500" />
           {{ t('payments.viewDuePayments') }}
         </button>
-        <button
-          @click="handleAddPayment"
-          :disabled="!canCreatePayment"
-          :class="[
-            canCreatePayment ? 'btn-primary' : 'btn-disabled',
-            'flex items-center'
-          ]"
-          :title="!canCreatePayment ? t('subscription.banner.freeTierLimitReached') : ''"
-          data-keyboard-shortcut="n"
-        >
+        <button @click="handleAddPayment" :disabled="!canCreatePayment" :class="[
+          canCreatePayment ? 'btn-primary' : 'btn-disabled',
+          'flex items-center'
+        ]" :title="!canCreatePayment ? t('subscription.banner.freeTierLimitReached') : ''" data-keyboard-shortcut="n">
           <Plus class="mr-2 h-4 w-4" />
           {{ t('payments.recordPayment') }}
         </button>
@@ -33,30 +24,25 @@
 
       <!-- Mobile Menu -->
       <div class="md:hidden relative header-mobile-menu">
-        <button @click="showHeaderMobileMenu = !showHeaderMobileMenu" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        <button @click="showHeaderMobileMenu = !showHeaderMobileMenu"
+          class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
           <MoreVertical class="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
 
         <!-- Mobile Dropdown Menu -->
-        <div v-if="showHeaderMobileMenu" class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+        <div v-if="showHeaderMobileMenu"
+          class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
           <div class="py-1">
-            <button
-              v-if="hasOutstandingPayments"
-              @click="handleHeaderMobileAction('viewDuePayments')"
-              class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
+            <button v-if="hasOutstandingPayments" @click="handleHeaderMobileAction('viewDuePayments')"
+              class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
               <AlertCircle class="mr-3 h-5 w-5 text-orange-500" />
               {{ t('payments.viewDuePayments') }}
             </button>
-            <button
-              @click="handleHeaderMobileAction('recordPayment')"
-              :disabled="!canCreatePayment"
-              :class="[
-                canCreatePayment
-                  ? 'flex items-center w-full px-4 py-3 text-sm text-white bg-blue-600 hover:bg-blue-700'
-                  : 'flex items-center w-full px-4 py-3 text-sm text-gray-400 bg-gray-100 dark:bg-gray-700 cursor-not-allowed'
-              ]"
-            >
+            <button @click="handleHeaderMobileAction('recordPayment')" :disabled="!canCreatePayment" :class="[
+              canCreatePayment
+                ? 'flex items-center w-full px-4 py-3 text-sm text-white bg-blue-600 hover:bg-blue-700'
+                : 'flex items-center w-full px-4 py-3 text-sm text-gray-400 bg-gray-100 dark:bg-gray-700 cursor-not-allowed'
+            ]">
               <Plus class="mr-3 h-5 w-5" :class="canCreatePayment ? 'text-white' : 'text-gray-400'" />
               {{ t('payments.recordPayment') }}
             </button>
@@ -70,15 +56,12 @@
       <!-- Desktop: side-by-side layout -->
       <div class="hidden md:flex items-center gap-6">
         <div class="w-96">
-          <SearchBox
-            v-model="searchQuery"
-            :placeholder="t('search.payments')"
-            :search-loading="searchLoading"
-          />
+          <SearchBox v-model="searchQuery" :placeholder="t('search.payments')" :search-loading="searchLoading" />
         </div>
-        
+
         <!-- Desktop Search Results Summary -->
-        <div v-if="searchQuery.trim() && !searchLoading" class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+        <div v-if="searchQuery.trim() && !searchLoading"
+          class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
           <div class="flex items-center gap-1">
             <span class="font-medium text-gray-900 dark:text-white">{{ searchResultsCount }}</span>
             <span>{{ searchResultsCount === 1 ? t('payments.result') : t('payments.results') }}</span>
@@ -90,17 +73,14 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Mobile: stacked layout -->
       <div class="md:hidden">
-        <SearchBox
-          v-model="searchQuery"
-          :placeholder="t('search.payments')"
-          :search-loading="searchLoading"
-        />
-        
+        <SearchBox v-model="searchQuery" :placeholder="t('search.payments')" :search-loading="searchLoading" />
+
         <!-- Mobile Search Results Summary -->
-        <div v-if="searchQuery.trim() && !searchLoading" class="mt-3 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+        <div v-if="searchQuery.trim() && !searchLoading"
+          class="mt-3 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
           <div class="flex items-center gap-1">
             <span class="font-medium text-gray-900 dark:text-white">{{ searchResultsCount }}</span>
             <span>{{ searchResultsCount === 1 ? t('payments.result') : t('payments.results') }}</span>
@@ -120,53 +100,59 @@
         <!-- Desktop Headers -->
         <thead class="bg-gray-50 dark:bg-gray-700 hidden lg:table-header-group">
           <tr>
-            <th
-              @click="handleSort('vendor')"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-            >
+            <th @click="handleSort('vendor')"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
               <div class="flex items-center space-x-1">
                 <span>{{ t('common.vendor') }}</span>
-                <component :is="getSortIcon('vendor')" class="h-4 w-4" :class="sortField === 'vendor' ? 'text-primary-600 dark:text-primary-400' : ''" />
+                <component :is="getSortIcon('vendor')" class="h-4 w-4"
+                  :class="sortField === 'vendor' ? 'text-primary-600 dark:text-primary-400' : ''" />
               </div>
             </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.account') }}</th>
             <th
-              @click="handleSort('amount')"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-            >
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              {{ t('common.account') }}</th>
+            <th @click="handleSort('amount')"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
               <div class="flex items-center space-x-1">
                 <span>{{ t('common.amount') }}</span>
-                <component :is="getSortIcon('amount')" class="h-4 w-4" :class="sortField === 'amount' ? 'text-primary-600 dark:text-primary-400' : ''" />
+                <component :is="getSortIcon('amount')" class="h-4 w-4"
+                  :class="sortField === 'amount' ? 'text-primary-600 dark:text-primary-400' : ''" />
+              </div>
+            </th>
+            <th @click="handleSort('date')"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+              <div class="flex items-center space-x-1">
+                <span>{{ t('common.date') }}</span>
+                <component :is="getSortIcon('date')" class="h-4 w-4"
+                  :class="sortField === 'date' ? 'text-primary-600 dark:text-primary-400' : ''" />
               </div>
             </th>
             <th
-              @click="handleSort('date')"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-            >
-              <div class="flex items-center space-x-1">
-                <span>{{ t('common.date') }}</span>
-                <component :is="getSortIcon('date')" class="h-4 w-4" :class="sortField === 'date' ? 'text-primary-600 dark:text-primary-400' : ''" />
-              </div>
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.reference') }}</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.actions') }}</th>
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              {{ t('common.reference') }}</th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              {{ t('common.actions') }}</th>
           </tr>
         </thead>
-        
+
         <!-- Mobile Headers -->
         <thead class="bg-gray-50 dark:bg-gray-700 lg:hidden">
           <tr>
-            <th
-              @click="handleSort('vendor')"
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-            >
+            <th @click="handleSort('vendor')"
+              class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
               <div class="flex items-center space-x-1">
                 <span>{{ t('common.vendor') }}</span>
-                <component :is="getSortIcon('vendor')" class="h-3 w-3" :class="sortField === 'vendor' ? 'text-primary-600 dark:text-primary-400' : ''" />
+                <component :is="getSortIcon('vendor')" class="h-3 w-3"
+                  :class="sortField === 'vendor' ? 'text-primary-600 dark:text-primary-400' : ''" />
               </div>
             </th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.account') }}</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.actions') }}</th>
+            <th
+              class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              {{ t('common.account') }}</th>
+            <th
+              class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              {{ t('common.actions') }}</th>
           </tr>
         </thead>
         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -186,22 +172,28 @@
               <div class="space-y-1">
                 <!-- Account (only show if payment has an account) -->
                 <div v-if="payment.expand?.account" class="flex items-center">
-                  <component :is="getAccountIcon(payment.expand.account.type)" class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  <component :is="getAccountIcon(payment.expand.account.type)"
+                    class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
                   <div class="text-sm text-gray-900 dark:text-white">{{ payment.expand.account.name }}</div>
                 </div>
                 <!-- Credit Notes -->
                 <div v-if="payment.credit_notes && payment.credit_notes.length > 0" class="flex items-center">
-                  <svg class="mr-2 h-4 w-4 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  <svg class="mr-2 h-4 w-4 text-green-500 dark:text-green-400" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
                   <div class="text-xs text-green-600 dark:text-green-400">
                     {{ payment.credit_notes.length }} Credit Note{{ payment.credit_notes.length > 1 ? 's' : '' }}
                   </div>
                 </div>
                 <!-- Show "Credit Note Only" when no account is used -->
-                <div v-if="!payment.expand?.account && payment.credit_notes && payment.credit_notes.length > 0" class="flex items-center">
-                  <svg class="mr-2 h-4 w-4 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                <div v-if="!payment.expand?.account && payment.credit_notes && payment.credit_notes.length > 0"
+                  class="flex items-center">
+                  <svg class="mr-2 h-4 w-4 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
                   <div class="text-xs text-blue-600 dark:text-blue-400 italic">
                     Credit Note Only
@@ -213,34 +205,35 @@
               <div class="flex items-center">
                 <div class="text-sm font-medium text-gray-900 dark:text-white">₹{{ payment.amount.toFixed(2) }}</div>
                 <!-- Allocation Status Indicator -->
-                <div v-if="payment.expand?.payment_allocations && payment.expand.payment_allocations.length > 0" class="ml-2">
-                  <span 
-                    v-if="getAllocatedAmount(payment.expand.payment_allocations) === payment.amount"
+                <div v-if="payment.expand?.payment_allocations && payment.expand.payment_allocations.length > 0"
+                  class="ml-2">
+                  <span v-if="getAllocatedAmount(payment.expand.payment_allocations) === payment.amount"
                     class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                    :title="t('payments.fullyAllocated')"
-                  >
+                    :title="t('payments.fullyAllocated')">
                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                      <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clip-rule="evenodd" />
                     </svg>
                     Allocated
                   </span>
-                  <span 
-                    v-else-if="getAllocatedAmount(payment.expand.payment_allocations) > 0"
+                  <span v-else-if="getAllocatedAmount(payment.expand.payment_allocations) > 0"
                     class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                    :title="`${t('payments.partiallyAllocated')}: ₹${getUnallocatedAmount(payment, payment.expand.payment_allocations).toFixed(2)} remaining`"
-                  >
+                    :title="`${t('payments.partiallyAllocated')}: ₹${getUnallocatedAmount(payment, payment.expand.payment_allocations).toFixed(2)} remaining`">
                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                      <path fill-rule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clip-rule="evenodd" />
                     </svg>
                     Partial
                   </span>
-                  <span 
-                    v-else
+                  <span v-else
                     class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400"
-                    :title="t('payments.unallocated')"
-                  >
+                    :title="t('payments.unallocated')">
                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                      <path fill-rule="evenodd"
+                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                        clip-rule="evenodd" />
                     </svg>
                     Unallocated
                   </span>
@@ -256,37 +249,29 @@
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium hidden lg:table-cell">
               <!-- Desktop Action Buttons -->
               <div class="hidden lg:flex items-center space-x-2" @click.stop>
-                <button
-                  @click="viewPayment(payment)"
+                <button @click="viewPayment(payment)"
                   class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-                  :title="t('common.view')"
-                >
+                  :title="t('common.view')">
                   <Eye class="h-4 w-4" />
                 </button>
-                <button
-                  v-if="canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])"
+                <button v-if="canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])"
                   @click="startEditPayment(payment)"
                   class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-                  :title="t('common.edit')"
-                >
+                  :title="t('common.edit')">
                   <Edit2 class="h-4 w-4" />
                 </button>
-                <button
-                  v-if="canPaymentBeDeleted(payment, payment.expand?.payment_allocations || [])"
+                <button v-if="canPaymentBeDeleted(payment, payment.expand?.payment_allocations || [])"
                   @click="deletePayment(payment)"
                   class="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-                  :title="t('common.deleteAction')"
-                >
+                  :title="t('common.deleteAction')">
                   <Trash2 class="h-4 w-4" />
                 </button>
               </div>
 
               <!-- Mobile Dropdown Menu -->
               <div class="lg:hidden">
-                <CardDropdownMenu
-                  :actions="getPaymentActions(payment)"
-                  @action="handlePaymentAction(payment, $event)"
-                />
+                <CardDropdownMenu :actions="getPaymentActions(payment)"
+                  @action="handlePaymentAction(payment, $event)" />
               </div>
             </td>
 
@@ -307,45 +292,47 @@
             <td class="px-4 py-4 lg:hidden">
               <div class="text-right">
                 <div class="flex items-center justify-end">
-                  <div class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{ payment.amount.toFixed(2) }}</div>
+                  <div class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{ payment.amount.toFixed(2) }}
+                  </div>
                   <!-- Mobile Allocation Status Indicator -->
-                  <div v-if="payment.expand?.payment_allocations && payment.expand.payment_allocations.length > 0" class="ml-2">
-                    <span 
-                      v-if="getAllocatedAmount(payment.expand.payment_allocations) === payment.amount"
+                  <div v-if="payment.expand?.payment_allocations && payment.expand.payment_allocations.length > 0"
+                    class="ml-2">
+                    <span v-if="getAllocatedAmount(payment.expand.payment_allocations) === payment.amount"
                       class="inline-flex w-2 h-2 bg-green-500 rounded-full"
-                      :title="t('payments.fullyAllocated')"
-                    ></span>
-                    <span 
-                      v-else-if="getAllocatedAmount(payment.expand.payment_allocations) > 0"
+                      :title="t('payments.fullyAllocated')"></span>
+                    <span v-else-if="getAllocatedAmount(payment.expand.payment_allocations) > 0"
                       class="inline-flex w-2 h-2 bg-yellow-500 rounded-full"
-                      :title="t('payments.partiallyAllocated')"
-                    ></span>
-                    <span 
-                      v-else
-                      class="inline-flex w-2 h-2 bg-orange-500 rounded-full"
-                      :title="t('payments.unallocated')"
-                    ></span>
+                      :title="t('payments.partiallyAllocated')"></span>
+                    <span v-else class="inline-flex w-2 h-2 bg-orange-500 rounded-full"
+                      :title="t('payments.unallocated')"></span>
                   </div>
                 </div>
                 <div class="space-y-1 mt-1">
                   <!-- Account (only show if payment has an account) -->
                   <div v-if="payment.expand?.account" class="flex items-center justify-end">
-                    <component :is="getAccountIcon(payment.expand.account.type)" class="mr-1 h-3 w-3 text-gray-500 dark:text-gray-400" />
+                    <component :is="getAccountIcon(payment.expand.account.type)"
+                      class="mr-1 h-3 w-3 text-gray-500 dark:text-gray-400" />
                     <div class="text-xs text-gray-500 dark:text-gray-400">{{ payment.expand.account.name }}</div>
                   </div>
                   <!-- Credit Notes -->
-                  <div v-if="payment.credit_notes && payment.credit_notes.length > 0" class="flex items-center justify-end">
-                    <svg class="mr-1 h-3 w-3 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  <div v-if="payment.credit_notes && payment.credit_notes.length > 0"
+                    class="flex items-center justify-end">
+                    <svg class="mr-1 h-3 w-3 text-green-500 dark:text-green-400" fill="none" stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     <div class="text-xs text-green-600 dark:text-green-400">
                       {{ payment.credit_notes.length }} Credit Note{{ payment.credit_notes.length > 1 ? 's' : '' }}
                     </div>
                   </div>
                   <!-- Show "Credit Note Only" when no account is used -->
-                  <div v-if="!payment.expand?.account && payment.credit_notes && payment.credit_notes.length > 0" class="flex items-center justify-end">
-                    <svg class="mr-1 h-3 w-3 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  <div v-if="!payment.expand?.account && payment.credit_notes && payment.credit_notes.length > 0"
+                    class="flex items-center justify-end">
+                    <svg class="mr-1 h-3 w-3 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     <div class="text-xs text-blue-600 dark:text-blue-400 italic">
                       Credit Note Only
@@ -356,52 +343,40 @@
             </td>
             <td class="px-4 py-4 lg:hidden">
               <div class="relative flex items-center justify-end">
-                <button 
-                  @click="toggleMobileMenu(payment.id!)"
+                <button @click="toggleMobileMenu(payment.id!)"
                   class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-                  :title="t('common.actions')"
-                >
+                  :title="t('common.actions')">
                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                    <path
+                      d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                   </svg>
                 </button>
-                
+
                 <!-- Mobile Actions Menu -->
-                <Transition
-                  enter-active-class="transition duration-200 ease-out"
-                  enter-from-class="transform scale-95 opacity-0"
-                  enter-to-class="transform scale-100 opacity-100"
+                <Transition enter-active-class="transition duration-200 ease-out"
+                  enter-from-class="transform scale-95 opacity-0" enter-to-class="transform scale-100 opacity-100"
                   leave-active-class="transition duration-150 ease-in"
-                  leave-from-class="transform scale-100 opacity-100"
-                  leave-to-class="transform scale-95 opacity-0"
-                >
-                  <div 
-                    v-if="openMobileMenuId === payment.id"
+                  leave-from-class="transform scale-100 opacity-100" leave-to-class="transform scale-95 opacity-0">
+                  <div v-if="openMobileMenuId === payment.id"
                     class="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-20 min-w-[120px] origin-top-right"
-                    @click.stop
-                  >
-                    <button 
-                      @click="viewPayment(payment); closeMobileMenu()"
-                      class="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
-                    >
+                    @click.stop>
+                    <button @click="viewPayment(payment); closeMobileMenu()"
+                      class="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150">
                       <Eye class="h-4 w-4 mr-2" />
                       {{ t('common.view') }}
                     </button>
-                    <button 
-                      v-if="canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])"
+                    <button v-if="canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])"
                       @click="startEditPayment(payment); closeMobileMenu()"
-                      class="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
-                    >
+                      class="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150">
                       <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                       {{ t('common.edit') }}
                     </button>
-                    <button 
-                      v-if="canPaymentBeDeleted(payment, payment.expand?.payment_allocations || [])"
+                    <button v-if="canPaymentBeDeleted(payment, payment.expand?.payment_allocations || [])"
                       @click="deletePayment(payment); closeMobileMenu()"
-                      class="w-full flex items-center px-3 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
-                    >
+                      class="w-full flex items-center px-3 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150">
                       <Trash2 class="h-4 w-4 mr-2" />
                       {{ t('common.deleteAction') }}
                     </button>
@@ -412,7 +387,7 @@
           </tr>
         </tbody>
       </table>
-      
+
       <div v-if="payments.length === 0" class="text-center py-12">
         <CreditCard class="mx-auto h-12 w-12 text-gray-400" />
         <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No payments recorded</h3>
@@ -421,44 +396,33 @@
     </div>
 
     <!-- Due Payments Modal -->
-    <DuePaymentsModal
-      :is-visible="showDuePaymentsModal"
-      :vendors="vendors"
-      :deliveries="deliveries"
-      :service-bookings="serviceBookings"
-      :payments="payments"
-      @close="showDuePaymentsModal = false"
-      @pay-vendor="handleDuePaymentVendorClick"
-    />
+    <DuePaymentsModal :is-visible="showDuePaymentsModal" :vendors="vendors" :deliveries="deliveries"
+      :service-bookings="serviceBookings" :payments="payments" @close="showDuePaymentsModal = false"
+      @pay-vendor="handleDuePaymentVendorClick" />
 
     <!-- Unified Payment Modal -->
-    <PaymentModal
-      :is-visible="showPaymentModal"
-      :mode="paymentModalMode"
-      :payment="currentPayment"
-      :current-allocations="currentAllocations"
-      :vendors="vendors"
-      :accounts="accounts"
-      :deliveries="deliveries"
-      :service-bookings="serviceBookings"
-      :payments="payments"
-      :vendor-id="vendorIdForPayNow"
-      :outstanding-amount="outstandingAmountForPayNow"
-      @submit="handlePaymentModalSubmit"
-      @close="handlePaymentModalClose"
-    />
+    <PaymentModal :is-visible="showPaymentModal" :mode="paymentModalMode" :payment="currentPayment"
+      :current-allocations="currentAllocations" :vendors="vendors" :accounts="accounts" :deliveries="deliveries"
+      :service-bookings="serviceBookings" :payments="payments" :vendor-id="vendorIdForPayNow"
+      :outstanding-amount="outstandingAmountForPayNow" @submit="handlePaymentModalSubmit"
+      @close="handlePaymentModalClose" />
 
     <!-- View Payment Modal -->
-    <div v-if="viewingPayment" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="viewingPayment = null; closeModalState('payments-view-modal')" @keydown.esc="viewingPayment = null; closeModalState('payments-view-modal')" tabindex="-1">
-      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-20 lg:mb-4" @click.stop>
+    <div v-if="viewingPayment" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]"
+      @click="viewingPayment = null; closeModalState('payments-view-modal')"
+      @keydown.esc="viewingPayment = null; closeModalState('payments-view-modal')" tabindex="-1">
+      <div
+        class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-20 lg:mb-4"
+        @click.stop>
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Payment Details</h3>
-          
+
           <div class="space-y-4">
             <div>
               <span class="font-medium text-gray-700 dark:text-gray-300">Vendor:</span>
               <div class="ml-2 inline-block">
-                <span class="text-gray-900 dark:text-white">{{ viewingPayment.expand?.vendor?.contact_person || 'Unknown Vendor' }}</span>
+                <span class="text-gray-900 dark:text-white">{{ viewingPayment.expand?.vendor?.contact_person ||
+                  'UnknownVendor' }}</span>
                 <div v-if="viewingPayment.expand?.vendor?.name" class="text-xs text-gray-500 dark:text-gray-400">
                   {{ viewingPayment.expand.vendor.name }}
                 </div>
@@ -467,8 +431,10 @@
             <div>
               <span class="font-medium text-gray-700 dark:text-gray-300">Account:</span>
               <div class="ml-2 flex items-center">
-                <component :is="getAccountIcon(viewingPayment.expand?.account?.type)" class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <span class="text-gray-900 dark:text-white">{{ viewingPayment.expand?.account?.name || 'Unknown Account' }}</span>
+                <component :is="getAccountIcon(viewingPayment.expand?.account?.type)"
+                  class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <span class="text-gray-900 dark:text-white">{{ viewingPayment.expand?.account?.name || 'Unknown Account'
+                }}</span>
               </div>
             </div>
             <div>
@@ -487,16 +453,13 @@
               <span class="font-medium text-gray-700 dark:text-gray-300">Notes:</span>
               <p class="ml-2 text-gray-600 dark:text-gray-400">{{ viewingPayment.notes }}</p>
             </div>
-            
+
             <!-- Credit Notes Used -->
             <div v-if="viewingPayment.credit_notes && viewingPayment.credit_notes.length > 0">
               <span class="font-medium text-gray-700 dark:text-gray-300">Credit Notes Used:</span>
               <div class="ml-2 mt-2 space-y-2">
-                <div 
-                  v-for="creditNoteId in viewingPayment.credit_notes" 
-                  :key="creditNoteId"
-                  class="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800"
-                >
+                <div v-for="creditNoteId in viewingPayment.credit_notes" :key="creditNoteId"
+                  class="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
                   <div>
                     <p class="text-sm font-medium text-green-800 dark:text-green-300">
                       {{ getCreditNoteDisplay(creditNoteId) }}
@@ -511,9 +474,9 @@
                 </div>
               </div>
             </div>
-            
+
           </div>
-          
+
           <!-- Payment Allocations -->
           <div v-if="viewingPaymentAllocations.length > 0" class="mt-6">
             <h4 class="text-md font-medium text-gray-900 dark:text-white mb-3">{{ t('payments.paidFor') }}</h4>
@@ -524,17 +487,25 @@
               <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
                 <thead class="bg-gray-100 dark:bg-gray-600">
                   <tr>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{{ t('common.type') }}</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{{ t('common.date') }}</th>
-                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{{ t('common.amount') }}</th>
+                    <th
+                      class="px-4 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      {{ t('common.type') }}</th>
+                    <th
+                      class="px-4 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      {{ t('common.date') }}</th>
+                    <th
+                      class="px-4 py-2 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      {{ t('common.amount') }}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
-                  <tr v-for="allocation in viewingPaymentAllocations" :key="allocation.id" class="hover:bg-gray-50 dark:hover:bg-gray-600">
+                  <tr v-for="allocation in viewingPaymentAllocations" :key="allocation.id"
+                    class="hover:bg-gray-50 dark:hover:bg-gray-600">
                     <td class="px-4 py-3 text-sm">
                       <div v-if="allocation.delivery" class="text-gray-900 dark:text-white">
                         <div class="font-medium">{{ t('common.delivery') }}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(allocation.expand?.delivery?.delivery_date || '') }}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">{{
+                          formatDate(allocation.expand?.delivery?.delivery_date || '') }}</div>
                       </div>
                       <div v-else-if="allocation.service_booking" class="text-gray-900 dark:text-white">
                         <div class="font-medium">{{ t('common.serviceBooking') }}</div>
@@ -544,7 +515,8 @@
                       </div>
                     </td>
                     <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                      {{ allocation.delivery ? formatDate(allocation.expand?.delivery?.delivery_date || '') : formatDate(allocation.expand?.service_booking?.start_date || '') }}
+                      {{ allocation.delivery ? formatDate(allocation.expand?.delivery?.delivery_date || '') :
+                        formatDate(allocation.expand?.service_booking?.start_date || '') }}
                     </td>
                     <td class="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
                       ₹{{ allocation.allocated_amount.toFixed(2) }}
@@ -554,20 +526,14 @@
               </table>
             </div>
           </div>
-          
+
           <div class="mt-6 flex space-x-3">
-            <button 
-              v-if="viewingPayment && canPaymentBeEdited(viewingPayment, viewingPaymentAllocations)" 
-              @click="startEditPayment(viewingPayment)" 
-              class="flex-1 btn-primary"
-            >
+            <button v-if="viewingPayment && canPaymentBeEdited(viewingPayment, viewingPaymentAllocations)"
+              @click="startEditPayment(viewingPayment)" class="flex-1 btn-primary">
               {{ t('common.edit') }}
             </button>
-            <button 
-              v-if="viewingPayment && canPaymentBeDeleted(viewingPayment, viewingPaymentAllocations)" 
-              @click="deletePayment(viewingPayment)" 
-              class="flex-1 btn-danger"
-            >
+            <button v-if="viewingPayment && canPaymentBeDeleted(viewingPayment, viewingPaymentAllocations)"
+              @click="deletePayment(viewingPayment)" class="flex-1 btn-danger">
               {{ t('common.deleteAction') }}
             </button>
             <button @click="viewingPayment = null; closeModalState('payments-view-modal')" :class="[
@@ -600,7 +566,7 @@ import {
   Building2,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
   AlertCircle,
   MoreVertical
 } from 'lucide-vue-next';
@@ -743,7 +709,7 @@ const searchResultsCount = computed(() => {
 
 const searchResultsTotal = computed(() => {
   if (!searchQuery.value.trim() || payments.value.length === 0) return 0;
-  
+
   return payments.value.reduce((total, payment) => {
     return total + (payment.amount || 0);
   }, 0);
@@ -778,16 +744,16 @@ const vendorsWithOutstanding = computed(() => {
       serviceBookings.value,
       payments.value
     );
-    
+
     // Calculate pending items based on outstanding amounts
     const vendorDeliveries = deliveries.value.filter(delivery => delivery.vendor === vendor.id);
     const vendorBookings = serviceBookings.value.filter(booking => booking.vendor === vendor.id);
-    
+
     // Count items with outstanding amounts (items that have work done but not fully paid)
     const pendingDeliveries = vendorDeliveries.filter(d => d.total_amount > 0).length;
     const pendingBookings = vendorBookings.filter(b => (b.percent_completed || 0) > 0).length;
     const pendingItems = pendingDeliveries + pendingBookings;
-    
+
     return {
       ...vendor,
       outstandingAmount,
@@ -905,18 +871,18 @@ const viewPayment = async (payment: Payment) => {
     try {
       // Check if we're already loading allocations for this payment
       let allocationsPromise = allocationLoadingPromises.value.get(payment.id);
-      
+
       if (!allocationsPromise) {
         // Create new promise and cache it
         allocationsPromise = paymentAllocationService.getByPayment(payment.id);
         allocationLoadingPromises.value.set(payment.id, allocationsPromise);
-        
+
         // Clean up promise after completion
         allocationsPromise.finally(() => {
           allocationLoadingPromises.value.delete(payment.id!);
         });
       }
-      
+
       const allocations = await allocationsPromise;
       viewingPaymentAllocations.value = allocations;
     } catch (err) {
@@ -937,7 +903,7 @@ const startEditPayment = async (payment: Payment) => {
   } else {
     // Fallback to reusing allocations from viewPayment if called from view modal
     allocations = viewingPaymentAllocations.value.length > 0 ? viewingPaymentAllocations.value : [];
-    
+
     // If no allocations available, load them
     if (allocations.length === 0 && payment.id) {
       try {
@@ -948,14 +914,14 @@ const startEditPayment = async (payment: Payment) => {
       }
     }
   }
-  
+
   // Set up unified modal for editing
   paymentModalMode.value = 'EDIT';
   currentPayment.value = payment;
   currentAllocations.value = allocations;
   vendorIdForPayNow.value = '';
   outstandingAmountForPayNow.value = 0;
-  
+
   // Close view modal and open edit modal
   closeModalState('payments-view-modal');
   viewingPayment.value = null;
@@ -965,21 +931,21 @@ const startEditPayment = async (payment: Payment) => {
 
 const deletePayment = async (payment: Payment) => {
   if (!payment.id) return;
-  
+
   const confirmed = confirm(`Are you sure you want to delete the payment of ₹${payment.amount.toFixed(2)} to ${payment.expand?.vendor?.name || 'Unknown Vendor'}? This action cannot be undone.`);
-  
+
   if (!confirmed) return;
-  
+
   try {
     await paymentService.delete(payment.id);
     success(t('messages.deleteSuccess', { item: t('common.payment') }));
-    
+
     // Close view modal if it's open for this payment
     if (viewingPayment.value?.id === payment.id) {
       closeModalState('payments-view-modal');
       viewingPayment.value = null;
     }
-    
+
     // Reload data
     await reloadAllData();
   } catch (err: any) {
@@ -1027,7 +993,7 @@ const closeMobileMenu = () => {
 
 const handlePaymentModalSubmit = async (data: any) => {
   const { mode, form, payment } = data;
-  
+
   // Prepare payment data outside try block for error handling access
   const paymentData = mode === 'CREATE' || mode === 'PAY_NOW' ? {
     vendor: form.vendor,
@@ -1049,12 +1015,12 @@ const handlePaymentModalSubmit = async (data: any) => {
   if (paymentData) {
     const totalCreditNoteAmount = Object.values(form.credit_note_allocations || {})
       .reduce((sum: number, allocation: any) => sum + (allocation?.amount || 0), 0);
-    
+
     if (totalCreditNoteAmount >= form.amount) {
       delete paymentData.account; // Remove account when fully covered by credit notes
     }
   }
-  
+
   try {
     if (mode === 'CREATE' || mode === 'PAY_NOW') {
       await paymentService.create(paymentData!);
@@ -1078,13 +1044,13 @@ const handlePaymentModalSubmit = async (data: any) => {
       await paymentService.updateAllocations(payment.id!, allDeliveryIds, allServiceBookingIds);
       success(t('messages.updateSuccess', { item: t('common.payment') }));
     }
-    
+
     // Reload data and close modal
     await reloadAllData();
     showPaymentModal.value = false;
   } catch (err: any) {
     console.error('Error saving payment:', err);
-    
+
     // Check if this is a credit note balance change error
     if (err.message === 'CREDIT_NOTE_BALANCE_CHANGED' && err.details) {
       const details = err.details;
@@ -1097,18 +1063,18 @@ const handlePaymentModalSubmit = async (data: any) => {
         `• Increased account payment: ₹${(details.requestedAmount - details.availableAmount).toFixed(2)}\n\n` +
         `Click OK to proceed with adjusted amounts, or Cancel to go back and review.`
       );
-      
+
       if (shouldProceed) {
         // Retry payment creation with balance adjustment allowed
         const adjustedPaymentData = {
           ...paymentData,
           allowBalanceAdjustment: true
         };
-        
+
         try {
           await paymentService.create(adjustedPaymentData);
           success(t('messages.createSuccess', { item: t('common.payment') }));
-          
+
           // Reload data and close modal
           await reloadAllData();
           showPaymentModal.value = false;
@@ -1127,9 +1093,9 @@ const handlePaymentModalSubmit = async (data: any) => {
         '• Use all available credit notes completely before paying from account, or\n' +
         '• Remove unused credit notes from this payment'
       );
-    } else if (err.message && (err.message.includes('not available for this amount') || 
-                        err.message.includes('balance changed during processing') ||
-                        err.message.includes('Insufficient credit balance'))) {
+    } else if (err.message && (err.message.includes('not available for this amount') ||
+      err.message.includes('balance changed during processing') ||
+      err.message.includes('Insufficient credit balance'))) {
       // Other credit note balance issues - provide helpful error message
       error(
         'Credit note information has changed since the modal was opened. ' +
@@ -1244,7 +1210,7 @@ onMounted(async () => {
       }
     }, 500);
   }
-  
+
   // Register keyboard shortcuts
   registerShortcuts();
 });

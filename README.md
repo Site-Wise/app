@@ -7,7 +7,7 @@
   
   *Streamline your construction projects with intelligent site management, real-time collaboration, and comprehensive financial tracking.*
   
-  [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
+  [![O'Saasy License](https://img.shields.io/badge/License-O'Saasy-green.svg)](https://osaasy.dev/)
   [![CI](https://github.com/site-wise/app/workflows/CI/badge.svg)](https://github.com/site-wise/app/actions/workflows/ci.yml)
   [![Security](https://github.com/site-wise/app/workflows/Security/badge.svg)](https://github.com/site-wise/app/actions/workflows/security.yml)
   [![codecov](https://codecov.io/gh/site-wise/app/graph/badge.svg?token=4H3X8FWNTV)](https://codecov.io/gh/site-wise/app)
@@ -430,10 +430,10 @@ See our [Support Guide](SUPPORT.md) for more detailed information.
 
 ## 📄 **License**
 
-SiteWise is proudly open source and available under the [MIT License](LICENSE).
+SiteWise is proudly open source and available under the [O'Saasy License](LICENSE).
 
 ```
-MIT License - see the LICENSE file for details.
+O'Saasy License - see the LICENSE file for details.
 Copyright (c) 2025 SiteWise
 ```
 

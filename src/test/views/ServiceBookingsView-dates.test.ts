@@ -299,12 +299,12 @@ describe('ServiceBookingsView - Date Handling', () => {
     })
 
     it('should update rate when service is selected', async () => {
-      // Select a service
-      wrapper.vm.form.service = 'service-1'
-      
-      // Call updateRateFromService
-      wrapper.vm.updateRateFromService()
+      // Simulate service selection with handleServiceSelected
+      const mockService = { id: 'service-1', name: 'Test Service', standard_rate: 100 }
+      wrapper.vm.handleServiceSelected(mockService)
+      await nextTick()
 
+      expect(wrapper.vm.form.service).toBe('service-1')
       expect(wrapper.vm.form.unit_rate).toBe(100) // standard_rate from mockServices
     })
 

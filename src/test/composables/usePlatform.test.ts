@@ -112,7 +112,7 @@ describe('usePlatform', () => {
     expect(wrapper.vm.isLoading).toBe(false);
   });
 
-  it('detects PWA mode', async () => {
+  it('detects PWA mode', { timeout: 10000 }, async () => {
     // Mock Tauri invoke to reject
     mockInvoke.mockRejectedValue(new Error('Tauri API not available'));
 

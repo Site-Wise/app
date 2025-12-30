@@ -559,7 +559,7 @@ import { useModalState } from '../composables/useModalState';
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
-const { success, error } = useToast();
+const { success, error, info: showInfoToast } = useToast();
 const { canDelete } = usePermissions();
 const { openModal, closeModal } = useModalState();
 
@@ -895,11 +895,9 @@ const showReturnDetails = (deliveryItemId: string) => {
   const info = returnInfo.value[deliveryItemId];
   if (!info || info.returns.length === 0) return;
   
-  const returnsList = info.returns.map(ret => 
-    `• ${ret.quantityReturned} units on ${new Date(ret.returnDate).toLocaleDateString()} (${ret.status}) - ${ret.reason}`
-  ).join('\n');
-  
-  alert(`Return Details:\n\n${returnsList}`);
+  const returnsSummary = `${info.returns.length} return(s): ${info.totalReturned} units returned`;
+
+  showInfoToast(returnsSummary, { duration: 6000 });
 };
 
 const deleteDelivery = async (delivery: Delivery) => {

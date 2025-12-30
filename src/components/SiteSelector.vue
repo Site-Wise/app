@@ -262,11 +262,13 @@ import { Building, ChevronDown, Check, Plus, Settings, Loader2, Save, Trash2 } f
 import { useSite } from '../composables/useSite';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
+import { useToast } from '../composables/useToast';
 import SiteDeleteModal from './SiteDeleteModal.vue';
 
 const { currentSite, userSites, selectSite: selectSiteAction, createSite, updateSite, isCurrentUserAdmin } = useSite();
 const { t } = useI18n();
 const { checkCreateLimit } = useSubscription();
+const { error: showError } = useToast();
 
 // Type for sites with additional ownership information
 interface SiteWithOwnership {
@@ -329,18 +331,18 @@ const selectSite = async (siteId: string) => {
 const handleCreateSite = async () => {
   // Double-check subscription limit
   if (!canCreateSite.value) {
-    alert(t('subscription.banner.freeTierLimitReached'));
+    showError(t('subscription.banner.freeTierLimitReached'));
     return;
   }
-  
+
   createLoading.value = true;
   try {
     await createSite(createForm);
     closeCreateModal();
     // Note: Removed custom event emission as watchers handle site changes
-  } catch (error) {
-    console.error('Error creating site:', error);
-    alert('Failed to create site. Please try again.');
+  } catch (err) {
+    console.error('Error creating site:', err);
+    showError('Failed to create site. Please try again.');
   } finally {
     createLoading.value = false;
   }
@@ -393,15 +395,15 @@ const closeManageModal = () => {
 
 const handleUpdateSite = async () => {
   if (!managingSite.value) return;
-  
+
   updateLoading.value = true;
   try {
     await updateSite(managingSite.value.id!, editForm);
     closeManageModal();
     // Note: Removed custom event emission as watchers handle site changes
-  } catch (error) {
-    console.error('Error updating site:', error);
-    alert('Failed to update site. Please try again.');
+  } catch (err) {
+    console.error('Error updating site:', err);
+    showError('Failed to update site. Please try again.');
   } finally {
     updateLoading.value = false;
   }

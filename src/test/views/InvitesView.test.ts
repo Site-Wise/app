@@ -148,6 +148,18 @@ vi.mock('../../services/pocketbase', () => ({
   })
 }))
 
+// Mock toast functions
+const mockShowSuccess = vi.fn()
+const mockShowError = vi.fn()
+vi.mock('../../composables/useToast', () => ({
+  useToast: () => ({
+    success: mockShowSuccess,
+    error: mockShowError,
+    warning: vi.fn(),
+    info: vi.fn()
+  })
+}))
+
 describe('InvitesView', () => {
   let wrapper: any
   let pinia: any
@@ -183,8 +195,11 @@ describe('InvitesView', () => {
     mockRejectInvitation.mockResolvedValue(true)
     
     // Mock window methods
-    window.alert = vi.fn()
     window.confirm = vi.fn(() => true)
+
+    // Clear toast mocks
+    mockShowSuccess.mockClear()
+    mockShowError.mockClear()
     
     wrapper = createWrapper()
   })
@@ -320,7 +335,7 @@ describe('InvitesView', () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       
-      expect(window.alert).toHaveBeenCalledWith('Invitation accepted successfully')
+      expect(mockShowSuccess).toHaveBeenCalledWith('Invitation accepted successfully')
     })
 
     it('should handle accept error gracefully', async () => {
@@ -333,7 +348,7 @@ describe('InvitesView', () => {
       await new Promise(resolve => setTimeout(resolve, 50))
       
       expect(consoleSpy).toHaveBeenCalledWith('Error accepting invitation:', expect.any(Error))
-      expect(window.alert).toHaveBeenCalledWith('Accept failed')
+      expect(mockShowError).toHaveBeenCalledWith('Accept failed')
       
       consoleSpy.mockRestore()
     })
@@ -358,7 +373,7 @@ describe('InvitesView', () => {
       await new Promise(resolve => setTimeout(resolve, 50))
       
       expect(mockRejectInvitation).toHaveBeenCalledWith('inv-1')
-      expect(window.alert).toHaveBeenCalledWith('Invitation declined')
+      expect(mockShowSuccess).toHaveBeenCalledWith('Invitation declined')
     })
 
     it('should not decline when user cancels confirmation', async () => {
@@ -396,7 +411,7 @@ describe('InvitesView', () => {
       await new Promise(resolve => setTimeout(resolve, 50))
       
       expect(consoleSpy).toHaveBeenCalledWith('Error declining invitation:', expect.any(Error))
-      expect(window.alert).toHaveBeenCalledWith('Failed to decline invitation')
+      expect(mockShowError).toHaveBeenCalledWith('Failed to decline invitation')
       
       consoleSpy.mockRestore()
     })
