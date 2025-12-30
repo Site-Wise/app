@@ -55,12 +55,12 @@
               <div class="flex justify-between items-center mb-2">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.outstanding') }}</span>
                 <span class="text-sm font-semibold text-red-600 dark:text-red-400">₹{{
-                  getVendorOutstanding(vendor.id!).toFixed(2) }}</span>
+                  getVendorOutstanding(vendor.id!).toFixed(0) }}</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.totalPaid') }}</span>
                 <span class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{
-                  getVendorPaid(vendor.id!).toFixed(2) }}</span>
+                  getVendorPaid(vendor.id!).toFixed(0) }}</span>
               </div>
             </div>
 
@@ -127,20 +127,20 @@
           <form @submit.prevent="saveVendor" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.contactPerson')
-              }}</label>
+                }}</label>
               <input ref="firstInputRef" v-model="form.contact_person" type="text" class="input mt-1"
                 :placeholder="t('forms.enterContactPerson')" autofocus />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.companyName')
-              }}</label>
+                }}</label>
               <input v-model="form.name" type="text" class="input mt-1" :placeholder="t('forms.enterCompanyName')" />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.paymentDetails')
-              }}</label>
+                }}</label>
               <textarea v-model="form.payment_details" class="input mt-1" rows="2"
                 :placeholder="t('forms.enterPaymentDetails')"></textarea>
             </div>
@@ -157,7 +157,7 @@
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.address')
-              }}</label>
+                }}</label>
               <textarea v-model="form.address" class="input mt-1" rows="2"
                 :placeholder="t('forms.enterAddress')"></textarea>
             </div>

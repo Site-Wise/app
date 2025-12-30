@@ -26,8 +26,7 @@
 
     <!-- Items Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6" data-tour="items-table">
-      <div v-for="item in items" :key="item.id"
-        class="card-interactive" @click="viewItemDetail(item.id!)">
+      <div v-for="item in items" :key="item.id" class="card-interactive" @click="viewItemDetail(item.id!)">
         <div class="flex items-start justify-between">
           <div class="flex-1">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ item.name }}</h3>
@@ -54,14 +53,14 @@
             <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div class="flex justify-between items-center mb-2">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.totalDelivered')
-                }}</span>
+                  }}</span>
                 <span class="text-sm font-semibold text-blue-600 dark:text-blue-400">{{
-                  getItemDeliveredQuantity(item.id!) }} {{ getUnitDisplay(item.unit) }}</span>
+                  getItemDeliveredQuantity(item.id!).toFixed(1) }} {{ getUnitDisplay(item.unit) }}</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.avgPrice') }}</span>
                 <span class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{
-                  getItemAveragePrice(item.id!).toFixed(2) }}</span>
+                  getItemAveragePrice(item.id!).toFixed(1) }}</span>
               </div>
             </div>
           </div>
@@ -131,7 +130,7 @@
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.description')
-              }}</label>
+                }}</label>
               <textarea v-model="form.description" class="input mt-1" rows="3"
                 :placeholder="t('forms.enterDescription')"></textarea>
             </div>

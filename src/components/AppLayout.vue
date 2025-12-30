@@ -1,7 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
-    <!-- PWA Prompts -->
-    <PWAPrompt />
+    <!-- PWA Prompts are now in App.vue for all users -->
 
     <!-- Sidebar -->
     <div
@@ -279,7 +278,6 @@ import { useInvitations } from '../composables/useInvitations';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { useOnboarding } from '../composables/useOnboarding';
 import ThemeToggle from './ThemeToggle.vue';
-import PWAPrompt from './PWAPrompt.vue';
 import SiteSelector from './SiteSelector.vue';
 import LanguageSelector from './LanguageSelector.vue';
 import KeyboardShortcutTooltip from './KeyboardShortcutTooltip.vue';
