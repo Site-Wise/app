@@ -752,6 +752,7 @@ const handleKeyboardShortcuts = (event: KeyboardEvent) => {
   // SHIFT + Right Arrow - Next step
   if (event.shiftKey && event.key === 'ArrowRight') {
     event.preventDefault();
+    event.stopPropagation();
     if (canProceedToNextStep.value && currentStep.value < steps.length - 1) {
       nextStep();
     }
@@ -761,32 +762,34 @@ const handleKeyboardShortcuts = (event: KeyboardEvent) => {
   // SHIFT + Left Arrow - Previous step
   if (event.shiftKey && event.key === 'ArrowLeft') {
     event.preventDefault();
+    event.stopPropagation();
     if (currentStep.value > 0) {
       previousStep();
     }
     return;
   }
 
-  // CTRL + ENTER - Add/Save item (only on Items step)
-  if (event.ctrlKey && event.key === 'Enter' && currentStep.value === 1) {
+  // CTRL + ENTER - Handle based on current step
+  if (event.ctrlKey && event.key === 'Enter') {
     event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
 
-    // Check if we're in the new item form and it's valid
-    if (newItemForm.value && isNewItemValid.value) {
-      saveNewItem();
+    // On Items step (1) - Add item
+    if (currentStep.value === 1) {
+      if (newItemForm.value && isNewItemValid.value) {
+        saveNewItem();
+      }
+      return;
     }
-    return;
-  }
 
-  // CTRL + ENTER - Create delivery (only on Review step)
-  if (event.ctrlKey && event.key === 'Enter' && currentStep.value === 2) {
-    event.preventDefault();
-
-    // Check if we can submit the delivery
-    if (canSubmit.value && !loading.value) {
-      saveDelivery();
+    // On Review step (2) - Create delivery
+    if (currentStep.value === 2) {
+      if (canSubmit.value && !loading.value) {
+        saveDelivery();
+      }
+      return;
     }
-    return;
   }
 };
 
@@ -917,12 +920,16 @@ const saveDelivery = async () => {
     // Upload new photos if any (after main delivery update)
     if (selectedFilesForUpload.value.length > 0) {
       try {
-        const uploadedPhotos = await deliveryService.uploadPhotos(delivery.id!, selectedFilesForUpload.value);
+        // Pass existing photos to preserve them when uploading new ones
+        const uploadedPhotos = await deliveryService.uploadPhotos(
+          delivery.id!,
+          selectedFilesForUpload.value,
+          props.editingDelivery ? existingPhotos.value : []
+        );
         console.log(`Successfully uploaded ${uploadedPhotos.length} of ${selectedFilesForUpload.value.length} photos`);
 
-        // For editing, we need to fetch the updated delivery to get the final photo list
+        // For editing, update the existingPhotos list to reflect all photos (old + new)
         if (props.editingDelivery) {
-          // Update the existingPhotos list to reflect all photos (old + new)
           existingPhotos.value = [...existingPhotos.value, ...uploadedPhotos];
         }
       } catch (uploadError) {

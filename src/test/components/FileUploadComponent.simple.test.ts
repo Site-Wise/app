@@ -96,29 +96,36 @@ describe('FileUploadComponent - Core Functionality', () => {
   })
 
   it('should emit events when files are processed', async () => {
-    wrapper = createWrapper()
-    
-    // Mock FileReader for this test
-    const mockFileReader = {
-      readAsDataURL: vi.fn(),
-      onload: null,
-      result: 'data:image/jpeg;base64,test'
+    // Create a proper class mock for FileReader
+    class MockFileReader {
+      result: string = 'data:image/jpeg;base64,test'
+      onload: ((event: any) => void) | null = null
+
+      readAsDataURL(_file: File) {
+        setTimeout(() => {
+          if (this.onload) {
+            this.onload({ target: { result: this.result } })
+          }
+        }, 5)
+      }
     }
-    
-    vi.spyOn(global, 'FileReader').mockImplementation(() => mockFileReader as any)
-    
+
+    Object.defineProperty(global, 'FileReader', {
+      writable: true,
+      value: MockFileReader
+    })
+
+    wrapper = createWrapper()
+
     const imageFile = new File(['image'], 'test.jpg', { type: 'image/jpeg' })
-    
+
     // Trigger file processing
     wrapper.vm.processFiles([imageFile])
-    
-    // Simulate FileReader completion
-    if (mockFileReader.onload) {
-      mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,test' } } as any)
-    }
-    
+
+    // Wait for FileReader to complete
+    await new Promise(resolve => setTimeout(resolve, 50))
     await nextTick()
-    
+
     expect(wrapper.emitted('files-selected')).toBeTruthy()
     expect(wrapper.emitted('update:modelValue')).toBeTruthy()
   })

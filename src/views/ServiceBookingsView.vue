@@ -282,23 +282,17 @@
           <form @submit.prevent="() => saveBooking()" @keydown="handleKeydown" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.service') }}</label>
-              <select 
-                ref="serviceInputRef" 
-                v-model="form.service" 
-                required 
-                :class="[
-                  'input mt-1',
-                  editingBooking && hasPayments(editingBooking) ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''
-                ]"
-                @change="updateRateFromService" 
+              <ServiceSearchBox
+                ref="serviceInputRef"
+                v-model="form.service"
+                :services="activeServices"
+                :placeholder="t('forms.selectService')"
+                :required="true"
+                :autofocus="true"
                 :disabled="!!(editingBooking && hasPayments(editingBooking))"
-                autofocus
-              >
-                <option value="">{{ t('forms.selectService') }}</option>
-                <option v-for="service in activeServices" :key="service.id" :value="service.id">
-                  {{ service.name }} ({{ service.category }})
-                </option>
-              </select>
+                class="mt-1"
+                @service-selected="handleServiceSelected"
+              />
               <p v-if="editingBooking && hasPayments(editingBooking)" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 {{ t('serviceBookings.cannotChangeServiceWithPayments') }}
               </p>
@@ -307,8 +301,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.vendor') }}</label>
               <VendorSearchBox
-                ref="vendorSearchRef"
-                v-model="form.vendor"
+                                v-model="form.vendor"
                 :vendors="vendors"
                 :deliveries="[]"
                 :service-bookings="[]"
@@ -552,6 +545,7 @@ import PhotoGallery from '../components/PhotoGallery.vue';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import VendorSearchBox from '../components/VendorSearchBox.vue';
+import ServiceSearchBox from '../components/ServiceSearchBox.vue';
 import TimeCalculatorModal from '../components/TimeCalculatorModal.vue';
 import { 
   serviceBookingService, 
@@ -652,7 +646,7 @@ const loading = ref(false);
 const showUnitRateWarning = ref(false);
 const originalUnitRate = ref(0);
 
-const serviceInputRef = ref<HTMLInputElement>();
+const serviceInputRef = ref<InstanceType<typeof ServiceSearchBox>>();
 const startDateInputRef = ref<HTMLInputElement>();
 
 const form = reactive({
@@ -728,6 +722,16 @@ const handleUnitRateChange = () => {
 const handleVendorSelected = (vendor: any) => {
   if (vendor) {
     form.vendor = vendor.id;
+  }
+};
+
+const handleServiceSelected = (service: any) => {
+  if (service) {
+    form.service = service.id;
+    if (service.standard_rate) {
+      form.unit_rate = service.standard_rate;
+      calculateTotal();
+    }
   }
 };
 

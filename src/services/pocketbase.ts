@@ -1782,13 +1782,14 @@ export class ServiceBookingService {
 }
 
 export class PaymentService {
-  async getAll(): Promise<Payment[]> {
+  async getAll(options?: { sort?: string }): Promise<Payment[]> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
 
     const records = await pb.collection('payments').getFullList({
       filter: `site="${siteId}"`,
-      expand: 'vendor,account,deliveries,service_bookings,payment_allocations,payment_allocations.delivery,payment_allocations.service_booking,payment_allocations.service_booking.service,credit_notes'
+      expand: 'vendor,account,deliveries,service_bookings,payment_allocations,payment_allocations.delivery,payment_allocations.service_booking,payment_allocations.service_booking.service,credit_notes',
+      sort: options?.sort || '-payment_date' // Default sort by payment_date descending
     });
     return records.map(record => this.mapRecordToPayment(record));
   }
@@ -2208,6 +2209,7 @@ export class PaymentService {
       return;
     }
 
+    // Prepare data for new allocations only
     const allocationData: Array<{delivery?: string, service_booking?: string, allocated_amount: number}> = [];
 
     // Handle new delivery allocations
@@ -4178,18 +4180,14 @@ export class DeliveryService {
     return record.photos[record.photos.length - 1];
   }
 
-  async uploadPhotos(deliveryId: string, files: File[]): Promise<string[]> {
+  async uploadPhotos(deliveryId: string, files: File[], existingPhotos: string[] = []): Promise<string[]> {
     if (files.length === 0) return [];
-
-    // First, fetch the current delivery to get existing photos
-    const currentRecord = await pb.collection('deliveries').getOne(deliveryId);
-    const existingPhotos = currentRecord.photos || [];
 
     const formData = new FormData();
 
-    // Include existing photo filenames to preserve them
-    existingPhotos.forEach((photoFilename: string) => {
-      formData.append('photos', photoFilename);
+    // Include existing photos to tell PocketBase to keep them
+    existingPhotos.forEach(photo => {
+      formData.append('photos', photo);
     });
 
     // Append new files
@@ -4445,6 +4443,29 @@ export class DeliveryItemService {
     }
     
     return true;
+  }
+
+  async getLastPriceForItem(itemId: string): Promise<number | null> {
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    try {
+      // Get the most recent delivery item for this item in the current site
+      const records = await pb.collection('delivery_items').getList(1, 1, {
+        filter: `item="${itemId}" && site="${currentSite}"`,
+        sort: '-created',
+      });
+
+      if (records.items.length > 0) {
+        return records.items[0].unit_price;
+      }
+      return null;
+    } catch (err) {
+      console.error('Error fetching last price for item:', err);
+      return null;
+    }
   }
 
   async createMultiple(deliveryId: string, items: Array<{

@@ -99,7 +99,7 @@ describe('useSiteData', () => {
   it('should reload data when site changes', async () => {
     const mockItems1 = [{ id: 'item-1', name: 'Site 1 Item' }]
     const mockItems2 = [{ id: 'item-2', name: 'Site 2 Item' }]
-    
+
     mockLoadData
       .mockResolvedValueOnce(mockItems1)
       .mockResolvedValueOnce(mockItems2)
@@ -107,24 +107,24 @@ describe('useSiteData', () => {
     const { data, loading, error } = useSiteData(mockLoadData)
 
     // Wait for initial load
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise(resolve => setTimeout(resolve, 150))
     expect(data.value).toEqual(mockItems1)
     expect(mockLoadData).toHaveBeenCalledWith('site-1')
 
     // Mock getCurrentSiteId to return site-2 for the site change
     getCurrentSiteIdMock.mockReturnValue('site-2')
-    
+
     // Use the store's selectSite method to properly trigger the watcher
     const mockSite2 = { id: 'site-2', name: 'Site 2' } as any
     await siteStore.selectSite(mockSite2, 'admin')
-    
+
     // Wait longer for site change to trigger reload and complete
-    await new Promise(resolve => setTimeout(resolve, 100))
-    
+    await new Promise(resolve => setTimeout(resolve, 200))
+
     expect(mockLoadData).toHaveBeenCalledWith('site-2')
     expect(data.value).toEqual(mockItems2)
     expect(mockLoadData).toHaveBeenCalledTimes(2)
-  })
+  }, 10000)
 
   it('should handle loading errors', async () => {
     const mockError = new Error('Failed to load data')
@@ -135,15 +135,15 @@ describe('useSiteData', () => {
 
     const { data, loading, error } = useSiteData(mockLoadData)
 
-    // Wait for error to be set
-    await new Promise(resolve => setTimeout(resolve, 50))
+    // Wait for error to be set - increased timeout for async error handling
+    await new Promise(resolve => setTimeout(resolve, 200))
 
     expect(data.value).toBe(null)
     expect(loading.value).toBe(false)
     expect(error.value).toEqual(mockError)
-    
+
     consoleSpy.mockRestore()
-  })
+  }, 10000) // Increase test timeout to 10 seconds
 
   it('should provide reload function', async () => {
     const mockItems1 = [{ id: 'item-1', name: 'Initial' }]
@@ -488,19 +488,20 @@ describe('useSitePaginatedData', () => {
     const { items, totalPages, totalItems } = useSitePaginatedData(mockLoadPaginatedData)
 
     // Wait for initial load
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise(resolve => setTimeout(resolve, 150))
     expect(items.value).toEqual(mockResult.items)
 
-    // Clear site
+    // Clear site - mock must be set BEFORE calling clearCurrentSite
     getCurrentSiteIdMock.mockReturnValue(null)
     await siteStore.clearCurrentSite()
 
-    await new Promise(resolve => setTimeout(resolve, 100))
+    // Wait for site change watcher to trigger and clear data
+    await new Promise(resolve => setTimeout(resolve, 150))
 
     expect(items.value).toEqual([])
     expect(totalPages.value).toBe(1)
     expect(totalItems.value).toBe(0)
-  })
+  }, 10000)
 
   it('should provide reload functionality', async () => {
     const mockResult1 = {

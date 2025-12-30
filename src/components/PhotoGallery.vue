@@ -95,8 +95,7 @@
           :class="{ 'cursor-zoom-in': !isZoomed, 'cursor-zoom-out': isZoomed }"
           @click="toggleZoom"
           :style="zoomStyle"
-          ref="photoElement"
-          @load="onPhotoLoad"
+                    @load="onPhotoLoad"
         />
         
         <!-- Loading Spinner -->
