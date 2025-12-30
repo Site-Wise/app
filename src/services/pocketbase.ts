@@ -2160,66 +2160,6 @@ export class PaymentService {
     return createdAllocationIds;
   }
 
-  private async handlePaymentAllocations(paymentId: string, deliveryIds: string[], serviceBookingIds: string[], totalAmount: number) {
-    const siteId = getCurrentSiteId();
-    if (!siteId) return;
-
-    let remainingAmount = totalAmount;
-    const createdAllocationIds: string[] = [];
-    
-    // Handle delivery allocations
-    for (const deliveryId of deliveryIds) {
-      if (remainingAmount <= 0) break;
-      
-      const delivery = await pb.collection('deliveries').getOne(deliveryId);
-      const currentPaidAmount = await deliveryService.calculatePaidAmount(deliveryId);
-      const outstandingAmount = delivery.total_amount - currentPaidAmount;
-      const allocatedAmount = Math.min(remainingAmount, outstandingAmount);
-      
-      // Create payment allocation record
-      const allocationRecord = await paymentAllocationService.create({
-        payment: paymentId,
-        delivery: deliveryId,
-        allocated_amount: allocatedAmount,
-        site: siteId
-      });
-      
-      createdAllocationIds.push(allocationRecord.id!);
-      remainingAmount -= allocatedAmount;
-    }
-    
-    // Handle service booking allocations
-    for (const bookingId of serviceBookingIds) {
-      if (remainingAmount <= 0) break;
-      
-      const bookingRecord = await pb.collection('service_bookings').getOne(bookingId);
-      const booking = serviceBookingService.mapRecordToServiceBooking(bookingRecord);
-      const currentPaidAmount = await serviceBookingService.calculatePaidAmount(bookingId);
-      const progressAmount = ServiceBookingService.calculateProgressBasedAmount(booking);
-      const outstandingAmount = progressAmount - currentPaidAmount;
-      const allocatedAmount = Math.min(remainingAmount, outstandingAmount);
-      
-      // Create payment allocation record
-      const allocationRecord = await paymentAllocationService.create({
-        payment: paymentId,
-        service_booking: bookingId,
-        allocated_amount: allocatedAmount,
-        site: siteId
-      });
-      
-      createdAllocationIds.push(allocationRecord.id!);
-      remainingAmount -= allocatedAmount;
-    }
-    
-    // Update payment record with allocation IDs so expand works properly
-    if (createdAllocationIds.length > 0) {
-      await pb.collection('payments').update(paymentId, {
-        payment_allocations: createdAllocationIds
-      });
-    }
-  }
-
-
   private async getVendorName(vendorId: string): Promise<string> {
     try {
       const vendor = await pb.collection('vendors').getOne(vendorId);
@@ -2233,12 +2173,106 @@ export class PaymentService {
     // Get the payment to determine total amount
     const payment = await this.getById(paymentId);
     if (!payment) throw new Error('Payment not found');
-    
-    // Delete all existing allocations
-    await paymentAllocationService.deleteByPayment(paymentId);
-    
-    // Create new allocations with the full payment amount
-    await this.handlePaymentAllocations(paymentId, deliveryIds, serviceBookingIds, payment.amount);
+
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    // Get existing allocations - we'll preserve these and only add new ones
+    const existingAllocations = await paymentAllocationService.getByPayment(paymentId);
+
+    // Create sets of already allocated item IDs
+    const existingDeliveryIds = new Set(
+      existingAllocations.filter(a => a.delivery).map(a => a.delivery!)
+    );
+    const existingServiceBookingIds = new Set(
+      existingAllocations.filter(a => a.service_booking).map(a => a.service_booking!)
+    );
+
+    // Calculate already allocated amount from existing allocations
+    const existingAllocatedAmount = existingAllocations.reduce((sum, a) => sum + a.allocated_amount, 0);
+
+    // Filter to only new items (not already allocated)
+    const newDeliveryIds = deliveryIds.filter(id => !existingDeliveryIds.has(id));
+    const newServiceBookingIds = serviceBookingIds.filter(id => !existingServiceBookingIds.has(id));
+
+    // If no new items to allocate, return early
+    if (newDeliveryIds.length === 0 && newServiceBookingIds.length === 0) {
+      return;
+    }
+
+    // Calculate remaining amount available for new allocations
+    let remainingAmount = payment.amount - existingAllocatedAmount;
+
+    if (remainingAmount <= 0) {
+      console.warn('Payment is already fully allocated, cannot add new allocations');
+      return;
+    }
+
+    // Prepare data for new allocations only
+    const allocationData: Array<{delivery?: string, service_booking?: string, allocated_amount: number}> = [];
+
+    // Handle new delivery allocations
+    for (const deliveryId of newDeliveryIds) {
+      if (remainingAmount <= 0) break;
+
+      const delivery = await pb.collection('deliveries').getOne(deliveryId);
+      const currentPaidAmount = await deliveryService.calculatePaidAmount(deliveryId);
+      const outstandingAmount = delivery.total_amount - currentPaidAmount;
+      const allocatedAmount = Math.min(remainingAmount, outstandingAmount);
+
+      if (allocatedAmount > 0) {
+        allocationData.push({
+          delivery: deliveryId,
+          allocated_amount: allocatedAmount
+        });
+        remainingAmount -= allocatedAmount;
+      }
+    }
+
+    // Handle new service booking allocations
+    for (const bookingId of newServiceBookingIds) {
+      if (remainingAmount <= 0) break;
+
+      const bookingRecord = await pb.collection('service_bookings').getOne(bookingId);
+      const booking = serviceBookingService.mapRecordToServiceBooking(bookingRecord);
+      const currentPaidAmount = await serviceBookingService.calculatePaidAmount(bookingId);
+      const progressAmount = ServiceBookingService.calculateProgressBasedAmount(booking);
+      const outstandingAmount = progressAmount - currentPaidAmount;
+      const allocatedAmount = Math.min(remainingAmount, outstandingAmount);
+
+      if (allocatedAmount > 0) {
+        allocationData.push({
+          service_booking: bookingId,
+          allocated_amount: allocatedAmount
+        });
+        remainingAmount -= allocatedAmount;
+      }
+    }
+
+    // Create new allocation records and collect their IDs
+    const newAllocationIds: string[] = [];
+    for (const data of allocationData) {
+      const allocationRecord = await paymentAllocationService.create({
+        payment: paymentId,
+        delivery: data.delivery,
+        service_booking: data.service_booking,
+        allocated_amount: data.allocated_amount,
+        site: siteId
+      });
+      if (allocationRecord.id) {
+        newAllocationIds.push(allocationRecord.id);
+      }
+    }
+
+    // Update the payment record with all allocation IDs (existing + new)
+    if (newAllocationIds.length > 0) {
+      const existingAllocationIds = existingAllocations.map(a => a.id!).filter(id => id);
+      const allAllocationIds = [...existingAllocationIds, ...newAllocationIds];
+
+      await pb.collection('payments').update(paymentId, {
+        payment_allocations: allAllocationIds
+      });
+    }
   }
 
   async delete(id: string): Promise<boolean> {

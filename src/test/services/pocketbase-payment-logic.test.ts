@@ -590,4 +590,418 @@ describe('Payment Services Business Logic', () => {
       expect(formatted).toBe('₹0.00')
     })
   })
+
+  describe('Payment Allocation Update Logic', () => {
+    // Helper types to simulate the data structures
+    interface MockAllocation {
+      id: string
+      payment: string
+      delivery?: string
+      service_booking?: string
+      allocated_amount: number
+    }
+
+    interface MockPayment {
+      id: string
+      amount: number
+      payment_allocations: string[]
+    }
+
+    // Simulates the updateAllocations logic for preserving existing allocations
+    const simulateUpdateAllocations = (
+      payment: MockPayment,
+      existingAllocations: MockAllocation[],
+      newDeliveryIds: string[],
+      newServiceBookingIds: string[],
+      deliveryOutstanding: Record<string, number>,
+      bookingOutstanding: Record<string, number>
+    ) => {
+      // Create sets of already allocated item IDs
+      const existingDeliveryIds = new Set(
+        existingAllocations.filter(a => a.delivery).map(a => a.delivery!)
+      )
+      const existingServiceBookingIds = new Set(
+        existingAllocations.filter(a => a.service_booking).map(a => a.service_booking!)
+      )
+
+      // Calculate already allocated amount from existing allocations
+      const existingAllocatedAmount = existingAllocations.reduce((sum, a) => sum + a.allocated_amount, 0)
+
+      // Filter to only new items (not already allocated)
+      const actualNewDeliveryIds = newDeliveryIds.filter(id => !existingDeliveryIds.has(id))
+      const actualNewServiceBookingIds = newServiceBookingIds.filter(id => !existingServiceBookingIds.has(id))
+
+      // Calculate remaining amount available for new allocations
+      let remainingAmount = payment.amount - existingAllocatedAmount
+
+      // Create new allocations
+      const newAllocations: MockAllocation[] = []
+
+      // Handle new delivery allocations
+      for (const deliveryId of actualNewDeliveryIds) {
+        if (remainingAmount <= 0) break
+        const outstanding = deliveryOutstanding[deliveryId] || 0
+        const allocatedAmount = Math.min(remainingAmount, outstanding)
+        if (allocatedAmount > 0) {
+          newAllocations.push({
+            id: `alloc-${deliveryId}`,
+            payment: payment.id,
+            delivery: deliveryId,
+            allocated_amount: allocatedAmount
+          })
+          remainingAmount -= allocatedAmount
+        }
+      }
+
+      // Handle new service booking allocations
+      for (const bookingId of actualNewServiceBookingIds) {
+        if (remainingAmount <= 0) break
+        const outstanding = bookingOutstanding[bookingId] || 0
+        const allocatedAmount = Math.min(remainingAmount, outstanding)
+        if (allocatedAmount > 0) {
+          newAllocations.push({
+            id: `alloc-${bookingId}`,
+            payment: payment.id,
+            service_booking: bookingId,
+            allocated_amount: allocatedAmount
+          })
+          remainingAmount -= allocatedAmount
+        }
+      }
+
+      // Combine existing and new allocations
+      const allAllocations = [...existingAllocations, ...newAllocations]
+      const allAllocationIds = allAllocations.map(a => a.id)
+
+      return {
+        existingPreserved: existingAllocations.length,
+        newCreated: newAllocations.length,
+        allAllocations,
+        allAllocationIds,
+        remainingUnallocated: remainingAmount
+      }
+    }
+
+    it('should preserve existing delivery allocation when adding service booking', () => {
+      const payment: MockPayment = { id: 'payment-1', amount: 1000, payment_allocations: ['alloc-1'] }
+      const existingAllocations: MockAllocation[] = [
+        { id: 'alloc-1', payment: 'payment-1', delivery: 'delivery-1', allocated_amount: 400 }
+      ]
+
+      const result = simulateUpdateAllocations(
+        payment,
+        existingAllocations,
+        ['delivery-1'], // Same delivery ID (should be ignored)
+        ['booking-1'],  // New service booking
+        { 'delivery-1': 400 },
+        { 'booking-1': 300 }
+      )
+
+      expect(result.existingPreserved).toBe(1)
+      expect(result.newCreated).toBe(1)
+      expect(result.allAllocations).toHaveLength(2)
+
+      // Existing delivery allocation preserved
+      const deliveryAlloc = result.allAllocations.find(a => a.delivery === 'delivery-1')
+      expect(deliveryAlloc).toBeDefined()
+      expect(deliveryAlloc!.allocated_amount).toBe(400)
+
+      // New service booking allocation added
+      const bookingAlloc = result.allAllocations.find(a => a.service_booking === 'booking-1')
+      expect(bookingAlloc).toBeDefined()
+      expect(bookingAlloc!.allocated_amount).toBe(300)
+    })
+
+    it('should preserve existing service booking allocation when adding delivery', () => {
+      const payment: MockPayment = { id: 'payment-1', amount: 1000, payment_allocations: ['alloc-1'] }
+      const existingAllocations: MockAllocation[] = [
+        { id: 'alloc-1', payment: 'payment-1', service_booking: 'booking-1', allocated_amount: 500 }
+      ]
+
+      const result = simulateUpdateAllocations(
+        payment,
+        existingAllocations,
+        ['delivery-1'],  // New delivery
+        ['booking-1'],   // Same booking ID (should be ignored)
+        { 'delivery-1': 300 },
+        { 'booking-1': 500 }
+      )
+
+      expect(result.existingPreserved).toBe(1)
+      expect(result.newCreated).toBe(1)
+      expect(result.allAllocations).toHaveLength(2)
+
+      // Existing service booking allocation preserved
+      const bookingAlloc = result.allAllocations.find(a => a.service_booking === 'booking-1')
+      expect(bookingAlloc).toBeDefined()
+      expect(bookingAlloc!.allocated_amount).toBe(500)
+
+      // New delivery allocation added
+      const deliveryAlloc = result.allAllocations.find(a => a.delivery === 'delivery-1')
+      expect(deliveryAlloc).toBeDefined()
+      expect(deliveryAlloc!.allocated_amount).toBe(300)
+    })
+
+    it('should preserve multiple existing allocations when adding new ones', () => {
+      const payment: MockPayment = { id: 'payment-1', amount: 2000, payment_allocations: ['alloc-1', 'alloc-2'] }
+      const existingAllocations: MockAllocation[] = [
+        { id: 'alloc-1', payment: 'payment-1', delivery: 'delivery-1', allocated_amount: 400 },
+        { id: 'alloc-2', payment: 'payment-1', service_booking: 'booking-1', allocated_amount: 600 }
+      ]
+
+      const result = simulateUpdateAllocations(
+        payment,
+        existingAllocations,
+        ['delivery-1', 'delivery-2'],  // delivery-1 exists, delivery-2 is new
+        ['booking-1', 'booking-2'],    // booking-1 exists, booking-2 is new
+        { 'delivery-1': 400, 'delivery-2': 500 },
+        { 'booking-1': 600, 'booking-2': 300 }
+      )
+
+      expect(result.existingPreserved).toBe(2)
+      expect(result.newCreated).toBe(2)
+      expect(result.allAllocations).toHaveLength(4)
+
+      // Total allocated should not exceed payment amount
+      const totalAllocated = result.allAllocations.reduce((sum, a) => sum + a.allocated_amount, 0)
+      expect(totalAllocated).toBeLessThanOrEqual(payment.amount)
+    })
+
+    it('should not create duplicate allocations for same item', () => {
+      const payment: MockPayment = { id: 'payment-1', amount: 1000, payment_allocations: ['alloc-1'] }
+      const existingAllocations: MockAllocation[] = [
+        { id: 'alloc-1', payment: 'payment-1', delivery: 'delivery-1', allocated_amount: 500 }
+      ]
+
+      const result = simulateUpdateAllocations(
+        payment,
+        existingAllocations,
+        ['delivery-1'],  // Same delivery ID - should be ignored
+        [],
+        { 'delivery-1': 500 },
+        {}
+      )
+
+      expect(result.existingPreserved).toBe(1)
+      expect(result.newCreated).toBe(0)
+      expect(result.allAllocations).toHaveLength(1)
+
+      // Only one allocation for delivery-1
+      const deliveryAllocs = result.allAllocations.filter(a => a.delivery === 'delivery-1')
+      expect(deliveryAllocs).toHaveLength(1)
+    })
+
+    it('should respect remaining unallocated amount when adding new allocations', () => {
+      const payment: MockPayment = { id: 'payment-1', amount: 1000, payment_allocations: ['alloc-1'] }
+      const existingAllocations: MockAllocation[] = [
+        { id: 'alloc-1', payment: 'payment-1', delivery: 'delivery-1', allocated_amount: 800 }
+      ]
+
+      const result = simulateUpdateAllocations(
+        payment,
+        existingAllocations,
+        ['delivery-1'],
+        ['booking-1'],  // Outstanding is 500, but only 200 remaining
+        { 'delivery-1': 800 },
+        { 'booking-1': 500 }
+      )
+
+      expect(result.existingPreserved).toBe(1)
+      expect(result.newCreated).toBe(1)
+
+      // New booking allocation should be capped at remaining amount (200)
+      const bookingAlloc = result.allAllocations.find(a => a.service_booking === 'booking-1')
+      expect(bookingAlloc).toBeDefined()
+      expect(bookingAlloc!.allocated_amount).toBe(200)
+
+      // Total allocated should equal payment amount
+      const totalAllocated = result.allAllocations.reduce((sum, a) => sum + a.allocated_amount, 0)
+      expect(totalAllocated).toBe(1000)
+    })
+
+    it('should not create allocations when payment is fully allocated', () => {
+      const payment: MockPayment = { id: 'payment-1', amount: 1000, payment_allocations: ['alloc-1', 'alloc-2'] }
+      const existingAllocations: MockAllocation[] = [
+        { id: 'alloc-1', payment: 'payment-1', delivery: 'delivery-1', allocated_amount: 600 },
+        { id: 'alloc-2', payment: 'payment-1', service_booking: 'booking-1', allocated_amount: 400 }
+      ]
+
+      const result = simulateUpdateAllocations(
+        payment,
+        existingAllocations,
+        ['delivery-1', 'delivery-2'],
+        ['booking-1', 'booking-2'],
+        { 'delivery-1': 600, 'delivery-2': 300 },
+        { 'booking-1': 400, 'booking-2': 200 }
+      )
+
+      expect(result.existingPreserved).toBe(2)
+      expect(result.newCreated).toBe(0)
+      expect(result.remainingUnallocated).toBe(0)
+    })
+
+    it('should update payment_allocations array with all allocation IDs', () => {
+      const payment: MockPayment = { id: 'payment-1', amount: 1000, payment_allocations: ['alloc-1'] }
+      const existingAllocations: MockAllocation[] = [
+        { id: 'alloc-1', payment: 'payment-1', delivery: 'delivery-1', allocated_amount: 400 }
+      ]
+
+      const result = simulateUpdateAllocations(
+        payment,
+        existingAllocations,
+        ['delivery-1'],
+        ['booking-1'],
+        { 'delivery-1': 400 },
+        { 'booking-1': 300 }
+      )
+
+      // Should include both existing and new allocation IDs
+      expect(result.allAllocationIds).toContain('alloc-1')
+      expect(result.allAllocationIds).toContain('alloc-booking-1')
+      expect(result.allAllocationIds).toHaveLength(2)
+    })
+
+    it('should handle empty existing allocations', () => {
+      const payment: MockPayment = { id: 'payment-1', amount: 1000, payment_allocations: [] }
+      const existingAllocations: MockAllocation[] = []
+
+      const result = simulateUpdateAllocations(
+        payment,
+        existingAllocations,
+        ['delivery-1'],
+        ['booking-1'],
+        { 'delivery-1': 400 },
+        { 'booking-1': 300 }
+      )
+
+      expect(result.existingPreserved).toBe(0)
+      expect(result.newCreated).toBe(2)
+      expect(result.allAllocations).toHaveLength(2)
+    })
+
+    it('should return early when no new items to allocate', () => {
+      const payment: MockPayment = { id: 'payment-1', amount: 1000, payment_allocations: ['alloc-1'] }
+      const existingAllocations: MockAllocation[] = [
+        { id: 'alloc-1', payment: 'payment-1', delivery: 'delivery-1', allocated_amount: 400 }
+      ]
+
+      const result = simulateUpdateAllocations(
+        payment,
+        existingAllocations,
+        ['delivery-1'],  // Already allocated
+        [],              // No new bookings
+        { 'delivery-1': 400 },
+        {}
+      )
+
+      expect(result.existingPreserved).toBe(1)
+      expect(result.newCreated).toBe(0)
+      expect(result.allAllocations).toHaveLength(1)
+    })
+  })
+
+  describe('Allocation Status Display Logic', () => {
+    // Helper to calculate allocation status
+    const getAllocationStatus = (payment: { amount: number }, allocations: { allocated_amount: number }[]) => {
+      const totalAllocated = allocations.reduce((sum, a) => sum + a.allocated_amount, 0)
+
+      if (allocations.length === 0) {
+        return 'no_allocations'
+      } else if (totalAllocated >= payment.amount) {
+        return 'fully_allocated'
+      } else if (totalAllocated > 0) {
+        return 'partially_allocated'
+      } else {
+        return 'unallocated'
+      }
+    }
+
+    it('should show fully allocated for payment with complete allocation', () => {
+      const payment = { amount: 1000 }
+      const allocations = [
+        { allocated_amount: 600 },
+        { allocated_amount: 400 }
+      ]
+
+      expect(getAllocationStatus(payment, allocations)).toBe('fully_allocated')
+    })
+
+    it('should show partially allocated for payment with partial allocation', () => {
+      const payment = { amount: 1000 }
+      const allocations = [
+        { allocated_amount: 300 },
+        { allocated_amount: 200 }
+      ]
+
+      expect(getAllocationStatus(payment, allocations)).toBe('partially_allocated')
+    })
+
+    it('should show no allocations for payment without any allocations', () => {
+      const payment = { amount: 1000 }
+      const allocations: { allocated_amount: number }[] = []
+
+      expect(getAllocationStatus(payment, allocations)).toBe('no_allocations')
+    })
+
+    it('should show fully allocated for delivery-only payment', () => {
+      const payment = { amount: 500 }
+      const allocations = [
+        { allocated_amount: 500, delivery: 'delivery-1' }
+      ]
+
+      expect(getAllocationStatus(payment, allocations)).toBe('fully_allocated')
+    })
+
+    it('should show fully allocated for service-only payment', () => {
+      const payment = { amount: 500 }
+      const allocations = [
+        { allocated_amount: 500, service_booking: 'booking-1' }
+      ]
+
+      expect(getAllocationStatus(payment, allocations)).toBe('fully_allocated')
+    })
+
+    it('should show fully allocated for mixed delivery and service payment', () => {
+      const payment = { amount: 1000 }
+      const allocations = [
+        { allocated_amount: 600, delivery: 'delivery-1' },
+        { allocated_amount: 400, service_booking: 'booking-1' }
+      ]
+
+      expect(getAllocationStatus(payment, allocations)).toBe('fully_allocated')
+    })
+
+    it('should show partially allocated for mixed payment with remaining amount', () => {
+      const payment = { amount: 1000 }
+      const allocations = [
+        { allocated_amount: 400, delivery: 'delivery-1' },
+        { allocated_amount: 200, service_booking: 'booking-1' }
+      ]
+
+      expect(getAllocationStatus(payment, allocations)).toBe('partially_allocated')
+    })
+
+    it('should calculate unallocated amount correctly', () => {
+      const payment = { amount: 1000 }
+      const allocations = [
+        { allocated_amount: 400 },
+        { allocated_amount: 300 }
+      ]
+
+      const totalAllocated = allocations.reduce((sum, a) => sum + a.allocated_amount, 0)
+      const unallocated = payment.amount - totalAllocated
+
+      expect(unallocated).toBe(300)
+    })
+
+    it('should handle zero allocations in array', () => {
+      const payment = { amount: 1000 }
+      const allocations = [
+        { allocated_amount: 0 },
+        { allocated_amount: 0 }
+      ]
+
+      expect(getAllocationStatus(payment, allocations)).toBe('unallocated')
+    })
+  })
 })

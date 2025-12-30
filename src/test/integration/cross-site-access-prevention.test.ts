@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { createMockPocketBase } from '../mocks/pocketbase'
 
 // Mock localStorage
 const localStorageData: Record<string, string> = {}
@@ -13,13 +12,11 @@ Object.defineProperty(window, 'localStorage', {
   writable: true
 })
 
-// Create extended mock with cross-site data
-const createCrossSiteMockPocketBase = () => {
-  const mockPb = createMockPocketBase()
-  const collections = new Map()
-  
+// Mock PocketBase as a class for proper constructor behavior in Vitest v4
+// Define inside vi.mock factory to avoid hoisting issues
+vi.mock('pocketbase', () => {
   // Site 1 data
-  const site1Data = {
+  const site1Data: Record<string, any[]> = {
     items: [{ id: 'item-site1', name: 'Site 1 Item', site: 'site-1' }],
     vendors: [{ id: 'vendor-site1', name: 'Site 1 Vendor', site: 'site-1' }],
     accounts: [{ id: 'account-site1', name: 'Site 1 Account', site: 'site-1' }],
@@ -36,7 +33,7 @@ const createCrossSiteMockPocketBase = () => {
   }
 
   // Site 2 data
-  const site2Data = {
+  const site2Data: Record<string, any[]> = {
     items: [{ id: 'item-site2', name: 'Site 2 Item', site: 'site-2' }],
     vendors: [{ id: 'vendor-site2', name: 'Site 2 Vendor', site: 'site-2' }],
     accounts: [{ id: 'account-site2', name: 'Site 2 Account', site: 'site-2' }],
@@ -52,72 +49,82 @@ const createCrossSiteMockPocketBase = () => {
     deliveries: [{ id: 'delivery-site2', vendor: 'vendor-site2', site: 'site-2' }]
   }
 
-  // Combine all data
-  Object.keys(site1Data).forEach(collection => {
-    collections.set(collection, [...site1Data[collection], ...site2Data[collection]])
-  })
+  const mockUser = { id: 'user-1', email: 'test@example.com', name: 'Test User', sites: ['site-1'] }
 
-  // Add sites collection (not site-filtered)
-  collections.set('sites', [
-    { id: 'site-1', name: 'Site 1', admin_user: 'user-1' },
-    { id: 'site-2', name: 'Site 2', admin_user: 'user-1' }
-  ])
+  class MockPocketBase {
+    authStore = {
+      isValid: true,
+      model: mockUser,
+      record: mockUser,
+      clear: () => {}
+    }
+    baseUrl = 'http://localhost:8090'
 
-  // Override collection method to handle site filtering
-  const originalCollection = mockPb.collection
-  mockPb.collection = vi.fn((name: string) => ({
-    ...originalCollection(name),
-    getFullList: vi.fn().mockImplementation((options: any = {}) => {
-      const items = collections.get(name) || []
-      
-      // Apply site filter
-      if (options.filter && options.filter.includes('site=')) {
-        const siteMatch = options.filter.match(/site="([^"]+)"/)
-        if (siteMatch) {
-          const siteId = siteMatch[1]
-          return Promise.resolve(items.filter((item: any) => item.site === siteId))
-        }
-      }
-      
-      return Promise.resolve(items)
-    }),
-    getOne: vi.fn().mockImplementation((id: string, options: any = {}) => {
-      const items = collections.get(name) || []
-      let item = items.find((item: any) => item.id === id)
-      
-      // Apply site filter for getOne
-      if (item && options.filter && options.filter.includes('site=')) {
-        const siteMatch = options.filter.match(/site="([^"]+)"/)
-        if (siteMatch) {
-          const siteId = siteMatch[1]
-          if (item.site !== siteId) {
-            return Promise.reject(new Error('Not found or access denied'))
+    collection(name: string) {
+      const collections = new Map<string, any[]>()
+
+      // Combine all data
+      Object.keys(site1Data).forEach(collection => {
+        collections.set(collection, [...(site1Data[collection] || []), ...(site2Data[collection] || [])])
+      })
+
+      // Add sites collection (not site-filtered)
+      collections.set('sites', [
+        { id: 'site-1', name: 'Site 1', admin_user: 'user-1' },
+        { id: 'site-2', name: 'Site 2', admin_user: 'user-1' }
+      ])
+
+      return {
+        getFullList: (options: any = {}) => {
+          const items = collections.get(name) || []
+
+          // Apply site filter
+          if (options.filter && options.filter.includes('site=')) {
+            const siteMatch = options.filter.match(/site="([^"]+)"/)
+            if (siteMatch) {
+              const siteId = siteMatch[1]
+              return Promise.resolve(items.filter((item: any) => item.site === siteId))
+            }
           }
+
+          return Promise.resolve(items)
+        },
+        getOne: (id: string, options: any = {}) => {
+          const items = collections.get(name) || []
+          let item = items.find((item: any) => item.id === id)
+
+          // Apply site filter for getOne
+          if (item && options.filter && options.filter.includes('site=')) {
+            const siteMatch = options.filter.match(/site="([^"]+)"/)
+            if (siteMatch) {
+              const siteId = siteMatch[1]
+              if (item.site !== siteId) {
+                return Promise.reject(new Error('Not found or access denied'))
+              }
+            }
+          }
+
+          if (!item) {
+            return Promise.reject(new Error('Not found'))
+          }
+
+          return Promise.resolve(item)
+        },
+        create: (data: any) => {
+          const newItem = { ...data, id: `${name}-${Date.now()}` }
+          const items = collections.get(name) || []
+          items.push(newItem)
+          collections.set(name, items)
+          return Promise.resolve(newItem)
         }
       }
-      
-      if (!item) {
-        return Promise.reject(new Error('Not found'))
-      }
-      
-      return Promise.resolve(item)
-    }),
-    create: vi.fn().mockImplementation((data: any) => {
-      const newItem = { ...data, id: `${name}-${Date.now()}` }
-      const items = collections.get(name) || []
-      items.push(newItem)
-      collections.set(name, items)
-      return Promise.resolve(newItem)
-    })
-  }))
+    }
 
-  return mockPb
-}
+    autoCancellation() {}
+  }
 
-// Mock PocketBase
-vi.mock('pocketbase', () => ({
-  default: vi.fn(() => createCrossSiteMockPocketBase())
-}))
+  return { default: MockPocketBase }
+})
 
 describe('Cross-Site Access Prevention Integration Tests', () => {
   let services: any
