@@ -174,16 +174,25 @@
             <!-- New Item Form (Always at top) -->
             <div v-if="newItemForm"
               class="border-2 border-dashed border-primary-300 dark:border-primary-600 rounded-lg p-1">
-              <div class="text-sm font-medium text-primary-600 dark:text-primary-400 mb-3 px-3 pt-3">
+              <!-- Mobile: Add Item button at top -->
+              <div class="flex sm:hidden items-center justify-between px-3 pt-3 pb-2">
+                <div class="text-sm font-medium text-primary-600 dark:text-primary-400">
+                  {{ t('deliveryForm.newItem') }}
+                </div>
+                <button @click="saveNewItem" :disabled="!isNewItemValid" class="btn-primary btn-sm"
+                  :class="{ 'opacity-50 cursor-not-allowed': !isNewItemValid }">
+                  <Plus class="h-4 w-4" />
+                </button>
+              </div>
+              <!-- Desktop: Title only -->
+              <div class="hidden sm:block text-sm font-medium text-primary-600 dark:text-primary-400 mb-3 px-3 pt-3">
                 {{ t('deliveryForm.newItem') }}
               </div>
               <DeliveryItemRow :key="newItemForm.tempId" :item="newItemForm" :index="-1" :items="items"
-                :used-items="usedItemIds" @update="updateNewItem" @remove="cancelNewItem"
+                :used-items="usedItemIds" :hide-remove-button="true" @update="updateNewItem" @remove="cancelNewItem"
                 @create-new-item="handleCreateNewItem" ref="newItemRowRef" />
-              <div class="flex justify-end space-x-2 p-3">
-                <button @click="cancelNewItem" class="btn-outline text-sm" v-if="completedDeliveryItems.length > 0">
-                  {{ t('common.cancel') }}
-                </button>
+              <!-- Desktop: Buttons at bottom -->
+              <div class="hidden sm:flex justify-end p-3">
                 <button @click="saveNewItem" :disabled="!isNewItemValid" class="btn-primary text-sm"
                   :class="{ 'opacity-50 cursor-not-allowed': !isNewItemValid }">
                   <Plus class="mr-2 h-4 w-4" />
@@ -252,6 +261,7 @@
                       :index="deliveryItems.indexOf(item)"
                       :items="items"
                       :used-items="usedItemIds"
+                      :hide-remove-button="true"
                       @update="updateDeliveryItem"
                       @remove="removeDeliveryItem"
                       @create-new-item="handleCreateNewItem"

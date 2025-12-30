@@ -178,11 +178,11 @@
       </div>
 
       <!-- Actions -->
-      <div class="md:col-span-2">
+      <div v-if="!hideRemoveButton" class="md:col-span-2">
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 invisible">
           {{ t('common.actions') }}
         </label>
-        <button 
+        <button
           @click="$emit('remove', index)"
           class="btn-outline text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border-red-300 hover:border-red-400 dark:border-red-600 dark:hover:border-red-500 w-full md:w-auto"
           :title="t('delivery.removeItem')"
@@ -240,6 +240,7 @@ interface Props {
   index: number;
   items: Item[];
   usedItems: string[];
+  hideRemoveButton?: boolean;
 }
 
 const props = defineProps<Props>();
