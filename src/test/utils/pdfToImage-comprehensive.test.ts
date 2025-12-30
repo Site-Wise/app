@@ -310,11 +310,9 @@ describe('pdfToImage Utility Logic', () => {
       let width = 5000
       let height = 5000
 
-      if (width > maxDimension || height > maxDimension) {
-        const scale = maxDimension / Math.max(width, height)
-        width = width * scale
-        height = height * scale
-      }
+      const scale = maxDimension / Math.max(width, height)
+      width = width * scale
+      height = height * scale
 
       expect(width).toBeLessThanOrEqual(maxDimension)
       expect(height).toBeLessThanOrEqual(maxDimension)
