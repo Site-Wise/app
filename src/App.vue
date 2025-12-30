@@ -38,6 +38,8 @@
       </div>
     </div>
     <ToastContainer />
+    <!-- PWA prompts shown for all users -->
+    <PWAPrompt />
     <PWAUpdateNotification />
   </div>
 </template>
@@ -53,6 +55,7 @@ import AppLayout from './components/AppLayout.vue';
 import SiteSelectionView from './views/SiteSelectionView.vue';
 import ToastContainer from './components/ToastContainer.vue';
 import PWAUpdateNotification from './components/PWAUpdateNotification.vue';
+import PWAPrompt from './components/PWAPrompt.vue';
 
 // PWA Debug utility (development only)
 if (import.meta.env.DEV) {
