@@ -90,8 +90,8 @@ describe('DeliveryItemRow - Last Price Logic', () => {
       const currentUnitPrice = 0
       const lastPrice = 150.50
 
-      // Ensure lastPrice is either number or null (it's a number here, so comparison is safe)
-      const shouldAutoFill = typeof lastPrice === 'number' && (!currentUnitPrice || currentUnitPrice === 0)
+      // Always auto-fill when last price exists (even if current price has value)
+      const shouldAutoFill = typeof lastPrice === 'number'
       expect(shouldAutoFill).toBe(true)
 
       // Simulate the auto-fill
@@ -99,27 +99,40 @@ describe('DeliveryItemRow - Last Price Logic', () => {
       expect(newUnitPrice).toBe(150.50)
     })
 
-    it('should not auto-fill unit_price when it already has a value', () => {
+    it('should auto-fill unit_price when changing items (even if current has value)', () => {
       const currentUnitPrice = 200
       const lastPrice = 150.50
 
-      const shouldAutoFill = typeof lastPrice === 'number' && (!currentUnitPrice || currentUnitPrice === 0)
-      expect(shouldAutoFill).toBe(false)
+      // When changing items, always use the new item's last price
+      const shouldAutoFill = typeof lastPrice === 'number'
+      expect(shouldAutoFill).toBe(true)
 
-      // Unit price should remain unchanged
+      // Unit price should be updated to the new item's last price
       const newUnitPrice = shouldAutoFill ? lastPrice : currentUnitPrice
-      expect(newUnitPrice).toBe(200)
+      expect(newUnitPrice).toBe(150.50)
     })
 
     it('should not auto-fill when last price is null', () => {
       const currentUnitPrice = 0
       const lastPrice = null
 
-      const shouldAutoFill = typeof lastPrice === 'number' && (!currentUnitPrice || currentUnitPrice === 0)
+      const shouldAutoFill = typeof lastPrice === 'number'
       expect(shouldAutoFill).toBe(false)
 
       const newUnitPrice = shouldAutoFill && lastPrice !== null ? lastPrice : currentUnitPrice
       expect(newUnitPrice).toBe(0)
+    })
+
+    it('should preserve existing price when new item has no price history', () => {
+      const currentUnitPrice = 200
+      const lastPrice = null // No price history for new item
+
+      const shouldAutoFill = typeof lastPrice === 'number'
+      expect(shouldAutoFill).toBe(false)
+
+      // Keep the current price if no last price exists
+      const newUnitPrice = shouldAutoFill && lastPrice !== null ? lastPrice : currentUnitPrice
+      expect(newUnitPrice).toBe(200)
     })
   })
 
@@ -127,21 +140,37 @@ describe('DeliveryItemRow - Last Price Logic', () => {
     it('should fetch last price and auto-fill when item is selected', async () => {
       const mockItem = { id: 'item-1', name: 'Cement', unit: 'kg' }
       const mockLastPrice = 150.50
-      const mockCurrentUnitPrice = 0
 
       // Simulate the logic in handleItemSelected
       const fetchLastPrice = vi.fn().mockResolvedValue(mockLastPrice)
 
       const lastPrice = await fetchLastPrice(mockItem.id)
 
-      // Auto-fill logic
-      const shouldAutoFill = lastPrice !== null && (!mockCurrentUnitPrice || mockCurrentUnitPrice === 0)
-      const newUnitPrice = shouldAutoFill ? lastPrice : mockCurrentUnitPrice
+      // Auto-fill logic - always auto-fill when last price exists
+      const shouldAutoFill = lastPrice !== null
+      const newUnitPrice = shouldAutoFill ? lastPrice : 0
 
       expect(fetchLastPrice).toHaveBeenCalledWith('item-1')
       expect(lastPrice).toBe(150.50)
       expect(shouldAutoFill).toBe(true)
       expect(newUnitPrice).toBe(150.50)
+    })
+
+    it('should update price when changing to a different item', async () => {
+      const fetchLastPrice = vi.fn()
+        .mockResolvedValueOnce(100) // First item price
+        .mockResolvedValueOnce(200) // Second item price
+
+      // Select first item
+      const firstPrice = await fetchLastPrice('item-1')
+      expect(firstPrice).toBe(100)
+
+      // Change to second item - should get second item's last price
+      const secondPrice = await fetchLastPrice('item-2')
+      expect(secondPrice).toBe(200)
+
+      // Always use the last price when available
+      expect(fetchLastPrice).toHaveBeenCalledTimes(2)
     })
 
     it('should clear last price when item is deselected', () => {

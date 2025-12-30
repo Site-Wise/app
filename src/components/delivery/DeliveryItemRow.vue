@@ -403,8 +403,9 @@ const handleItemSelected = async (item: Item | null) => {
       const fetchedLastPrice = await deliveryItemService.getLastPriceForItem(item.id!);
       lastPrice.value = fetchedLastPrice;
 
-      // If unit price is 0 or empty, auto-fill with last price
-      if (fetchedLastPrice !== null && (!props.item.unit_price || props.item.unit_price === 0)) {
+      // Always auto-fill with last price when an item is selected/changed
+      // This ensures changing items updates the price to reflect the new item's history
+      if (fetchedLastPrice !== null) {
         updateItem({ unit_price: fetchedLastPrice }, 'unit_price');
       }
     } catch (error) {
