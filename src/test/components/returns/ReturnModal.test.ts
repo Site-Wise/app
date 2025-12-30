@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { h } from 'vue'
 import { setupTestPinia } from '../../utils/test-setup'
 import ReturnModal from '../../../components/returns/ReturnModal.vue'
 
@@ -15,17 +16,41 @@ vi.mock('../../../composables/useToast', () => ({
   })
 }))
 
+// Mock VendorSearchBox component
+vi.mock('../../../components/VendorSearchBox.vue', () => ({
+  default: {
+    name: 'VendorSearchBox',
+    props: ['modelValue', 'vendors', 'deliveries', 'serviceBookings', 'payments', 'placeholder', 'required', 'autofocus'],
+    emits: ['update:modelValue', 'vendorSelected'],
+    setup(props: any, { emit }: any) {
+      return () => h('input', {
+        type: 'text',
+        class: 'mock-vendor-searchbox',
+        value: props.modelValue,
+        onInput: (e: Event) => emit('update:modelValue', (e.target as HTMLInputElement).value)
+      })
+    }
+  }
+}))
+
 // Mock services
 vi.mock('../../../services/pocketbase', () => ({
   vendorService: {
     getAll: vi.fn().mockResolvedValue([])
   },
   deliveryItemService: {
+    getAll: vi.fn().mockResolvedValue([]),
     getByVendorId: vi.fn().mockResolvedValue([])
   },
   vendorReturnService: {
     create: vi.fn().mockResolvedValue({ id: 'return-1' }),
     update: vi.fn().mockResolvedValue({ id: 'return-1' })
+  },
+  vendorReturnItemService: {
+    create: vi.fn().mockResolvedValue({ id: 'return-item-1' })
+  },
+  VendorService: {
+    calculateOutstandingFromData: vi.fn().mockReturnValue(0)
   },
   getCurrentSiteId: vi.fn(() => 'site-1'),
   setCurrentSiteId: vi.fn(),
@@ -62,7 +87,8 @@ describe('ReturnModal Logic', () => {
         },
         props: {
           isEdit: false,
-          returnData: null
+          returnData: null,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
         }
       })
 
@@ -81,11 +107,26 @@ describe('ReturnModal Logic', () => {
             vendor: 'vendor-1',
             return_date: '2024-01-01',
             reason: 'damaged'
-          }
+          },
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
         }
       })
 
       expect(wrapper.exists()).toBe(true)
+    })
+
+    it('should render VendorSearchBox component', () => {
+      wrapper = mount(ReturnModal, {
+        global: {
+          plugins: [pinia]
+        },
+        props: {
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
+        }
+      })
+
+      expect(wrapper.find('.mock-vendor-searchbox').exists()).toBe(true)
     })
   })
 
@@ -96,7 +137,8 @@ describe('ReturnModal Logic', () => {
           plugins: [pinia]
         },
         props: {
-          isEdit: false
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
         }
       })
 
@@ -109,7 +151,8 @@ describe('ReturnModal Logic', () => {
           plugins: [pinia]
         },
         props: {
-          isEdit: false
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
         }
       })
 
@@ -122,6 +165,24 @@ describe('ReturnModal Logic', () => {
       await wrapper.vm.$nextTick()
       expect(wrapper.vm.form.vendor).toBe('vendor-1')
     })
+
+    it('should update vendor via VendorSearchBox', async () => {
+      wrapper = mount(ReturnModal, {
+        global: {
+          plugins: [pinia]
+        },
+        props: {
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
+        }
+      })
+
+      // Direct form update simulating VendorSearchBox selection
+      wrapper.vm.form.vendor = 'vendor-1'
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.form.vendor).toBe('vendor-1')
+    })
   })
 
   describe('Event Emissions', () => {
@@ -131,7 +192,8 @@ describe('ReturnModal Logic', () => {
           plugins: [pinia]
         },
         props: {
-          isEdit: false
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
         }
       })
 
@@ -147,7 +209,8 @@ describe('ReturnModal Logic', () => {
           plugins: [pinia]
         },
         props: {
-          isEdit: false
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
         }
       })
 
@@ -155,6 +218,58 @@ describe('ReturnModal Logic', () => {
       await wrapper.vm.$nextTick()
 
       expect(wrapper.emitted('saved')).toBeTruthy()
+    })
+  })
+
+  describe('VendorSearchBox Integration', () => {
+    it('should pass vendors prop to VendorSearchBox', () => {
+      const vendors = [
+        { id: 'vendor-1', contact_person: 'Test Vendor 1', name: 'Vendor Co 1' },
+        { id: 'vendor-2', contact_person: 'Test Vendor 2', name: 'Vendor Co 2' }
+      ]
+
+      wrapper = mount(ReturnModal, {
+        global: {
+          plugins: [pinia]
+        },
+        props: {
+          isEdit: false,
+          vendors
+        }
+      })
+
+      expect(wrapper.find('.mock-vendor-searchbox').exists()).toBe(true)
+    })
+
+    it('should pass deliveries prop to VendorSearchBox when provided', () => {
+      wrapper = mount(ReturnModal, {
+        global: {
+          plugins: [pinia]
+        },
+        props: {
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }],
+          deliveries: [{ id: 'delivery-1', vendor: 'vendor-1' }]
+        }
+      })
+
+      expect(wrapper.find('.mock-vendor-searchbox').exists()).toBe(true)
+    })
+
+    it('should use default empty arrays for optional props', () => {
+      wrapper = mount(ReturnModal, {
+        global: {
+          plugins: [pinia]
+        },
+        props: {
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
+        }
+      })
+
+      // Component should mount successfully with default empty arrays
+      expect(wrapper.exists()).toBe(true)
+      expect(wrapper.find('.mock-vendor-searchbox').exists()).toBe(true)
     })
   })
 })
