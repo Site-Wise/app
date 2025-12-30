@@ -22,27 +22,31 @@
 
         <!-- Progress Steps -->
         <div class="mb-8">
-          <div class="flex items-center justify-center space-x-4">
+          <div class="flex items-center justify-center space-x-2 sm:space-x-4">
             <div v-for="(step, index) in steps" :key="index" class="flex items-center">
-              <div :class="[
-                'flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium',
-                currentStep > index
-                  ? 'bg-green-500 text-white'
-                  : currentStep === index
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
-              ]">
-                {{ index + 1 }}
+              <!-- Step indicator with text below on mobile, beside on larger screens -->
+              <div class="flex flex-col items-center sm:flex-row sm:items-center">
+                <div :class="[
+                  'flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium',
+                  currentStep > index
+                    ? 'bg-green-500 text-white'
+                    : currentStep === index
+                      ? 'bg-primary-500 text-white'
+                      : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
+                ]">
+                  {{ index + 1 }}
+                </div>
+                <span :class="[
+                  'mt-1 sm:mt-0 sm:ml-2 text-xs sm:text-sm font-medium text-center sm:text-left',
+                  currentStep >= index
+                    ? 'text-gray-900 dark:text-white'
+                    : 'text-gray-500 dark:text-gray-400'
+                ]">
+                  {{ step }}
+                </span>
               </div>
-              <span :class="[
-                'ml-2 text-sm font-medium',
-                currentStep >= index
-                  ? 'text-gray-900 dark:text-white'
-                  : 'text-gray-500 dark:text-gray-400'
-              ]">
-                {{ step }}
-              </span>
-              <div v-if="index < steps.length - 1" class="ml-4 h-px w-8 bg-gray-200 dark:bg-gray-600"></div>
+              <!-- Connector line -->
+              <div v-if="index < steps.length - 1" class="ml-2 sm:ml-4 h-px w-4 sm:w-8 bg-gray-200 dark:bg-gray-600"></div>
             </div>
           </div>
         </div>
