@@ -1,7 +1,7 @@
 <template>
   <div 
     v-if="show" 
-    class="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center"
+    class="fixed inset-0 bg-black bg-opacity-95 z-[60] flex items-center justify-center"
     @click="handleBackdropClick"
     @keydown.escape="close"
     tabindex="0"

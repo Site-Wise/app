@@ -45,13 +45,7 @@
       <div class="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
           <div class="flex items-center space-x-4">
-            <button @click="sidebarOpen = !sidebarOpen"
-              class="lg:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-              :aria-label="t('nav.openSidebar')" :aria-expanded="sidebarOpen">
-              <Menu class="h-6 w-6" />
-            </button>
-
-            <!-- Site Selector for mobile -->
+            <!-- Site Selector for mobile (hamburger menu removed - using bottom nav) -->
             <div class="lg:hidden">
               <SiteSelector />
             </div>
@@ -298,7 +292,6 @@ import {
   TruckIcon,
   CreditCard,
   BanknoteArrowDown,
-  Menu,
   ChevronDown,
   LogOut,
   Plus,

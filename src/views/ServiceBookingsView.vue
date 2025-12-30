@@ -272,8 +272,8 @@
     </div>
 
     <!-- Add/Edit Modal -->
-    <div v-if="showAddModal || editingBooking" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-md m-4 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto" @click.stop>
+    <div v-if="showAddModal || editingBooking" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
+      <div class="relative top-20 mx-auto p-5 border w-full max-w-md m-4 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto mb-20 lg:mb-4" @click.stop>
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
             {{ editingBooking ? t('serviceBookings.editBooking') : t('serviceBookings.bookService') }}
@@ -441,8 +441,8 @@
     </div>
 
     <!-- View Modal -->
-    <div v-if="viewingBooking" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="viewingBooking = null" @keydown.esc="viewingBooking = null" tabindex="-1">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-4xl m-4 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto" @click.stop>
+    <div v-if="viewingBooking" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="viewingBooking = null" @keydown.esc="viewingBooking = null" tabindex="-1">
+      <div class="relative top-20 mx-auto p-5 border w-full max-w-4xl m-4 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto mb-20 lg:mb-4" @click.stop>
         <div class="mt-3">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ t('serviceBookings.bookingDetails') }}</h3>
@@ -653,7 +653,6 @@ const showUnitRateWarning = ref(false);
 const originalUnitRate = ref(0);
 
 const serviceInputRef = ref<HTMLInputElement>();
-const vendorSearchRef = ref();
 const startDateInputRef = ref<HTMLInputElement>();
 
 const form = reactive({

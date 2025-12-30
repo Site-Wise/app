@@ -3,7 +3,7 @@
     <Transition name="bottom-sheet-overlay">
       <div
         v-if="modelValue"
-        class="fixed inset-0 bg-black/50 z-50"
+        class="fixed inset-0 bg-black/50 z-[60]"
         @click="handleOverlayClick"
       />
     </Transition>
@@ -11,7 +11,7 @@
     <Transition :name="isMobile ? 'bottom-sheet' : 'modal-fade'">
       <div
         v-if="modelValue"
-        class="fixed z-50"
+        class="fixed z-[60]"
         :class="containerClasses"
         role="dialog"
         :aria-modal="true"

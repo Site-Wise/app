@@ -14,7 +14,7 @@
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-xl shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 min-h-touch touch-feedback;
+    @apply inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-xl shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 min-h-[44px] touch-feedback;
   }
 
   .btn-primary {
@@ -42,7 +42,7 @@
   }
 
   .input {
-    @apply block w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-primary-500 dark:focus:border-primary-400 transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 min-h-touch text-base sm:text-sm;
+    @apply block w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-primary-500 dark:focus:border-primary-400 transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 min-h-[44px] text-base sm:text-sm;
   }
 
   .card {
@@ -146,6 +146,18 @@
   .h-nav-safe {
     height: calc(4rem + env(safe-area-inset-bottom));
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Modal utilities - ensure modals appear above bottom nav */
+@layer components {
+  .modal-overlay {
+    @apply fixed inset-0 z-[60] overflow-y-auto;
+  }
+
+  .modal-content {
+    /* Add bottom padding on mobile to account for bottom nav */
+    @apply mb-20 lg:mb-4;
   }
 }
 

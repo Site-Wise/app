@@ -265,7 +265,7 @@
     </div>
 
     <!-- Enhanced Invite User Modal -->
-    <div v-if="showInviteModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div v-if="showInviteModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md">
         <div class="p-6">
           <div class="flex items-center gap-3 mb-6">
@@ -352,7 +352,7 @@
     </div>
 
     <!-- Enhanced Edit Role Modal -->
-    <div v-if="editingUser" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div v-if="editingUser" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md">
         <div class="p-6">
           <div class="flex items-center gap-3 mb-6">

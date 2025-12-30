@@ -111,7 +111,7 @@
     </div>
 
     <!-- PDF Conversion Modal -->
-    <div v-if="showPdfModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div v-if="showPdfModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 z-[60] flex items-center justify-center p-4">
       <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
           {{ t('fileUpload.pdfConversion') }}

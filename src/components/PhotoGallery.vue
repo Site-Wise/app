@@ -38,7 +38,7 @@
     <!-- Gallery Modal -->
     <div 
       v-if="showGallery" 
-      class="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
+      class="fixed inset-0 bg-black bg-opacity-90 z-[60] flex items-center justify-center"
       @click="closeGallery"
       @keydown.escape="closeGallery"
       tabindex="0"
@@ -199,7 +199,6 @@ const showGallery = ref(false);
 const currentPhotoIndex = ref(0);
 const isZoomed = ref(false);
 const photoLoading = ref(false);
-const photoElement = ref<HTMLImageElement | null>(null);
 const zoomLevel = ref(1);
 const zoomX = ref(0);
 const zoomY = ref(0);

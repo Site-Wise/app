@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="$emit('close')"
+  <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="$emit('close')"
     @keydown.esc="$emit('close')" tabindex="-1">
     <div
       class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
@@ -101,7 +101,6 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 // Refs
-const dateInputRef = ref<HTMLInputElement>();
 const startTimeInputRef = ref<HTMLInputElement>();
 
 // Form data
