@@ -95,8 +95,7 @@
           :class="{ 'cursor-zoom-in': !isZoomed, 'cursor-zoom-out': isZoomed }"
           @click="toggleZoom"
           :style="zoomStyle"
-          ref="photoElement"
-          @load="onPhotoLoad"
+                    @load="onPhotoLoad"
         />
         
         <!-- Loading Spinner -->
@@ -199,7 +198,6 @@ const showGallery = ref(false);
 const currentPhotoIndex = ref(0);
 const isZoomed = ref(false);
 const photoLoading = ref(false);
-const photoElement = ref<HTMLImageElement | null>(null);
 const zoomLevel = ref(1);
 const zoomX = ref(0);
 const zoomY = ref(0);

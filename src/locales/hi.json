@@ -735,7 +735,12 @@
     "currentAllocations": "वर्तमान आवंटन",
     "allocationStatus": "आवंटन स्थिति",
     "result": "परिणाम",
-    "results": "परिणाम"
+    "results": "परिणाम",
+    "viewDuePayments": "बकाया भुगतान देखें",
+    "duePayments": "बकाया भुगतान",
+    "totalOutstanding": "कुल बकाया",
+    "payNow": "अभी भुगतान करें",
+    "allPaymentsCurrent": "सभी भुगतान वर्तमान हैं"
   },
   "site": {
     "selectSite": "साइट चुनें",

@@ -7,19 +7,62 @@
           {{ t('payments.subtitle') }}
         </p>
       </div>
-      <button 
-        @click="handleAddPayment" 
-        :disabled="!canCreatePayment"
-        :class="[
-          canCreatePayment ? 'btn-primary' : 'btn-disabled',
-          'hidden md:flex items-center'
-        ]"
-        :title="!canCreatePayment ? t('subscription.banner.freeTierLimitReached') : ''"
-        data-keyboard-shortcut="n"
-      >
-        <Plus class="mr-2 h-4 w-4" />
-        {{ t('payments.recordPayment') }}
-      </button>
+      <div class="hidden md:flex items-center space-x-3">
+        <button
+          @click="showDuePaymentsModal = true"
+          v-if="hasOutstandingPayments"
+          class="btn-outline flex items-center"
+        >
+          <AlertCircle class="mr-2 h-4 w-4 text-orange-500" />
+          {{ t('payments.viewDuePayments') }}
+        </button>
+        <button
+          @click="handleAddPayment"
+          :disabled="!canCreatePayment"
+          :class="[
+            canCreatePayment ? 'btn-primary' : 'btn-disabled',
+            'flex items-center'
+          ]"
+          :title="!canCreatePayment ? t('subscription.banner.freeTierLimitReached') : ''"
+          data-keyboard-shortcut="n"
+        >
+          <Plus class="mr-2 h-4 w-4" />
+          {{ t('payments.recordPayment') }}
+        </button>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div class="md:hidden relative header-mobile-menu">
+        <button @click="showHeaderMobileMenu = !showHeaderMobileMenu" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <MoreVertical class="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        </button>
+
+        <!-- Mobile Dropdown Menu -->
+        <div v-if="showHeaderMobileMenu" class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+          <div class="py-1">
+            <button
+              v-if="hasOutstandingPayments"
+              @click="handleHeaderMobileAction('viewDuePayments')"
+              class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <AlertCircle class="mr-3 h-5 w-5 text-orange-500" />
+              {{ t('payments.viewDuePayments') }}
+            </button>
+            <button
+              @click="handleHeaderMobileAction('recordPayment')"
+              :disabled="!canCreatePayment"
+              :class="[
+                canCreatePayment
+                  ? 'flex items-center w-full px-4 py-3 text-sm text-white bg-blue-600 hover:bg-blue-700'
+                  : 'flex items-center w-full px-4 py-3 text-sm text-gray-400 bg-gray-100 dark:bg-gray-700 cursor-not-allowed'
+              ]"
+            >
+              <Plus class="mr-3 h-5 w-5" :class="canCreatePayment ? 'text-white' : 'text-gray-400'" />
+              {{ t('payments.recordPayment') }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Search Box with Results Summary -->
@@ -345,37 +388,16 @@
       </div>
     </div>
 
-    <!-- Outstanding Amounts by Vendor -->
-    <div class="mt-8 card">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Outstanding Amounts by Vendor</h2>
-      <div class="space-y-4">
-        <div v-for="vendor in vendorsWithOutstanding" :key="vendor.id" class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <div class="mb-3 sm:mb-0">
-            <h3 class="font-medium text-gray-900 dark:text-white">{{ vendor.contact_person }}</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400">{{ vendor.pendingItems }} pending deliveries</p>
-          </div>
-          <div class="flex items-center justify-between sm:block sm:text-right">
-            <p class="text-lg font-semibold text-gray-900 dark:text-white">₹{{ vendor.outstandingAmount.toFixed(2) }}</p>
-            <button 
-              @click="quickPayment(vendor)" 
-              :disabled="!canCreatePayment"
-              :class="[
-                canCreatePayment 
-                  ? 'text-sm text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300' 
-                  : 'text-sm text-gray-300 dark:text-gray-600 cursor-not-allowed',
-                'ml-3 sm:ml-0'
-              ]"
-            >
-              Pay Now
-            </button>
-          </div>
-        </div>
-        
-        <div v-if="vendorsWithOutstanding.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
-          No outstanding amounts
-        </div>
-      </div>
-    </div>
+    <!-- Due Payments Modal -->
+    <DuePaymentsModal
+      :is-visible="showDuePaymentsModal"
+      :vendors="vendors"
+      :deliveries="deliveries"
+      :service-bookings="serviceBookings"
+      :payments="payments"
+      @close="showDuePaymentsModal = false"
+      @pay-vendor="handleDuePaymentVendorClick"
+    />
 
     <!-- Unified Payment Modal -->
     <PaymentModal
@@ -533,17 +555,19 @@
 import { ref, computed, onMounted } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { useRoute } from 'vue-router';
-import { 
-  CreditCard, 
-  Plus, 
-  Eye, 
+import {
+  CreditCard,
+  Plus,
+  Eye,
   Edit2,
   Trash2,
   Loader2,
   Banknote,
   Wallet,
   Smartphone,
-  Building2
+  Building2,
+  AlertCircle,
+  MoreVertical
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
@@ -555,8 +579,9 @@ import { useModalState } from '../composables/useModalState';
 import SearchBox from '../components/SearchBox.vue';
 import PaymentModal from '../components/PaymentModal.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
-import { 
-  paymentService, 
+import DuePaymentsModal from '../components/DuePaymentsModal.vue';
+import {
+  paymentService,
   paymentAllocationService,
   vendorService,
   accountService,
@@ -633,6 +658,12 @@ const allocationLoadingPromises = ref<Map<string, Promise<PaymentAllocation[]>>>
 
 const openMobileMenuId = ref<string | null>(null);
 
+// Due Payments Modal state
+const showDuePaymentsModal = ref(false);
+
+// Header mobile menu state
+const showHeaderMobileMenu = ref(false);
+
 const canCreatePayment = computed(() => {
   return !isReadOnly.value && checkCreateLimit('payments');
 });
@@ -701,6 +732,10 @@ const vendorsWithOutstanding = computed(() => {
   }).filter(vendor => vendor.outstandingAmount > 0);
 });
 
+const hasOutstandingPayments = computed(() => {
+  return vendorsWithOutstanding.value.length > 0;
+});
+
 const getAccountIcon = (type?: Account['type']) => {
   if (!type) return Wallet;
   const icons = {
@@ -745,6 +780,27 @@ const quickPayment = (vendor: VendorWithOutstanding) => {
   currentAllocations.value = [];
   showPaymentModal.value = true;
   openModal('payments-paynow-modal');
+};
+
+const handleDuePaymentVendorClick = (vendor: VendorWithOutstanding) => {
+  // Close the due payments modal first
+  showDuePaymentsModal.value = false;
+  // Then open the payment modal with this vendor pre-selected
+  quickPayment(vendor);
+};
+
+const handleHeaderMobileAction = (action: string) => {
+  showHeaderMobileMenu.value = false;
+  switch (action) {
+    case 'viewDuePayments':
+      showDuePaymentsModal.value = true;
+      break;
+    case 'recordPayment':
+      if (canCreatePayment.value) {
+        handleAddPayment();
+      }
+      break;
+  }
 };
 
 const viewPayment = async (payment: Payment) => {
@@ -913,8 +969,22 @@ const handlePaymentModalSubmit = async (data: any) => {
       await paymentService.create(paymentData!);
       success(t('messages.createSuccess', { item: t('common.payment') }));
     } else if (mode === 'EDIT') {
-      // Use the service method to update allocations (deletes old and creates new)
-      await paymentService.updateAllocations(payment.id!, form.deliveries, form.service_bookings);
+      // In EDIT mode, merge existing allocations with new ones from the form
+      // Extract existing delivery and service booking IDs from current allocations
+      const existingDeliveryIds = currentAllocations.value
+        .filter(allocation => allocation.delivery)
+        .map(allocation => allocation.delivery!);
+
+      const existingServiceBookingIds = currentAllocations.value
+        .filter(allocation => allocation.service_booking)
+        .map(allocation => allocation.service_booking!);
+
+      // Combine existing with new (form contains only newly added items in edit mode)
+      const allDeliveryIds = [...new Set([...existingDeliveryIds, ...form.deliveries])];
+      const allServiceBookingIds = [...new Set([...existingServiceBookingIds, ...form.service_bookings])];
+
+      // Use the service method to add new allocations while preserving existing ones
+      await paymentService.updateAllocations(payment.id!, allDeliveryIds, allServiceBookingIds);
       success(t('messages.updateSuccess', { item: t('common.payment') }));
     }
     
@@ -1059,6 +1129,10 @@ const handleClickOutside = (event: Event) => {
   const target = event.target as Element;
   if (!target.closest('.relative')) {
     closeMobileMenu();
+  }
+  // Close header mobile menu when clicking outside
+  if (!target.closest('.header-mobile-menu')) {
+    showHeaderMobileMenu.value = false;
   }
 };
 

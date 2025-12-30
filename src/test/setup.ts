@@ -1,27 +1,30 @@
 import { vi } from 'vitest'
 
-// Mock PocketBase
+// Mock PocketBase - using a class for proper constructor behavior in Vitest v4
 vi.mock('pocketbase', () => {
-  const mockPB = {
-    authStore: {
+  class MockPocketBase {
+    authStore = {
       isValid: false,
       model: null,
       clear: vi.fn(),
-    },
-    collection: vi.fn(() => ({
+    }
+    baseUrl = 'http://localhost:8090'
+
+    collection = vi.fn(() => ({
       getFullList: vi.fn(),
       getOne: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
       authWithPassword: vi.fn(),
-    })),
-    autoCancellation: vi.fn(),
-    baseUrl: 'http://localhost:8090'
+      getFirstListItem: vi.fn().mockRejectedValue(new Error('Not found')),
+    }))
+
+    autoCancellation = vi.fn()
   }
-  
+
   return {
-    default: vi.fn(() => mockPB)
+    default: MockPocketBase
   }
 })
 
