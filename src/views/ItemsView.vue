@@ -173,6 +173,15 @@
         </div>
       </div>
     </div>
+
+    <!-- Loading Overlay -->
+    <LoadingOverlay
+      :show="showOverlay"
+      :state="overlayState"
+      :message="overlayMessage"
+      @close="handleOverlayClose"
+      @timeout="handleOverlayTimeout"
+    />
   </div>
 </template>
 
@@ -189,6 +198,7 @@ import { useSiteData } from '../composables/useSiteData';
 import TagSelector from '../components/TagSelector.vue';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
+import LoadingOverlay from '../components/LoadingOverlay.vue';
 import { useItemSearch } from '../composables/useSearch';
 import {
   itemService,
@@ -239,6 +249,22 @@ const showAddModal = ref(false);
 const editingItem = ref<Item | null>(null);
 const formLoading = ref(false);
 const nameInputRef = ref<HTMLInputElement>();
+
+// Loading overlay state
+const showOverlay = ref(false);
+const overlayState = ref<'loading' | 'success' | 'error' | 'timeout'>('loading');
+const overlayMessage = ref('');
+
+const handleOverlayClose = () => {
+  showOverlay.value = false;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+};
+
+const handleOverlayTimeout = () => {
+  overlayState.value = 'timeout';
+  overlayMessage.value = t('loading.timeout');
+};
 
 const canCreateItem = computed(() => {
   return checkCreateLimit('items') && !isReadOnly.value;
@@ -359,24 +385,38 @@ const handleAddItem = async () => {
 
 const saveItem = async () => {
   formLoading.value = true;
+  showOverlay.value = true;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+
   try {
     if (editingItem.value) {
       await itemService.update(editingItem.value.id!, form);
-      success(t('messages.updateSuccess', { item: t('common.item') }));
+      overlayState.value = 'success';
+      overlayMessage.value = t('messages.updateSuccess', { item: t('common.item') });
     } else {
       if (!checkCreateLimit('items')) {
-        error(t('subscription.banner.freeTierLimitReached'));
+        overlayState.value = 'error';
+        overlayMessage.value = t('subscription.banner.freeTierLimitReached');
+        formLoading.value = false;
         return;
       }
       await itemService.create(form);
-      success(t('messages.createSuccess', { item: t('common.item') }));
+      overlayState.value = 'success';
+      overlayMessage.value = t('messages.createSuccess', { item: t('common.item') });
       // Usage is automatically incremented by PocketBase hooks
     }
     await reloadItems();
-    closeModal();
+
+    // Wait for success animation then close
+    setTimeout(() => {
+      showOverlay.value = false;
+      closeModal();
+    }, 1500);
   } catch (err) {
     console.error('Error saving item:', err);
-    error(t('messages.error'));
+    overlayState.value = 'error';
+    overlayMessage.value = t('messages.error');
   } finally {
     formLoading.value = false;
   }
