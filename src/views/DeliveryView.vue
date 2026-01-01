@@ -330,8 +330,8 @@
     />
 
     <!-- View Modal -->
-    <div v-if="viewingDelivery" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @keydown.esc="closeViewModal" tabindex="-1">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-6xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto">
+    <div v-if="viewingDelivery" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @keydown.esc="closeViewModal" tabindex="-1">
+      <div class="relative top-20 mx-auto p-5 border w-full max-w-6xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto mb-20 lg:mb-4">
         <div class="mt-3">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ t('delivery.deliveryDetails') }}</h3>
@@ -559,7 +559,7 @@ import { useModalState } from '../composables/useModalState';
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
-const { success, error } = useToast();
+const { success, error, info: showInfoToast } = useToast();
 const { canDelete } = usePermissions();
 const { openModal, closeModal } = useModalState();
 
@@ -895,11 +895,9 @@ const showReturnDetails = (deliveryItemId: string) => {
   const info = returnInfo.value[deliveryItemId];
   if (!info || info.returns.length === 0) return;
   
-  const returnsList = info.returns.map(ret => 
-    `• ${ret.quantityReturned} units on ${new Date(ret.returnDate).toLocaleDateString()} (${ret.status}) - ${ret.reason}`
-  ).join('\n');
-  
-  alert(`Return Details:\n\n${returnsList}`);
+  const returnsSummary = `${info.returns.length} return(s): ${info.totalReturned} units returned`;
+
+  showInfoToast(returnsSummary, { duration: 6000 });
 };
 
 const deleteDelivery = async (delivery: Delivery) => {

@@ -239,9 +239,11 @@ describe('UserManagementView Logic', () => {
     })
 
     it('should format minutes for times less than 1 hour away', () => {
-      const formatRelativeTime = (dateString: string) => {
+      // Use a fixed reference time to avoid timing race conditions
+      const fixedNow = new Date('2024-01-15T10:00:00Z').getTime()
+      const formatRelativeTime = (dateString: string, referenceTime: number) => {
         const date = new Date(dateString)
-        const now = new Date()
+        const now = new Date(referenceTime)
         const diffInSeconds = Math.floor((date.getTime() - now.getTime()) / 1000)
 
         if (diffInSeconds <= 0) return 'soon'
@@ -250,14 +252,16 @@ describe('UserManagementView Logic', () => {
         return `${Math.floor(diffInSeconds / 86400)}d`
       }
 
-      const futureDate = new Date(Date.now() + 1800000).toISOString() // 30 minutes from now
-      expect(formatRelativeTime(futureDate)).toBe('30m')
+      const futureDate = new Date(fixedNow + 1800000).toISOString() // 30 minutes from fixed reference
+      expect(formatRelativeTime(futureDate, fixedNow)).toBe('30m')
     })
 
     it('should format hours for times less than 1 day away', () => {
-      const formatRelativeTime = (dateString: string) => {
+      // Use fixed timestamp to avoid timing race conditions
+      const fixedNow = Date.now()
+      const formatRelativeTime = (dateString: string, nowTimestamp: number) => {
         const date = new Date(dateString)
-        const now = new Date()
+        const now = new Date(nowTimestamp)
         const diffInSeconds = Math.floor((date.getTime() - now.getTime()) / 1000)
 
         if (diffInSeconds <= 0) return 'soon'
@@ -266,14 +270,16 @@ describe('UserManagementView Logic', () => {
         return `${Math.floor(diffInSeconds / 86400)}d`
       }
 
-      const futureDate = new Date(Date.now() + 7200000).toISOString() // 2 hours from now
-      expect(formatRelativeTime(futureDate)).toBe('2h')
+      const futureDate = new Date(fixedNow + 7200000).toISOString() // 2 hours from fixed reference
+      expect(formatRelativeTime(futureDate, fixedNow)).toBe('2h')
     })
 
     it('should format days for times 1 day or more away', () => {
-      const formatRelativeTime = (dateString: string) => {
+      // Use fixed timestamp to avoid timing race conditions
+      const fixedNow = Date.now()
+      const formatRelativeTime = (dateString: string, nowTimestamp: number) => {
         const date = new Date(dateString)
-        const now = new Date()
+        const now = new Date(nowTimestamp)
         const diffInSeconds = Math.floor((date.getTime() - now.getTime()) / 1000)
 
         if (diffInSeconds <= 0) return 'soon'
@@ -282,15 +288,16 @@ describe('UserManagementView Logic', () => {
         return `${Math.floor(diffInSeconds / 86400)}d`
       }
 
-      // Add 1 second buffer to ensure we're safely in the 3-day range despite timing variations
-      const futureDate = new Date(Date.now() + 259201000).toISOString() // 3 days + 1 second from now
-      expect(formatRelativeTime(futureDate)).toBe('3d')
+      const futureDate = new Date(fixedNow + 259200000).toISOString() // 3 days from now
+      expect(formatRelativeTime(futureDate, fixedNow)).toBe('3d')
     })
 
     it('should handle exactly 1 hour', () => {
-      const formatRelativeTime = (dateString: string) => {
+      // Use fixed timestamp to avoid timing race conditions
+      const fixedNow = Date.now()
+      const formatRelativeTime = (dateString: string, nowTimestamp: number) => {
         const date = new Date(dateString)
-        const now = new Date()
+        const now = new Date(nowTimestamp)
         const diffInSeconds = Math.floor((date.getTime() - now.getTime()) / 1000)
 
         if (diffInSeconds <= 0) return 'soon'
@@ -299,14 +306,16 @@ describe('UserManagementView Logic', () => {
         return `${Math.floor(diffInSeconds / 86400)}d`
       }
 
-      const futureDate = new Date(Date.now() + 3600000).toISOString() // exactly 1 hour
-      expect(formatRelativeTime(futureDate)).toBe('1h')
+      const futureDate = new Date(fixedNow + 3600000).toISOString() // exactly 1 hour from fixed reference
+      expect(formatRelativeTime(futureDate, fixedNow)).toBe('1h')
     })
 
     it('should handle 7 days (typical invitation expiry)', () => {
-      const formatRelativeTime = (dateString: string) => {
+      // Use fixed timestamp to avoid timing race conditions
+      const fixedNow = Date.now()
+      const formatRelativeTime = (dateString: string, nowTimestamp: number) => {
         const date = new Date(dateString)
-        const now = new Date()
+        const now = new Date(nowTimestamp)
         const diffInSeconds = Math.floor((date.getTime() - now.getTime()) / 1000)
 
         if (diffInSeconds <= 0) return 'soon'
@@ -315,10 +324,9 @@ describe('UserManagementView Logic', () => {
         return `${Math.floor(diffInSeconds / 86400)}d`
       }
 
-      const futureDate = new Date(Date.now() + 604800000).toISOString() // 7 days
-      const result = formatRelativeTime(futureDate)
-      // Should be 6d or 7d depending on timing precision
-      expect(['6d', '7d']).toContain(result)
+      const futureDate = new Date(fixedNow + 604800000).toISOString() // 7 days from fixed reference
+      const result = formatRelativeTime(futureDate, fixedNow)
+      expect(result).toBe('7d')
     })
   })
 

@@ -192,7 +192,7 @@
       </div>
 
       <!-- Available Plans (shown when upgrading) -->
-      <div v-if="showUpgradeModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div v-if="showUpgradeModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
           <div class="p-6 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center justify-between">
@@ -296,7 +296,7 @@
       </div>
 
       <!-- Cancel Subscription Modal -->
-      <div v-if="showCancelModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div v-if="showCancelModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md">
           <div class="p-6">
             <div class="flex items-center gap-3 mb-4">
@@ -350,8 +350,10 @@ import {
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription, type SubscriptionPlan } from '../composables/useSubscription';
+import { useToast } from '../composables/useToast';
 
 const { t } = useI18n();
+const { success: showSuccess, error: showError } = useToast();
 const {
   currentSubscription,
   currentPlan,
@@ -445,7 +447,7 @@ const upgradeToPlan = async (plan: SubscriptionPlan) => {
     }
   } catch (err) {
     console.error('Error upgrading subscription:', err);
-    alert(err instanceof Error ? err.message : t('subscription.upgradeError'));
+    showError(err instanceof Error ? err.message : t('subscription.upgradeError'));
   } finally {
     upgrading.value = false;
   }
@@ -454,10 +456,10 @@ const upgradeToPlan = async (plan: SubscriptionPlan) => {
 const confirmReactivate = async () => {
   try {
     await reactivateSubscription();
-    alert(t('subscription.reactivateSuccess'));
+    showSuccess(t('subscription.reactivateSuccess'));
   } catch (err) {
     console.error('Error reactivating subscription:', err);
-    alert(err instanceof Error ? err.message : t('subscription.reactivateError'));
+    showError(err instanceof Error ? err.message : t('subscription.reactivateError'));
   }
 };
 
@@ -508,7 +510,7 @@ const confirmCancel = async () => {
     showCancelModal.value = false;
   } catch (err) {
     console.error('Error cancelling subscription:', err);
-    alert(err instanceof Error ? err.message : t('subscription.cancelError'));
+    showError(err instanceof Error ? err.message : t('subscription.cancelError'));
   } finally {
     cancelling.value = false;
   }

@@ -246,12 +246,14 @@ describe('DashboardView', () => {
   it('should display calculated expenses correctly', async () => {
     // Wait for data to load
     await wrapper.vm.$nextTick()
-    
+
     // Should show total expenses (22500 from incoming items + 10000 from service bookings = 32500)
-    expect(wrapper.text()).toContain('32,500')
-    
+    // Note: Dashboard uses compact format (32.5K instead of 32,500)
+    expect(wrapper.text()).toContain('32.5K')
+
     // Should show outstanding amount (22500 - 0 from unpaid incoming items = 22500)
-    expect(wrapper.text()).toContain('22,500')
+    // Note: Dashboard uses compact format (22.5K instead of 22,500)
+    expect(wrapper.text()).toContain('22.5K')
   })
 
   it('should render payments chart section', () => {

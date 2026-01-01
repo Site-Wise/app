@@ -32,6 +32,17 @@ vi.mock('../../composables/useSubscription', () => ({
   })
 }))
 
+// Mock toast error function
+const mockShowError = vi.fn()
+vi.mock('../../composables/useToast', () => ({
+  useToast: () => ({
+    error: mockShowError,
+    success: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn()
+  })
+}))
+
 // Mock the useSite composable
 vi.mock('../../composables/useSite', () => ({
   useSite: () => ({
@@ -92,8 +103,8 @@ describe('SiteSelector', () => {
     
     // Mock window.dispatchEvent
     window.dispatchEvent = vi.fn()
-    // Mock window.alert
-    window.alert = vi.fn()
+    // Clear toast mock
+    mockShowError.mockClear()
   })
 
   afterEach(() => {
@@ -338,20 +349,17 @@ describe('SiteSelector', () => {
     it('should show error when trying to create site at limit', async () => {
       // Set checkCreateLimit to return false
       mockCheckCreateLimit.mockReturnValue(false)
-      
-      // Mock alert
-      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {})
-      
+
       wrapper = createWrapper()
-      
+
       // Try to submit create form
       wrapper.vm.showCreateModal = true
       await wrapper.vm.handleCreateSite()
-      
-      expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining('limit'))
+
+      // The component calls showError(t('subscription.banner.freeTierLimitReached'))
+      expect(mockShowError).toHaveBeenCalled()
       expect(mockCreateSite).not.toHaveBeenCalled()
-      
-      alertSpy.mockRestore()
+
       // Reset mock for other tests
       mockCheckCreateLimit.mockReturnValue(true)
     })
@@ -451,7 +459,7 @@ describe('SiteSelector', () => {
       
       await wrapper.vm.$nextTick()
       
-      expect(window.alert).toHaveBeenCalledWith('Failed to update site. Please try again.')
+      expect(mockShowError).toHaveBeenCalledWith('Failed to update site. Please try again.')
     })
 
     it('should display site stats in manage modal', async () => {

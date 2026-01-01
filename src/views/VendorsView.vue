@@ -55,12 +55,12 @@
               <div class="flex justify-between items-center mb-2">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.outstanding') }}</span>
                 <span class="text-sm font-semibold text-red-600 dark:text-red-400">₹{{
-                  getVendorOutstanding(vendor.id!).toFixed(2) }}</span>
+                  getVendorOutstanding(vendor.id!).toFixed(0) }}</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.totalPaid') }}</span>
                 <span class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{
-                  getVendorPaid(vendor.id!).toFixed(2) }}</span>
+                  getVendorPaid(vendor.id!).toFixed(0) }}</span>
               </div>
             </div>
 
@@ -114,10 +114,10 @@
 
     <!-- Add/Edit Modal -->
     <div v-if="showAddModal || editingVendor"
-      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="closeModal"
       @keydown.esc="closeModal" tabindex="-1">
       <div
-        class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4"
+        class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4 mb-20 lg:mb-4"
         @click.stop>
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
@@ -127,20 +127,20 @@
           <form @submit.prevent="saveVendor" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.contactPerson')
-              }}</label>
+                }}</label>
               <input ref="firstInputRef" v-model="form.contact_person" type="text" class="input mt-1"
                 :placeholder="t('forms.enterContactPerson')" autofocus />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.companyName')
-              }}</label>
+                }}</label>
               <input v-model="form.name" type="text" class="input mt-1" :placeholder="t('forms.enterCompanyName')" />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.paymentDetails')
-              }}</label>
+                }}</label>
               <textarea v-model="form.payment_details" class="input mt-1" rows="2"
                 :placeholder="t('forms.enterPaymentDetails')"></textarea>
             </div>
@@ -157,7 +157,7 @@
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.address')
-              }}</label>
+                }}</label>
               <textarea v-model="form.address" class="input mt-1" rows="2"
                 :placeholder="t('forms.enterAddress')"></textarea>
             </div>

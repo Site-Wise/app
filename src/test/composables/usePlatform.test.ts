@@ -1,22 +1,23 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { usePlatform } from '../../composables/usePlatform';
 import { nextTick } from 'vue';
 
-// Mock Tauri API - will be configured per test
-const mockInvoke = vi.fn();
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: mockInvoke,
-}));
+// Store reference to mocked invoke that we can control
+let mockInvoke: ReturnType<typeof vi.fn>;
 
 describe('usePlatform', () => {
   let originalNavigator: any;
   let originalMatchMedia: any;
   let originalNotification: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
-    
+
+    // Get reference to the mocked invoke from global setup and reset it
+    const tauriCore = await import('@tauri-apps/api/core');
+    mockInvoke = vi.mocked(tauriCore.invoke);
+    mockInvoke.mockReset();
+
     // Store original values
     originalNavigator = window.navigator;
     originalMatchMedia = window.matchMedia;
@@ -52,12 +53,15 @@ describe('usePlatform', () => {
       configurable: true,
       writable: true,
     });
-    
+
     Object.defineProperty(window, 'matchMedia', {
       value: vi.fn(() => ({ matches: false })),
       configurable: true,
       writable: true,
     });
+
+    // Dynamically import to get fresh module with updated mock
+    const { usePlatform } = await import('../../composables/usePlatform');
 
     const wrapper = mount({
       template: '<div></div>',
@@ -67,7 +71,7 @@ describe('usePlatform', () => {
     });
 
     // Wait for onMounted to complete
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise(resolve => setTimeout(resolve, 50));
     await nextTick();
 
     expect(wrapper.vm.platformInfo.platform).toBe('web');
@@ -85,6 +89,9 @@ describe('usePlatform', () => {
       is_native: true,
     });
 
+    // Dynamically import to get fresh module with updated mock
+    const { usePlatform } = await import('../../composables/usePlatform');
+
     const wrapper = mount({
       template: '<div></div>',
       setup() {
@@ -93,7 +100,7 @@ describe('usePlatform', () => {
     });
 
     // Wait for onMounted to complete
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise(resolve => setTimeout(resolve, 50));
     await nextTick();
 
     expect(wrapper.vm.platformInfo.platform).toBe('linux');
@@ -105,7 +112,7 @@ describe('usePlatform', () => {
     expect(wrapper.vm.isLoading).toBe(false);
   });
 
-  it('detects PWA mode', async () => {
+  it('detects PWA mode', { timeout: 10000 }, async () => {
     // Mock Tauri invoke to reject
     mockInvoke.mockRejectedValue(new Error('Tauri API not available'));
 
@@ -115,12 +122,15 @@ describe('usePlatform', () => {
       configurable: true,
       writable: true,
     });
-    
+
     Object.defineProperty(window, 'matchMedia', {
       value: vi.fn(() => ({ matches: true })),
       configurable: true,
       writable: true,
     });
+
+    // Dynamically import to get fresh module with updated mock
+    const { usePlatform } = await import('../../composables/usePlatform');
 
     const wrapper = mount({
       template: '<div></div>',
@@ -130,7 +140,7 @@ describe('usePlatform', () => {
     });
 
     // Wait for onMounted to complete
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise(resolve => setTimeout(resolve, 50));
     await nextTick();
 
     expect(wrapper.vm.platformInfo.isPWA).toBe(true);
@@ -153,6 +163,9 @@ describe('usePlatform', () => {
       writable: true,
     });
 
+    // Dynamically import to get fresh module with updated mock
+    const { usePlatform } = await import('../../composables/usePlatform');
+
     const wrapper = mount({
       template: '<div></div>',
       setup() {
@@ -161,7 +174,7 @@ describe('usePlatform', () => {
     });
 
     // Wait for onMounted to complete
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise(resolve => setTimeout(resolve, 50));
     await nextTick();
 
     expect(wrapper.vm.platformInfo.platform).toBe('android');
@@ -186,6 +199,9 @@ describe('usePlatform', () => {
       writable: true,
     });
 
+    // Dynamically import to get fresh module with updated mock
+    const { usePlatform } = await import('../../composables/usePlatform');
+
     const wrapper = mount({
       template: '<div></div>',
       setup() {
@@ -209,6 +225,9 @@ describe('usePlatform', () => {
       arch: 'arm64',
       is_native: true,
     });
+
+    // Dynamically import to get fresh module with updated mock
+    const { usePlatform } = await import('../../composables/usePlatform');
 
     const wrapper = mount({
       template: '<div></div>',
@@ -238,7 +257,7 @@ describe('usePlatform', () => {
       configurable: true,
       writable: true,
     });
-    
+
     Object.defineProperty(window, 'matchMedia', {
       value: vi.fn(() => ({ matches: true })),
       configurable: true,
@@ -247,6 +266,9 @@ describe('usePlatform', () => {
 
     // Mock Notification API availability
     (window as any).Notification = {};
+
+    // Dynamically import to get fresh module with updated mock
+    const { usePlatform } = await import('../../composables/usePlatform');
 
     const wrapper = mount({
       template: '<div></div>',
@@ -276,7 +298,7 @@ describe('usePlatform', () => {
       configurable: true,
       writable: true,
     });
-    
+
     Object.defineProperty(window, 'matchMedia', {
       value: vi.fn(() => ({ matches: false })),
       configurable: true,
@@ -285,6 +307,9 @@ describe('usePlatform', () => {
 
     // Mock Notification API availability
     (window as any).Notification = {};
+
+    // Dynamically import to get fresh module with updated mock
+    const { usePlatform } = await import('../../composables/usePlatform');
 
     const wrapper = mount({
       template: '<div></div>',

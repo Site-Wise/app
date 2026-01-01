@@ -1,6 +1,6 @@
 <template>
-  <div v-if="isVisible" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="handleBackdropClick" @keydown.esc="handleEscape" tabindex="-1">
-    <div class="relative top-10 mx-auto p-6 border w-full max-w-5xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4" @click.stop>
+  <div v-if="isVisible" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="handleBackdropClick" @keydown.esc="handleEscape" tabindex="-1">
+    <div class="relative top-10 mx-auto p-6 border w-full max-w-5xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4 mb-20 lg:mb-4" @click.stop>
       <div class="mt-3">
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">

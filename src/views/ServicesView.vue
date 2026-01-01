@@ -152,10 +152,10 @@
 
     <!-- Add/Edit Modal -->
     <div v-if="showAddModal || editingService"
-      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="closeModal"
       @keydown.esc="closeModal" tabindex="-1">
       <div
-        class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+        class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-20 lg:mb-4"
         @click.stop>
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
@@ -291,7 +291,7 @@ import { useServiceSearch } from '../composables/useSearch';
 
 const { t } = useI18n();
 const { canUpdate, canDelete } = usePermissions();
-const { success, error } = useToast();
+const { success, error: showError } = useToast();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { openModal, closeModal: closeModalState } = useModalState();
 const router = useRouter();
@@ -430,6 +430,7 @@ const saveService = async () => {
     console.error('Error saving service:', err);
     overlayState.value = 'error';
     overlayMessage.value = t('messages.error');
+    showError(t('messages.error'));
   } finally {
     saveLoading.value = false;
   }
@@ -455,9 +456,9 @@ const toggleServiceStatus = async (service: Service) => {
   try {
     await serviceService.update(service.id!, { is_active: !service.is_active });
     await reloadServices();
-  } catch (error) {
-    console.error('Error updating service status:', error);
-    alert(t('messages.error'));
+  } catch (err) {
+    console.error('Error updating service status:', err);
+    showError(t('messages.error'));
   }
 };
 
@@ -466,9 +467,9 @@ const deleteService = async (id: string) => {
     try {
       await serviceService.delete(id);
       await reloadServices();
-    } catch (error) {
-      console.error('Error deleting service:', error);
-      alert(t('messages.error'));
+    } catch (err) {
+      console.error('Error deleting service:', err);
+      showError(t('messages.error'));
     }
   }
 };
@@ -533,7 +534,7 @@ const handleServiceAction = (service: Service, action: string) => {
 
 const handleAddService = async () => {
   if (!canCreateService.value) {
-    error(t('subscription.banner.freeTierLimitReached'));
+    showError(t('subscription.banner.freeTierLimitReached'));
     return;
   }
 

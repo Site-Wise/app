@@ -178,8 +178,10 @@ import {
 import { useI18n } from '../composables/useI18n';
 import { useInvitations } from '../composables/useInvitations';
 import { usePermissions } from '../composables/usePermissions';
+import { useToast } from '../composables/useToast';
 
 const { t } = useI18n();
+const { success: showSuccess, error: showError } = useToast();
 const router = useRouter();
 const { 
   receivedInvitations, 
@@ -244,11 +246,11 @@ const acceptInvitationHandler = async (invitationId: string) => {
   acceptingInvite.value = invitationId;
   try {
     await acceptInvitation(invitationId);
-    alert(t('users.invitationAccepted'));
+    showSuccess(t('users.invitationAccepted'));
     router.push('/dashboard');
-  } catch (error) {
-    console.error('Error accepting invitation:', error);
-    alert(error instanceof Error ? error.message : t('users.failedToAcceptInvitation'));
+  } catch (err) {
+    console.error('Error accepting invitation:', err);
+    showError(err instanceof Error ? err.message : t('users.failedToAcceptInvitation'));
   } finally {
     acceptingInvite.value = null;
   }
@@ -258,14 +260,14 @@ const declineInvitation = async (invitationId: string) => {
   if (!confirm(t('users.confirmDeclineInvitation'))) {
     return;
   }
-  
+
   decliningInvite.value = invitationId;
   try {
     await rejectInvitation(invitationId);
-    alert(t('users.invitationDeclined'));
-  } catch (error) {
-    console.error('Error declining invitation:', error);
-    alert(t('users.failedToDeclineInvitation'));
+    showSuccess(t('users.invitationDeclined'));
+  } catch (err) {
+    console.error('Error declining invitation:', err);
+    showError(t('users.failedToDeclineInvitation'));
   } finally {
     decliningInvite.value = null;
   }

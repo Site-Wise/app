@@ -46,6 +46,9 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // clientsClaim ensures the new service worker takes control immediately
+        // This helps suppress browser-native update notifications
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         runtimeCaching: [
           {

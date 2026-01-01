@@ -442,12 +442,11 @@ describe('VendorReturnsView', () => {
   describe('Filtering', () => {
     it('should filter returns by search query', async () => {
       await wrapper.vm.$nextTick()
-      await new Promise(resolve => setTimeout(resolve, 50))
-      
-      // Set search query
+
+      // Set search query directly
       wrapper.vm.searchQuery = 'Defective'
       await wrapper.vm.$nextTick()
-      
+
       const filtered = wrapper.vm.filteredReturns
       expect(filtered.length).toBe(1)
       expect(filtered[0].reason).toContain('Defective')

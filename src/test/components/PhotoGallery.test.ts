@@ -89,8 +89,6 @@ describe('PhotoGallery.vue', () => {
   });
 
   it('downloads the photo', async () => {
-    const createElementSpy = vi.spyOn(document, 'createElement');
-
     const wrapper = mount(PhotoGallery, {
       props: {
         photos: ['photo1.jpg'],
@@ -99,9 +97,14 @@ describe('PhotoGallery.vue', () => {
     });
 
     await wrapper.find('.grid > div').trigger('click');
+
+    // Spy on createElement AFTER mounting to avoid capturing component elements
+    const createElementSpy = vi.spyOn(document, 'createElement');
+
     await wrapper.find('[title="files.download"]').trigger('click');
 
     expect(createElementSpy).toHaveBeenCalledWith('a');
+    createElementSpy.mockRestore();
   });
 
   it('deletes the photo', async () => {

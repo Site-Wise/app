@@ -11,6 +11,8 @@
     "update": "Update",
     "close": "Close",
     "closeAll": "Close All",
+    "expandAll": "Expand All",
+    "collapseAll": "Collapse All",
     "yes": "Yes",
     "no": "No",
     "searchAction": "Search",
@@ -22,6 +24,7 @@
     "next": "Next",
     "previous": "Previous",
     "submit": "Submit",
+    "apply": "Apply",
     "reset": "Reset",
     "clear": "Clear",
     "copy": "Copy",
@@ -129,7 +132,8 @@
     "closeSidebar": "Close navigation menu",
     "mainNavigation": "Main navigation",
     "userMenu": "User menu",
-    "quickActions": "Quick actions menu"
+    "quickActions": "Quick actions menu",
+    "more": "More"
   },
   "auth": {
     "signIn": "Sign in",
@@ -280,6 +284,8 @@
     "noDeliveriesRecorded": "No deliveries recorded",
     "startTracking": "Start tracking by recording a delivery.",
     "service": "Service",
+    "perUnit": "per unit",
+    "noServicesFound": "No services found matching \"{query}\"",
     "categories": {
       "labor": "Labor",
       "equipment": "Equipment",
@@ -731,7 +737,12 @@
     "currentAllocations": "Current Allocations",
     "allocationStatus": "Allocation Status",
     "result": "result",
-    "results": "results"
+    "results": "results",
+    "viewDuePayments": "View Due Payments",
+    "duePayments": "Due Payments",
+    "totalOutstanding": "Total Outstanding",
+    "payNow": "Pay Now",
+    "allPaymentsCurrent": "All payments are current"
   },
   "site": {
     "selectSite": "Select a Site",

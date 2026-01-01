@@ -1,15 +1,16 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-8">
+    <!-- Header - Mobile optimized -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('items.title') }}</h1>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{{ t('items.title') }}</h1>
+        <p class="mt-0.5 text-sm text-gray-600 dark:text-gray-400">
           {{ t('items.subtitle') }}
         </p>
       </div>
       <button @click="handleAddItem" :disabled="!canCreateItem" :class="[
         canCreateItem ? 'btn-primary' : 'btn-disabled',
-        'hidden md:flex items-center'
+        'hidden lg:flex items-center'
       ]"
         :title="!canCreateItem ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
         data-keyboard-shortcut="n" data-tour="add-item-btn">
@@ -19,14 +20,13 @@
     </div>
 
     <!-- Search Box -->
-    <div class="w-full md:w-96 mb-6" data-tour="search-bar">
+    <div class="w-full lg:w-96 mb-6" data-tour="search-bar">
       <SearchBox v-model="searchQuery" :placeholder="t('search.items')" :search-loading="searchLoading" />
     </div>
 
     <!-- Items Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-tour="items-table">
-      <div v-for="item in items" :key="item.id"
-        class="card hover:shadow-md transition-shadow duration-200 cursor-pointer" @click="viewItemDetail(item.id!)">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6" data-tour="items-table">
+      <div v-for="item in items" :key="item.id" class="card-interactive" @click="viewItemDetail(item.id!)">
         <div class="flex items-start justify-between">
           <div class="flex-1">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ item.name }}</h3>
@@ -53,14 +53,14 @@
             <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div class="flex justify-between items-center mb-2">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.totalDelivered')
-                }}</span>
+                  }}</span>
                 <span class="text-sm font-semibold text-blue-600 dark:text-blue-400">{{
-                  getItemDeliveredQuantity(item.id!) }} {{ getUnitDisplay(item.unit) }}</span>
+                  getItemDeliveredQuantity(item.id!).toFixed(1) }} {{ getUnitDisplay(item.unit) }}</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.avgPrice') }}</span>
                 <span class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{
-                  getItemAveragePrice(item.id!).toFixed(2) }}</span>
+                  getItemAveragePrice(item.id!).toFixed(1) }}</span>
               </div>
             </div>
           </div>
@@ -111,10 +111,10 @@
 
     <!-- Add/Edit Modal -->
     <div v-if="showAddModal || editingItem"
-      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="closeModal"
       @keydown.esc="closeModal" tabindex="-1">
       <div
-        class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4"
+        class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4 mb-20 lg:mb-4"
         @click.stop>
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
@@ -130,7 +130,7 @@
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.description')
-              }}</label>
+                }}</label>
               <textarea v-model="form.description" class="input mt-1" rows="3"
                 :placeholder="t('forms.enterDescription')"></textarea>
             </div>

@@ -87,8 +87,8 @@
     </div>
 
     <!-- Create Site Modal -->
-    <div v-if="showCreateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeCreateModal">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4" @click.stop>
+    <div v-if="showCreateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="closeCreateModal">
+      <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4 mb-20 lg:mb-4" @click.stop>
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Create New Site</h3>
           
@@ -129,7 +129,7 @@
     </div>
 
     <!-- Enhanced Manage Site Modal -->
-    <div v-if="showManageModal && managingSite" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50" @click="closeManageModal">
+    <div v-if="showManageModal && managingSite" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]" @click="closeManageModal">
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-lg" @click.stop>
         <div class="p-6">
           <div class="flex items-center gap-3 mb-6">
@@ -262,11 +262,13 @@ import { Building, ChevronDown, Check, Plus, Settings, Loader2, Save, Trash2 } f
 import { useSite } from '../composables/useSite';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
+import { useToast } from '../composables/useToast';
 import SiteDeleteModal from './SiteDeleteModal.vue';
 
 const { currentSite, userSites, selectSite: selectSiteAction, createSite, updateSite, isCurrentUserAdmin } = useSite();
 const { t } = useI18n();
 const { checkCreateLimit } = useSubscription();
+const { error: showError } = useToast();
 
 // Type for sites with additional ownership information
 interface SiteWithOwnership {
@@ -329,18 +331,18 @@ const selectSite = async (siteId: string) => {
 const handleCreateSite = async () => {
   // Double-check subscription limit
   if (!canCreateSite.value) {
-    alert(t('subscription.banner.freeTierLimitReached'));
+    showError(t('subscription.banner.freeTierLimitReached'));
     return;
   }
-  
+
   createLoading.value = true;
   try {
     await createSite(createForm);
     closeCreateModal();
     // Note: Removed custom event emission as watchers handle site changes
-  } catch (error) {
-    console.error('Error creating site:', error);
-    alert('Failed to create site. Please try again.');
+  } catch (err) {
+    console.error('Error creating site:', err);
+    showError('Failed to create site. Please try again.');
   } finally {
     createLoading.value = false;
   }
@@ -393,15 +395,15 @@ const closeManageModal = () => {
 
 const handleUpdateSite = async () => {
   if (!managingSite.value) return;
-  
+
   updateLoading.value = true;
   try {
     await updateSite(managingSite.value.id!, editForm);
     closeManageModal();
     // Note: Removed custom event emission as watchers handle site changes
-  } catch (error) {
-    console.error('Error updating site:', error);
-    alert('Failed to update site. Please try again.');
+  } catch (err) {
+    console.error('Error updating site:', err);
+    showError('Failed to update site. Please try again.');
   } finally {
     updateLoading.value = false;
   }

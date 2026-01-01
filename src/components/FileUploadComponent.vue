@@ -111,7 +111,7 @@
     </div>
 
     <!-- PDF Conversion Modal -->
-    <div v-if="showPdfModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div v-if="showPdfModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 z-[60] flex items-center justify-center p-4">
       <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
           {{ t('fileUpload.pdfConversion') }}
@@ -364,9 +364,14 @@ const showPdfConversionModal = async (pdfFile: File) => {
   try {
     // Get page count for display in modal
     const pdfjsLib = await import('pdfjs-dist')
-    // Set worker source to use static file from public directory
+
+    // Import worker using Vite's ?url suffix for proper module resolution
+    const workerModule = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+    const workerSrc = workerModule.default;
+
+    // Set worker source
     if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/pdf.worker.min.mjs';
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
     }
 
     const arrayBuffer = await pdfFile.arrayBuffer()

@@ -1,6 +1,6 @@
 <template>
-  <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="$emit('close')" @keydown.esc="$emit('close')" tabindex="-1">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700" @click.stop>
+  <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="$emit('close')" @keydown.esc="$emit('close')" tabindex="-1">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-20 lg:mb-4" @click.stop>
       <div class="mt-3">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white">
@@ -17,12 +17,18 @@
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ t('common.vendor') }} *
             </label>
-            <select v-model="form.vendor" required class="input mt-1" autofocus>
-              <option value="">Select a vendor</option>
-              <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
-                {{ vendor.name || vendor.contact_person || 'Unnamed Vendor' }}
-              </option>
-            </select>
+            <VendorSearchBox
+              ref="vendorSearchRef"
+              v-model="form.vendor"
+              :vendors="vendors"
+              :deliveries="deliveries"
+              :service-bookings="serviceBookings"
+              :payments="payments"
+              :placeholder="t('search.vendors')"
+              :required="true"
+              :autofocus="true"
+              class="mt-1"
+            />
           </div>
 
           <!-- Return Date -->
@@ -287,6 +293,7 @@
 import { ref, reactive, computed, watch } from 'vue';
 import { X, Plus, Trash2, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '../../composables/useI18n';
+import { useToast } from '../../composables/useToast';
 import {
   vendorReturnService,
   vendorReturnItemService,
@@ -294,15 +301,22 @@ import {
   getCurrentSiteId,
   type VendorReturn,
   type Vendor,
-  type DeliveryItem
+  type DeliveryItem,
+  type Delivery,
+  type ServiceBooking,
+  type Payment
 } from '../../services/pocketbase';
 import FileUploadComponent from '../FileUploadComponent.vue';
 import LoadingOverlay from '../LoadingOverlay.vue';
+import VendorSearchBox from '../VendorSearchBox.vue';
 
 interface Props {
   isEdit: boolean;
   returnData?: VendorReturn | null;
   vendors: Vendor[];
+  deliveries?: Delivery[];
+  serviceBookings?: ServiceBooking[];
+  payments?: Payment[];
 }
 
 interface ReturnItemForm {
@@ -315,13 +329,23 @@ interface ReturnItemForm {
   item_notes: string;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  deliveries: () => [],
+  serviceBookings: () => [],
+  payments: () => []
+});
 const emit = defineEmits<{
   close: [];
   save: [];
 }>();
 
 const { t } = useI18n();
+const toast = useToast();
+
+// Refs - used in template via ref="vendorSearchRef"
+const vendorSearchRef = ref<InstanceType<typeof VendorSearchBox> | null>(null);
+// Ensure TypeScript knows this ref is used (template refs are not detected as used)
+void vendorSearchRef;
 
 // Form data
 const form = reactive({
@@ -444,10 +468,9 @@ const updateReturnAmount = (index: number) => {
   item.return_amount = item.quantity_returned * item.return_rate;
 };
 
-const handlePhotosSelected = (files: File[]) => {
-  // FileUploadComponent emits File[], but we need to store file names or handle uploads
-  // For now, we'll store file names as placeholder
-  form.photos = files.map(file => file.name);
+const handlePhotosSelected = (_files: File[]) => {
+  // Files are stored in uploadedFiles via v-model
+  // Actual upload happens in handleSubmit after return is created
 };
 
 const formatDate = (dateString: string) => {
@@ -467,15 +490,27 @@ const handleSubmit = async () => {
     // Create or update the vendor return
     let vendorReturn: VendorReturn;
 
+    // Prepare return data WITHOUT photos - photos will be uploaded separately
     const returnData = {
-      ...form,
-      reason: form.reason as 'damaged' | 'wrong_item' | 'excess_delivery' | 'quality_issue' | 'specification_mismatch' | 'other'
+      vendor: form.vendor,
+      return_date: form.return_date,
+      reason: form.reason as 'damaged' | 'wrong_item' | 'excess_delivery' | 'quality_issue' | 'specification_mismatch' | 'other',
+      notes: form.notes,
+      status: form.status,
+      total_return_amount: form.total_return_amount
     };
 
     if (props.isEdit && props.returnData?.id) {
       vendorReturn = await vendorReturnService.update(props.returnData.id, returnData);
     } else {
       vendorReturn = await vendorReturnService.create(returnData);
+    }
+
+    // Upload photos if any were selected
+    if (uploadedFiles.value.length > 0) {
+      for (const file of uploadedFiles.value) {
+        await vendorReturnService.uploadPhoto(vendorReturn.id!, file);
+      }
     }
 
     // Create return items
@@ -505,6 +540,7 @@ const handleSubmit = async () => {
     console.error('Error saving return:', error);
     overlayState.value = 'error';
     overlayMessage.value = t('messages.error');
+    toast.error(t('common.errorSavingData'));
   } finally {
     loading.value = false;
   }

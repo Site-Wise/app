@@ -272,8 +272,8 @@
     </div>
 
     <!-- Add/Edit Modal -->
-    <div v-if="showAddModal || editingBooking" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-md m-4 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto" @click.stop>
+    <div v-if="showAddModal || editingBooking" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
+      <div class="relative top-20 mx-auto p-5 border w-full max-w-md m-4 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto mb-20 lg:mb-4" @click.stop>
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
             {{ editingBooking ? t('serviceBookings.editBooking') : t('serviceBookings.bookService') }}
@@ -282,23 +282,17 @@
           <form @submit.prevent="() => saveBooking()" @keydown="handleKeydown" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.service') }}</label>
-              <select 
-                ref="serviceInputRef" 
-                v-model="form.service" 
-                required 
-                :class="[
-                  'input mt-1',
-                  editingBooking && hasPayments(editingBooking) ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''
-                ]"
-                @change="updateRateFromService" 
+              <ServiceSearchBox
+                ref="serviceInputRef"
+                v-model="form.service"
+                :services="activeServices"
+                :placeholder="t('forms.selectService')"
+                :required="true"
+                :autofocus="true"
                 :disabled="!!(editingBooking && hasPayments(editingBooking))"
-                autofocus
-              >
-                <option value="">{{ t('forms.selectService') }}</option>
-                <option v-for="service in activeServices" :key="service.id" :value="service.id">
-                  {{ service.name }} ({{ service.category }})
-                </option>
-              </select>
+                class="mt-1"
+                @service-selected="handleServiceSelected"
+              />
               <p v-if="editingBooking && hasPayments(editingBooking)" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 {{ t('serviceBookings.cannotChangeServiceWithPayments') }}
               </p>
@@ -307,8 +301,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.vendor') }}</label>
               <VendorSearchBox
-                ref="vendorSearchRef"
-                v-model="form.vendor"
+                                v-model="form.vendor"
                 :vendors="vendors"
                 :deliveries="[]"
                 :service-bookings="[]"
@@ -441,8 +434,8 @@
     </div>
 
     <!-- View Modal -->
-    <div v-if="viewingBooking" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="viewingBooking = null" @keydown.esc="viewingBooking = null" tabindex="-1">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-4xl m-4 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto" @click.stop>
+    <div v-if="viewingBooking" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="viewingBooking = null" @keydown.esc="viewingBooking = null" tabindex="-1">
+      <div class="relative top-20 mx-auto p-5 border w-full max-w-4xl m-4 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto mb-20 lg:mb-4" @click.stop>
         <div class="mt-3">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ t('serviceBookings.bookingDetails') }}</h3>
@@ -552,6 +545,7 @@ import PhotoGallery from '../components/PhotoGallery.vue';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import VendorSearchBox from '../components/VendorSearchBox.vue';
+import ServiceSearchBox from '../components/ServiceSearchBox.vue';
 import TimeCalculatorModal from '../components/TimeCalculatorModal.vue';
 import { 
   serviceBookingService, 
@@ -570,7 +564,7 @@ interface ServiceBookingWithPaymentStatus extends ServiceBooking {
 
 const { t } = useI18n();
 const { canCreate, canUpdate, canDelete } = usePermissions();
-const { success: showSuccessToast } = useToast();
+const { success: showSuccessToast, error: showErrorToast } = useToast();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { openModal, closeModal: closeModalState } = useModalState();
 
@@ -652,8 +646,7 @@ const loading = ref(false);
 const showUnitRateWarning = ref(false);
 const originalUnitRate = ref(0);
 
-const serviceInputRef = ref<HTMLInputElement>();
-const vendorSearchRef = ref();
+const serviceInputRef = ref<InstanceType<typeof ServiceSearchBox>>();
 const startDateInputRef = ref<HTMLInputElement>();
 
 const form = reactive({
@@ -709,14 +702,6 @@ const calculateTotal = () => {
   form.total_amount = form.duration * form.unit_rate;
 };
 
-const updateRateFromService = () => {
-  const selectedService = services.value?.find(service => service.id === form.service);
-  if (selectedService && selectedService.standard_rate) {
-    form.unit_rate = selectedService.standard_rate;
-    calculateTotal();
-  }
-};
-
 const handleUnitRateChange = () => {
   calculateTotal();
 
@@ -729,6 +714,16 @@ const handleUnitRateChange = () => {
 const handleVendorSelected = (vendor: any) => {
   if (vendor) {
     form.vendor = vendor.id;
+  }
+};
+
+const handleServiceSelected = (service: any) => {
+  if (service) {
+    form.service = service.id;
+    if (service.standard_rate) {
+      form.unit_rate = service.standard_rate;
+      calculateTotal();
+    }
   }
 };
 
@@ -790,7 +785,7 @@ const saveBooking = async (keepModalOpen = false) => {
     }
   } catch (error) {
     console.error('Error saving service booking:', error);
-    alert(t('messages.error'));
+    showErrorToast(t('messages.error'));
   } finally {
     loading.value = false;
   }
@@ -833,9 +828,9 @@ const deleteBooking = async (id: string) => {
       console.error('Error deleting service booking:', error);
       // Show specific error message if it's about payments
       if (error instanceof Error && error.message.includes('payments assigned')) {
-        alert(t('serviceBookings.cannotDeleteWithPayments'));
+        showErrorToast(t('serviceBookings.cannotDeleteWithPayments'));
       } else {
-        alert(t('messages.error'));
+        showErrorToast(t('messages.error'));
       }
     }
   }

@@ -265,7 +265,7 @@
     </div>
 
     <!-- Enhanced Invite User Modal -->
-    <div v-if="showInviteModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div v-if="showInviteModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md">
         <div class="p-6">
           <div class="flex items-center gap-3 mb-6">
@@ -352,7 +352,7 @@
     </div>
 
     <!-- Enhanced Edit Role Modal -->
-    <div v-if="editingUser" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div v-if="editingUser" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md">
         <div class="p-6">
           <div class="flex items-center gap-3 mb-6">
@@ -469,8 +469,10 @@ import {
   type SiteUser
 } from '../services/pocketbase';
 import { usePermissions } from '../composables/usePermissions';
+import { useToast } from '../composables/useToast';
 
 const { t } = useI18n();
+const { success: showSuccess, error: showError } = useToast();
 const { currentSite, canManageUsers, changeUserRole, removeUserFromSite } = useSite();
 const { canDelete } = usePermissions();
 const { 
@@ -625,15 +627,15 @@ const inviteUser = async () => {
     // Show success message with expiry info
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 7);
-    alert(t('users.invitationCreated', { email: inviteForm.email, date: expiryDate.toLocaleDateString() }));
+    showSuccess(t('users.invitationCreated', { email: inviteForm.email, date: expiryDate.toLocaleDateString() }));
     closeInviteModal();
-    
+
     // Reload invitations
     await loadSiteInvitations(currentSite.value.id!);
-  } catch (error) {
-    console.error('Error sending invitation:', error);
-    const errorMessage = error instanceof Error ? error.message : t('users.failedToCreateInvitation');
-    alert(errorMessage);
+  } catch (err) {
+    console.error('Error sending invitation:', err);
+    const errorMessage = err instanceof Error ? err.message : t('users.failedToCreateInvitation');
+    showError(errorMessage);
   } finally {
     inviteLoading.value = false;
   }
@@ -652,9 +654,9 @@ const saveRoleChange = async () => {
     await changeUserRole(editingUser.value.user, currentSite.value.id!, roleForm.role);
     await loadSiteUsers();
     editingUser.value = null;
-  } catch (error) {
-    console.error('Error changing user role:', error);
-    alert(error instanceof Error ? error.message : t('messages.error'));
+  } catch (err) {
+    console.error('Error changing user role:', err);
+    showError(err instanceof Error ? err.message : t('messages.error'));
   } finally {
     roleLoading.value = false;
   }
@@ -664,30 +666,30 @@ const toggleUserStatus = async (siteUser: SiteUser) => {
   try {
     await siteUserService.updateRole(siteUser.id!, { is_active: !siteUser.is_active });
     await loadSiteUsers();
-  } catch (error) {
-    console.error('Error toggling user status:', error);
-    alert(t('messages.error'));
+  } catch (err) {
+    console.error('Error toggling user status:', err);
+    showError(t('messages.error'));
   }
 };
 
 const removeUser = async (siteUser: SiteUser) => {
   // Prevent users from removing themselves
   if (isCurrentUser(siteUser)) {
-    alert(t('users.cannotRemoveSelf'));
+    showError(t('users.cannotRemoveSelf'));
     return;
   }
-  
+
   if (!confirm(t('users.confirmRemoveUser', { name: siteUser.expand?.user?.name || 'this user' }))) {
     return;
   }
-  
+
   try {
     if (!currentSite.value) return;
     await removeUserFromSite(siteUser.user, currentSite.value.id!);
     await loadSiteUsers();
-  } catch (error) {
-    console.error('Error removing user:', error);
-    alert(error instanceof Error ? error.message : t('messages.error'));
+  } catch (err) {
+    console.error('Error removing user:', err);
+    showError(err instanceof Error ? err.message : t('messages.error'));
   }
 };
 

@@ -1,8 +1,8 @@
 <template>
-  <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="$emit('close')"
+  <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="$emit('close')"
     @keydown.esc="$emit('close')" tabindex="-1">
     <div
-      class="relative top-4 mx-auto p-5 border w-full max-w-5xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+      class="relative top-4 mx-auto p-5 border w-full max-w-5xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-20 lg:mb-4"
       @click.stop>
       <div class="mt-3">
         <!-- Header -->
@@ -22,29 +22,69 @@
 
         <!-- Progress Steps -->
         <div class="mb-8">
-          <div class="flex items-center justify-center space-x-4">
+          <div class="flex items-center justify-center space-x-2 sm:space-x-4">
             <div v-for="(step, index) in steps" :key="index" class="flex items-center">
-              <div :class="[
-                'flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium',
-                currentStep > index
-                  ? 'bg-green-500 text-white'
-                  : currentStep === index
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
-              ]">
-                {{ index + 1 }}
+              <!-- Step indicator with text below on mobile, beside on larger screens -->
+              <div class="flex flex-col items-center sm:flex-row sm:items-center">
+                <div :class="[
+                  'flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium',
+                  currentStep > index
+                    ? 'bg-green-500 text-white'
+                    : currentStep === index
+                      ? 'bg-primary-500 text-white'
+                      : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
+                ]">
+                  {{ index + 1 }}
+                </div>
+                <span :class="[
+                  'mt-1 sm:mt-0 sm:ml-2 text-xs sm:text-sm font-medium text-center sm:text-left',
+                  currentStep >= index
+                    ? 'text-gray-900 dark:text-white'
+                    : 'text-gray-500 dark:text-gray-400'
+                ]">
+                  {{ step }}
+                </span>
               </div>
-              <span :class="[
-                'ml-2 text-sm font-medium',
-                currentStep >= index
-                  ? 'text-gray-900 dark:text-white'
-                  : 'text-gray-500 dark:text-gray-400'
-              ]">
-                {{ step }}
-              </span>
-              <div v-if="index < steps.length - 1" class="ml-4 h-px w-8 bg-gray-200 dark:bg-gray-600"></div>
+              <!-- Connector line -->
+              <div v-if="index < steps.length - 1" class="ml-2 sm:ml-4 h-px w-4 sm:w-8 bg-gray-200 dark:bg-gray-600"></div>
             </div>
           </div>
+        </div>
+
+        <!-- Mobile Top Navigation -->
+        <div class="flex justify-between items-center mb-4 sm:hidden">
+          <button
+            v-if="currentStep > 0"
+            @click="previousStep"
+            class="btn-outline btn-sm flex items-center"
+            :disabled="loading"
+          >
+            <ArrowLeft class="h-4 w-4 mr-1" />
+            {{ t('common.back') }}
+          </button>
+          <div v-else></div>
+
+          <button
+            v-if="currentStep < steps.length - 1"
+            @click="nextStep"
+            :disabled="!canProceedToNextStep || loading"
+            class="btn-primary btn-sm flex items-center"
+            :class="{ 'opacity-50 cursor-not-allowed': !canProceedToNextStep || loading }"
+          >
+            {{ t('common.next') }}
+            <ArrowRight class="h-4 w-4 ml-1" />
+          </button>
+          <button
+            v-else
+            @click="saveDelivery"
+            :disabled="loading || !canSubmit"
+            class="btn-primary btn-sm bg-green-600 hover:bg-green-700 flex items-center"
+            :class="{ 'opacity-50 cursor-not-allowed': loading || !canSubmit }"
+          >
+            <Loader2 v-if="loading" class="h-4 w-4 mr-1 animate-spin" />
+            <CheckCircle v-else class="h-4 w-4 mr-1" />
+            {{ editingDelivery ? t('common.update') : t('common.create') }}
+          </button>
         </div>
 
         <!-- Step Content -->
@@ -134,16 +174,25 @@
             <!-- New Item Form (Always at top) -->
             <div v-if="newItemForm"
               class="border-2 border-dashed border-primary-300 dark:border-primary-600 rounded-lg p-1">
-              <div class="text-sm font-medium text-primary-600 dark:text-primary-400 mb-3 px-3 pt-3">
+              <!-- Mobile: Add Item button at top -->
+              <div class="flex sm:hidden items-center justify-between px-3 pt-3 pb-2">
+                <div class="text-sm font-medium text-primary-600 dark:text-primary-400">
+                  {{ t('deliveryForm.newItem') }}
+                </div>
+                <button @click="saveNewItem" :disabled="!isNewItemValid" class="btn-primary btn-sm"
+                  :class="{ 'opacity-50 cursor-not-allowed': !isNewItemValid }">
+                  <Plus class="h-4 w-4" />
+                </button>
+              </div>
+              <!-- Desktop: Title only -->
+              <div class="hidden sm:block text-sm font-medium text-primary-600 dark:text-primary-400 mb-3 px-3 pt-3">
                 {{ t('deliveryForm.newItem') }}
               </div>
               <DeliveryItemRow :key="newItemForm.tempId" :item="newItemForm" :index="-1" :items="items"
-                :used-items="usedItemIds" @update="updateNewItem" @remove="cancelNewItem"
+                :used-items="usedItemIds" :hide-remove-button="true" @update="updateNewItem" @remove="cancelNewItem"
                 @create-new-item="handleCreateNewItem" ref="newItemRowRef" />
-              <div class="flex justify-end space-x-2 p-3">
-                <button @click="cancelNewItem" class="btn-outline text-sm" v-if="completedDeliveryItems.length > 0">
-                  {{ t('common.cancel') }}
-                </button>
+              <!-- Desktop: Buttons at bottom -->
+              <div class="hidden sm:flex justify-end p-3">
                 <button @click="saveNewItem" :disabled="!isNewItemValid" class="btn-primary text-sm"
                   :class="{ 'opacity-50 cursor-not-allowed': !isNewItemValid }">
                   <Plus class="mr-2 h-4 w-4" />
@@ -155,14 +204,86 @@
             <!-- This section is no longer needed as we always show a new item form -->
 
             <!-- Completed Items List -->
-            <div v-if="completedDeliveryItems.length > 0" class="space-y-4">
+            <div v-if="completedDeliveryItems.length > 0" class="space-y-2 sm:space-y-4">
               <div
-                class="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600 pb-2">
-                {{ t('deliveryForm.addedItems') }}
+                class="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600 pb-2 flex items-center justify-between">
+                <span>{{ t('deliveryForm.addedItems') }}</span>
+                <!-- Collapse/Expand all on mobile -->
+                <button
+                  @click="toggleAllItemsExpanded"
+                  class="sm:hidden text-xs text-primary-600 dark:text-primary-400 hover:underline"
+                >
+                  {{ allItemsExpanded ? t('common.collapseAll') : t('common.expandAll') }}
+                </button>
               </div>
-              <DeliveryItemRow v-for="item in completedDeliveryItems" :key="item.tempId" :item="item"
-                :index="deliveryItems.indexOf(item)" :items="items" :used-items="usedItemIds"
-                @update="updateDeliveryItem" @remove="removeDeliveryItem" @create-new-item="handleCreateNewItem" />
+
+              <!-- Mobile: Compact collapsible cards -->
+              <div class="sm:hidden space-y-2">
+                <div
+                  v-for="item in completedDeliveryItems"
+                  :key="item.tempId"
+                  class="border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 overflow-hidden"
+                >
+                  <!-- Compact summary header -->
+                  <div
+                    class="flex items-center justify-between p-3 cursor-pointer"
+                    @click="toggleItemExpanded(item.tempId)"
+                  >
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium text-gray-900 dark:text-white truncate">
+                        {{ getItemName(item.item) }}
+                      </div>
+                      <div class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ item.quantity }} {{ getItemUnit(item.item) }} × ₹{{ item.unit_price }} =
+                        <span class="font-medium text-gray-900 dark:text-white">₹{{ item.total_amount.toFixed(2) }}</span>
+                      </div>
+                    </div>
+                    <div class="flex items-center space-x-2 ml-2">
+                      <button
+                        @click.stop="removeDeliveryItem(deliveryItems.indexOf(item))"
+                        class="p-1.5 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                        :title="t('delivery.removeItem')"
+                      >
+                        <Trash2 class="h-4 w-4" />
+                      </button>
+                      <ChevronDown
+                        :class="[
+                          'h-5 w-5 text-gray-400 transition-transform',
+                          expandedItems.has(item.tempId) ? 'rotate-180' : ''
+                        ]"
+                      />
+                    </div>
+                  </div>
+                  <!-- Expanded content -->
+                  <div v-if="expandedItems.has(item.tempId)" class="border-t border-gray-200 dark:border-gray-600">
+                    <DeliveryItemRow
+                      :item="item"
+                      :index="deliveryItems.indexOf(item)"
+                      :items="items"
+                      :used-items="usedItemIds"
+                      :hide-remove-button="true"
+                      @update="updateDeliveryItem"
+                      @remove="removeDeliveryItem"
+                      @create-new-item="handleCreateNewItem"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Desktop: Full item rows -->
+              <div class="hidden sm:block space-y-4">
+                <DeliveryItemRow
+                  v-for="item in completedDeliveryItems"
+                  :key="item.tempId"
+                  :item="item"
+                  :index="deliveryItems.indexOf(item)"
+                  :items="items"
+                  :used-items="usedItemIds"
+                  @update="updateDeliveryItem"
+                  @remove="removeDeliveryItem"
+                  @create-new-item="handleCreateNewItem"
+                />
+              </div>
             </div>
 
             <!-- Removed detailed delivery totals - now shown in header -->
@@ -303,7 +424,7 @@
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import {
-  X, ArrowLeft, ArrowRight, CheckCircle, Loader2, Plus
+  X, ArrowLeft, ArrowRight, CheckCircle, Loader2, Plus, ChevronDown, Trash2
 } from 'lucide-vue-next';
 import { useI18n } from '../../composables/useI18n';
 import { useToast } from '../../composables/useToast';
@@ -409,6 +530,34 @@ const deliveryItems = ref<DeliveryItemForm[]>([]);
 const originalDeliveryItems = ref<DeliveryItemForm[]>([]); // Track original items for comparison
 const newItemForm = ref<DeliveryItemForm | null>(null);
 const newItemRowRef = ref();
+
+// Mobile collapsible items state
+const expandedItems = ref<Set<string>>(new Set());
+
+const allItemsExpanded = computed(() => {
+  if (completedDeliveryItems.value.length === 0) return false;
+  return completedDeliveryItems.value.every(item => expandedItems.value.has(item.tempId));
+});
+
+const toggleItemExpanded = (tempId: string) => {
+  if (expandedItems.value.has(tempId)) {
+    expandedItems.value.delete(tempId);
+  } else {
+    expandedItems.value.add(tempId);
+  }
+  // Trigger reactivity
+  expandedItems.value = new Set(expandedItems.value);
+};
+
+const toggleAllItemsExpanded = () => {
+  if (allItemsExpanded.value) {
+    // Collapse all
+    expandedItems.value = new Set();
+  } else {
+    // Expand all
+    expandedItems.value = new Set(completedDeliveryItems.value.map(item => item.tempId));
+  }
+};
 
 // Computed properties
 const itemsTotal = computed(() => {
@@ -629,6 +778,7 @@ const handleKeyboardShortcuts = (event: KeyboardEvent) => {
   // SHIFT + Right Arrow - Next step
   if (event.shiftKey && event.key === 'ArrowRight') {
     event.preventDefault();
+    event.stopPropagation();
     if (canProceedToNextStep.value && currentStep.value < steps.length - 1) {
       nextStep();
     }
@@ -638,32 +788,34 @@ const handleKeyboardShortcuts = (event: KeyboardEvent) => {
   // SHIFT + Left Arrow - Previous step
   if (event.shiftKey && event.key === 'ArrowLeft') {
     event.preventDefault();
+    event.stopPropagation();
     if (currentStep.value > 0) {
       previousStep();
     }
     return;
   }
 
-  // CTRL + ENTER - Add/Save item (only on Items step)
-  if (event.ctrlKey && event.key === 'Enter' && currentStep.value === 1) {
+  // CTRL + ENTER - Handle based on current step
+  if (event.ctrlKey && event.key === 'Enter') {
     event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
 
-    // Check if we're in the new item form and it's valid
-    if (newItemForm.value && isNewItemValid.value) {
-      saveNewItem();
+    // On Items step (1) - Add item
+    if (currentStep.value === 1) {
+      if (newItemForm.value && isNewItemValid.value) {
+        saveNewItem();
+      }
+      return;
     }
-    return;
-  }
 
-  // CTRL + ENTER - Create delivery (only on Review step)
-  if (event.ctrlKey && event.key === 'Enter' && currentStep.value === 2) {
-    event.preventDefault();
-
-    // Check if we can submit the delivery
-    if (canSubmit.value && !loading.value) {
-      saveDelivery();
+    // On Review step (2) - Create delivery
+    if (currentStep.value === 2) {
+      if (canSubmit.value && !loading.value) {
+        saveDelivery();
+      }
+      return;
     }
-    return;
   }
 };
 
@@ -798,12 +950,16 @@ const saveDelivery = async () => {
     // Upload new photos if any (after main delivery update)
     if (selectedFilesForUpload.value.length > 0) {
       try {
-        const uploadedPhotos = await deliveryService.uploadPhotos(delivery.id!, selectedFilesForUpload.value);
+        // Pass existing photos to preserve them when uploading new ones
+        const uploadedPhotos = await deliveryService.uploadPhotos(
+          delivery.id!,
+          selectedFilesForUpload.value,
+          props.editingDelivery ? existingPhotos.value : []
+        );
         console.log(`Successfully uploaded ${uploadedPhotos.length} of ${selectedFilesForUpload.value.length} photos`);
 
-        // For editing, we need to fetch the updated delivery to get the final photo list
+        // For editing, update the existingPhotos list to reflect all photos (old + new)
         if (props.editingDelivery) {
-          // Update the existingPhotos list to reflect all photos (old + new)
           existingPhotos.value = [...existingPhotos.value, ...uploadedPhotos];
         }
       } catch (uploadError) {
