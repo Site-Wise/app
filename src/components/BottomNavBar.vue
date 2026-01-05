@@ -127,6 +127,7 @@ import {
   Calendar,
   Wrench,
   RotateCcw,
+  TrendingUp,
 } from 'lucide-vue-next';
 
 const route = useRoute();
@@ -202,6 +203,13 @@ const secondaryNavItems = computed(() => [
     to: '/quotations',
     icon: FileText,
     current: route.name === 'Quotations',
+  },
+  {
+    name: 'Analytics',
+    nameKey: 'nav.analytics',
+    to: '/analytics',
+    icon: TrendingUp,
+    current: route.name === 'Analytics',
   },
   {
     name: 'Vendor Returns',
