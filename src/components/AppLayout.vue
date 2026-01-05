@@ -300,7 +300,8 @@ import {
   Wrench,
   Calendar,
   RotateCcw,
-  HelpCircle
+  HelpCircle,
+  TrendingUp
 } from 'lucide-vue-next';
 
 import { usePWAUpdate } from '../composables/usePWAUpdate';
@@ -343,6 +344,7 @@ const navigation = computed(() => [
   { name: 'Quotations', nameKey: 'nav.quotations', to: '/quotations', icon: FileText, current: route.name === 'Quotations', shortcut: 'q' },
   { name: 'Accounts', nameKey: 'nav.accounts', to: '/accounts', icon: CreditCard, current: route.name === 'Accounts', shortcut: 'a' },
   { name: 'Payments', nameKey: 'nav.payments', to: '/payments', icon: BanknoteArrowDown, current: route.name === 'Payments', shortcut: 'p' },
+  { name: 'Analytics', nameKey: 'nav.analytics', to: '/analytics', icon: TrendingUp, current: route.name === 'Analytics', shortcut: 'y' },
   { name: 'Vendor Returns', nameKey: 'nav.vendorReturns', to: '/vendor-returns', icon: RotateCcw, current: route.name === 'VendorReturns', shortcut: 'r' },
 ]);
 

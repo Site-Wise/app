@@ -107,6 +107,12 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresSite: true, permission: 'canViewFinancials' }
     },
     {
+      path: '/analytics',
+      name: 'Analytics',
+      component: () => import('../views/AnalyticsView.vue'),
+      meta: { requiresAuth: true, requiresSite: true, permission: 'canRead' }
+    },
+    {
       path: '/users',
       name: 'UserManagement',
       component: () => import('../views/UserManagementView.vue'),

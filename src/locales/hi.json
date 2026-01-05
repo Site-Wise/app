@@ -118,6 +118,7 @@
     "services": "सेवाएं",
     "accounts": "खाते",
     "payments": "भुगतान",
+    "analytics": "विश्लेषण",
     "deliveries": "डिलीवरी",
     "vendorReturns": "विक्रेता वापसी",
     "serviceBookings": "सेवा बुकिंग",
@@ -1418,5 +1419,59 @@
     "updateAvailable": "नया अपडेट उपलब्ध",
     "updateDescription": "ऐप का नया संस्करण इंस्टॉल के लिए तैयार है",
     "youreOffline": "आप ऑफलाइन हैं"
+  },
+  "analytics": {
+    "title": "विश्लेषण",
+    "subtitle": "टैग, तारीख और राशि के अनुसार लागत का विश्लेषण करें",
+    "filters": "फ़िल्टर",
+    "results": "परिणाम",
+    "selectTags": "टैग चुनें",
+    "dateRange": "तारीख सीमा",
+    "dateFrom": "तारीख से",
+    "dateTo": "तारीख तक",
+    "amountRange": "राशि सीमा",
+    "amountMin": "न्यूनतम राशि",
+    "amountMax": "अधिकतम राशि",
+    "calculate": "विश्लेषण गणना करें",
+    "calculating": "गणना हो रही है...",
+    "reset": "फ़िल्टर रीसेट करें",
+    "saveFilters": "फ़िल्टर सहेजें",
+    "savedSettings": "सहेजी गई सेटिंग्स",
+    "loadSetting": "सेटिंग लोड करें",
+    "deleteSetting": "सेटिंग हटाएं",
+    "updateSetting": "सेटिंग अपडेट करें",
+    "settingName": "सेटिंग नाम",
+    "enterSettingName": "इस फ़िल्टर सेटिंग के लिए एक नाम दर्ज करें",
+    "noSettingsSaved": "अभी तक कोई सहेजी गई सेटिंग नहीं",
+    "noTagsSelected": "कोई टैग नहीं चुना गया",
+    "allDates": "सभी तारीखें",
+    "allAmounts": "सभी राशि",
+    "summary": {
+      "totalCost": "कुल लागत",
+      "averageCostPerItem": "औसत लागत / आइटम",
+      "averageCostPerDelivery": "औसत लागत / डिलीवरी",
+      "itemCount": "आइटम",
+      "deliveryCount": "डिलीवरी",
+      "totalQuantity": "कुल मात्रा"
+    },
+    "charts": {
+      "costByTag": "टैग के अनुसार लागत",
+      "costOverTime": "समय के साथ लागत",
+      "noData": "प्रदर्शित करने के लिए कोई डेटा नहीं"
+    },
+    "messages": {
+      "noFiltersApplied": "विश्लेषण देखने के लिए फ़िल्टर लागू करें और गणना करें क्लिक करें",
+      "calculateFirst": "परिणाम देखने के लिए गणना करें क्लिक करें",
+      "settingSaved": "विश्लेषण सेटिंग सफलतापूर्वक सहेजी गई",
+      "settingDeleted": "विश्लेषण सेटिंग सफलतापूर्वक हटाई गई",
+      "settingUpdated": "विश्लेषण सेटिंग सफलतापूर्वक अपडेट की गई",
+      "failedToSave": "विश्लेषण सेटिंग सहेजने में विफल",
+      "failedToLoad": "विश्लेषण सेटिंग लोड करने में विफल",
+      "failedToDelete": "विश्लेषण सेटिंग हटाने में विफल",
+      "failedToCalculate": "विश्लेषण गणना करने में विफल"
+    },
+    "confirmDelete": "क्या आप वाकई इस सहेजी गई सेटिंग को हटाना चाहते हैं?",
+    "export": "डेटा निर्यात करें",
+    "exportCSV": "CSV में निर्यात करें"
   }
 }
