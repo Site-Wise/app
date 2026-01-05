@@ -1,5 +1,6 @@
 import PocketBase, { type RecordModel } from 'pocketbase';
 import { batchCreate, batchUpdate, batchDelete } from './pocketbaseBatch';
+import { roundToTwoDecimals } from '../utils/numbers';
 
 // Get PocketBase URL from environment variables with fallback
 const POCKETBASE_URL = import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090' || 'http://127.0.0.1:8090';
@@ -4491,13 +4492,13 @@ export class DeliveryItemService {
       throw new Error('Access denied: Cannot create delivery items for delivery in different site');
     }
 
-    // Prepare batch data
+    // Prepare batch data - round unit_price and total_amount, but keep quantity as entered
     const batchData = items.map(itemData => ({
       delivery: deliveryId,
       item: itemData.item,
       quantity: itemData.quantity,
-      unit_price: itemData.unit_price,
-      total_amount: itemData.quantity * itemData.unit_price,
+      unit_price: roundToTwoDecimals(itemData.unit_price),
+      total_amount: roundToTwoDecimals(itemData.quantity * itemData.unit_price),
       notes: itemData.notes,
       site: currentSite
     }));
@@ -4591,16 +4592,22 @@ export class DeliveryItemService {
       }
     }
 
-    // Prepare batch update data
-    const batchUpdates = updates.map(update => ({
-      id: update.id,
-      data: {
-        ...update.data,
-        total_amount: update.data.quantity && update.data.unit_price 
-          ? update.data.quantity * update.data.unit_price 
-          : undefined
+    // Prepare batch update data - round unit_price and total_amount, keep quantity as entered
+    const batchUpdates = updates.map(update => {
+      const data: Partial<DeliveryItem> = { ...update.data };
+
+      // Round unit_price if provided
+      if (data.unit_price !== undefined) {
+        data.unit_price = roundToTwoDecimals(data.unit_price);
       }
-    }));
+
+      // Calculate and round total_amount if both values are available
+      if (data.quantity !== undefined && data.unit_price !== undefined) {
+        data.total_amount = roundToTwoDecimals(data.quantity * data.unit_price);
+      }
+
+      return { id: update.id, data };
+    });
 
     // Use batch API to update all items at once
     const updatedRecords = await batchUpdate<any>('delivery_items', batchUpdates);

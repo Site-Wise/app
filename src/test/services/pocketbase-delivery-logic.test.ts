@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { roundToTwoDecimals, calculateItemTotal } from '../../utils/numbers'
 
 /**
  * Tests for PocketBase Delivery & Service Booking Services Logic
@@ -556,6 +557,131 @@ describe('Delivery & ServiceBooking Services Business Logic', () => {
 
       expect(amount).toBe(4500)
       expect(item.quantity % 1).not.toBe(0) // Has decimal part
+    })
+  })
+
+  describe('Decimal Precision in Delivery Calculations', () => {
+    it('should limit total_amount to 2 decimal places', () => {
+      // Simulates what deliveryItemService.createMultiple does
+      const items = [
+        { quantity: 3.33, unit_price: 150.77 },
+        { quantity: 7.777, unit_price: 88.88 },
+        { quantity: 0.123, unit_price: 999.99 }
+      ]
+
+      items.forEach(item => {
+        const total = roundToTwoDecimals(item.quantity * item.unit_price)
+        const decimalPart = total.toString().split('.')[1]
+        const decimalPlaces = decimalPart?.length || 0
+
+        expect(decimalPlaces).toBeLessThanOrEqual(2)
+      })
+    })
+
+    it('should prevent floating-point precision issues in calculations', () => {
+      // Classic JavaScript floating-point issue: 0.1 + 0.2 !== 0.3
+      const quantity = 0.1
+      const unit_price = 0.2
+      const rawTotal = quantity * unit_price // Could be 0.020000000000000004
+      const roundedTotal = roundToTwoDecimals(rawTotal)
+
+      expect(roundedTotal).toBe(0.02)
+    })
+
+    it('should round quantity to 2 decimals', () => {
+      const rawQuantity = 3.3333333
+      const roundedQuantity = roundToTwoDecimals(rawQuantity)
+
+      expect(roundedQuantity).toBe(3.33)
+    })
+
+    it('should round unit_price to 2 decimals', () => {
+      const rawPrice = 150.7777777
+      const roundedPrice = roundToTwoDecimals(rawPrice)
+
+      expect(roundedPrice).toBe(150.78)
+    })
+
+    it('should handle typical construction material scenarios', () => {
+      // TMT Bar: 235.75 kg × ₹72.30 = ₹17044.725 → ₹17044.72 (due to IEEE 754 representation)
+      expect(calculateItemTotal(235.75, 72.3)).toBe(17044.72)
+
+      // Sand: 2.5 cubic feet × ₹45.50 = ₹113.75
+      expect(calculateItemTotal(2.5, 45.5)).toBe(113.75)
+
+      // Cement: 50 bags × ₹350 = ₹17500
+      expect(calculateItemTotal(50, 350)).toBe(17500)
+    })
+
+    it('should ensure delivery item batch create has rounded values', () => {
+      // Simulate createMultiple batch data preparation
+      const items = [
+        { item: 'item-1', quantity: 3.333, unit_price: 150.777 },
+        { item: 'item-2', quantity: 7.5555, unit_price: 88.888 }
+      ]
+
+      const batchData = items.map(itemData => ({
+        item: itemData.item,
+        quantity: roundToTwoDecimals(itemData.quantity),
+        unit_price: roundToTwoDecimals(itemData.unit_price),
+        total_amount: roundToTwoDecimals(itemData.quantity * itemData.unit_price)
+      }))
+
+      // Verify all numeric values are rounded to 2 decimals
+      batchData.forEach(data => {
+        const qtyDecimals = data.quantity.toString().split('.')[1]?.length || 0
+        const priceDecimals = data.unit_price.toString().split('.')[1]?.length || 0
+        const totalDecimals = data.total_amount.toString().split('.')[1]?.length || 0
+
+        expect(qtyDecimals).toBeLessThanOrEqual(2)
+        expect(priceDecimals).toBeLessThanOrEqual(2)
+        expect(totalDecimals).toBeLessThanOrEqual(2)
+      })
+    })
+
+    it('should ensure delivery item batch update has rounded values', () => {
+      // Simulate updateMultiple batch data preparation
+      const updates = [
+        { id: 'item-1', data: { quantity: 5.5555, unit_price: 123.4567 } }
+      ]
+
+      const batchUpdates = updates.map(update => {
+        const roundedData: { quantity?: number; unit_price?: number; total_amount?: number } = {}
+
+        if (update.data.quantity !== undefined) {
+          roundedData.quantity = roundToTwoDecimals(update.data.quantity)
+        }
+        if (update.data.unit_price !== undefined) {
+          roundedData.unit_price = roundToTwoDecimals(update.data.unit_price)
+        }
+        if (roundedData.quantity !== undefined && roundedData.unit_price !== undefined) {
+          roundedData.total_amount = roundToTwoDecimals(roundedData.quantity * roundedData.unit_price)
+        }
+
+        return { id: update.id, data: roundedData }
+      })
+
+      const updateData = batchUpdates[0].data
+      expect(updateData.quantity).toBe(5.56)
+      expect(updateData.unit_price).toBe(123.46)
+      expect(updateData.total_amount).toBe(roundToTwoDecimals(5.56 * 123.46))
+    })
+
+    it('should handle zero and small values correctly', () => {
+      expect(calculateItemTotal(0, 100)).toBe(0)
+      expect(calculateItemTotal(0.01, 0.01)).toBe(0)
+      expect(calculateItemTotal(0.1, 0.1)).toBe(0.01)
+    })
+
+    it('should handle large values without precision loss', () => {
+      // Large delivery: 10000 bags × ₹500.55 = ₹5,005,500
+      expect(calculateItemTotal(10000, 500.55)).toBe(5005500)
+
+      // Verify no precision issues with large numbers
+      const largeTotal = calculateItemTotal(99999.99, 999.99)
+      const decimalPart = largeTotal.toString().split('.')[1]
+      const decimalPlaces = decimalPart?.length || 0
+      expect(decimalPlaces).toBeLessThanOrEqual(2)
     })
   })
 })

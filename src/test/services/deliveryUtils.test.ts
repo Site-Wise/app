@@ -578,4 +578,185 @@ describe('DeliveryPaymentCalculator Logic', () => {
       expect(paid).toBe(500.25)
     })
   })
+
+  describe('Decimal Precision in Payment Calculations', () => {
+    it('should round allocated amounts to 2 decimal places', () => {
+      // Allocations that could produce floating-point precision issues
+      const allocations: PaymentAllocation[] = [
+        {
+          id: 'alloc-1',
+          payment: 'payment-1',
+          delivery: 'delivery-1',
+          allocated_amount: 333.33,
+          created: '2024-01-16T10:00:00Z',
+          updated: '2024-01-16T10:00:00Z'
+        },
+        {
+          id: 'alloc-2',
+          payment: 'payment-2',
+          delivery: 'delivery-1',
+          allocated_amount: 333.33,
+          created: '2024-01-17T10:00:00Z',
+          updated: '2024-01-17T10:00:00Z'
+        },
+        {
+          id: 'alloc-3',
+          payment: 'payment-3',
+          delivery: 'delivery-1',
+          allocated_amount: 333.34,
+          created: '2024-01-18T10:00:00Z',
+          updated: '2024-01-18T10:00:00Z'
+        }
+      ]
+
+      const paid = DeliveryPaymentCalculator.calculatePaidAmount(mockDelivery, allocations)
+
+      // 333.33 + 333.33 + 333.34 = 1000.00 (should be exactly 1000, not 999.9999999...)
+      expect(paid).toBe(1000)
+
+      // Verify the result has at most 2 decimal places
+      const decimalPart = paid.toString().split('.')[1]
+      const decimalPlaces = decimalPart?.length || 0
+      expect(decimalPlaces).toBeLessThanOrEqual(2)
+    })
+
+    it('should round outstanding amounts to 2 decimal places', () => {
+      const delivery: Delivery = {
+        ...mockDelivery,
+        total_amount: 1000.99
+      }
+
+      const allocations: PaymentAllocation[] = [{
+        id: 'alloc-1',
+        payment: 'payment-1',
+        delivery: 'delivery-1',
+        allocated_amount: 333.33,
+        created: '2024-01-16T10:00:00Z',
+        updated: '2024-01-16T10:00:00Z'
+      }]
+
+      const outstanding = DeliveryPaymentCalculator.calculateOutstandingAmount(delivery, allocations)
+
+      // 1000.99 - 333.33 = 667.66
+      expect(outstanding).toBe(667.66)
+
+      // Verify the result has at most 2 decimal places
+      const decimalPart = outstanding.toString().split('.')[1]
+      const decimalPlaces = decimalPart?.length || 0
+      expect(decimalPlaces).toBeLessThanOrEqual(2)
+    })
+
+    it('should handle floating-point precision issues in status calculation', () => {
+      // This tests the scenario where floating-point math could cause issues
+      // 0.1 + 0.2 in JavaScript = 0.30000000000000004, not 0.3
+      const delivery: Delivery = {
+        ...mockDelivery,
+        total_amount: 0.3
+      }
+
+      const allocations: PaymentAllocation[] = [
+        {
+          id: 'alloc-1',
+          payment: 'payment-1',
+          delivery: 'delivery-1',
+          allocated_amount: 0.1,
+          created: '2024-01-16T10:00:00Z',
+          updated: '2024-01-16T10:00:00Z'
+        },
+        {
+          id: 'alloc-2',
+          payment: 'payment-2',
+          delivery: 'delivery-1',
+          allocated_amount: 0.2,
+          created: '2024-01-17T10:00:00Z',
+          updated: '2024-01-17T10:00:00Z'
+        }
+      ]
+
+      // Without rounding, 0.1 + 0.2 = 0.30000000000000004 which is > 0.3
+      // but logically should be equal and marked as 'paid'
+      const status = DeliveryPaymentCalculator.calculatePaymentStatus(delivery, allocations)
+      expect(status).toBe('paid')
+    })
+
+    it('should round total_amount when checking payment status', () => {
+      // Delivery with long decimal that should be treated as 1000.00
+      const delivery: Delivery = {
+        ...mockDelivery,
+        total_amount: 999.999 // Would round to 1000.00
+      }
+
+      const allocations: PaymentAllocation[] = [{
+        id: 'alloc-1',
+        payment: 'payment-1',
+        delivery: 'delivery-1',
+        allocated_amount: 1000,
+        created: '2024-01-16T10:00:00Z',
+        updated: '2024-01-16T10:00:00Z'
+      }]
+
+      const status = DeliveryPaymentCalculator.calculatePaymentStatus(delivery, allocations)
+      expect(status).toBe('paid')
+    })
+
+    it('should ensure all returned values have max 2 decimal places in enhance function', () => {
+      const delivery: Delivery = {
+        ...mockDelivery,
+        total_amount: 1000.999 // Long decimal
+      }
+
+      const allocations: PaymentAllocation[] = [{
+        id: 'alloc-1',
+        payment: 'payment-1',
+        delivery: 'delivery-1',
+        allocated_amount: 333.333,
+        created: '2024-01-16T10:00:00Z',
+        updated: '2024-01-16T10:00:00Z'
+      }]
+
+      const result = DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus([delivery], allocations)
+
+      // Check outstanding has at most 2 decimals
+      const outstandingDecimals = result[0].outstanding.toString().split('.')[1]?.length || 0
+      expect(outstandingDecimals).toBeLessThanOrEqual(2)
+
+      // Check paid_amount has at most 2 decimals
+      const paidDecimals = result[0].paid_amount.toString().split('.')[1]?.length || 0
+      expect(paidDecimals).toBeLessThanOrEqual(2)
+    })
+
+    it('should handle real-world construction payment scenario', () => {
+      // Typical scenario: TMT Bar delivery with multiple partial payments
+      const tmtDelivery: Delivery = {
+        ...mockDelivery,
+        id: 'tmt-delivery',
+        total_amount: 17044.73 // 235.75 kg × ₹72.30
+      }
+
+      const allocations: PaymentAllocation[] = [
+        {
+          id: 'alloc-1',
+          payment: 'payment-1',
+          delivery: 'tmt-delivery',
+          allocated_amount: 5000,
+          created: '2024-01-16T10:00:00Z',
+          updated: '2024-01-16T10:00:00Z'
+        },
+        {
+          id: 'alloc-2',
+          payment: 'payment-2',
+          delivery: 'tmt-delivery',
+          allocated_amount: 7000,
+          created: '2024-01-20T10:00:00Z',
+          updated: '2024-01-20T10:00:00Z'
+        }
+      ]
+
+      const outstanding = DeliveryPaymentCalculator.calculateOutstandingAmount(tmtDelivery, allocations)
+      expect(outstanding).toBe(5044.73) // 17044.73 - 12000
+
+      const status = DeliveryPaymentCalculator.calculatePaymentStatus(tmtDelivery, allocations)
+      expect(status).toBe('partial')
+    })
+  })
 })

@@ -1,4 +1,5 @@
 import type { Delivery, PaymentAllocation } from './pocketbase';
+import { roundToTwoDecimals } from '../utils/numbers';
 
 export type PaymentStatus = 'pending' | 'partial' | 'paid';
 
@@ -14,13 +15,15 @@ export class DeliveryPaymentCalculator {
    */
   static calculatePaymentStatus(delivery: Delivery, paymentAllocations: PaymentAllocation[]): PaymentStatus {
     if (!paymentAllocations.length) return 'pending';
-    
-    const allocatedAmount = paymentAllocations
-      .filter(allocation => allocation.delivery === delivery.id)
-      .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
-    
+
+    const allocatedAmount = roundToTwoDecimals(
+      paymentAllocations
+        .filter(allocation => allocation.delivery === delivery.id)
+        .reduce((sum, allocation) => sum + allocation.allocated_amount, 0)
+    );
+
     if (allocatedAmount <= 0) return 'pending';
-    if (allocatedAmount >= delivery.total_amount) return 'paid';
+    if (allocatedAmount >= roundToTwoDecimals(delivery.total_amount)) return 'paid';
     return 'partial';
   }
 
@@ -28,13 +31,15 @@ export class DeliveryPaymentCalculator {
    * Calculate outstanding amount for a delivery
    */
   static calculateOutstandingAmount(delivery: Delivery, paymentAllocations: PaymentAllocation[]): number {
-    if (!paymentAllocations.length) return delivery.total_amount;
-    
-    const allocatedAmount = paymentAllocations
-      .filter(allocation => allocation.delivery === delivery.id)
-      .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
-    
-    return Math.max(0, delivery.total_amount - allocatedAmount);
+    if (!paymentAllocations.length) return roundToTwoDecimals(delivery.total_amount);
+
+    const allocatedAmount = roundToTwoDecimals(
+      paymentAllocations
+        .filter(allocation => allocation.delivery === delivery.id)
+        .reduce((sum, allocation) => sum + allocation.allocated_amount, 0)
+    );
+
+    return roundToTwoDecimals(Math.max(0, delivery.total_amount - allocatedAmount));
   }
 
   /**
@@ -42,10 +47,12 @@ export class DeliveryPaymentCalculator {
    */
   static calculatePaidAmount(delivery: Delivery, paymentAllocations: PaymentAllocation[]): number {
     if (!paymentAllocations.length) return 0;
-    
-    return paymentAllocations
-      .filter(allocation => allocation.delivery === delivery.id)
-      .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
+
+    return roundToTwoDecimals(
+      paymentAllocations
+        .filter(allocation => allocation.delivery === delivery.id)
+        .reduce((sum, allocation) => sum + allocation.allocated_amount, 0)
+    );
   }
 
   /**
