@@ -241,7 +241,7 @@
               {{ t('analytics.charts.costByTag') }}
             </h3>
             <div class="h-64 sm:h-80">
-              <Bar :data="costByTagChartData" :options="chartOptions" />
+              <Pie :data="costByTagChartData" :options="pieChartOptions" />
             </div>
           </div>
 
@@ -374,14 +374,15 @@ import {
   BarElement,
   LineElement,
   PointElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend
 } from 'chart.js';
-import { Bar, Line } from 'vue-chartjs';
+import { Pie, Line } from 'vue-chartjs';
 
 // Register Chart.js components
-ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend);
 
 const { t } = useI18n();
 
@@ -413,15 +414,44 @@ const costByTagChartData = computed(() => {
     return { labels: [], datasets: [] };
   }
 
+  // Color palette for pie chart segments
+  const colors = [
+    'rgba(34, 197, 94, 0.8)',    // Green
+    'rgba(59, 130, 246, 0.8)',   // Blue
+    'rgba(239, 68, 68, 0.8)',    // Red
+    'rgba(245, 158, 11, 0.8)',   // Amber
+    'rgba(168, 85, 247, 0.8)',   // Purple
+    'rgba(236, 72, 153, 0.8)',   // Pink
+    'rgba(14, 165, 233, 0.8)',   // Sky
+    'rgba(34, 211, 238, 0.8)',   // Cyan
+    'rgba(99, 102, 241, 0.8)',   // Indigo
+    'rgba(234, 179, 8, 0.8)',    // Yellow
+  ];
+
+  const borderColors = [
+    'rgb(34, 197, 94)',
+    'rgb(59, 130, 246)',
+    'rgb(239, 68, 68)',
+    'rgb(245, 158, 11)',
+    'rgb(168, 85, 247)',
+    'rgb(236, 72, 153)',
+    'rgb(14, 165, 233)',
+    'rgb(34, 211, 238)',
+    'rgb(99, 102, 241)',
+    'rgb(234, 179, 8)',
+  ];
+
+  const backgroundColors = analyticsData.value.costByTag.map((_, index) => colors[index % colors.length]);
+  const borderColorsArray = analyticsData.value.costByTag.map((_, index) => borderColors[index % borderColors.length]);
+
   return {
     labels: analyticsData.value.costByTag.map(item => item.tagName),
     datasets: [
       {
-        label: t('analytics.charts.costByTag'),
         data: analyticsData.value.costByTag.map(item => item.cost),
-        backgroundColor: 'rgba(59, 130, 246, 0.5)',
-        borderColor: 'rgb(59, 130, 246)',
-        borderWidth: 1
+        backgroundColor: backgroundColors,
+        borderColor: borderColorsArray,
+        borderWidth: 2
       }
     ]
   };
@@ -496,7 +526,7 @@ const costOverTimeChartData = computed(() => {
         borderWidth: 2,
         fill: false, // Don't fill area for multiple lines (cleaner view)
         tension: 0.4,
-        spanGaps: false // Don't connect lines across null values
+        spanGaps: true // Connect actual data points, skipping null values
       };
     });
 
@@ -523,6 +553,31 @@ const costOverTimeChartData = computed(() => {
   };
 });
 
+// Pie chart options (for cost by tag)
+const pieChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: true,
+      position: 'right' as const
+    },
+    tooltip: {
+      callbacks: {
+        // Format currency in tooltips
+        label: function(context: any) {
+          const label = context.label || '';
+          const value = context.parsed;
+          const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+          const percentage = ((value / total) * 100).toFixed(1);
+          return `${label}: ₹${value.toLocaleString('en-IN')} (${percentage}%)`;
+        }
+      }
+    }
+  }
+};
+
+// Line chart options (for cost over time)
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
