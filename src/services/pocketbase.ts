@@ -484,6 +484,7 @@ export interface AnalyticsResult {
   quantityByUnit: { unit: string; quantity: number; itemCount: number }[];
   costByTag: { tagId: string; tagName: string; cost: number }[];
   costOverTime: { date: string; cost: number }[];
+  costOverTimeByTag: { tagId: string; tagName: string; data: { date: string; cost: number }[] }[];
 }
 
 // Site context management
@@ -4866,6 +4867,44 @@ class AnalyticsSettingService {
       .map(([date, cost]) => ({ date, cost }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
+    // Calculate cost over time by tag (for multi-tag trajectory analysis)
+    const costByDateByTagMap = new Map<string, { tagName: string; dateMap: Map<string, number> }>();
+
+    for (const record of deliveryItems) {
+      const delivery = record.expand?.delivery;
+      const item = record.expand?.item;
+
+      if (delivery && delivery.delivery_date && item && item.tags) {
+        const date = delivery.delivery_date.split('T')[0]; // Get date part only
+        const itemTags = Array.isArray(item.tags) ? item.tags : [];
+        const expandedTags = item.expand?.tags || [];
+        const amount = record.total_amount || 0;
+
+        for (const tagId of itemTags) {
+          const tag = expandedTags.find((t: any) => t.id === tagId);
+          const tagName = tag?.name || 'Unknown';
+
+          if (!costByDateByTagMap.has(tagId)) {
+            costByDateByTagMap.set(tagId, { tagName, dateMap: new Map<string, number>() });
+          }
+
+          const tagData = costByDateByTagMap.get(tagId)!;
+          const existingCost = tagData.dateMap.get(date) || 0;
+          tagData.dateMap.set(date, existingCost + amount);
+        }
+      }
+    }
+
+    const costOverTimeByTag = Array.from(costByDateByTagMap.entries())
+      .map(([tagId, tagData]) => ({
+        tagId,
+        tagName: tagData.tagName,
+        data: Array.from(tagData.dateMap.entries())
+          .map(([date, cost]) => ({ date, cost }))
+          .sort((a, b) => a.date.localeCompare(b.date))
+      }))
+      .sort((a, b) => a.tagName.localeCompare(b.tagName));
+
     // Calculate quantity by unit (aggregated by item unit)
     const quantityByUnitMap = new Map<string, { quantity: number; itemIds: Set<string> }>();
 
@@ -4900,7 +4939,8 @@ class AnalyticsSettingService {
       totalQuantity,
       quantityByUnit,
       costByTag,
-      costOverTime
+      costOverTime,
+      costOverTimeByTag
     };
   }
 

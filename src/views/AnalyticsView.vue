@@ -454,6 +454,55 @@ const costOverTimeChartData = computed(() => {
     }
   };
 
+  // If multiple tags are selected, show individual tag trajectories
+  if (analyticsData.value.costOverTimeByTag && analyticsData.value.costOverTimeByTag.length > 1) {
+    // Color palette for different tags
+    const tagColors = [
+      { bg: 'rgba(34, 197, 94, 0.2)', border: 'rgb(34, 197, 94)' },    // Green
+      { bg: 'rgba(59, 130, 246, 0.2)', border: 'rgb(59, 130, 246)' },  // Blue
+      { bg: 'rgba(239, 68, 68, 0.2)', border: 'rgb(239, 68, 68)' },    // Red
+      { bg: 'rgba(245, 158, 11, 0.2)', border: 'rgb(245, 158, 11)' },  // Amber
+      { bg: 'rgba(168, 85, 247, 0.2)', border: 'rgb(168, 85, 247)' },  // Purple
+      { bg: 'rgba(236, 72, 153, 0.2)', border: 'rgb(236, 72, 153)' },  // Pink
+      { bg: 'rgba(14, 165, 233, 0.2)', border: 'rgb(14, 165, 233)' },  // Sky
+      { bg: 'rgba(34, 211, 238, 0.2)', border: 'rgb(34, 211, 238)' },  // Cyan
+    ];
+
+    // Collect all unique dates across all tags
+    const allDates = new Set<string>();
+    analyticsData.value.costOverTimeByTag.forEach(tag => {
+      tag.data.forEach(item => allDates.add(item.date));
+    });
+    const sortedDates = Array.from(allDates).sort();
+
+    // Create datasets for each tag
+    const datasets = analyticsData.value.costOverTimeByTag.map((tagData, index) => {
+      const color = tagColors[index % tagColors.length];
+
+      // Create a map of date to cost for this tag
+      const dateMap = new Map(tagData.data.map(item => [item.date, item.cost]));
+
+      // Fill in data for all dates (use 0 for missing dates)
+      const data = sortedDates.map(date => dateMap.get(date) || 0);
+
+      return {
+        label: tagData.tagName,
+        data,
+        backgroundColor: color.bg,
+        borderColor: color.border,
+        borderWidth: 2,
+        fill: false, // Don't fill area for multiple lines (cleaner view)
+        tension: 0.4
+      };
+    });
+
+    return {
+      labels: sortedDates.map(formatDate),
+      datasets
+    };
+  }
+
+  // Default: show combined cost over time
   return {
     labels: analyticsData.value.costOverTime.map(item => formatDate(item.date)),
     datasets: [
