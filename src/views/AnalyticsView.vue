@@ -300,13 +300,13 @@
         </h2>
         <label class="label">{{ t('analytics.settingName') }}</label>
         <input
-          ref="settingNameInput"
           v-model="settingName"
           type="text"
           class="input mb-4"
           :placeholder="t('analytics.enterSettingName')"
           @keyup.enter="handleSaveSetting"
           @keyup.esc="showSaveModal = false"
+          autofocus
         />
         <div class="flex gap-2 justify-end">
           <button @click="showSaveModal = false" class="btn-secondary">
@@ -350,11 +350,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useI18n } from '../composables/useI18n';
 import { useAnalytics } from '../composables/useAnalytics';
-import { useSiteData } from '../composables/useSiteData';
-import { tagService, type Tag } from '../services/pocketbase';
 import TagSelector from '../components/TagSelector.vue';
 import {
   BarChart3,
@@ -403,20 +401,11 @@ const {
   formatCompactAmount
 } = useAnalytics();
 
-// Load tags for tag selector
-const { data: tagsData } = useSiteData(async () => {
-  const tags = await tagService.getAll();
-  return { tags };
-});
-
-const tags = computed(() => tagsData.value?.tags || []);
-
 // Modal states
 const showSaveModal = ref(false);
 const showDeleteConfirm = ref(false);
 const settingName = ref('');
 const settingToDelete = ref<string | null>(null);
-const settingNameInput = ref<HTMLInputElement | null>(null);
 
 // Chart data
 const costByTagChartData = computed(() => {
@@ -547,19 +536,6 @@ const handleDeleteSetting = async () => {
 };
 
 // Auto-focus setting name input when modal opens
-const focusSettingNameInput = async () => {
-  await nextTick();
-  settingNameInput.value?.focus();
-};
-
-// Watch for modal open
-const originalShowSaveModal = showSaveModal.value;
-const unwatchShowSaveModal = () => {
-  if (showSaveModal.value && !originalShowSaveModal) {
-    focusSettingNameInput();
-  }
-};
-
 onMounted(async () => {
   await loadSavedSettings();
 });

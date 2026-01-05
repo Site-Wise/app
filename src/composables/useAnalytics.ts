@@ -12,7 +12,7 @@ export interface AnalyticsFilters {
 }
 
 export function useAnalytics() {
-  const { showToast } = useToast();
+  const { success, error } = useToast();
   const { currentSite } = useSite();
 
   // Filters state
@@ -39,9 +39,9 @@ export function useAnalytics() {
     try {
       loadingSettings.value = true;
       savedSettings.value = await analyticsSettingService.getAll();
-    } catch (error) {
-      console.error('Failed to load saved analytics settings:', error);
-      showToast('Failed to load saved settings', 'error');
+    } catch (err) {
+      console.error('Failed to load saved analytics settings:', err);
+      error('Failed to load saved settings');
     } finally {
       loadingSettings.value = false;
     }
@@ -77,9 +77,9 @@ export function useAnalytics() {
       }
 
       analyticsData.value = await analyticsSettingService.calculateAnalytics(filterParams);
-    } catch (error) {
-      console.error('Failed to calculate analytics:', error);
-      showToast('Failed to calculate analytics', 'error');
+    } catch (err) {
+      console.error('Failed to calculate analytics:', err);
+      error('Failed to calculate analytics');
       analyticsData.value = null;
     } finally {
       loading.value = false;
@@ -101,12 +101,12 @@ export function useAnalytics() {
       };
 
       await analyticsSettingService.create(setting);
-      showToast('Analytics setting saved', 'success');
+      success('Analytics setting saved');
       await loadSavedSettings(); // Refresh the list
       return true;
-    } catch (error) {
-      console.error('Failed to save analytics setting:', error);
-      showToast('Failed to save setting', 'error');
+    } catch (err) {
+      console.error('Failed to save analytics setting:', err);
+      error('Failed to save setting');
       return false;
     }
   };
@@ -118,7 +118,7 @@ export function useAnalytics() {
     try {
       const setting = await analyticsSettingService.getById(settingId);
       if (!setting) {
-        showToast('Setting not found', 'error');
+        error('Setting not found');
         return;
       }
 
@@ -132,9 +132,9 @@ export function useAnalytics() {
 
       // Automatically calculate analytics when loading a setting
       await calculateAnalytics();
-    } catch (error) {
-      console.error('Failed to load analytics setting:', error);
-      showToast('Failed to load setting', 'error');
+    } catch (err) {
+      console.error('Failed to load analytics setting:', err);
+      error('Failed to load setting');
     }
   };
 
@@ -144,12 +144,12 @@ export function useAnalytics() {
   const deleteSetting = async (settingId: string): Promise<boolean> => {
     try {
       await analyticsSettingService.delete(settingId);
-      showToast('Setting deleted', 'success');
+      success('Setting deleted');
       await loadSavedSettings(); // Refresh the list
       return true;
-    } catch (error) {
-      console.error('Failed to delete analytics setting:', error);
-      showToast('Failed to delete setting', 'error');
+    } catch (err) {
+      console.error('Failed to delete analytics setting:', err);
+      error('Failed to delete setting');
       return false;
     }
   };
@@ -172,12 +172,12 @@ export function useAnalytics() {
       }
 
       await analyticsSettingService.update(settingId, updates);
-      showToast('Setting updated', 'success');
+      success('Setting updated');
       await loadSavedSettings(); // Refresh the list
       return true;
-    } catch (error) {
-      console.error('Failed to update analytics setting:', error);
-      showToast('Failed to update setting', 'error');
+    } catch (err) {
+      console.error('Failed to update analytics setting:', err);
+      error('Failed to update setting');
       return false;
     }
   };
