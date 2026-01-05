@@ -468,22 +468,25 @@ const costOverTimeChartData = computed(() => {
       { bg: 'rgba(34, 211, 238, 0.2)', border: 'rgb(34, 211, 238)' },  // Cyan
     ];
 
-    // Collect all unique dates across all tags
+    // Collect all unique dates across all tags for x-axis labels
     const allDates = new Set<string>();
     analyticsData.value.costOverTimeByTag.forEach(tag => {
       tag.data.forEach(item => allDates.add(item.date));
     });
     const sortedDates = Array.from(allDates).sort();
 
-    // Create datasets for each tag
+    // Create datasets for each tag with only their actual data points
     const datasets = analyticsData.value.costOverTimeByTag.map((tagData, index) => {
       const color = tagColors[index % tagColors.length];
 
       // Create a map of date to cost for this tag
       const dateMap = new Map(tagData.data.map(item => [item.date, item.cost]));
 
-      // Fill in data for all dates (use 0 for missing dates)
-      const data = sortedDates.map(date => dateMap.get(date) || 0);
+      // Only include actual data points (null for missing dates, Chart.js will handle gaps)
+      const data = sortedDates.map(date => {
+        const value = dateMap.get(date);
+        return value !== undefined ? value : null;
+      });
 
       return {
         label: tagData.tagName,
@@ -492,7 +495,8 @@ const costOverTimeChartData = computed(() => {
         borderColor: color.border,
         borderWidth: 2,
         fill: false, // Don't fill area for multiple lines (cleaner view)
-        tension: 0.4
+        tension: 0.4,
+        spanGaps: false // Don't connect lines across null values
       };
     });
 
