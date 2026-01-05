@@ -10,7 +10,10 @@
         <button
           @click="showSaveModal = true"
           :disabled="!hasActiveFilters"
-          class="btn-secondary text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+          :class="[
+            hasActiveFilters ? 'btn-primary' : 'btn-disabled',
+            'text-sm whitespace-nowrap'
+          ]"
         >
           <Save class="h-4 w-4" />
           <span>{{ t('analytics.saveFilters') }}</span>
