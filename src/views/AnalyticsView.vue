@@ -1,8 +1,8 @@
 <template>
-  <div class="pb-20">
+  <div>
     <!-- Header -->
-    <div class="mb-4 sm:mb-6">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <div class="mb-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{{ t('analytics.title') }}</h1>
           <p class="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{{ t('analytics.subtitle') }}</p>
@@ -18,10 +18,10 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
       <!-- Filters Panel - Left Sidebar on Desktop, Top on Mobile -->
       <div class="lg:col-span-1">
-        <div class="card p-4 sticky top-4">
+        <div class="card p-4 lg:sticky lg:top-4">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">{{ t('analytics.filters') }}</h2>
 
           <!-- Tags Filter -->
@@ -153,9 +153,9 @@
         </div>
 
         <!-- Results Display -->
-        <div v-else class="space-y-4 sm:space-y-6">
+        <div v-else class="space-y-6">
           <!-- Summary Cards -->
-          <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             <!-- Total Cost -->
             <div class="card p-3 sm:p-4">
               <div class="flex items-center mb-2">
@@ -236,7 +236,7 @@
           </div>
 
           <!-- Cost by Tag Chart -->
-          <div v-if="analyticsData.costByTag.length > 0" class="card p-4 sm:p-6">
+          <div v-if="analyticsData.costByTag.length > 0" class="card p-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               {{ t('analytics.charts.costByTag') }}
             </h3>
@@ -246,7 +246,7 @@
           </div>
 
           <!-- Cost Over Time Chart -->
-          <div v-if="analyticsData.costOverTime.length > 0" class="card p-4 sm:p-6">
+          <div v-if="analyticsData.costOverTime.length > 0" class="card p-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               {{ t('analytics.charts.costOverTime') }}
             </h3>
@@ -256,7 +256,7 @@
           </div>
 
           <!-- Quantity by Unit Breakdown -->
-          <div v-if="analyticsData.quantityByUnit.length > 0" class="card p-4 sm:p-6">
+          <div v-if="analyticsData.quantityByUnit.length > 0" class="card p-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               {{ t('analytics.quantityByUnit.title') }}
             </h3>
