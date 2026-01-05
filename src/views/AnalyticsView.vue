@@ -251,7 +251,7 @@
               {{ t('analytics.charts.costOverTime') }}
             </h3>
             <div class="h-64 sm:h-80">
-              <Line :data="costOverTimeChartData" :options="chartOptions" />
+              <Bar :data="costOverTimeChartData" :options="barChartOptions" />
             </div>
           </div>
 
@@ -379,7 +379,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
-import { Pie, Line } from 'vue-chartjs';
+import { Pie, Bar } from 'vue-chartjs';
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend);
@@ -512,7 +512,7 @@ const costOverTimeChartData = computed(() => {
       // Create a map of date to cost for this tag
       const dateMap = new Map(tagData.data.map(item => [item.date, item.cost]));
 
-      // Only include actual data points (null for missing dates, Chart.js will handle gaps)
+      // Only include actual data points (null for missing dates)
       const data = sortedDates.map(date => {
         const value = dateMap.get(date);
         return value !== undefined ? value : null;
@@ -523,10 +523,7 @@ const costOverTimeChartData = computed(() => {
         data,
         backgroundColor: color.bg,
         borderColor: color.border,
-        borderWidth: 2,
-        fill: false, // Don't fill area for multiple lines (cleaner view)
-        tension: 0.4,
-        spanGaps: true // Connect actual data points, skipping null values
+        borderWidth: 1
       };
     });
 
@@ -543,11 +540,9 @@ const costOverTimeChartData = computed(() => {
       {
         label: t('analytics.charts.costOverTime'),
         data: analyticsData.value.costOverTime.map(item => item.cost),
-        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+        backgroundColor: 'rgba(34, 197, 94, 0.8)',
         borderColor: 'rgb(34, 197, 94)',
-        borderWidth: 2,
-        fill: true,
-        tension: 0.4
+        borderWidth: 1
       }
     ]
   };
@@ -577,8 +572,8 @@ const pieChartOptions = {
   }
 };
 
-// Line chart options (for cost over time)
-const chartOptions = {
+// Bar chart options (for cost over time)
+const barChartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
