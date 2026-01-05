@@ -443,8 +443,30 @@ const costOverTimeChartData = computed(() => {
     return { labels: [], datasets: [] };
   }
 
+  // Format dates as YYYY-MM-DD for consistent display
+  const formatDate = (dateStr: string): string => {
+    // If already in YYYY-MM-DD format, return as-is
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      return dateStr;
+    }
+    // If it's a full ISO string, extract the date part
+    if (dateStr.includes('T')) {
+      return dateStr.split('T')[0];
+    }
+    // Try to parse and format
+    try {
+      const date = new Date(dateStr);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch {
+      return dateStr;
+    }
+  };
+
   return {
-    labels: analyticsData.value.costOverTime.map(item => item.date),
+    labels: analyticsData.value.costOverTime.map(item => formatDate(item.date)),
     datasets: [
       {
         label: t('analytics.charts.costOverTime'),
@@ -466,11 +488,34 @@ const chartOptions = {
     legend: {
       display: true,
       position: 'top' as const
+    },
+    tooltip: {
+      callbacks: {
+        // Format currency in tooltips
+        label: function(context: any) {
+          const label = context.dataset.label || '';
+          const value = context.parsed.y;
+          return `${label}: ₹${value.toLocaleString('en-IN')}`;
+        }
+      }
     }
   },
   scales: {
+    x: {
+      ticks: {
+        maxRotation: 45,
+        minRotation: 45,
+        autoSkip: true,
+        maxTicksLimit: 10
+      }
+    },
     y: {
-      beginAtZero: true
+      beginAtZero: true,
+      ticks: {
+        callback: function(value: any) {
+          return '₹' + value.toLocaleString('en-IN');
+        }
+      }
     }
   }
 };
