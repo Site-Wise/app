@@ -254,6 +254,36 @@
               <Line :data="costOverTimeChartData" :options="chartOptions" />
             </div>
           </div>
+
+          <!-- Quantity by Unit Breakdown -->
+          <div v-if="analyticsData.quantityByUnit.length > 0" class="card p-4 sm:p-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              {{ t('analytics.quantityByUnit.title') }}
+            </h3>
+            <div class="space-y-3">
+              <div
+                v-for="unitData in analyticsData.quantityByUnit"
+                :key="unitData.unit"
+                class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              >
+                <div class="flex-1">
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">
+                      {{ unitData.unit }}
+                    </span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">
+                      ({{ unitData.itemCount }} {{ unitData.itemCount === 1 ? t('analytics.quantityByUnit.item') : t('analytics.quantityByUnit.items') }})
+                    </span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-lg font-semibold text-primary-600 dark:text-primary-400">
+                    {{ unitData.quantity.toLocaleString() }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

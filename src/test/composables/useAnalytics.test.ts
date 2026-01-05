@@ -320,6 +320,218 @@ describe('useAnalytics Logic', () => {
     });
   });
 
+  describe('Quantity by Unit Aggregation Logic', () => {
+    it('should aggregate quantities by unit correctly', () => {
+      const aggregateQuantityByUnit = (deliveryItems: any[]) => {
+        const quantityByUnitMap = new Map<string, { quantity: number; itemIds: Set<string> }>();
+
+        for (const record of deliveryItems) {
+          const item = record.expand?.item;
+          if (item && item.unit) {
+            const unit = item.unit;
+            const quantity = record.quantity || 0;
+            const itemId = record.item;
+
+            const existing = quantityByUnitMap.get(unit) || { quantity: 0, itemIds: new Set<string>() };
+            existing.quantity += quantity;
+            existing.itemIds.add(itemId);
+            quantityByUnitMap.set(unit, existing);
+          }
+        }
+
+        return Array.from(quantityByUnitMap.entries())
+          .map(([unit, data]) => ({
+            unit,
+            quantity: data.quantity,
+            itemCount: data.itemIds.size
+          }))
+          .sort((a, b) => b.quantity - a.quantity);
+      };
+
+      const items = [
+        {
+          item: 'item1',
+          quantity: 100,
+          expand: { item: { unit: 'kg' } }
+        },
+        {
+          item: 'item2',
+          quantity: 50,
+          expand: { item: { unit: 'kg' } }
+        },
+        {
+          item: 'item3',
+          quantity: 10,
+          expand: { item: { unit: 'ton' } }
+        },
+        {
+          item: 'item1',
+          quantity: 75,
+          expand: { item: { unit: 'kg' } }
+        }
+      ];
+
+      const result = aggregateQuantityByUnit(items);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({ unit: 'kg', quantity: 225, itemCount: 2 });
+      expect(result[1]).toEqual({ unit: 'ton', quantity: 10, itemCount: 1 });
+    });
+
+    it('should handle multiple items with same unit', () => {
+      const aggregateQuantityByUnit = (deliveryItems: any[]) => {
+        const quantityByUnitMap = new Map<string, { quantity: number; itemIds: Set<string> }>();
+
+        for (const record of deliveryItems) {
+          const item = record.expand?.item;
+          if (item && item.unit) {
+            const unit = item.unit;
+            const quantity = record.quantity || 0;
+            const itemId = record.item;
+
+            const existing = quantityByUnitMap.get(unit) || { quantity: 0, itemIds: new Set<string>() };
+            existing.quantity += quantity;
+            existing.itemIds.add(itemId);
+            quantityByUnitMap.set(unit, existing);
+          }
+        }
+
+        return Array.from(quantityByUnitMap.entries())
+          .map(([unit, data]) => ({
+            unit,
+            quantity: data.quantity,
+            itemCount: data.itemIds.size
+          }))
+          .sort((a, b) => b.quantity - a.quantity);
+      };
+
+      const items = [
+        { item: 'cement1', quantity: 500, expand: { item: { unit: 'bags' } } },
+        { item: 'cement2', quantity: 300, expand: { item: { unit: 'bags' } } },
+        { item: 'sand', quantity: 1000, expand: { item: { unit: 'kg' } } }
+      ];
+
+      const result = aggregateQuantityByUnit(items);
+
+      expect(result).toHaveLength(2);
+      expect(result.find(r => r.unit === 'bags')?.quantity).toBe(800);
+      expect(result.find(r => r.unit === 'bags')?.itemCount).toBe(2);
+      expect(result.find(r => r.unit === 'kg')?.quantity).toBe(1000);
+      expect(result.find(r => r.unit === 'kg')?.itemCount).toBe(1);
+    });
+
+    it('should sort by quantity descending', () => {
+      const aggregateQuantityByUnit = (deliveryItems: any[]) => {
+        const quantityByUnitMap = new Map<string, { quantity: number; itemIds: Set<string> }>();
+
+        for (const record of deliveryItems) {
+          const item = record.expand?.item;
+          if (item && item.unit) {
+            const unit = item.unit;
+            const quantity = record.quantity || 0;
+            const itemId = record.item;
+
+            const existing = quantityByUnitMap.get(unit) || { quantity: 0, itemIds: new Set<string>() };
+            existing.quantity += quantity;
+            existing.itemIds.add(itemId);
+            quantityByUnitMap.set(unit, existing);
+          }
+        }
+
+        return Array.from(quantityByUnitMap.entries())
+          .map(([unit, data]) => ({
+            unit,
+            quantity: data.quantity,
+            itemCount: data.itemIds.size
+          }))
+          .sort((a, b) => b.quantity - a.quantity);
+      };
+
+      const items = [
+        { item: 'item1', quantity: 50, expand: { item: { unit: 'kg' } } },
+        { item: 'item2', quantity: 1000, expand: { item: { unit: 'ton' } } },
+        { item: 'item3', quantity: 200, expand: { item: { unit: 'bags' } } }
+      ];
+
+      const result = aggregateQuantityByUnit(items);
+
+      expect(result[0].unit).toBe('ton');
+      expect(result[1].unit).toBe('bags');
+      expect(result[2].unit).toBe('kg');
+    });
+
+    it('should handle empty delivery items', () => {
+      const aggregateQuantityByUnit = (deliveryItems: any[]) => {
+        const quantityByUnitMap = new Map<string, { quantity: number; itemIds: Set<string> }>();
+
+        for (const record of deliveryItems) {
+          const item = record.expand?.item;
+          if (item && item.unit) {
+            const unit = item.unit;
+            const quantity = record.quantity || 0;
+            const itemId = record.item;
+
+            const existing = quantityByUnitMap.get(unit) || { quantity: 0, itemIds: new Set<string>() };
+            existing.quantity += quantity;
+            existing.itemIds.add(itemId);
+            quantityByUnitMap.set(unit, existing);
+          }
+        }
+
+        return Array.from(quantityByUnitMap.entries())
+          .map(([unit, data]) => ({
+            unit,
+            quantity: data.quantity,
+            itemCount: data.itemIds.size
+          }))
+          .sort((a, b) => b.quantity - a.quantity);
+      };
+
+      const result = aggregateQuantityByUnit([]);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should handle items without units', () => {
+      const aggregateQuantityByUnit = (deliveryItems: any[]) => {
+        const quantityByUnitMap = new Map<string, { quantity: number; itemIds: Set<string> }>();
+
+        for (const record of deliveryItems) {
+          const item = record.expand?.item;
+          if (item && item.unit) {
+            const unit = item.unit;
+            const quantity = record.quantity || 0;
+            const itemId = record.item;
+
+            const existing = quantityByUnitMap.get(unit) || { quantity: 0, itemIds: new Set<string>() };
+            existing.quantity += quantity;
+            existing.itemIds.add(itemId);
+            quantityByUnitMap.set(unit, existing);
+          }
+        }
+
+        return Array.from(quantityByUnitMap.entries())
+          .map(([unit, data]) => ({
+            unit,
+            quantity: data.quantity,
+            itemCount: data.itemIds.size
+          }))
+          .sort((a, b) => b.quantity - a.quantity);
+      };
+
+      const items = [
+        { item: 'item1', quantity: 100, expand: { item: { unit: 'kg' } } },
+        { item: 'item2', quantity: 50, expand: { item: {} } }, // No unit
+        { item: 'item3', quantity: 75, expand: {} } // No item
+      ];
+
+      const result = aggregateQuantityByUnit(items);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({ unit: 'kg', quantity: 100, itemCount: 1 });
+    });
+  });
+
   describe('Filter Application Logic', () => {
     it('should filter by tags correctly', () => {
       const filterByTags = (deliveryItems: any[], selectedTagIds: string[]) => {

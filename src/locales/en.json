@@ -1457,6 +1457,11 @@
       "costOverTime": "Cost Over Time",
       "noData": "No data to display"
     },
+    "quantityByUnit": {
+      "title": "Quantity by Unit",
+      "item": "item",
+      "items": "items"
+    },
     "messages": {
       "noFiltersApplied": "Apply filters and click Calculate to see analytics",
       "calculateFirst": "Click Calculate to see results",

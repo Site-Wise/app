@@ -481,6 +481,7 @@ export interface AnalyticsResult {
   itemCount: number;
   deliveryCount: number;
   totalQuantity: number;
+  quantityByUnit: { unit: string; quantity: number; itemCount: number }[];
   costByTag: { tagId: string; tagName: string; cost: number }[];
   costOverTime: { date: string; cost: number }[];
 }
@@ -4865,6 +4866,31 @@ class AnalyticsSettingService {
       .map(([date, cost]) => ({ date, cost }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
+    // Calculate quantity by unit (aggregated by item unit)
+    const quantityByUnitMap = new Map<string, { quantity: number; itemIds: Set<string> }>();
+
+    for (const record of deliveryItems) {
+      const item = record.expand?.item;
+      if (item && item.unit) {
+        const unit = item.unit;
+        const quantity = record.quantity || 0;
+        const itemId = record.item;
+
+        const existing = quantityByUnitMap.get(unit) || { quantity: 0, itemIds: new Set<string>() };
+        existing.quantity += quantity;
+        existing.itemIds.add(itemId);
+        quantityByUnitMap.set(unit, existing);
+      }
+    }
+
+    const quantityByUnit = Array.from(quantityByUnitMap.entries())
+      .map(([unit, data]) => ({
+        unit,
+        quantity: data.quantity,
+        itemCount: data.itemIds.size
+      }))
+      .sort((a, b) => b.quantity - a.quantity); // Sort by quantity descending
+
     return {
       totalCost,
       averageCostPerItem,
@@ -4872,6 +4898,7 @@ class AnalyticsSettingService {
       itemCount,
       deliveryCount,
       totalQuantity,
+      quantityByUnit,
       costByTag,
       costOverTime
     };
