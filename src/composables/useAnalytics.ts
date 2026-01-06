@@ -48,9 +48,39 @@ export function useAnalytics() {
   };
 
   /**
+   * Validate filters before calculation
+   */
+  const validateFilters = (): boolean => {
+    // Validate date range
+    if (filters.value.dateFrom && filters.value.dateTo) {
+      const fromDate = new Date(filters.value.dateFrom);
+      const toDate = new Date(filters.value.dateTo);
+      if (fromDate > toDate) {
+        error('Date from must be before or equal to date to');
+        return false;
+      }
+    }
+
+    // Validate amount range
+    if (filters.value.amountMin !== null && filters.value.amountMax !== null) {
+      if (filters.value.amountMin > filters.value.amountMax) {
+        error('Minimum amount must be less than or equal to maximum amount');
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  /**
    * Calculate analytics based on current filters
    */
   const calculateAnalytics = async () => {
+    // Validate filters first
+    if (!validateFilters()) {
+      return;
+    }
+
     try {
       loading.value = true;
 
@@ -96,8 +126,9 @@ export function useAnalytics() {
         tag_ids: filters.value.tagIds.length > 0 ? filters.value.tagIds : undefined,
         date_from: filters.value.dateFrom || undefined,
         date_to: filters.value.dateTo || undefined,
-        amount_min: filters.value.amountMin !== null ? filters.value.amountMin : undefined,
-        amount_max: filters.value.amountMax !== null ? filters.value.amountMax : undefined
+        // Use -1 as sentinel value for null (allows 0 to be a valid filter)
+        amount_min: filters.value.amountMin !== null ? filters.value.amountMin : -1,
+        amount_max: filters.value.amountMax !== null ? filters.value.amountMax : -1
       };
 
       await analyticsSettingService.create(setting);
@@ -126,9 +157,9 @@ export function useAnalytics() {
         tagIds: setting.tag_ids || [],
         dateFrom: setting.date_from || '',
         dateTo: setting.date_to || '',
-        // Treat 0 as null for optional amount filters (PocketBase may return 0 for empty fields)
-        amountMin: setting.amount_min && setting.amount_min !== 0 ? setting.amount_min : null,
-        amountMax: setting.amount_max && setting.amount_max !== 0 ? setting.amount_max : null
+        // Convert -1 sentinel value back to null (allows 0 to be a valid filter)
+        amountMin: setting.amount_min !== undefined && setting.amount_min !== -1 ? setting.amount_min : null,
+        amountMax: setting.amount_max !== undefined && setting.amount_max !== -1 ? setting.amount_max : null
       };
 
       // Automatically calculate analytics when loading a setting
@@ -164,8 +195,9 @@ export function useAnalytics() {
         tag_ids: filters.value.tagIds.length > 0 ? filters.value.tagIds : undefined,
         date_from: filters.value.dateFrom || undefined,
         date_to: filters.value.dateTo || undefined,
-        amount_min: filters.value.amountMin !== null ? filters.value.amountMin : undefined,
-        amount_max: filters.value.amountMax !== null ? filters.value.amountMax : undefined
+        // Use -1 as sentinel value for null (allows 0 to be a valid filter)
+        amount_min: filters.value.amountMin !== null ? filters.value.amountMin : -1,
+        amount_max: filters.value.amountMax !== null ? filters.value.amountMax : -1
       };
 
       if (name) {

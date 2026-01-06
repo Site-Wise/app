@@ -616,15 +616,16 @@ describe('useAnalytics Logic', () => {
   });
 
   describe('Setting Serialization Logic', () => {
-    it('should serialize filters to setting correctly', () => {
+    it('should serialize filters to setting correctly with -1 sentinel', () => {
       const serializeFiltersToSetting = (name: string, filters: any) => {
         return {
           name,
           tag_ids: filters.tagIds.length > 0 ? filters.tagIds : undefined,
           date_from: filters.dateFrom || undefined,
           date_to: filters.dateTo || undefined,
-          amount_min: filters.amountMin !== null ? filters.amountMin : undefined,
-          amount_max: filters.amountMax !== null ? filters.amountMax : undefined
+          // Use -1 as sentinel value for null (allows 0 to be a valid filter)
+          amount_min: filters.amountMin !== null ? filters.amountMin : -1,
+          amount_max: filters.amountMax !== null ? filters.amountMax : -1
         };
       };
 
@@ -646,14 +647,61 @@ describe('useAnalytics Logic', () => {
       expect(setting.amount_max).toBe(1000);
     });
 
-    it('should deserialize setting to filters correctly', () => {
+    it('should serialize null amounts as -1 sentinel value', () => {
+      const serializeFiltersToSetting = (name: string, filters: any) => {
+        return {
+          name,
+          tag_ids: filters.tagIds.length > 0 ? filters.tagIds : undefined,
+          date_from: filters.dateFrom || undefined,
+          date_to: filters.dateTo || undefined,
+          amount_min: filters.amountMin !== null ? filters.amountMin : -1,
+          amount_max: filters.amountMax !== null ? filters.amountMax : -1
+        };
+      };
+
+      const filters = {
+        tagIds: ['tag1'],
+        dateFrom: '2024-01-01',
+        dateTo: '',
+        amountMin: null,
+        amountMax: null
+      };
+
+      const setting = serializeFiltersToSetting('Test Setting', filters);
+
+      expect(setting.amount_min).toBe(-1);
+      expect(setting.amount_max).toBe(-1);
+    });
+
+    it('should allow 0 as valid amount filter value', () => {
+      const serializeFiltersToSetting = (name: string, filters: any) => {
+        return {
+          name,
+          amount_min: filters.amountMin !== null ? filters.amountMin : -1,
+          amount_max: filters.amountMax !== null ? filters.amountMax : -1
+        };
+      };
+
+      const filters = {
+        amountMin: 0,
+        amountMax: 100
+      };
+
+      const setting = serializeFiltersToSetting('Test', filters);
+
+      expect(setting.amount_min).toBe(0);
+      expect(setting.amount_max).toBe(100);
+    });
+
+    it('should deserialize setting to filters correctly with -1 sentinel', () => {
       const deserializeSettingToFilters = (setting: any) => {
         return {
           tagIds: setting.tag_ids || [],
           dateFrom: setting.date_from || '',
           dateTo: setting.date_to || '',
-          amountMin: setting.amount_min ?? null,
-          amountMax: setting.amount_max ?? null
+          // Convert -1 sentinel value back to null (allows 0 to be a valid filter)
+          amountMin: setting.amount_min !== undefined && setting.amount_min !== -1 ? setting.amount_min : null,
+          amountMax: setting.amount_max !== undefined && setting.amount_max !== -1 ? setting.amount_max : null
         };
       };
 
@@ -672,6 +720,83 @@ describe('useAnalytics Logic', () => {
       expect(filters.dateTo).toBe('2024-12-31');
       expect(filters.amountMin).toBe(100);
       expect(filters.amountMax).toBe(1000);
+    });
+
+    it('should deserialize -1 sentinel to null', () => {
+      const deserializeSettingToFilters = (setting: any) => {
+        return {
+          tagIds: setting.tag_ids || [],
+          dateFrom: setting.date_from || '',
+          dateTo: setting.date_to || '',
+          amountMin: setting.amount_min !== undefined && setting.amount_min !== -1 ? setting.amount_min : null,
+          amountMax: setting.amount_max !== undefined && setting.amount_max !== -1 ? setting.amount_max : null
+        };
+      };
+
+      const setting = {
+        tag_ids: ['tag1'],
+        date_from: '2024-01-01',
+        date_to: '2024-12-31',
+        amount_min: -1,
+        amount_max: -1
+      };
+
+      const filters = deserializeSettingToFilters(setting);
+
+      expect(filters.amountMin).toBe(null);
+      expect(filters.amountMax).toBe(null);
+    });
+
+    it('should deserialize 0 as valid amount value', () => {
+      const deserializeSettingToFilters = (setting: any) => {
+        return {
+          amountMin: setting.amount_min !== undefined && setting.amount_min !== -1 ? setting.amount_min : null,
+          amountMax: setting.amount_max !== undefined && setting.amount_max !== -1 ? setting.amount_max : null
+        };
+      };
+
+      const setting = {
+        amount_min: 0,
+        amount_max: 100
+      };
+
+      const filters = deserializeSettingToFilters(setting);
+
+      expect(filters.amountMin).toBe(0);
+      expect(filters.amountMax).toBe(100);
+    });
+  });
+
+  describe('Filter Validation with Range Checks', () => {
+    it('should validate date range - from before to', () => {
+      const validateDateRange = (dateFrom: string, dateTo: string) => {
+        if (dateFrom && dateTo) {
+          const fromDate = new Date(dateFrom);
+          const toDate = new Date(dateTo);
+          return fromDate <= toDate;
+        }
+        return true;
+      };
+
+      expect(validateDateRange('2024-01-01', '2024-12-31')).toBe(true);
+      expect(validateDateRange('2024-12-31', '2024-01-01')).toBe(false);
+      expect(validateDateRange('2024-01-01', '2024-01-01')).toBe(true);
+    });
+
+    it('should validate amount range - min less than or equal to max', () => {
+      const validateAmountRange = (amountMin: number | null, amountMax: number | null) => {
+        if (amountMin !== null && amountMax !== null) {
+          return amountMin <= amountMax;
+        }
+        return true;
+      };
+
+      expect(validateAmountRange(100, 1000)).toBe(true);
+      expect(validateAmountRange(1000, 100)).toBe(false);
+      expect(validateAmountRange(100, 100)).toBe(true);
+      expect(validateAmountRange(0, 100)).toBe(true);
+      expect(validateAmountRange(null, 100)).toBe(true);
+      expect(validateAmountRange(100, null)).toBe(true);
     });
   });
 });
