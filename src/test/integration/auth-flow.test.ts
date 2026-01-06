@@ -61,13 +61,23 @@ vi.mock('../../services/pocketbase', () => {
     serviceBookingService: { getAll: vi.fn().mockResolvedValue([]) },
     quotationService: { getAll: vi.fn().mockResolvedValue([]) },
     tagService: { getAll: vi.fn().mockResolvedValue([]) },
-    siteInvitationService: { 
+    siteInvitationService: {
       getAll: vi.fn().mockResolvedValue([]),
       getReceivedInvitations: vi.fn().mockResolvedValue([]),
       getSentInvitations: vi.fn().mockResolvedValue([]),
       accept: vi.fn().mockResolvedValue({}),
       decline: vi.fn().mockResolvedValue({})
-    }
+    },
+    // Token refresh functions
+    initializeTokenRefresh: vi.fn().mockResolvedValue(true),
+    stopTokenRefresh: vi.fn(),
+    getTokenStatus: vi.fn().mockReturnValue({
+      isValid: true,
+      isExpired: false,
+      needsRefresh: false,
+      expiresAt: new Date(Date.now() + 3600000),
+      timeUntilExpiry: 3600000
+    })
   }
 })
 
