@@ -34,6 +34,7 @@
               v-model="filters.tagIds"
               :type-filter="'item_category'"
               :multiple="true"
+              :allow-create="false"
               :placeholder="t('analytics.selectTags')"
             />
             <p v-if="filters.tagIds.length === 0" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
