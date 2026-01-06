@@ -7,14 +7,10 @@
           <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{{ t('analytics.title') }}</h1>
           <p class="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{{ t('analytics.subtitle') }}</p>
         </div>
-        <button
-          @click="showSaveModal = true"
-          :disabled="!hasActiveFilters"
-          :class="[
-            hasActiveFilters ? 'btn-primary' : 'btn-disabled',
-            'text-sm whitespace-nowrap'
-          ]"
-        >
+        <button @click="showSaveModal = true" :disabled="!hasActiveFilters" :class="[
+          hasActiveFilters ? 'btn-primary' : 'btn-disabled',
+          'text-sm whitespace-nowrap'
+        ]">
           <Save class="h-4 w-4" />
           <span>{{ t('analytics.saveFilters') }}</span>
         </button>
@@ -30,14 +26,8 @@
           <!-- Tags Filter -->
           <div class="mb-4">
             <label class="label">{{ t('analytics.selectTags') }}</label>
-            <TagSelector
-              v-model="filters.tagIds"
-              :type-filter="'item_category'"
-              :multiple="true"
-              :allow-create="false"
-              :track-usage="false"
-              :placeholder="t('analytics.selectTags')"
-            />
+            <TagSelector v-model="filters.tagIds" :showLabel=false :type-filter="'item_category'" :multiple="true"
+              :allow-create="false" :track-usage="false" :placeholder="t('analytics.selectTags')" />
             <p v-if="filters.tagIds.length === 0" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {{ t('analytics.noTagsSelected') }}
             </p>
@@ -47,18 +37,9 @@
           <div class="mb-4">
             <label class="label">{{ t('analytics.dateRange') }}</label>
             <div class="space-y-2">
-              <input
-                v-model="filters.dateFrom"
-                type="date"
-                class="input text-sm"
-                :placeholder="t('analytics.dateFrom')"
-              />
-              <input
-                v-model="filters.dateTo"
-                type="date"
-                class="input text-sm"
-                :placeholder="t('analytics.dateTo')"
-              />
+              <input v-model="filters.dateFrom" type="date" class="input text-sm"
+                :placeholder="t('analytics.dateFrom')" />
+              <input v-model="filters.dateTo" type="date" class="input text-sm" :placeholder="t('analytics.dateTo')" />
             </div>
           </div>
 
@@ -66,39 +47,22 @@
           <div class="mb-4">
             <label class="label">{{ t('analytics.amountRange') }}</label>
             <div class="space-y-2">
-              <input
-                v-model="amountMinInput"
-                type="number"
-                min="0"
-                class="input text-sm"
-                :placeholder="t('analytics.amountMin')"
-              />
-              <input
-                v-model="amountMaxInput"
-                type="number"
-                min="0"
-                class="input text-sm"
-                :placeholder="t('analytics.amountMax')"
-              />
+              <input v-model="amountMinInput" type="number" min="0" class="input text-sm"
+                :placeholder="t('analytics.amountMin')" />
+              <input v-model="amountMaxInput" type="number" min="0" class="input text-sm"
+                :placeholder="t('analytics.amountMax')" />
             </div>
           </div>
 
           <!-- Action Buttons -->
           <div class="space-y-2">
-            <button
-              @click="calculateAnalytics"
-              :disabled="loading"
-              class="btn-primary w-full"
-            >
+            <button @click="calculateAnalytics" :disabled="loading" class="btn-primary w-full">
               <BarChart3 v-if="!loading" class="h-4 w-4" />
               <Loader2 v-else class="h-4 w-4 animate-spin" />
               <span>{{ loading ? t('analytics.calculating') : t('analytics.calculate') }}</span>
             </button>
-            <button
-              @click="resetFilters"
-              :disabled="!hasActiveFilters"
-              class="btn-secondary w-full disabled:opacity-50"
-            >
+            <button @click="resetFilters" :disabled="!hasActiveFilters"
+              class="btn-secondary w-full disabled:opacity-50">
               <RotateCcw class="h-4 w-4" />
               <span>{{ t('analytics.reset') }}</span>
             </button>
@@ -114,28 +78,21 @@
               <Loader2 class="h-5 w-5 animate-spin text-gray-400" />
             </div>
 
-            <div v-else-if="savedSettings.length === 0" class="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
+            <div v-else-if="savedSettings.length === 0"
+              class="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
               {{ t('analytics.noSettingsSaved') }}
             </div>
 
             <div v-else class="space-y-2">
-              <div
-                v-for="setting in savedSettings"
-                :key="setting.id"
-                class="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                <button
-                  @click="loadSetting(setting.id!)"
-                  class="flex-1 text-left text-sm text-gray-900 dark:text-white truncate"
-                  :title="setting.name"
-                >
+              <div v-for="setting in savedSettings" :key="setting.id"
+                class="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <button @click="loadSetting(setting.id!)"
+                  class="flex-1 text-left text-sm text-gray-900 dark:text-white truncate" :title="setting.name">
                   {{ setting.name }}
                 </button>
-                <button
-                  @click="confirmDeleteSetting(setting.id!)"
+                <button @click="confirmDeleteSetting(setting.id!)"
                   class="ml-2 p-1 text-error-600 hover:bg-error-50 dark:hover:bg-error-900/20 rounded"
-                  :title="t('analytics.deleteSetting')"
-                >
+                  :title="t('analytics.deleteSetting')">
                   <Trash2 class="h-4 w-4" />
                 </button>
               </div>
@@ -181,7 +138,8 @@
                   <Package class="h-4 w-4 sm:h-5 sm:w-5 text-secondary-600 dark:text-secondary-400" />
                 </div>
               </div>
-              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{{ t('analytics.summary.averageCostPerItem') }}</p>
+              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{{
+                t('analytics.summary.averageCostPerItem') }}</p>
               <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">
                 ₹{{ formatCompactAmount(analyticsData.averageCostPerItem) }}
               </p>
@@ -194,7 +152,8 @@
                   <TruckIcon class="h-4 w-4 sm:h-5 sm:w-5 text-warning-600 dark:text-warning-400" />
                 </div>
               </div>
-              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{{ t('analytics.summary.averageCostPerDelivery') }}</p>
+              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{{
+                t('analytics.summary.averageCostPerDelivery') }}</p>
               <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">
                 ₹{{ formatCompactAmount(analyticsData.averageCostPerDelivery) }}
               </p>
@@ -220,7 +179,8 @@
                   <FileText class="h-4 w-4 sm:h-5 sm:w-5 text-info-600 dark:text-info-400" />
                 </div>
               </div>
-              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{{ t('analytics.summary.deliveryCount') }}</p>
+              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{{ t('analytics.summary.deliveryCount') }}
+              </p>
               <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">
                 {{ analyticsData.deliveryCount }}
               </p>
@@ -233,7 +193,8 @@
                   <Boxes class="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
-              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{{ t('analytics.summary.totalQuantity') }}</p>
+              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{{ t('analytics.summary.totalQuantity') }}
+              </p>
               <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">
                 {{ analyticsData.totalQuantity.toLocaleString() }}
               </p>
@@ -266,18 +227,16 @@
               {{ t('analytics.quantityByUnit.title') }}
             </h3>
             <div class="space-y-3">
-              <div
-                v-for="unitData in analyticsData.quantityByUnit"
-                :key="unitData.unit"
-                class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-              >
+              <div v-for="unitData in analyticsData.quantityByUnit" :key="unitData.unit"
+                class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div class="flex-1">
                   <div class="flex items-center gap-2">
                     <span class="text-sm font-medium text-gray-900 dark:text-white">
                       {{ unitData.unit }}
                     </span>
                     <span class="text-xs text-gray-500 dark:text-gray-400">
-                      ({{ unitData.itemCount }} {{ unitData.itemCount === 1 ? t('analytics.quantityByUnit.item') : t('analytics.quantityByUnit.items') }})
+                      ({{ unitData.itemCount }} {{ unitData.itemCount === 1 ? t('analytics.quantityByUnit.item') :
+                        t('analytics.quantityByUnit.items') }})
                     </span>
                   </div>
                 </div>
@@ -294,34 +253,20 @@
     </div>
 
     <!-- Save Setting Modal -->
-    <div
-      v-if="showSaveModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-      @click.self="showSaveModal = false"
-    >
+    <div v-if="showSaveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      @click.self="showSaveModal = false">
       <div class="card p-6 max-w-md w-full">
         <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
           {{ t('analytics.saveFilters') }}
         </h2>
         <label class="label">{{ t('analytics.settingName') }}</label>
-        <input
-          v-model="settingName"
-          type="text"
-          class="input mb-4"
-          :placeholder="t('analytics.enterSettingName')"
-          @keyup.enter="handleSaveSetting"
-          @keyup.esc="showSaveModal = false"
-          autofocus
-        />
+        <input v-model="settingName" type="text" class="input mb-4" :placeholder="t('analytics.enterSettingName')"
+          @keyup.enter="handleSaveSetting" @keyup.esc="showSaveModal = false" autofocus />
         <div class="flex gap-2 justify-end">
           <button @click="showSaveModal = false" class="btn-secondary">
             {{ t('common.cancel') }}
           </button>
-          <button
-            @click="handleSaveSetting"
-            :disabled="!settingName.trim()"
-            class="btn-primary disabled:opacity-50"
-          >
+          <button @click="handleSaveSetting" :disabled="!settingName.trim()" class="btn-primary disabled:opacity-50">
             {{ t('common.save') }}
           </button>
         </div>
@@ -329,11 +274,8 @@
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div
-      v-if="showDeleteConfirm"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-      @click.self="showDeleteConfirm = false"
-    >
+    <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      @click.self="showDeleteConfirm = false">
       <div class="card p-6 max-w-md w-full">
         <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
           {{ t('analytics.deleteSetting') }}
@@ -582,7 +524,7 @@ const pieChartOptions = {
     tooltip: {
       callbacks: {
         // Format currency in tooltips
-        label: function(context: any) {
+        label: function (context: any) {
           const label = context.label || '';
           const value = context.parsed;
           const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
@@ -606,7 +548,7 @@ const barChartOptions = {
     tooltip: {
       callbacks: {
         // Format currency in tooltips
-        label: function(context: any) {
+        label: function (context: any) {
           const label = context.dataset.label || '';
           const value = context.parsed.y;
           return `${label}: ₹${value.toLocaleString('en-IN')}`;
@@ -626,7 +568,7 @@ const barChartOptions = {
     y: {
       beginAtZero: true,
       ticks: {
-        callback: function(value: any) {
+        callback: function (value: any) {
           return '₹' + value.toLocaleString('en-IN');
         }
       }
