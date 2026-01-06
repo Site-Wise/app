@@ -126,8 +126,9 @@ export function useAnalytics() {
         tagIds: setting.tag_ids || [],
         dateFrom: setting.date_from || '',
         dateTo: setting.date_to || '',
-        amountMin: setting.amount_min ?? null,
-        amountMax: setting.amount_max ?? null
+        // Treat 0 as null for optional amount filters (PocketBase may return 0 for empty fields)
+        amountMin: setting.amount_min && setting.amount_min !== 0 ? setting.amount_min : null,
+        amountMax: setting.amount_max && setting.amount_max !== 0 ? setting.amount_max : null
       };
 
       // Automatically calculate analytics when loading a setting

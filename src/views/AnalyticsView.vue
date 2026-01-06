@@ -35,6 +35,7 @@
               :type-filter="'item_category'"
               :multiple="true"
               :allow-create="false"
+              :track-usage="false"
               :placeholder="t('analytics.selectTags')"
             />
             <p v-if="filters.tagIds.length === 0" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -66,14 +67,14 @@
             <label class="label">{{ t('analytics.amountRange') }}</label>
             <div class="space-y-2">
               <input
-                v-model.number="filters.amountMin"
+                v-model="amountMinInput"
                 type="number"
                 min="0"
                 class="input text-sm"
                 :placeholder="t('analytics.amountMin')"
               />
               <input
-                v-model.number="filters.amountMax"
+                v-model="amountMaxInput"
                 type="number"
                 min="0"
                 class="input text-sm"
@@ -411,6 +412,23 @@ const showSaveModal = ref(false);
 const showDeleteConfirm = ref(false);
 const settingName = ref('');
 const settingToDelete = ref<string | null>(null);
+
+// Computed properties for amount inputs to handle empty values properly
+const amountMinInput = computed({
+  get: () => filters.value.amountMin ?? '',
+  set: (value: string | number) => {
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    filters.value.amountMin = isNaN(num) || value === '' ? null : num;
+  }
+});
+
+const amountMaxInput = computed({
+  get: () => filters.value.amountMax ?? '',
+  set: (value: string | number) => {
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    filters.value.amountMax = isNaN(num) || value === '' ? null : num;
+  }
+});
 
 // Chart data
 const costByTagChartData = computed(() => {

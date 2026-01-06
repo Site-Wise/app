@@ -119,6 +119,7 @@ interface Props {
   placeholder?: string
   tagType?: Tag['type']
   allowCreate?: boolean
+  trackUsage?: boolean // Whether to increment usage count when selecting tags
 }
 
 interface Emits {
@@ -128,7 +129,8 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   allowCreate: true,
-  tagType: 'custom'
+  tagType: 'custom',
+  trackUsage: true
 })
 
 const emit = defineEmits<Emits>()
@@ -190,9 +192,11 @@ const selectTag = (tag: Tag) => {
     const newValue = [...props.modelValue, tag.id!]
     emit('update:modelValue', newValue)
     emit('tagsChanged', allTags.value.filter(t => newValue.includes(t.id!)))
-    
-    // Increment usage count
-    tagService.incrementUsage(tag.id!)
+
+    // Increment usage count only if tracking is enabled
+    if (props.trackUsage) {
+      tagService.incrementUsage(tag.id!)
+    }
   }
   searchQuery.value = ''
   showDropdown.value = false
