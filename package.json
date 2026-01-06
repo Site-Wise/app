@@ -22,7 +22,7 @@
     "@vueuse/core": "^14.0.0",
     "chart.js": "^4.5.1",
     "driver.js": "^1.4.0",
-    "jspdf": "^3.0.4",
+    "jspdf": "^4.0.0",
     "lucide-vue-next": "^0.562.0",
     "pdfjs-dist": "^5.4.530",
     "pinia": "^3.0.4",

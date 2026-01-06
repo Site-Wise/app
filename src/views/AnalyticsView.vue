@@ -344,7 +344,7 @@
             {{ t('common.cancel') }}
           </button>
           <button @click="handleDeleteSetting" class="btn-danger">
-            {{ t('common.delete') }}
+            {{ t('common.deleteAction') }}
           </button>
         </div>
       </div>
