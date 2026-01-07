@@ -1,0 +1,19 @@
+name = "sitewise-webauthn-verifier"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+# Environment variables (set via wrangler secret or dashboard)
+# API_KEY - shared secret with PocketBase
+# ALLOWED_ORIGINS - comma-separated list of allowed origins
+
+[vars]
+RP_ID = "sitewise.com"
+RP_NAME = "Site-Wise"
+
+# Production environment
+[env.production]
+vars = { RP_ID = "sitewise.com", RP_NAME = "Site-Wise" }
+
+# Development environment
+[env.development]
+vars = { RP_ID = "localhost", RP_NAME = "Site-Wise Dev" }

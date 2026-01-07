@@ -11,6 +11,8 @@ external_services/pocketbase/
 ├── subscription-hooks.pb.js      # Subscription and billing management
 ├── usage-tracking-hooks.pb.js    # Usage counting and limit validation
 ├── invitation-hooks.pb.js        # Site invitation processing
+├── webauthn-hooks.pb.js          # WebAuthn/Passkey authentication
+├── webauthn-utils.js             # WebAuthn shared utilities
 ├── usage-calculation-hook.js     # Legacy usage calculation (deprecated)
 └── HOOKS_README.md               # This documentation
 ```
@@ -97,6 +99,40 @@ Tracks usage and enforces subscription limits:
 
 ### 5. **invitation-hooks.pb.js** - Invitation Management
 Handles site invitations and user access:
+
+### 6. **webauthn-hooks.pb.js** - WebAuthn/Passkey Authentication
+Provides passwordless authentication using device biometrics (Face ID, fingerprint, Windows Hello).
+
+**Requires:** `webauthn-utils.js`
+
+**Custom Routes:**
+- `POST /api/passkey/register/start` - Start passkey registration (authenticated)
+- `POST /api/passkey/register/finish` - Complete passkey registration
+- `POST /api/passkey/authenticate/start` - Start passkey authentication (guest)
+- `POST /api/passkey/authenticate/finish` - Complete authentication, returns auth token
+- `GET /api/passkey/list` - List user's registered passkeys
+- `DELETE /api/passkey/:id` - Delete a passkey
+- `PATCH /api/passkey/:id` - Rename a passkey
+
+**Features:**
+- Cryptographic challenge generation and validation
+- Integration with external WebAuthn verification service
+- Secure credential storage (public keys only)
+- Counter validation for replay attack prevention
+- Rate limiting to prevent brute force attacks
+- Automatic challenge cleanup
+
+**Required Collections:**
+- `passkey_credentials` - Stores WebAuthn credentials
+- `passkey_challenges` - Temporary challenge storage
+
+**Environment Variables:**
+- `WEBAUTHN_VERIFIER_URL` - URL of the Cloudflare Worker verification service
+- `WEBAUTHN_VERIFIER_API_KEY` - API key for the verification service
+- `WEBAUTHN_RP_ID` - Relying Party ID (your domain)
+- `WEBAUTHN_RP_NAME` - Relying Party display name
+- `WEBAUTHN_ALLOWED_ORIGINS` - Comma-separated allowed origins
+- `WEBAUTHN_ENCRYPTION_KEY` - 32-char key for encrypting challenges
 
 **Hooks:**
 - `onRecordAfterUpdateSuccess` on `site_invitations` - Processes acceptance

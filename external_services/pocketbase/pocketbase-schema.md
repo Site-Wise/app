@@ -25,6 +25,9 @@ This document outlines the database schema for the SiteWise application, managed
   - [quotations](#quotations)
 - [System Collections](#system-collections)
   - [usage_recalculation_requests](#usage_recalculation_requests)
+- [WebAuthn/Passkey Collections](#webauthnpasskey-collections)
+  - [passkey_credentials](#passkey_credentials)
+  - [passkey_challenges](#passkey_challenges)
 
 ---
 
@@ -241,3 +244,75 @@ A utility collection to manually trigger usage recalculation for a site.
 |----------|------------|--------------------------------------------------|
 | `site`   | `relation` | The site to recalculate usage for (`sites.id`).  |
 | `status` | `string`   | The status of the request (`pending`, `done`).   |
+
+---
+
+## WebAuthn/Passkey Collections
+
+### `passkey_credentials`
+
+Stores WebAuthn credentials (passkeys) for passwordless authentication.
+
+| Field           | Type       | Required | Description                                              |
+|-----------------|------------|----------|----------------------------------------------------------|
+| `id`            | `string`   | auto     | Unique identifier for the credential.                    |
+| `user`          | `relation` | yes      | The user this passkey belongs to (`users.id`).           |
+| `credential_id` | `text`     | yes      | Base64URL-encoded credential ID from authenticator.      |
+| `public_key`    | `text`     | yes      | Base64URL-encoded COSE public key.                       |
+| `counter`       | `number`   | yes      | Signature counter for replay attack prevention.          |
+| `device_name`   | `text`     | no       | User-friendly device name (e.g., "iPhone 15 Pro").       |
+| `device_type`   | `select`   | no       | `platform` (device biometric) or `cross-platform`.       |
+| `transports`    | `json`     | no       | Array of transport types (e.g., `["internal"]`).         |
+| `backed_up`     | `bool`     | no       | Whether credential is synced (iCloud/Google).            |
+| `aaguid`        | `text`     | no       | Authenticator Attestation GUID.                          |
+| `last_used`     | `date`     | no       | Timestamp of last successful authentication.             |
+| `flagged`       | `bool`     | no       | True if credential has security concerns (counter issue).|
+| `created`       | `date`     | auto     | When the passkey was registered.                         |
+| `updated`       | `date`     | auto     | Last update timestamp.                                   |
+
+**Indexes:**
+- Unique index on `credential_id`
+- Index on `user`
+
+**API Rules:**
+- List/View: Only owner can see their passkeys (`@request.auth.id = user`)
+- Create: Handled by custom routes (not direct API)
+- Update: Only owner can update (`@request.auth.id = user`)
+- Delete: Only owner can delete (`@request.auth.id = user`)
+
+### `passkey_challenges`
+
+Temporary storage for WebAuthn challenges. Records auto-expire after 5 minutes.
+
+| Field            | Type     | Required | Description                                          |
+|------------------|----------|----------|------------------------------------------------------|
+| `id`             | `string` | auto     | Unique identifier for the challenge.                 |
+| `challenge_hash` | `text`   | yes      | SHA256 hash of the challenge (for lookup).           |
+| `challenge`      | `text`   | yes      | AES-encrypted challenge value.                       |
+| `type`           | `select` | yes      | `registration` or `authentication`.                  |
+| `user_id`        | `text`   | no       | User ID (for registration, optional for auth).       |
+| `ip_address`     | `text`   | no       | Client IP for rate limiting.                         |
+| `expires_at`     | `date`   | yes      | When this challenge expires (5 min from creation).   |
+| `created`        | `date`   | auto     | When the challenge was created.                      |
+
+**Cleanup:**
+- Expired challenges are automatically deleted by PocketBase hooks.
+- Manual cleanup can be triggered via cron job.
+
+**API Rules:**
+- All operations: Internal only (no public API access)
+
+---
+
+## Environment Variables for WebAuthn
+
+The following environment variables must be set on the PocketBase server:
+
+| Variable                    | Description                                          | Example                                           |
+|-----------------------------|------------------------------------------------------|---------------------------------------------------|
+| `WEBAUTHN_VERIFIER_URL`     | URL of the Cloudflare Worker verification service    | `https://sitewise-webauthn.workers.dev`           |
+| `WEBAUTHN_VERIFIER_API_KEY` | Shared API key for authenticating with verifier      | `your-secure-random-key`                          |
+| `WEBAUTHN_RP_ID`            | Relying Party ID (your domain)                       | `sitewise.com`                                    |
+| `WEBAUTHN_RP_NAME`          | Relying Party display name                           | `Site-Wise`                                       |
+| `WEBAUTHN_ALLOWED_ORIGINS`  | Comma-separated list of allowed origins              | `https://app.sitewise.com,https://sitewise.com`   |
+| `WEBAUTHN_ENCRYPTION_KEY`   | 32-character key for encrypting stored challenges    | `your-32-character-encryption-key`                |

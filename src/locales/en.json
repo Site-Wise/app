@@ -1476,5 +1476,46 @@
     "confirmDelete": "Are you sure you want to delete this saved setting?",
     "export": "Export Data",
     "exportCSV": "Export to CSV"
+  },
+  "passkey": {
+    "title": "Passkeys",
+    "description": "Use your fingerprint, face, or screen lock to sign in securely without a password.",
+    "addPasskey": "Add Passkey",
+    "addPasskeyTitle": "Add a Passkey",
+    "addPasskeyDescription": "Your device will prompt you to use Face ID, fingerprint, or your screen lock to create a passkey.",
+    "addFirstPasskey": "Add Your First Passkey",
+    "deviceNameLabel": "Device Name (Optional)",
+    "deviceNamePlaceholder": "e.g., My iPhone",
+    "continue": "Continue",
+    "noPasskeys": "No Passkeys Yet",
+    "noPasskeysDescription": "Add a passkey to sign in faster and more securely using your device's biometrics.",
+    "notSupported": "Passkeys are not supported on this device or browser. Try using a modern browser like Chrome, Safari, or Edge.",
+    "signInWithPasskey": "Sign in with Passkey",
+    "authenticating": "Authenticating...",
+    "lastUsed": "Last used",
+    "created": "Created",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo": "days ago",
+    "synced": "Synced",
+    "flagged": "Security Alert",
+    "rename": "Rename",
+    "delete": "Delete",
+    "renameTitle": "Rename Passkey",
+    "deleteTitle": "Delete Passkey",
+    "deleteConfirmation": "Are you sure you want to delete the passkey \"{name}\"? You won't be able to use it to sign in anymore.",
+    "success": {
+      "added": "Passkey added successfully",
+      "deleted": "Passkey deleted successfully",
+      "renamed": "Passkey renamed successfully"
+    },
+    "errors": {
+      "registrationCancelled": "Passkey creation was cancelled",
+      "registrationFailed": "Failed to create passkey",
+      "authenticationCancelled": "Sign in was cancelled",
+      "authenticationFailed": "Failed to sign in with passkey",
+      "alreadyRegistered": "This device already has a passkey registered",
+      "notSupported": "Passkeys are not supported on this device"
+    }
   }
 }
