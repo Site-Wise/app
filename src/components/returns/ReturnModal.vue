@@ -277,6 +277,15 @@
         </div>
       </div>
     </div>
+
+    <!-- Loading Overlay -->
+    <LoadingOverlay
+      :show="showOverlay"
+      :state="overlayState"
+      :message="overlayMessage"
+      @close="handleOverlayClose"
+      @timeout="handleOverlayTimeout"
+    />
   </div>
 </template>
 
@@ -298,6 +307,7 @@ import {
   type Payment
 } from '../../services/pocketbase';
 import FileUploadComponent from '../FileUploadComponent.vue';
+import LoadingOverlay from '../LoadingOverlay.vue';
 import VendorSearchBox from '../VendorSearchBox.vue';
 
 interface Props {
@@ -356,6 +366,22 @@ const loading = ref(false);
 const showItemSelection = ref(false);
 const vendorDeliveryItems = ref<DeliveryItem[]>([]);
 const loadingDeliveryItems = ref(false);
+
+// Loading overlay state
+const showOverlay = ref(false);
+const overlayState = ref<'loading' | 'success' | 'error' | 'timeout'>('loading');
+const overlayMessage = ref('');
+
+const handleOverlayClose = () => {
+  showOverlay.value = false;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+};
+
+const handleOverlayTimeout = () => {
+  overlayState.value = 'timeout';
+  overlayMessage.value = t('loading.timeout');
+};
 
 // Computed properties
 const availableDeliveryItems = computed(() => {
@@ -456,6 +482,10 @@ const handleSubmit = async () => {
   if (!form.reason) return; // Ensure reason is selected
 
   loading.value = true;
+  showOverlay.value = true;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+
   try {
     // Create or update the vendor return
     let vendorReturn: VendorReturn;
@@ -497,10 +527,19 @@ const handleSubmit = async () => {
       });
     }
 
-    toast.success(props.isEdit ? t('vendors.returnUpdated') : t('vendors.returnCreated'));
-    emit('save');
+    // Show success overlay
+    overlayState.value = 'success';
+    overlayMessage.value = props.isEdit ? t('messages.updateSuccess', { item: 'Return' }) : t('messages.createSuccess', { item: 'Return' });
+
+    // Wait for success animation then emit
+    setTimeout(() => {
+      showOverlay.value = false;
+      emit('save');
+    }, 1500);
   } catch (error) {
     console.error('Error saving return:', error);
+    overlayState.value = 'error';
+    overlayMessage.value = t('messages.error');
     toast.error(t('common.errorSavingData'));
   } finally {
     loading.value = false;
