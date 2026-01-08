@@ -62,6 +62,8 @@ export interface AuthResult {
   token: string;
   record: {
     id: string;
+    collectionId: string;
+    collectionName: string;
     email: string;
     name: string;
     avatar?: string;
