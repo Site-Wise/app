@@ -538,7 +538,7 @@ describe('useSitePaginatedData', () => {
     // Mock invalid auth state by overriding the mock
     const pocketbaseMocks = await import('../../services/pocketbase')
     const originalPb = pocketbaseMocks.pb
-    
+
     // Create a new mock for this test
     Object.defineProperty(originalPb, 'authStore', {
       value: { isValid: false },
@@ -554,5 +554,64 @@ describe('useSitePaginatedData', () => {
     expect(items.value).toEqual([])
     expect(totalPages.value).toBe(1)
     expect(totalItems.value).toBe(0)
+  })
+})
+
+describe('useSiteData Request Deduplication', () => {
+  /**
+   * These tests verify the fix for duplicate API requests.
+   * Bug: DeliveryView was making 3 requests on mount.
+   * Fix: useSiteData now waits for store to finish loading before making requests.
+   *
+   * The integration tests in request-deduplication.test.ts cover the logic more thoroughly.
+   * These tests focus on the useSiteData composable's specific deduplication behavior.
+   *
+   * Note: Other behaviors (site changes, clearing data, multiple instances) are
+   * already covered by tests in the main 'useSiteData' describe block.
+   */
+
+  it('should NOT load data while store isLoading is true', async () => {
+    // Create a fresh pinia for this test
+    const testPinia = createPinia()
+    setActivePinia(testPinia)
+
+    // Get fresh store and set it to loading state BEFORE using useSiteData
+    const store = useSiteStore()
+    store.$patch({ isLoading: true, currentSiteId: 'site-1' })
+
+    const testMock = vi.fn().mockResolvedValue([{ id: 'test' }])
+    const { data, loading } = useSiteData(testMock)
+
+    // Wait for potential loading attempts
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // Should NOT have called the load function while store is loading
+    expect(testMock).not.toHaveBeenCalled()
+    expect(data.value).toBe(null)
+    expect(loading.value).toBe(false)
+  })
+
+  it('should not reload data when same site is re-selected (deduplication)', async () => {
+    // Create a fresh pinia for this test
+    const testPinia = createPinia()
+    setActivePinia(testPinia)
+
+    const store = useSiteStore()
+    // Store should already have currentSiteId from mock
+
+    const testMock = vi.fn().mockResolvedValue([{ id: 'test' }])
+    const { data } = useSiteData(testMock)
+
+    // Wait for initial load
+    await new Promise(resolve => setTimeout(resolve, 100))
+    const initialCallCount = testMock.mock.calls.length
+
+    // Re-patch with same site ID - should NOT trigger another load
+    store.$patch({ currentSiteId: store.currentSiteId })
+
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // Call count should not have increased
+    expect(testMock).toHaveBeenCalledTimes(initialCallCount)
   })
 })
