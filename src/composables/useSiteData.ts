@@ -32,14 +32,18 @@ export function useSiteData<T>(
 
   const loadData = async () => {
     const currentSiteId = unref(siteStore.currentSiteId);
-    if (!currentSiteId || !pb.authStore.isValid) {
-      data.value = null;
+
+    // Don't load if no site selected, not authenticated, or store is still loading
+    if (!currentSiteId || !pb.authStore.isValid || siteStore.isLoading) {
+      if (!currentSiteId) {
+        data.value = null;
+      }
       return;
     }
 
     loading.value = true;
     error.value = null;
-    
+
     // Generate unique ID for this load operation to handle race conditions
     const loadId = ++currentLoadId;
 
@@ -64,15 +68,37 @@ export function useSiteData<T>(
     }
   };
 
+  // Track previous values to detect actual changes
+  let previousSiteId: string | null = null;
+  let previousIsLoading = true;
+
   // Watch for site changes and reload data
   watch(
-    () => siteStore.currentSiteId,
-    (newSiteId, oldSiteId) => {
-      // Only reload if site actually changed and is not null
-      if (newSiteId && newSiteId !== oldSiteId) {
+    () => ({ siteId: siteStore.currentSiteId, isLoading: siteStore.isLoading }),
+    ({ siteId: newSiteId, isLoading: newIsLoading }) => {
+      // If store is still loading, don't do anything yet
+      if (newIsLoading) {
+        previousIsLoading = true;
+        return;
+      }
+
+      // Store just finished loading - trigger initial load if we have a site
+      if (previousIsLoading && !newIsLoading && newSiteId) {
+        previousIsLoading = false;
+        previousSiteId = newSiteId;
+        loadData();
+        return;
+      }
+
+      previousIsLoading = false;
+
+      // Site changed - reload data
+      if (newSiteId && newSiteId !== previousSiteId) {
+        previousSiteId = newSiteId;
         loadData();
       } else if (!newSiteId) {
         // Clear data when no site selected
+        previousSiteId = null;
         data.value = null;
       }
     },
