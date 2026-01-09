@@ -165,11 +165,8 @@ describe('Request Deduplication', () => {
       let deliveryServiceCalls = 0
       let searchLoadAllCalls = 0
 
-      // Old behavior (buggy): reloadAllData called both
-      const oldReloadAllData = () => {
-        deliveryServiceCalls++ // reloadDeliveries()
-        searchLoadAllCalls++   // loadAll() - DUPLICATE!
-      }
+      // Old behavior (buggy): reloadAllData called both reloadDeliveries() and loadAll(),
+      // causing duplicate requests for the same data.
 
       // New behavior (fixed): only reloadDeliveries
       const newReloadAllData = () => {
