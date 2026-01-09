@@ -4,13 +4,14 @@
  */
 
 // Configuration - set these via environment variables
-const WEBAUTHN_VERIFIER_URL = process.env.WEBAUTHN_VERIFIER_URL || 'https://sitewise-webauthn-verifier.workers.dev';
-const WEBAUTHN_VERIFIER_API_KEY = process.env.WEBAUTHN_VERIFIER_API_KEY || '';
-const RP_ID = process.env.WEBAUTHN_RP_ID || 'sitewise.com';
-const RP_NAME = process.env.WEBAUTHN_RP_NAME || 'Site-Wise';
+// Note: PocketBase uses $os.getenv() instead of process.env
+const WEBAUTHN_VERIFIER_URL = $os.getenv('WEBAUTHN_VERIFIER_URL') || 'https://sitewise-webauthn-verifier.workers.dev';
+const WEBAUTHN_VERIFIER_API_KEY = $os.getenv('WEBAUTHN_VERIFIER_API_KEY') || '';
+const RP_ID = $os.getenv('WEBAUTHN_RP_ID') || 'sitewise.com';
+const RP_NAME = $os.getenv('WEBAUTHN_RP_NAME') || 'Site-Wise';
 
 // Allowed origins for WebAuthn
-const ALLOWED_ORIGINS = (process.env.WEBAUTHN_ALLOWED_ORIGINS || 'https://app.sitewise.com,https://sitewise.com')
+const ALLOWED_ORIGINS = ($os.getenv('WEBAUTHN_ALLOWED_ORIGINS') || 'https://app.sitewise.com,https://sitewise.com')
   .split(',')
   .map(o => o.trim());
 
@@ -353,7 +354,7 @@ function isRateLimited(app, ipAddress, maxAttempts, windowMs) {
  */
 function getEncryptionKey() {
   // Use environment variable or derive from a secret
-  const key = process.env.WEBAUTHN_ENCRYPTION_KEY || '';
+  const key = $os.getenv('WEBAUTHN_ENCRYPTION_KEY') || '';
   if (key.length === 32) {
     return key;
   }
