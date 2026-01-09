@@ -600,7 +600,7 @@ describe('useSiteData Request Deduplication', () => {
     // Store should already have currentSiteId from mock
 
     const testMock = vi.fn().mockResolvedValue([{ id: 'test' }])
-    const { data } = useSiteData(testMock)
+    useSiteData(testMock)
 
     // Wait for initial load
     await new Promise(resolve => setTimeout(resolve, 100))
