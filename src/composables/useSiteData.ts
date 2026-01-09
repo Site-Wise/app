@@ -83,7 +83,7 @@ export function useSiteData<T>(
       }
 
       // Store just finished loading - trigger initial load if we have a site
-      if (previousIsLoading && !newIsLoading && newSiteId) {
+      if (previousIsLoading && newSiteId) {
         previousIsLoading = false;
         previousSiteId = newSiteId;
         loadData();
