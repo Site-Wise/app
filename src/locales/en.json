@@ -156,6 +156,7 @@
     "passwordTooShort": "Password must be at least 6 characters",
     "forgotPassword": "Forgot Password",
     "rememberMe": "Remember me",
+    "orContinueWith": "or continue with",
     "forgotPasswordTitle": "Reset your password",
     "forgotPasswordSubtitle": "Enter your email address and we'll send you a link to reset your password",
     "resetPasswordTitle": "Create new password",

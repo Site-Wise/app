@@ -75,7 +75,7 @@
                   v-model="form.email"
                   name="email"
                   type="email"
-                  autocomplete="email"
+                  autocomplete="email webauthn"
                   required
                   class="input"
                   :placeholder="t('forms.enterEmail')"
@@ -145,6 +145,25 @@
                 {{ loading ? t('auth.signingIn') : t('auth.signIn') }}
               </button>
             </div>
+
+            <!-- Passkey Login Divider -->
+            <div class="relative">
+              <div class="absolute inset-0 flex items-center">
+                <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
+              </div>
+              <div class="relative flex justify-center text-sm">
+                <span class="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                  {{ t('auth.orContinueWith') }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Passkey Login Button -->
+            <PasskeyLoginButton
+              :email="form.email"
+              @success="handlePasskeySuccess"
+              @error="handlePasskeyError"
+            />
           </form>
         </div>
 
@@ -403,6 +422,7 @@ import { useTheme } from '../composables/useTheme';
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-vue-next';
 import TurnstileWidget from '../components/TurnstileWidget.vue';
 import LegalModal from '../components/LegalModal.vue';
+import PasskeyLoginButton from '../components/PasskeyLoginButton.vue';
 
 const router = useRouter();
 const { login, register } = useAuth();
@@ -571,5 +591,17 @@ const handleTurnstileExpired = () => {
 const handleRegisterTurnstileExpired = () => {
   registerTurnstileToken.value = '';
   error.value = t('auth.turnstileExpired');
+};
+
+// Passkey event handlers
+const handlePasskeySuccess = async () => {
+  // Load user sites before navigation
+  const { loadUserSites } = useSite();
+  await loadUserSites();
+  router.push('/');
+};
+
+const handlePasskeyError = (message: string) => {
+  error.value = message;
 };
 </script>

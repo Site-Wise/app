@@ -156,6 +156,7 @@
     "passwordTooShort": "पासवर्ड कम से कम 6 वर्ण का होना चाहिए",
     "forgotPassword": "पासवर्ड भूल गए",
     "rememberMe": "मुझे याद रखें",
+    "orContinueWith": "या इसके साथ जारी रखें",
     "forgotPasswordTitle": "अपना पासवर्ड रीसेट करें",
     "forgotPasswordSubtitle": "अपना ईमेल पता दर्ज करें और हम आपको पासवर्ड रीसेट करने के लिए एक लिंक भेजेंगे",
     "resetPasswordTitle": "नया पासवर्ड बनाएं",
