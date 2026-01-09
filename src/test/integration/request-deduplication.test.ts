@@ -201,7 +201,7 @@ describe('Request Deduplication', () => {
         }
 
         // Transition from loading to ready
-        if (previousIsLoading && !storeIsLoading && siteId) {
+        if (previousIsLoading && siteId) {
           previousIsLoading = false
           loads.push('initial-load')
           return
