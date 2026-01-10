@@ -125,6 +125,7 @@
     "serviceBookings": "सेवा बुकिंग",
     "quotations": "कोटेशन",
     "users": "उपयोगकर्ता",
+    "auditLogs": "ऑडिट लॉग",
     "settings": "सेटिंग्स",
     "helpTour": "सहायता टूर दिखाएं",
     "profile": "प्रोफाइल",
@@ -1509,5 +1510,35 @@
     "confirmDelete": "क्या आप वाकई इस सहेजी गई सेटिंग को हटाना चाहते हैं?",
     "export": "डेटा निर्यात करें",
     "exportCSV": "CSV में निर्यात करें"
+  },
+  "auditLogs": {
+    "title": "ऑडिट लॉग",
+    "subtitle": "अपनी साइट डेटा में किए गए सभी बदलावों को ट्रैक करें",
+    "filters": "फ़िल्टर",
+    "entityType": "इकाई प्रकार",
+    "action": "कार्रवाई",
+    "user": "उपयोगकर्ता",
+    "role": "भूमिका",
+    "dateRange": "तिथि सीमा",
+    "totalLogs": "कुल लॉग",
+    "activityLog": "गतिविधि लॉग",
+    "showingLogs": "{total} में से {count} लॉग दिखा रहे हैं",
+    "noLogs": "कोई ऑडिट लॉग नहीं",
+    "noLogsDescription": "अभी तक कोई बदलाव रिकॉर्ड नहीं किया गया है। जब डेटा बनाया, अपडेट या हटाया जाएगा तो ऑडिट लॉग यहां दिखाई देंगे।",
+    "logDetails": "लॉग विवरण",
+    "entityName": "इकाई का नाम",
+    "entityId": "इकाई आईडी",
+    "changesDetail": "बदलाव का विवरण",
+    "oldValue": "पुराना मान",
+    "newValue": "नया मान",
+    "recordCreated": "एक नया रिकॉर्ड बनाया गया",
+    "recordDeleted": "रिकॉर्ड हटा दिया गया",
+    "unknownUser": "अज्ञात उपयोगकर्ता",
+    "page": "पृष्ठ {current} का {total}",
+    "actions": {
+      "create": "बनाया गया",
+      "update": "अपडेट किया गया",
+      "delete": "हटाया गया"
+    }
   }
 }
