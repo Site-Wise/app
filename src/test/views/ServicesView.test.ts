@@ -60,6 +60,7 @@ vi.mock('../../composables/useI18n', () => ({
         'services.units.job': 'Job',
         'services.units.sqft': 'Sq.ft',
         'services.units.month': 'Month',
+        'services.units.kg': 'Per Kg',
         'forms.enterServiceName': 'Enter service name',
         'forms.enterServiceType': 'Enter service type',
         'forms.selectCategory': 'Select category',
@@ -614,13 +615,84 @@ describe('ServicesView', () => {
     // Wait for data to load
     await wrapper.vm.$nextTick()
     await new Promise(resolve => setTimeout(resolve, 50))
-    
+
     // Check that service data is displayed in the grid
     expect(wrapper.text()).toContain('Test Service')
     expect(wrapper.text()).toContain('Construction')
-    
+
     // Check that individual service stats are shown
     expect(wrapper.text()).toContain('Total Bookings')
     expect(wrapper.text()).toContain('Avg. Rate')
+  })
+
+  it('should have all unit options including kg in the form', async () => {
+    // Open modal
+    wrapper.vm.showAddModal = true
+    await wrapper.vm.$nextTick()
+
+    // Find all select elements - unit select is the second one (after category)
+    const selects = wrapper.findAll('select')
+    expect(selects.length).toBeGreaterThanOrEqual(2)
+
+    // Unit select is the second one in the form
+    const unitSelect = selects[1]
+    expect(unitSelect.exists()).toBe(true)
+
+    // Get all options
+    const options = unitSelect.findAll('option')
+    const optionValues = options.map((opt: any) => opt.element.value)
+
+    // Verify all expected units are present
+    expect(optionValues).toContain('hour')
+    expect(optionValues).toContain('day')
+    expect(optionValues).toContain('job')
+    expect(optionValues).toContain('sqft')
+    expect(optionValues).toContain('month')
+    expect(optionValues).toContain('kg')
+  })
+
+  it('should handle service creation with kg unit', async () => {
+    const { serviceService } = await import('../../services/pocketbase')
+    const mockCreate = vi.mocked(serviceService.create)
+
+    let capturedFormData: any = null
+    mockCreate.mockImplementation((formData) => {
+      capturedFormData = { ...formData }
+      return Promise.resolve({
+        id: 'new-service-kg',
+        name: formData.name,
+        category: formData.category,
+        service_type: formData.service_type,
+        unit: formData.unit,
+        standard_rate: formData.standard_rate,
+        description: formData.description,
+        tags: formData.tags,
+        is_active: formData.is_active,
+        site: 'site-1'
+      })
+    })
+
+    // Open modal
+    wrapper.vm.showAddModal = true
+    await wrapper.vm.$nextTick()
+
+    // Set form data with kg unit
+    wrapper.vm.form.name = 'Sand Delivery'
+    wrapper.vm.form.service_type = 'Material'
+    wrapper.vm.form.category = 'transport'
+    wrapper.vm.form.unit = 'kg'
+    wrapper.vm.form.standard_rate = 5
+    wrapper.vm.form.tags = []
+    await wrapper.vm.$nextTick()
+
+    // Submit form
+    await wrapper.vm.saveService()
+
+    // Verify the service was created with kg unit
+    expect(mockCreate).toHaveBeenCalledTimes(1)
+    expect(capturedFormData).toBeDefined()
+    expect(capturedFormData.name).toBe('Sand Delivery')
+    expect(capturedFormData.unit).toBe('kg')
+    expect(capturedFormData.standard_rate).toBe(5)
   })
 })

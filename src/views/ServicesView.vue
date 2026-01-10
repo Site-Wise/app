@@ -64,7 +64,7 @@
               <div v-if="service.standard_rate"
                 class="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.standardRate')
-                }}:</span>
+                  }}:</span>
                 <span class="text-lg font-bold text-primary-600 dark:text-primary-400">
                   ₹{{ service.standard_rate.toFixed(2) }}/{{ service.unit }}
                 </span>
@@ -90,7 +90,7 @@
             <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div class="flex justify-between items-center mb-2">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.totalBookings')
-                }}</span>
+                  }}</span>
                 <span class="text-sm font-semibold text-blue-600 dark:text-blue-400">{{
                   getServiceBookingsCount(service.id!) }}</span>
               </div>
@@ -165,7 +165,7 @@
           <form @submit.prevent="saveService" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.serviceName')
-              }}</label>
+                }}</label>
               <input ref="nameInputRef" v-model="form.name" type="text" required class="input mt-1"
                 :placeholder="t('forms.enterServiceName')" autofocus />
             </div>
@@ -177,7 +177,7 @@
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.category')
-              }}</label>
+                }}</label>
               <select v-model="form.category" required class="input mt-1">
                 <option value="">{{ t('forms.selectCategory') }}</option>
                 <option value="labor">{{ t('services.categories.labor') }}</option>
@@ -191,19 +191,20 @@
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.unit')
-                }}</label>
+                  }}</label>
                 <select v-model="form.unit" required class="input mt-1">
                   <option value="">{{ t('forms.selectUnit') }}</option>
                   <option value="hour">{{ t('services.units.hour') }}</option>
                   <option value="day">{{ t('services.units.day') }}</option>
                   <option value="job">{{ t('services.units.job') }}</option>
                   <option value="sqft">{{ t('services.units.sqft') }}</option>
+                  <option value="kg">{{ t('services.units.kg') }}</option>
                   <option value="month">{{ t('services.units.month') }}</option>
                 </select>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.standardRate')
-                }}</label>
+                  }}</label>
                 <input v-model.number="form.standard_rate" type="number" step="0.01" class="input mt-1"
                   :placeholder="t('forms.enterRate')" />
               </div>
@@ -211,7 +212,7 @@
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.description')
-              }}</label>
+                }}</label>
               <textarea v-model="form.description" class="input mt-1" rows="3"
                 :placeholder="t('forms.enterServiceDescription')"></textarea>
             </div>
@@ -224,7 +225,7 @@
               <input v-model="form.is_active" type="checkbox" id="is_active"
                 class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500" />
               <label for="is_active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ t('services.isActive')
-              }}</label>
+                }}</label>
             </div>
 
             <div class="flex space-x-3 pt-4">

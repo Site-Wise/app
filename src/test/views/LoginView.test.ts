@@ -26,6 +26,16 @@ vi.mock('../../components/LegalModal.vue', () => ({
   }
 }))
 
+// Mock PasskeyLoginButton component
+vi.mock('../../components/PasskeyLoginButton.vue', () => ({
+  default: {
+    name: 'PasskeyLoginButton',
+    template: '<button class="mock-passkey-btn" @click="$emit(\'success\')">Sign in with Passkey</button>',
+    props: ['email'],
+    emits: ['success', 'error']
+  }
+}))
+
 // Mock Auth composable
 const mockLogin = vi.fn()
 const mockRegister = vi.fn()
@@ -73,6 +83,7 @@ vi.mock('../../composables/useI18n', () => ({
         'auth.registrationFailed': 'Registration failed',
         'auth.turnstileRequired': 'Please complete the security check',
         'auth.passwordsDoNotMatch': 'Passwords do not match',
+        'auth.orContinueWith': 'or continue with',
         'forms.enterEmail': 'Enter your email',
         'forms.enterPassword': 'Enter your password',
         'forms.enterFullName': 'Enter your full name',
@@ -122,8 +133,11 @@ describe('LoginComponent', () => {
         stubs: {
           'AlertCircle': true,
           'Loader2': true,
+          'Eye': true,
+          'EyeOff': true,
           'TurnstileWidget': true,
-          'LegalModal': true
+          'LegalModal': true,
+          'PasskeyLoginButton': true
         }
       }
     })
@@ -438,22 +452,79 @@ describe('LoginComponent', () => {
     it('has proper autocomplete attributes', async () => {
       const emailInput = wrapper.find('#email')
       const passwordInput = wrapper.find('#password')
-      
-      expect(emailInput.attributes('autocomplete')).toBe('email')
+
+      // Email input should have webauthn for passkey autofill support
+      expect(emailInput.attributes('autocomplete')).toBe('email webauthn')
       expect(passwordInput.attributes('autocomplete')).toBe('current-password')
     })
 
     it('uses proper input types', async () => {
       expect(wrapper.find('#email').attributes('type')).toBe('email')
       expect(wrapper.find('#password').attributes('type')).toBe('password')
-      
+
       wrapper.vm.activeTab = 'register'
       await nextTick()
-      
+
       expect(wrapper.find('#reg-email').attributes('type')).toBe('email')
       expect(wrapper.find('#reg-phone').attributes('type')).toBe('tel')
       expect(wrapper.find('#reg-password').attributes('type')).toBe('password')
       expect(wrapper.find('#reg-confirm-password').attributes('type')).toBe('password')
+    })
+  })
+
+  describe('Passkey Login Functionality', () => {
+    beforeEach(() => {
+      wrapper = createWrapper()
+    })
+
+    it('renders passkey login button in login form', async () => {
+      await nextTick()
+
+      // PasskeyLoginButton should be rendered (stubbed)
+      expect(wrapper.findComponent({ name: 'PasskeyLoginButton' }).exists()).toBe(true)
+    })
+
+    it('renders the "or continue with" divider', async () => {
+      await nextTick()
+
+      expect(wrapper.text()).toContain('or continue with')
+    })
+
+    it('redirects to home page on passkey success', async () => {
+      await wrapper.vm.handlePasskeySuccess()
+
+      expect(mockPush).toHaveBeenCalledWith('/')
+    })
+
+    it('displays error message on passkey error', async () => {
+      const errorMessage = 'Passkey authentication failed'
+
+      wrapper.vm.handlePasskeyError(errorMessage)
+      await nextTick()
+
+      expect(wrapper.vm.error).toBe(errorMessage)
+      expect(wrapper.text()).toContain(errorMessage)
+    })
+
+    it('passes email to PasskeyLoginButton when email is entered', async () => {
+      wrapper.vm.form.email = 'test@example.com'
+      await nextTick()
+
+      const passkeyButton = wrapper.findComponent({ name: 'PasskeyLoginButton' })
+      expect(passkeyButton.exists()).toBe(true)
+      // The email prop is passed to the component
+      expect(passkeyButton.props('email')).toBe('test@example.com')
+    })
+
+    it('clears previous error on passkey error', async () => {
+      wrapper.vm.error = 'Previous error'
+      await nextTick()
+
+      const newError = 'New passkey error'
+      wrapper.vm.handlePasskeyError(newError)
+      await nextTick()
+
+      expect(wrapper.vm.error).toBe(newError)
     })
   })
 })

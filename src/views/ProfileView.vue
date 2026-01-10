@@ -99,7 +99,7 @@
               <!-- Password Change Section -->
               <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">{{ t('auth.changePassword') }}</h3>
-                
+
                 <div class="space-y-4">
                   <div>
                     <label for="current-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -174,6 +174,11 @@
               </div>
             </form>
           </div>
+
+          <!-- Passkey Security Section -->
+          <div class="sm:col-span-2 border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+            <PasskeyList />
+          </div>
         </div>
       </div>
     </div>
@@ -186,6 +191,7 @@ import { useAuth } from '../composables/useAuth';
 import { useI18n } from '../composables/useI18n';
 import { pb } from '../services/pocketbase';
 import { AlertCircle, Loader2 } from 'lucide-vue-next';
+import PasskeyList from '../components/PasskeyList.vue';
 
 const { user, refreshAuth } = useAuth();
 const { t } = useI18n();

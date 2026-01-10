@@ -587,8 +587,9 @@ const { data: paymentAllocationsData } = useSiteData(
   }
 );
 
-// Search functionality
-const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useDeliverySearch();
+// Search functionality - only used when user enters a search query
+// Data loading is handled by useSiteData, NOT by loadAll()
+const { searchQuery, loading: searchLoading, results: searchResults } = useDeliverySearch();
 
 // Client-side payment status calculation
 const paymentAllocations = computed(() => paymentAllocationsData.value || []);
@@ -784,8 +785,8 @@ const viewAllImages = () => {
 const reloadAllData = async () => {
   try {
     await reloadDeliveries();
-    // Load all items for search functionality
-    loadAll();
+    // Note: loadAll() is NOT called here to avoid duplicate requests
+    // useSiteData already handles data loading, search only fetches when query is entered
   } catch (err) {
     console.error('Error loading deliveries:', err);
     error(t('delivery.loadError'));

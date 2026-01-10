@@ -243,8 +243,9 @@ describe('VendorSearchBox', () => {
     it('calculates vendor pending count correctly', () => {
       const vendor = mockVendors[0]; // vendor1
       const pendingCount = wrapper.vm.getVendorPendingCount(vendor);
-      
-      // vendor1 has 2 non-paid deliveries + 1 non-paid booking = 3 pending items
+
+      // vendor1 has 2 deliveries (delivery1, delivery2) + 1 service booking (booking1) = 3 items
+      // Note: getVendorPendingCount counts ALL deliveries and bookings, not just unpaid ones
       expect(pendingCount).toBe(3);
     });
 
@@ -265,9 +266,12 @@ describe('VendorSearchBox', () => {
       await input.setValue('NonExistentVendor');
       await input.trigger('input');
       await input.trigger('focus');
-      
+      await nextTick();
+
       expect(wrapper.vm.filteredVendors).toHaveLength(0);
-      // When implemented, check for no results message
+      expect(wrapper.vm.showDropdown).toBe(true);
+      expect(wrapper.html()).toContain('No vendors found matching');
+      expect(wrapper.html()).toContain('NonExistentVendor');
     });
   });
 
@@ -387,21 +391,25 @@ describe('VendorSearchBox', () => {
     });
 
     it('hides dropdown on blur with delay', async () => {
+      vi.useFakeTimers();
+
       const input = wrapper.find('input');
       await input.setValue('o'); // Search for 'o' to match both 'John Doe' and 'Bob Johnson'
       await input.trigger('input');
       await input.trigger('focus');
-      
+
       expect(wrapper.vm.showDropdown).toBe(true);
-      
+
       await input.trigger('blur');
-      
-      // Should still be visible initially due to delay
+
+      // Should still be visible initially due to 200ms delay in component
       expect(wrapper.vm.showDropdown).toBe(true);
-      
-      // After delay, should be hidden
-      await new Promise(resolve => setTimeout(resolve, 250));
+
+      // Advance timers past the 200ms delay
+      await vi.advanceTimersByTimeAsync(250);
       expect(wrapper.vm.showDropdown).toBe(false);
+
+      vi.useRealTimers();
     });
   });
 
@@ -429,8 +437,10 @@ describe('VendorSearchBox', () => {
       await input.setValue('John Doe'); // Search by contact_person
       await input.trigger('input');
       await input.trigger('focus');
-      
+      await nextTick();
+
       // Should show outstanding amount in search results
+      // vendor1 (John Doe) has ₹1800 outstanding and 3 items (2 deliveries + 1 booking)
       expect(wrapper.html()).toContain('₹1800.00');
       expect(wrapper.html()).toContain('3 pending');
     });
