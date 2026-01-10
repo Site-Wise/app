@@ -5,10 +5,6 @@ import { calculatePermissions } from '../types/permissions';
 import type { Delivery, DeliveryItem, Vendor, Item, PaymentAllocation } from '../types';
 
 // Forward references for circular dependencies
-let deliveryItemServiceRef: {
-  getByDelivery: (deliveryId: string) => Promise<DeliveryItem[]>;
-} | null = null;
-
 let paymentAllocationServiceRef: {
   getByDelivery: (deliveryId: string) => Promise<PaymentAllocation[]>;
 } | null = null;
@@ -17,7 +13,7 @@ export function setDeliveryServiceDependencies(deps: {
   deliveryItemService: { getByDelivery: (deliveryId: string) => Promise<DeliveryItem[]> };
   paymentAllocationService: { getByDelivery: (deliveryId: string) => Promise<PaymentAllocation[]> };
 }) {
-  deliveryItemServiceRef = deps.deliveryItemService;
+  // deliveryItemService passed for interface compatibility but items are fetched via expand
   paymentAllocationServiceRef = deps.paymentAllocationService;
 }
 

@@ -1,4 +1,3 @@
-import type { RecordModel } from 'pocketbase';
 import { pb } from '../client';
 import { getCurrentSiteId, getCurrentUserRole } from '../context';
 import { calculatePermissions } from '../types/permissions';
