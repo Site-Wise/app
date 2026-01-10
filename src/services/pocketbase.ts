@@ -487,6 +487,98 @@ export interface AnalyticsResult {
   costOverTimeByTag: { tagId: string; tagName: string; data: { date: string; cost: number }[] }[];
 }
 
+// ========================================
+// IMPERSONATION SYSTEM
+// ========================================
+
+export type ImpersonationRequestStatus = 'pending' | 'approved' | 'denied' | 'expired' | 'cancelled';
+
+export interface ImpersonationRequest {
+  id?: string;
+  support_user: string; // User ID of support staff requesting impersonation
+  target_user: string; // User ID of the user to be impersonated
+  target_site: string; // Site ID where impersonation is requested
+  reason: string; // Reason for impersonation (required for audit)
+  status: ImpersonationRequestStatus;
+  requested_at: string;
+  responded_at?: string; // When owner approved/denied
+  expires_at: string; // Request expiration time (e.g., 5 minutes to respond)
+  session_duration_minutes: number; // How long the session should last if approved (max 60 mins)
+  denied_reason?: string; // Optional reason for denial
+  created?: string;
+  updated?: string;
+  expand?: {
+    support_user?: User;
+    target_user?: User;
+    target_site?: Site;
+  };
+}
+
+export interface ImpersonationSession {
+  id?: string;
+  request: string; // ImpersonationRequest ID that created this session
+  support_user: string; // User ID of support staff
+  target_user: string; // User ID being impersonated
+  target_site: string; // Site ID
+  effective_role: 'supervisor' | 'accountant'; // Max role allowed during impersonation (never owner)
+  started_at: string;
+  expires_at: string; // Session expiration
+  ended_at?: string; // When session was manually ended
+  ended_by?: string; // Who ended the session (support user or owner)
+  end_reason?: 'manual' | 'expired' | 'revoked'; // How session ended
+  is_active: boolean;
+  created?: string;
+  updated?: string;
+  expand?: {
+    request?: ImpersonationRequest;
+    support_user?: User;
+    target_user?: User;
+    target_site?: Site;
+    ended_by?: User;
+  };
+}
+
+export type AuditLogAction =
+  | 'impersonation_requested'
+  | 'impersonation_approved'
+  | 'impersonation_denied'
+  | 'impersonation_started'
+  | 'impersonation_ended'
+  | 'impersonation_action' // Any action taken while impersonating
+  | 'impersonation_revoked';
+
+export interface AuditLog {
+  id?: string;
+  action: AuditLogAction;
+  actor_user: string; // Who performed the action (real user ID)
+  impersonated_user?: string; // If action was during impersonation
+  impersonation_session?: string; // Session ID if applicable
+  site?: string; // Site ID if applicable
+  resource_type?: string; // e.g., 'delivery', 'payment', 'vendor'
+  resource_id?: string; // ID of affected resource
+  details: Record<string, any>; // JSON details of the action
+  ip_address?: string;
+  user_agent?: string;
+  created?: string;
+}
+
+// Support user flag - users with this flag can initiate impersonation
+export interface SupportUserSettings {
+  id?: string;
+  user: string; // User ID
+  is_support_agent: boolean; // Whether user can initiate impersonation
+  support_level: 'tier1' | 'tier2' | 'admin'; // Level of support access
+  max_session_duration: number; // Maximum session duration in minutes this agent can request
+  enabled_at?: string;
+  enabled_by?: string; // Admin who enabled support access
+  created?: string;
+  updated?: string;
+  expand?: {
+    user?: User;
+    enabled_by?: User;
+  };
+}
+
 // Site context management
 let currentSiteId: string | null = null;
 let currentUserRole: 'owner' | 'supervisor' | 'accountant' | null = null;
