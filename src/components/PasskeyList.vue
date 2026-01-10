@@ -22,6 +22,42 @@ const showRenameModal = ref(false);
 const selectedPasskey = ref<PasskeyCredential | null>(null);
 const newDeviceName = ref('');
 const renameValue = ref('');
+const deviceNameError = ref('');
+
+// Device name validation constants
+const MAX_DEVICE_NAME_LENGTH = 100;
+const DEVICE_NAME_PATTERN = /^[a-zA-Z0-9\s\-_().,'\u0900-\u097F]*$/;
+
+/**
+ * Validate device name for XSS prevention
+ */
+function validateDeviceName(name: string): { valid: boolean; error?: string } {
+  if (!name || name.trim() === '') {
+    return { valid: true }; // Empty is allowed - server will default to 'Unknown Device'
+  }
+
+  const trimmed = name.trim();
+
+  if (trimmed.length > MAX_DEVICE_NAME_LENGTH) {
+    return { valid: false, error: t('passkey.errorNameTooLong') };
+  }
+
+  if (!DEVICE_NAME_PATTERN.test(trimmed)) {
+    return { valid: false, error: t('passkey.errorInvalidCharacters') };
+  }
+
+  // HTML injection check
+  if (/<[^>]*>/.test(trimmed)) {
+    return { valid: false, error: t('passkey.errorNoHtml') };
+  }
+
+  // Script injection check
+  if (/javascript:|on\w+\s*=/i.test(trimmed)) {
+    return { valid: false, error: t('passkey.errorInvalidContent') };
+  }
+
+  return { valid: true };
+}
 
 // Computed
 const sortedPasskeys = computed(() => {
@@ -33,11 +69,40 @@ const sortedPasskeys = computed(() => {
 // Methods
 async function handleAddPasskey() {
   clearError();
+  deviceNameError.value = '';
+
+  // Validate device name
+  const validation = validateDeviceName(newDeviceName.value);
+  if (!validation.valid) {
+    deviceNameError.value = validation.error || '';
+    return;
+  }
+
   const result = await registerPasskey(newDeviceName.value || undefined);
   if (result) {
     showAddModal.value = false;
     newDeviceName.value = '';
+    deviceNameError.value = '';
   }
+}
+
+function handleDeviceNameInput(value: string) {
+  deviceNameError.value = '';
+  if (value.length > MAX_DEVICE_NAME_LENGTH) {
+    deviceNameError.value = t('passkey.errorNameTooLong');
+  }
+}
+
+function openAddModal() {
+  newDeviceName.value = '';
+  deviceNameError.value = '';
+  showAddModal.value = true;
+}
+
+function closeAddModal() {
+  showAddModal.value = false;
+  newDeviceName.value = '';
+  deviceNameError.value = '';
 }
 
 function openDeleteModal(passkey: PasskeyCredential) {
@@ -58,17 +123,37 @@ async function confirmDelete() {
 function openRenameModal(passkey: PasskeyCredential) {
   selectedPasskey.value = passkey;
   renameValue.value = passkey.deviceName;
+  deviceNameError.value = '';
   showRenameModal.value = true;
 }
 
+function closeRenameModal() {
+  showRenameModal.value = false;
+  selectedPasskey.value = null;
+  renameValue.value = '';
+  deviceNameError.value = '';
+}
+
 async function confirmRename() {
-  if (selectedPasskey.value && renameValue.value.trim()) {
-    const success = await renamePasskey(selectedPasskey.value.id, renameValue.value.trim());
-    if (success) {
-      showRenameModal.value = false;
-      selectedPasskey.value = null;
-      renameValue.value = '';
-    }
+  if (!selectedPasskey.value || !renameValue.value.trim()) {
+    return;
+  }
+
+  deviceNameError.value = '';
+
+  // Validate device name
+  const validation = validateDeviceName(renameValue.value);
+  if (!validation.valid) {
+    deviceNameError.value = validation.error || '';
+    return;
+  }
+
+  const success = await renamePasskey(selectedPasskey.value.id, renameValue.value.trim());
+  if (success) {
+    showRenameModal.value = false;
+    selectedPasskey.value = null;
+    renameValue.value = '';
+    deviceNameError.value = '';
   }
 }
 
@@ -124,7 +209,7 @@ function getDeviceIcon(deviceType: string, deviceName: string): string {
       </div>
       <button
         v-if="canUsePasskeys"
-        @click="showAddModal = true"
+        @click="openAddModal"
         :disabled="isLoading"
         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
       >
@@ -244,7 +329,7 @@ function getDeviceIcon(deviceType: string, deviceName: string): string {
         {{ t('passkey.noPasskeysDescription') }}
       </p>
       <button
-        @click="showAddModal = true"
+        @click="openAddModal"
         class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
       >
         {{ t('passkey.addFirstPasskey') }}
@@ -256,10 +341,10 @@ function getDeviceIcon(deviceType: string, deviceName: string): string {
       <div
         v-if="showAddModal"
         class="fixed inset-0 z-50 overflow-y-auto"
-        @keydown.escape="showAddModal = false"
+        @keydown.escape="closeAddModal"
       >
         <div class="flex min-h-full items-center justify-center p-4">
-          <div class="fixed inset-0 bg-black/50" @click="showAddModal = false"></div>
+          <div class="fixed inset-0 bg-black/50" @click="closeAddModal"></div>
           <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
             <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
               {{ t('passkey.addPasskeyTitle') }}
@@ -274,20 +359,29 @@ function getDeviceIcon(deviceType: string, deviceName: string): string {
               <input
                 v-model="newDeviceName"
                 type="text"
+                :maxlength="MAX_DEVICE_NAME_LENGTH"
                 :placeholder="t('passkey.deviceNamePlaceholder')"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                @input="handleDeviceNameInput(newDeviceName)"
+                class="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                :class="deviceNameError ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'"
               />
+              <p v-if="deviceNameError" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                {{ deviceNameError }}
+              </p>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ newDeviceName.length }}/{{ MAX_DEVICE_NAME_LENGTH }}
+              </p>
             </div>
             <div class="flex justify-end space-x-3">
               <button
-                @click="showAddModal = false"
+                @click="closeAddModal"
                 class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
               >
                 {{ t('common.cancel') }}
               </button>
               <button
                 @click="handleAddPasskey"
-                :disabled="isLoading"
+                :disabled="isLoading || !!deviceNameError"
                 class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50"
               >
                 <span v-if="isLoading">{{ t('common.loading') }}</span>
@@ -340,10 +434,10 @@ function getDeviceIcon(deviceType: string, deviceName: string): string {
       <div
         v-if="showRenameModal"
         class="fixed inset-0 z-50 overflow-y-auto"
-        @keydown.escape="showRenameModal = false"
+        @keydown.escape="closeRenameModal"
       >
         <div class="flex min-h-full items-center justify-center p-4">
-          <div class="fixed inset-0 bg-black/50" @click="showRenameModal = false"></div>
+          <div class="fixed inset-0 bg-black/50" @click="closeRenameModal"></div>
           <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
             <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
               {{ t('passkey.renameTitle') }}
@@ -355,20 +449,29 @@ function getDeviceIcon(deviceType: string, deviceName: string): string {
               <input
                 v-model="renameValue"
                 type="text"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                :maxlength="MAX_DEVICE_NAME_LENGTH"
+                class="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                :class="deviceNameError ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'"
+                @input="handleDeviceNameInput(renameValue)"
                 @keydown.enter="confirmRename"
               />
+              <p v-if="deviceNameError" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                {{ deviceNameError }}
+              </p>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ renameValue.length }}/{{ MAX_DEVICE_NAME_LENGTH }}
+              </p>
             </div>
             <div class="flex justify-end space-x-3">
               <button
-                @click="showRenameModal = false"
+                @click="closeRenameModal"
                 class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
               >
                 {{ t('common.cancel') }}
               </button>
               <button
                 @click="confirmRename"
-                :disabled="isLoading || !renameValue.trim()"
+                :disabled="isLoading || !renameValue.trim() || !!deviceNameError"
                 class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50"
               >
                 {{ t('common.save') }}

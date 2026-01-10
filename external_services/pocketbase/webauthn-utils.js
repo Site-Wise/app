@@ -350,16 +350,26 @@ function isRateLimited(app, ipAddress, maxAttempts, windowMs) {
 
 /**
  * Get encryption key for challenge storage
- * Uses PocketBase's encryption key or a derived one
+ * CRITICAL: This function will throw if the key is not properly configured
  */
 function getEncryptionKey() {
-  // Use environment variable or derive from a secret
-  const key = $os.getenv('WEBAUTHN_ENCRYPTION_KEY') || '';
-  if (key.length === 32) {
-    return key;
+  const key = $os.getenv('WEBAUTHN_ENCRYPTION_KEY');
+
+  if (!key) {
+    throw new Error(
+      'WEBAUTHN_ENCRYPTION_KEY environment variable is not set. ' +
+      'Please generate a 32-character secure key: openssl rand -base64 32 | cut -c1-32'
+    );
   }
-  // If not 32 chars, hash it to get consistent 32-char key
-  return $security.sha256(key || 'default-key-change-me').substring(0, 32);
+
+  if (key.length !== 32) {
+    throw new Error(
+      `WEBAUTHN_ENCRYPTION_KEY must be exactly 32 characters. Got ${key.length}. ` +
+      'Generate with: openssl rand -base64 32 | cut -c1-32'
+    );
+  }
+
+  return key;
 }
 
 /**
@@ -374,6 +384,64 @@ function getAllowedOrigins() {
  */
 function getRpId() {
   return RP_ID;
+}
+
+/**
+ * Validate device name for security (XSS prevention)
+ * @param {string} deviceName - The device name to validate
+ * @returns {{ valid: boolean, error?: string }} Validation result
+ */
+function validateDeviceName(deviceName) {
+  if (!deviceName || typeof deviceName !== 'string') {
+    return { valid: true }; // Allow empty - will default to 'Unknown Device'
+  }
+
+  const trimmed = deviceName.trim();
+
+  // Length validation
+  if (trimmed.length > 100) {
+    return { valid: false, error: 'Device name must be less than 100 characters' };
+  }
+
+  // Format validation - alphanumeric, spaces, basic punctuation only
+  if (!/^[a-zA-Z0-9\s\-_().,'\u0900-\u097F]+$/.test(trimmed)) {
+    return { valid: false, error: 'Device name contains invalid characters' };
+  }
+
+  // HTML injection prevention
+  if (/<[^>]*>/.test(trimmed)) {
+    return { valid: false, error: 'Device name cannot contain HTML tags' };
+  }
+
+  // Script injection patterns
+  if (/javascript:|on\w+\s*=/i.test(trimmed)) {
+    return { valid: false, error: 'Device name contains invalid content' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Sanitize device name for safe storage
+ * @param {string} deviceName - The device name to sanitize
+ * @returns {string} Sanitized device name
+ */
+function sanitizeDeviceName(deviceName) {
+  if (!deviceName || typeof deviceName !== 'string') {
+    return 'Unknown Device';
+  }
+
+  // Trim and limit length
+  let sanitized = deviceName.trim().substring(0, 100);
+
+  // Remove any HTML tags
+  sanitized = sanitized.replace(/<[^>]*>/g, '');
+
+  // Remove potential script injection
+  sanitized = sanitized.replace(/javascript:/gi, '');
+  sanitized = sanitized.replace(/on\w+\s*=/gi, '');
+
+  return sanitized || 'Unknown Device';
 }
 
 // Export all utilities
@@ -394,5 +462,7 @@ module.exports = {
   isRateLimited,
   getAllowedOrigins,
   getRpId,
+  validateDeviceName,
+  sanitizeDeviceName,
   CHALLENGE_TTL_MS
 };

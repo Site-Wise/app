@@ -1518,6 +1518,10 @@
       "authenticationFailed": "Failed to sign in with passkey",
       "alreadyRegistered": "This device already has a passkey registered",
       "notSupported": "Passkeys are not supported on this device"
-    }
+    },
+    "errorNameTooLong": "Device name must be less than 100 characters",
+    "errorInvalidCharacters": "Device name contains invalid characters. Use only letters, numbers, spaces, and basic punctuation.",
+    "errorNoHtml": "Device name cannot contain HTML tags",
+    "errorInvalidContent": "Device name contains invalid content"
   }
 }

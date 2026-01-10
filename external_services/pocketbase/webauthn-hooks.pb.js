@@ -70,9 +70,17 @@ routerAdd('POST', '/api/passkey/register/finish', (e) => {
   }
 
   const body = e.requestInfo().body;
+  const clientIP = e.request.header.get('X-Real-IP') ||
+                   e.request.header.get('X-Forwarded-For') || '';
 
   if (!body.response) {
     throw new BadRequestError('Missing registration response');
+  }
+
+  // Validate device name for security (XSS prevention)
+  const deviceNameValidation = utils.validateDeviceName(body.deviceName);
+  if (!deviceNameValidation.valid) {
+    throw new BadRequestError(deviceNameValidation.error);
   }
 
   // Extract challenge from clientDataJSON
@@ -106,11 +114,14 @@ routerAdd('POST', '/api/passkey/register/finish', (e) => {
     throw new BadRequestError('Challenge does not match user');
   }
 
+  // CRITICAL: Delete challenge immediately to prevent replay attacks
+  const challengeRecordId = challengeRecord.id;
+  utils.deleteChallenge(e.app, challengeRecordId);
+
   // Check if credential already exists
   if (body.response.id) {
     const existing = utils.findCredentialById(e.app, body.response.id);
     if (existing) {
-      utils.deleteChallenge(e.app, challengeRecord.id);
       throw new BadRequestError('Credential already registered');
     }
   }
@@ -125,28 +136,36 @@ routerAdd('POST', '/api/passkey/register/finish', (e) => {
       expectedRPID: utils.getRpId()
     });
   } catch (err) {
-    utils.deleteChallenge(e.app, challengeRecord.id);
     e.app.logger().error(`Passkey registration verification failed: ${err.message}`);
     throw new BadRequestError(`Verification failed: ${err.message}`);
   }
 
   if (!verificationResult.success) {
-    utils.deleteChallenge(e.app, challengeRecord.id);
     throw new BadRequestError(verificationResult.error || 'Verification failed');
   }
+
+  // Sanitize device name before storage
+  const sanitizedDeviceName = utils.sanitizeDeviceName(body.deviceName);
 
   // Store the credential
   const credential = utils.storeCredential(
     e.app,
     auth.id,
     verificationResult.data,
-    body.deviceName || 'Unknown Device'
+    sanitizedDeviceName
   );
 
-  // Delete used challenge
-  utils.deleteChallenge(e.app, challengeRecord.id);
-
-  e.app.logger().info(`Passkey registered for user ${auth.id}: ${credential.id}`);
+  // Security audit log
+  e.app.logger().info(JSON.stringify({
+    event: 'passkey_registered',
+    userId: auth.id,
+    userEmail: auth.email,
+    credentialId: credential.id,
+    deviceName: sanitizedDeviceName,
+    clientIP: clientIP,
+    userAgent: e.request.header.get('User-Agent'),
+    timestamp: new Date().toISOString()
+  }));
 
   return e.json(200, {
     success: true,
@@ -227,6 +246,9 @@ routerAdd('POST', '/api/passkey/authenticate/finish', (e) => {
   const utils = require(`${__hooks}/webauthn-utils.js`);
 
   const body = e.requestInfo().body;
+  const clientIP = e.request.header.get('X-Real-IP') ||
+                   e.request.header.get('X-Forwarded-For') || '';
+  const userAgent = e.request.header.get('User-Agent') || '';
 
   if (!body.response) {
     throw new BadRequestError('Missing authentication response');
@@ -241,11 +263,26 @@ routerAdd('POST', '/api/passkey/authenticate/finish', (e) => {
   // Find the credential
   const credential = utils.findCredentialById(e.app, credentialId);
   if (!credential) {
+    // Security audit: Unknown credential attempt
+    e.app.logger().warn(JSON.stringify({
+      event: 'passkey_auth_unknown_credential',
+      credentialId: credentialId,
+      clientIP: clientIP,
+      userAgent: userAgent,
+      timestamp: new Date().toISOString()
+    }));
     throw new BadRequestError('Unknown credential');
   }
 
   // Check if credential is flagged
   if (credential.get('flagged')) {
+    e.app.logger().warn(JSON.stringify({
+      event: 'passkey_auth_flagged_credential',
+      credentialId: credentialId,
+      userId: credential.get('user'),
+      clientIP: clientIP,
+      timestamp: new Date().toISOString()
+    }));
     throw new BadRequestError('Credential has been flagged for security review');
   }
 
@@ -274,6 +311,10 @@ routerAdd('POST', '/api/passkey/authenticate/finish', (e) => {
     throw new BadRequestError('Invalid or expired challenge');
   }
 
+  // CRITICAL: Delete challenge immediately to prevent replay attacks
+  const challengeRecordId = challengeRecord.id;
+  utils.deleteChallenge(e.app, challengeRecordId);
+
   // Call verification service
   let verificationResult;
   try {
@@ -292,23 +333,45 @@ routerAdd('POST', '/api/passkey/authenticate/finish', (e) => {
     // Check for counter error (possible cloned credential)
     if (err.message && err.message.includes('counter')) {
       utils.flagCredential(e.app, credential);
-      e.app.logger().warn(`Credential flagged for counter anomaly: ${credential.id}`);
+      e.app.logger().error(JSON.stringify({
+        event: 'passkey_counter_anomaly',
+        credentialId: credential.id,
+        userId: credential.get('user'),
+        storedCounter: credential.get('counter'),
+        clientIP: clientIP,
+        userAgent: userAgent,
+        timestamp: new Date().toISOString()
+      }));
     }
-    utils.deleteChallenge(e.app, challengeRecord.id);
-    e.app.logger().error(`Passkey authentication verification failed: ${err.message}`);
+
+    // Security audit: Failed authentication
+    e.app.logger().warn(JSON.stringify({
+      event: 'passkey_auth_failed',
+      credentialId: credentialId,
+      userId: credential.get('user'),
+      error: err.message,
+      clientIP: clientIP,
+      userAgent: userAgent,
+      timestamp: new Date().toISOString()
+    }));
+
     throw new BadRequestError(`Verification failed: ${err.message}`);
   }
 
   if (!verificationResult.success) {
-    utils.deleteChallenge(e.app, challengeRecord.id);
+    e.app.logger().warn(JSON.stringify({
+      event: 'passkey_auth_verification_failed',
+      credentialId: credentialId,
+      userId: credential.get('user'),
+      error: verificationResult.error,
+      clientIP: clientIP,
+      timestamp: new Date().toISOString()
+    }));
     throw new BadRequestError(verificationResult.error || 'Verification failed');
   }
 
   // Update credential counter
   utils.updateCredentialAfterAuth(e.app, credential, verificationResult.data.newCounter);
-
-  // Delete used challenge
-  utils.deleteChallenge(e.app, challengeRecord.id);
 
   // Get user and generate auth token
   const userId = credential.get('user');
@@ -320,7 +383,16 @@ routerAdd('POST', '/api/passkey/authenticate/finish', (e) => {
   // Generate auth token
   const token = user.newAuthToken();
 
-  e.app.logger().info(`Passkey authentication successful for user ${userId}`);
+  // Security audit: Successful authentication
+  e.app.logger().info(JSON.stringify({
+    event: 'passkey_auth_success',
+    userId: userId,
+    userEmail: user.get('email'),
+    credentialId: credentialId,
+    clientIP: clientIP,
+    userAgent: userAgent,
+    timestamp: new Date().toISOString()
+  }));
 
   return e.json(200, {
     success: true,
@@ -376,6 +448,9 @@ routerAdd('GET', '/api/passkey/list', (e) => {
 /**
  * DELETE /api/passkey/:id
  * Delete a passkey
+ *
+ * Security: Prevents account lockout by checking if user has password
+ * when deleting their last passkey
  */
 routerAdd('DELETE', '/api/passkey/{id}', (e) => {
   const utils = require(`${__hooks}/webauthn-utils.js`);
@@ -384,6 +459,9 @@ routerAdd('DELETE', '/api/passkey/{id}', (e) => {
   if (!auth) {
     throw new UnauthorizedError('Authentication required');
   }
+
+  const clientIP = e.request.header.get('X-Real-IP') ||
+                   e.request.header.get('X-Forwarded-For') || '';
 
   const passkeyId = e.request.pathValue('id');
   if (!passkeyId) {
@@ -406,14 +484,54 @@ routerAdd('DELETE', '/api/passkey/{id}', (e) => {
   // Check if this is the user's last passkey
   const allCredentials = utils.getUserCredentials(e.app, auth.id);
   if (allCredentials.length <= 1) {
-    // Allow deletion but warn - user will need password to login
-    e.app.logger().warn(`User ${auth.id} deleted their last passkey`);
+    // SECURITY: Check if user has a password set before allowing deletion
+    const user = e.app.findRecordById('users', auth.id);
+
+    // Check if user has password authentication method available
+    // PocketBase stores a hash if password is set
+    const hasPassword = user.get('passwordHash') !== '';
+
+    if (!hasPassword) {
+      // Security audit: Blocked dangerous deletion
+      e.app.logger().warn(JSON.stringify({
+        event: 'passkey_delete_blocked_no_password',
+        userId: auth.id,
+        passkeyId: passkeyId,
+        clientIP: clientIP,
+        timestamp: new Date().toISOString()
+      }));
+
+      throw new BadRequestError(
+        'Cannot delete your last passkey without a password set. ' +
+        'Please set a password in Settings > Profile first to prevent account lockout.'
+      );
+    }
+
+    // Security audit: Last passkey deletion with password backup
+    e.app.logger().warn(JSON.stringify({
+      event: 'passkey_last_deleted',
+      userId: auth.id,
+      userEmail: auth.email,
+      passkeyId: passkeyId,
+      hasPassword: true,
+      clientIP: clientIP,
+      timestamp: new Date().toISOString()
+    }));
   }
 
   // Delete the credential
   e.app.delete(credential);
 
-  e.app.logger().info(`Passkey deleted for user ${auth.id}: ${passkeyId}`);
+  // Security audit log
+  e.app.logger().info(JSON.stringify({
+    event: 'passkey_deleted',
+    userId: auth.id,
+    passkeyId: passkeyId,
+    deviceName: credential.get('device_name'),
+    remainingPasskeys: allCredentials.length - 1,
+    clientIP: clientIP,
+    timestamp: new Date().toISOString()
+  }));
 
   return e.json(200, {
     success: true,
@@ -425,6 +543,8 @@ routerAdd('DELETE', '/api/passkey/{id}', (e) => {
 /**
  * PATCH /api/passkey/:id
  * Update a passkey (rename)
+ *
+ * Security: Validates device name input to prevent XSS
  */
 routerAdd('PATCH', '/api/passkey/{id}', (e) => {
   const utils = require(`${__hooks}/webauthn-utils.js`);
@@ -456,8 +576,25 @@ routerAdd('PATCH', '/api/passkey/{id}', (e) => {
 
   // Update device name if provided
   if (body.deviceName) {
-    credential.set('device_name', body.deviceName);
+    // Validate device name for security (XSS prevention)
+    const validation = utils.validateDeviceName(body.deviceName);
+    if (!validation.valid) {
+      throw new BadRequestError(validation.error);
+    }
+
+    // Sanitize before storage
+    const sanitizedName = utils.sanitizeDeviceName(body.deviceName);
+    credential.set('device_name', sanitizedName);
     e.app.save(credential);
+
+    // Security audit log
+    e.app.logger().info(JSON.stringify({
+      event: 'passkey_renamed',
+      userId: auth.id,
+      passkeyId: passkeyId,
+      newDeviceName: sanitizedName,
+      timestamp: new Date().toISOString()
+    }));
   }
 
   return e.json(200, {
