@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { usePasskey } from '../composables/usePasskey';
 import { useI18n } from '../composables/useI18n';
 
@@ -26,18 +26,30 @@ const {
 
 const showButton = ref(false);
 
+// AbortController for cancelling conditional UI on unmount
+let abortController: AbortController | null = null;
+
 onMounted(async () => {
   await checkSupport();
   showButton.value = isSupported.value && isPlatformAvailable.value;
 
   // Setup conditional UI if available (passkey autofill)
   if (isConditionalAvailable.value) {
-    setupConditionalUI().then(() => {
+    abortController = new AbortController();
+    setupConditionalUI(abortController.signal).then(() => {
       // If user selected a passkey from autofill, emit success
       emit('success');
     }).catch(() => {
       // User didn't select a passkey, that's fine
     });
+  }
+});
+
+onUnmounted(() => {
+  // Cancel conditional UI when component unmounts (e.g., after login)
+  if (abortController) {
+    abortController.abort();
+    abortController = null;
   }
 });
 

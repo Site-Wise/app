@@ -169,31 +169,56 @@ export function usePasskey(options: UsePasskeyOptions = {}) {
   /**
    * Setup conditional UI (passkey autofill)
    * Call this on login page mount to enable passkey autofill
+   * @param signal - Optional AbortSignal to cancel the operation
    */
-  async function setupConditionalUI(): Promise<void> {
+  async function setupConditionalUI(signal?: AbortSignal): Promise<void> {
     if (!isConditionalAvailable.value) {
       return;
     }
 
+    // Don't try to authenticate if user is already logged in
+    // The /api/passkey/authenticate/start endpoint is guest-only
+    if (pb.authStore.isValid) {
+      return;
+    }
+
     try {
+      // Check abort signal before making API call
+      if (signal?.aborted) {
+        return;
+      }
+
       // Get authentication options for conditional UI
       const options = await startAuthentication();
+
+      // Check again after API call in case user logged in while waiting
+      if (signal?.aborted || pb.authStore.isValid) {
+        return;
+      }
 
       // Start conditional mediation
       const credential = await navigator.credentials.get({
         publicKey: transformAuthenticationOptions(options),
         mediation: 'conditional',
+        signal,
       } as CredentialRequestOptions) as PublicKeyCredential | null;
 
-      if (credential) {
+      // Verify user hasn't logged in via another method while waiting
+      if (credential && !signal?.aborted && !pb.authStore.isValid) {
         // User selected a passkey from autofill
         const result = await finishAuthentication(credential);
         pb.authStore.save(result.token, result.record);
       }
     } catch (err: any) {
-      // Conditional UI errors are expected when user doesn't select a passkey
+      // Conditional UI errors are expected when:
+      // - User doesn't select a passkey
+      // - Operation is aborted
+      // - User logged in via another method (guest-only endpoint rejects)
       if (err.name !== 'NotAllowedError' && err.name !== 'AbortError') {
-        console.error('Conditional UI error:', err);
+        // Only log if it's not the expected "guests only" error
+        if (!err.message?.includes('guests')) {
+          console.error('Conditional UI error:', err);
+        }
       }
     }
   }
