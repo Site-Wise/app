@@ -201,6 +201,18 @@ export class VendorReturnService {
     }
   }
 
+  async getReturnInfoForDeliveryItems(deliveryItemIds: string[]): Promise<Record<string, {
+    totalReturned: number;
+    availableForReturn: number;
+    returns: Array<{ id: string; returnDate: string; quantityReturned: number; status: string; reason: string; }>;
+  }>> {
+    const result: Record<string, any> = {};
+    await Promise.all(deliveryItemIds.map(async (id) => {
+      result[id] = await this.getReturnInfoForDeliveryItem(id);
+    }));
+    return result;
+  }
+
   async getReturnInfoForDeliveryItem(deliveryItemId: string): Promise<{
     totalReturned: number;
     availableForReturn: number;

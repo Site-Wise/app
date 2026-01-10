@@ -190,6 +190,22 @@ export class DeliveryItemService {
     }
   }
 
+  async deleteMultiple(ids: string[]): Promise<void> {
+    for (const id of ids) {
+      await this.delete(id);
+    }
+  }
+
+  async updateMultiple(items: Array<{ id: string } & Partial<DeliveryItem>>): Promise<DeliveryItem[]> {
+    const updatedItems: DeliveryItem[] = [];
+    for (const item of items) {
+      const { id, ...data } = item;
+      const updated = await this.update(id, data);
+      updatedItems.push(updated);
+    }
+    return updatedItems;
+  }
+
   async createMultiple(deliveryId: string, items: Array<{
     item: string;
     quantity: number;

@@ -3,7 +3,7 @@ import { pb } from '../client';
 import { getCurrentSiteId, getCurrentUserRole } from '../context';
 import { calculatePermissions } from '../types/permissions';
 import type { ServiceBooking } from '../types';
-import { mapRecordToServiceBooking } from './mappers';
+import { mapRecordToServiceBooking as mapRecordToServiceBookingFromMapper } from './mappers';
 
 // Forward reference to paymentAllocationService
 let paymentAllocationServiceRef: { getByServiceBooking: (bookingId: string) => Promise<any[]> } | null = null;
@@ -21,7 +21,7 @@ export class ServiceBookingService {
       filter: `site="${siteId}"`,
       expand: 'vendor,service'
     });
-    return records.map(record => mapRecordToServiceBooking(record));
+    return records.map(record => mapRecordToServiceBookingFromMapper(record));
   }
 
   async getById(id: string): Promise<ServiceBooking | null> {
@@ -33,7 +33,7 @@ export class ServiceBookingService {
         filter: `site="${siteId}"`,
         expand: 'vendor,service'
       });
-      return mapRecordToServiceBooking(record);
+      return mapRecordToServiceBookingFromMapper(record);
     } catch (error) {
       return null;
     }
@@ -54,7 +54,7 @@ export class ServiceBookingService {
       ...data,
       site: siteId
     });
-    return mapRecordToServiceBooking(record);
+    return mapRecordToServiceBookingFromMapper(record);
   }
 
   async update(id: string, data: Partial<ServiceBooking>): Promise<ServiceBooking> {
@@ -66,7 +66,7 @@ export class ServiceBookingService {
     }
 
     const record = await pb.collection('service_bookings').update(id, data);
-    return mapRecordToServiceBooking(record);
+    return mapRecordToServiceBookingFromMapper(record);
   }
 
   async delete(id: string): Promise<boolean> {
@@ -122,7 +122,20 @@ export class ServiceBookingService {
     return 'partial';
   }
 
-  // Centralized calculation methods
+  // Instance method wrappers for use by other services
+  mapRecordToServiceBooking(record: RecordModel): ServiceBooking {
+    return mapRecordToServiceBookingFromMapper(record);
+  }
+
+  calculateProgressBasedAmount(serviceBooking: ServiceBooking): number {
+    return ServiceBookingService.calculateProgressBasedAmountStatic(serviceBooking);
+  }
+
+  // Centralized calculation methods (static versions)
+  static calculateProgressBasedAmountStatic(serviceBooking: ServiceBooking): number {
+    return (serviceBooking.total_amount * (serviceBooking.percent_completed || 0)) / 100;
+  }
+
   static calculateProgressBasedAmount(serviceBooking: ServiceBooking): number {
     return (serviceBooking.total_amount * (serviceBooking.percent_completed || 0)) / 100;
   }

@@ -170,7 +170,7 @@ export class VendorCreditNoteService {
     return balance;
   }
 
-  async updateBalance(id: string, usedAmount: number): Promise<VendorCreditNote> {
+  async updateBalance(id: string, usedAmount: number): Promise<void> {
     // Since we now calculate balance dynamically from usage records,
     // we just need to update the status based on the new calculated balance
     const creditNote = await this.getById(id);
@@ -181,7 +181,7 @@ export class VendorCreditNoteService {
 
     // Update status if balance becomes zero or negative
     const status = newBalance <= 0 ? 'fully_used' : creditNote.status;
-    return this.update(id, { status });
+    await this.update(id, { status });
   }
 
   mapRecordToCreditNote(record: RecordModel): VendorCreditNote {

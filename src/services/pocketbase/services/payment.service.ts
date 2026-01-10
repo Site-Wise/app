@@ -2,7 +2,7 @@ import type { RecordModel } from 'pocketbase';
 import { pb } from '../client';
 import { getCurrentSiteId, getCurrentUserRole } from '../context';
 import { calculatePermissions } from '../types/permissions';
-import type { Payment, Vendor, Account, Delivery, ServiceBooking, PaymentAllocation, VendorCreditNote, CreditNoteUsage, AccountTransaction } from '../types';
+import type { Payment, Delivery, ServiceBooking, PaymentAllocation, VendorCreditNote, CreditNoteUsage, AccountTransaction } from '../types';
 import { mapRecordToVendor, mapRecordToAccount } from './mappers';
 
 // Forward references for circular dependencies

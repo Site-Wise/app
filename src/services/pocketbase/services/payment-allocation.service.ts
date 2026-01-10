@@ -1,4 +1,3 @@
-import type { RecordModel } from 'pocketbase';
 import { pb } from '../client';
 import { getCurrentSiteId } from '../context';
 import type { PaymentAllocation } from '../types';
