@@ -629,11 +629,9 @@ describe('PasskeyLoginButton Lifecycle Logic', () => {
       let abortController: AbortController | null = new AbortController();
       const originalController = abortController;
 
-      // Simulate unmount
-      if (abortController) {
-        abortController.abort();
-        abortController = null;
-      }
+      // Simulate unmount - abort and cleanup
+      abortController.abort();
+      abortController = null;
 
       expect(abortController).toBeNull();
       expect(originalController.signal.aborted).toBe(true);

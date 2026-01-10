@@ -423,6 +423,9 @@ function validateDeviceName(deviceName) {
 
 /**
  * Sanitize device name for safe storage
+ * Uses allowlist-based character filtering for robust XSS prevention.
+ * This approach is more secure than regex-based removal because it only
+ * allows known-safe characters rather than trying to block dangerous patterns.
  * @param {string} deviceName - The device name to sanitize
  * @returns {string} Sanitized device name
  */
@@ -432,16 +435,43 @@ function sanitizeDeviceName(deviceName) {
   }
 
   // Trim and limit length
-  let sanitized = deviceName.trim().substring(0, 100);
+  const trimmed = deviceName.trim().substring(0, 100);
 
-  // Remove any HTML tags
-  sanitized = sanitized.replace(/<[^>]*>/g, '');
+  // Allowlist-based sanitization: only permit safe characters
+  // This prevents HTML injection, script injection, and dangerous URL schemes
+  // by only allowing alphanumeric, spaces, basic punctuation, and Hindi characters
+  // Allowed: a-z, A-Z, 0-9, space, hyphen, underscore, parentheses, period, comma, apostrophe, Hindi unicode
+  let sanitized = '';
+  for (let i = 0; i < trimmed.length; i++) {
+    const char = trimmed[i];
+    const code = char.charCodeAt(0);
 
-  // Remove potential script injection
-  sanitized = sanitized.replace(/javascript:/gi, '');
-  sanitized = sanitized.replace(/on\w+\s*=/gi, '');
+    // Allow: alphanumeric (a-z, A-Z, 0-9)
+    if ((code >= 48 && code <= 57) ||   // 0-9
+        (code >= 65 && code <= 90) ||   // A-Z
+        (code >= 97 && code <= 122)) {  // a-z
+      sanitized += char;
+      continue;
+    }
 
-  return sanitized || 'Unknown Device';
+    // Allow: space, hyphen, underscore, parentheses, period, comma, apostrophe
+    if (char === ' ' || char === '-' || char === '_' ||
+        char === '(' || char === ')' || char === '.' ||
+        char === ',' || char === "'") {
+      sanitized += char;
+      continue;
+    }
+
+    // Allow: Hindi/Devanagari unicode range (U+0900 to U+097F)
+    if (code >= 0x0900 && code <= 0x097F) {
+      sanitized += char;
+      continue;
+    }
+
+    // Skip all other characters (including <, >, &, ", :, =, etc.)
+  }
+
+  return sanitized.trim() || 'Unknown Device';
 }
 
 // Export all utilities

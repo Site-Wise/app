@@ -17,9 +17,6 @@ vi.mock('../../services/pocketbase', () => ({
 // Import after mocking
 import {
   base64UrlToArrayBuffer,
-  isWebAuthnSupported,
-  isPlatformAuthenticatorAvailable,
-  isConditionalUIAvailable,
   startRegistration,
   finishRegistration,
   startAuthentication,

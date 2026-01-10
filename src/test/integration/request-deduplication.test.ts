@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { ref, nextTick } from 'vue'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { ref } from 'vue'
 import { createPinia, setActivePinia, defineStore } from 'pinia'
 
 /**
@@ -106,8 +106,8 @@ describe('Request Deduplication', () => {
           return
         }
 
-        // Store just finished loading
-        if (previousIsLoading && !isLoading && siteId) {
+        // Store just finished loading (isLoading is false here due to early return above)
+        if (previousIsLoading && siteId) {
           previousIsLoading = false
           loadCount++
           return
@@ -418,8 +418,8 @@ describe('Request Deduplication', () => {
           return false
         }
 
-        // Only load on transition from loading -> ready
-        if (previousLoadingState && !storeLoading) {
+        // Only load on transition from loading -> ready (storeLoading is false here due to early return above)
+        if (previousLoadingState) {
           previousLoadingState = false
           return true
         }
