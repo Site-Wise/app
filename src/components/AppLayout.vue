@@ -301,7 +301,8 @@ import {
   Calendar,
   RotateCcw,
   HelpCircle,
-  TrendingUp
+  TrendingUp,
+  History
 } from 'lucide-vue-next';
 
 import { usePWAUpdate } from '../composables/usePWAUpdate';
@@ -320,7 +321,7 @@ const showUpdateDuringDev = () => {
 const route = useRoute();
 const router = useRouter();
 const { user, logout } = useAuth();
-const { hasSiteAccess, canManageUsers } = useSite();
+const { hasSiteAccess, canManageUsers, isCurrentUserAdmin } = useSite();
 const { t } = useI18n();
 const { warning: showWarning } = useToast();
 const { autoStartTour, resetTour, getOnboardingDebugInfo } = useOnboarding();
@@ -334,19 +335,28 @@ const fabMenuOpen = ref(false);
 const userMenuRef = ref<HTMLElement | null>(null);
 const appVersion = ref(__APP_VERSION__);
 
-const navigation = computed(() => [
-  { name: 'Dashboard', nameKey: 'nav.dashboard', to: '/', icon: BarChart3, current: route.name === 'Dashboard', shortcut: 'd' },
-  { name: 'Items', nameKey: 'nav.items', to: '/items', icon: Package, current: route.name === 'Items', shortcut: 'i' },
-  { name: 'Services', nameKey: 'nav.services', to: '/services', icon: Wrench, current: route.name === 'Services', shortcut: 's' },
-  { name: 'Vendors', nameKey: 'nav.vendors', to: '/vendors', icon: Users, current: route.name === 'Vendors', shortcut: 'v' },
-  { name: 'Deliveries', nameKey: 'nav.deliveries', to: '/deliveries', icon: TruckIcon, current: route.name === 'Deliveries', shortcut: 'e' },
-  { name: 'Service Bookings', nameKey: 'nav.serviceBookings', to: '/service-bookings', icon: Calendar, current: route.name === 'ServiceBookings', shortcut: 'b' },
-  { name: 'Quotations', nameKey: 'nav.quotations', to: '/quotations', icon: FileText, current: route.name === 'Quotations', shortcut: 'q' },
-  { name: 'Accounts', nameKey: 'nav.accounts', to: '/accounts', icon: CreditCard, current: route.name === 'Accounts', shortcut: 'a' },
-  { name: 'Payments', nameKey: 'nav.payments', to: '/payments', icon: BanknoteArrowDown, current: route.name === 'Payments', shortcut: 'p' },
-  { name: 'Analytics', nameKey: 'nav.analytics', to: '/analytics', icon: TrendingUp, current: route.name === 'Analytics', shortcut: 'y' },
-  { name: 'Vendor Returns', nameKey: 'nav.vendorReturns', to: '/vendor-returns', icon: RotateCcw, current: route.name === 'VendorReturns', shortcut: 'r' },
-]);
+const navigation = computed(() => {
+  const baseNav = [
+    { name: 'Dashboard', nameKey: 'nav.dashboard', to: '/', icon: BarChart3, current: route.name === 'Dashboard', shortcut: 'd' },
+    { name: 'Items', nameKey: 'nav.items', to: '/items', icon: Package, current: route.name === 'Items', shortcut: 'i' },
+    { name: 'Services', nameKey: 'nav.services', to: '/services', icon: Wrench, current: route.name === 'Services', shortcut: 's' },
+    { name: 'Vendors', nameKey: 'nav.vendors', to: '/vendors', icon: Users, current: route.name === 'Vendors', shortcut: 'v' },
+    { name: 'Deliveries', nameKey: 'nav.deliveries', to: '/deliveries', icon: TruckIcon, current: route.name === 'Deliveries', shortcut: 'e' },
+    { name: 'Service Bookings', nameKey: 'nav.serviceBookings', to: '/service-bookings', icon: Calendar, current: route.name === 'ServiceBookings', shortcut: 'b' },
+    { name: 'Quotations', nameKey: 'nav.quotations', to: '/quotations', icon: FileText, current: route.name === 'Quotations', shortcut: 'q' },
+    { name: 'Accounts', nameKey: 'nav.accounts', to: '/accounts', icon: CreditCard, current: route.name === 'Accounts', shortcut: 'a' },
+    { name: 'Payments', nameKey: 'nav.payments', to: '/payments', icon: BanknoteArrowDown, current: route.name === 'Payments', shortcut: 'p' },
+    { name: 'Analytics', nameKey: 'nav.analytics', to: '/analytics', icon: TrendingUp, current: route.name === 'Analytics', shortcut: 'y' },
+    { name: 'Vendor Returns', nameKey: 'nav.vendorReturns', to: '/vendor-returns', icon: RotateCcw, current: route.name === 'VendorReturns', shortcut: 'r' },
+  ];
+
+  // Add audit logs for owners only
+  if (isCurrentUserAdmin.value) {
+    baseNav.push({ name: 'Audit Logs', nameKey: 'nav.auditLogs', to: '/audit-logs', icon: History, current: route.name === 'AuditLogs', shortcut: 'l' });
+  }
+
+  return baseNav;
+});
 
 const baseFabActions = [
   { type: 'serviceBooking', labelKey: 'quickActions.recordServiceBooking', icon: Calendar },
