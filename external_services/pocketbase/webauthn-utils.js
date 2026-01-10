@@ -5,13 +5,13 @@
 
 // Configuration - set these via environment variables
 // Note: PocketBase uses $os.getenv() instead of process.env
-const WEBAUTHN_VERIFIER_URL = $os.getenv('WEBAUTHN_VERIFIER_URL') || 'https://sitewise-webauthn-verifier.workers.dev';
+const WEBAUTHN_VERIFIER_URL = $os.getenv('WEBAUTHN_VERIFIER_URL') || 'http://localhost:8787';
 const WEBAUTHN_VERIFIER_API_KEY = $os.getenv('WEBAUTHN_VERIFIER_API_KEY') || '';
-const RP_ID = $os.getenv('WEBAUTHN_RP_ID') || 'sitewise.com';
+const RP_ID = $os.getenv('WEBAUTHN_RP_ID') || 'http://localhost:8090';
 const RP_NAME = $os.getenv('WEBAUTHN_RP_NAME') || 'Site-Wise';
 
 // Allowed origins for WebAuthn
-const ALLOWED_ORIGINS = ($os.getenv('WEBAUTHN_ALLOWED_ORIGINS') || 'https://app.sitewise.com,https://sitewise.com')
+const ALLOWED_ORIGINS = ($os.getenv('WEBAUTHN_ALLOWED_ORIGINS') || 'http://127.0.0.1:5173,https://app.sitewise.com')
   .split(',')
   .map(o => o.trim());
 

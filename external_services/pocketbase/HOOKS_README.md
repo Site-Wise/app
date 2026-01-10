@@ -123,8 +123,44 @@ Provides passwordless authentication using device biometrics (Face ID, fingerpri
 - Automatic challenge cleanup
 
 **Required Collections:**
-- `passkey_credentials` - Stores WebAuthn credentials
-- `passkey_challenges` - Temporary challenge storage
+
+#### `passkey_challenges` - Temporary Challenge Storage
+Stores cryptographic challenges for WebAuthn ceremonies. Challenges expire after 5 minutes.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `challenge_hash` | text | SHA256 hash of challenge (for lookup) |
+| `challenge` | text | Encrypted challenge value |
+| `type` | select | `registration` or `authentication` |
+| `user_id` | text | User ID (for registration flow) |
+| `ip_address` | text | Client IP for rate limiting |
+| `expires_at` | date | Expiration timestamp (5 min TTL) |
+
+**API Rules:**
+- List/Search: Admins only (or deny all)
+- View/Create/Update/Delete: Admins only (hooks manage this)
+
+#### `passkey_credentials` - WebAuthn Credential Storage
+Stores registered passkey credentials. Each user can have multiple passkeys.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `user` | relation | Relation to `users` collection |
+| `credential_id` | text | WebAuthn credential ID (base64url, unique) |
+| `public_key` | text | COSE public key (base64url) |
+| `counter` | number | Signature counter (for replay prevention) |
+| `device_name` | text | User-friendly device name |
+| `device_type` | select | `platform` or `cross-platform` |
+| `transports` | json | Transport hints, e.g., `["internal"]` |
+| `backed_up` | bool | Whether credential is synced/backed up |
+| `aaguid` | text | Authenticator AAGUID |
+| `last_used` | date | Last successful authentication |
+| `flagged` | bool | Flagged for security review (counter anomaly) |
+
+**API Rules:**
+- List/Search: `@request.auth.id != "" && user = @request.auth.id`
+- View: `@request.auth.id != "" && user = @request.auth.id`
+- Create/Update/Delete: Admins only (hooks manage this)
 
 **Environment Variables:**
 - `WEBAUTHN_VERIFIER_URL` - URL of the Cloudflare Worker verification service

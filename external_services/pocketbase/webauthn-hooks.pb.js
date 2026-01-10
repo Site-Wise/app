@@ -10,8 +10,6 @@
  * - DELETE /api/passkey/:id - Delete a passkey
  */
 
-const utils = require(`${__hooks}/webauthn-utils.js`);
-
 // ============================================================================
 // REGISTRATION ROUTES
 // ============================================================================
@@ -23,6 +21,8 @@ const utils = require(`${__hooks}/webauthn-utils.js`);
  * Response: PublicKeyCredentialCreationOptions
  */
 routerAdd('POST', '/api/passkey/register/start', (e) => {
+  const utils = require(`${__hooks}/webauthn-utils.js`);
+
   const auth = e.auth;
   if (!auth) {
     throw new UnauthorizedError('Authentication required');
@@ -62,12 +62,14 @@ routerAdd('POST', '/api/passkey/register/start', (e) => {
  * Body: { response: RegistrationResponseJSON, deviceName?: string }
  */
 routerAdd('POST', '/api/passkey/register/finish', (e) => {
+  const utils = require(`${__hooks}/webauthn-utils.js`);
+
   const auth = e.auth;
   if (!auth) {
     throw new UnauthorizedError('Authentication required');
   }
 
-  const body = $apis.requestInfo(e).body;
+  const body = e.requestInfo().body;
 
   if (!body.response) {
     throw new BadRequestError('Missing registration response');
@@ -169,7 +171,9 @@ routerAdd('POST', '/api/passkey/register/finish', (e) => {
  * Response: PublicKeyCredentialRequestOptions
  */
 routerAdd('POST', '/api/passkey/authenticate/start', (e) => {
-  const body = $apis.requestInfo(e).body;
+  const utils = require(`${__hooks}/webauthn-utils.js`);
+
+  const body = e.requestInfo().body;
   const clientIP = e.request.header.get('X-Real-IP') ||
                    e.request.header.get('X-Forwarded-For') || '';
 
@@ -220,7 +224,9 @@ routerAdd('POST', '/api/passkey/authenticate/start', (e) => {
  * Response: { token: string, record: User }
  */
 routerAdd('POST', '/api/passkey/authenticate/finish', (e) => {
-  const body = $apis.requestInfo(e).body;
+  const utils = require(`${__hooks}/webauthn-utils.js`);
+
+  const body = e.requestInfo().body;
 
   if (!body.response) {
     throw new BadRequestError('Missing authentication response');
@@ -341,6 +347,8 @@ routerAdd('POST', '/api/passkey/authenticate/finish', (e) => {
  * List user's registered passkeys
  */
 routerAdd('GET', '/api/passkey/list', (e) => {
+  const utils = require(`${__hooks}/webauthn-utils.js`);
+
   const auth = e.auth;
   if (!auth) {
     throw new UnauthorizedError('Authentication required');
@@ -370,6 +378,8 @@ routerAdd('GET', '/api/passkey/list', (e) => {
  * Delete a passkey
  */
 routerAdd('DELETE', '/api/passkey/{id}', (e) => {
+  const utils = require(`${__hooks}/webauthn-utils.js`);
+
   const auth = e.auth;
   if (!auth) {
     throw new UnauthorizedError('Authentication required');
@@ -417,13 +427,15 @@ routerAdd('DELETE', '/api/passkey/{id}', (e) => {
  * Update a passkey (rename)
  */
 routerAdd('PATCH', '/api/passkey/{id}', (e) => {
+  const utils = require(`${__hooks}/webauthn-utils.js`);
+
   const auth = e.auth;
   if (!auth) {
     throw new UnauthorizedError('Authentication required');
   }
 
   const passkeyId = e.request.pathValue('id');
-  const body = $apis.requestInfo(e).body;
+  const body = e.requestInfo().body;
 
   if (!passkeyId) {
     throw new BadRequestError('Missing passkey ID');
@@ -468,11 +480,18 @@ routerAdd('PATCH', '/api/passkey/{id}', (e) => {
 
 /**
  * Clean up expired challenges periodically
- * This runs on every request - you may want to use a scheduled job instead
  */
 onBootstrap((e) => {
-  // Clean up expired challenges on startup
-  utils.cleanupExpiredChallenges(e.app);
-  e.app.logger().info('WebAuthn hooks initialized');
+  // IMPORTANT: Call e.next() first to let the app fully initialize
   e.next();
+
+  const utils = require(`${__hooks}/webauthn-utils.js`);
+
+  // Clean up expired challenges on startup (collection may not exist yet)
+  try {
+    utils.cleanupExpiredChallenges(e.app);
+  } catch (err) {
+    // Collection may not exist yet - ignore
+  }
+  e.app.logger().info('WebAuthn hooks initialized');
 });
