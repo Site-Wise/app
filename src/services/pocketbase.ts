@@ -538,30 +538,6 @@ export interface ImpersonationSession {
   };
 }
 
-export type AuditLogAction =
-  | 'impersonation_requested'
-  | 'impersonation_approved'
-  | 'impersonation_denied'
-  | 'impersonation_started'
-  | 'impersonation_ended'
-  | 'impersonation_action' // Any action taken while impersonating
-  | 'impersonation_revoked';
-
-export interface AuditLog {
-  id?: string;
-  action: AuditLogAction;
-  actor_user: string; // Who performed the action (real user ID)
-  impersonated_user?: string; // If action was during impersonation
-  impersonation_session?: string; // Session ID if applicable
-  site?: string; // Site ID if applicable
-  resource_type?: string; // e.g., 'delivery', 'payment', 'vendor'
-  resource_id?: string; // ID of affected resource
-  details: Record<string, any>; // JSON details of the action
-  ip_address?: string;
-  user_agent?: string;
-  created?: string;
-}
-
 // Support user flag - users with this flag can initiate impersonation
 export interface SupportUserSettings {
   id?: string;
