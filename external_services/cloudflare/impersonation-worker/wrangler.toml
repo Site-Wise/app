@@ -1,6 +1,6 @@
 # Cloudflare Worker Configuration for Impersonation System
 #
-# Deploy with: wrangler deploy -c wrangler-impersonation.toml
+# Deploy from this directory with: wrangler deploy
 #
 # Required secrets (set via `wrangler secret put <NAME>`):
 # - POCKETBASE_URL
@@ -9,7 +9,7 @@
 # - IMPERSONATION_SECRET
 
 name = "sitewise-impersonation"
-main = "cf-worker-impersonation.js"
+main = "index.js"
 compatibility_date = "2024-01-01"
 
 # Durable Objects binding
