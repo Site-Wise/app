@@ -119,6 +119,12 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresSite: true, permission: 'canManageUsers' }
     },
     {
+      path: '/audit-logs',
+      name: 'AuditLogs',
+      component: () => import('../views/AuditLogsView.vue'),
+      meta: { requiresAuth: true, requiresSite: true, ownerOnly: true }
+    },
+    {
       path: '/invites',
       name: 'Invites',
       component: () => import('../views/InvitesView.vue'),
