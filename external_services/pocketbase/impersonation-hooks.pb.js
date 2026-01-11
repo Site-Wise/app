@@ -6,9 +6,59 @@
  * These hooks handle:
  * - Automatic session expiration
  * - Request expiration cleanup
- * - Audit log creation for impersonation events
+ * - Audit log creation for impersonation events (using PR 145's audit_logs schema)
  * - Session validation
+ *
+ * NOTE: Uses the same audit_logs collection as PR 145's general audit system.
+ * Impersonation events are tracked as entity CRUD operations on impersonation_requests
+ * and impersonation_sessions collections.
  */
+
+// Helper to get user info from record or context
+function getUserInfo(app, userId) {
+  if (!userId) return { userId: '', userEmail: '', userRole: '' };
+
+  try {
+    const user = app.findRecordById('users', userId);
+    return {
+      userId: userId,
+      userEmail: user.get('email') || '',
+      userRole: '' // Role is site-specific, handled separately
+    };
+  } catch (err) {
+    return { userId: userId, userEmail: '', userRole: '' };
+  }
+}
+
+// Helper to create audit log entry (compatible with PR 145's schema)
+function createAuditLog(app, action, entityType, entityId, entityName, siteId, userId, userEmail, userRole, changes = null) {
+  try {
+    const auditCollection = app.findCollectionByNameOrId('audit_logs');
+    if (!auditCollection) {
+      app.logger().warn('audit_logs collection not found - skipping audit');
+      return;
+    }
+
+    const auditLog = new Record(auditCollection);
+    auditLog.set('site', siteId || '');
+    auditLog.set('user_id', userId || '');
+    auditLog.set('user_email', userEmail || '');
+    auditLog.set('user_role', userRole || '');
+    auditLog.set('action', action);
+    auditLog.set('entity_type', entityType);
+    auditLog.set('entity_id', entityId);
+    auditLog.set('entity_name', entityName);
+    auditLog.set('timestamp', new Date().toISOString());
+
+    if (changes) {
+      auditLog.set('changes', changes);
+    }
+
+    app.save(auditLog);
+  } catch (err) {
+    app.logger().error(`Failed to create audit log for ${entityType}:`, err);
+  }
+}
 
 // ============================================
 // Scheduled Jobs for Cleanup
@@ -16,7 +66,7 @@
 
 // Run every minute to expire old requests and sessions
 cronAdd("expire_impersonation_items", "* * * * *", (app) => {
-  const now = new Date().toISOString()
+  const now = new Date().toISOString();
 
   // Expire pending requests that have passed their expiration time
   try {
@@ -26,23 +76,34 @@ cronAdd("expire_impersonation_items", "* * * * *", (app) => {
       "-created",
       100,
       0
-    )
+    );
 
     for (const request of expiredRequests) {
-      request.set("status", "expired")
-      app.save(request)
+      const oldStatus = request.get("status");
+      request.set("status", "expired");
+      app.save(request);
 
-      // Log the expiration
-      const auditLogCollection = app.findCollectionByNameOrId("audit_logs")
-      const auditLog = new Record(auditLogCollection)
-      auditLog.set("action", "impersonation_expired")
-      auditLog.set("actor_user", request.get("support_user"))
-      auditLog.set("site", request.get("target_site"))
-      auditLog.set("details", { requestId: request.id, reason: "Request expired without response" })
-      app.save(auditLog)
+      // Log using PR 145's audit schema
+      const userInfo = getUserInfo(app, request.get("support_user"));
+      createAuditLog(
+        app,
+        'UPDATE',
+        'impersonation_request',
+        request.id,
+        `Request ${request.id.substring(0, 8)}...`,
+        request.get("target_site"),
+        userInfo.userId,
+        userInfo.userEmail,
+        '',
+        {
+          status: { old: oldStatus, new: 'expired' },
+          _impersonation_event: 'request_expired',
+          reason: 'Request expired without response'
+        }
+      );
     }
   } catch (err) {
-    app.logger().error("Failed to expire requests", "error", err.toString())
+    app.logger().error("Failed to expire requests", "error", err.toString());
   }
 
   // End active sessions that have passed their expiration time
@@ -53,28 +114,37 @@ cronAdd("expire_impersonation_items", "* * * * *", (app) => {
       "-created",
       100,
       0
-    )
+    );
 
     for (const session of expiredSessions) {
-      session.set("is_active", false)
-      session.set("ended_at", now)
-      session.set("end_reason", "expired")
-      app.save(session)
+      session.set("is_active", false);
+      session.set("ended_at", now);
+      session.set("end_reason", "expired");
+      app.save(session);
 
-      // Log the expiration
-      const auditLogCollection = app.findCollectionByNameOrId("audit_logs")
-      const auditLog = new Record(auditLogCollection)
-      auditLog.set("action", "impersonation_ended")
-      auditLog.set("actor_user", session.get("support_user"))
-      auditLog.set("impersonation_session", session.id)
-      auditLog.set("site", session.get("target_site"))
-      auditLog.set("details", { sessionId: session.id, reason: "Session expired" })
-      app.save(auditLog)
+      // Log using PR 145's audit schema
+      const userInfo = getUserInfo(app, session.get("support_user"));
+      createAuditLog(
+        app,
+        'UPDATE',
+        'impersonation_session',
+        session.id,
+        `Session ${session.id.substring(0, 8)}...`,
+        session.get("target_site"),
+        userInfo.userId,
+        userInfo.userEmail,
+        '',
+        {
+          is_active: { old: true, new: false },
+          end_reason: { old: null, new: 'expired' },
+          _impersonation_event: 'session_expired'
+        }
+      );
     }
   } catch (err) {
-    app.logger().error("Failed to expire sessions", "error", err.toString())
+    app.logger().error("Failed to expire sessions", "error", err.toString());
   }
-})
+});
 
 // ============================================
 // Record Hooks for Impersonation Requests
@@ -83,63 +153,79 @@ cronAdd("expire_impersonation_items", "* * * * *", (app) => {
 onRecordAfterCreateSuccess((e) => {
   // Log when a new impersonation request is created
   try {
-    const auditLogCollection = e.app.findCollectionByNameOrId("audit_logs")
-    const auditLog = new Record(auditLogCollection)
-    auditLog.set("action", "impersonation_requested")
-    auditLog.set("actor_user", e.record.get("support_user"))
-    auditLog.set("site", e.record.get("target_site"))
-    auditLog.set("details", {
-      requestId: e.record.id,
-      targetUser: e.record.get("target_user"),
-      reason: e.record.get("reason"),
-      sessionDuration: e.record.get("session_duration_minutes")
-    })
-    e.app.save(auditLog)
+    const userInfo = getUserInfo(e.app, e.record.get("support_user"));
+    createAuditLog(
+      e.app,
+      'CREATE',
+      'impersonation_request',
+      e.record.id,
+      `Impersonation request by ${userInfo.userEmail || 'support'}`,
+      e.record.get("target_site"),
+      userInfo.userId,
+      userInfo.userEmail,
+      '',
+      {
+        target_user: { old: null, new: e.record.get("target_user") },
+        reason: { old: null, new: e.record.get("reason") },
+        session_duration_minutes: { old: null, new: e.record.get("session_duration_minutes") },
+        _impersonation_event: 'request_created'
+      }
+    );
   } catch (err) {
-    e.app.logger().error("Failed to log impersonation request", "error", err.toString())
+    e.app.logger().error("Failed to log impersonation request", "error", err.toString());
   }
 
-  e.next()
-}, "impersonation_requests")
+  e.next();
+}, "impersonation_requests");
 
 onRecordAfterUpdateSuccess((e) => {
-  const oldRecord = e.record.original()
-  const oldStatus = oldRecord.get("status")
-  const newStatus = e.record.get("status")
+  const oldRecord = e.record.original();
+  const oldStatus = oldRecord.get("status");
+  const newStatus = e.record.get("status");
 
   // Only log status changes
   if (oldStatus !== newStatus) {
     try {
-      let action = ""
+      let eventType = '';
       if (newStatus === "approved") {
-        action = "impersonation_approved"
+        eventType = 'request_approved';
       } else if (newStatus === "denied") {
-        action = "impersonation_denied"
+        eventType = 'request_denied';
       } else if (newStatus === "cancelled") {
-        action = "impersonation_cancelled"
+        eventType = 'request_cancelled';
       }
 
-      if (action) {
-        const auditLogCollection = e.app.findCollectionByNameOrId("audit_logs")
-        const auditLog = new Record(auditLogCollection)
-        auditLog.set("action", action)
-        auditLog.set("actor_user", e.record.get("support_user"))
-        auditLog.set("site", e.record.get("target_site"))
-        auditLog.set("details", {
-          requestId: e.record.id,
-          previousStatus: oldStatus,
-          newStatus: newStatus,
-          deniedReason: e.record.get("denied_reason")
-        })
-        e.app.save(auditLog)
+      if (eventType) {
+        const userInfo = getUserInfo(e.app, e.record.get("support_user"));
+        const changes = {
+          status: { old: oldStatus, new: newStatus },
+          _impersonation_event: eventType
+        };
+
+        if (e.record.get("denied_reason")) {
+          changes.denied_reason = { old: null, new: e.record.get("denied_reason") };
+        }
+
+        createAuditLog(
+          e.app,
+          'UPDATE',
+          'impersonation_request',
+          e.record.id,
+          `Request ${newStatus}`,
+          e.record.get("target_site"),
+          userInfo.userId,
+          userInfo.userEmail,
+          '',
+          changes
+        );
       }
     } catch (err) {
-      e.app.logger().error("Failed to log impersonation status change", "error", err.toString())
+      e.app.logger().error("Failed to log impersonation status change", "error", err.toString());
     }
   }
 
-  e.next()
-}, "impersonation_requests")
+  e.next();
+}, "impersonation_requests");
 
 // ============================================
 // Record Hooks for Impersonation Sessions
@@ -148,59 +234,69 @@ onRecordAfterUpdateSuccess((e) => {
 onRecordAfterCreateSuccess((e) => {
   // Log when a new impersonation session starts
   try {
-    const auditLogCollection = e.app.findCollectionByNameOrId("audit_logs")
-    const auditLog = new Record(auditLogCollection)
-    auditLog.set("action", "impersonation_started")
-    auditLog.set("actor_user", e.record.get("support_user"))
-    auditLog.set("impersonation_session", e.record.id)
-    auditLog.set("impersonated_user", e.record.get("target_user"))
-    auditLog.set("site", e.record.get("target_site"))
-    auditLog.set("details", {
-      sessionId: e.record.id,
-      requestId: e.record.get("request"),
-      effectiveRole: e.record.get("effective_role"),
-      expiresAt: e.record.get("expires_at")
-    })
-    e.app.save(auditLog)
+    const userInfo = getUserInfo(e.app, e.record.get("support_user"));
+    createAuditLog(
+      e.app,
+      'CREATE',
+      'impersonation_session',
+      e.record.id,
+      `Impersonation session started`,
+      e.record.get("target_site"),
+      userInfo.userId,
+      userInfo.userEmail,
+      '',
+      {
+        target_user: { old: null, new: e.record.get("target_user") },
+        effective_role: { old: null, new: e.record.get("effective_role") },
+        expires_at: { old: null, new: e.record.get("expires_at") },
+        request_id: { old: null, new: e.record.get("request") },
+        _impersonation_event: 'session_started'
+      }
+    );
   } catch (err) {
-    e.app.logger().error("Failed to log impersonation session start", "error", err.toString())
+    e.app.logger().error("Failed to log impersonation session start", "error", err.toString());
   }
 
-  e.next()
-}, "impersonation_sessions")
+  e.next();
+}, "impersonation_sessions");
 
 onRecordAfterUpdateSuccess((e) => {
-  const oldRecord = e.record.original()
-  const wasActive = oldRecord.get("is_active")
-  const isActive = e.record.get("is_active")
+  const oldRecord = e.record.original();
+  const wasActive = oldRecord.get("is_active");
+  const isActive = e.record.get("is_active");
 
   // Log when session ends
   if (wasActive && !isActive) {
     try {
-      const endReason = e.record.get("end_reason")
-      const action = endReason === "revoked" ? "impersonation_revoked" : "impersonation_ended"
+      const endReason = e.record.get("end_reason");
+      const eventType = endReason === "revoked" ? 'session_revoked' : 'session_ended';
+      const userInfo = getUserInfo(e.app, e.record.get("ended_by") || e.record.get("support_user"));
 
-      const auditLogCollection = e.app.findCollectionByNameOrId("audit_logs")
-      const auditLog = new Record(auditLogCollection)
-      auditLog.set("action", action)
-      auditLog.set("actor_user", e.record.get("ended_by") || e.record.get("support_user"))
-      auditLog.set("impersonation_session", e.record.id)
-      auditLog.set("impersonated_user", e.record.get("target_user"))
-      auditLog.set("site", e.record.get("target_site"))
-      auditLog.set("details", {
-        sessionId: e.record.id,
-        endReason: endReason,
-        endedBy: e.record.get("ended_by"),
-        endedAt: e.record.get("ended_at")
-      })
-      e.app.save(auditLog)
+      createAuditLog(
+        e.app,
+        'UPDATE',
+        'impersonation_session',
+        e.record.id,
+        `Session ${endReason || 'ended'}`,
+        e.record.get("target_site"),
+        userInfo.userId,
+        userInfo.userEmail,
+        '',
+        {
+          is_active: { old: true, new: false },
+          end_reason: { old: null, new: endReason },
+          ended_at: { old: null, new: e.record.get("ended_at") },
+          ended_by: { old: null, new: e.record.get("ended_by") },
+          _impersonation_event: eventType
+        }
+      );
     } catch (err) {
-      e.app.logger().error("Failed to log impersonation session end", "error", err.toString())
+      e.app.logger().error("Failed to log impersonation session end", "error", err.toString());
     }
   }
 
-  e.next()
-}, "impersonation_sessions")
+  e.next();
+}, "impersonation_sessions");
 
 // ============================================
 // Validation Hooks
@@ -208,55 +304,55 @@ onRecordAfterUpdateSuccess((e) => {
 
 onRecordCreate((e) => {
   // Validate that the support user is actually a support agent
-  const supportUserId = e.record.get("support_user")
+  const supportUserId = e.record.get("support_user");
 
   try {
     const supportSettings = e.app.findFirstRecordByFilter(
       "support_user_settings",
       `user = "${supportUserId}" && is_support_agent = true`
-    )
+    );
 
     if (!supportSettings) {
-      throw new BadRequestError("User is not authorized as a support agent")
+      throw new BadRequestError("User is not authorized as a support agent");
     }
 
     // Validate session duration doesn't exceed max allowed
-    const requestedDuration = e.record.get("session_duration_minutes")
-    const maxDuration = supportSettings.get("max_session_duration")
+    const requestedDuration = e.record.get("session_duration_minutes");
+    const maxDuration = supportSettings.get("max_session_duration");
 
     if (requestedDuration > maxDuration) {
-      e.record.set("session_duration_minutes", maxDuration)
+      e.record.set("session_duration_minutes", maxDuration);
     }
   } catch (err) {
     if (err instanceof BadRequestError) {
-      throw err
+      throw err;
     }
-    throw new BadRequestError("Failed to validate support user")
+    throw new BadRequestError("Failed to validate support user");
   }
 
-  e.next()
-}, "impersonation_requests")
+  e.next();
+}, "impersonation_requests");
 
 onRecordCreate((e) => {
   // Validate that there isn't already an active session for this combination
-  const supportUser = e.record.get("support_user")
-  const targetSite = e.record.get("target_site")
+  const supportUser = e.record.get("support_user");
+  const targetSite = e.record.get("target_site");
 
   try {
     const existingSession = e.app.findFirstRecordByFilter(
       "impersonation_sessions",
       `support_user = "${supportUser}" && target_site = "${targetSite}" && is_active = true`
-    )
+    );
 
     if (existingSession) {
-      throw new BadRequestError("An active impersonation session already exists for this site")
+      throw new BadRequestError("An active impersonation session already exists for this site");
     }
   } catch (err) {
     if (err instanceof BadRequestError) {
-      throw err
+      throw err;
     }
     // No existing session found, which is fine
   }
 
-  e.next()
-}, "impersonation_sessions")
+  e.next();
+}, "impersonation_sessions");
