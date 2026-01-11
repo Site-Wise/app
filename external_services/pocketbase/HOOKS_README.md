@@ -6,13 +6,15 @@ This directory contains the PocketBase hooks organized into logical modules for 
 
 ```
 external_services/pocketbase/
-├── utils.js                      # Shared utility functions (required by all hooks)
-├── site-management-hooks.pb.js   # Site lifecycle management (Note: may be named subscription-hooks.pb.js)
-├── subscription-hooks.pb.js      # Subscription and billing management
-├── usage-tracking-hooks.pb.js    # Usage counting and limit validation
-├── invitation-hooks.pb.js        # Site invitation processing
-├── usage-calculation-hook.js     # Legacy usage calculation (deprecated)
-└── HOOKS_README.md               # This documentation
+├── utils.js                         # Shared utility functions (required by all hooks)
+├── site-management-hooks.pb.js      # Site lifecycle management (Note: may be named subscription-hooks.pb.js)
+├── subscription-hooks.pb.js         # Subscription and billing management
+├── usage-tracking-hooks.pb.js       # Usage counting and limit validation
+├── invitation-hooks.pb.js           # Site invitation processing
+├── payment-reconciliation.pb.js     # Payment-account transaction reconciliation (hourly cron + manual)
+├── usage-calculation-hook.js        # Legacy usage calculation (deprecated)
+├── HOOKS_README.md                  # This documentation
+└── RECONCILIATION_SETUP.md          # Payment reconciliation setup guide
 ```
 
 ## Installation
@@ -109,6 +111,41 @@ Handles site invitations and user access:
 - Role updates for existing users
 - Invitation validation and expiration handling
 - Automatic cleanup of expired invitations
+
+### 6. **payment-reconciliation.pb.js** - Payment-Account Reconciliation
+Ensures payment account changes sync with account transactions:
+
+**Hooks:**
+- `onRecordAfterCreateRequest` on `payment_reconciliation_requests` - Manual trigger for reconciliation
+- `cronAdd('payment-reconciliation-hourly', ...)` - Automatic hourly reconciliation
+
+**Features:**
+- **Automatic Hourly Sync**: Runs every hour to detect and fix mismatches
+- **Manual Trigger**: Create a record in `payment_reconciliation_requests` to run on-demand
+- **Mismatch Detection**: Finds payments where `payment.account` != `transaction.account`
+- **Automatic Fixes**: Updates transactions to match payment account
+- **Balance Recalculation**: Recalculates affected account balances
+- **Detailed Logging**: Records all fixes, errors, and statistics
+- **Audit Trail**: Optional logging to `payment_reconciliation_logs` collection
+
+**Why This Exists:**
+When a payment is created, both a `payment` record and a related `account_transaction` are created with matching `account` fields. If the payment's account is changed later (via admin panel or API), the transaction becomes out of sync, causing incorrect account balances.
+
+**How It Works:**
+1. Fetches all payments (500 at a time to prevent memory issues)
+2. For each payment, finds related account_transaction records
+3. Compares `payment.account` with `transaction.account`
+4. If mismatch detected, updates transaction to match payment
+5. Recalculates balances for both old and new accounts
+6. Logs all actions with detailed statistics
+
+**Usage:**
+- **Automatic**: Runs hourly at minute 0 (configurable in script)
+- **Manual**: Create a record in `payment_reconciliation_requests` with `status: "pending"`
+- **Logs**: Check PocketBase logs or `payment_reconciliation_logs` collection
+
+**Setup:**
+See `RECONCILIATION_SETUP.md` for detailed installation and configuration instructions.
 
 ## Usage Examples
 
