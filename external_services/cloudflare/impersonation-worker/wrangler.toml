@@ -1,0 +1,40 @@
+# Cloudflare Worker Configuration for Impersonation System
+#
+# Deploy from this directory with: wrangler deploy
+#
+# Required secrets (set via `wrangler secret put <NAME>`):
+# - POCKETBASE_URL
+# - POCKETBASE_ADMIN_EMAIL
+# - POCKETBASE_ADMIN_PASSWORD
+# - IMPERSONATION_SECRET
+
+name = "sitewise-impersonation"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+# Durable Objects binding
+[[durable_objects.bindings]]
+name = "IMPERSONATION_COORDINATOR"
+class_name = "ImpersonationCoordinator"
+
+# Durable Objects migrations
+[[migrations]]
+tag = "v1"
+new_classes = ["ImpersonationCoordinator"]
+
+# Routes (adjust domain as needed)
+# routes = [
+#   { pattern = "impersonation.yourdomain.com/*", zone_name = "yourdomain.com" }
+# ]
+
+# Development settings
+[dev]
+port = 8787
+local_protocol = "http"
+
+# Environment-specific settings
+[env.production]
+# Add production-specific configuration here
+
+[env.staging]
+# Add staging-specific configuration here
