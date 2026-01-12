@@ -11,6 +11,8 @@ external_services/pocketbase/
 ├── subscription-hooks.pb.js      # Subscription and billing management
 ├── usage-tracking-hooks.pb.js    # Usage counting and limit validation
 ├── invitation-hooks.pb.js        # Site invitation processing
+├── webauthn-hooks.pb.js          # WebAuthn/Passkey authentication
+├── webauthn-utils.js             # WebAuthn shared utilities
 ├── usage-calculation-hook.js     # Legacy usage calculation (deprecated)
 └── HOOKS_README.md               # This documentation
 ```
@@ -97,6 +99,76 @@ Tracks usage and enforces subscription limits:
 
 ### 5. **invitation-hooks.pb.js** - Invitation Management
 Handles site invitations and user access:
+
+### 6. **webauthn-hooks.pb.js** - WebAuthn/Passkey Authentication
+Provides passwordless authentication using device biometrics (Face ID, fingerprint, Windows Hello).
+
+**Requires:** `webauthn-utils.js`
+
+**Custom Routes:**
+- `POST /api/passkey/register/start` - Start passkey registration (authenticated)
+- `POST /api/passkey/register/finish` - Complete passkey registration
+- `POST /api/passkey/authenticate/start` - Start passkey authentication (guest)
+- `POST /api/passkey/authenticate/finish` - Complete authentication, returns auth token
+- `GET /api/passkey/list` - List user's registered passkeys
+- `DELETE /api/passkey/:id` - Delete a passkey
+- `PATCH /api/passkey/:id` - Rename a passkey
+
+**Features:**
+- Cryptographic challenge generation and validation
+- Integration with external WebAuthn verification service
+- Secure credential storage (public keys only)
+- Counter validation for replay attack prevention
+- Rate limiting to prevent brute force attacks
+- Automatic challenge cleanup
+
+**Required Collections:**
+
+#### `passkey_challenges` - Temporary Challenge Storage
+Stores cryptographic challenges for WebAuthn ceremonies. Challenges expire after 5 minutes.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `challenge_hash` | text | SHA256 hash of challenge (for lookup) |
+| `challenge` | text | Encrypted challenge value |
+| `type` | select | `registration` or `authentication` |
+| `user_id` | text | User ID (for registration flow) |
+| `ip_address` | text | Client IP for rate limiting |
+| `expires_at` | date | Expiration timestamp (5 min TTL) |
+
+**API Rules:**
+- List/Search: Admins only (or deny all)
+- View/Create/Update/Delete: Admins only (hooks manage this)
+
+#### `passkey_credentials` - WebAuthn Credential Storage
+Stores registered passkey credentials. Each user can have multiple passkeys.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `user` | relation | Relation to `users` collection |
+| `credential_id` | text | WebAuthn credential ID (base64url, unique) |
+| `public_key` | text | COSE public key (base64url) |
+| `counter` | number | Signature counter (for replay prevention) |
+| `device_name` | text | User-friendly device name |
+| `device_type` | select | `platform` or `cross-platform` |
+| `transports` | json | Transport hints, e.g., `["internal"]` |
+| `backed_up` | bool | Whether credential is synced/backed up |
+| `aaguid` | text | Authenticator AAGUID |
+| `last_used` | date | Last successful authentication |
+| `flagged` | bool | Flagged for security review (counter anomaly) |
+
+**API Rules:**
+- List/Search: `@request.auth.id != "" && user = @request.auth.id`
+- View: `@request.auth.id != "" && user = @request.auth.id`
+- Create/Update/Delete: Admins only (hooks manage this)
+
+**Environment Variables:**
+- `WEBAUTHN_VERIFIER_URL` - URL of the Cloudflare Worker verification service
+- `WEBAUTHN_VERIFIER_API_KEY` - API key for the verification service
+- `WEBAUTHN_RP_ID` - Relying Party ID (your domain)
+- `WEBAUTHN_RP_NAME` - Relying Party display name
+- `WEBAUTHN_ALLOWED_ORIGINS` - Comma-separated allowed origins
+- `WEBAUTHN_ENCRYPTION_KEY` - 32-char key for encrypting challenges
 
 **Hooks:**
 - `onRecordAfterUpdateSuccess` on `site_invitations` - Processes acceptance
