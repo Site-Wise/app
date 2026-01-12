@@ -195,7 +195,7 @@ onUnmounted(() => {
     >
       <div
         v-if="show"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+        class="fixed inset-0 z-[70] flex items-center justify-center p-4"
         @keydown="handleEscape"
         tabindex="-1"
         role="dialog"

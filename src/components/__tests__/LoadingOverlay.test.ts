@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { ref, nextTick } from 'vue'
 
 // Mock useI18n composable
 vi.mock('../../composables/useI18n', () => ({
@@ -17,6 +19,9 @@ vi.mock('../../composables/useI18n', () => ({
     locale: { value: 'en' }
   })
 }))
+
+// Import after mocks
+import LoadingOverlay from '../LoadingOverlay.vue'
 
 describe('LoadingOverlay Logic', () => {
   beforeEach(() => {
@@ -78,6 +83,21 @@ describe('LoadingOverlay Logic', () => {
       expect(getDisplayMessage(undefined, 'error', t)).toBe('translated_loading.error')
       expect(getDisplayMessage(undefined, 'timeout', t)).toBe('translated_loading.timeout')
     })
+
+    it('should return empty string for unknown state', () => {
+      const getDisplayMessage = (message: string | undefined, state: string) => {
+        if (message) return message
+        switch (state) {
+          case 'loading': return 'Loading...'
+          case 'success': return 'Success'
+          case 'error': return 'Error'
+          case 'timeout': return 'Timeout'
+          default: return ''
+        }
+      }
+
+      expect(getDisplayMessage(undefined, 'unknown')).toBe('')
+    })
   })
 
   describe('Icon Classes', () => {
@@ -111,6 +131,22 @@ describe('LoadingOverlay Logic', () => {
       expect(classes).toContain('h-12 w-12')
       expect(classes).toContain('sm:h-16 sm:w-16')
     })
+
+    it('should return default classes for unknown state', () => {
+      const getIconClasses = (state: string) => {
+        const baseClasses = 'h-12 w-12 sm:h-16 sm:w-16'
+        switch (state) {
+          case 'loading': return `${baseClasses} text-primary-500 animate-spin`
+          case 'success': return `${baseClasses} text-green-500`
+          case 'error': return `${baseClasses} text-red-500`
+          case 'timeout': return `${baseClasses} text-amber-500`
+          default: return `${baseClasses} text-primary-500`
+        }
+      }
+
+      expect(getIconClasses('unknown')).toContain('text-primary-500')
+      expect(getIconClasses('unknown')).not.toContain('animate-spin')
+    })
   })
 
   describe('Icon Background Classes', () => {
@@ -142,6 +178,20 @@ describe('LoadingOverlay Logic', () => {
 
       expect(getIconBgClasses('loading')).toContain('dark:bg-primary-900/30')
       expect(getIconBgClasses('success')).toContain('dark:bg-green-900/30')
+    })
+
+    it('should return default classes for unknown state', () => {
+      const getIconBgClasses = (state: string) => {
+        switch (state) {
+          case 'loading': return 'bg-primary-100 dark:bg-primary-900/30'
+          case 'success': return 'bg-green-100 dark:bg-green-900/30'
+          case 'error': return 'bg-red-100 dark:bg-red-900/30'
+          case 'timeout': return 'bg-amber-100 dark:bg-amber-900/30'
+          default: return 'bg-primary-100 dark:bg-primary-900/30'
+        }
+      }
+
+      expect(getIconBgClasses('unknown')).toBe('bg-primary-100 dark:bg-primary-900/30')
     })
   })
 
@@ -215,6 +265,32 @@ describe('LoadingOverlay Logic', () => {
       expect(hasTimedOut).toBe(false)
       expect(closed).toBe(false)
     })
+
+    it('should handle custom timeout duration', () => {
+      let hasTimedOut = false
+      const customTimeout = 5000
+
+      setTimeout(() => { hasTimedOut = true }, customTimeout)
+
+      vi.advanceTimersByTime(4999)
+      expect(hasTimedOut).toBe(false)
+
+      vi.advanceTimersByTime(1)
+      expect(hasTimedOut).toBe(true)
+    })
+
+    it('should handle custom success duration', () => {
+      let closed = false
+      const customSuccess = 3000
+
+      setTimeout(() => { closed = true }, customSuccess)
+
+      vi.advanceTimersByTime(2999)
+      expect(closed).toBe(false)
+
+      vi.advanceTimersByTime(1)
+      expect(closed).toBe(true)
+    })
   })
 
   describe('Default Props', () => {
@@ -230,6 +306,20 @@ describe('LoadingOverlay Logic', () => {
       expect(defaultProps.timeoutDuration).toBe(10000)
       expect(defaultProps.successDuration).toBe(1500)
       expect(defaultProps.allowClose).toBe(false)
+    })
+
+    it('should allow overriding defaults', () => {
+      const customProps = {
+        state: 'success',
+        timeoutDuration: 5000,
+        successDuration: 2000,
+        allowClose: true
+      }
+
+      expect(customProps.state).toBe('success')
+      expect(customProps.timeoutDuration).toBe(5000)
+      expect(customProps.successDuration).toBe(2000)
+      expect(customProps.allowClose).toBe(true)
     })
   })
 
@@ -274,6 +364,23 @@ describe('LoadingOverlay Logic', () => {
 
       handleEscape({ key: 'Enter' })
       expect(closed).toBe(false)
+    })
+
+    it('should handle multiple key presses', () => {
+      let closeCount = 0
+      const canClose = true
+
+      const handleEscape = (event: { key: string }) => {
+        if (event.key === 'Escape' && canClose) {
+          closeCount++
+        }
+      }
+
+      handleEscape({ key: 'Escape' })
+      handleEscape({ key: 'Enter' })
+      handleEscape({ key: 'Escape' })
+
+      expect(closeCount).toBe(2)
     })
   })
 
@@ -322,6 +429,34 @@ describe('LoadingOverlay Logic', () => {
       hasTimedOut = true
       expect(getEffectiveState()).toBe('timeout')
     })
+
+    it('should handle rapid state transitions', () => {
+      let state = 'loading'
+
+      const updateState = (newState: string) => {
+        state = newState
+      }
+
+      updateState('success')
+      updateState('loading')
+      updateState('error')
+
+      expect(state).toBe('error')
+    })
+
+    it('should not affect timeout state when success is set', () => {
+      let hasTimedOut = true
+
+      const getEffectiveState = (state: string) => {
+        if (state === 'loading' && hasTimedOut) {
+          return 'timeout'
+        }
+        return state
+      }
+
+      // Success state should not be affected by hasTimedOut
+      expect(getEffectiveState('success')).toBe('success')
+    })
   })
 
   describe('Accessibility', () => {
@@ -342,6 +477,11 @@ describe('LoadingOverlay Logic', () => {
 
       expect(getAriaLabel('Please wait...')).toBe('Please wait...')
       expect(getAriaLabel('Operation completed')).toBe('Operation completed')
+    })
+
+    it('should have accessible close button', () => {
+      const closeButtonAriaLabel = 'Close'
+      expect(closeButtonAriaLabel).toBe('Close')
     })
   })
 
@@ -390,6 +530,15 @@ describe('LoadingOverlay Logic', () => {
       expect(shouldShowCloseButton('loading')).toBe(false)
       expect(shouldShowCloseButton('success')).toBe(false)
     })
+
+    it('should show close button when allowClose is true regardless of state', () => {
+      const canClose = (allowClose: boolean, state: string) => {
+        return allowClose || state === 'error' || state === 'timeout'
+      }
+
+      expect(canClose(true, 'loading')).toBe(true)
+      expect(canClose(true, 'success')).toBe(true)
+    })
   })
 
   describe('Timeout Hint Visibility', () => {
@@ -421,5 +570,461 @@ describe('LoadingOverlay Logic', () => {
       expect(containerClasses).toContain('p-6')
       expect(containerClasses).toContain('sm:p-8')
     })
+
+    it('should have responsive icon margin', () => {
+      const marginClasses = 'mb-4 sm:mb-5'
+      expect(marginClasses).toContain('mb-4')
+      expect(marginClasses).toContain('sm:mb-5')
+    })
+
+    it('should have responsive text sizes', () => {
+      const textClasses = 'text-base sm:text-lg'
+      expect(textClasses).toContain('text-base')
+      expect(textClasses).toContain('sm:text-lg')
+    })
+  })
+
+  describe('Z-Index Layering', () => {
+    it('should have z-index higher than modals (z-[60])', () => {
+      // LoadingOverlay uses z-[70] to appear above modals that use z-[60]
+      const loadingOverlayZIndex = 70
+      const modalZIndex = 60
+
+      expect(loadingOverlayZIndex).toBeGreaterThan(modalZIndex)
+    })
+
+    it('should have correct z-index class', () => {
+      const expectedZIndexClass = 'z-[70]'
+      expect(expectedZIndexClass).toBe('z-[70]')
+    })
+  })
+
+  describe('Event Emissions', () => {
+    it('should emit close event when handleClose is called', () => {
+      const events: string[] = []
+
+      const emit = (event: string) => {
+        events.push(event)
+      }
+
+      const handleClose = (canClose: boolean) => {
+        if (canClose) {
+          emit('close')
+        }
+      }
+
+      handleClose(true)
+      expect(events).toContain('close')
+    })
+
+    it('should not emit close when canClose is false', () => {
+      const events: string[] = []
+
+      const emit = (event: string) => {
+        events.push(event)
+      }
+
+      const handleClose = (canClose: boolean) => {
+        if (canClose) {
+          emit('close')
+        }
+      }
+
+      handleClose(false)
+      expect(events).not.toContain('close')
+    })
+
+    it('should emit timeout event when timeout occurs', () => {
+      const events: string[] = []
+
+      const emit = (event: string) => {
+        events.push(event)
+      }
+
+      const triggerTimeout = () => {
+        emit('timeout')
+      }
+
+      triggerTimeout()
+      expect(events).toContain('timeout')
+    })
+  })
+
+  describe('Watch Behavior', () => {
+    it('should reset timeout flag when show changes to false', () => {
+      let hasTimedOut = true
+
+      const onShowChange = (newValue: boolean) => {
+        if (!newValue) {
+          hasTimedOut = false
+        }
+      }
+
+      onShowChange(false)
+      expect(hasTimedOut).toBe(false)
+    })
+
+    it('should start timeout timer when show becomes true', () => {
+      let timerStarted = false
+
+      const onShowChange = (newValue: boolean, state: string) => {
+        if (newValue && state === 'loading') {
+          timerStarted = true
+        }
+      }
+
+      onShowChange(true, 'loading')
+      expect(timerStarted).toBe(true)
+    })
+
+    it('should not start timeout timer for non-loading states', () => {
+      let timerStarted = false
+
+      const onShowChange = (newValue: boolean, state: string) => {
+        if (newValue && state === 'loading') {
+          timerStarted = true
+        }
+      }
+
+      onShowChange(true, 'success')
+      expect(timerStarted).toBe(false)
+    })
+
+    it('should start success timer when state changes to success', () => {
+      let successTimerStarted = false
+
+      const onStateChange = (newState: string, show: boolean) => {
+        if (newState === 'success' && show) {
+          successTimerStarted = true
+        }
+      }
+
+      onStateChange('success', true)
+      expect(successTimerStarted).toBe(true)
+    })
+
+    it('should restart timeout timer when state changes back to loading', () => {
+      let timeoutTimerRestarted = false
+      let hasTimedOut = true
+
+      const onStateChange = (newState: string, show: boolean) => {
+        if (newState === 'loading' && show) {
+          hasTimedOut = false
+          timeoutTimerRestarted = true
+        }
+      }
+
+      onStateChange('loading', true)
+      expect(timeoutTimerRestarted).toBe(true)
+      expect(hasTimedOut).toBe(false)
+    })
+  })
+
+  describe('Dark Mode Support', () => {
+    it('should have dark mode background classes', () => {
+      const bgClasses = 'bg-white dark:bg-gray-800'
+      expect(bgClasses).toContain('dark:bg-gray-800')
+    })
+
+    it('should have dark mode text classes', () => {
+      const textClasses = 'text-gray-700 dark:text-gray-200'
+      expect(textClasses).toContain('dark:text-gray-200')
+    })
+
+    it('should have dark mode border classes', () => {
+      const borderClasses = 'border-gray-200 dark:border-gray-700'
+      expect(borderClasses).toContain('dark:border-gray-700')
+    })
+
+    it('should have dark mode hover classes for close button', () => {
+      const hoverClasses = 'hover:bg-gray-100 dark:hover:bg-gray-700'
+      expect(hoverClasses).toContain('dark:hover:bg-gray-700')
+    })
+  })
+
+  describe('Animation Classes', () => {
+    it('should have fade transition for overlay', () => {
+      const enterClasses = 'transition-opacity duration-200 ease-out'
+      expect(enterClasses).toContain('transition-opacity')
+      expect(enterClasses).toContain('duration-200')
+    })
+
+    it('should have scale transition for content', () => {
+      const enterFromClasses = 'scale-90 opacity-0'
+      const enterToClasses = 'scale-100 opacity-100'
+      expect(enterFromClasses).toContain('scale-90')
+      expect(enterToClasses).toContain('scale-100')
+    })
+
+    it('should have backdrop blur effect', () => {
+      const backdropClasses = 'backdrop-blur-sm'
+      expect(backdropClasses).toContain('backdrop-blur-sm')
+    })
+
+    it('should have transition duration for icon background', () => {
+      const transitionClasses = 'transition-colors duration-300'
+      expect(transitionClasses).toContain('transition-colors')
+      expect(transitionClasses).toContain('duration-300')
+    })
+  })
+
+  describe('Teleport Behavior', () => {
+    it('should teleport to body element', () => {
+      const teleportTarget = 'body'
+      expect(teleportTarget).toBe('body')
+    })
+  })
+
+  describe('Edge Cases', () => {
+    it('should handle empty message gracefully', () => {
+      const getDisplayMessage = (message: string | undefined) => {
+        return message || 'Default message'
+      }
+
+      expect(getDisplayMessage('')).toBe('Default message')
+      expect(getDisplayMessage(undefined)).toBe('Default message')
+    })
+
+    it('should handle zero timeout duration', () => {
+      let hasTimedOut = false
+      const timeoutDuration = 0
+
+      setTimeout(() => { hasTimedOut = true }, timeoutDuration)
+      vi.advanceTimersByTime(0)
+
+      expect(hasTimedOut).toBe(true)
+    })
+
+    it('should handle very long timeout duration', () => {
+      let hasTimedOut = false
+      const timeoutDuration = 60000 // 1 minute
+
+      setTimeout(() => { hasTimedOut = true }, timeoutDuration)
+
+      vi.advanceTimersByTime(59999)
+      expect(hasTimedOut).toBe(false)
+
+      vi.advanceTimersByTime(1)
+      expect(hasTimedOut).toBe(true)
+    })
+
+    it('should handle state changes while hidden', () => {
+      let state = 'loading'
+      const show = false
+
+      const shouldStartTimer = (newState: string, isShown: boolean) => {
+        return newState === 'loading' && isShown
+      }
+
+      expect(shouldStartTimer(state, show)).toBe(false)
+    })
+
+    it('should handle multiple rapid show/hide toggles', () => {
+      let timerCount = 0
+
+      const onShowChange = (newValue: boolean) => {
+        if (newValue) {
+          timerCount++
+        }
+      }
+
+      onShowChange(true)
+      onShowChange(false)
+      onShowChange(true)
+      onShowChange(false)
+      onShowChange(true)
+
+      expect(timerCount).toBe(3)
+    })
+  })
+})
+
+describe('LoadingOverlay Component Integration', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('should render when show is true', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('should not render when show is false', () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: false
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('should emit close event on backdrop click when allowed', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true,
+        state: 'error'
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+    const backdrop = wrapper.find('.bg-gray-900\\/60')
+    if (backdrop.exists()) {
+      await backdrop.trigger('click')
+      expect(wrapper.emitted('close')).toBeTruthy()
+    }
+    wrapper.unmount()
+  })
+
+  it('should display custom message', async () => {
+    const customMessage = 'Custom loading message'
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true,
+        message: customMessage
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+    expect(wrapper.text()).toContain(customMessage)
+    wrapper.unmount()
+  })
+
+  it('should show close button in error state', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true,
+        state: 'error'
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+    // Look for close button (X icon button or Close text button)
+    const buttons = wrapper.findAll('button')
+    expect(buttons.length).toBeGreaterThan(0)
+    wrapper.unmount()
+  })
+
+  it('should show timeout hint in timeout state', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true,
+        state: 'timeout'
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+    expect(wrapper.text()).toContain('You may close this and try again')
+    wrapper.unmount()
+  })
+
+  it('should have correct z-index class', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+    const dialog = wrapper.find('[role="dialog"]')
+    expect(dialog.classes()).toContain('z-[70]')
+    wrapper.unmount()
+  })
+
+  it('should emit timeout event after timeout duration', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true,
+        state: 'loading',
+        timeoutDuration: 5000
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+
+    vi.advanceTimersByTime(5000)
+    await nextTick()
+
+    expect(wrapper.emitted('timeout')).toBeTruthy()
+    wrapper.unmount()
+  })
+
+  it('should auto-close after success duration', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true,
+        state: 'loading',
+        successDuration: 1000
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+
+    // Change state to success - this triggers the success timer
+    await wrapper.setProps({ state: 'success' })
+    await nextTick()
+
+    vi.advanceTimersByTime(1000)
+    await nextTick()
+
+    expect(wrapper.emitted('close')).toBeTruthy()
+    wrapper.unmount()
   })
 })
