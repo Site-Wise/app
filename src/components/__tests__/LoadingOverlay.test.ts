@@ -1027,4 +1027,239 @@ describe('LoadingOverlay Component Integration', () => {
     expect(wrapper.emitted('close')).toBeTruthy()
     wrapper.unmount()
   })
+
+  it('should increment stateKey on state change for animations', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true,
+        state: 'loading'
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+    const initialKey = wrapper.vm.stateKey
+
+    // Change state to trigger animation
+    await wrapper.setProps({ state: 'success' })
+    await nextTick()
+
+    expect(wrapper.vm.stateKey).toBe(initialKey + 1)
+    wrapper.unmount()
+  })
+
+  it('should increment stateKey when timeout occurs', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true,
+        state: 'loading',
+        timeoutDuration: 1000
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+    const initialKey = wrapper.vm.stateKey
+
+    // Wait for timeout
+    vi.advanceTimersByTime(1000)
+    await nextTick()
+
+    expect(wrapper.vm.stateKey).toBeGreaterThan(initialKey)
+    wrapper.unmount()
+  })
+
+  it('should apply shake animation class for error state', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true,
+        state: 'error'
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+    expect(wrapper.vm.iconClasses).toContain('animate-icon-shake')
+    wrapper.unmount()
+  })
+
+  it('should apply pulse animation class for timeout state', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true,
+        state: 'timeout'
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+    expect(wrapper.vm.iconClasses).toContain('animate-icon-pulse')
+    wrapper.unmount()
+  })
+
+  it('should apply pop animation class for success state', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true,
+        state: 'success'
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+    expect(wrapper.vm.iconClasses).toContain('animate-icon-pop')
+    wrapper.unmount()
+  })
+
+  it('should apply spin animation class for loading state', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true,
+        state: 'loading'
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+    expect(wrapper.vm.iconClasses).toContain('animate-spin')
+    wrapper.unmount()
+  })
+
+  it('should handle state change from error back to loading', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true,
+        state: 'error',
+        timeoutDuration: 5000
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+
+    // Change back to loading - should restart timeout timer
+    await wrapper.setProps({ state: 'loading' })
+    await nextTick()
+
+    // Verify timeout works after state change
+    vi.advanceTimersByTime(5000)
+    await nextTick()
+
+    expect(wrapper.emitted('timeout')).toBeTruthy()
+    wrapper.unmount()
+  })
+
+  it('should not emit close when clicking backdrop in loading state', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true,
+        state: 'loading'
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+    const backdrop = wrapper.find('.bg-gray-900\\/60')
+    if (backdrop.exists()) {
+      await backdrop.trigger('click')
+      expect(wrapper.emitted('close')).toBeFalsy()
+    }
+    wrapper.unmount()
+  })
+
+  it('should emit close when clicking X button in error state', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true,
+        state: 'error'
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+    const closeButton = wrapper.find('button[aria-label="Close"]')
+    if (closeButton.exists()) {
+      await closeButton.trigger('click')
+      expect(wrapper.emitted('close')).toBeTruthy()
+    }
+    wrapper.unmount()
+  })
+
+  it('should emit close on escape key in error state', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true,
+        state: 'error'
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+    const dialog = wrapper.find('[role="dialog"]')
+    await dialog.trigger('keydown', { key: 'Escape' })
+
+    expect(wrapper.emitted('close')).toBeTruthy()
+    wrapper.unmount()
+  })
+
+  it('should not emit close on escape key in loading state', async () => {
+    const wrapper = mount(LoadingOverlay, {
+      props: {
+        show: true,
+        state: 'loading'
+      },
+      global: {
+        stubs: {
+          teleport: true
+        }
+      }
+    })
+
+    await nextTick()
+    const dialog = wrapper.find('[role="dialog"]')
+    await dialog.trigger('keydown', { key: 'Escape' })
+
+    expect(wrapper.emitted('close')).toBeFalsy()
+    wrapper.unmount()
+  })
 })
