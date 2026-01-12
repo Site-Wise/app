@@ -430,7 +430,6 @@ const saveService = async () => {
     console.error('Error saving service:', err);
     overlayState.value = 'error';
     overlayMessage.value = t('messages.error');
-    showError(t('messages.error'));
   } finally {
     saveLoading.value = false;
   }

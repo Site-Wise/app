@@ -449,7 +449,6 @@ import {
   X
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
-import { useToast } from '../composables/useToast';
 import VendorSearchBox from './VendorSearchBox.vue';
 import TriStateCheckbox from './TriStateCheckbox.vue';
 import LoadingOverlay from './LoadingOverlay.vue';
@@ -496,7 +495,6 @@ const emit = defineEmits<Emits>();
 
 // Composables
 const { t } = useI18n();
-const { } = useToast();
 
 // Refs
 const vendorInputRef = ref<InstanceType<typeof VendorSearchBox>>();

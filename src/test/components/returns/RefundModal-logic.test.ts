@@ -423,4 +423,89 @@ describe('RefundModal Logic Tests', () => {
       expect(reason).toContain('ret12')
     })
   })
+
+  describe('Loading Overlay Integration', () => {
+    it('should manage overlay state during refund processing', () => {
+      const overlayState = {
+        showOverlay: false,
+        overlayState: 'loading' as 'loading' | 'success' | 'error' | 'timeout',
+        overlayMessage: ''
+      }
+
+      const startProcessing = () => {
+        overlayState.showOverlay = true
+        overlayState.overlayState = 'loading'
+        overlayState.overlayMessage = ''
+      }
+
+      const handleSuccess = (processingOption: 'credit_note' | 'refund') => {
+        overlayState.overlayState = 'success'
+        overlayState.overlayMessage = processingOption === 'credit_note'
+          ? 'Credit note created successfully'
+          : 'Refund processed successfully'
+      }
+
+      const handleError = (message: string) => {
+        overlayState.overlayState = 'error'
+        overlayState.overlayMessage = message
+      }
+
+      // Test start processing
+      startProcessing()
+      expect(overlayState.showOverlay).toBe(true)
+      expect(overlayState.overlayState).toBe('loading')
+
+      // Test credit note success
+      handleSuccess('credit_note')
+      expect(overlayState.overlayState).toBe('success')
+      expect(overlayState.overlayMessage).toBe('Credit note created successfully')
+
+      // Reset and test refund success
+      startProcessing()
+      handleSuccess('refund')
+      expect(overlayState.overlayMessage).toBe('Refund processed successfully')
+
+      // Test error
+      startProcessing()
+      handleError('Processing failed')
+      expect(overlayState.overlayState).toBe('error')
+      expect(overlayState.overlayMessage).toBe('Processing failed')
+    })
+
+    it('should handle overlay close', () => {
+      const overlayState = {
+        showOverlay: true,
+        overlayState: 'success' as 'loading' | 'success' | 'error' | 'timeout',
+        overlayMessage: 'Success!'
+      }
+
+      const handleOverlayClose = () => {
+        overlayState.showOverlay = false
+        overlayState.overlayState = 'loading'
+        overlayState.overlayMessage = ''
+      }
+
+      handleOverlayClose()
+      expect(overlayState.showOverlay).toBe(false)
+      expect(overlayState.overlayState).toBe('loading')
+      expect(overlayState.overlayMessage).toBe('')
+    })
+
+    it('should handle overlay timeout', () => {
+      const overlayState = {
+        showOverlay: true,
+        overlayState: 'loading' as 'loading' | 'success' | 'error' | 'timeout',
+        overlayMessage: ''
+      }
+
+      const handleOverlayTimeout = (timeoutMessage: string) => {
+        overlayState.overlayState = 'timeout'
+        overlayState.overlayMessage = timeoutMessage
+      }
+
+      handleOverlayTimeout('This is taking longer than expected')
+      expect(overlayState.overlayState).toBe('timeout')
+      expect(overlayState.overlayMessage).toBe('This is taking longer than expected')
+    })
+  })
 })
