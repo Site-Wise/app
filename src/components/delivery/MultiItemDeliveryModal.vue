@@ -474,7 +474,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const { success, error } = useToast();
+const { error } = useToast();
 const { openModal, closeModal } = useModalState();
 
 // Component state

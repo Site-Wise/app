@@ -99,7 +99,6 @@ import { AlertTriangle, Trash2, Loader2, X } from 'lucide-vue-next'
 import { useI18n } from '../composables/useI18n'
 import { useModalEscape } from '../composables/useModalEscape'
 import { siteService, type Site } from '../services/pocketbase'
-import { useToast } from '../composables/useToast'
 import { useSiteStore } from '../stores/site'
 import { useRouter } from 'vue-router'
 import LoadingOverlay from './LoadingOverlay.vue'
@@ -115,7 +114,6 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const { success, error: showError } = useToast()
 const siteStore = useSiteStore()
 const router = useRouter()
 

@@ -1658,11 +1658,12 @@ const initializeForm = () => {
 
 // Loading overlay handlers
 const handleOverlayClose = () => {
+  const wasSuccess = overlayState.value === 'success';
   showOverlay.value = false;
   overlayState.value = 'loading';
   overlayMessage.value = '';
-  // If error or timeout, don't close modal - let user retry
-  if (overlayState.value === 'success') {
+  // If success, close the modal
+  if (wasSuccess) {
     emit('close');
   }
 };

@@ -291,7 +291,7 @@ import { useServiceSearch } from '../composables/useSearch';
 
 const { t } = useI18n();
 const { canUpdate, canDelete } = usePermissions();
-const { success, error: showError } = useToast();
+const { error: showError } = useToast();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { openModal, closeModal: closeModalState } = useModalState();
 const router = useRouter();

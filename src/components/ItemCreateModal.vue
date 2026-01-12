@@ -75,7 +75,6 @@ import { ref, reactive, watch, nextTick } from 'vue';
 import { Loader2 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
-import { useToast } from '../composables/useToast';
 import TagSelector from './TagSelector.vue';
 import LoadingOverlay from './LoadingOverlay.vue';
 import {
@@ -101,7 +100,6 @@ const emit = defineEmits<Emits>();
 
 const { t } = useI18n();
 const { checkCreateLimit } = useSubscription();
-const { success, error } = useToast();
 
 const formLoading = ref(false);
 const nameInputRef = ref<HTMLInputElement>();
