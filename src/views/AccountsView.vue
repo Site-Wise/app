@@ -239,6 +239,15 @@
         </div>
       </div>
     </div>
+
+    <!-- Loading Overlay -->
+    <LoadingOverlay
+      :show="showOverlay"
+      :state="overlayState"
+      :message="overlayMessage"
+      @close="handleOverlayClose"
+      @timeout="handleOverlayTimeout"
+    />
   </div>
 </template>
 
@@ -263,6 +272,7 @@ import {
 } from 'lucide-vue-next';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
+import LoadingOverlay from '../components/LoadingOverlay.vue';
 import {
   accountService,
   type Account
@@ -298,6 +308,22 @@ const showAddModal = ref(false);
 const editingAccount = ref<Account | null>(null);
 const loading = ref(false);
 const firstInputRef = ref<HTMLInputElement>();
+
+// Loading overlay state
+const showOverlay = ref(false);
+const overlayState = ref<'loading' | 'success' | 'error' | 'timeout'>('loading');
+const overlayMessage = ref('');
+
+const handleOverlayClose = () => {
+  showOverlay.value = false;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+};
+
+const handleOverlayTimeout = () => {
+  overlayState.value = 'timeout';
+  overlayMessage.value = t('loading.timeout');
+};
 
 const form = reactive({
   name: '',
@@ -358,16 +384,31 @@ const viewAccountDetail = (accountId: string) => {
 
 const saveAccount = async () => {
   loading.value = true;
+  showOverlay.value = true;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+
   try {
     if (editingAccount.value) {
       await accountService.update(editingAccount.value.id!, form);
+      overlayState.value = 'success';
+      overlayMessage.value = t('messages.updateSuccess', { item: t('common.account') });
     } else {
       await accountService.create(form);
+      overlayState.value = 'success';
+      overlayMessage.value = t('messages.createSuccess', { item: t('common.account') });
     }
     await reloadAccounts();
-    closeModal();
-  } catch (error) {
-    console.error('Error saving account:', error);
+
+    // Wait for success animation then close
+    setTimeout(() => {
+      showOverlay.value = false;
+      closeModal();
+    }, 1500);
+  } catch (err) {
+    console.error('Error saving account:', err);
+    overlayState.value = 'error';
+    overlayMessage.value = t('messages.error');
   } finally {
     loading.value = false;
   }

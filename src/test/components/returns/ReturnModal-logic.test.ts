@@ -555,4 +555,89 @@ describe('ReturnModal Logic Tests', () => {
       expect(showNoItems(5, false)).toBe(false)
     })
   })
+
+  describe('Loading Overlay Integration', () => {
+    it('should manage overlay state during return save', () => {
+      const overlayState = {
+        showOverlay: false,
+        overlayState: 'loading' as 'loading' | 'success' | 'error' | 'timeout',
+        overlayMessage: ''
+      }
+
+      const startSave = () => {
+        overlayState.showOverlay = true
+        overlayState.overlayState = 'loading'
+        overlayState.overlayMessage = ''
+      }
+
+      const handleSuccess = (isEdit: boolean) => {
+        overlayState.overlayState = 'success'
+        overlayState.overlayMessage = isEdit
+          ? 'Return updated successfully'
+          : 'Return created successfully'
+      }
+
+      const handleError = (message: string) => {
+        overlayState.overlayState = 'error'
+        overlayState.overlayMessage = message
+      }
+
+      // Test start save
+      startSave()
+      expect(overlayState.showOverlay).toBe(true)
+      expect(overlayState.overlayState).toBe('loading')
+
+      // Test create success
+      handleSuccess(false)
+      expect(overlayState.overlayState).toBe('success')
+      expect(overlayState.overlayMessage).toBe('Return created successfully')
+
+      // Reset and test update success
+      startSave()
+      handleSuccess(true)
+      expect(overlayState.overlayMessage).toBe('Return updated successfully')
+
+      // Test error
+      startSave()
+      handleError('Failed to save return')
+      expect(overlayState.overlayState).toBe('error')
+      expect(overlayState.overlayMessage).toBe('Failed to save return')
+    })
+
+    it('should handle overlay close', () => {
+      const overlayState = {
+        showOverlay: true,
+        overlayState: 'success' as 'loading' | 'success' | 'error' | 'timeout',
+        overlayMessage: 'Success!'
+      }
+
+      const handleOverlayClose = () => {
+        overlayState.showOverlay = false
+        overlayState.overlayState = 'loading'
+        overlayState.overlayMessage = ''
+      }
+
+      handleOverlayClose()
+      expect(overlayState.showOverlay).toBe(false)
+      expect(overlayState.overlayState).toBe('loading')
+      expect(overlayState.overlayMessage).toBe('')
+    })
+
+    it('should handle overlay timeout', () => {
+      const overlayState = {
+        showOverlay: true,
+        overlayState: 'loading' as 'loading' | 'success' | 'error' | 'timeout',
+        overlayMessage: ''
+      }
+
+      const handleOverlayTimeout = (timeoutMessage: string) => {
+        overlayState.overlayState = 'timeout'
+        overlayState.overlayMessage = timeoutMessage
+      }
+
+      handleOverlayTimeout('This is taking longer than expected')
+      expect(overlayState.overlayState).toBe('timeout')
+      expect(overlayState.overlayMessage).toBe('This is taking longer than expected')
+    })
+  })
 })

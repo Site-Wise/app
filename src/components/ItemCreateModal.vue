@@ -58,6 +58,15 @@
         </form>
       </div>
     </div>
+
+    <!-- Loading Overlay -->
+    <LoadingOverlay
+      :show="showOverlay"
+      :state="overlayState"
+      :message="overlayMessage"
+      @close="handleOverlayClose"
+      @timeout="handleOverlayTimeout"
+    />
   </div>
 </template>
 
@@ -66,8 +75,8 @@ import { ref, reactive, watch, nextTick } from 'vue';
 import { Loader2 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
-import { useToast } from '../composables/useToast';
 import TagSelector from './TagSelector.vue';
+import LoadingOverlay from './LoadingOverlay.vue';
 import {
   itemService,
   type Item
@@ -91,10 +100,25 @@ const emit = defineEmits<Emits>();
 
 const { t } = useI18n();
 const { checkCreateLimit } = useSubscription();
-const { success, error } = useToast();
 
 const formLoading = ref(false);
 const nameInputRef = ref<HTMLInputElement>();
+
+// Loading overlay state
+const showOverlay = ref(false);
+const overlayState = ref<'loading' | 'success' | 'error' | 'timeout'>('loading');
+const overlayMessage = ref('');
+
+const handleOverlayClose = () => {
+  showOverlay.value = false;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+};
+
+const handleOverlayTimeout = () => {
+  overlayState.value = 'timeout';
+  overlayMessage.value = t('loading.timeout');
+};
 
 const form = reactive({
   name: '',
@@ -112,19 +136,32 @@ const resetForm = () => {
 
 const saveItem = async () => {
   formLoading.value = true;
+  showOverlay.value = true;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+
   try {
     if (!checkCreateLimit('items')) {
-      error(t('subscription.banner.freeTierLimitReached'));
+      overlayState.value = 'error';
+      overlayMessage.value = t('subscription.banner.freeTierLimitReached');
+      formLoading.value = false;
       return;
     }
 
     const newItem = await itemService.create(form);
-    success(t('messages.createSuccess', { item: t('common.item') }));
-    emit('created', newItem);
-    resetForm();
+    overlayState.value = 'success';
+    overlayMessage.value = t('messages.createSuccess', { item: t('common.item') });
+
+    // Wait for success animation then emit and close
+    setTimeout(() => {
+      emit('created', newItem);
+      resetForm();
+      showOverlay.value = false;
+    }, 1500);
   } catch (err) {
     console.error('Error saving item:', err);
-    error(t('messages.error'));
+    overlayState.value = 'error';
+    overlayMessage.value = t('messages.error');
   } finally {
     formLoading.value = false;
   }

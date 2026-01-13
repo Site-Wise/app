@@ -408,6 +408,15 @@
     <!-- Item Create Modal -->
     <ItemCreateModal :show="showItemCreateModal" :initial-name="newItemName" @close="closeItemCreateModal"
       @created="handleItemCreated" />
+
+    <!-- Loading Overlay -->
+    <LoadingOverlay
+      :show="showOverlay"
+      :state="overlayState"
+      :message="overlayMessage"
+      @close="handleOverlayClose"
+      @timeout="handleOverlayTimeout"
+    />
   </div>
 </template>
 
@@ -425,6 +434,7 @@ import DeliveryItemRow from './DeliveryItemRow.vue';
 import ImageSlider from '../ImageSlider.vue';
 import ItemCreateModal from '../ItemCreateModal.vue';
 import VendorSearchBox from '../VendorSearchBox.vue';
+import LoadingOverlay from '../LoadingOverlay.vue';
 import {
   deliveryService,
   deliveryItemService,
@@ -464,7 +474,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const { success, error } = useToast();
+const { error } = useToast();
 const { openModal, closeModal } = useModalState();
 
 // Component state
@@ -482,6 +492,22 @@ const showPhotoGallery = ref(false);
 const galleryIndex = ref(0);
 const showItemCreateModal = ref(false);
 const newItemName = ref('');
+
+// Loading overlay state
+const showOverlay = ref(false);
+const overlayState = ref<'loading' | 'success' | 'error' | 'timeout'>('loading');
+const overlayMessage = ref('');
+
+const handleOverlayClose = () => {
+  showOverlay.value = false;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+};
+
+const handleOverlayTimeout = () => {
+  overlayState.value = 'timeout';
+  overlayMessage.value = t('loading.timeout');
+};
 
 // Steps
 const steps = [
@@ -864,6 +890,10 @@ const saveDelivery = async () => {
   if (!canSubmit.value) return;
 
   loading.value = true;
+  showOverlay.value = true;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+
   try {
     // Prepare delivery data - preserve existing photos unless they were removed
     const deliveryData = {
@@ -939,18 +969,25 @@ const saveDelivery = async () => {
       }
     }
 
-    success(props.editingDelivery ? t('messages.updateSuccess', { item: 'Delivery' }) : t('messages.createSuccess', { item: 'Delivery' }));
+    // Show success overlay
+    overlayState.value = 'success';
+    overlayMessage.value = props.editingDelivery ? t('messages.updateSuccess', { item: 'Delivery' }) : t('messages.createSuccess', { item: 'Delivery' });
 
-    // If creating a new delivery, reset the form for another entry
-    if (!props.editingDelivery) {
-      resetForm();
-      emit('saved', delivery);
-    } else {
-      emit('success', delivery);
-    }
+    // Wait for success animation then proceed
+    setTimeout(() => {
+      showOverlay.value = false;
+      // If creating a new delivery, reset the form for another entry
+      if (!props.editingDelivery) {
+        resetForm();
+        emit('saved', delivery);
+      } else {
+        emit('success', delivery);
+      }
+    }, 1500);
   } catch (err) {
     console.error('Error saving delivery:', err);
-    error(t('messages.error'));
+    overlayState.value = 'error';
+    overlayMessage.value = t('messages.error');
   } finally {
     loading.value = false;
   }

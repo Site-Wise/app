@@ -179,6 +179,15 @@
         </div>
       </div>
     </div>
+
+    <!-- Loading Overlay -->
+    <LoadingOverlay
+      :show="showOverlay"
+      :state="overlayState"
+      :message="overlayMessage"
+      @close="handleOverlayClose"
+      @timeout="handleOverlayTimeout"
+    />
   </div>
 </template>
 
@@ -195,6 +204,7 @@ import { useSiteData } from '../composables/useSiteData';
 import TagSelector from '../components/TagSelector.vue';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
+import LoadingOverlay from '../components/LoadingOverlay.vue';
 import { useVendorSearch } from '../composables/useSearch';
 import {
   vendorService,
@@ -248,6 +258,22 @@ const vendorTags = ref<Map<string, TagType[]>>(new Map());
 const showAddModal = ref(false);
 const editingVendor = ref<Vendor | null>(null);
 const loading = ref(false);
+
+// Loading overlay state
+const showOverlay = ref(false);
+const overlayState = ref<'loading' | 'success' | 'error' | 'timeout'>('loading');
+const overlayMessage = ref('');
+
+const handleOverlayClose = () => {
+  showOverlay.value = false;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+};
+
+const handleOverlayTimeout = () => {
+  overlayState.value = 'timeout';
+  overlayMessage.value = t('loading.timeout');
+};
 
 const firstInputRef = ref<HTMLInputElement>();
 
@@ -364,24 +390,38 @@ const saveVendor = async () => {
   }
 
   loading.value = true;
+  showOverlay.value = true;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+
   try {
     if (editingVendor.value) {
       await vendorService.update(editingVendor.value.id!, form);
-      success(t('messages.updateSuccess', { item: t('common.vendor') }));
+      overlayState.value = 'success';
+      overlayMessage.value = t('messages.updateSuccess', { item: t('common.vendor') });
     } else {
       if (!checkCreateLimit('vendors')) {
-        error(t('subscription.banner.freeTierLimitReached'));
+        overlayState.value = 'error';
+        overlayMessage.value = t('subscription.banner.freeTierLimitReached');
+        loading.value = false;
         return;
       }
       await vendorService.create(form);
-      success(t('messages.createSuccess', { item: t('common.vendor') }));
+      overlayState.value = 'success';
+      overlayMessage.value = t('messages.createSuccess', { item: t('common.vendor') });
       // Usage is automatically incremented by PocketBase hooks
     }
     await reloadAllData();
-    closeModal();
+
+    // Wait for success animation then close
+    setTimeout(() => {
+      showOverlay.value = false;
+      closeModal();
+    }, 1500);
   } catch (err) {
     console.error('Error saving vendor:', err);
-    error(t('messages.error'));
+    overlayState.value = 'error';
+    overlayMessage.value = t('messages.error');
   } finally {
     loading.value = false;
   }

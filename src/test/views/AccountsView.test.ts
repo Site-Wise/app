@@ -284,18 +284,27 @@ describe('AccountsView', () => {
     })
 
     it('should close modal after successful creation', async () => {
+      // Use fake timers for this test since saveAccount has a setTimeout
+      vi.useFakeTimers()
+
       // Open modal and set form data
       wrapper.vm.showAddModal = true
       wrapper.vm.form.name = 'New Account'
       wrapper.vm.form.type = 'cash'
       wrapper.vm.form.opening_balance = 500
       await wrapper.vm.$nextTick()
-      
-      // Save account
+
+      // Save account - this now uses LoadingOverlay with 1500ms delay
       await wrapper.vm.saveAccount()
       await wrapper.vm.$nextTick()
-      
+
+      // Advance timers to trigger the setTimeout callback that closes the modal
+      await vi.advanceTimersByTimeAsync(1500)
+      await wrapper.vm.$nextTick()
+
       expect(wrapper.vm.showAddModal).toBe(false)
+
+      vi.useRealTimers()
     })
   })
 

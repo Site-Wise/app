@@ -226,9 +226,9 @@
 
           <!-- Actions -->
           <div class="flex space-x-3 pt-4">
-            <button 
-              type="submit" 
-              :disabled="loading || form.refund_amount <= 0 || form.refund_amount > maxRefundAmount" 
+            <button
+              type="submit"
+              :disabled="loading || form.refund_amount <= 0 || form.refund_amount > maxRefundAmount"
               class="flex-1 btn-primary bg-purple-600 hover:bg-purple-700"
             >
               <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
@@ -242,6 +242,15 @@
         </form>
       </div>
     </div>
+
+    <!-- Loading Overlay -->
+    <LoadingOverlay
+      :show="showOverlay"
+      :state="overlayState"
+      :message="overlayMessage"
+      @close="handleOverlayClose"
+      @timeout="handleOverlayTimeout"
+    />
   </div>
 </template>
 
@@ -250,6 +259,7 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { X, DollarSign, AlertTriangle, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '../../composables/useI18n';
 import { useModalEscape } from '../../composables/useModalEscape';
+import LoadingOverlay from '../LoadingOverlay.vue';
 import {
   vendorRefundService,
   vendorCreditNoteService,
@@ -290,6 +300,22 @@ const form = reactive({
 
 const loading = ref(false);
 
+// Loading overlay state
+const showOverlay = ref(false);
+const overlayState = ref<'loading' | 'success' | 'error' | 'timeout'>('loading');
+const overlayMessage = ref('');
+
+const handleOverlayClose = () => {
+  showOverlay.value = false;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+};
+
+const handleOverlayTimeout = () => {
+  overlayState.value = 'timeout';
+  overlayMessage.value = t('loading.timeout');
+};
+
 // Computed properties
 const activeAccounts = computed(() => {
   return props.accounts.filter(account => account.is_active);
@@ -312,6 +338,10 @@ const handleSubmit = async () => {
   if (!props.returnData?.id) return;
 
   loading.value = true;
+  showOverlay.value = true;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+
   try {
     if (form.processing_option === 'credit_note') {
       // Create credit note
@@ -343,7 +373,7 @@ const handleSubmit = async () => {
           // Continue with refund processing even if credit note deletion fails
         }
       }
-      
+
       // Create refund record
       await vendorRefundService.create({
         vendor_return: props.returnData.id,
@@ -365,9 +395,21 @@ const handleSubmit = async () => {
       completion_date: new Date().toISOString()
     });
 
-    emit('save');
+    // Show success overlay
+    overlayState.value = 'success';
+    overlayMessage.value = form.processing_option === 'credit_note'
+      ? t('messages.createSuccess', { item: 'Credit Note' })
+      : t('messages.createSuccess', { item: 'Refund' });
+
+    // Wait for success animation then emit
+    setTimeout(() => {
+      showOverlay.value = false;
+      emit('save');
+    }, 1500);
   } catch (error) {
     console.error('Error processing return:', error);
+    overlayState.value = 'error';
+    overlayMessage.value = t('messages.error');
   } finally {
     loading.value = false;
   }

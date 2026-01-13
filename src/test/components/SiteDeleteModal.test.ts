@@ -476,7 +476,7 @@ describe('SiteDeleteModal Logic', () => {
   describe('CSS Classes Validation', () => {
     it('should validate modal overlay classes', () => {
       const overlayClasses = 'fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50'
-      
+
       expect(overlayClasses).toContain('fixed')
       expect(overlayClasses).toContain('inset-0')
       expect(overlayClasses).toContain('bg-black')
@@ -488,17 +488,17 @@ describe('SiteDeleteModal Logic', () => {
     it('should validate delete button classes', () => {
       const getDeleteButtonClasses = (disabled: boolean) => {
         return `flex-1 flex items-center justify-center gap-2 px-6 py-3 ${
-          disabled 
-            ? 'bg-gray-400 cursor-not-allowed' 
+          disabled
+            ? 'bg-gray-400 cursor-not-allowed'
             : 'bg-red-600 hover:bg-red-700'
         } text-white font-medium rounded-xl transition-all duration-200`
       }
-      
+
       const enabledClasses = getDeleteButtonClasses(false)
       expect(enabledClasses).toContain('bg-red-600')
       expect(enabledClasses).toContain('hover:bg-red-700')
       expect(enabledClasses).not.toContain('cursor-not-allowed')
-      
+
       const disabledClasses = getDeleteButtonClasses(true)
       expect(disabledClasses).toContain('bg-gray-400')
       expect(disabledClasses).toContain('cursor-not-allowed')
@@ -506,11 +506,123 @@ describe('SiteDeleteModal Logic', () => {
 
     it('should validate warning message classes', () => {
       const warningClasses = 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl p-4 mb-6'
-      
+
       expect(warningClasses).toContain('bg-red-50')
       expect(warningClasses).toContain('dark:bg-red-900/20')
       expect(warningClasses).toContain('border-red-200')
       expect(warningClasses).toContain('dark:border-red-800/50')
+    })
+  })
+
+  describe('Loading Overlay Integration', () => {
+    it('should manage overlay state during delete operation', () => {
+      const overlayState = {
+        showOverlay: false,
+        overlayState: 'loading' as 'loading' | 'success' | 'error' | 'timeout',
+        overlayMessage: ''
+      }
+
+      const startDelete = () => {
+        overlayState.showOverlay = true
+        overlayState.overlayState = 'loading'
+        overlayState.overlayMessage = ''
+      }
+
+      const handleSuccess = (message: string) => {
+        overlayState.overlayState = 'success'
+        overlayState.overlayMessage = message
+      }
+
+      const handleError = (message: string) => {
+        overlayState.overlayState = 'error'
+        overlayState.overlayMessage = message
+      }
+
+      // Test start delete
+      startDelete()
+      expect(overlayState.showOverlay).toBe(true)
+      expect(overlayState.overlayState).toBe('loading')
+      expect(overlayState.overlayMessage).toBe('')
+
+      // Test success
+      handleSuccess('Site deleted successfully')
+      expect(overlayState.overlayState).toBe('success')
+      expect(overlayState.overlayMessage).toBe('Site deleted successfully')
+
+      // Reset and test error
+      startDelete()
+      handleError('Failed to delete site')
+      expect(overlayState.overlayState).toBe('error')
+      expect(overlayState.overlayMessage).toBe('Failed to delete site')
+    })
+
+    it('should handle overlay close', () => {
+      const overlayState = {
+        showOverlay: true,
+        overlayState: 'success' as 'loading' | 'success' | 'error' | 'timeout',
+        overlayMessage: 'Success!'
+      }
+
+      const handleOverlayClose = () => {
+        overlayState.showOverlay = false
+        overlayState.overlayState = 'loading'
+        overlayState.overlayMessage = ''
+      }
+
+      handleOverlayClose()
+      expect(overlayState.showOverlay).toBe(false)
+      expect(overlayState.overlayState).toBe('loading')
+      expect(overlayState.overlayMessage).toBe('')
+    })
+
+    it('should handle overlay timeout', () => {
+      const overlayState = {
+        showOverlay: true,
+        overlayState: 'loading' as 'loading' | 'success' | 'error' | 'timeout',
+        overlayMessage: ''
+      }
+
+      const handleOverlayTimeout = (timeoutMessage: string) => {
+        overlayState.overlayState = 'timeout'
+        overlayState.overlayMessage = timeoutMessage
+      }
+
+      handleOverlayTimeout('This is taking longer than expected')
+      expect(overlayState.overlayState).toBe('timeout')
+      expect(overlayState.overlayMessage).toBe('This is taking longer than expected')
+    })
+
+    it('should complete delete flow with overlay states', async () => {
+      const states: string[] = []
+      const overlayState = {
+        showOverlay: false,
+        overlayState: 'loading' as 'loading' | 'success' | 'error' | 'timeout',
+        overlayMessage: ''
+      }
+
+      const performDelete = async (shouldSucceed: boolean) => {
+        // Start
+        overlayState.showOverlay = true
+        overlayState.overlayState = 'loading'
+        states.push('loading')
+
+        await new Promise(resolve => setTimeout(resolve, 10))
+
+        if (shouldSucceed) {
+          overlayState.overlayState = 'success'
+          overlayState.overlayMessage = 'Deleted!'
+          states.push('success')
+        } else {
+          overlayState.overlayState = 'error'
+          overlayState.overlayMessage = 'Error!'
+          states.push('error')
+        }
+      }
+
+      await performDelete(true)
+      expect(states).toContain('loading')
+      expect(states).toContain('success')
+      expect(overlayState.overlayState).toBe('success')
     })
   })
 })

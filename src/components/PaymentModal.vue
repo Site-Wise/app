@@ -423,6 +423,15 @@
         </form>
       </div>
     </div>
+
+    <!-- Loading Overlay -->
+    <LoadingOverlay
+      :show="showOverlay"
+      :state="overlayState"
+      :message="overlayMessage"
+      @close="handleOverlayClose"
+      @timeout="handleOverlayTimeout"
+    />
   </div>
 </template>
 
@@ -440,9 +449,9 @@ import {
   X
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
-import { useToast } from '../composables/useToast';
 import VendorSearchBox from './VendorSearchBox.vue';
 import TriStateCheckbox from './TriStateCheckbox.vue';
+import LoadingOverlay from './LoadingOverlay.vue';
 import type {
   Payment,
   PaymentAllocation,
@@ -486,11 +495,15 @@ const emit = defineEmits<Emits>();
 
 // Composables
 const { t } = useI18n();
-const { } = useToast();
 
 // Refs
 const vendorInputRef = ref<InstanceType<typeof VendorSearchBox>>();
 const loading = ref(false);
+
+// Loading overlay state
+const showOverlay = ref(false);
+const overlayState = ref<'loading' | 'success' | 'error' | 'timeout'>('loading');
+const overlayMessage = ref('');
 
 // Form state
 const form = reactive({
@@ -1641,11 +1654,44 @@ const initializeForm = () => {
   }
 };
 
+// Loading overlay handlers
+const handleOverlayClose = () => {
+  const wasSuccess = overlayState.value === 'success';
+  showOverlay.value = false;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+  // If success, close the modal
+  if (wasSuccess) {
+    emit('close');
+  }
+};
+
+const handleOverlayTimeout = () => {
+  overlayState.value = 'timeout';
+  overlayMessage.value = t('loading.timeout');
+};
+
+// Method to update overlay state from parent (called after submission completes)
+const setOverlaySuccess = (message?: string) => {
+  overlayState.value = 'success';
+  overlayMessage.value = message || t('loading.success');
+};
+
+const setOverlayError = (message?: string) => {
+  overlayState.value = 'error';
+  overlayMessage.value = message || t('loading.error');
+  loading.value = false;
+};
+
 // TODO - ensure that all relevant payment markings are being sent correctly!
 const handleSubmit = async () => {
   if (!isFormValid.value) return;
 
   loading.value = true;
+  showOverlay.value = true;
+  overlayState.value = 'loading';
+  overlayMessage.value = '';
+
   try {
     const data = {
       mode: props.mode,
@@ -1661,8 +1707,9 @@ const handleSubmit = async () => {
     });
 
     emit('submit', data);
-  } finally {
-    loading.value = false;
+    // Note: Parent component should call setOverlaySuccess() or setOverlayError() after processing
+  } catch {
+    setOverlayError();
   }
 };
 
@@ -1745,8 +1792,10 @@ watch(() => props.accounts, () => {
   }
 }, { deep: true });
 
-// Expose functions for testing
+// Expose functions for testing and parent component control
 defineExpose({
-  autoSelectCreditNotes
+  autoSelectCreditNotes,
+  setOverlaySuccess,
+  setOverlayError
 });
 </script>

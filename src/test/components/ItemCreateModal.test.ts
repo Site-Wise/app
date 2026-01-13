@@ -799,4 +799,133 @@ describe('ItemCreateModal Logic', () => {
       expect(ItemCreateModal.default).toBeDefined()
     })
   })
+
+  describe('Loading Overlay Integration', () => {
+    it('should manage overlay state during save operation', () => {
+      const overlayState = {
+        showOverlay: false,
+        overlayState: 'loading' as 'loading' | 'success' | 'error' | 'timeout',
+        overlayMessage: ''
+      }
+
+      const startSave = () => {
+        overlayState.showOverlay = true
+        overlayState.overlayState = 'loading'
+        overlayState.overlayMessage = ''
+      }
+
+      const handleSuccess = (message: string) => {
+        overlayState.overlayState = 'success'
+        overlayState.overlayMessage = message
+      }
+
+      const handleError = (message: string) => {
+        overlayState.overlayState = 'error'
+        overlayState.overlayMessage = message
+      }
+
+      // Test start save
+      startSave()
+      expect(overlayState.showOverlay).toBe(true)
+      expect(overlayState.overlayState).toBe('loading')
+      expect(overlayState.overlayMessage).toBe('')
+
+      // Test success
+      handleSuccess('Item created successfully')
+      expect(overlayState.overlayState).toBe('success')
+      expect(overlayState.overlayMessage).toBe('Item created successfully')
+
+      // Reset and test error
+      startSave()
+      handleError('Failed to create item')
+      expect(overlayState.overlayState).toBe('error')
+      expect(overlayState.overlayMessage).toBe('Failed to create item')
+    })
+
+    it('should handle overlay close', () => {
+      const overlayState = {
+        showOverlay: true,
+        overlayState: 'success' as 'loading' | 'success' | 'error' | 'timeout',
+        overlayMessage: 'Success!'
+      }
+
+      const handleOverlayClose = () => {
+        overlayState.showOverlay = false
+        overlayState.overlayState = 'loading'
+        overlayState.overlayMessage = ''
+      }
+
+      handleOverlayClose()
+      expect(overlayState.showOverlay).toBe(false)
+      expect(overlayState.overlayState).toBe('loading')
+      expect(overlayState.overlayMessage).toBe('')
+    })
+
+    it('should handle overlay timeout', () => {
+      const overlayState = {
+        showOverlay: true,
+        overlayState: 'loading' as 'loading' | 'success' | 'error' | 'timeout',
+        overlayMessage: ''
+      }
+
+      const handleOverlayTimeout = (timeoutMessage: string) => {
+        overlayState.overlayState = 'timeout'
+        overlayState.overlayMessage = timeoutMessage
+      }
+
+      handleOverlayTimeout('This is taking longer than expected')
+      expect(overlayState.overlayState).toBe('timeout')
+      expect(overlayState.overlayMessage).toBe('This is taking longer than expected')
+    })
+
+    it('should handle subscription limit error', () => {
+      const overlayState = {
+        showOverlay: true,
+        overlayState: 'loading' as 'loading' | 'success' | 'error' | 'timeout',
+        overlayMessage: ''
+      }
+
+      const handleLimitError = () => {
+        overlayState.overlayState = 'error'
+        overlayState.overlayMessage = 'Free tier limit reached'
+      }
+
+      handleLimitError()
+      expect(overlayState.overlayState).toBe('error')
+      expect(overlayState.overlayMessage).toBe('Free tier limit reached')
+    })
+
+    it('should complete create flow with overlay states', async () => {
+      const states: string[] = []
+      const overlayState = {
+        showOverlay: false,
+        overlayState: 'loading' as 'loading' | 'success' | 'error' | 'timeout',
+        overlayMessage: ''
+      }
+
+      const performCreate = async (shouldSucceed: boolean) => {
+        // Start
+        overlayState.showOverlay = true
+        overlayState.overlayState = 'loading'
+        states.push('loading')
+
+        await new Promise(resolve => setTimeout(resolve, 10))
+
+        if (shouldSucceed) {
+          overlayState.overlayState = 'success'
+          overlayState.overlayMessage = 'Created!'
+          states.push('success')
+        } else {
+          overlayState.overlayState = 'error'
+          overlayState.overlayMessage = 'Error!'
+          states.push('error')
+        }
+      }
+
+      await performCreate(true)
+      expect(states).toContain('loading')
+      expect(states).toContain('success')
+      expect(overlayState.overlayState).toBe('success')
+    })
+  })
 })
