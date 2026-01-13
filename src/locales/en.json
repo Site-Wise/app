@@ -299,7 +299,9 @@
       "day": "Daily",
       "job": "Per Job",
       "sqft": "Per Sqft",
-      "month": "Monthly"
+      "month": "Monthly",
+      "kg": "Per Kg",
+      "rft": "Running ft"
     }
   },
   "serviceBookings": {

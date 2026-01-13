@@ -199,6 +199,8 @@
                   <option value="job">{{ t('services.units.job') }}</option>
                   <option value="sqft">{{ t('services.units.sqft') }}</option>
                   <option value="month">{{ t('services.units.month') }}</option>
+                  <option value="kg">{{ t('services.units.kg') }}</option>
+                  <option value="rft">{{ t('services.units.rft') }}</option>
                 </select>
               </div>
               <div>
