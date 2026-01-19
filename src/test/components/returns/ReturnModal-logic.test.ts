@@ -34,17 +34,28 @@ describe('ReturnModal Logic Tests', () => {
   })
 
   describe('Available Delivery Items Filtering Logic', () => {
-    const filterAvailableItems = (deliveryItems: any[], selectedItems: any[]) => {
+    const filterAvailableItems = (
+      deliveryItems: any[],
+      selectedItems: any[],
+      returnInfo: Record<string, { availableForReturn: number }> = {}
+    ) => {
       return deliveryItems.filter(item => {
-        return !selectedItems.some(si => si.delivery_item === item.id)
+        // Exclude already selected items
+        const isNotSelected = !selectedItems.some(si => si.delivery_item === item.id)
+
+        // Exclude fully returned items
+        const itemReturnInfo = returnInfo[item.id!] || { availableForReturn: item.quantity }
+        const hasAvailableQuantity = itemReturnInfo.availableForReturn > 0
+
+        return isNotSelected && hasAvailableQuantity
       })
     }
 
     it('should filter out already selected items', () => {
       const deliveryItems = [
-        { id: 'item1', name: 'Item 1' },
-        { id: 'item2', name: 'Item 2' },
-        { id: 'item3', name: 'Item 3' }
+        { id: 'item1', name: 'Item 1', quantity: 10 },
+        { id: 'item2', name: 'Item 2', quantity: 20 },
+        { id: 'item3', name: 'Item 3', quantity: 30 }
       ]
       const selectedItems = [
         { delivery_item: 'item1' }
@@ -56,15 +67,15 @@ describe('ReturnModal Logic Tests', () => {
 
     it('should return all items when none selected', () => {
       const deliveryItems = [
-        { id: 'item1', name: 'Item 1' },
-        { id: 'item2', name: 'Item 2' }
+        { id: 'item1', name: 'Item 1', quantity: 10 },
+        { id: 'item2', name: 'Item 2', quantity: 20 }
       ]
       expect(filterAvailableItems(deliveryItems, [])).toHaveLength(2)
     })
 
     it('should return empty array when all items selected', () => {
       const deliveryItems = [
-        { id: 'item1', name: 'Item 1' }
+        { id: 'item1', name: 'Item 1', quantity: 10 }
       ]
       const selectedItems = [
         { delivery_item: 'item1' }
@@ -74,6 +85,62 @@ describe('ReturnModal Logic Tests', () => {
 
     it('should handle empty delivery items', () => {
       expect(filterAvailableItems([], [])).toHaveLength(0)
+    })
+
+    it('should filter out fully returned items', () => {
+      const deliveryItems = [
+        { id: 'item1', name: 'Item 1', quantity: 10 },
+        { id: 'item2', name: 'Item 2', quantity: 20 },
+        { id: 'item3', name: 'Item 3', quantity: 30 }
+      ]
+      const returnInfo = {
+        'item1': { availableForReturn: 0 }, // Fully returned
+        'item2': { availableForReturn: 10 }, // Partially returned
+        'item3': { availableForReturn: 30 }  // Not returned
+      }
+      const result = filterAvailableItems(deliveryItems, [], returnInfo)
+      expect(result).toHaveLength(2)
+      expect(result.find(i => i.id === 'item1')).toBeUndefined()
+    })
+
+    it('should include items with partial returns', () => {
+      const deliveryItems = [
+        { id: 'item1', name: 'Item 1', quantity: 100 }
+      ]
+      const returnInfo = {
+        'item1': { availableForReturn: 50 } // 50 returned, 50 available
+      }
+      const result = filterAvailableItems(deliveryItems, [], returnInfo)
+      expect(result).toHaveLength(1)
+      expect(result[0].id).toBe('item1')
+    })
+
+    it('should use original quantity when no return info available', () => {
+      const deliveryItems = [
+        { id: 'item1', name: 'Item 1', quantity: 10 }
+      ]
+      const result = filterAvailableItems(deliveryItems, [], {})
+      expect(result).toHaveLength(1)
+    })
+
+    it('should combine selected and fully returned filtering', () => {
+      const deliveryItems = [
+        { id: 'item1', name: 'Item 1', quantity: 10 },
+        { id: 'item2', name: 'Item 2', quantity: 20 },
+        { id: 'item3', name: 'Item 3', quantity: 30 },
+        { id: 'item4', name: 'Item 4', quantity: 40 }
+      ]
+      const selectedItems = [
+        { delivery_item: 'item1' } // Selected
+      ]
+      const returnInfo = {
+        'item2': { availableForReturn: 0 }, // Fully returned
+        'item3': { availableForReturn: 15 }, // Partially returned - should be included
+        'item4': { availableForReturn: 40 }  // Not returned - should be included
+      }
+      const result = filterAvailableItems(deliveryItems, selectedItems, returnInfo)
+      expect(result).toHaveLength(2)
+      expect(result.map(i => i.id)).toEqual(['item3', 'item4'])
     })
   })
 
@@ -553,6 +620,174 @@ describe('ReturnModal Logic Tests', () => {
         return !loading && itemsCount === 0
       }
       expect(showNoItems(5, false)).toBe(false)
+    })
+  })
+
+  describe('Available Quantity Calculation Logic', () => {
+    const getAvailableQuantity = (
+      deliveryItemId: string,
+      originalQuantity: number,
+      returnInfo: Record<string, { availableForReturn: number }>
+    ): number => {
+      const info = returnInfo[deliveryItemId]
+      return info ? info.availableForReturn : originalQuantity
+    }
+
+    it('should return available quantity from return info', () => {
+      const returnInfo = {
+        'item1': { availableForReturn: 50 }
+      }
+      expect(getAvailableQuantity('item1', 100, returnInfo)).toBe(50)
+    })
+
+    it('should return original quantity when no return info exists', () => {
+      const returnInfo = {}
+      expect(getAvailableQuantity('item1', 100, returnInfo)).toBe(100)
+    })
+
+    it('should return 0 for fully returned items', () => {
+      const returnInfo = {
+        'item1': { availableForReturn: 0 }
+      }
+      expect(getAvailableQuantity('item1', 100, returnInfo)).toBe(0)
+    })
+
+    it('should handle partial returns correctly', () => {
+      const returnInfo = {
+        'item1': { availableForReturn: 75.5 }
+      }
+      expect(getAvailableQuantity('item1', 100, returnInfo)).toBe(75.5)
+    })
+
+    it('should return original quantity for different item', () => {
+      const returnInfo = {
+        'item1': { availableForReturn: 50 }
+      }
+      expect(getAvailableQuantity('item2', 200, returnInfo)).toBe(200)
+    })
+  })
+
+  describe('Return Info Structure Logic', () => {
+    interface ReturnInfo {
+      totalReturned: number
+      availableForReturn: number
+      returns: Array<{
+        id: string
+        returnDate: string
+        quantityReturned: number
+        status: string
+        reason: string
+      }>
+    }
+
+    const calculateAvailableFromReturns = (
+      originalQuantity: number,
+      returns: Array<{ quantityReturned: number; status: string }>
+    ): number => {
+      const totalReturned = returns
+        .filter(r => ['completed', 'approved', 'refunded'].includes(r.status))
+        .reduce((sum, r) => sum + r.quantityReturned, 0)
+      return Math.max(0, originalQuantity - totalReturned)
+    }
+
+    it('should calculate available quantity correctly', () => {
+      const returns = [
+        { quantityReturned: 10, status: 'completed' },
+        { quantityReturned: 5, status: 'approved' }
+      ]
+      expect(calculateAvailableFromReturns(100, returns)).toBe(85)
+    })
+
+    it('should ignore pending/rejected returns', () => {
+      const returns = [
+        { quantityReturned: 10, status: 'completed' },
+        { quantityReturned: 20, status: 'initiated' },
+        { quantityReturned: 15, status: 'rejected' }
+      ]
+      expect(calculateAvailableFromReturns(100, returns)).toBe(90)
+    })
+
+    it('should handle fully returned items', () => {
+      const returns = [
+        { quantityReturned: 60, status: 'completed' },
+        { quantityReturned: 40, status: 'refunded' }
+      ]
+      expect(calculateAvailableFromReturns(100, returns)).toBe(0)
+    })
+
+    it('should not return negative quantities', () => {
+      const returns = [
+        { quantityReturned: 150, status: 'completed' }
+      ]
+      expect(calculateAvailableFromReturns(100, returns)).toBe(0)
+    })
+
+    it('should handle no returns', () => {
+      expect(calculateAvailableFromReturns(100, [])).toBe(100)
+    })
+
+    it('should handle decimal quantities', () => {
+      const returns = [
+        { quantityReturned: 12.5, status: 'completed' },
+        { quantityReturned: 7.25, status: 'approved' }
+      ]
+      expect(calculateAvailableFromReturns(50, returns)).toBe(30.25)
+    })
+  })
+
+  describe('Return Info Display Logic', () => {
+    const shouldShowReturnedIndicator = (totalReturned: number): boolean => {
+      return totalReturned > 0
+    }
+
+    const formatReturnedMessage = (totalReturned: number, originalQuantity: number): string => {
+      return `(${totalReturned} of ${originalQuantity} already returned)`
+    }
+
+    it('should show indicator when items are returned', () => {
+      expect(shouldShowReturnedIndicator(5)).toBe(true)
+    })
+
+    it('should hide indicator when no items returned', () => {
+      expect(shouldShowReturnedIndicator(0)).toBe(false)
+    })
+
+    it('should format returned message correctly', () => {
+      expect(formatReturnedMessage(30, 100)).toBe('(30 of 100 already returned)')
+    })
+
+    it('should handle decimal quantities in message', () => {
+      expect(formatReturnedMessage(12.5, 50)).toBe('(12.5 of 50 already returned)')
+    })
+  })
+
+  describe('Max Quantity Validation Logic', () => {
+    const getMaxReturnQuantity = (
+      deliveryItemId: string,
+      originalQuantity: number,
+      returnInfo: Record<string, { availableForReturn: number }>
+    ): number => {
+      const info = returnInfo[deliveryItemId]
+      return info ? info.availableForReturn : originalQuantity
+    }
+
+    it('should limit max to available quantity', () => {
+      const returnInfo = {
+        'item1': { availableForReturn: 40 }
+      }
+      expect(getMaxReturnQuantity('item1', 100, returnInfo)).toBe(40)
+    })
+
+    it('should allow full quantity when not returned', () => {
+      const returnInfo = {}
+      expect(getMaxReturnQuantity('item1', 100, returnInfo)).toBe(100)
+    })
+
+    it('should prevent returns when fully returned', () => {
+      const returnInfo = {
+        'item1': { availableForReturn: 0 }
+      }
+      expect(getMaxReturnQuantity('item1', 100, returnInfo)).toBe(0)
     })
   })
 })

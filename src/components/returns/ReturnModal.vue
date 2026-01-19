@@ -102,7 +102,10 @@
                       Available Quantity
                     </label>
                     <div class="text-sm text-gray-900 dark:text-white">
-                      {{ item.delivery_item_data?.quantity || 0 }} {{ item.delivery_item_data?.expand?.item?.unit || 'units' }}
+                      {{ getAvailableQuantity(item.delivery_item, item.delivery_item_data?.quantity || 0) }} {{ item.delivery_item_data?.expand?.item?.unit || 'units' }}
+                    </div>
+                    <div v-if="deliveryItemsReturnInfo[item.delivery_item]?.totalReturned > 0" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      ({{ deliveryItemsReturnInfo[item.delivery_item].totalReturned }} already returned)
                     </div>
                   </div>
 
@@ -110,13 +113,13 @@
                     <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
                       {{ t('vendors.quantityReturned') }} *
                     </label>
-                    <input 
-                      v-model.number="item.quantity_returned" 
-                      type="number" 
-                      step="0.01" 
-                      :max="item.delivery_item_data?.quantity || 0"
-                      required 
-                      class="input text-sm" 
+                    <input
+                      v-model.number="item.quantity_returned"
+                      type="number"
+                      step="0.01"
+                      :max="getAvailableQuantity(item.delivery_item, item.delivery_item_data?.quantity || 0)"
+                      required
+                      class="input text-sm"
                       @input="updateReturnAmount(index)"
                     />
                   </div>
@@ -257,7 +260,10 @@
                     Delivered: {{ formatDate(item.expand?.delivery?.delivery_date || '') }}
                   </div>
                   <div class="text-xs text-gray-500 dark:text-gray-400">
-                    Qty: {{ item.quantity }} {{ item.expand?.item?.unit || 'units' }} @ ₹{{ item.unit_price }}
+                    Available: {{ getAvailableQuantity(item.id!, item.quantity) }} {{ item.expand?.item?.unit || 'units' }} @ ₹{{ item.unit_price }}
+                  </div>
+                  <div v-if="deliveryItemsReturnInfo[item.id!]?.totalReturned > 0" class="text-xs text-orange-600 dark:text-orange-400">
+                    ({{ deliveryItemsReturnInfo[item.id!].totalReturned }} of {{ item.quantity }} already returned)
                   </div>
                 </div>
                 <div class="text-sm font-medium text-gray-900 dark:text-white">
@@ -356,17 +362,39 @@ const loading = ref(false);
 const showItemSelection = ref(false);
 const vendorDeliveryItems = ref<DeliveryItem[]>([]);
 const loadingDeliveryItems = ref(false);
+const deliveryItemsReturnInfo = ref<Record<string, {
+  totalReturned: number;
+  availableForReturn: number;
+  returns: Array<{
+    id: string;
+    returnDate: string;
+    quantityReturned: number;
+    status: string;
+    reason: string;
+  }>;
+}>>({});
 
 // Computed properties
 const availableDeliveryItems = computed(() => {
   if (!form.vendor) return [];
-  
+
   return vendorDeliveryItems.value.filter(item => {
     // Exclude already selected items
     const isNotSelected = !returnItems.value.some(ri => ri.delivery_item === item.id);
-    return isNotSelected;
+
+    // Exclude fully returned items
+    const returnInfo = deliveryItemsReturnInfo.value[item.id!] || { availableForReturn: item.quantity };
+    const hasAvailableQuantity = returnInfo.availableForReturn > 0;
+
+    return isNotSelected && hasAvailableQuantity;
   });
 });
+
+// Helper to get available quantity for a delivery item
+const getAvailableQuantity = (deliveryItemId: string, originalQuantity: number): number => {
+  const returnInfo = deliveryItemsReturnInfo.value[deliveryItemId];
+  return returnInfo ? returnInfo.availableForReturn : originalQuantity;
+};
 
 const totalReturnAmount = computed(() => {
   return returnItems.value.reduce((sum, item) => sum + item.return_amount, 0);
@@ -406,9 +434,18 @@ const fetchVendorDeliveryItems = async (vendorId: string) => {
   loadingDeliveryItems.value = true;
   try {
     vendorDeliveryItems.value = await deliveryItemService.getAll(vendorId);
+
+    // Fetch return info for all delivery items
+    const deliveryItemIds = vendorDeliveryItems.value.map(item => item.id!).filter(id => id);
+    if (deliveryItemIds.length > 0) {
+      deliveryItemsReturnInfo.value = await vendorReturnService.getReturnInfoForDeliveryItems(deliveryItemIds);
+    } else {
+      deliveryItemsReturnInfo.value = {};
+    }
   } catch (error) {
     console.error('Error fetching delivery items for vendor:', error);
     vendorDeliveryItems.value = [];
+    deliveryItemsReturnInfo.value = {};
   } finally {
     loadingDeliveryItems.value = false;
   }
