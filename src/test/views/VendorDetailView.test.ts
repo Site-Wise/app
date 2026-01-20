@@ -495,8 +495,10 @@ describe('VendorDetailView', () => {
       wrapper.vm.openExportModal('csv')
       await wrapper.vm.$nextTick()
 
+      // From date should be empty, to date defaults to today
+      const today = new Date().toISOString().split('T')[0]
       expect(wrapper.vm.exportFromDate).toBe('')
-      expect(wrapper.vm.exportToDate).toBe('')
+      expect(wrapper.vm.exportToDate).toBe(today)
       expect(wrapper.vm.exportAllData).toBe(true)
     })
 
@@ -592,6 +594,36 @@ describe('VendorDetailView', () => {
       await wrapper.vm.$nextTick()
 
       expect(wrapper.vm.exportOpeningBalance).toBe(0)
+    })
+
+    it('should close export modal when ESC key is pressed', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Open modal first
+      wrapper.vm.openExportModal('csv')
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.showExportModal).toBe(true)
+
+      // Simulate ESC key press
+      const escEvent = new KeyboardEvent('keydown', { key: 'Escape' })
+      document.dispatchEvent(escEvent)
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showExportModal).toBe(false)
+    })
+
+    it('should default to-date to today when opening modal', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.openExportModal('csv')
+      await wrapper.vm.$nextTick()
+
+      const today = new Date().toISOString().split('T')[0]
+      expect(wrapper.vm.exportToDate).toBe(today)
     })
   })
 

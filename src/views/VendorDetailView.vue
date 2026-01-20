@@ -982,7 +982,8 @@ const openExportModal = (format: 'csv' | 'pdf' | 'tally') => {
   exportFormat.value = format;
   exportAllData.value = true;
   exportFromDate.value = '';
-  exportToDate.value = '';
+  // Default to-date to today for better UX
+  exportToDate.value = new Date().toISOString().split('T')[0];
   showExportModal.value = true;
 };
 
@@ -1624,8 +1625,18 @@ const handleClickOutside = (event: Event) => {
   }
 };
 
+// Handle ESC key for closing modals
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    if (showExportModal.value) {
+      closeExportModal();
+    }
+  }
+};
+
 // Event listeners using @vueuse/core
 useEventListener(document, 'click', handleClickOutside);
+useEventListener(document, 'keydown', handleKeydown);
 
 onMounted(() => {
   loadVendorData();
