@@ -26,15 +26,15 @@
           <!-- Export Dropdown Menu -->
           <div v-if="showExportDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
             <div class="py-1">
-              <button @click="exportLedger(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <button @click="openExportModal('csv'); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <FileSpreadsheet class="mr-3 h-4 w-4 text-green-600" />
                 {{ t('vendors.exportCsv') }}
               </button>
-              <button @click="handleExportPdf(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <button @click="openExportModal('pdf'); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <FileText class="mr-3 h-4 w-4 text-red-600" />
                 {{ t('vendors.exportPdf') }}
               </button>
-              <button @click="exportTallyXml(); showExportDropdown = false" class="relative flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <button @click="openExportModal('tally'); showExportDropdown = false" class="relative flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <FileText class="mr-3 h-4 w-4 text-blue-600" />
                 {{ t('vendors.exportTallyXml') }}
                 <StatusBadge type="beta" position="absolute" />
@@ -65,15 +65,15 @@
             <div class="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700">
               {{ t('vendors.exportLedger') }}
             </div>
-            <button @click="handleMobileAction('exportCsv')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+            <button @click="openExportModal('csv'); showMobileMenu = false" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
               <FileSpreadsheet class="mr-3 h-5 w-5 text-green-600" />
               {{ t('vendors.exportCsv') }}
             </button>
-            <button @click="handleMobileAction('exportPdf')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+            <button @click="openExportModal('pdf'); showMobileMenu = false" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
               <FileText class="mr-3 h-5 w-5 text-red-600" />
               {{ t('vendors.exportPdf') }}
             </button>
-            <button @click="handleMobileAction('exportTallyXml')" class="relative flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+            <button @click="openExportModal('tally'); showMobileMenu = false" class="relative flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
               <FileText class="mr-3 h-5 w-5 text-blue-600" />
               {{ t('vendors.exportTallyXml') }}
               <StatusBadge type="beta" position="absolute" />
@@ -299,155 +299,92 @@
 
     <!-- Ledger Section -->
     <div class="card mb-8">
-      <!-- Ledger Header with Filter Toggle -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+      <!-- Ledger Header -->
+      <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('vendors.vendorLedger') }}</h2>
-        <div class="flex items-center gap-2">
-          <button
-            @click="showLedgerFilters = !showLedgerFilters"
-            class="btn-outline text-sm flex items-center"
-            :class="{ 'bg-primary-50 dark:bg-primary-900/20 border-primary-300 dark:border-primary-700': hasActiveFilters }"
-          >
-            <Filter class="h-4 w-4 mr-2" />
-            {{ t('common.filter') }}
-            <span v-if="hasActiveFilters" class="ml-2 px-1.5 py-0.5 bg-primary-500 text-white text-xs rounded-full">
-              {{ (ledgerFilterFromDate ? 1 : 0) + (ledgerFilterToDate ? 1 : 0) }}
-            </span>
-          </button>
-          <button
-            v-if="hasActiveFilters"
-            @click="clearLedgerFilters"
-            class="btn-outline text-sm flex items-center text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
-          >
-            <X class="h-4 w-4 mr-1" />
-            {{ t('common.clearFilters') }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Filter Panel -->
-      <div v-if="showLedgerFilters" class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              <Calendar class="inline h-4 w-4 mr-1" />
-              {{ t('vendors.filterFromDate') }}
-            </label>
-            <input
-              v-model="ledgerFilterFromDate"
-              type="date"
-              class="input w-full"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              <Calendar class="inline h-4 w-4 mr-1" />
-              {{ t('vendors.filterToDate') }}
-            </label>
-            <input
-              v-model="ledgerFilterToDate"
-              type="date"
-              class="input w-full"
-            />
-          </div>
-        </div>
+        <span class="text-sm text-gray-500 dark:text-gray-400">
+          {{ ledgerEntries.length }} {{ t('vendors.entries') }}
+        </span>
       </div>
 
       <!-- Ledger Table -->
       <div class="overflow-x-auto">
-        <table class="w-full text-sm">
+        <table class="w-full text-sm table-fixed">
           <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
               <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
                 {{ t('vendors.date') }}
               </th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-auto">
                 {{ t('vendors.particulars') }}
               </th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell w-28">
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell w-24">
                 {{ t('vendors.reference') }}
               </th>
-              <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+              <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20">
                 {{ t('vendors.debit') }}
               </th>
-              <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+              <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20">
                 {{ t('vendors.credit') }}
               </th>
-              <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">
+              <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
                 {{ t('vendors.balance') }}
               </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
-            <!-- Opening Balance Row (when filtering) -->
-            <tr v-if="filteredLedgerEntries.hasOpeningBalance" class="bg-blue-50 dark:bg-blue-900/20">
-              <td class="px-3 py-2 text-gray-900 dark:text-white">
-                {{ ledgerFilterFromDate }}
-              </td>
-              <td class="px-3 py-2 text-gray-900 dark:text-white font-medium ledger-particulars">
-                {{ t('vendors.openingBalance') }}
-              </td>
-              <td class="px-3 py-2 text-gray-500 dark:text-gray-400 hidden md:table-cell">-</td>
-              <td class="px-3 py-2 text-right text-gray-900 dark:text-white">-</td>
-              <td class="px-3 py-2 text-right text-gray-900 dark:text-white">-</td>
-              <td class="px-3 py-2 text-right font-medium" :class="filteredLedgerEntries.openingBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
-                ₹{{ Math.abs(filteredLedgerEntries.openingBalance).toFixed(2) }}
-                <span class="text-xs ml-1">{{ filteredLedgerEntries.openingBalance >= 0 ? 'Cr' : 'Dr' }}</span>
-              </td>
-            </tr>
-
             <!-- Ledger Entries -->
-            <tr v-for="entry in filteredLedgerEntries.entries" :key="entry.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+            <tr v-for="entry in ledgerEntries" :key="entry.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
               <td class="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap">
                 {{ formatDate(entry.date) }}
               </td>
-              <td class="px-3 py-2 text-gray-900 dark:text-white ledger-particulars">
-                <div class="ledger-particulars-text">{{ entry.particulars }}</div>
-                <div v-if="entry.details" class="text-xs text-gray-500 dark:text-gray-400 mt-1 ledger-details-text">
+              <td class="px-3 py-2 text-gray-900 dark:text-white">
+                <div class="truncate" :title="entry.particulars">{{ entry.particulars }}</div>
+                <div v-if="entry.details" class="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate" :title="entry.details">
                   {{ entry.details }}
                 </div>
               </td>
-              <td class="px-3 py-2 text-gray-500 dark:text-gray-400 hidden md:table-cell ledger-reference">
+              <td class="px-3 py-2 text-gray-500 dark:text-gray-400 hidden md:table-cell truncate" :title="entry.reference">
                 {{ entry.reference || '-' }}
               </td>
-              <td class="px-3 py-2 text-right">
+              <td class="px-3 py-2 text-right whitespace-nowrap">
                 <span v-if="entry.debit > 0" class="text-green-600 dark:text-green-400 font-medium">
                   ₹{{ entry.debit.toFixed(2) }}
                 </span>
                 <span v-else class="text-gray-400">-</span>
               </td>
-              <td class="px-3 py-2 text-right">
+              <td class="px-3 py-2 text-right whitespace-nowrap">
                 <span v-if="entry.credit > 0" class="text-red-600 dark:text-red-400 font-medium">
                   ₹{{ entry.credit.toFixed(2) }}
                 </span>
                 <span v-else class="text-gray-400">-</span>
               </td>
-              <td class="px-3 py-2 text-right font-medium" :class="entry.runningBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+              <td class="px-3 py-2 text-right font-medium whitespace-nowrap" :class="entry.runningBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
                 ₹{{ Math.abs(entry.runningBalance).toFixed(2) }}
                 <span class="text-xs ml-1">{{ entry.runningBalance >= 0 ? 'Cr' : 'Dr' }}</span>
               </td>
             </tr>
 
             <!-- Empty State -->
-            <tr v-if="filteredLedgerEntries.entries.length === 0 && !filteredLedgerEntries.hasOpeningBalance">
+            <tr v-if="ledgerEntries.length === 0">
               <td colspan="6" class="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
-                {{ hasActiveFilters ? t('vendors.noEntriesInRange') : t('vendors.noLedgerEntries') }}
+                {{ t('vendors.noLedgerEntries') }}
               </td>
             </tr>
 
             <!-- Totals Row -->
-            <tr v-if="filteredLedgerEntries.entries.length > 0 || filteredLedgerEntries.hasOpeningBalance" class="bg-gray-100 dark:bg-gray-700 font-medium">
+            <tr v-if="ledgerEntries.length > 0" class="bg-gray-100 dark:bg-gray-700 font-medium">
               <td class="px-3 py-2 text-gray-900 dark:text-white" colspan="2">
                 {{ t('vendors.totals') }}
               </td>
               <td class="px-3 py-2 hidden md:table-cell"></td>
-              <td class="px-3 py-2 text-right text-green-600 dark:text-green-400">
+              <td class="px-3 py-2 text-right text-green-600 dark:text-green-400 whitespace-nowrap">
                 ₹{{ totalDebits.toFixed(2) }}
               </td>
-              <td class="px-3 py-2 text-right text-red-600 dark:text-red-400">
+              <td class="px-3 py-2 text-right text-red-600 dark:text-red-400 whitespace-nowrap">
                 ₹{{ totalCredits.toFixed(2) }}
               </td>
-              <td class="px-3 py-2 text-right" :class="finalBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+              <td class="px-3 py-2 text-right whitespace-nowrap" :class="finalBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
                 ₹{{ Math.abs(finalBalance).toFixed(2) }}
                 <span class="text-xs ml-1">{{ finalBalance >= 0 ? 'Cr' : 'Dr' }}</span>
               </td>
@@ -457,16 +394,10 @@
       </div>
 
       <!-- Ledger Summary -->
-      <div v-if="filteredLedgerEntries.entries.length > 0 || filteredLedgerEntries.hasOpeningBalance" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+      <div v-if="ledgerEntries.length > 0" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div class="text-sm text-gray-600 dark:text-gray-400">
-            <span v-if="hasActiveFilters">
-              {{ t('vendors.showingEntriesFrom') }} {{ ledgerFilterFromDate || t('vendors.beginning') }}
-              {{ t('vendors.to') }} {{ ledgerFilterToDate || t('vendors.today') }}
-            </span>
-            <span v-else>
-              {{ t('vendors.showingAllEntries') }} ({{ filteredLedgerEntries.entries.length }} {{ t('vendors.entries') }})
-            </span>
+            {{ t('vendors.showingAllEntries') }} ({{ ledgerEntries.length }} {{ t('vendors.entries') }})
           </div>
           <div class="text-lg font-semibold" :class="finalBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
             {{ finalBalance >= 0 ? t('vendors.totalOutstanding') : t('vendors.creditBalance') }}: ₹{{ Math.abs(finalBalance).toFixed(2) }}
@@ -491,6 +422,105 @@
       @submit="handlePaymentModalSubmit"
       @close="handlePaymentModalClose"
     />
+
+    <!-- Export Ledger Modal -->
+    <div v-if="showExportModal" class="fixed inset-0 z-50 overflow-y-auto">
+      <div class="flex min-h-full items-center justify-center p-4">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-black/50 transition-opacity" @click="closeExportModal"></div>
+
+        <!-- Modal Panel -->
+        <div class="relative w-full max-w-md transform rounded-lg bg-white dark:bg-gray-800 p-6 shadow-xl transition-all">
+          <!-- Header -->
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('vendors.exportLedger') }}
+            </h3>
+            <button @click="closeExportModal" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+
+          <!-- Export Format Display -->
+          <div class="mb-6 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <div class="flex items-center">
+              <FileSpreadsheet v-if="exportFormat === 'csv'" class="h-5 w-5 text-green-600 mr-2" />
+              <FileText v-else-if="exportFormat === 'pdf'" class="h-5 w-5 text-red-600 mr-2" />
+              <FileText v-else class="h-5 w-5 text-blue-600 mr-2" />
+              <span class="font-medium text-gray-900 dark:text-white">
+                {{ exportFormat === 'csv' ? t('vendors.exportCsv') : exportFormat === 'pdf' ? t('vendors.exportPdf') : t('vendors.exportTallyXml') }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Date Range Selection -->
+          <div class="space-y-4 mb-6">
+            <div class="flex items-center gap-2 mb-2">
+              <input
+                type="checkbox"
+                id="useAllData"
+                v-model="exportAllData"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+              <label for="useAllData" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('vendors.exportAllData') }}
+              </label>
+            </div>
+
+            <div v-if="!exportAllData" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <Calendar class="inline h-4 w-4 mr-1" />
+                  {{ t('vendors.filterFromDate') }}
+                </label>
+                <input
+                  v-model="exportFromDate"
+                  type="date"
+                  class="input w-full"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <Calendar class="inline h-4 w-4 mr-1" />
+                  {{ t('vendors.filterToDate') }}
+                </label>
+                <input
+                  v-model="exportToDate"
+                  type="date"
+                  class="input w-full"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Preview Info -->
+          <div class="mb-6 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm">
+            <p class="text-blue-700 dark:text-blue-300">
+              <span v-if="exportAllData">
+                {{ t('vendors.exportingAllEntries', { count: ledgerEntries.length }) }}
+              </span>
+              <span v-else>
+                {{ t('vendors.exportingFilteredEntries', { count: exportPreviewCount }) }}
+                <span v-if="exportOpeningBalance !== 0" class="block mt-1">
+                  {{ t('vendors.openingBalance') }}: ₹{{ Math.abs(exportOpeningBalance).toFixed(2) }} {{ exportOpeningBalance >= 0 ? 'Cr' : 'Dr' }}
+                </span>
+              </span>
+            </p>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex justify-end gap-3">
+            <button @click="closeExportModal" class="btn-outline">
+              {{ t('common.cancel') }}
+            </button>
+            <button @click="executeExport" class="btn-primary">
+              <Download class="h-4 w-4 mr-2" />
+              {{ t('common.export') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div v-else class="flex items-center justify-center min-h-96">
@@ -521,8 +551,7 @@ import {
   MoreVertical,
   AlertCircle,
   CheckCircle,
-  Filter,
-  X,
+X,
   Calendar
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
@@ -589,10 +618,12 @@ const paymentModalMode = ref<'CREATE' | 'PAY_NOW' | 'EDIT'>('PAY_NOW');
 const currentPayment = ref<Payment | null>(null);
 const currentAllocations = ref<PaymentAllocation[]>([]);
 
-// Ledger filter state
-const ledgerFilterFromDate = ref<string>('');
-const ledgerFilterToDate = ref<string>('');
-const showLedgerFilters = ref(false);
+// Export modal state
+const showExportModal = ref(false);
+const exportFormat = ref<'csv' | 'pdf' | 'tally'>('csv');
+const exportFromDate = ref<string>('');
+const exportToDate = ref<string>('');
+const exportAllData = ref(true);
 
 
 const outstandingAmount = computed(() => {
@@ -864,13 +895,32 @@ const ledgerEntries = computed(() => {
   return entries;
 });
 
-// Filtered ledger entries with opening balance calculation
-const filteredLedgerEntries = computed(() => {
-  const allEntries = ledgerEntries.value;
-  const fromDate = ledgerFilterFromDate.value ? new Date(ledgerFilterFromDate.value) : null;
-  const toDate = ledgerFilterToDate.value ? new Date(ledgerFilterToDate.value) : null;
+// Calculate totals for the ledger (uses all entries for display)
+const totalDebits = computed(() => {
+  return ledgerEntries.value.reduce((sum, entry) => sum + entry.debit, 0);
+});
 
-  // If no filters, return all entries
+const totalCredits = computed(() => {
+  return ledgerEntries.value.reduce((sum, entry) => sum + entry.credit, 0);
+});
+
+// Final balance: Credits - Debits
+const finalBalance = computed(() => {
+  return totalCredits.value - totalDebits.value;
+});
+
+// Export-related computed properties
+const getFilteredEntriesForExport = () => {
+  const allEntries = ledgerEntries.value;
+
+  if (exportAllData.value) {
+    return { entries: allEntries, openingBalance: 0, hasOpeningBalance: false };
+  }
+
+  const fromDate = exportFromDate.value ? new Date(exportFromDate.value) : null;
+  const toDate = exportToDate.value ? new Date(exportToDate.value) : null;
+
+  // If no filters set, return all entries
   if (!fromDate && !toDate) {
     return { entries: allEntries, openingBalance: 0, hasOpeningBalance: false };
   }
@@ -913,33 +963,51 @@ const filteredLedgerEntries = computed(() => {
     openingBalance,
     hasOpeningBalance: fromDate !== null && openingBalance !== 0
   };
-});
-
-// Check if filters are active
-const hasActiveFilters = computed(() => {
-  return ledgerFilterFromDate.value !== '' || ledgerFilterToDate.value !== '';
-});
-
-// Clear ledger filters
-const clearLedgerFilters = () => {
-  ledgerFilterFromDate.value = '';
-  ledgerFilterToDate.value = '';
 };
 
-// Calculate totals for the ledger (uses filtered entries when filters are active)
-const totalDebits = computed(() => {
-  return filteredLedgerEntries.value.entries.reduce((sum, entry) => sum + entry.debit, 0);
+// Preview count for export modal
+const exportPreviewCount = computed(() => {
+  if (exportAllData.value) return ledgerEntries.value.length;
+  return getFilteredEntriesForExport().entries.length;
 });
 
-const totalCredits = computed(() => {
-  return filteredLedgerEntries.value.entries.reduce((sum, entry) => sum + entry.credit, 0);
+// Opening balance for export preview
+const exportOpeningBalance = computed(() => {
+  if (exportAllData.value) return 0;
+  return getFilteredEntriesForExport().openingBalance;
 });
 
-// Final balance: Opening Balance + Credits - Debits
-const finalBalance = computed(() => {
-  const opening = filteredLedgerEntries.value.openingBalance;
-  return opening + totalCredits.value - totalDebits.value;
-});
+// Export modal functions
+const openExportModal = (format: 'csv' | 'pdf' | 'tally') => {
+  exportFormat.value = format;
+  exportAllData.value = true;
+  exportFromDate.value = '';
+  exportToDate.value = '';
+  showExportModal.value = true;
+};
+
+const closeExportModal = () => {
+  showExportModal.value = false;
+};
+
+const executeExport = async () => {
+  try {
+    switch (exportFormat.value) {
+      case 'csv':
+        exportLedger();
+        break;
+      case 'pdf':
+        await exportLedgerPDF();
+        break;
+      case 'tally':
+        exportTallyXml();
+        break;
+    }
+    closeExportModal();
+  } catch (err) {
+    console.error('Export error:', err);
+  }
+};
 
 
 
@@ -1118,9 +1186,10 @@ const exportLedgerPDF = async () => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
-  const margin = 20;
+  const margin = 14;
   let yPosition = 25;
-  const filtered = filteredLedgerEntries.value;
+  const filtered = getFilteredEntriesForExport();
+  const hasDateFilter = !exportAllData.value && (exportFromDate.value || exportToDate.value);
 
   // Load and add logo
   try {
@@ -1179,18 +1248,21 @@ const exportLedgerPDF = async () => {
   doc.text(`${t('vendors.generated')}: ${new Date().toLocaleDateString('en-CA')}`, margin, yPosition);
 
   // Show filter period if active
-  if (hasActiveFilters.value) {
+  if (hasDateFilter) {
     yPosition += 6;
-    const periodText = `${t('vendors.filterPeriod')}: ${ledgerFilterFromDate.value || t('vendors.beginning')} - ${ledgerFilterToDate.value || t('vendors.today')}`;
+    const periodText = `${t('vendors.filterPeriod')}: ${exportFromDate.value || t('vendors.beginning')} - ${exportToDate.value || t('vendors.today')}`;
     doc.text(periodText, margin, yPosition);
   }
 
   yPosition += 15;
 
-  // Table headers
+  // Table headers with adjusted column widths for better text fitting
+  // Total usable width: pageWidth - 2*margin = 210 - 28 = 182mm
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
   const headers = [t('vendors.date'), t('vendors.particulars'), t('vendors.reference'), t('vendors.debit'), t('vendors.credit'), t('vendors.balance')];
-  const colWidths = [20, 65, 20, 20, 20, 25];
+  // Adjusted widths: date=22, particulars=70, reference=25, debit=22, credit=22, balance=22 = 183 (close enough)
+  const colWidths = [22, 70, 25, 22, 22, 22];
   let xPos = margin;
 
   headers.forEach((header, i) => {
@@ -1198,13 +1270,13 @@ const exportLedgerPDF = async () => {
     xPos += colWidths[i];
   });
 
-  yPosition += 8;
+  yPosition += 6;
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
   yPosition += 5;
 
   // Table rows
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(8);
 
   // Add opening balance row if filtering
   if (filtered.hasOpeningBalance) {
@@ -1214,115 +1286,115 @@ const exportLedgerPDF = async () => {
       ? `${Math.abs(filtered.openingBalance).toFixed(0)} Cr`
       : `${Math.abs(filtered.openingBalance).toFixed(0)} Dr`;
 
-    const openingRowData = [
-      ledgerFilterFromDate.value,
-      t('vendors.openingBalance'),
-      '',
-      '',
-      '',
-      openingBalanceDisplay
-    ];
+    doc.text(exportFromDate.value || '', xPos, yPosition);
+    xPos += colWidths[0];
+    doc.text(t('vendors.openingBalance'), xPos, yPosition);
+    xPos += colWidths[1];
+    doc.text('', xPos, yPosition);
+    xPos += colWidths[2];
+    doc.text('', xPos, yPosition);
+    xPos += colWidths[3];
+    doc.text('', xPos, yPosition);
+    xPos += colWidths[4];
+    doc.text(openingBalanceDisplay, xPos, yPosition);
 
-    openingRowData.forEach((data, i) => {
-      doc.text(data, xPos, yPosition);
-      xPos += colWidths[i];
-    });
-
-    yPosition += 6;
+    yPosition += 5;
   }
+
+  // Calculate export totals
+  let exportTotalDebits = 0;
+  let exportTotalCredits = 0;
 
   // Use filtered ledger entries
   filtered.entries.forEach(entry => {
-    if (yPosition > 240) { // Leave more space for footer
+    if (yPosition > 245) { // Leave more space for footer
       doc.addPage();
-      yPosition = 30;
+      yPosition = 25;
     }
 
     xPos = margin;
 
-    // Handle multi-line particulars
-    const maxParticularsWidth = colWidths[1] - 5; // Particulars column width minus padding
-    const particularsLines = doc.splitTextToSize(entry.particulars, maxParticularsWidth);
-    const lineHeight = 4;
-    const rowHeight = Math.max(6, particularsLines.length * lineHeight);
-
-    // Check if we need a new page for multi-line content
-    if (yPosition + rowHeight > 240) { // Leave more space for footer
-      doc.addPage();
-      yPosition = 30;
+    // Truncate particulars to fit in column instead of wrapping
+    const maxParticularsWidth = colWidths[1] - 2;
+    let particularsText = entry.particulars;
+    while (doc.getTextWidth(particularsText) > maxParticularsWidth && particularsText.length > 3) {
+      particularsText = particularsText.slice(0, -4) + '...';
     }
 
-    // Balance display with Cr/Dr notation (positive = Cr = we owe, negative = Dr = credit balance)
+    // Truncate reference similarly
+    const maxRefWidth = colWidths[2] - 2;
+    let refText = entry.reference || '-';
+    while (doc.getTextWidth(refText) > maxRefWidth && refText.length > 3) {
+      refText = refText.slice(0, -4) + '...';
+    }
+
+    // Balance display with Cr/Dr notation
     const balanceDisplay = entry.runningBalance >= 0
       ? `${Math.abs(entry.runningBalance).toFixed(0)} Cr`
       : `${Math.abs(entry.runningBalance).toFixed(0)} Dr`;
 
-    // Draw row data
-    const rowData = [
-      new Date(entry.date).toLocaleDateString('en-CA'),
-      '', // Particulars handled separately for multi-line
-      entry.reference || '',
-      entry.debit > 0 ? entry.debit.toFixed(0) : '',
-      entry.credit > 0 ? entry.credit.toFixed(0) : '',
-      balanceDisplay
-    ];
+    // Draw each column
+    doc.text(new Date(entry.date).toLocaleDateString('en-CA'), xPos, yPosition);
+    xPos += colWidths[0];
 
-    // Draw non-particulars columns
-    rowData.forEach((data, i) => {
-      if (i !== 1) { // Skip particulars column
-        doc.text(data, xPos, yPosition);
-      }
-      xPos += colWidths[i];
-    });
+    doc.text(particularsText, xPos, yPosition);
+    xPos += colWidths[1];
 
-    // Draw multi-line particulars
-    const particularsX = margin + colWidths[0];
-    particularsLines.forEach((line: string, lineIndex: number) => {
-      doc.text(line, particularsX, yPosition + (lineIndex * lineHeight));
-    });
+    doc.text(refText, xPos, yPosition);
+    xPos += colWidths[2];
 
-    yPosition += rowHeight;
+    doc.text(entry.debit > 0 ? entry.debit.toFixed(0) : '-', xPos, yPosition);
+    xPos += colWidths[3];
+
+    doc.text(entry.credit > 0 ? entry.credit.toFixed(0) : '-', xPos, yPosition);
+    xPos += colWidths[4];
+
+    doc.text(balanceDisplay, xPos, yPosition);
+
+    exportTotalDebits += entry.debit;
+    exportTotalCredits += entry.credit;
+
+    yPosition += 5;
   });
 
   // Summary
-  if (yPosition > 200) { // Leave more space for footer
+  if (yPosition > 210) { // Leave more space for footer
     doc.addPage();
-    yPosition = 30;
+    yPosition = 25;
   }
 
-  yPosition += 10;
-  doc.line(margin, yPosition, pageWidth - margin, yPosition);
   yPosition += 8;
+  doc.line(margin, yPosition, pageWidth - margin, yPosition);
+  yPosition += 6;
 
   // Add totals
   doc.setFont('helvetica', 'bold');
-  doc.text(t('vendors.totals'), margin, yPosition);
-
+  doc.setFontSize(9);
   xPos = margin;
-  const totalsData = [
-    '',
-    '',
-    '',
-    totalDebits.value.toFixed(0),
-    totalCredits.value.toFixed(0),
-    Math.abs(finalBalance.value).toFixed(0) + (finalBalance.value >= 0 ? ' Cr' : ' Dr')
-  ];
 
-  totalsData.forEach((data, i) => {
-    if (i >= 3) { // Only show financial columns
-      doc.text(data, xPos, yPosition);
-    }
-    xPos += colWidths[i];
-  });
+  doc.text(t('vendors.totals'), xPos, yPosition);
+  xPos += colWidths[0] + colWidths[1] + colWidths[2];
 
-  yPosition += 10;
+  doc.text(exportTotalDebits.toFixed(0), xPos, yPosition);
+  xPos += colWidths[3];
+
+  doc.text(exportTotalCredits.toFixed(0), xPos, yPosition);
+  xPos += colWidths[4];
+
+  const exportFinalBalance = filtered.openingBalance + exportTotalCredits - exportTotalDebits;
+  const finalBalanceDisplay = exportFinalBalance >= 0
+    ? `${Math.abs(exportFinalBalance).toFixed(0)} Cr`
+    : `${Math.abs(exportFinalBalance).toFixed(0)} Dr`;
+  doc.text(finalBalanceDisplay, xPos, yPosition);
+
+  yPosition += 8;
 
   // Final balance summary
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  const balanceText = finalBalance.value >= 0
-    ? `${t('vendors.totalOutstanding')}: ₹${finalBalance.value.toFixed(0)}`
-    : `${t('vendors.creditBalance')}: ₹${Math.abs(finalBalance.value).toFixed(0)}`;
+  doc.setFontSize(11);
+  const balanceText = exportFinalBalance >= 0
+    ? `${t('vendors.totalOutstanding')}: ₹${exportFinalBalance.toFixed(0)}`
+    : `${t('vendors.creditBalance')}: ₹${Math.abs(exportFinalBalance).toFixed(0)}`;
   doc.text(balanceText, margin, yPosition);
 
   // Add footer to all pages
@@ -1349,7 +1421,8 @@ const generateLedgerCSV = () => {
   ];
 
   const rows: (string | number)[][] = [];
-  const filtered = filteredLedgerEntries.value;
+  const filtered = getFilteredEntriesForExport();
+  const hasDateFilter = !exportAllData.value && (exportFromDate.value || exportToDate.value);
 
   // Add opening balance row if filtering
   if (filtered.hasOpeningBalance) {
@@ -1358,7 +1431,7 @@ const generateLedgerCSV = () => {
       : `${Math.abs(filtered.openingBalance).toFixed(2)} Dr`;
 
     rows.push([
-      ledgerFilterFromDate.value,
+      exportFromDate.value,
       t('vendors.openingBalance'),
       '',
       '',
@@ -1366,6 +1439,10 @@ const generateLedgerCSV = () => {
       openingBalanceDisplay
     ]);
   }
+
+  // Calculate export totals
+  let exportTotalDebits = 0;
+  let exportTotalCredits = 0;
 
   // Use the filtered ledger entries
   filtered.entries.forEach(entry => {
@@ -1381,6 +1458,9 @@ const generateLedgerCSV = () => {
       entry.credit > 0 ? entry.credit.toFixed(2) : '',
       balanceDisplay
     ]);
+
+    exportTotalDebits += entry.debit;
+    exportTotalCredits += entry.credit;
   });
 
   // Add totals row
@@ -1388,8 +1468,8 @@ const generateLedgerCSV = () => {
     '',
     t('vendors.totals'),
     '',
-    totalDebits.value.toFixed(2),
-    totalCredits.value.toFixed(2),
+    exportTotalDebits.toFixed(2),
+    exportTotalCredits.toFixed(2),
     ''
   ]);
 
@@ -1397,10 +1477,10 @@ const generateLedgerCSV = () => {
   rows.push(['', '', '', '', '', '']);
 
   // Add filter info if active
-  if (hasActiveFilters.value) {
+  if (hasDateFilter) {
     rows.push([
       t('vendors.filterPeriod'),
-      `${ledgerFilterFromDate.value || t('vendors.beginning')} - ${ledgerFilterToDate.value || t('vendors.today')}`,
+      `${exportFromDate.value || t('vendors.beginning')} - ${exportToDate.value || t('vendors.today')}`,
       '',
       '',
       '',
@@ -1417,10 +1497,11 @@ const generateLedgerCSV = () => {
     ''
   ]);
 
-  const balanceStatus = finalBalance.value >= 0 ? t('vendors.outstanding') : t('vendors.creditBalance');
-  const finalBalanceDisplay = finalBalance.value >= 0
-    ? `₹${finalBalance.value.toFixed(2)} Cr (${balanceStatus})`
-    : `₹${Math.abs(finalBalance.value).toFixed(2)} Dr (${balanceStatus})`;
+  const exportFinalBalance = filtered.openingBalance + exportTotalCredits - exportTotalDebits;
+  const balanceStatus = exportFinalBalance >= 0 ? t('vendors.outstanding') : t('vendors.creditBalance');
+  const finalBalanceDisplay = exportFinalBalance >= 0
+    ? `₹${exportFinalBalance.toFixed(2)} Cr (${balanceStatus})`
+    : `₹${Math.abs(exportFinalBalance).toFixed(2)} Dr (${balanceStatus})`;
 
   rows.push([
     t('vendors.finalBalance'),
@@ -1494,15 +1575,6 @@ const createReturn = () => {
     path: '/vendor-returns',
     query: { vendor: vendor.value?.id }
   });
-};
-
-// Handle async PDF export
-const handleExportPdf = async () => {
-  try {
-    await exportLedgerPDF();
-  } catch (error) {
-    console.error('Error exporting PDF:', error);
-  }
 };
 
 // Handle mobile menu actions

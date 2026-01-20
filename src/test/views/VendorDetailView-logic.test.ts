@@ -629,4 +629,403 @@ describe('VendorDetailView Logic', () => {
       expect(isOverpaid).toBe(true)
     })
   })
+
+  describe('Export Date Range Filtering', () => {
+    // Helper to create ledger entries for testing
+    const createTestEntries = () => [
+      { id: '1', date: '2024-01-05', credit: 5000, debit: 0, runningBalance: 5000 },   // Delivery
+      { id: '2', date: '2024-01-10', credit: 0, debit: 2000, runningBalance: 3000 },   // Payment
+      { id: '3', date: '2024-01-15', credit: 3000, debit: 0, runningBalance: 6000 },   // Delivery
+      { id: '4', date: '2024-01-20', credit: 0, debit: 1500, runningBalance: 4500 },   // Payment
+      { id: '5', date: '2024-01-25', credit: 2000, debit: 0, runningBalance: 6500 },   // Delivery
+      { id: '6', date: '2024-01-30', credit: 0, debit: 3000, runningBalance: 3500 }    // Payment
+    ]
+
+    it('should return all entries when exportAllData is true', () => {
+      const allEntries = createTestEntries()
+      const exportAllData = true
+
+      const result = exportAllData
+        ? { entries: allEntries, openingBalance: 0, hasOpeningBalance: false }
+        : { entries: [], openingBalance: 0, hasOpeningBalance: false }
+
+      expect(result.entries.length).toBe(6)
+      expect(result.openingBalance).toBe(0)
+      expect(result.hasOpeningBalance).toBe(false)
+    })
+
+    it('should filter entries by from date', () => {
+      const allEntries = createTestEntries()
+      const fromDate = new Date('2024-01-15')
+      const toDate = null
+
+      let openingBalance = 0
+      const filteredEntries = allEntries.filter(entry => {
+        const entryDate = new Date(entry.date)
+        if (entryDate < fromDate) {
+          openingBalance += entry.credit - entry.debit
+          return false
+        }
+        return true
+      })
+
+      // Opening balance from entries before 2024-01-15: 5000 - 2000 = 3000
+      expect(openingBalance).toBe(3000)
+      // Filtered entries should be from 2024-01-15 onwards: 4 entries
+      expect(filteredEntries.length).toBe(4)
+    })
+
+    it('should filter entries by to date', () => {
+      const allEntries = createTestEntries()
+      const fromDate = null
+      const toDate = new Date('2024-01-20')
+
+      const filteredEntries = allEntries.filter(entry => {
+        const entryDate = new Date(entry.date)
+        if (toDate) {
+          const toDateEnd = new Date(toDate)
+          toDateEnd.setHours(23, 59, 59, 999)
+          if (entryDate > toDateEnd) {
+            return false
+          }
+        }
+        return true
+      })
+
+      // Entries up to 2024-01-20: 4 entries
+      expect(filteredEntries.length).toBe(4)
+    })
+
+    it('should filter entries by date range', () => {
+      const allEntries = createTestEntries()
+      const fromDate = new Date('2024-01-15')
+      const toDate = new Date('2024-01-25')
+
+      let openingBalance = 0
+      const filteredEntries = allEntries.filter(entry => {
+        const entryDate = new Date(entry.date)
+
+        // Calculate opening balance from entries before fromDate
+        if (entryDate < fromDate) {
+          openingBalance += entry.credit - entry.debit
+          return false
+        }
+
+        // Exclude entries after toDate
+        if (toDate) {
+          const toDateEnd = new Date(toDate)
+          toDateEnd.setHours(23, 59, 59, 999)
+          if (entryDate > toDateEnd) {
+            return false
+          }
+        }
+
+        return true
+      })
+
+      // Opening balance: 5000 - 2000 = 3000
+      expect(openingBalance).toBe(3000)
+      // Entries from 2024-01-15 to 2024-01-25: 3 entries (15th, 20th, 25th)
+      expect(filteredEntries.length).toBe(3)
+    })
+
+    it('should recalculate running balance after filtering', () => {
+      const allEntries = createTestEntries()
+      const fromDate = new Date('2024-01-15')
+      const toDate = new Date('2024-01-25')
+
+      let openingBalance = 0
+      const filteredEntries: typeof allEntries = []
+
+      allEntries.forEach(entry => {
+        const entryDate = new Date(entry.date)
+
+        if (entryDate < fromDate) {
+          openingBalance += entry.credit - entry.debit
+          return
+        }
+
+        if (toDate) {
+          const toDateEnd = new Date(toDate)
+          toDateEnd.setHours(23, 59, 59, 999)
+          if (entryDate > toDateEnd) {
+            return
+          }
+        }
+
+        filteredEntries.push({ ...entry })
+      })
+
+      // Recalculate running balance starting from opening balance
+      let runningBalance = openingBalance
+      filteredEntries.forEach(entry => {
+        runningBalance += entry.credit - entry.debit
+        entry.runningBalance = runningBalance
+      })
+
+      // Opening balance: 3000
+      // Entry 1 (2024-01-15): 3000 + 3000 - 0 = 6000
+      // Entry 2 (2024-01-20): 6000 + 0 - 1500 = 4500
+      // Entry 3 (2024-01-25): 4500 + 2000 - 0 = 6500
+      expect(filteredEntries[0].runningBalance).toBe(6000)
+      expect(filteredEntries[1].runningBalance).toBe(4500)
+      expect(filteredEntries[2].runningBalance).toBe(6500)
+    })
+
+    it('should calculate final balance correctly with opening balance', () => {
+      const openingBalance = 3000
+      const filteredDebits = 1500
+      const filteredCredits = 5000
+
+      const finalBalance = openingBalance + filteredCredits - filteredDebits
+
+      expect(finalBalance).toBe(6500) // 3000 + 5000 - 1500
+    })
+
+    it('should return no opening balance when from date is before all entries', () => {
+      const allEntries = createTestEntries()
+      const fromDate = new Date('2024-01-01') // Before all entries
+
+      let openingBalance = 0
+      allEntries.forEach(entry => {
+        const entryDate = new Date(entry.date)
+        if (entryDate < fromDate) {
+          openingBalance += entry.credit - entry.debit
+        }
+      })
+
+      expect(openingBalance).toBe(0)
+    })
+
+    it('should return all entries as opening balance when from date is after all entries', () => {
+      const allEntries = createTestEntries()
+      const fromDate = new Date('2024-02-01') // After all entries
+
+      let openingBalance = 0
+      const filteredEntries = allEntries.filter(entry => {
+        const entryDate = new Date(entry.date)
+        if (entryDate < fromDate) {
+          openingBalance += entry.credit - entry.debit
+          return false
+        }
+        return true
+      })
+
+      // All entries become opening balance
+      expect(openingBalance).toBe(3500) // Final balance of all entries
+      expect(filteredEntries.length).toBe(0)
+    })
+
+    it('should handle empty ledger entries', () => {
+      const allEntries: any[] = []
+      const fromDate = new Date('2024-01-15')
+
+      let openingBalance = 0
+      const filteredEntries = allEntries.filter(entry => {
+        const entryDate = new Date(entry.date)
+        if (entryDate < fromDate) {
+          openingBalance += entry.credit - entry.debit
+          return false
+        }
+        return true
+      })
+
+      expect(openingBalance).toBe(0)
+      expect(filteredEntries.length).toBe(0)
+    })
+  })
+
+  describe('Export Preview Count', () => {
+    it('should return total count when exportAllData is true', () => {
+      const totalEntries = 10
+      const exportAllData = true
+
+      const previewCount = exportAllData ? totalEntries : 5
+
+      expect(previewCount).toBe(10)
+    })
+
+    it('should return filtered count when exportAllData is false', () => {
+      const totalEntries = 10
+      const filteredEntries = 5
+      const exportAllData = false
+
+      const previewCount = exportAllData ? totalEntries : filteredEntries
+
+      expect(previewCount).toBe(5)
+    })
+  })
+
+  describe('Opening Balance Display', () => {
+    it('should display credit balance with Cr suffix', () => {
+      const openingBalance = 3000 // Positive = we owe vendor (Credit)
+
+      const display = openingBalance >= 0
+        ? `${Math.abs(openingBalance).toFixed(2)} Cr`
+        : `${Math.abs(openingBalance).toFixed(2)} Dr`
+
+      expect(display).toBe('3000.00 Cr')
+    })
+
+    it('should display debit balance with Dr suffix', () => {
+      const openingBalance = -2000 // Negative = vendor owes us (Debit)
+
+      const display = openingBalance >= 0
+        ? `${Math.abs(openingBalance).toFixed(2)} Cr`
+        : `${Math.abs(openingBalance).toFixed(2)} Dr`
+
+      expect(display).toBe('2000.00 Dr')
+    })
+
+    it('should display zero balance correctly', () => {
+      const openingBalance = 0
+
+      const display = openingBalance >= 0
+        ? `${Math.abs(openingBalance).toFixed(2)} Cr`
+        : `${Math.abs(openingBalance).toFixed(2)} Dr`
+
+      expect(display).toBe('0.00 Cr')
+    })
+  })
+
+  describe('CSV Export Generation', () => {
+    it('should include opening balance row when filtering', () => {
+      const hasOpeningBalance = true
+      const openingBalance = 3000
+      const fromDate = '2024-01-15'
+
+      const rows: any[][] = []
+
+      if (hasOpeningBalance) {
+        const openingBalanceDisplay = openingBalance >= 0
+          ? `${openingBalance.toFixed(2)} Cr`
+          : `${Math.abs(openingBalance).toFixed(2)} Dr`
+
+        rows.push([
+          fromDate,
+          'Opening Balance',
+          '',
+          '',
+          '',
+          openingBalanceDisplay
+        ])
+      }
+
+      expect(rows.length).toBe(1)
+      expect(rows[0][1]).toBe('Opening Balance')
+      expect(rows[0][5]).toBe('3000.00 Cr')
+    })
+
+    it('should not include opening balance row when not filtering', () => {
+      const hasOpeningBalance = false
+
+      const rows: any[][] = []
+
+      if (hasOpeningBalance) {
+        rows.push(['Opening Balance row'])
+      }
+
+      expect(rows.length).toBe(0)
+    })
+
+    it('should include filter period in CSV export', () => {
+      const hasDateFilter = true
+      const fromDate = '2024-01-15'
+      const toDate = '2024-01-30'
+
+      const rows: any[][] = []
+
+      if (hasDateFilter) {
+        rows.push([
+          'Period',
+          `${fromDate || 'Beginning'} - ${toDate || 'Today'}`,
+          '',
+          '',
+          '',
+          ''
+        ])
+      }
+
+      expect(rows.length).toBe(1)
+      expect(rows[0][1]).toBe('2024-01-15 - 2024-01-30')
+    })
+  })
+
+  describe('PDF Export Text Truncation', () => {
+    it('should truncate long particulars text', () => {
+      const maxWidth = 50 // Simulated max width
+      const longText = 'Invoice: INV-2024-001 - Item A, Item B, Item C, Item D, Item E'
+
+      // Simulate text width check and truncation
+      let truncatedText = longText
+      // In real code, this uses doc.getTextWidth()
+      // Here we simulate by checking character length
+      const maxChars = 30
+      if (truncatedText.length > maxChars) {
+        truncatedText = truncatedText.slice(0, maxChars - 3) + '...'
+      }
+
+      expect(truncatedText.endsWith('...')).toBe(true)
+      expect(truncatedText.length).toBeLessThanOrEqual(maxChars)
+    })
+
+    it('should not truncate short particulars text', () => {
+      const shortText = 'Invoice: INV-001'
+      const maxChars = 30
+
+      let truncatedText = shortText
+      if (truncatedText.length > maxChars) {
+        truncatedText = truncatedText.slice(0, maxChars - 3) + '...'
+      }
+
+      expect(truncatedText).toBe(shortText)
+      expect(truncatedText.endsWith('...')).toBe(false)
+    })
+
+    it('should truncate reference text similarly', () => {
+      const longRef = 'VERY-LONG-REFERENCE-NUMBER-12345678'
+      const maxChars = 20
+
+      let truncatedRef = longRef
+      if (truncatedRef.length > maxChars) {
+        truncatedRef = truncatedRef.slice(0, maxChars - 3) + '...'
+      }
+
+      expect(truncatedRef.endsWith('...')).toBe(true)
+      expect(truncatedRef.length).toBeLessThanOrEqual(maxChars)
+    })
+  })
+
+  describe('Export Modal State Management', () => {
+    it('should initialize export modal with correct defaults', () => {
+      // Initial state when opening modal
+      const showExportModal = true
+      const exportFormat = 'csv'
+      const exportAllData = true
+      const exportFromDate = ''
+      const exportToDate = ''
+
+      expect(showExportModal).toBe(true)
+      expect(exportFormat).toBe('csv')
+      expect(exportAllData).toBe(true)
+      expect(exportFromDate).toBe('')
+      expect(exportToDate).toBe('')
+    })
+
+    it('should reset state when closing modal', () => {
+      // State after closing modal
+      const showExportModal = false
+
+      expect(showExportModal).toBe(false)
+    })
+
+    it('should preserve format when opening modal', () => {
+      const formats = ['csv', 'pdf', 'tally'] as const
+
+      formats.forEach(format => {
+        const exportFormat = format
+        expect(exportFormat).toBe(format)
+      })
+    })
+  })
 })

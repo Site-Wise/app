@@ -532,7 +532,10 @@
     "entries": "प्रविष्टियाँ",
     "beginning": "शुरुआत",
     "today": "आज",
-    "outstanding": "बकाया"
+    "outstanding": "बकाया",
+    "exportAllData": "सभी खाता डेटा निर्यात करें",
+    "exportingAllEntries": "सभी {count} प्रविष्टियाँ निर्यात हो रही हैं",
+    "exportingFilteredEntries": "चयनित तारीख सीमा में {count} प्रविष्टियाँ निर्यात हो रही हैं"
   },
   "returns": {
     "createReturn": "वापसी बनाएं",

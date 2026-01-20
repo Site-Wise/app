@@ -530,7 +530,10 @@
     "entries": "entries",
     "beginning": "Beginning",
     "today": "Today",
-    "outstanding": "Outstanding"
+    "outstanding": "Outstanding",
+    "exportAllData": "Export all ledger data",
+    "exportingAllEntries": "Exporting all {count} entries",
+    "exportingFilteredEntries": "Exporting {count} entries in selected date range"
   },
   "returns": {
     "createReturn": "Create Return",
