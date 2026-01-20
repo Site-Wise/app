@@ -953,7 +953,6 @@ describe('VendorDetailView Logic', () => {
 
   describe('PDF Export Text Truncation', () => {
     it('should truncate long particulars text', () => {
-      const maxWidth = 50 // Simulated max width
       const longText = 'Invoice: INV-2024-001 - Item A, Item B, Item C, Item D, Item E'
 
       // Simulate text width check and truncation
