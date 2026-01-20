@@ -897,9 +897,7 @@ describe('VendorDetailView Logic', () => {
 
       if (hasOpeningBalance) {
         const openingBalanceDisplay = openingBalance >= 0
-          ? `${openingBalance.toFixed(2)} Cr`
-          : `${Math.abs(openingBalance).toFixed(2)} Dr`
-
+        const openingBalanceDisplay = `${openingBalance.toFixed(2)} Cr`
         rows.push([
           fromDate,
           'Opening Balance',
