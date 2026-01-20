@@ -677,7 +677,6 @@ describe('VendorDetailView Logic', () => {
 
     it('should filter entries by to date', () => {
       const allEntries = createTestEntries()
-      const fromDate = null
       const toDate = new Date('2024-01-20')
 
       const filteredEntries = allEntries.filter(entry => {
