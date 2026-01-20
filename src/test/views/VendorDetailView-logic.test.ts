@@ -657,7 +657,6 @@ describe('VendorDetailView Logic', () => {
     it('should filter entries by from date', () => {
       const allEntries = createTestEntries()
       const fromDate = new Date('2024-01-15')
-      const toDate = null
 
       let openingBalance = 0
       const filteredEntries = allEntries.filter(entry => {
