@@ -197,7 +197,7 @@
 
 
     <!-- Quick Summary Cards -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
     <!-- Deliveries Summary -->
     <div class="card">
       <div class="flex items-center justify-between mb-4">
@@ -297,6 +297,184 @@
     </div>
     </div>
 
+    <!-- Ledger Section -->
+    <div class="card mb-8">
+      <!-- Ledger Header with Filter Toggle -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('vendors.vendorLedger') }}</h2>
+        <div class="flex items-center gap-2">
+          <button
+            @click="showLedgerFilters = !showLedgerFilters"
+            class="btn-outline text-sm flex items-center"
+            :class="{ 'bg-primary-50 dark:bg-primary-900/20 border-primary-300 dark:border-primary-700': hasActiveFilters }"
+          >
+            <Filter class="h-4 w-4 mr-2" />
+            {{ t('common.filter') }}
+            <span v-if="hasActiveFilters" class="ml-2 px-1.5 py-0.5 bg-primary-500 text-white text-xs rounded-full">
+              {{ (ledgerFilterFromDate ? 1 : 0) + (ledgerFilterToDate ? 1 : 0) }}
+            </span>
+          </button>
+          <button
+            v-if="hasActiveFilters"
+            @click="clearLedgerFilters"
+            class="btn-outline text-sm flex items-center text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
+          >
+            <X class="h-4 w-4 mr-1" />
+            {{ t('common.clearFilters') }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Panel -->
+      <div v-if="showLedgerFilters" class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <Calendar class="inline h-4 w-4 mr-1" />
+              {{ t('vendors.filterFromDate') }}
+            </label>
+            <input
+              v-model="ledgerFilterFromDate"
+              type="date"
+              class="input w-full"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <Calendar class="inline h-4 w-4 mr-1" />
+              {{ t('vendors.filterToDate') }}
+            </label>
+            <input
+              v-model="ledgerFilterToDate"
+              type="date"
+              class="input w-full"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Ledger Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                {{ t('vendors.date') }}
+              </th>
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                {{ t('vendors.particulars') }}
+              </th>
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell w-28">
+                {{ t('vendors.reference') }}
+              </th>
+              <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                {{ t('vendors.debit') }}
+              </th>
+              <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                {{ t('vendors.credit') }}
+              </th>
+              <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">
+                {{ t('vendors.balance') }}
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+            <!-- Opening Balance Row (when filtering) -->
+            <tr v-if="filteredLedgerEntries.hasOpeningBalance" class="bg-blue-50 dark:bg-blue-900/20">
+              <td class="px-3 py-2 text-gray-900 dark:text-white">
+                {{ ledgerFilterFromDate }}
+              </td>
+              <td class="px-3 py-2 text-gray-900 dark:text-white font-medium ledger-particulars">
+                {{ t('vendors.openingBalance') }}
+              </td>
+              <td class="px-3 py-2 text-gray-500 dark:text-gray-400 hidden md:table-cell">-</td>
+              <td class="px-3 py-2 text-right text-gray-900 dark:text-white">-</td>
+              <td class="px-3 py-2 text-right text-gray-900 dark:text-white">-</td>
+              <td class="px-3 py-2 text-right font-medium" :class="filteredLedgerEntries.openingBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+                ₹{{ Math.abs(filteredLedgerEntries.openingBalance).toFixed(2) }}
+                <span class="text-xs ml-1">{{ filteredLedgerEntries.openingBalance >= 0 ? 'Cr' : 'Dr' }}</span>
+              </td>
+            </tr>
+
+            <!-- Ledger Entries -->
+            <tr v-for="entry in filteredLedgerEntries.entries" :key="entry.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <td class="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap">
+                {{ formatDate(entry.date) }}
+              </td>
+              <td class="px-3 py-2 text-gray-900 dark:text-white ledger-particulars">
+                <div class="ledger-particulars-text">{{ entry.particulars }}</div>
+                <div v-if="entry.details" class="text-xs text-gray-500 dark:text-gray-400 mt-1 ledger-details-text">
+                  {{ entry.details }}
+                </div>
+              </td>
+              <td class="px-3 py-2 text-gray-500 dark:text-gray-400 hidden md:table-cell ledger-reference">
+                {{ entry.reference || '-' }}
+              </td>
+              <td class="px-3 py-2 text-right">
+                <span v-if="entry.debit > 0" class="text-green-600 dark:text-green-400 font-medium">
+                  ₹{{ entry.debit.toFixed(2) }}
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </td>
+              <td class="px-3 py-2 text-right">
+                <span v-if="entry.credit > 0" class="text-red-600 dark:text-red-400 font-medium">
+                  ₹{{ entry.credit.toFixed(2) }}
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </td>
+              <td class="px-3 py-2 text-right font-medium" :class="entry.runningBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+                ₹{{ Math.abs(entry.runningBalance).toFixed(2) }}
+                <span class="text-xs ml-1">{{ entry.runningBalance >= 0 ? 'Cr' : 'Dr' }}</span>
+              </td>
+            </tr>
+
+            <!-- Empty State -->
+            <tr v-if="filteredLedgerEntries.entries.length === 0 && !filteredLedgerEntries.hasOpeningBalance">
+              <td colspan="6" class="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
+                {{ hasActiveFilters ? t('vendors.noEntriesInRange') : t('vendors.noLedgerEntries') }}
+              </td>
+            </tr>
+
+            <!-- Totals Row -->
+            <tr v-if="filteredLedgerEntries.entries.length > 0 || filteredLedgerEntries.hasOpeningBalance" class="bg-gray-100 dark:bg-gray-700 font-medium">
+              <td class="px-3 py-2 text-gray-900 dark:text-white" colspan="2">
+                {{ t('vendors.totals') }}
+              </td>
+              <td class="px-3 py-2 hidden md:table-cell"></td>
+              <td class="px-3 py-2 text-right text-green-600 dark:text-green-400">
+                ₹{{ totalDebits.toFixed(2) }}
+              </td>
+              <td class="px-3 py-2 text-right text-red-600 dark:text-red-400">
+                ₹{{ totalCredits.toFixed(2) }}
+              </td>
+              <td class="px-3 py-2 text-right" :class="finalBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+                ₹{{ Math.abs(finalBalance).toFixed(2) }}
+                <span class="text-xs ml-1">{{ finalBalance >= 0 ? 'Cr' : 'Dr' }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Ledger Summary -->
+      <div v-if="filteredLedgerEntries.entries.length > 0 || filteredLedgerEntries.hasOpeningBalance" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span v-if="hasActiveFilters">
+              {{ t('vendors.showingEntriesFrom') }} {{ ledgerFilterFromDate || t('vendors.beginning') }}
+              {{ t('vendors.to') }} {{ ledgerFilterToDate || t('vendors.today') }}
+            </span>
+            <span v-else>
+              {{ t('vendors.showingAllEntries') }} ({{ filteredLedgerEntries.entries.length }} {{ t('vendors.entries') }})
+            </span>
+          </div>
+          <div class="text-lg font-semibold" :class="finalBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+            {{ finalBalance >= 0 ? t('vendors.totalOutstanding') : t('vendors.creditBalance') }}: ₹{{ Math.abs(finalBalance).toFixed(2) }}
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Payment Modal -->
     <PaymentModal
       :is-visible="showPaymentModal"
@@ -342,7 +520,10 @@ import {
   ChevronDown,
   MoreVertical,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Filter,
+  X,
+  Calendar
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useToast } from '../composables/useToast';
@@ -408,6 +589,11 @@ const paymentModalMode = ref<'CREATE' | 'PAY_NOW' | 'EDIT'>('PAY_NOW');
 const currentPayment = ref<Payment | null>(null);
 const currentAllocations = ref<PaymentAllocation[]>([]);
 
+// Ledger filter state
+const ledgerFilterFromDate = ref<string>('');
+const ledgerFilterToDate = ref<string>('');
+const showLedgerFilters = ref(false);
+
 
 const outstandingAmount = computed(() => {
   if (!vendor.value) return 0;
@@ -442,6 +628,9 @@ const totalPaid = computed(() => {
 // });
 
 // Comprehensive ledger entries with proper accounting principles
+// From buyer's perspective (Accounts Payable):
+// - Credit = increases liability (deliveries received)
+// - Debit = decreases liability (payments made, refunds received)
 const ledgerEntries = computed(() => {
   const entries: Array<{
     id: string;
@@ -451,20 +640,20 @@ const ledgerEntries = computed(() => {
     details?: string;
     reference: string;
     particulars: string;
-    debit: number;  // Purchases on credit
-    credit: number; // Payments, credit notes, refunds
+    debit: number;  // Payments, refunds (decreases liability)
+    credit: number; // Purchases on credit (increases liability)
     runningBalance: number;
   }> = [];
 
   // 1️⃣ Add opening balance if there are previous transactions
   // For now, we'll start fresh, but this can be extended for previous period balances
-  
-  // 2️⃣ Add delivery entries (debits - purchases on credit)
+
+  // 2️⃣ Add delivery entries (credits - purchases increase liability)
   vendorDeliveries.value.forEach(delivery => {
     let description = `${t('vendors.delivery')} #${delivery.id?.slice(-6) || t('vendors.unknown')}`;
     let details = '';
     let particulars = `Invoice: ${delivery.delivery_reference || delivery.id?.slice(-6) || 'N/A'}`;
-    
+
     // Create description from delivery items if available
     if (delivery.expand?.delivery_items && delivery.expand.delivery_items.length > 0) {
       const itemNames = delivery.expand.delivery_items.map((deliveryItem) => {
@@ -486,26 +675,26 @@ const ledgerEntries = computed(() => {
       details,
       reference: delivery.delivery_reference || '',
       particulars,
-      debit: delivery.total_amount,  // Debit increases vendor liability (what we owe)
-      credit: 0,
+      debit: 0,
+      credit: delivery.total_amount,  // Credit increases liability (what we owe)
       runningBalance: 0 // Will be calculated below
     });
   });
 
-  // 3️⃣ Add return entries 
+  // 3️⃣ Add return entries
   vendorReturns.value.forEach(returnItem => {
     if (returnItem.status === 'completed' || returnItem.status === 'refunded') {
       if (returnItem.processing_option === 'credit_note') {
         // CREDIT NOTE SCENARIO: Return processed as credit note
-        // Shows ONLY in credit column - no debit entry for usage
-        const relatedCreditNote = vendorCreditNotes.value.find(cn => 
-          cn.reason === returnItem.reason && 
+        // Shows ONLY in debit column - reduces liability
+        const relatedCreditNote = vendorCreditNotes.value.find(cn =>
+          cn.reason === returnItem.reason &&
           cn.credit_amount === returnItem.total_return_amount
         );
-        
+
         let details = `Return processed as credit note`;
         let particulars = `Credit Note: ${relatedCreditNote?.reference || `Return #${returnItem.id?.slice(-6)}`}`;
-        
+
         if (returnItem.reason) {
           details += ` - ${returnItem.reason}`;
           particulars += ` - ${returnItem.reason}`;
@@ -519,18 +708,18 @@ const ledgerEntries = computed(() => {
           details,
           reference: relatedCreditNote?.reference || `RET-${returnItem.id?.slice(-6)}`,
           particulars,
-          debit: 0,
-          credit: returnItem.total_return_amount,  // CREDIT: reduces vendor liability
+          debit: returnItem.total_return_amount,  // Debit: reduces liability
+          credit: 0,
           runningBalance: 0 // Will be calculated below
         });
-        
+
       } else if (returnItem.processing_option === 'refund') {
         // REFUND SCENARIO: Return processed as refund (TWO ENTRIES)
-        
-        // 1. Return entry - CREDIT column (reduces liability for returned goods)
+
+        // 1. Return entry - DEBIT column (reduces liability for returned goods)
         let returnDetails = `Goods returned for refund`;
         let returnParticulars = `Return: Return #${returnItem.id?.slice(-6)}`;
-        
+
         if (returnItem.reason) {
           returnDetails += ` - ${returnItem.reason}`;
           returnParticulars += ` - ${returnItem.reason}`;
@@ -544,16 +733,16 @@ const ledgerEntries = computed(() => {
           details: returnDetails,
           reference: `RET-${returnItem.id?.slice(-6)}`,
           particulars: returnParticulars,
-          debit: 0,
-          credit: returnItem.total_return_amount,  // CREDIT: reduces liability for returned goods
+          debit: returnItem.total_return_amount,  // Debit: reduces liability for returned goods
+          credit: 0,
           runningBalance: 0 // Will be calculated below
         });
 
-        // 2. Refund transaction entry - DEBIT column (vendor gave us money back)
+        // 2. Refund transaction entry - also DEBIT (vendor gave us money back)
         if (returnItem.actual_refund_amount && returnItem.actual_refund_amount > 0) {
           let refundDetails = `Refund received for returned goods`;
           let refundParticulars = `Refund Received: Return #${returnItem.id?.slice(-6)}`;
-          
+
           if (returnItem.reason) {
             refundDetails += ` - ${returnItem.reason}`;
             refundParticulars += ` - ${returnItem.reason}`;
@@ -567,7 +756,7 @@ const ledgerEntries = computed(() => {
             details: refundDetails,
             reference: `REF-${returnItem.id?.slice(-6)}`,
             particulars: refundParticulars,
-            debit: returnItem.actual_refund_amount,  // DEBIT: vendor gave us money back
+            debit: returnItem.actual_refund_amount,  // Debit: refund received reduces liability
             credit: 0,
             runningBalance: 0 // Will be calculated below
           });
@@ -579,16 +768,16 @@ const ledgerEntries = computed(() => {
   // Also add standalone credit notes (not related to returns)
   vendorCreditNotes.value.forEach(creditNote => {
     // Only show credit notes that are not already processed above via returns
-    const isReturnRelated = vendorReturns.value.some(returnItem => 
+    const isReturnRelated = vendorReturns.value.some(returnItem =>
       returnItem.processing_option === 'credit_note' &&
       returnItem.reason === creditNote.reason &&
       returnItem.total_return_amount === creditNote.credit_amount
     );
-    
+
     if (creditNote.credit_amount > 0 && !isReturnRelated) {
       let details = '';
       let particulars = `Credit Note: ${creditNote.reference || `CN-${creditNote.id?.slice(-6)}`}`;
-      
+
       if (creditNote.reason) {
         details = creditNote.reason;
         particulars += ` - ${creditNote.reason}`;
@@ -602,8 +791,8 @@ const ledgerEntries = computed(() => {
         details,
         reference: creditNote.reference || `CN-${creditNote.id?.slice(-6)}`,
         particulars,
-        debit: 0,
-        credit: creditNote.credit_amount,  // Credit reduces vendor liability
+        debit: creditNote.credit_amount,  // Debit reduces liability
+        credit: 0,
         runningBalance: 0 // Will be calculated below
       });
     }
@@ -613,7 +802,7 @@ const ledgerEntries = computed(() => {
   // The credit note already reduced our liability when issued
   // Usage is just internal tracking of which payments utilized the credit
 
-  // 4️⃣ Add payment entries (credits - reduces what we owe)
+  // 4️⃣ Add payment entries (debits - reduces what we owe)
   vendorPayments.value.forEach(payment => {
     let particulars = `Payment: ${payment.reference || 'Bank Transfer'}`;
     if (payment.notes) {
@@ -628,8 +817,8 @@ const ledgerEntries = computed(() => {
       details: payment.notes || '',
       reference: payment.reference || '',
       particulars,
-      debit: 0,
-      credit: payment.amount,  // Credit reduces vendor liability (what we paid)
+      debit: payment.amount,  // Debit reduces liability (what we paid)
+      credit: 0,
       runningBalance: 0 // Will be calculated below
     });
   });
@@ -639,7 +828,7 @@ const ledgerEntries = computed(() => {
   vendorRefunds.value.forEach(refund => {
     let details = refund.description || '';
     let particulars = `Refund Received`;
-    
+
     if (refund.reference) {
       particulars += `: ${refund.reference}`;
     }
@@ -656,8 +845,8 @@ const ledgerEntries = computed(() => {
       details,
       reference: refund.reference || '',
       particulars,
-      debit: 0,
-      credit: refund.amount,  // Credit reduces vendor liability
+      debit: refund.amount,  // Debit reduces liability
+      credit: 0,
       runningBalance: 0 // Will be calculated below
     });
   });
@@ -665,27 +854,91 @@ const ledgerEntries = computed(() => {
   // Sort entries by date
   entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  // 5️⃣ Calculate running balance (Debit increases balance, Credit decreases balance)
+  // 5️⃣ Calculate running balance (Credit increases balance, Debit decreases balance)
   let runningBalance = 0;
   entries.forEach(entry => {
-    runningBalance += entry.debit - entry.credit;  // Proper accounting: Dr (+), Cr (-)
+    runningBalance += entry.credit - entry.debit;  // Proper accounting: Cr (+), Dr (-)
     entry.runningBalance = runningBalance;
   });
 
   return entries;
 });
 
-// Calculate totals for the ledger
+// Filtered ledger entries with opening balance calculation
+const filteredLedgerEntries = computed(() => {
+  const allEntries = ledgerEntries.value;
+  const fromDate = ledgerFilterFromDate.value ? new Date(ledgerFilterFromDate.value) : null;
+  const toDate = ledgerFilterToDate.value ? new Date(ledgerFilterToDate.value) : null;
+
+  // If no filters, return all entries
+  if (!fromDate && !toDate) {
+    return { entries: allEntries, openingBalance: 0, hasOpeningBalance: false };
+  }
+
+  // Calculate opening balance from entries before the from date
+  let openingBalance = 0;
+  const filteredEntries: typeof allEntries = [];
+
+  allEntries.forEach(entry => {
+    const entryDate = new Date(entry.date);
+
+    // Check if entry is before fromDate (for opening balance)
+    if (fromDate && entryDate < fromDate) {
+      openingBalance += entry.credit - entry.debit;
+      return;
+    }
+
+    // Check if entry is after toDate (exclude)
+    if (toDate) {
+      const toDateEnd = new Date(toDate);
+      toDateEnd.setHours(23, 59, 59, 999);
+      if (entryDate > toDateEnd) {
+        return;
+      }
+    }
+
+    // Entry is within range
+    filteredEntries.push({ ...entry });
+  });
+
+  // Recalculate running balance starting from opening balance
+  let runningBalance = openingBalance;
+  filteredEntries.forEach(entry => {
+    runningBalance += entry.credit - entry.debit;
+    entry.runningBalance = runningBalance;
+  });
+
+  return {
+    entries: filteredEntries,
+    openingBalance,
+    hasOpeningBalance: fromDate !== null && openingBalance !== 0
+  };
+});
+
+// Check if filters are active
+const hasActiveFilters = computed(() => {
+  return ledgerFilterFromDate.value !== '' || ledgerFilterToDate.value !== '';
+});
+
+// Clear ledger filters
+const clearLedgerFilters = () => {
+  ledgerFilterFromDate.value = '';
+  ledgerFilterToDate.value = '';
+};
+
+// Calculate totals for the ledger (uses filtered entries when filters are active)
 const totalDebits = computed(() => {
-  return ledgerEntries.value.reduce((sum, entry) => sum + entry.debit, 0);
+  return filteredLedgerEntries.value.entries.reduce((sum, entry) => sum + entry.debit, 0);
 });
 
 const totalCredits = computed(() => {
-  return ledgerEntries.value.reduce((sum, entry) => sum + entry.credit, 0);
+  return filteredLedgerEntries.value.entries.reduce((sum, entry) => sum + entry.credit, 0);
 });
 
+// Final balance: Opening Balance + Credits - Debits
 const finalBalance = computed(() => {
-  return totalDebits.value - totalCredits.value;
+  const opening = filteredLedgerEntries.value.openingBalance;
+  return opening + totalCredits.value - totalDebits.value;
 });
 
 
@@ -861,122 +1114,149 @@ const addFooter = (doc: any, pageWidth: number, pageHeight: number, margin: numb
 
 const exportLedgerPDF = async () => {
   if (!vendor.value) return;
-  
+
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
   const margin = 20;
   let yPosition = 25;
-  
+  const filtered = filteredLedgerEntries.value;
+
   // Load and add logo
   try {
     const logoImg = new Image();
     logoImg.crossOrigin = 'anonymous';
-    
+
     await new Promise((resolve, reject) => {
       logoImg.onload = resolve;
       logoImg.onerror = reject;
       logoImg.src = '/logo.png';
     });
-    
+
     // Add logo to the right side of header with proper aspect ratio
     const maxLogoWidth = 25;
     const maxLogoHeight = 15;
-    
+
     // Calculate aspect ratio and fit within bounds
     const aspectRatio = logoImg.naturalWidth / logoImg.naturalHeight;
     let logoWidth = maxLogoWidth;
     let logoHeight = maxLogoWidth / aspectRatio;
-    
+
     // If height exceeds max, scale by height instead
     if (logoHeight > maxLogoHeight) {
       logoHeight = maxLogoHeight;
       logoWidth = maxLogoHeight * aspectRatio;
     }
-    
+
     const logoX = pageWidth - margin - logoWidth;
     const logoY = yPosition - 5;
-    
+
     doc.addImage(logoImg, 'PNG', logoX, logoY, logoWidth, logoHeight);
   } catch (error) {
     console.warn('Could not load logo for PDF:', error);
     // Continue without logo if it fails to load
   }
-  
+
   // Document title (no SiteWise text in header, just logo)
   yPosition += 10;
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(0, 0, 0); // Black for main content
   doc.text(t('vendors.vendorLedger'), margin, yPosition);
-  
+
   // Vendor information
   yPosition += 12;
   doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
   doc.text(`${t('vendors.vendor')}: ${vendor.value.name}`, margin, yPosition);
-  
+
   yPosition += 6;
   if (vendor.value.contact_person) {
     doc.text(`${t('vendors.contact')}: ${vendor.value.contact_person}`, margin, yPosition);
     yPosition += 6;
   }
-  
+
   doc.text(`${t('vendors.generated')}: ${new Date().toLocaleDateString('en-CA')}`, margin, yPosition);
-  
-  // yPosition += 6;
-  // const outstandingAmount = vendorDeliveries.value.reduce((sum, delivery) => 
-  //   delivery.payment_status === 'pending' ? sum + delivery.total_amount : sum, 0) - 
-  //   vendorPayments.value.reduce((sum, payment) => sum + payment.amount, 0);
-  // doc.text(`Outstanding Balance: ₹${outstandingAmount.toFixed(2)}`, margin, yPosition);
-  
+
+  // Show filter period if active
+  if (hasActiveFilters.value) {
+    yPosition += 6;
+    const periodText = `${t('vendors.filterPeriod')}: ${ledgerFilterFromDate.value || t('vendors.beginning')} - ${ledgerFilterToDate.value || t('vendors.today')}`;
+    doc.text(periodText, margin, yPosition);
+  }
+
   yPosition += 15;
-  
+
   // Table headers
   doc.setFont("helvetica", "bold");
   const headers = [t('vendors.date'), t('vendors.particulars'), t('vendors.reference'), t('vendors.debit'), t('vendors.credit'), t('vendors.balance')];
   const colWidths = [20, 65, 20, 20, 20, 25];
   let xPos = margin;
-  
+
   headers.forEach((header, i) => {
     doc.text(header, xPos, yPosition);
     xPos += colWidths[i];
   });
-  
+
   yPosition += 8;
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
   yPosition += 5;
-  
+
   // Table rows
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  
-  // Use comprehensive ledger entries
-  ledgerEntries.value.forEach(entry => {
+
+  // Add opening balance row if filtering
+  if (filtered.hasOpeningBalance) {
+    xPos = margin;
+
+    const openingBalanceDisplay = filtered.openingBalance >= 0
+      ? `${Math.abs(filtered.openingBalance).toFixed(0)} Cr`
+      : `${Math.abs(filtered.openingBalance).toFixed(0)} Dr`;
+
+    const openingRowData = [
+      ledgerFilterFromDate.value,
+      t('vendors.openingBalance'),
+      '',
+      '',
+      '',
+      openingBalanceDisplay
+    ];
+
+    openingRowData.forEach((data, i) => {
+      doc.text(data, xPos, yPosition);
+      xPos += colWidths[i];
+    });
+
+    yPosition += 6;
+  }
+
+  // Use filtered ledger entries
+  filtered.entries.forEach(entry => {
     if (yPosition > 240) { // Leave more space for footer
       doc.addPage();
       yPosition = 30;
     }
-    
+
     xPos = margin;
-    
+
     // Handle multi-line particulars
     const maxParticularsWidth = colWidths[1] - 5; // Particulars column width minus padding
     const particularsLines = doc.splitTextToSize(entry.particulars, maxParticularsWidth);
     const lineHeight = 4;
     const rowHeight = Math.max(6, particularsLines.length * lineHeight);
-    
+
     // Check if we need a new page for multi-line content
     if (yPosition + rowHeight > 240) { // Leave more space for footer
       doc.addPage();
       yPosition = 30;
     }
-    
-    // Balance display with Dr/Cr notation
-    const balanceDisplay = entry.runningBalance >= 0 
-      ? `${Math.abs(entry.runningBalance).toFixed(0)} Dr`
-      : `${Math.abs(entry.runningBalance).toFixed(0)} Cr`;
-    
+
+    // Balance display with Cr/Dr notation (positive = Cr = we owe, negative = Dr = credit balance)
+    const balanceDisplay = entry.runningBalance >= 0
+      ? `${Math.abs(entry.runningBalance).toFixed(0)} Cr`
+      : `${Math.abs(entry.runningBalance).toFixed(0)} Dr`;
+
     // Draw row data
     const rowData = [
       new Date(entry.date).toLocaleDateString('en-CA'),
@@ -986,7 +1266,7 @@ const exportLedgerPDF = async () => {
       entry.credit > 0 ? entry.credit.toFixed(0) : '',
       balanceDisplay
     ];
-    
+
     // Draw non-particulars columns
     rowData.forEach((data, i) => {
       if (i !== 1) { // Skip particulars column
@@ -994,30 +1274,30 @@ const exportLedgerPDF = async () => {
       }
       xPos += colWidths[i];
     });
-    
+
     // Draw multi-line particulars
     const particularsX = margin + colWidths[0];
     particularsLines.forEach((line: string, lineIndex: number) => {
       doc.text(line, particularsX, yPosition + (lineIndex * lineHeight));
     });
-    
+
     yPosition += rowHeight;
   });
-  
+
   // Summary
   if (yPosition > 200) { // Leave more space for footer
     doc.addPage();
     yPosition = 30;
   }
-  
+
   yPosition += 10;
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
   yPosition += 8;
-  
+
   // Add totals
   doc.setFont('helvetica', 'bold');
   doc.text(t('vendors.totals'), margin, yPosition);
-  
+
   xPos = margin;
   const totalsData = [
     '',
@@ -1025,33 +1305,33 @@ const exportLedgerPDF = async () => {
     '',
     totalDebits.value.toFixed(0),
     totalCredits.value.toFixed(0),
-    Math.abs(finalBalance.value).toFixed(0) + (finalBalance.value >= 0 ? ' Dr' : ' Cr')
+    Math.abs(finalBalance.value).toFixed(0) + (finalBalance.value >= 0 ? ' Cr' : ' Dr')
   ];
-  
+
   totalsData.forEach((data, i) => {
     if (i >= 3) { // Only show financial columns
       doc.text(data, xPos, yPosition);
     }
     xPos += colWidths[i];
   });
-  
+
   yPosition += 10;
-  
+
   // Final balance summary
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  const balanceText = finalBalance.value >= 0 
-    ? `${t('vendors.totalOutstanding')}: ${finalBalance.value.toFixed(0)}`
-    : `${t('vendors.creditBalance')}: ${Math.abs(finalBalance.value).toFixed(0)}`;
+  const balanceText = finalBalance.value >= 0
+    ? `${t('vendors.totalOutstanding')}: ₹${finalBalance.value.toFixed(0)}`
+    : `${t('vendors.creditBalance')}: ₹${Math.abs(finalBalance.value).toFixed(0)}`;
   doc.text(balanceText, margin, yPosition);
-  
+
   // Add footer to all pages
   const totalPages = doc.internal.pages.length - 1; // Subtract 1 because pages array includes a null first element
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     addFooter(doc, pageWidth, pageHeight, margin);
   }
-  
+
   // Save the PDF
   doc.save(`${vendor.value.name}_${t('vendors.ledger')}_${new Date().toISOString().split('T')[0]}.pdf`);
 };
@@ -1060,21 +1340,38 @@ const generateLedgerCSV = () => {
   if (!vendor.value) return '';
 
   const headers = [
-    t('vendors.date'), 
-    t('vendors.particulars'), 
-    t('vendors.reference'), 
-    t('vendors.debit'), 
+    t('vendors.date'),
+    t('vendors.particulars'),
+    t('vendors.reference'),
+    t('vendors.debit'),
     t('vendors.credit'),
     t('vendors.balance')
   ];
 
   const rows: (string | number)[][] = [];
+  const filtered = filteredLedgerEntries.value;
 
-  // Use the comprehensive ledger entries
-  ledgerEntries.value.forEach(entry => {
-    const balanceDisplay = entry.runningBalance >= 0 
-      ? `${entry.runningBalance.toFixed(2)} Dr`
-      : `${Math.abs(entry.runningBalance).toFixed(2)} Cr`;
+  // Add opening balance row if filtering
+  if (filtered.hasOpeningBalance) {
+    const openingBalanceDisplay = filtered.openingBalance >= 0
+      ? `${filtered.openingBalance.toFixed(2)} Cr`
+      : `${Math.abs(filtered.openingBalance).toFixed(2)} Dr`;
+
+    rows.push([
+      ledgerFilterFromDate.value,
+      t('vendors.openingBalance'),
+      '',
+      '',
+      '',
+      openingBalanceDisplay
+    ]);
+  }
+
+  // Use the filtered ledger entries
+  filtered.entries.forEach(entry => {
+    const balanceDisplay = entry.runningBalance >= 0
+      ? `${entry.runningBalance.toFixed(2)} Cr`
+      : `${Math.abs(entry.runningBalance).toFixed(2)} Dr`;
 
     rows.push([
       new Date(entry.date).toLocaleDateString('en-CA'),
@@ -1099,6 +1396,18 @@ const generateLedgerCSV = () => {
   // Add summary information
   rows.push(['', '', '', '', '', '']);
 
+  // Add filter info if active
+  if (hasActiveFilters.value) {
+    rows.push([
+      t('vendors.filterPeriod'),
+      `${ledgerFilterFromDate.value || t('vendors.beginning')} - ${ledgerFilterToDate.value || t('vendors.today')}`,
+      '',
+      '',
+      '',
+      ''
+    ]);
+  }
+
   rows.push([
     t('vendors.generated'),
     new Date().toISOString().split('T')[0],
@@ -1109,10 +1418,10 @@ const generateLedgerCSV = () => {
   ]);
 
   const balanceStatus = finalBalance.value >= 0 ? t('vendors.outstanding') : t('vendors.creditBalance');
-  const finalBalanceDisplay = finalBalance.value >= 0 
-    ? `₹${finalBalance.value.toFixed(2)} Dr (${balanceStatus})`
-    : `₹${Math.abs(finalBalance.value).toFixed(2)} Cr (${balanceStatus})`;
-  
+  const finalBalanceDisplay = finalBalance.value >= 0
+    ? `₹${finalBalance.value.toFixed(2)} Cr (${balanceStatus})`
+    : `₹${Math.abs(finalBalance.value).toFixed(2)} Dr (${balanceStatus})`;
+
   rows.push([
     t('vendors.finalBalance'),
     finalBalanceDisplay,
@@ -1262,5 +1571,29 @@ onMounted(() => {
 
 .status-paid {
   @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300;
+}
+
+/* Ledger table text wrapping */
+.ledger-particulars {
+  @apply max-w-xs md:max-w-sm lg:max-w-md;
+}
+
+.ledger-particulars-text {
+  @apply break-words whitespace-normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.ledger-details-text {
+  @apply break-words whitespace-normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.ledger-reference {
+  @apply max-w-[7rem] break-words whitespace-normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 </style>
