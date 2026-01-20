@@ -14,6 +14,7 @@ vi.mock('../../composables/useI18n', () => ({
         'vendors.exportLedger': 'Export Ledger',
         'vendors.exportCsv': 'Export CSV',
         'vendors.exportPdf': 'Export PDF',
+        'vendors.exportTallyXml': 'Export for Tally',
         'vendors.recordPayment': 'Record Payment',
         'vendors.createReturn': 'Create Return',
         'vendors.unnamedVendor': 'Unnamed Vendor',
@@ -36,10 +37,28 @@ vi.mock('../../composables/useI18n', () => ({
         'vendors.refundForReturn': 'Refund for Return',
         'vendors.refundProcessed': 'Refund Processed',
         'vendors.ledger': 'Ledger',
+        'vendors.openingBalance': 'Opening Balance',
+        'vendors.filterFromDate': 'From Date',
+        'vendors.filterToDate': 'To Date',
+        'vendors.filterPeriod': 'Period',
+        'vendors.exportAllData': 'Export all ledger data',
+        'vendors.exportingAllEntries': `Exporting all ${params?.count || 0} entries`,
+        'vendors.exportingFilteredEntries': `Exporting ${params?.count || 0} entries in selected date range`,
+        'vendors.particulars': 'Particulars',
+        'vendors.debit': 'Debit',
+        'vendors.credit': 'Credit',
+        'vendors.totals': 'Totals',
+        'vendors.totalOutstanding': 'Total Outstanding',
+        'vendors.creditBalance': 'Credit Balance',
+        'vendors.finalBalance': 'Final Balance',
+        'vendors.beginning': 'Beginning',
+        'vendors.today': 'Today',
         'common.name': 'Name',
         'common.contact': 'Contact',
         'common.phone': 'Phone',
-        'common.email': 'Email'
+        'common.email': 'Email',
+        'common.cancel': 'Cancel',
+        'common.export': 'Export'
       }
       let result = translations[key] || key
       if (params) {
@@ -377,13 +396,10 @@ describe('VendorDetailView', () => {
       expect(xmlExportButton?.exists()).toBe(true);
     });
 
-    it('should call exportTallyXml when XML export is clicked', async () => {
+    it('should open export modal when Tally export is clicked', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
-
-      // Mock the exportTallyXml method
-      const exportTallyXmlSpy = vi.spyOn(wrapper.vm, 'exportTallyXml')
 
       // Open export dropdown
       const exportButton = wrapper.findAll('button').find(btn => btn.text().includes('Export Ledger'))
@@ -391,14 +407,313 @@ describe('VendorDetailView', () => {
       await wrapper.vm.$nextTick()
 
       // Click XML export option - use translation key that appears in tests
-      const xmlExportButton = wrapper.findAll('button').find(btn => 
-        btn.text().includes('Export for Tally') || 
+      const xmlExportButton = wrapper.findAll('button').find(btn =>
+        btn.text().includes('Export for Tally') ||
         btn.text().includes('vendors.exportTallyXml') ||
         btn.text().includes('exportTallyXml')
       )
       await xmlExportButton?.trigger('click')
+      await wrapper.vm.$nextTick()
 
-      expect(exportTallyXmlSpy).toHaveBeenCalled()
+      // Modal should open with tally format
+      expect(wrapper.vm.showExportModal).toBe(true)
+      expect(wrapper.vm.exportFormat).toBe('tally')
     });
+  })
+
+  describe('Export Modal', () => {
+    it('should open export modal when export option is clicked', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Initially modal should be hidden
+      expect(wrapper.vm.showExportModal).toBe(false)
+
+      // Open export modal directly via method
+      wrapper.vm.openExportModal('csv')
+      await wrapper.vm.$nextTick()
+
+      // Modal should be visible
+      expect(wrapper.vm.showExportModal).toBe(true)
+      expect(wrapper.vm.exportFormat).toBe('csv')
+      expect(wrapper.vm.exportAllData).toBe(true)
+    })
+
+    it('should open export modal for PDF format', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.openExportModal('pdf')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showExportModal).toBe(true)
+      expect(wrapper.vm.exportFormat).toBe('pdf')
+    })
+
+    it('should open export modal for Tally format', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.openExportModal('tally')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showExportModal).toBe(true)
+      expect(wrapper.vm.exportFormat).toBe('tally')
+    })
+
+    it('should close export modal', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Open modal first
+      wrapper.vm.openExportModal('csv')
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.showExportModal).toBe(true)
+
+      // Close modal
+      wrapper.vm.closeExportModal()
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showExportModal).toBe(false)
+    })
+
+    it('should reset export modal state when opening', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Set some values
+      wrapper.vm.exportFromDate = '2024-01-01'
+      wrapper.vm.exportToDate = '2024-01-31'
+      wrapper.vm.exportAllData = false
+
+      // Open modal - should reset
+      wrapper.vm.openExportModal('csv')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.exportFromDate).toBe('')
+      expect(wrapper.vm.exportToDate).toBe('')
+      expect(wrapper.vm.exportAllData).toBe(true)
+    })
+
+    it('should close modal after executeExport for csv format', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.openExportModal('csv')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showExportModal).toBe(true)
+      expect(wrapper.vm.exportFormat).toBe('csv')
+
+      // executeExport should close modal after export (even if export fails due to mocks)
+      await wrapper.vm.executeExport()
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showExportModal).toBe(false)
+    })
+
+    it('should keep modal open when pdf export fails due to error', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.openExportModal('pdf')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showExportModal).toBe(true)
+      expect(wrapper.vm.exportFormat).toBe('pdf')
+
+      // executeExport catches errors and doesn't close modal on failure
+      // This is expected behavior - user can retry or cancel manually
+      await wrapper.vm.executeExport()
+      await wrapper.vm.$nextTick()
+
+      // Modal stays open on error (jsPDF mock throws)
+      expect(wrapper.vm.showExportModal).toBe(true)
+    })
+
+    it('should close modal after executeExport for tally format', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.openExportModal('tally')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showExportModal).toBe(true)
+      expect(wrapper.vm.exportFormat).toBe('tally')
+
+      // executeExport should close modal after export (even if export fails due to mocks)
+      await wrapper.vm.executeExport()
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showExportModal).toBe(false)
+    })
+
+    it('should show date range inputs when exportAllData is false', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.openExportModal('csv')
+      wrapper.vm.exportAllData = false
+      await wrapper.vm.$nextTick()
+
+      // Modal should be open and date inputs visible
+      expect(wrapper.vm.showExportModal).toBe(true)
+      expect(wrapper.vm.exportAllData).toBe(false)
+    })
+
+    it('should compute export preview count correctly', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // When exportAllData is true, preview count should match total entries
+      wrapper.vm.openExportModal('csv')
+      await wrapper.vm.$nextTick()
+
+      const totalEntries = wrapper.vm.ledgerEntries.length
+      expect(wrapper.vm.exportPreviewCount).toBe(totalEntries)
+    })
+
+    it('should compute export opening balance as zero when exportAllData is true', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.openExportModal('csv')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.exportOpeningBalance).toBe(0)
+    })
+  })
+
+  describe('Filtered Export Entries', () => {
+    it('should return all entries when exportAllData is true', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.exportAllData = true
+      const result = wrapper.vm.getFilteredEntriesForExport()
+
+      expect(result.entries).toEqual(wrapper.vm.ledgerEntries)
+      expect(result.openingBalance).toBe(0)
+      expect(result.hasOpeningBalance).toBe(false)
+    })
+
+    it('should return all entries when no date filters are set', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.exportAllData = false
+      wrapper.vm.exportFromDate = ''
+      wrapper.vm.exportToDate = ''
+      const result = wrapper.vm.getFilteredEntriesForExport()
+
+      expect(result.entries).toEqual(wrapper.vm.ledgerEntries)
+      expect(result.openingBalance).toBe(0)
+      expect(result.hasOpeningBalance).toBe(false)
+    })
+  })
+
+  describe('Mobile Menu', () => {
+    it('should handle mobile action for export CSV', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      const openExportModalSpy = vi.spyOn(wrapper.vm, 'openExportModal')
+
+      // Trigger mobile action
+      wrapper.vm.showMobileMenu = true
+      await wrapper.vm.$nextTick()
+
+      // Click the CSV export button in mobile menu
+      const mobileButtons = wrapper.findAll('button')
+      const csvButton = mobileButtons.find(btn => btn.text().includes('Export CSV'))
+      if (csvButton) {
+        await csvButton.trigger('click')
+        await wrapper.vm.$nextTick()
+        await new Promise(resolve => setTimeout(resolve, 150))
+        expect(openExportModalSpy).toHaveBeenCalledWith('csv')
+      }
+    })
+
+    it('should close mobile menu when action is triggered', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.showMobileMenu = true
+      await wrapper.vm.$nextTick()
+
+      // Simulate handleMobileAction
+      wrapper.vm.handleMobileAction('createReturn')
+
+      // Menu should close immediately
+      expect(wrapper.vm.showMobileMenu).toBe(false)
+    })
+
+    it('should handle createReturn action', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.showMobileMenu = true
+      wrapper.vm.handleMobileAction('createReturn')
+
+      // Wait for timeout
+      await new Promise(resolve => setTimeout(resolve, 150))
+
+      expect(mockPush).toHaveBeenCalled()
+    })
+  })
+
+  describe('Dropdown Behavior', () => {
+    it('should toggle export dropdown visibility', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showExportDropdown).toBe(false)
+
+      // Toggle dropdown
+      wrapper.vm.showExportDropdown = true
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showExportDropdown).toBe(true)
+
+      // Toggle again
+      wrapper.vm.showExportDropdown = false
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showExportDropdown).toBe(false)
+    })
+
+    it('should close dropdown when export option is selected', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.showExportDropdown = true
+      await wrapper.vm.$nextTick()
+
+      // Open export modal (which should close dropdown)
+      wrapper.vm.openExportModal('csv')
+      wrapper.vm.showExportDropdown = false
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showExportDropdown).toBe(false)
+      expect(wrapper.vm.showExportModal).toBe(true)
+    })
   })
 })

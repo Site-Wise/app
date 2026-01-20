@@ -880,7 +880,9 @@ describe('VendorDetailView Logic', () => {
 
       const display = openingBalance >= 0
         ? `${Math.abs(openingBalance).toFixed(2)} Cr`
-      const display = `${Math.abs(openingBalance).toFixed(2)} Cr`
+        : `${Math.abs(openingBalance).toFixed(2)} Dr`
+
+      expect(display).toBe('0.00 Cr')
     })
   })
 
@@ -894,7 +896,8 @@ describe('VendorDetailView Logic', () => {
 
       if (hasOpeningBalance) {
         const openingBalanceDisplay = openingBalance >= 0
-        const openingBalanceDisplay = `${openingBalance.toFixed(2)} Cr`
+          ? `${openingBalance.toFixed(2)} Cr`
+          : `${Math.abs(openingBalance).toFixed(2)} Dr`
         rows.push([
           fromDate,
           'Opening Balance',
@@ -1019,6 +1022,302 @@ describe('VendorDetailView Logic', () => {
         const exportFormat = format
         expect(exportFormat).toBe(format)
       })
+    })
+  })
+
+  describe('Ledger Entry Accounting Semantics', () => {
+    // Test buyer's perspective accounting
+    it('should treat deliveries as credits (increases liability)', () => {
+      const delivery = { total_amount: 5000 }
+
+      // From buyer's perspective: delivery increases what we owe (Credit)
+      const entry = {
+        debit: 0,
+        credit: delivery.total_amount
+      }
+
+      expect(entry.credit).toBe(5000)
+      expect(entry.debit).toBe(0)
+    })
+
+    it('should treat payments as debits (decreases liability)', () => {
+      const payment = { amount: 3000 }
+
+      // From buyer's perspective: payment decreases what we owe (Debit)
+      const entry = {
+        debit: payment.amount,
+        credit: 0
+      }
+
+      expect(entry.debit).toBe(3000)
+      expect(entry.credit).toBe(0)
+    })
+
+    it('should calculate running balance correctly (Credits - Debits)', () => {
+      const entries = [
+        { credit: 5000, debit: 0 },    // Delivery: +5000
+        { credit: 0, debit: 2000 },    // Payment: -2000
+        { credit: 3000, debit: 0 },    // Delivery: +3000
+        { credit: 0, debit: 1500 }     // Credit note: -1500
+      ]
+
+      let runningBalance = 0
+      const balances = entries.map(entry => {
+        runningBalance += entry.credit - entry.debit
+        return runningBalance
+      })
+
+      expect(balances[0]).toBe(5000)
+      expect(balances[1]).toBe(3000)
+      expect(balances[2]).toBe(6000)
+      expect(balances[3]).toBe(4500)
+    })
+
+    it('should display positive balance as Cr (we owe vendor)', () => {
+      const balance = 3500
+
+      const display = balance >= 0 ? 'Cr' : 'Dr'
+      const isWeOweVendor = balance > 0
+
+      expect(display).toBe('Cr')
+      expect(isWeOweVendor).toBe(true)
+    })
+
+    it('should display negative balance as Dr (vendor owes us)', () => {
+      const balance = -1000
+
+      const display = balance >= 0 ? 'Cr' : 'Dr'
+      const isVendorOwesUs = balance < 0
+
+      expect(display).toBe('Dr')
+      expect(isVendorOwesUs).toBe(true)
+    })
+  })
+
+  describe('Date Filtering Edge Cases', () => {
+    it('should handle same day from and to dates', () => {
+      const entries = [
+        { id: '1', date: '2024-01-14', credit: 1000, debit: 0 },
+        { id: '2', date: '2024-01-15', credit: 2000, debit: 0 },
+        { id: '3', date: '2024-01-15', credit: 0, debit: 500 },
+        { id: '4', date: '2024-01-16', credit: 3000, debit: 0 }
+      ]
+
+      const fromDate = new Date('2024-01-15')
+      const toDate = new Date('2024-01-15')
+
+      let openingBalance = 0
+      const filtered = entries.filter(entry => {
+        const entryDate = new Date(entry.date)
+
+        if (entryDate < fromDate) {
+          openingBalance += entry.credit - entry.debit
+          return false
+        }
+
+        const toDateEnd = new Date(toDate)
+        toDateEnd.setHours(23, 59, 59, 999)
+        if (entryDate > toDateEnd) {
+          return false
+        }
+
+        return true
+      })
+
+      expect(openingBalance).toBe(1000) // Entry from 2024-01-14
+      expect(filtered.length).toBe(2) // Two entries from 2024-01-15
+    })
+
+    it('should handle entries with timestamps', () => {
+      const entries = [
+        { id: '1', date: '2024-01-15T08:00:00', credit: 1000, debit: 0 },
+        { id: '2', date: '2024-01-15T14:30:00', credit: 2000, debit: 0 },
+        { id: '3', date: '2024-01-15T23:59:59', credit: 0, debit: 500 }
+      ]
+
+      const fromDate = new Date('2024-01-15')
+      const toDate = new Date('2024-01-15')
+
+      const filtered = entries.filter(entry => {
+        const entryDate = new Date(entry.date)
+
+        if (entryDate < fromDate) {
+          return false
+        }
+
+        const toDateEnd = new Date(toDate)
+        toDateEnd.setHours(23, 59, 59, 999)
+        if (entryDate > toDateEnd) {
+          return false
+        }
+
+        return true
+      })
+
+      // All three entries should be included (same day different times)
+      expect(filtered.length).toBe(3)
+    })
+
+    it('should handle only fromDate filter', () => {
+      const entries = [
+        { id: '1', date: '2024-01-10', credit: 1000, debit: 0 },
+        { id: '2', date: '2024-01-15', credit: 2000, debit: 0 },
+        { id: '3', date: '2024-01-20', credit: 3000, debit: 0 }
+      ]
+
+      const fromDate = new Date('2024-01-15')
+      const toDate = null
+
+      let openingBalance = 0
+      const filtered = entries.filter(entry => {
+        const entryDate = new Date(entry.date)
+
+        if (entryDate < fromDate) {
+          openingBalance += entry.credit - entry.debit
+          return false
+        }
+
+        return true
+      })
+
+      expect(openingBalance).toBe(1000)
+      expect(filtered.length).toBe(2)
+    })
+
+    it('should handle only toDate filter', () => {
+      const entries = [
+        { id: '1', date: '2024-01-10', credit: 1000, debit: 0 },
+        { id: '2', date: '2024-01-15', credit: 2000, debit: 0 },
+        { id: '3', date: '2024-01-20', credit: 3000, debit: 0 }
+      ]
+
+      const fromDate = null
+      const toDate = new Date('2024-01-15')
+
+      const filtered = entries.filter(entry => {
+        const entryDate = new Date(entry.date)
+
+        if (toDate) {
+          const toDateEnd = new Date(toDate)
+          toDateEnd.setHours(23, 59, 59, 999)
+          if (entryDate > toDateEnd) {
+            return false
+          }
+        }
+
+        return true
+      })
+
+      expect(filtered.length).toBe(2)
+    })
+  })
+
+  describe('CSV Content Generation', () => {
+    it('should escape commas in field values', () => {
+      const field = 'Invoice: INV-001, Item A, Item B'
+
+      const escaped = field.includes(',') ? `"${field}"` : field
+
+      expect(escaped).toBe('"Invoice: INV-001, Item A, Item B"')
+    })
+
+    it('should not escape fields without commas', () => {
+      const field = 'Simple text'
+
+      const escaped = field.includes(',') ? `"${field}"` : field
+
+      expect(escaped).toBe('Simple text')
+    })
+
+    it('should format date as YYYY-MM-DD', () => {
+      const date = new Date('2024-01-15')
+      const formatted = date.toLocaleDateString('en-CA')
+
+      expect(formatted).toBe('2024-01-15')
+    })
+
+    it('should format currency with two decimals', () => {
+      const amount = 1234.5
+      const formatted = amount.toFixed(2)
+
+      expect(formatted).toBe('1234.50')
+    })
+
+    it('should show empty string for zero debit/credit', () => {
+      const debit = 0
+      const credit = 1000
+
+      const debitDisplay = debit > 0 ? debit.toFixed(2) : ''
+      const creditDisplay = credit > 0 ? credit.toFixed(2) : ''
+
+      expect(debitDisplay).toBe('')
+      expect(creditDisplay).toBe('1000.00')
+    })
+  })
+
+  describe('PDF Column Width Calculations', () => {
+    it('should calculate correct column widths', () => {
+      // Total usable width: 210 - 28 = 182mm (A4 minus margins)
+      const pageWidth = 210
+      const margin = 14
+      const usableWidth = pageWidth - 2 * margin
+
+      // Column widths from implementation
+      const colWidths = [22, 70, 25, 22, 22, 22]
+      const totalColWidth = colWidths.reduce((a, b) => a + b, 0)
+
+      expect(usableWidth).toBe(182)
+      expect(totalColWidth).toBe(183) // Close to usable width
+    })
+
+    it('should truncate text iteratively until it fits', () => {
+      let text = 'This is a very long particulars text that needs truncation'
+      const maxChars = 25
+
+      // Simulate iterative truncation
+      while (text.length > maxChars && text.length > 3) {
+        text = text.slice(0, -4) + '...'
+      }
+
+      expect(text.length).toBeLessThanOrEqual(maxChars)
+      expect(text.endsWith('...')).toBe(true)
+    })
+  })
+
+  describe('Export Totals Calculation', () => {
+    it('should calculate filtered totals correctly', () => {
+      const filteredEntries = [
+        { credit: 3000, debit: 0 },
+        { credit: 0, debit: 1500 },
+        { credit: 2000, debit: 0 }
+      ]
+
+      const exportTotalDebits = filteredEntries.reduce((sum, e) => sum + e.debit, 0)
+      const exportTotalCredits = filteredEntries.reduce((sum, e) => sum + e.credit, 0)
+
+      expect(exportTotalDebits).toBe(1500)
+      expect(exportTotalCredits).toBe(5000)
+    })
+
+    it('should calculate final balance with opening balance', () => {
+      const openingBalance = 3000
+      const exportTotalCredits = 5000
+      const exportTotalDebits = 1500
+
+      const exportFinalBalance = openingBalance + exportTotalCredits - exportTotalDebits
+
+      expect(exportFinalBalance).toBe(6500)
+    })
+
+    it('should display final balance status correctly', () => {
+      const positiveBalance = 5000
+      const negativeBalance = -2000
+
+      const positiveStatus = positiveBalance >= 0 ? 'Total Outstanding' : 'Credit Balance'
+      const negativeStatus = negativeBalance >= 0 ? 'Total Outstanding' : 'Credit Balance'
+
+      expect(positiveStatus).toBe('Total Outstanding')
+      expect(negativeStatus).toBe('Credit Balance')
     })
   })
 })
