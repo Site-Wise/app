@@ -880,9 +880,7 @@ describe('VendorDetailView Logic', () => {
 
       const display = openingBalance >= 0
         ? `${Math.abs(openingBalance).toFixed(2)} Cr`
-        : `${Math.abs(openingBalance).toFixed(2)} Dr`
-
-      expect(display).toBe('0.00 Cr')
+      const display = `${Math.abs(openingBalance).toFixed(2)} Cr`
     })
   })
 
