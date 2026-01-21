@@ -374,6 +374,8 @@
     "paymentStatusBreakdown": "भुगतान स्थिति विवरण",
     "viewLedger": "खाता बही देखें",
     "exportLedger": "खाता बही निर्यात करें",
+    "exportAllLedgers": "सभी खाता बही निर्यात करें",
+    "exportAllLedgersSuccess": "सभी विक्रेता खाता बही सफलतापूर्वक निर्यात की गई",
     "exportCsv": "CSV निर्यात करें",
     "exportPdf": "PDF निर्यात करें",
     "exportTallyXml": "टैली के लिए निर्यात करें",

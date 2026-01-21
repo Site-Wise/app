@@ -374,6 +374,8 @@
     "paymentStatusBreakdown": "Payment Status Breakdown",
     "viewLedger": "View Ledger",
     "exportLedger": "Export Ledger",
+    "exportAllLedgers": "Export All Ledgers",
+    "exportAllLedgersSuccess": "All vendor ledgers exported successfully",
     "exportCsv": "Export CSV",
     "exportPdf": "Export PDF",
     "exportTallyXml": "Export for Tally",
