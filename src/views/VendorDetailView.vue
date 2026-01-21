@@ -358,6 +358,23 @@
             </div>
           </div>
 
+          <!-- Mobile Rotate Hint (only shows on small screens in portrait) -->
+          <div
+            v-if="!rotateHintDismissed"
+            class="sm:hidden flex items-center justify-between px-4 py-2 bg-blue-50 dark:bg-blue-900/30 border-b border-blue-100 dark:border-blue-800"
+          >
+            <div class="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
+              <Smartphone class="h-4 w-4 rotate-90" />
+              <span>{{ t('vendors.rotateForBetterView') }}</span>
+            </div>
+            <button
+              @click="dismissRotateHint"
+              class="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200"
+            >
+              <X class="h-4 w-4" />
+            </button>
+          </div>
+
           <!-- Ledger Table -->
           <div class="flex-1 overflow-auto p-6">
             <div class="overflow-x-auto">
@@ -403,12 +420,23 @@
                   </tr>
 
                   <!-- Ledger Entries -->
-                  <tr v-for="entry in displayedLedgerEntries" :key="entry.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <tr
+                    v-for="entry in displayedLedgerEntries"
+                    :key="entry.id"
+                    :class="[
+                      'hover:bg-gray-50 dark:hover:bg-gray-700/50',
+                      isEntryClickable(entry) ? 'cursor-pointer' : ''
+                    ]"
+                    @click="isEntryClickable(entry) && openEntryDetail(entry)"
+                  >
                     <td class="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap">
                       {{ formatDate(entry.date) }}
                     </td>
                     <td class="px-3 py-2 text-gray-900 dark:text-white">
-                      <div class="truncate" :title="entry.particulars">{{ entry.particulars }}</div>
+                      <div class="flex items-center gap-1">
+                        <span class="truncate" :title="entry.particulars">{{ entry.particulars }}</span>
+                        <ExternalLink v-if="isEntryClickable(entry)" class="h-3 w-3 text-gray-400 flex-shrink-0" />
+                      </div>
                       <div v-if="entry.details" class="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate" :title="entry.details">
                         {{ entry.details }}
                       </div>
@@ -540,6 +568,124 @@
         </div>
       </div>
     </div>
+
+    <!-- Entry Detail Modal -->
+    <div v-if="showEntryDetailModal && selectedEntry" class="fixed inset-0 z-[70] overflow-y-auto">
+      <div class="flex min-h-full items-center justify-center p-4">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-black/50 transition-opacity" @click="closeEntryDetail"></div>
+
+        <!-- Modal Panel -->
+        <div class="relative w-full max-w-lg transform rounded-lg bg-white dark:bg-gray-800 shadow-xl transition-all">
+          <!-- Header -->
+          <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                {{ selectedEntry.type === 'delivery' ? t('vendors.deliveryDetails') : t('vendors.paymentDetails') }}
+              </h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {{ formatDate(selectedEntry.date) }}
+              </p>
+            </div>
+            <button @click="closeEntryDetail" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+
+          <!-- Content -->
+          <div class="p-6 space-y-4">
+            <!-- Delivery Details -->
+            <template v-if="selectedEntry.type === 'delivery' && selectedDelivery">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.reference') }}</label>
+                  <p class="mt-1 text-gray-900 dark:text-white">{{ selectedDelivery.delivery_reference || '-' }}</p>
+                </div>
+                <div>
+                  <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.status') }}</label>
+                  <p class="mt-1">
+                    <span :class="DeliveryPaymentCalculator.getPaymentStatusClass(selectedDelivery.payment_status)">
+                      {{ t(DeliveryPaymentCalculator.getPaymentStatusTextKey(selectedDelivery.payment_status)) }}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.amount') }}</label>
+                <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">₹{{ selectedDelivery.total_amount.toFixed(2) }}</p>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.paid') }}</label>
+                  <p class="mt-1 text-green-600 dark:text-green-400 font-medium">₹{{ (selectedDelivery.paid_amount || 0).toFixed(2) }}</p>
+                </div>
+                <div>
+                  <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.outstanding') }}</label>
+                  <p class="mt-1 text-red-600 dark:text-red-400 font-medium">₹{{ (selectedDelivery.outstanding || 0).toFixed(2) }}</p>
+                </div>
+              </div>
+
+              <!-- Delivery Items -->
+              <div v-if="selectedDelivery.expand?.delivery_items && selectedDelivery.expand.delivery_items.length > 0">
+                <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.items') }}</label>
+                <div class="mt-2 space-y-2">
+                  <div
+                    v-for="item in selectedDelivery.expand.delivery_items"
+                    :key="item.id"
+                    class="flex justify-between items-center py-2 px-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                  >
+                    <div>
+                      <p class="text-sm font-medium text-gray-900 dark:text-white">{{ item.expand?.item?.name || t('vendors.unknownItem') }}</p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.quantity }} {{ item.expand?.item?.unit || t('vendors.units') }} × ₹{{ item.unit_price?.toFixed(2) || '0.00' }}</p>
+                    </div>
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">₹{{ (item.quantity * (item.unit_price || 0)).toFixed(2) }}</p>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <!-- Payment Details -->
+            <template v-else-if="selectedEntry.type === 'payment' && selectedPayment">
+              <div>
+                <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.amount') }}</label>
+                <p class="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">₹{{ selectedPayment.amount.toFixed(2) }}</p>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.reference') }}</label>
+                  <p class="mt-1 text-gray-900 dark:text-white">{{ selectedPayment.reference || '-' }}</p>
+                </div>
+                <div>
+                  <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.date') }}</label>
+                  <p class="mt-1 text-gray-900 dark:text-white">{{ formatDate(selectedPayment.payment_date) }}</p>
+                </div>
+              </div>
+
+              <div v-if="selectedPayment.notes">
+                <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.notes') }}</label>
+                <p class="mt-1 text-gray-900 dark:text-white">{{ selectedPayment.notes }}</p>
+              </div>
+
+              <!-- Payment Account -->
+              <div v-if="selectedPayment.expand?.account">
+                <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.paymentAccount') }}</label>
+                <p class="mt-1 text-gray-900 dark:text-white">{{ selectedPayment.expand.account.name }}</p>
+              </div>
+            </template>
+          </div>
+
+          <!-- Footer -->
+          <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+            <button @click="closeEntryDetail" class="w-full btn-outline">
+              {{ t('common.close') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div v-else class="flex items-center justify-center min-h-96">
@@ -571,7 +717,9 @@ import {
   AlertCircle,
   CheckCircle,
   X,
-  BookOpen
+  BookOpen,
+  Smartphone,
+  ExternalLink
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useToast } from '../composables/useToast';
@@ -641,6 +789,21 @@ const currentAllocations = ref<PaymentAllocation[]>([]);
 const showLedgerModal = ref(false);
 const ledgerFromDate = ref<string>('');
 const ledgerToDate = ref<string>(new Date().toISOString().split('T')[0]);
+const rotateHintDismissed = ref(false);
+
+// Entry detail modal state
+const showEntryDetailModal = ref(false);
+const selectedEntry = ref<{
+  id: string;
+  type: 'delivery' | 'payment' | 'credit_note' | 'refund' | 'opening_balance';
+  date: string;
+  particulars: string;
+  details?: string;
+  reference: string;
+  debit: number;
+  credit: number;
+  runningBalance: number;
+} | null>(null);
 
 // Export modal state
 const showExportModal = ref(false);
@@ -1011,6 +1174,41 @@ const resetDateFilter = () => {
   ledgerFromDate.value = '';
   ledgerToDate.value = new Date().toISOString().split('T')[0];
 };
+
+// Dismiss rotate hint
+const dismissRotateHint = () => {
+  rotateHintDismissed.value = true;
+};
+
+// Check if entry is clickable (has associated detail)
+const isEntryClickable = (entry: { type: string }) => {
+  return entry.type === 'delivery' || entry.type === 'payment';
+};
+
+// Open entry detail modal
+const openEntryDetail = (entry: typeof selectedEntry.value) => {
+  if (!entry || !isEntryClickable(entry)) return;
+  selectedEntry.value = entry;
+  showEntryDetailModal.value = true;
+};
+
+// Close entry detail modal
+const closeEntryDetail = () => {
+  showEntryDetailModal.value = false;
+  selectedEntry.value = null;
+};
+
+// Get delivery details for selected entry
+const selectedDelivery = computed(() => {
+  if (!selectedEntry.value || selectedEntry.value.type !== 'delivery') return null;
+  return vendorDeliveries.value.find(d => d.id === selectedEntry.value?.id) || null;
+});
+
+// Get payment details for selected entry
+const selectedPayment = computed(() => {
+  if (!selectedEntry.value || selectedEntry.value.type !== 'payment') return null;
+  return vendorPayments.value.find(p => p.id === selectedEntry.value?.id) || null;
+});
 
 // Export modal functions
 const openExportModal = (format: 'csv' | 'pdf' | 'tally') => {

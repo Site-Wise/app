@@ -540,7 +540,12 @@
     "showingFilteredEntries": "{total} में से {count} प्रविष्टियाँ दिखा रहे हैं (फ़िल्टर किया गया)",
     "from": "से",
     "reset": "रीसेट",
-    "resetDateFilter": "तारीख फ़िल्टर रीसेट करें"
+    "resetDateFilter": "तारीख फ़िल्टर रीसेट करें",
+    "rotateForBetterView": "बेहतर दृश्य के लिए घुमाएं",
+    "deliveryDetails": "डिलीवरी विवरण",
+    "paymentDetails": "भुगतान विवरण",
+    "items": "वस्तुएं",
+    "paid": "भुगतान किया गया"
   },
   "returns": {
     "createReturn": "वापसी बनाएं",

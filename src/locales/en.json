@@ -538,7 +538,12 @@
     "showingFilteredEntries": "Showing {count} of {total} entries (filtered)",
     "from": "From",
     "reset": "Reset",
-    "resetDateFilter": "Reset date filter"
+    "resetDateFilter": "Reset date filter",
+    "rotateForBetterView": "Rotate for better view",
+    "deliveryDetails": "Delivery Details",
+    "paymentDetails": "Payment Details",
+    "items": "Items",
+    "paid": "Paid"
   },
   "returns": {
     "createReturn": "Create Return",
