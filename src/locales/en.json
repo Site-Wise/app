@@ -534,7 +534,11 @@
     "outstanding": "Outstanding",
     "exportAllData": "Export all ledger data",
     "exportingAllEntries": "Exporting all {count} entries",
-    "exportingFilteredEntries": "Exporting {count} entries in selected date range"
+    "exportingFilteredEntries": "Exporting {count} filtered entries",
+    "showingFilteredEntries": "Showing {count} of {total} entries (filtered)",
+    "from": "From",
+    "reset": "Reset",
+    "resetDateFilter": "Reset date filter"
   },
   "returns": {
     "createReturn": "Create Return",

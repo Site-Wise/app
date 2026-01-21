@@ -74,6 +74,11 @@ vi.mock('../../composables/useI18n', () => ({
         'vendors.entries': 'entries',
         'vendors.noLedgerEntries': 'No ledger entries',
         'vendors.showingAllEntries': 'Showing all entries',
+        'vendors.showingFilteredEntries': `Showing ${params?.count || 0} of ${params?.total || 0} entries (filtered)`,
+        'vendors.from': 'From',
+        'vendors.to': 'to',
+        'vendors.reset': 'Reset',
+        'vendors.resetDateFilter': 'Reset date filter',
         'vendors.delivery': 'Delivery',
         'vendors.paymentMade': 'Payment made',
         'common.name': 'Name',
@@ -534,7 +539,6 @@ describe('VendorDetailView', () => {
       // Modal should be visible
       expect(wrapper.vm.showExportModal).toBe(true)
       expect(wrapper.vm.exportFormat).toBe('csv')
-      expect(wrapper.vm.exportAllData).toBe(true)
     })
 
     it('should open export modal for PDF format', async () => {
@@ -578,25 +582,21 @@ describe('VendorDetailView', () => {
       expect(wrapper.vm.showExportModal).toBe(false)
     })
 
-    it('should reset export modal state when opening', async () => {
+    it('should set export format when opening modal', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
-      // Set some values
-      wrapper.vm.exportFromDate = '2024-01-01'
-      wrapper.vm.exportToDate = '2024-01-31'
-      wrapper.vm.exportAllData = false
-
-      // Open modal - should reset
+      // Open modal with csv format
       wrapper.vm.openExportModal('csv')
       await wrapper.vm.$nextTick()
+      expect(wrapper.vm.exportFormat).toBe('csv')
 
-      // From date should be empty, to date defaults to today
-      const today = new Date().toISOString().split('T')[0]
-      expect(wrapper.vm.exportFromDate).toBe('')
-      expect(wrapper.vm.exportToDate).toBe(today)
-      expect(wrapper.vm.exportAllData).toBe(true)
+      // Close and open with pdf format
+      wrapper.vm.closeExportModal()
+      wrapper.vm.openExportModal('pdf')
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.exportFormat).toBe('pdf')
     })
 
     it('should close modal after executeExport for csv format', async () => {
@@ -674,23 +674,25 @@ describe('VendorDetailView', () => {
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
-      // When exportAllData is true, preview count should match total entries
-      wrapper.vm.openExportModal('csv')
+      // When no date filter, displayed entries should match total entries
+      wrapper.vm.ledgerFromDate = ''
+      wrapper.vm.ledgerToDate = ''
       await wrapper.vm.$nextTick()
 
       const totalEntries = wrapper.vm.ledgerEntries.length
-      expect(wrapper.vm.exportPreviewCount).toBe(totalEntries)
+      expect(wrapper.vm.displayedLedgerEntries.length).toBe(totalEntries)
     })
 
-    it('should compute export opening balance as zero when exportAllData is true', async () => {
+    it('should compute ledger opening balance as zero when no date filter', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
-      wrapper.vm.openExportModal('csv')
+      wrapper.vm.ledgerFromDate = ''
+      wrapper.vm.ledgerToDate = ''
       await wrapper.vm.$nextTick()
 
-      expect(wrapper.vm.exportOpeningBalance).toBe(0)
+      expect(wrapper.vm.ledgerOpeningBalance).toBe(0)
     })
 
     it('should close export modal when ESC key is pressed', async () => {
@@ -711,46 +713,84 @@ describe('VendorDetailView', () => {
       expect(wrapper.vm.showExportModal).toBe(false)
     })
 
-    it('should default to-date to today when opening modal', async () => {
+    it('should have ledgerToDate initialized to today', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
-      wrapper.vm.openExportModal('csv')
-      await wrapper.vm.$nextTick()
-
       const today = new Date().toISOString().split('T')[0]
-      expect(wrapper.vm.exportToDate).toBe(today)
+      expect(wrapper.vm.ledgerToDate).toBe(today)
     })
   })
 
   describe('Filtered Export Entries', () => {
-    it('should return all entries when exportAllData is true', async () => {
-      await wrapper.vm.$nextTick()
-      await new Promise(resolve => setTimeout(resolve, 50))
-      await wrapper.vm.$nextTick()
-
-      wrapper.vm.exportAllData = true
-      const result = wrapper.vm.getFilteredEntriesForExport()
-
-      expect(result.entries).toEqual(wrapper.vm.ledgerEntries)
-      expect(result.openingBalance).toBe(0)
-      expect(result.hasOpeningBalance).toBe(false)
-    })
-
     it('should return all entries when no date filters are set', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
-      wrapper.vm.exportAllData = false
-      wrapper.vm.exportFromDate = ''
-      wrapper.vm.exportToDate = ''
+      // Reset filters to show all entries
+      wrapper.vm.ledgerFromDate = ''
+      wrapper.vm.ledgerToDate = ''
+      await wrapper.vm.$nextTick()
+
       const result = wrapper.vm.getFilteredEntriesForExport()
 
       expect(result.entries).toEqual(wrapper.vm.ledgerEntries)
       expect(result.openingBalance).toBe(0)
       expect(result.hasOpeningBalance).toBe(false)
+    })
+
+    it('should filter entries based on ledger date range', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Set date filter
+      wrapper.vm.ledgerFromDate = '2024-01-15'
+      wrapper.vm.ledgerToDate = '2024-01-25'
+      await wrapper.vm.$nextTick()
+
+      const result = wrapper.vm.getFilteredEntriesForExport()
+
+      expect(result).toBeDefined()
+      expect(result.entries).toBeDefined()
+    })
+
+    it('should reset date filter to full range', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Set a date filter
+      wrapper.vm.ledgerFromDate = '2024-01-15'
+      wrapper.vm.ledgerToDate = '2024-01-25'
+      await wrapper.vm.$nextTick()
+
+      // Reset the filter
+      wrapper.vm.resetDateFilter()
+      await wrapper.vm.$nextTick()
+
+      // From date should be empty, to date should be today
+      const today = new Date().toISOString().split('T')[0]
+      expect(wrapper.vm.ledgerFromDate).toBe('')
+      expect(wrapper.vm.ledgerToDate).toBe(today)
+    })
+
+    it('should detect when date filter is active', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Reset to default (no filter active when from is empty and to is today)
+      wrapper.vm.resetDateFilter()
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.isDateFilterActive).toBe(false)
+
+      // Set a from date filter
+      wrapper.vm.ledgerFromDate = '2024-01-15'
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.isDateFilterActive).toBe(true)
     })
   })
 
@@ -1556,30 +1596,28 @@ describe('VendorDetailView', () => {
       expect(typeof wrapper.vm.finalBalance).toBe('number')
     })
 
-    it('should calculate export preview count when filtering', async () => {
+    it('should calculate displayedLedgerEntries when filtering', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 100))
       await wrapper.vm.$nextTick()
 
-      wrapper.vm.exportAllData = false
-      wrapper.vm.exportFromDate = '2024-01-20'
+      wrapper.vm.ledgerFromDate = '2024-01-20'
       await wrapper.vm.$nextTick()
 
-      expect(wrapper.vm.exportPreviewCount).toBeDefined()
-      expect(typeof wrapper.vm.exportPreviewCount).toBe('number')
+      expect(wrapper.vm.displayedLedgerEntries).toBeDefined()
+      expect(Array.isArray(wrapper.vm.displayedLedgerEntries)).toBe(true)
     })
 
-    it('should calculate export opening balance when filtering', async () => {
+    it('should calculate ledgerOpeningBalance when filtering', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 100))
       await wrapper.vm.$nextTick()
 
-      wrapper.vm.exportAllData = false
-      wrapper.vm.exportFromDate = '2024-01-20'
+      wrapper.vm.ledgerFromDate = '2024-01-20'
       await wrapper.vm.$nextTick()
 
-      expect(wrapper.vm.exportOpeningBalance).toBeDefined()
-      expect(typeof wrapper.vm.exportOpeningBalance).toBe('number')
+      expect(wrapper.vm.ledgerOpeningBalance).toBeDefined()
+      expect(typeof wrapper.vm.ledgerOpeningBalance).toBe('number')
     })
   })
 

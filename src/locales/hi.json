@@ -536,7 +536,11 @@
     "outstanding": "बकाया",
     "exportAllData": "सभी खाता डेटा निर्यात करें",
     "exportingAllEntries": "सभी {count} प्रविष्टियाँ निर्यात हो रही हैं",
-    "exportingFilteredEntries": "चयनित तारीख सीमा में {count} प्रविष्टियाँ निर्यात हो रही हैं"
+    "exportingFilteredEntries": "{count} फ़िल्टर की गई प्रविष्टियाँ निर्यात हो रही हैं",
+    "showingFilteredEntries": "{total} में से {count} प्रविष्टियाँ दिखा रहे हैं (फ़िल्टर किया गया)",
+    "from": "से",
+    "reset": "रीसेट",
+    "resetDateFilter": "तारीख फ़िल्टर रीसेट करें"
   },
   "returns": {
     "createReturn": "वापसी बनाएं",

@@ -284,8 +284,8 @@
         <!-- Modal Panel -->
         <div class="relative w-full max-w-5xl transform rounded-lg bg-white dark:bg-gray-800 shadow-xl transition-all max-h-[90vh] flex flex-col">
           <!-- Header -->
-          <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-            <div>
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-6 border-b border-gray-200 dark:border-gray-700 gap-4">
+            <div class="flex-shrink-0">
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                 {{ t('vendors.vendorLedger') }}
               </h3>
@@ -293,7 +293,38 @@
                 {{ vendor?.name || vendor?.contact_person }}
               </p>
             </div>
-            <div class="flex items-center gap-3">
+
+            <!-- Date Filter Section -->
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+              <div class="flex items-center gap-2">
+                <label class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ t('vendors.from') }}:</label>
+                <input
+                  v-model="ledgerFromDate"
+                  type="date"
+                  class="input text-sm py-1.5 px-2 w-32"
+                  :placeholder="t('vendors.beginning')"
+                />
+              </div>
+              <div class="flex items-center gap-2">
+                <label class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ t('vendors.to') }}:</label>
+                <input
+                  v-model="ledgerToDate"
+                  type="date"
+                  class="input text-sm py-1.5 px-2 w-32"
+                />
+              </div>
+              <button
+                v-if="isDateFilterActive"
+                @click="resetDateFilter"
+                class="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
+                :title="t('vendors.resetDateFilter')"
+              >
+                <RotateCcw class="h-4 w-4" />
+                <span class="hidden sm:inline">{{ t('vendors.reset') }}</span>
+              </button>
+            </div>
+
+            <div class="flex items-center gap-3 flex-shrink-0">
               <!-- Export Dropdown -->
               <div class="relative export-dropdown">
                 <button @click="showExportDropdown = !showExportDropdown" class="btn-outline flex items-center text-sm">
@@ -354,8 +385,25 @@
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                  <!-- Opening Balance Row (shown when date filter is active) -->
+                  <tr v-if="hasLedgerOpeningBalance" class="bg-blue-50 dark:bg-blue-900/20">
+                    <td class="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap">
+                      {{ ledgerFromDate }}
+                    </td>
+                    <td class="px-3 py-2 text-gray-900 dark:text-white font-medium">
+                      {{ t('vendors.openingBalance') }}
+                    </td>
+                    <td class="px-3 py-2 text-gray-500 dark:text-gray-400">-</td>
+                    <td class="px-3 py-2 text-right text-gray-400">-</td>
+                    <td class="px-3 py-2 text-right text-gray-400">-</td>
+                    <td class="px-3 py-2 text-right font-medium whitespace-nowrap" :class="ledgerOpeningBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+                      ₹{{ Math.abs(ledgerOpeningBalance).toFixed(2) }}
+                      <span class="text-xs ml-1">{{ ledgerOpeningBalance >= 0 ? 'Cr' : 'Dr' }}</span>
+                    </td>
+                  </tr>
+
                   <!-- Ledger Entries -->
-                  <tr v-for="entry in ledgerEntries" :key="entry.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <tr v-for="entry in displayedLedgerEntries" :key="entry.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td class="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap">
                       {{ formatDate(entry.date) }}
                     </td>
@@ -387,14 +435,14 @@
                   </tr>
 
                   <!-- Empty State -->
-                  <tr v-if="ledgerEntries.length === 0">
+                  <tr v-if="displayedLedgerEntries.length === 0 && !hasLedgerOpeningBalance">
                     <td colspan="6" class="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
                       {{ t('vendors.noLedgerEntries') }}
                     </td>
                   </tr>
 
                   <!-- Totals Row -->
-                  <tr v-if="ledgerEntries.length > 0" class="bg-gray-100 dark:bg-gray-700 font-medium">
+                  <tr v-if="displayedLedgerEntries.length > 0 || hasLedgerOpeningBalance" class="bg-gray-100 dark:bg-gray-700 font-medium">
                     <td class="px-3 py-2 text-gray-900 dark:text-white" colspan="3">
                       {{ t('vendors.totals') }}
                     </td>
@@ -415,10 +463,15 @@
           </div>
 
           <!-- Footer Summary -->
-          <div v-if="ledgerEntries.length > 0" class="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+          <div v-if="displayedLedgerEntries.length > 0 || hasLedgerOpeningBalance" class="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div class="text-sm text-gray-600 dark:text-gray-400">
-                {{ t('vendors.showingAllEntries') }} ({{ ledgerEntries.length }} {{ t('vendors.entries') }})
+                <span v-if="isDateFilterActive">
+                  {{ t('vendors.showingFilteredEntries', { count: displayedLedgerEntries.length, total: ledgerEntries.length }) }}
+                </span>
+                <span v-else>
+                  {{ t('vendors.showingAllEntries') }} ({{ displayedLedgerEntries.length }} {{ t('vendors.entries') }})
+                </span>
               </div>
               <div class="text-lg font-semibold" :class="finalBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
                 {{ finalBalance >= 0 ? t('vendors.totalOutstanding') : t('vendors.creditBalance') }}: ₹{{ Math.abs(finalBalance).toFixed(2) }}
@@ -429,7 +482,7 @@
       </div>
     </div>
 
-    <!-- Export Options Modal -->
+    <!-- Export Confirmation Modal -->
     <div v-if="showExportModal" class="fixed inset-0 z-[60] overflow-y-auto">
       <div class="flex min-h-full items-center justify-center p-4">
         <!-- Backdrop -->
@@ -459,57 +512,17 @@
             </div>
           </div>
 
-          <!-- Date Range Selection -->
-          <div class="space-y-4 mb-6">
-            <div class="flex items-center gap-2 mb-2">
-              <input
-                type="checkbox"
-                id="useAllData"
-                v-model="exportAllData"
-                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              <label for="useAllData" class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ t('vendors.exportAllData') }}
-              </label>
-            </div>
-
-            <div v-if="!exportAllData" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  <Calendar class="inline h-4 w-4 mr-1" />
-                  {{ t('vendors.filterFromDate') }}
-                </label>
-                <input
-                  v-model="exportFromDate"
-                  type="date"
-                  class="input w-full"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  <Calendar class="inline h-4 w-4 mr-1" />
-                  {{ t('vendors.filterToDate') }}
-                </label>
-                <input
-                  v-model="exportToDate"
-                  type="date"
-                  class="input w-full"
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- Preview Info -->
+          <!-- Export Info -->
           <div class="mb-6 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm">
             <p class="text-blue-700 dark:text-blue-300">
-              <span v-if="exportAllData">
-                {{ t('vendors.exportingAllEntries', { count: ledgerEntries.length }) }}
+              <span v-if="isDateFilterActive">
+                {{ t('vendors.exportingFilteredEntries', { count: displayedLedgerEntries.length }) }}
+                <span v-if="hasLedgerOpeningBalance" class="block mt-1">
+                  {{ t('vendors.openingBalance') }}: ₹{{ Math.abs(ledgerOpeningBalance).toFixed(2) }} {{ ledgerOpeningBalance >= 0 ? 'Cr' : 'Dr' }}
+                </span>
               </span>
               <span v-else>
-                {{ t('vendors.exportingFilteredEntries', { count: exportPreviewCount }) }}
-                <span v-if="exportOpeningBalance !== 0" class="block mt-1">
-                  {{ t('vendors.openingBalance') }}: ₹{{ Math.abs(exportOpeningBalance).toFixed(2) }} {{ exportOpeningBalance >= 0 ? 'Cr' : 'Dr' }}
-                </span>
+                {{ t('vendors.exportingAllEntries', { count: ledgerEntries.length }) }}
               </span>
             </p>
           </div>
@@ -558,7 +571,6 @@ import {
   AlertCircle,
   CheckCircle,
   X,
-  Calendar,
   BookOpen
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
@@ -627,13 +639,12 @@ const currentAllocations = ref<PaymentAllocation[]>([]);
 
 // Ledger modal state
 const showLedgerModal = ref(false);
+const ledgerFromDate = ref<string>('');
+const ledgerToDate = ref<string>(new Date().toISOString().split('T')[0]);
 
 // Export modal state
 const showExportModal = ref(false);
 const exportFormat = ref<'csv' | 'pdf' | 'tally'>('csv');
-const exportFromDate = ref<string>('');
-const exportToDate = ref<string>('');
-const exportAllData = ref(true);
 
 
 const outstandingAmount = computed(() => {
@@ -905,30 +916,11 @@ const ledgerEntries = computed(() => {
   return entries;
 });
 
-// Calculate totals for the ledger (uses all entries for display)
-const totalDebits = computed(() => {
-  return ledgerEntries.value.reduce((sum, entry) => sum + entry.debit, 0);
-});
-
-const totalCredits = computed(() => {
-  return ledgerEntries.value.reduce((sum, entry) => sum + entry.credit, 0);
-});
-
-// Final balance: Credits - Debits
-const finalBalance = computed(() => {
-  return totalCredits.value - totalDebits.value;
-});
-
-// Export-related computed properties
-const getFilteredEntriesForExport = () => {
+// Filter ledger entries based on date range
+const filteredLedgerData = computed(() => {
   const allEntries = ledgerEntries.value;
-
-  if (exportAllData.value) {
-    return { entries: allEntries, openingBalance: 0, hasOpeningBalance: false };
-  }
-
-  const fromDate = exportFromDate.value ? new Date(exportFromDate.value) : null;
-  const toDate = exportToDate.value ? new Date(exportToDate.value) : null;
+  const fromDate = ledgerFromDate.value ? new Date(ledgerFromDate.value) : null;
+  const toDate = ledgerToDate.value ? new Date(ledgerToDate.value) : null;
 
   // If no filters set, return all entries
   if (!fromDate && !toDate) {
@@ -973,19 +965,36 @@ const getFilteredEntriesForExport = () => {
     openingBalance,
     hasOpeningBalance: fromDate !== null && openingBalance !== 0
   };
+});
+
+// Filtered entries for display
+const displayedLedgerEntries = computed(() => filteredLedgerData.value.entries);
+const ledgerOpeningBalance = computed(() => filteredLedgerData.value.openingBalance);
+const hasLedgerOpeningBalance = computed(() => filteredLedgerData.value.hasOpeningBalance);
+
+// Calculate totals for the ledger (uses filtered entries for display)
+const totalDebits = computed(() => {
+  return displayedLedgerEntries.value.reduce((sum, entry) => sum + entry.debit, 0);
+});
+
+const totalCredits = computed(() => {
+  return displayedLedgerEntries.value.reduce((sum, entry) => sum + entry.credit, 0);
+});
+
+// Final balance: Credits - Debits (including opening balance)
+const finalBalance = computed(() => {
+  return ledgerOpeningBalance.value + totalCredits.value - totalDebits.value;
+});
+
+// Check if date filter is active
+const isDateFilterActive = computed(() => {
+  return ledgerFromDate.value !== '' || ledgerToDate.value !== new Date().toISOString().split('T')[0];
+});
+
+// Export uses the current filtered data from ledger modal
+const getFilteredEntriesForExport = () => {
+  return filteredLedgerData.value;
 };
-
-// Preview count for export modal
-const exportPreviewCount = computed(() => {
-  if (exportAllData.value) return ledgerEntries.value.length;
-  return getFilteredEntriesForExport().entries.length;
-});
-
-// Opening balance for export preview
-const exportOpeningBalance = computed(() => {
-  if (exportAllData.value) return 0;
-  return getFilteredEntriesForExport().openingBalance;
-});
 
 // Ledger modal functions
 const openLedgerModal = () => {
@@ -997,13 +1006,15 @@ const closeLedgerModal = () => {
   showExportDropdown.value = false;
 };
 
+// Reset date filter to full range (empty from date, today as to date)
+const resetDateFilter = () => {
+  ledgerFromDate.value = '';
+  ledgerToDate.value = new Date().toISOString().split('T')[0];
+};
+
 // Export modal functions
 const openExportModal = (format: 'csv' | 'pdf' | 'tally') => {
   exportFormat.value = format;
-  exportAllData.value = true;
-  exportFromDate.value = '';
-  // Default to-date to today for better UX
-  exportToDate.value = new Date().toISOString().split('T')[0];
   showExportModal.value = true;
 };
 
@@ -1210,7 +1221,7 @@ const exportLedgerPDF = async () => {
   const margin = 14;
   let yPosition = 25;
   const filtered = getFilteredEntriesForExport();
-  const hasDateFilter = !exportAllData.value && (exportFromDate.value || exportToDate.value);
+  const hasDateFilter = isDateFilterActive.value;
 
   // Load and add logo
   try {
@@ -1271,7 +1282,7 @@ const exportLedgerPDF = async () => {
   // Show filter period if active
   if (hasDateFilter) {
     yPosition += 6;
-    const periodText = `${t('vendors.filterPeriod')}: ${exportFromDate.value || t('vendors.beginning')} - ${exportToDate.value || t('vendors.today')}`;
+    const periodText = `${t('vendors.filterPeriod')}: ${ledgerFromDate.value || t('vendors.beginning')} - ${ledgerToDate.value || t('vendors.today')}`;
     doc.text(periodText, margin, yPosition);
   }
 
@@ -1307,7 +1318,7 @@ const exportLedgerPDF = async () => {
       ? `${Math.abs(filtered.openingBalance).toFixed(0)} Cr`
       : `${Math.abs(filtered.openingBalance).toFixed(0)} Dr`;
 
-    doc.text(exportFromDate.value || '', xPos, yPosition);
+    doc.text(ledgerFromDate.value || '', xPos, yPosition);
     xPos += colWidths[0];
     doc.text(t('vendors.openingBalance'), xPos, yPosition);
     xPos += colWidths[1];
@@ -1443,7 +1454,7 @@ const generateLedgerCSV = () => {
 
   const rows: (string | number)[][] = [];
   const filtered = getFilteredEntriesForExport();
-  const hasDateFilter = !exportAllData.value && (exportFromDate.value || exportToDate.value);
+  const hasDateFilter = isDateFilterActive.value;
 
   // Add opening balance row if filtering
   if (filtered.hasOpeningBalance) {
@@ -1452,7 +1463,7 @@ const generateLedgerCSV = () => {
       : `${Math.abs(filtered.openingBalance).toFixed(2)} Dr`;
 
     rows.push([
-      exportFromDate.value,
+      ledgerFromDate.value,
       t('vendors.openingBalance'),
       '',
       '',
@@ -1501,7 +1512,7 @@ const generateLedgerCSV = () => {
   if (hasDateFilter) {
     rows.push([
       t('vendors.filterPeriod'),
-      `${exportFromDate.value || t('vendors.beginning')} - ${exportToDate.value || t('vendors.today')}`,
+      `${ledgerFromDate.value || t('vendors.beginning')} - ${ledgerToDate.value || t('vendors.today')}`,
       '',
       '',
       '',
