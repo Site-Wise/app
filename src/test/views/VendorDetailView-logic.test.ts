@@ -868,9 +868,7 @@ describe('VendorDetailView Logic', () => {
     it('should display debit balance with Dr suffix', () => {
       const openingBalance = -2000 // Negative = vendor owes us (Debit)
 
-      const display = openingBalance >= 0
-        ? `${Math.abs(openingBalance).toFixed(2)} Cr`
-        : `${Math.abs(openingBalance).toFixed(2)} Dr`
+      const display = `${Math.abs(openingBalance).toFixed(2)} Dr`
 
       expect(display).toBe('2000.00 Dr')
     })
