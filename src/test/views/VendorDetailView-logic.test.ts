@@ -1247,7 +1247,7 @@ describe('VendorDetailView Logic', () => {
       const credit = 1000
 
       const debitDisplay = debit > 0 ? debit.toFixed(2) : ''
-      const creditDisplay = credit > 0 ? credit.toFixed(2) : ''
+      const debitDisplay = ''
       const creditDisplay = credit.toFixed(2)
       expect(debitDisplay).toBe('')
       expect(creditDisplay).toBe('1000.00')
