@@ -1313,7 +1313,7 @@ describe('VendorDetailView Logic', () => {
       const getBalanceStatus = (balance: number) =>
         balance >= 0 ? 'Total Outstanding' : 'Credit Balance'
 
-      const negativeBalance = -2000
+      const positiveStatus = 'Total Outstanding'
 
       const positiveStatus = positiveBalance >= 0 ? 'Total Outstanding' : 'Credit Balance'
       const positiveStatus = getBalanceStatus(positiveBalance)
