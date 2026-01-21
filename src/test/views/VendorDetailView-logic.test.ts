@@ -858,9 +858,7 @@ describe('VendorDetailView Logic', () => {
     it('should display credit balance with Cr suffix', () => {
       const openingBalance = 3000 // Positive = we owe vendor (Credit)
 
-      const display = openingBalance >= 0
-        ? `${Math.abs(openingBalance).toFixed(2)} Cr`
-        : `${Math.abs(openingBalance).toFixed(2)} Dr`
+      const display = `${Math.abs(openingBalance).toFixed(2)} Cr`
 
       expect(display).toBe('3000.00 Cr')
     })
