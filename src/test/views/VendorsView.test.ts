@@ -325,10 +325,10 @@ describe('VendorsView', () => {
         configurable: true
       })
 
-      // Should show add vendor button
-      const addButton = wrapper.find('button')
-      expect(addButton.exists()).toBe(true)
-      expect(addButton.text()).toContain('Add Vendor')
+      // Should show add vendor button - find by text content since export button now comes first
+      const buttons = wrapper.findAll('button')
+      const addButton = buttons.find(btn => btn.text().includes('Add Vendor'))
+      expect(addButton?.exists()).toBe(true)
       // Don't check disabled attribute - just check the button exists
     })
 

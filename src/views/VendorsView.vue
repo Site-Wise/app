@@ -8,15 +8,45 @@
         </p>
       </div>
       <div class="flex items-center space-x-3">
-        <button @click="exportAllLedgers" :disabled="exporting || vendors.length === 0" :class="[
-          vendors.length > 0 && !exporting ? 'btn-outline' : 'btn-disabled',
-          'hidden md:flex items-center'
-        ]"
-          :title="t('vendors.exportAllLedgers')">
-          <Loader2 v-if="exporting" class="mr-2 h-4 w-4 animate-spin" />
-          <Download v-else class="mr-2 h-4 w-4" />
-          {{ t('vendors.exportAllLedgers') }}
-        </button>
+        <!-- Export All Ledgers Dropdown -->
+        <div class="relative export-all-dropdown hidden md:block">
+          <button
+            @click="showExportDropdown = !showExportDropdown"
+            :disabled="exporting || vendors.length === 0"
+            :class="[
+              vendors.length > 0 && !exporting ? 'btn-outline' : 'btn-disabled',
+              'flex items-center'
+            ]"
+            :title="t('vendors.exportAllLedgers')"
+          >
+            <Loader2 v-if="exporting" class="mr-2 h-4 w-4 animate-spin" />
+            <Download v-else class="mr-2 h-4 w-4" />
+            <span v-if="exporting && exportTotal > 0">
+              {{ exportProgress }}/{{ exportTotal }}
+            </span>
+            <span v-else>{{ t('vendors.exportAllLedgers') }}</span>
+            <ChevronDown class="ml-2 h-4 w-4" />
+          </button>
+
+          <!-- Export Dropdown Menu -->
+          <div v-if="showExportDropdown && !exporting" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+            <div class="py-1">
+              <button @click="exportAllLedgersCSV(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <FileSpreadsheet class="mr-3 h-4 w-4 text-green-600" />
+                {{ t('vendors.exportCsv') }}
+              </button>
+              <button @click="exportAllLedgersPDF(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <FileText class="mr-3 h-4 w-4 text-red-600" />
+                {{ t('vendors.exportPdf') }}
+              </button>
+              <button @click="exportAllLedgersTally(); showExportDropdown = false" class="relative flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <FileText class="mr-3 h-4 w-4 text-blue-600" />
+                {{ t('vendors.exportTallyXml') }}
+                <StatusBadge type="beta" position="absolute" />
+              </button>
+            </div>
+          </div>
+        </div>
         <button @click="handleAddVendor" :disabled="!canCreateVendor" :class="[
           canCreateVendor ? 'btn-primary' : 'btn-disabled',
           'hidden md:flex items-center'
@@ -198,7 +228,7 @@ import { ref, reactive, onMounted, computed, nextTick } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { useKeyboardShortcutSingle } from '../composables/useKeyboardShortcut';
 import { useRouter } from 'vue-router';
-import { Users, Plus, Edit2, Trash2, Loader2, Mail, Phone, MapPin, Download } from 'lucide-vue-next';
+import { Users, Plus, Edit2, Trash2, Loader2, Mail, Phone, MapPin, Download, ChevronDown, FileSpreadsheet, FileText } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
@@ -227,6 +257,8 @@ import {
 } from '../services/pocketbase';
 import { DeliveryPaymentCalculator, type DeliveryWithPaymentStatus } from '../services/deliveryUtils';
 import { usePermissions } from '../composables/usePermissions';
+import StatusBadge from '../components/StatusBadge.vue';
+import JSZip from 'jszip';
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
@@ -269,6 +301,9 @@ const showAddModal = ref(false);
 const editingVendor = ref<Vendor | null>(null);
 const loading = ref(false);
 const exporting = ref(false);
+const showExportDropdown = ref(false);
+const exportProgress = ref(0);
+const exportTotal = ref(0);
 
 const firstInputRef = ref<HTMLInputElement>();
 
@@ -454,12 +489,190 @@ const closeModal = () => {
   });
 };
 
-// Export all vendor ledgers to a single CSV file
-const exportAllLedgers = async () => {
+// Type for ledger entry
+type LedgerEntry = {
+  date: string;
+  particulars: string;
+  reference: string;
+  debit: number;
+  credit: number;
+  runningBalance: number;
+};
+
+// Helper function to build ledger entries for a single vendor
+const buildVendorLedgerEntries = (
+  _vendorId: string,
+  vendorDeliveries: Delivery[],
+  vendorPayments: Payment[],
+  vendorReturns: VendorReturn[],
+  vendorCreditNotes: VendorCreditNote[],
+  allPaymentAllocations: PaymentAllocation[]
+): LedgerEntry[] => {
+  // Enhance deliveries with payment status
+  const enhancedDeliveries = DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus(
+    vendorDeliveries,
+    allPaymentAllocations.filter((pa: PaymentAllocation) =>
+      vendorDeliveries.some((d: Delivery) => d.id === pa.delivery)
+    )
+  );
+
+  const entries: LedgerEntry[] = [];
+
+  // Add delivery entries (debits)
+  enhancedDeliveries.forEach((delivery: DeliveryWithPaymentStatus) => {
+    let particulars = `${t('vendors.delivery')} #${delivery.id?.slice(-6) || t('vendors.unknown')}`;
+    if (delivery.delivery_reference) {
+      particulars = `Invoice: ${delivery.delivery_reference}`;
+    }
+
+    entries.push({
+      date: delivery.delivery_date,
+      particulars,
+      reference: delivery.delivery_reference || '',
+      debit: delivery.total_amount,
+      credit: 0,
+      runningBalance: 0
+    });
+  });
+
+  // Add return entries (credit note or refund)
+  vendorReturns.forEach((returnItem: VendorReturn) => {
+    if (returnItem.status === 'completed' || returnItem.status === 'refunded') {
+      if (returnItem.processing_option === 'credit_note') {
+        entries.push({
+          date: returnItem.completion_date || returnItem.return_date,
+          particulars: `Credit Note for Return #${returnItem.id?.slice(-6)}`,
+          reference: `RET-${returnItem.id?.slice(-6)}`,
+          debit: 0,
+          credit: returnItem.total_return_amount,
+          runningBalance: 0
+        });
+      } else if (returnItem.processing_option === 'refund') {
+        entries.push({
+          date: returnItem.completion_date || returnItem.return_date,
+          particulars: `Goods Returned #${returnItem.id?.slice(-6)}`,
+          reference: `RET-${returnItem.id?.slice(-6)}`,
+          debit: 0,
+          credit: returnItem.total_return_amount,
+          runningBalance: 0
+        });
+      }
+    }
+  });
+
+  // Add standalone credit notes (not related to returns)
+  vendorCreditNotes.forEach((creditNote: VendorCreditNote) => {
+    const isReturnRelated = vendorReturns.some((returnItem: VendorReturn) =>
+      returnItem.processing_option === 'credit_note' &&
+      returnItem.reason === creditNote.reason &&
+      returnItem.total_return_amount === creditNote.credit_amount
+    );
+
+    if (creditNote.credit_amount > 0 && !isReturnRelated) {
+      entries.push({
+        date: creditNote.issue_date,
+        particulars: `${t('vendors.creditNoteIssued')} - ${creditNote.reason || ''}`,
+        reference: creditNote.reference || `CN-${creditNote.id?.slice(-6)}`,
+        debit: 0,
+        credit: creditNote.credit_amount,
+        runningBalance: 0
+      });
+    }
+  });
+
+  // Add payment entries (credits)
+  vendorPayments.forEach((payment: Payment) => {
+    entries.push({
+      date: payment.payment_date,
+      particulars: `${t('vendors.paymentMade')} - ${payment.reference || t('common.payment')}`,
+      reference: payment.reference || '',
+      debit: 0,
+      credit: payment.amount,
+      runningBalance: 0
+    });
+  });
+
+  // Sort entries by date
+  entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  // Calculate running balance (Debit increases balance, Credit decreases balance)
+  let runningBalance = 0;
+  entries.forEach(entry => {
+    runningBalance += entry.debit - entry.credit;
+    entry.runningBalance = runningBalance;
+  });
+
+  return entries;
+};
+
+// Helper function to generate CSV content for a vendor
+const generateVendorCSV = (_vendorName: string, entries: LedgerEntry[]): string => {
+  const csvRows: string[] = [];
+
+  // CSV Header
+  const headers = [
+    t('vendors.date'),
+    t('vendors.particulars'),
+    t('vendors.reference'),
+    t('vendors.debit'),
+    t('vendors.credit'),
+    t('vendors.balance')
+  ];
+  csvRows.push(headers.join(','));
+
+  // Add entries
+  entries.forEach(entry => {
+    const balanceDisplay = entry.runningBalance >= 0
+      ? `${entry.runningBalance.toFixed(2)} Dr`
+      : `${Math.abs(entry.runningBalance).toFixed(2)} Cr`;
+
+    const row = [
+      new Date(entry.date).toLocaleDateString('en-CA'),
+      escapeCSV(entry.particulars),
+      escapeCSV(entry.reference),
+      entry.debit > 0 ? entry.debit.toFixed(2) : '',
+      entry.credit > 0 ? entry.credit.toFixed(2) : '',
+      balanceDisplay
+    ];
+    csvRows.push(row.join(','));
+  });
+
+  // Add totals row
+  const totalDebits = entries.reduce((sum, e) => sum + e.debit, 0);
+  const totalCredits = entries.reduce((sum, e) => sum + e.credit, 0);
+  const finalBalance = totalDebits - totalCredits;
+  const finalBalanceDisplay = finalBalance >= 0
+    ? `${finalBalance.toFixed(2)} Dr`
+    : `${Math.abs(finalBalance).toFixed(2)} Cr`;
+
+  csvRows.push([
+    '',
+    t('vendors.totals'),
+    '',
+    totalDebits.toFixed(2),
+    totalCredits.toFixed(2),
+    finalBalanceDisplay
+  ].join(','));
+
+  return csvRows.join('\n');
+};
+
+// Helper to sanitize filename
+const sanitizeFilename = (name: string): string => {
+  return name.replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '_').substring(0, 50);
+};
+
+// Export all vendor ledgers as CSV files in a ZIP
+const exportAllLedgersCSV = async () => {
   if (vendors.value.length === 0) return;
 
   exporting.value = true;
+  exportProgress.value = 0;
+  exportTotal.value = vendors.value.length;
+
   try {
+    const zip = new JSZip();
+
     // Load all data needed for ledger entries
     const [allPaymentAllocations, allReturns, allCreditNotes] = await Promise.all([
       paymentAllocationService.getAll(),
@@ -467,20 +680,7 @@ const exportAllLedgers = async () => {
       vendorCreditNoteService.getAll()
     ]);
 
-    // Build CSV content with all vendor ledgers
-    const csvRows: string[] = [];
-
-    // CSV Header
-    const headers = [
-      t('vendors.vendor'),
-      t('vendors.date'),
-      t('vendors.particulars'),
-      t('vendors.reference'),
-      t('vendors.debit'),
-      t('vendors.credit'),
-      t('vendors.balance')
-    ];
-    csvRows.push(headers.join(','));
+    let filesCreated = 0;
 
     // Process each vendor
     for (const vendor of vendors.value) {
@@ -493,157 +693,36 @@ const exportAllLedgers = async () => {
       const vendorReturns = allReturns.filter((r: VendorReturn) => r.vendor === vendorId);
       const vendorCreditNotes = allCreditNotes.filter((cn: VendorCreditNote) => cn.vendor === vendorId);
 
-      // Enhance deliveries with payment status
-      const enhancedDeliveries = DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus(
+      const entries = buildVendorLedgerEntries(
+        vendorId,
         vendorDeliveries,
-        allPaymentAllocations.filter((pa: PaymentAllocation) =>
-          vendorDeliveries.some((d: Delivery) => d.id === pa.delivery)
-        )
+        vendorPayments,
+        vendorReturns,
+        vendorCreditNotes,
+        allPaymentAllocations
       );
 
-      // Build ledger entries for this vendor
-      const entries: Array<{
-        date: string;
-        particulars: string;
-        reference: string;
-        debit: number;
-        credit: number;
-        runningBalance: number;
-      }> = [];
-
-      // Add delivery entries (debits)
-      enhancedDeliveries.forEach((delivery: DeliveryWithPaymentStatus) => {
-        let particulars = `${t('vendors.delivery')} #${delivery.id?.slice(-6) || t('vendors.unknown')}`;
-        if (delivery.delivery_reference) {
-          particulars = `Invoice: ${delivery.delivery_reference}`;
-        }
-
-        entries.push({
-          date: delivery.delivery_date,
-          particulars,
-          reference: delivery.delivery_reference || '',
-          debit: delivery.total_amount,
-          credit: 0,
-          runningBalance: 0
-        });
-      });
-
-      // Add return entries (credit note or refund)
-      vendorReturns.forEach((returnItem: VendorReturn) => {
-        if (returnItem.status === 'completed' || returnItem.status === 'refunded') {
-          if (returnItem.processing_option === 'credit_note') {
-            entries.push({
-              date: returnItem.completion_date || returnItem.return_date,
-              particulars: `Credit Note for Return #${returnItem.id?.slice(-6)}`,
-              reference: `RET-${returnItem.id?.slice(-6)}`,
-              debit: 0,
-              credit: returnItem.total_return_amount,
-              runningBalance: 0
-            });
-          } else if (returnItem.processing_option === 'refund') {
-            entries.push({
-              date: returnItem.completion_date || returnItem.return_date,
-              particulars: `Goods Returned #${returnItem.id?.slice(-6)}`,
-              reference: `RET-${returnItem.id?.slice(-6)}`,
-              debit: 0,
-              credit: returnItem.total_return_amount,
-              runningBalance: 0
-            });
-          }
-        }
-      });
-
-      // Add standalone credit notes (not related to returns)
-      vendorCreditNotes.forEach((creditNote: VendorCreditNote) => {
-        const isReturnRelated = vendorReturns.some((returnItem: VendorReturn) =>
-          returnItem.processing_option === 'credit_note' &&
-          returnItem.reason === creditNote.reason &&
-          returnItem.total_return_amount === creditNote.credit_amount
-        );
-
-        if (creditNote.credit_amount > 0 && !isReturnRelated) {
-          entries.push({
-            date: creditNote.issue_date,
-            particulars: `${t('vendors.creditNoteIssued')} - ${creditNote.reason || ''}`,
-            reference: creditNote.reference || `CN-${creditNote.id?.slice(-6)}`,
-            debit: 0,
-            credit: creditNote.credit_amount,
-            runningBalance: 0
-          });
-        }
-      });
-
-      // Add payment entries (credits)
-      vendorPayments.forEach((payment: Payment) => {
-        entries.push({
-          date: payment.payment_date,
-          particulars: `${t('vendors.paymentMade')} - ${payment.reference || t('common.payment')}`,
-          reference: payment.reference || '',
-          debit: 0,
-          credit: payment.amount,
-          runningBalance: 0
-        });
-      });
-
-      // Sort entries by date
-      entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-      // Calculate running balance (Debit increases balance, Credit decreases balance)
-      let runningBalance = 0;
-      entries.forEach(entry => {
-        runningBalance += entry.debit - entry.credit;
-        entry.runningBalance = runningBalance;
-      });
-
-      // Add entries to CSV
       if (entries.length > 0) {
-        entries.forEach(entry => {
-          const balanceDisplay = entry.runningBalance >= 0
-            ? `${entry.runningBalance.toFixed(2)} Dr`
-            : `${Math.abs(entry.runningBalance).toFixed(2)} Cr`;
-
-          const row = [
-            escapeCSV(vendorName),
-            new Date(entry.date).toLocaleDateString('en-CA'),
-            escapeCSV(entry.particulars),
-            escapeCSV(entry.reference),
-            entry.debit > 0 ? entry.debit.toFixed(2) : '',
-            entry.credit > 0 ? entry.credit.toFixed(2) : '',
-            balanceDisplay
-          ];
-          csvRows.push(row.join(','));
-        });
-
-        // Add totals row for this vendor
-        const totalDebits = entries.reduce((sum, e) => sum + e.debit, 0);
-        const totalCredits = entries.reduce((sum, e) => sum + e.credit, 0);
-        const finalBalance = totalDebits - totalCredits;
-        const finalBalanceDisplay = finalBalance >= 0
-          ? `${finalBalance.toFixed(2)} Dr`
-          : `${Math.abs(finalBalance).toFixed(2)} Cr`;
-
-        csvRows.push([
-          escapeCSV(vendorName),
-          '',
-          `${t('vendors.totals')}`,
-          '',
-          totalDebits.toFixed(2),
-          totalCredits.toFixed(2),
-          finalBalanceDisplay
-        ].join(','));
-
-        // Add empty row between vendors
-        csvRows.push('');
+        const csvContent = generateVendorCSV(vendorName, entries);
+        const filename = `${sanitizeFilename(vendorName)}_Ledger.csv`;
+        zip.file(filename, csvContent);
+        filesCreated++;
       }
+
+      exportProgress.value++;
     }
 
-    // Create and download file
-    const csvContent = csvRows.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    if (filesCreated === 0) {
+      error(t('vendors.noLedgerEntries'));
+      return;
+    }
+
+    // Generate and download ZIP
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
     const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(zipBlob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `All_Vendor_Ledgers_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `All_Vendor_Ledgers_CSV_${new Date().toISOString().split('T')[0]}.zip`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -656,7 +735,295 @@ const exportAllLedgers = async () => {
     error(t('messages.error'));
   } finally {
     exporting.value = false;
+    exportProgress.value = 0;
+    exportTotal.value = 0;
   }
+};
+
+// Export all vendor ledgers as PDF files in a ZIP
+const exportAllLedgersPDF = async () => {
+  if (vendors.value.length === 0) return;
+
+  exporting.value = true;
+  exportProgress.value = 0;
+  exportTotal.value = vendors.value.length;
+
+  try {
+    // Dynamically import jsPDF
+    const { default: jsPDF } = await import('jspdf');
+    const zip = new JSZip();
+
+    // Load all data needed for ledger entries
+    const [allPaymentAllocations, allReturns, allCreditNotes] = await Promise.all([
+      paymentAllocationService.getAll(),
+      vendorReturnService.getAll(),
+      vendorCreditNoteService.getAll()
+    ]);
+
+    let filesCreated = 0;
+
+    // Process each vendor
+    for (const vendor of vendors.value) {
+      const vendorId = vendor.id!;
+      const vendorName = vendor.contact_person || vendor.name || t('common.unnamedVendor');
+
+      // Filter data for this vendor
+      const vendorDeliveries = deliveries.value.filter((d: Delivery) => d.vendor === vendorId);
+      const vendorPayments = payments.value.filter((p: Payment) => p.vendor === vendorId);
+      const vendorReturns = allReturns.filter((r: VendorReturn) => r.vendor === vendorId);
+      const vendorCreditNotes = allCreditNotes.filter((cn: VendorCreditNote) => cn.vendor === vendorId);
+
+      const entries = buildVendorLedgerEntries(
+        vendorId,
+        vendorDeliveries,
+        vendorPayments,
+        vendorReturns,
+        vendorCreditNotes,
+        allPaymentAllocations
+      );
+
+      if (entries.length > 0) {
+        // Create PDF for this vendor
+        const doc = new jsPDF({ orientation: 'landscape' });
+
+        // Title
+        doc.setFontSize(16);
+        doc.text(`${t('vendors.vendorLedger')}: ${vendorName}`, 14, 15);
+        doc.setFontSize(10);
+        doc.text(`${t('vendors.generated')}: ${new Date().toLocaleDateString()}`, 14, 22);
+
+        // Table headers
+        let y = 35;
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text(t('vendors.date'), 14, y);
+        doc.text(t('vendors.particulars'), 45, y);
+        doc.text(t('vendors.reference'), 130, y);
+        doc.text(t('vendors.debit'), 175, y);
+        doc.text(t('vendors.credit'), 205, y);
+        doc.text(t('vendors.balance'), 235, y);
+
+        y += 5;
+        doc.line(14, y, 280, y);
+        y += 5;
+
+        // Table rows
+        doc.setFont('helvetica', 'normal');
+        for (const entry of entries) {
+          if (y > 180) {
+            doc.addPage();
+            y = 20;
+          }
+
+          const balanceDisplay = entry.runningBalance >= 0
+            ? `${entry.runningBalance.toFixed(2)} Dr`
+            : `${Math.abs(entry.runningBalance).toFixed(2)} Cr`;
+
+          doc.text(new Date(entry.date).toLocaleDateString('en-CA'), 14, y);
+          doc.text(entry.particulars.substring(0, 50), 45, y);
+          doc.text((entry.reference || '-').substring(0, 20), 130, y);
+          doc.text(entry.debit > 0 ? `₹${entry.debit.toFixed(2)}` : '', 175, y);
+          doc.text(entry.credit > 0 ? `₹${entry.credit.toFixed(2)}` : '', 205, y);
+          doc.text(balanceDisplay, 235, y);
+          y += 7;
+        }
+
+        // Totals
+        y += 3;
+        doc.line(14, y, 280, y);
+        y += 7;
+        doc.setFont('helvetica', 'bold');
+        const totalDebits = entries.reduce((sum, e) => sum + e.debit, 0);
+        const totalCredits = entries.reduce((sum, e) => sum + e.credit, 0);
+        const finalBalance = totalDebits - totalCredits;
+        const finalBalanceDisplay = finalBalance >= 0
+          ? `${finalBalance.toFixed(2)} Dr`
+          : `${Math.abs(finalBalance).toFixed(2)} Cr`;
+
+        doc.text(t('vendors.totals'), 45, y);
+        doc.text(`₹${totalDebits.toFixed(2)}`, 175, y);
+        doc.text(`₹${totalCredits.toFixed(2)}`, 205, y);
+        doc.text(finalBalanceDisplay, 235, y);
+
+        const pdfBlob = doc.output('blob');
+        const filename = `${sanitizeFilename(vendorName)}_Ledger.pdf`;
+        zip.file(filename, pdfBlob);
+        filesCreated++;
+      }
+
+      exportProgress.value++;
+    }
+
+    if (filesCreated === 0) {
+      error(t('vendors.noLedgerEntries'));
+      return;
+    }
+
+    // Generate and download ZIP
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(zipBlob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `All_Vendor_Ledgers_PDF_${new Date().toISOString().split('T')[0]}.zip`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    success(t('vendors.exportAllLedgersSuccess'));
+  } catch (err) {
+    console.error('Error exporting all ledgers as PDF:', err);
+    error(t('messages.error'));
+  } finally {
+    exporting.value = false;
+    exportProgress.value = 0;
+    exportTotal.value = 0;
+  }
+};
+
+// Export all vendor ledgers as Tally XML files in a ZIP
+const exportAllLedgersTally = async () => {
+  if (vendors.value.length === 0) return;
+
+  exporting.value = true;
+  exportProgress.value = 0;
+  exportTotal.value = vendors.value.length;
+
+  try {
+    const zip = new JSZip();
+
+    // Load all data needed for ledger entries
+    const [allPaymentAllocations, allReturns, allCreditNotes] = await Promise.all([
+      paymentAllocationService.getAll(),
+      vendorReturnService.getAll(),
+      vendorCreditNoteService.getAll()
+    ]);
+
+    let filesCreated = 0;
+
+    // Process each vendor
+    for (const vendor of vendors.value) {
+      const vendorId = vendor.id!;
+      const vendorName = vendor.contact_person || vendor.name || t('common.unnamedVendor');
+
+      // Filter data for this vendor
+      const vendorDeliveries = deliveries.value.filter((d: Delivery) => d.vendor === vendorId);
+      const vendorPayments = payments.value.filter((p: Payment) => p.vendor === vendorId);
+      const vendorReturns = allReturns.filter((r: VendorReturn) => r.vendor === vendorId);
+      const vendorCreditNotes = allCreditNotes.filter((cn: VendorCreditNote) => cn.vendor === vendorId);
+
+      const entries = buildVendorLedgerEntries(
+        vendorId,
+        vendorDeliveries,
+        vendorPayments,
+        vendorReturns,
+        vendorCreditNotes,
+        allPaymentAllocations
+      );
+
+      if (entries.length > 0) {
+        // Generate Tally XML for this vendor
+        const xmlContent = generateTallyXML(vendorName, entries);
+        const filename = `${sanitizeFilename(vendorName)}_Ledger.xml`;
+        zip.file(filename, xmlContent);
+        filesCreated++;
+      }
+
+      exportProgress.value++;
+    }
+
+    if (filesCreated === 0) {
+      error(t('vendors.noLedgerEntries'));
+      return;
+    }
+
+    // Generate and download ZIP
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(zipBlob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `All_Vendor_Ledgers_Tally_${new Date().toISOString().split('T')[0]}.zip`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    success(t('vendors.exportAllLedgersSuccess'));
+  } catch (err) {
+    console.error('Error exporting all ledgers as Tally XML:', err);
+    error(t('messages.error'));
+  } finally {
+    exporting.value = false;
+    exportProgress.value = 0;
+    exportTotal.value = 0;
+  }
+};
+
+// Helper function to generate Tally XML content
+const generateTallyXML = (vendorName: string, entries: LedgerEntry[]): string => {
+  const formatTallyDate = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}${month}${day}`;
+  };
+
+  const escapeXML = (str: string): string => {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  };
+
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<ENVELOPE>
+  <HEADER>
+    <TALLYREQUEST>Import Data</TALLYREQUEST>
+  </HEADER>
+  <BODY>
+    <IMPORTDATA>
+      <REQUESTDESC>
+        <REPORTNAME>Vouchers</REPORTNAME>
+      </REQUESTDESC>
+      <REQUESTDATA>`;
+
+  entries.forEach((entry, index) => {
+    const voucherType = entry.debit > 0 ? 'Purchase' : 'Payment';
+    const amount = entry.debit > 0 ? entry.debit : entry.credit;
+
+    xml += `
+        <TALLYMESSAGE xmlns:UDF="TallyUDF">
+          <VOUCHER VCHTYPE="${voucherType}" ACTION="Create">
+            <DATE>${formatTallyDate(entry.date)}</DATE>
+            <VOUCHERTYPENAME>${voucherType}</VOUCHERTYPENAME>
+            <VOUCHERNUMBER>${index + 1}</VOUCHERNUMBER>
+            <NARRATION>${escapeXML(entry.particulars)}</NARRATION>
+            <REFERENCE>${escapeXML(entry.reference || '')}</REFERENCE>
+            <PARTYLEDGERNAME>${escapeXML(vendorName)}</PARTYLEDGERNAME>
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>${escapeXML(vendorName)}</LEDGERNAME>
+              <AMOUNT>${entry.debit > 0 ? amount : -amount}</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>${entry.debit > 0 ? 'Purchase Account' : 'Cash/Bank'}</LEDGERNAME>
+              <AMOUNT>${entry.debit > 0 ? -amount : amount}</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+          </VOUCHER>
+        </TALLYMESSAGE>`;
+  });
+
+  xml += `
+      </REQUESTDATA>
+    </IMPORTDATA>
+  </BODY>
+</ENVELOPE>`;
+
+  return xml;
 };
 
 // Helper function to escape CSV values
@@ -681,6 +1048,15 @@ useKeyboardShortcutSingle('n', handleAddVendor, { shiftKey: true, altKey: true }
 
 // Event listeners using @vueuse/core
 useEventListener(window, 'show-add-modal', handleQuickAction);
+
+// Handle click outside to close export dropdown
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+  if (showExportDropdown.value && !target.closest('.export-all-dropdown')) {
+    showExportDropdown.value = false;
+  }
+};
+useEventListener(document, 'click', handleClickOutside);
 
 onMounted(() => {
   // Data loading is handled automatically by useSiteData
