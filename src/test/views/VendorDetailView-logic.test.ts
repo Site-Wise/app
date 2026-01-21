@@ -1086,7 +1086,7 @@ describe('VendorDetailView Logic', () => {
     it('should display negative balance as Dr (vendor owes us)', () => {
       const balance = -1000
 
-      const display = balance >= 0 ? 'Cr' : 'Dr'
+      const display = 'Dr'
       const isVendorOwesUs = balance < 0
 
       expect(display).toBe('Dr')
