@@ -315,3 +315,187 @@ export const getLedgerExportTranslations = (t: (key: string) => string) => ({
   totalOutstanding: t('vendors.totalOutstanding'),
   creditBalance: t('vendors.creditBalance'),
 });
+
+/**
+ * CSV export options
+ */
+export type LedgerCSVOptions = {
+  vendorName: string;
+  entries: LedgerEntry[];
+  openingBalance?: number;
+  hasOpeningBalance?: boolean;
+  filterFromDate?: string;
+  filterToDate?: string;
+  translations: {
+    date: string;
+    particulars: string;
+    reference: string;
+    debit: string;
+    credit: string;
+    balance: string;
+    openingBalance: string;
+    totals: string;
+    filterPeriod: string;
+    beginning: string;
+    today: string;
+    generated: string;
+    outstanding: string;
+    creditBalance: string;
+    finalBalance: string;
+  };
+};
+
+/**
+ * Helper function to escape CSV values
+ */
+const escapeCSV = (value: string): string => {
+  if (!value) return '';
+  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+};
+
+/**
+ * Generates CSV content for a vendor ledger
+ * @returns CSV content as a string
+ */
+export const generateLedgerCSV = (options: LedgerCSVOptions): string => {
+  const {
+    entries,
+    openingBalance = 0,
+    hasOpeningBalance = false,
+    filterFromDate,
+    filterToDate,
+    translations: t
+  } = options;
+
+  const headers = [
+    t.date,
+    t.particulars,
+    t.reference,
+    t.debit,
+    t.credit,
+    t.balance
+  ];
+
+  const rows: (string | number)[][] = [];
+  const hasDateFilter = !!(filterFromDate || filterToDate);
+
+  // Add opening balance row if filtering
+  if (hasOpeningBalance) {
+    const openingBalanceDisplay = openingBalance >= 0
+      ? `${openingBalance.toFixed(2)} Cr`
+      : `${Math.abs(openingBalance).toFixed(2)} Dr`;
+
+    rows.push([
+      filterFromDate || '',
+      t.openingBalance,
+      '',
+      '',
+      '',
+      openingBalanceDisplay
+    ]);
+  }
+
+  // Calculate export totals
+  let exportTotalDebits = 0;
+  let exportTotalCredits = 0;
+
+  // Add entries
+  entries.forEach(entry => {
+    const balanceDisplay = entry.runningBalance >= 0
+      ? `${entry.runningBalance.toFixed(2)} Cr`
+      : `${Math.abs(entry.runningBalance).toFixed(2)} Dr`;
+
+    rows.push([
+      new Date(entry.date).toLocaleDateString('en-CA'),
+      escapeCSV(entry.particulars),
+      escapeCSV(entry.reference || ''),
+      entry.debit > 0 ? entry.debit.toFixed(2) : '',
+      entry.credit > 0 ? entry.credit.toFixed(2) : '',
+      balanceDisplay
+    ]);
+
+    exportTotalDebits += entry.debit;
+    exportTotalCredits += entry.credit;
+  });
+
+  // Add totals row
+  rows.push([
+    '',
+    t.totals,
+    '',
+    exportTotalDebits.toFixed(2),
+    exportTotalCredits.toFixed(2),
+    ''
+  ]);
+
+  // Add summary information
+  rows.push(['', '', '', '', '', '']);
+
+  // Add filter info if active
+  if (hasDateFilter) {
+    rows.push([
+      t.filterPeriod,
+      `${filterFromDate || t.beginning} - ${filterToDate || t.today}`,
+      '',
+      '',
+      '',
+      ''
+    ]);
+  }
+
+  rows.push([
+    t.generated,
+    new Date().toISOString().split('T')[0],
+    '',
+    '',
+    '',
+    ''
+  ]);
+
+  const exportFinalBalance = openingBalance + exportTotalCredits - exportTotalDebits;
+  const balanceStatus = exportFinalBalance >= 0 ? t.outstanding : t.creditBalance;
+  const finalBalanceDisplay = exportFinalBalance >= 0
+    ? `₹${exportFinalBalance.toFixed(2)} Cr (${balanceStatus})`
+    : `₹${Math.abs(exportFinalBalance).toFixed(2)} Dr (${balanceStatus})`;
+
+  rows.push([
+    t.finalBalance,
+    finalBalanceDisplay,
+    '',
+    '',
+    '',
+    ''
+  ]);
+
+  // Convert to CSV
+  const csvRows = [headers, ...rows];
+  return csvRows.map(row =>
+    row.map(field =>
+      typeof field === 'string' && field.includes(',') ? `"${field}"` : field
+    ).join(',')
+  ).join('\n');
+};
+
+/**
+ * Helper function to get translations object for CSV export
+ */
+export const getLedgerCSVTranslations = (t: (key: string) => string) => ({
+  date: t('vendors.date'),
+  particulars: t('vendors.particulars'),
+  reference: t('vendors.reference'),
+  debit: t('vendors.debit'),
+  credit: t('vendors.credit'),
+  balance: t('vendors.balance'),
+  openingBalance: t('vendors.openingBalance'),
+  totals: t('vendors.totals'),
+  filterPeriod: t('vendors.filterPeriod'),
+  beginning: t('vendors.beginning'),
+  today: t('vendors.today'),
+  generated: t('vendors.generated'),
+  outstanding: t('vendors.outstanding'),
+  creditBalance: t('vendors.creditBalance'),
+  finalBalance: t('vendors.finalBalance'),
+});

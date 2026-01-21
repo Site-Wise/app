@@ -259,7 +259,14 @@ import { DeliveryPaymentCalculator, type DeliveryWithPaymentStatus } from '../se
 import { usePermissions } from '../composables/usePermissions';
 import StatusBadge from '../components/StatusBadge.vue';
 import JSZip from 'jszip';
-import { generateLedgerPDF, getLedgerExportTranslations } from '../services/ledgerExportUtils';
+import {
+  generateLedgerPDF,
+  getLedgerExportTranslations,
+  generateLedgerCSV,
+  getLedgerCSVTranslations,
+  type LedgerEntry
+} from '../services/ledgerExportUtils';
+import { TallyXmlExporter } from '../utils/tallyXmlExport';
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
@@ -490,16 +497,6 @@ const closeModal = () => {
   });
 };
 
-// Type for ledger entry
-type LedgerEntry = {
-  date: string;
-  particulars: string;
-  reference: string;
-  debit: number;
-  credit: number;
-  runningBalance: number;
-};
-
 // Helper function to build ledger entries for a single vendor
 const buildVendorLedgerEntries = (
   _vendorId: string,
@@ -606,58 +603,6 @@ const buildVendorLedgerEntries = (
   return entries;
 };
 
-// Helper function to generate CSV content for a vendor
-const generateVendorCSV = (_vendorName: string, entries: LedgerEntry[]): string => {
-  const csvRows: string[] = [];
-
-  // CSV Header
-  const headers = [
-    t('vendors.date'),
-    t('vendors.particulars'),
-    t('vendors.reference'),
-    t('vendors.debit'),
-    t('vendors.credit'),
-    t('vendors.balance')
-  ];
-  csvRows.push(headers.join(','));
-
-  // Add entries
-  entries.forEach(entry => {
-    const balanceDisplay = entry.runningBalance >= 0
-      ? `${entry.runningBalance.toFixed(2)} Dr`
-      : `${Math.abs(entry.runningBalance).toFixed(2)} Cr`;
-
-    const row = [
-      new Date(entry.date).toLocaleDateString('en-CA'),
-      escapeCSV(entry.particulars),
-      escapeCSV(entry.reference),
-      entry.debit > 0 ? entry.debit.toFixed(2) : '',
-      entry.credit > 0 ? entry.credit.toFixed(2) : '',
-      balanceDisplay
-    ];
-    csvRows.push(row.join(','));
-  });
-
-  // Add totals row
-  const totalDebits = entries.reduce((sum, e) => sum + e.debit, 0);
-  const totalCredits = entries.reduce((sum, e) => sum + e.credit, 0);
-  const finalBalance = totalDebits - totalCredits;
-  const finalBalanceDisplay = finalBalance >= 0
-    ? `${finalBalance.toFixed(2)} Dr`
-    : `${Math.abs(finalBalance).toFixed(2)} Cr`;
-
-  csvRows.push([
-    '',
-    t('vendors.totals'),
-    '',
-    totalDebits.toFixed(2),
-    totalCredits.toFixed(2),
-    finalBalanceDisplay
-  ].join(','));
-
-  return csvRows.join('\n');
-};
-
 // Helper to sanitize filename
 const sanitizeFilename = (name: string): string => {
   return name.replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '_').substring(0, 50);
@@ -704,7 +649,14 @@ const exportAllLedgersCSV = async () => {
       );
 
       if (entries.length > 0) {
-        const csvContent = generateVendorCSV(vendorName, entries);
+        // Use shared CSV generation utility
+        const csvContent = generateLedgerCSV({
+          vendorName,
+          entries,
+          openingBalance: 0,
+          hasOpeningBalance: false,
+          translations: getLedgerCSVTranslations(t)
+        });
         const filename = `${sanitizeFilename(vendorName)}_Ledger.csv`;
         zip.file(filename, csvContent);
         filesCreated++;
@@ -870,8 +822,22 @@ const exportAllLedgersTally = async () => {
       );
 
       if (entries.length > 0) {
-        // Generate Tally XML for this vendor
-        const xmlContent = generateTallyXML(vendorName, entries);
+        // Use shared TallyXmlExporter utility
+        const ledgerData = TallyXmlExporter.prepareLedgerData(
+          vendor,
+          vendorDeliveries,
+          vendorPayments,
+          vendorCreditNotes,
+          [], // No credit note usages needed for bulk export
+          vendorReturns
+        );
+        const xmlContent = TallyXmlExporter.generateVendorLedgerXml(ledgerData, {
+          companyName: 'SiteWise Construction',
+          periodFrom: '01-04-2024',
+          periodTo: '31-03-2025',
+          includeNarration: true,
+          includeVoucherNumber: true
+        });
         const filename = `${sanitizeFilename(vendorName)}_Ledger.xml`;
         zip.file(filename, xmlContent);
         filesCreated++;
@@ -906,80 +872,6 @@ const exportAllLedgersTally = async () => {
     exportProgress.value = 0;
     exportTotal.value = 0;
   }
-};
-
-// Helper function to generate Tally XML content
-const generateTallyXML = (vendorName: string, entries: LedgerEntry[]): string => {
-  const formatTallyDate = (dateStr: string): string => {
-    const date = new Date(dateStr);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}${month}${day}`;
-  };
-
-  const escapeXML = (str: string): string => {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
-  };
-
-  let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<ENVELOPE>
-  <HEADER>
-    <TALLYREQUEST>Import Data</TALLYREQUEST>
-  </HEADER>
-  <BODY>
-    <IMPORTDATA>
-      <REQUESTDESC>
-        <REPORTNAME>Vouchers</REPORTNAME>
-      </REQUESTDESC>
-      <REQUESTDATA>`;
-
-  entries.forEach((entry, index) => {
-    const voucherType = entry.debit > 0 ? 'Purchase' : 'Payment';
-    const amount = entry.debit > 0 ? entry.debit : entry.credit;
-
-    xml += `
-        <TALLYMESSAGE xmlns:UDF="TallyUDF">
-          <VOUCHER VCHTYPE="${voucherType}" ACTION="Create">
-            <DATE>${formatTallyDate(entry.date)}</DATE>
-            <VOUCHERTYPENAME>${voucherType}</VOUCHERTYPENAME>
-            <VOUCHERNUMBER>${index + 1}</VOUCHERNUMBER>
-            <NARRATION>${escapeXML(entry.particulars)}</NARRATION>
-            <REFERENCE>${escapeXML(entry.reference || '')}</REFERENCE>
-            <PARTYLEDGERNAME>${escapeXML(vendorName)}</PARTYLEDGERNAME>
-            <ALLLEDGERENTRIES.LIST>
-              <LEDGERNAME>${escapeXML(vendorName)}</LEDGERNAME>
-              <AMOUNT>${entry.debit > 0 ? amount : -amount}</AMOUNT>
-            </ALLLEDGERENTRIES.LIST>
-            <ALLLEDGERENTRIES.LIST>
-              <LEDGERNAME>${entry.debit > 0 ? 'Purchase Account' : 'Cash/Bank'}</LEDGERNAME>
-              <AMOUNT>${entry.debit > 0 ? -amount : amount}</AMOUNT>
-            </ALLLEDGERENTRIES.LIST>
-          </VOUCHER>
-        </TALLYMESSAGE>`;
-  });
-
-  xml += `
-      </REQUESTDATA>
-    </IMPORTDATA>
-  </BODY>
-</ENVELOPE>`;
-
-  return xml;
-};
-
-// Helper function to escape CSV values
-const escapeCSV = (value: string): string => {
-  if (!value) return '';
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
 };
 
 const handleQuickAction = async () => {

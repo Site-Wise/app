@@ -638,7 +638,12 @@
 import { ref, onMounted, computed } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { useRoute, useRouter } from 'vue-router';
-import { generateLedgerPDF, getLedgerExportTranslations } from '../services/ledgerExportUtils';
+import {
+  generateLedgerPDF,
+  getLedgerExportTranslations,
+  generateLedgerCSV,
+  getLedgerCSVTranslations
+} from '../services/ledgerExportUtils';
 import {
   ArrowLeft,
   Download,
@@ -1281,8 +1286,18 @@ const handlePaymentModalClose = () => {
 const exportLedger = () => {
   if (!vendor.value) return;
 
-  // Create CSV content
-  const csvContent = generateLedgerCSV();
+  const filtered = getFilteredEntriesForExport();
+
+  // Use shared CSV generation utility
+  const csvContent = generateLedgerCSV({
+    vendorName: vendor.value.name || '',
+    entries: filtered.entries,
+    openingBalance: filtered.openingBalance,
+    hasOpeningBalance: filtered.hasOpeningBalance,
+    filterFromDate: ledgerFromDate.value || undefined,
+    filterToDate: ledgerToDate.value || undefined,
+    translations: getLedgerCSVTranslations(t)
+  });
 
   // Create and download file
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1314,119 +1329,6 @@ const exportLedgerPDF = async () => {
 
   // Save the PDF
   doc.save(`${vendor.value.name}_${t('vendors.ledger')}_${new Date().toISOString().split('T')[0]}.pdf`);
-};
-
-const generateLedgerCSV = () => {
-  if (!vendor.value) return '';
-
-  const headers = [
-    t('vendors.date'),
-    t('vendors.particulars'),
-    t('vendors.reference'),
-    t('vendors.debit'),
-    t('vendors.credit'),
-    t('vendors.balance')
-  ];
-
-  const rows: (string | number)[][] = [];
-  const filtered = getFilteredEntriesForExport();
-  const hasDateFilter = isDateFilterActive.value;
-
-  // Add opening balance row if filtering
-  if (filtered.hasOpeningBalance) {
-    const openingBalanceDisplay = filtered.openingBalance >= 0
-      ? `${filtered.openingBalance.toFixed(2)} Cr`
-      : `${Math.abs(filtered.openingBalance).toFixed(2)} Dr`;
-
-    rows.push([
-      ledgerFromDate.value,
-      t('vendors.openingBalance'),
-      '',
-      '',
-      '',
-      openingBalanceDisplay
-    ]);
-  }
-
-  // Calculate export totals
-  let exportTotalDebits = 0;
-  let exportTotalCredits = 0;
-
-  // Use the filtered ledger entries
-  filtered.entries.forEach(entry => {
-    const balanceDisplay = entry.runningBalance >= 0
-      ? `${entry.runningBalance.toFixed(2)} Cr`
-      : `${Math.abs(entry.runningBalance).toFixed(2)} Dr`;
-
-    rows.push([
-      new Date(entry.date).toLocaleDateString('en-CA'),
-      entry.particulars,
-      entry.reference || '',
-      entry.debit > 0 ? entry.debit.toFixed(2) : '',
-      entry.credit > 0 ? entry.credit.toFixed(2) : '',
-      balanceDisplay
-    ]);
-
-    exportTotalDebits += entry.debit;
-    exportTotalCredits += entry.credit;
-  });
-
-  // Add totals row
-  rows.push([
-    '',
-    t('vendors.totals'),
-    '',
-    exportTotalDebits.toFixed(2),
-    exportTotalCredits.toFixed(2),
-    ''
-  ]);
-
-  // Add summary information
-  rows.push(['', '', '', '', '', '']);
-
-  // Add filter info if active
-  if (hasDateFilter) {
-    rows.push([
-      t('vendors.filterPeriod'),
-      `${ledgerFromDate.value || t('vendors.beginning')} - ${ledgerToDate.value || t('vendors.today')}`,
-      '',
-      '',
-      '',
-      ''
-    ]);
-  }
-
-  rows.push([
-    t('vendors.generated'),
-    new Date().toISOString().split('T')[0],
-    '',
-    '',
-    '',
-    ''
-  ]);
-
-  const exportFinalBalance = filtered.openingBalance + exportTotalCredits - exportTotalDebits;
-  const balanceStatus = exportFinalBalance >= 0 ? t('vendors.outstanding') : t('vendors.creditBalance');
-  const finalBalanceDisplay = exportFinalBalance >= 0
-    ? `₹${exportFinalBalance.toFixed(2)} Cr (${balanceStatus})`
-    : `₹${Math.abs(exportFinalBalance).toFixed(2)} Dr (${balanceStatus})`;
-
-  rows.push([
-    t('vendors.finalBalance'),
-    finalBalanceDisplay,
-    '',
-    '',
-    '',
-    ''
-  ]);
-
-  // Convert to CSV
-  const csvRows = [headers, ...rows];
-  return csvRows.map(row =>
-    row.map(field =>
-      typeof field === 'string' && field.includes(',') ? `"${field}"` : field
-    ).join(',')
-  ).join('\n');
 };
 
 const exportTallyXml = () => {

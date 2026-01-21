@@ -1428,30 +1428,31 @@ describe('VendorDetailView', () => {
       expect(() => wrapper.vm.exportLedger()).not.toThrow()
     })
 
-    it('should generate CSV content', async () => {
+    it('should have getFilteredEntriesForExport method', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 100))
       await wrapper.vm.$nextTick()
 
-      const csv = wrapper.vm.generateLedgerCSV()
+      const filtered = wrapper.vm.getFilteredEntriesForExport()
 
-      expect(csv).toBeDefined()
-      expect(typeof csv).toBe('string')
+      expect(filtered).toBeDefined()
+      expect(filtered.entries).toBeDefined()
+      expect(Array.isArray(filtered.entries)).toBe(true)
     })
 
-    it('should generate CSV with date filter info', async () => {
+    it('should filter entries based on date range', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 100))
       await wrapper.vm.$nextTick()
 
-      wrapper.vm.exportAllData = false
-      wrapper.vm.exportFromDate = '2024-01-15'
-      wrapper.vm.exportToDate = '2024-01-30'
+      wrapper.vm.ledgerFromDate = '2024-01-15'
+      wrapper.vm.ledgerToDate = '2024-01-30'
       await wrapper.vm.$nextTick()
 
-      const csv = wrapper.vm.generateLedgerCSV()
+      const filtered = wrapper.vm.getFilteredEntriesForExport()
 
-      expect(csv).toBeDefined()
+      expect(filtered).toBeDefined()
+      expect(filtered.entries).toBeDefined()
     })
 
     it('should call exportTallyXml method without error', async () => {
