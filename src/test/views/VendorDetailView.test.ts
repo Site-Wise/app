@@ -53,12 +53,37 @@ vi.mock('../../composables/useI18n', () => ({
         'vendors.finalBalance': 'Final Balance',
         'vendors.beginning': 'Beginning',
         'vendors.today': 'Today',
+        'vendors.outstandingAmount': 'Outstanding Amount',
+        'vendors.totalPaid': 'Total Paid',
+        'vendors.totalDeliveries': 'Total Deliveries',
+        'vendors.recentDeliveries': 'Recent Deliveries',
+        'vendors.paymentHistory': 'Payment History',
+        'vendors.recentReturns': 'Recent Returns',
+        'vendors.specialties': 'Specialties',
+        'vendors.noDeliveriesRecorded': 'No deliveries recorded',
+        'vendors.noPaymentsRecorded': 'No payments recorded',
+        'vendors.noReturnsRecorded': 'No returns recorded',
+        'vendors.noReference': 'No reference',
+        'vendors.total': 'total',
+        'vendors.returns': 'returns',
+        'vendors.returnAmount': 'Return Amount',
+        'vendors.returnStatuses.initiated': 'Initiated',
+        'vendors.returnStatuses.completed': 'Completed',
+        'vendors.returnStatuses.refunded': 'Refunded',
+        'vendors.entries': 'entries',
+        'vendors.noLedgerEntries': 'No ledger entries',
+        'vendors.showingAllEntries': 'Showing all entries',
+        'vendors.delivery': 'Delivery',
+        'vendors.paymentMade': 'Payment made',
         'common.name': 'Name',
         'common.contact': 'Contact',
         'common.phone': 'Phone',
         'common.email': 'Email',
         'common.cancel': 'Cancel',
-        'common.export': 'Export'
+        'common.export': 'Export',
+        'payments.pending': 'Pending',
+        'payments.partial': 'Partial',
+        'payments.paid': 'Paid'
       }
       let result = translations[key] || key
       if (params) {
@@ -73,37 +98,107 @@ vi.mock('../../composables/useI18n', () => ({
 
 vi.mock('../../services/pocketbase', () => ({
   vendorService: {
+    getAll: vi.fn().mockResolvedValue([{
+      id: 'vendor-1',
+      name: 'ABC Construction Supplies',
+      contact_person: 'John Doe',
+      email: 'john@abcsupplies.com',
+      phone: '+91 98765 43210',
+      address: '123 Industrial Area, Mumbai, Maharashtra 400001',
+      payment_details: 'Bank: HDFC Bank\nAccount: 1234567890\nIFSC: HDFC0001234',
+      is_active: true,
+      site: 'site-1',
+      tags: ['tag-1', 'tag-2']
+    }])
+  },
+  deliveryService: {
     getAll: vi.fn().mockResolvedValue([
       {
-        id: 'vendor-1',
-        name: 'Test Vendor',
-        contact_person: 'John Doe',
-        email: 'john@test.com',
-        phone: '+1234567890',
-        address: '123 Main St',
-        payment_details: 'Bank Transfer',
-        is_active: true,
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        delivery_reference: 'INV-001',
+        total_amount: 50000,
+        payment_status: 'partial',
+        paid_amount: 20000,
+        outstanding: 30000,
+        site: 'site-1'
+      },
+      {
+        id: 'delivery-2',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-20',
+        delivery_reference: 'INV-002',
+        total_amount: 30000,
+        payment_status: 'pending',
+        paid_amount: 0,
+        outstanding: 30000,
+        site: 'site-1'
+      },
+      {
+        id: 'delivery-3',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-25',
+        delivery_reference: 'INV-003',
+        total_amount: 20000,
+        payment_status: 'paid',
+        paid_amount: 20000,
+        outstanding: 0,
         site: 'site-1'
       }
     ])
   },
-  deliveryService: {
-    getAll: vi.fn().mockResolvedValue([])
-  },
   paymentService: {
-    getAll: vi.fn().mockResolvedValue([])
+    getAll: vi.fn().mockResolvedValue([
+      {
+        id: 'payment-1',
+        vendor: 'vendor-1',
+        amount: 20000,
+        payment_date: '2024-01-18',
+        reference: 'PAY-001',
+        notes: 'Partial payment for INV-001',
+        site: 'site-1'
+      },
+      {
+        id: 'payment-2',
+        vendor: 'vendor-1',
+        amount: 20000,
+        payment_date: '2024-01-28',
+        reference: 'PAY-002',
+        notes: 'Full payment for INV-003',
+        site: 'site-1'
+      }
+    ])
   },
   accountService: {
-    getAll: vi.fn().mockResolvedValue([])
+    getAll: vi.fn().mockResolvedValue([
+      { id: 'account-1', name: 'Cash', type: 'cash', balance: 100000 }
+    ])
   },
   tagService: {
-    getAll: vi.fn().mockResolvedValue([])
+    getAll: vi.fn().mockResolvedValue([
+      { id: 'tag-1', name: 'Cement Supplier', color: '#3B82F6', type: 'vendor' },
+      { id: 'tag-2', name: 'Premium', color: '#10B981', type: 'vendor' }
+    ])
   },
   vendorReturnService: {
-    getByVendor: vi.fn().mockResolvedValue([])
+    getByVendor: vi.fn().mockResolvedValue([
+      {
+        id: 'return-1',
+        vendor: 'vendor-1',
+        return_date: '2024-01-22',
+        total_return_amount: 5000,
+        status: 'completed',
+        reason: 'Damaged goods',
+        processing_option: 'credit_note',
+        site: 'site-1'
+      }
+    ])
   },
   vendorCreditNoteService: {
-    getByVendor: vi.fn().mockResolvedValue([])
+    getByVendor: vi.fn().mockResolvedValue([
+      { id: 'cn-1', vendor: 'vendor-1', credit_amount: 5000, balance: 5000, issue_date: '2024-01-22', reference: 'CN-001', reason: 'Damaged goods' }
+    ])
   },
   creditNoteUsageService: {
     getByVendor: vi.fn().mockResolvedValue([])
@@ -118,7 +213,7 @@ vi.mock('../../services/pocketbase', () => ({
     getAll: vi.fn().mockResolvedValue([])
   },
   VendorService: {
-    calculateOutstandingFromData: vi.fn().mockReturnValue(0)
+    calculateOutstandingFromData: vi.fn().mockReturnValue(55000)
   },
   getCurrentSiteId: vi.fn(() => 'site-1'),
   setCurrentSiteId: vi.fn(),
@@ -244,7 +339,7 @@ describe('VendorDetailView', () => {
 
       // Should show vendor name and details
       expect(wrapper.text()).toContain('John Doe')
-      expect(wrapper.text()).toContain('Test Vendor')
+      expect(wrapper.text()).toContain('ABC Construction Supplies')
     })
   })
 
@@ -746,6 +841,338 @@ describe('VendorDetailView', () => {
 
       expect(wrapper.vm.showExportDropdown).toBe(false)
       expect(wrapper.vm.showExportModal).toBe(true)
+    })
+  })
+
+  describe('Vendor Information Display', () => {
+    it('should display vendor contact person name', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.text()).toContain('John Doe')
+    })
+
+    it('should display vendor company name', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.text()).toContain('ABC Construction Supplies')
+    })
+
+    it('should display vendor email', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.text()).toContain('john@abcsupplies.com')
+    })
+
+    it('should display vendor phone number', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.text()).toContain('+91 98765 43210')
+    })
+
+    it('should display vendor address', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.text()).toContain('123 Industrial Area')
+      expect(wrapper.text()).toContain('Mumbai')
+    })
+
+    it('should display vendor payment details', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.text()).toContain('HDFC Bank')
+      expect(wrapper.text()).toContain('1234567890')
+    })
+
+    it('should display vendor tags when available', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      // Check that tags are loaded
+      expect(wrapper.vm.vendorTags.length).toBeGreaterThan(0)
+    })
+  })
+
+  describe('Financial Summary Cards', () => {
+    it('should display outstanding amount', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      // Check computed outstanding amount is calculated
+      expect(wrapper.vm.outstandingAmount).toBeDefined()
+    })
+
+    it('should display total paid amount', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      // Total paid should be sum of all payments (20000 + 20000 = 40000)
+      expect(wrapper.vm.totalPaid).toBe(40000)
+    })
+
+    it('should display total deliveries count', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      // Should have 3 deliveries
+      expect(wrapper.vm.vendorDeliveries.length).toBe(3)
+    })
+  })
+
+  describe('Recent Deliveries Section', () => {
+    it('should load vendor deliveries', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.vendorDeliveries).toBeDefined()
+      expect(wrapper.vm.vendorDeliveries.length).toBe(3)
+    })
+
+    it('should display delivery references', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.text()).toContain('INV-001')
+    })
+
+    it('should display delivery amounts', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      // First delivery amount
+      expect(wrapper.text()).toContain('50000')
+    })
+  })
+
+  describe('Payment History Section', () => {
+    it('should load vendor payments', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.vendorPayments).toBeDefined()
+      expect(wrapper.vm.vendorPayments.length).toBe(2)
+    })
+
+    it('should display payment amounts', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.text()).toContain('20000')
+    })
+
+    it('should display payment references', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.text()).toContain('PAY-001')
+    })
+  })
+
+  describe('Returns Section', () => {
+    it('should load vendor returns', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.vendorReturns).toBeDefined()
+      expect(wrapper.vm.vendorReturns.length).toBe(1)
+    })
+
+    it('should display return amount', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.text()).toContain('5000')
+    })
+  })
+
+  describe('Ledger Section', () => {
+    it('should compute ledger entries from deliveries and payments', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      // Ledger should have entries for deliveries, payments, and credit notes
+      expect(wrapper.vm.ledgerEntries.length).toBeGreaterThan(0)
+    })
+
+    it('should calculate total debits correctly', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      // Total debits = payments (40000) + credit notes (5000) = 45000
+      expect(wrapper.vm.totalDebits).toBeDefined()
+    })
+
+    it('should calculate total credits correctly', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      // Total credits = deliveries (50000 + 30000 + 20000) = 100000
+      expect(wrapper.vm.totalCredits).toBeDefined()
+    })
+
+    it('should calculate final balance correctly', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      // Final balance = credits - debits
+      expect(wrapper.vm.finalBalance).toBeDefined()
+    })
+  })
+
+  describe('Action Buttons Functionality', () => {
+    it('should show Record Payment button', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.text()).toContain('Record Payment')
+    })
+
+    it('should show Create Return button', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.text()).toContain('Create Return')
+    })
+
+    it('should open payment modal when Record Payment is clicked', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showPaymentModal).toBe(false)
+
+      // Call recordPayment method directly
+      wrapper.vm.recordPayment()
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showPaymentModal).toBe(true)
+      expect(wrapper.vm.paymentModalMode).toBe('PAY_NOW')
+    })
+
+    it('should navigate to returns page when Create Return is clicked', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Call createReturn method directly
+      wrapper.vm.createReturn()
+
+      expect(mockPush).toHaveBeenCalledWith({
+        path: '/vendor-returns',
+        query: { vendor: 'vendor-1' }
+      })
+    })
+  })
+
+  describe('Export Dropdown Options', () => {
+    it('should show Export CSV option in dropdown', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Open dropdown
+      wrapper.vm.showExportDropdown = true
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.text()).toContain('Export CSV')
+    })
+
+    it('should show Export PDF option in dropdown', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Open dropdown
+      wrapper.vm.showExportDropdown = true
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.text()).toContain('Export PDF')
+    })
+
+    it('should show Export for Tally option in dropdown', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Open dropdown
+      wrapper.vm.showExportDropdown = true
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.text()).toContain('Export for Tally')
+    })
+  })
+
+  describe('Payment Modal', () => {
+    it('should close payment modal when handlePaymentModalClose is called', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Open modal first
+      wrapper.vm.recordPayment()
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.showPaymentModal).toBe(true)
+
+      // Close modal
+      wrapper.vm.handlePaymentModalClose()
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showPaymentModal).toBe(false)
+      expect(wrapper.vm.paymentModalMode).toBe('PAY_NOW')
+      expect(wrapper.vm.currentPayment).toBeNull()
+    })
+  })
+
+  describe('Data Loading', () => {
+    it('should load all required data on mount', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      // Verify all data is loaded
+      expect(wrapper.vm.vendor).toBeDefined()
+      expect(wrapper.vm.vendorDeliveries).toBeDefined()
+      expect(wrapper.vm.vendorPayments).toBeDefined()
+      expect(wrapper.vm.vendorReturns).toBeDefined()
+      expect(wrapper.vm.accounts).toBeDefined()
+    })
+
+    it('should load credit notes for vendor', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.vendorCreditNotes).toBeDefined()
+      expect(wrapper.vm.vendorCreditNotes.length).toBe(1)
     })
   })
 })

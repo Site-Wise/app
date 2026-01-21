@@ -1245,8 +1245,8 @@ describe('VendorDetailView Logic', () => {
       const credit = 1000
 
       const debitDisplay = debit > 0 ? debit.toFixed(2) : ''
-      const debitDisplay = ''
-      const creditDisplay = credit.toFixed(2)
+      const creditDisplay = credit > 0 ? credit.toFixed(2) : ''
+
       expect(debitDisplay).toBe('')
       expect(creditDisplay).toBe('1000.00')
     })
@@ -1308,14 +1308,11 @@ describe('VendorDetailView Logic', () => {
 
     it('should display final balance status correctly', () => {
       const positiveBalance = 5000
-      const getBalanceStatus = (balance: number) =>
-        balance >= 0 ? 'Total Outstanding' : 'Credit Balance'
-
-      const positiveStatus = 'Total Outstanding'
+      const negativeBalance = -2000
 
       const positiveStatus = positiveBalance >= 0 ? 'Total Outstanding' : 'Credit Balance'
-      const positiveStatus = getBalanceStatus(positiveBalance)
-      const negativeStatus = getBalanceStatus(negativeBalance)
+      const negativeStatus = negativeBalance >= 0 ? 'Total Outstanding' : 'Credit Balance'
+
       expect(positiveStatus).toBe('Total Outstanding')
       expect(negativeStatus).toBe('Credit Balance')
     })
