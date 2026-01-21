@@ -7,15 +7,26 @@
           {{ t('vendors.subtitle') }}
         </p>
       </div>
-      <button @click="handleAddVendor" :disabled="!canCreateVendor" :class="[
-        canCreateVendor ? 'btn-primary' : 'btn-disabled',
-        'hidden md:flex items-center'
-      ]"
-        :title="!canCreateVendor ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
-        data-keyboard-shortcut="n">
-        <Plus class="mr-2 h-4 w-4" />
-        {{ t('vendors.addVendor') }}
-      </button>
+      <div class="flex items-center space-x-3">
+        <button @click="exportAllLedgers" :disabled="exporting || vendors.length === 0" :class="[
+          vendors.length > 0 && !exporting ? 'btn-outline' : 'btn-disabled',
+          'hidden md:flex items-center'
+        ]"
+          :title="t('vendors.exportAllLedgers')">
+          <Loader2 v-if="exporting" class="mr-2 h-4 w-4 animate-spin" />
+          <Download v-else class="mr-2 h-4 w-4" />
+          {{ t('vendors.exportAllLedgers') }}
+        </button>
+        <button @click="handleAddVendor" :disabled="!canCreateVendor" :class="[
+          canCreateVendor ? 'btn-primary' : 'btn-disabled',
+          'hidden md:flex items-center'
+        ]"
+          :title="!canCreateVendor ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
+          data-keyboard-shortcut="n">
+          <Plus class="mr-2 h-4 w-4" />
+          {{ t('vendors.addVendor') }}
+        </button>
+      </div>
     </div>
 
     <!-- Search Box -->
@@ -187,7 +198,7 @@ import { ref, reactive, onMounted, computed, nextTick } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { useKeyboardShortcutSingle } from '../composables/useKeyboardShortcut';
 import { useRouter } from 'vue-router';
-import { Users, Plus, Edit2, Trash2, Loader2, Mail, Phone, MapPin } from 'lucide-vue-next';
+import { Users, Plus, Edit2, Trash2, Loader2, Mail, Phone, MapPin, Download } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
@@ -202,10 +213,19 @@ import {
   serviceBookingService,
   paymentService,
   tagService,
+  vendorReturnService,
+  vendorCreditNoteService,
+  paymentAllocationService,
   VendorService,
   type Vendor,
+  type Delivery,
+  type Payment,
+  type VendorReturn,
+  type VendorCreditNote,
+  type PaymentAllocation,
   type Tag as TagType
 } from '../services/pocketbase';
+import { DeliveryPaymentCalculator, type DeliveryWithPaymentStatus } from '../services/deliveryUtils';
 import { usePermissions } from '../composables/usePermissions';
 
 const { t } = useI18n();
@@ -248,6 +268,7 @@ const vendorTags = ref<Map<string, TagType[]>>(new Map());
 const showAddModal = ref(false);
 const editingVendor = ref<Vendor | null>(null);
 const loading = ref(false);
+const exporting = ref(false);
 
 const firstInputRef = ref<HTMLInputElement>();
 
@@ -431,6 +452,220 @@ const closeModal = () => {
     address: '',
     tags: []
   });
+};
+
+// Export all vendor ledgers to a single CSV file
+const exportAllLedgers = async () => {
+  if (vendors.value.length === 0) return;
+
+  exporting.value = true;
+  try {
+    // Load all data needed for ledger entries
+    const [allPaymentAllocations, allReturns, allCreditNotes] = await Promise.all([
+      paymentAllocationService.getAll(),
+      vendorReturnService.getAll(),
+      vendorCreditNoteService.getAll()
+    ]);
+
+    // Build CSV content with all vendor ledgers
+    const csvRows: string[] = [];
+
+    // CSV Header
+    const headers = [
+      t('vendors.vendor'),
+      t('vendors.date'),
+      t('vendors.particulars'),
+      t('vendors.reference'),
+      t('vendors.debit'),
+      t('vendors.credit'),
+      t('vendors.balance')
+    ];
+    csvRows.push(headers.join(','));
+
+    // Process each vendor
+    for (const vendor of vendors.value) {
+      const vendorId = vendor.id!;
+      const vendorName = vendor.contact_person || vendor.name || t('common.unnamedVendor');
+
+      // Filter data for this vendor
+      const vendorDeliveries = deliveries.value.filter((d: Delivery) => d.vendor === vendorId);
+      const vendorPayments = payments.value.filter((p: Payment) => p.vendor === vendorId);
+      const vendorReturns = allReturns.filter((r: VendorReturn) => r.vendor === vendorId);
+      const vendorCreditNotes = allCreditNotes.filter((cn: VendorCreditNote) => cn.vendor === vendorId);
+
+      // Enhance deliveries with payment status
+      const enhancedDeliveries = DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus(
+        vendorDeliveries,
+        allPaymentAllocations.filter((pa: PaymentAllocation) =>
+          vendorDeliveries.some((d: Delivery) => d.id === pa.delivery)
+        )
+      );
+
+      // Build ledger entries for this vendor
+      const entries: Array<{
+        date: string;
+        particulars: string;
+        reference: string;
+        debit: number;
+        credit: number;
+        runningBalance: number;
+      }> = [];
+
+      // Add delivery entries (debits)
+      enhancedDeliveries.forEach((delivery: DeliveryWithPaymentStatus) => {
+        let particulars = `${t('vendors.delivery')} #${delivery.id?.slice(-6) || t('vendors.unknown')}`;
+        if (delivery.delivery_reference) {
+          particulars = `Invoice: ${delivery.delivery_reference}`;
+        }
+
+        entries.push({
+          date: delivery.delivery_date,
+          particulars,
+          reference: delivery.delivery_reference || '',
+          debit: delivery.total_amount,
+          credit: 0,
+          runningBalance: 0
+        });
+      });
+
+      // Add return entries (credit note or refund)
+      vendorReturns.forEach((returnItem: VendorReturn) => {
+        if (returnItem.status === 'completed' || returnItem.status === 'refunded') {
+          if (returnItem.processing_option === 'credit_note') {
+            entries.push({
+              date: returnItem.completion_date || returnItem.return_date,
+              particulars: `Credit Note for Return #${returnItem.id?.slice(-6)}`,
+              reference: `RET-${returnItem.id?.slice(-6)}`,
+              debit: 0,
+              credit: returnItem.total_return_amount,
+              runningBalance: 0
+            });
+          } else if (returnItem.processing_option === 'refund') {
+            entries.push({
+              date: returnItem.completion_date || returnItem.return_date,
+              particulars: `Goods Returned #${returnItem.id?.slice(-6)}`,
+              reference: `RET-${returnItem.id?.slice(-6)}`,
+              debit: 0,
+              credit: returnItem.total_return_amount,
+              runningBalance: 0
+            });
+          }
+        }
+      });
+
+      // Add standalone credit notes (not related to returns)
+      vendorCreditNotes.forEach((creditNote: VendorCreditNote) => {
+        const isReturnRelated = vendorReturns.some((returnItem: VendorReturn) =>
+          returnItem.processing_option === 'credit_note' &&
+          returnItem.reason === creditNote.reason &&
+          returnItem.total_return_amount === creditNote.credit_amount
+        );
+
+        if (creditNote.credit_amount > 0 && !isReturnRelated) {
+          entries.push({
+            date: creditNote.issue_date,
+            particulars: `${t('vendors.creditNoteIssued')} - ${creditNote.reason || ''}`,
+            reference: creditNote.reference || `CN-${creditNote.id?.slice(-6)}`,
+            debit: 0,
+            credit: creditNote.credit_amount,
+            runningBalance: 0
+          });
+        }
+      });
+
+      // Add payment entries (credits)
+      vendorPayments.forEach((payment: Payment) => {
+        entries.push({
+          date: payment.payment_date,
+          particulars: `${t('vendors.paymentMade')} - ${payment.reference || t('common.payment')}`,
+          reference: payment.reference || '',
+          debit: 0,
+          credit: payment.amount,
+          runningBalance: 0
+        });
+      });
+
+      // Sort entries by date
+      entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      // Calculate running balance (Debit increases balance, Credit decreases balance)
+      let runningBalance = 0;
+      entries.forEach(entry => {
+        runningBalance += entry.debit - entry.credit;
+        entry.runningBalance = runningBalance;
+      });
+
+      // Add entries to CSV
+      if (entries.length > 0) {
+        entries.forEach(entry => {
+          const balanceDisplay = entry.runningBalance >= 0
+            ? `${entry.runningBalance.toFixed(2)} Dr`
+            : `${Math.abs(entry.runningBalance).toFixed(2)} Cr`;
+
+          const row = [
+            escapeCSV(vendorName),
+            new Date(entry.date).toLocaleDateString('en-CA'),
+            escapeCSV(entry.particulars),
+            escapeCSV(entry.reference),
+            entry.debit > 0 ? entry.debit.toFixed(2) : '',
+            entry.credit > 0 ? entry.credit.toFixed(2) : '',
+            balanceDisplay
+          ];
+          csvRows.push(row.join(','));
+        });
+
+        // Add totals row for this vendor
+        const totalDebits = entries.reduce((sum, e) => sum + e.debit, 0);
+        const totalCredits = entries.reduce((sum, e) => sum + e.credit, 0);
+        const finalBalance = totalDebits - totalCredits;
+        const finalBalanceDisplay = finalBalance >= 0
+          ? `${finalBalance.toFixed(2)} Dr`
+          : `${Math.abs(finalBalance).toFixed(2)} Cr`;
+
+        csvRows.push([
+          escapeCSV(vendorName),
+          '',
+          `${t('vendors.totals')}`,
+          '',
+          totalDebits.toFixed(2),
+          totalCredits.toFixed(2),
+          finalBalanceDisplay
+        ].join(','));
+
+        // Add empty row between vendors
+        csvRows.push('');
+      }
+    }
+
+    // Create and download file
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `All_Vendor_Ledgers_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    success(t('vendors.exportAllLedgersSuccess'));
+  } catch (err) {
+    console.error('Error exporting all ledgers:', err);
+    error(t('messages.error'));
+  } finally {
+    exporting.value = false;
+  }
+};
+
+// Helper function to escape CSV values
+const escapeCSV = (value: string): string => {
+  if (!value) return '';
+  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
 };
 
 const handleQuickAction = async () => {
