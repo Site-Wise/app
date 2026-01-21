@@ -1310,11 +1310,14 @@ describe('VendorDetailView Logic', () => {
 
     it('should display final balance status correctly', () => {
       const positiveBalance = 5000
+      const getBalanceStatus = (balance: number) =>
+        balance >= 0 ? 'Total Outstanding' : 'Credit Balance'
+
       const negativeBalance = -2000
 
       const positiveStatus = positiveBalance >= 0 ? 'Total Outstanding' : 'Credit Balance'
-      const negativeStatus = negativeBalance >= 0 ? 'Total Outstanding' : 'Credit Balance'
-
+      const positiveStatus = getBalanceStatus(positiveBalance)
+      const negativeStatus = getBalanceStatus(negativeBalance)
       expect(positiveStatus).toBe('Total Outstanding')
       expect(negativeStatus).toBe('Credit Balance')
     })
