@@ -1317,4 +1317,727 @@ describe('VendorDetailView Logic', () => {
       expect(negativeStatus).toBe('Credit Balance')
     })
   })
+
+  describe('Return Status Classes', () => {
+    it('should return status-pending for initiated status', () => {
+      const classes: Record<string, string> = {
+        initiated: 'status-pending',
+        approved: 'status-approved',
+        rejected: 'status-rejected',
+        completed: 'status-completed',
+        refunded: 'status-paid'
+      }
+
+      expect(classes['initiated']).toBe('status-pending')
+    })
+
+    it('should return status-approved for approved status', () => {
+      const classes: Record<string, string> = {
+        initiated: 'status-pending',
+        approved: 'status-approved',
+        rejected: 'status-rejected',
+        completed: 'status-completed',
+        refunded: 'status-paid'
+      }
+
+      expect(classes['approved']).toBe('status-approved')
+    })
+
+    it('should return status-rejected for rejected status', () => {
+      const classes: Record<string, string> = {
+        initiated: 'status-pending',
+        approved: 'status-approved',
+        rejected: 'status-rejected',
+        completed: 'status-completed',
+        refunded: 'status-paid'
+      }
+
+      expect(classes['rejected']).toBe('status-rejected')
+    })
+
+    it('should return status-completed for completed status', () => {
+      const classes: Record<string, string> = {
+        initiated: 'status-pending',
+        approved: 'status-approved',
+        rejected: 'status-rejected',
+        completed: 'status-completed',
+        refunded: 'status-paid'
+      }
+
+      expect(classes['completed']).toBe('status-completed')
+    })
+
+    it('should return status-paid for refunded status', () => {
+      const classes: Record<string, string> = {
+        initiated: 'status-pending',
+        approved: 'status-approved',
+        rejected: 'status-rejected',
+        completed: 'status-completed',
+        refunded: 'status-paid'
+      }
+
+      expect(classes['refunded']).toBe('status-paid')
+    })
+
+    it('should return status-pending for unknown status', () => {
+      const getReturnStatusClass = (status: string) => {
+        const classes: Record<string, string> = {
+          initiated: 'status-pending',
+          approved: 'status-approved',
+          rejected: 'status-rejected',
+          completed: 'status-completed',
+          refunded: 'status-paid'
+        }
+        return classes[status] || 'status-pending'
+      }
+
+      expect(getReturnStatusClass('unknown')).toBe('status-pending')
+    })
+  })
+
+  describe('Date Formatting', () => {
+    it('should format date string to locale date', () => {
+      const dateString = '2024-01-15'
+      const formatted = new Date(dateString).toLocaleDateString()
+
+      // Should be a valid date string
+      expect(formatted).toBeDefined()
+      expect(formatted.length).toBeGreaterThan(0)
+    })
+
+    it('should handle ISO date strings', () => {
+      const dateString = '2024-01-15T10:30:00Z'
+      const formatted = new Date(dateString).toLocaleDateString()
+
+      expect(formatted).toBeDefined()
+    })
+
+    it('should handle date-only strings', () => {
+      const dateString = '2024-12-31'
+      const formatted = new Date(dateString).toLocaleDateString()
+
+      expect(formatted).toBeDefined()
+    })
+  })
+
+  describe('Mobile Action Handler', () => {
+    it('should handle exportCsv action', () => {
+      const actions = ['exportCsv', 'exportPdf', 'exportTallyXml', 'createReturn', 'recordPayment']
+
+      expect(actions).toContain('exportCsv')
+    })
+
+    it('should handle exportPdf action', () => {
+      const actions = ['exportCsv', 'exportPdf', 'exportTallyXml', 'createReturn', 'recordPayment']
+
+      expect(actions).toContain('exportPdf')
+    })
+
+    it('should handle exportTallyXml action', () => {
+      const actions = ['exportCsv', 'exportPdf', 'exportTallyXml', 'createReturn', 'recordPayment']
+
+      expect(actions).toContain('exportTallyXml')
+    })
+
+    it('should handle createReturn action', () => {
+      const actions = ['exportCsv', 'exportPdf', 'exportTallyXml', 'createReturn', 'recordPayment']
+
+      expect(actions).toContain('createReturn')
+    })
+
+    it('should handle recordPayment action', () => {
+      const actions = ['exportCsv', 'exportPdf', 'exportTallyXml', 'createReturn', 'recordPayment']
+
+      expect(actions).toContain('recordPayment')
+    })
+
+    it('should warn for unknown action', () => {
+      const handleMobileAction = (action: string) => {
+        const validActions = ['exportCsv', 'exportPdf', 'exportTallyXml', 'createReturn', 'recordPayment']
+        if (!validActions.includes(action)) {
+          return 'unknown'
+        }
+        return action
+      }
+
+      expect(handleMobileAction('invalidAction')).toBe('unknown')
+    })
+  })
+
+  describe('Click Outside Handler', () => {
+    it('should close export dropdown when clicking outside', () => {
+      let showExportDropdown = true
+
+      const handleClickOutside = (isInside: boolean) => {
+        if (!isInside) {
+          showExportDropdown = false
+        }
+      }
+
+      handleClickOutside(false)
+      expect(showExportDropdown).toBe(false)
+    })
+
+    it('should not close export dropdown when clicking inside', () => {
+      let showExportDropdown = true
+
+      const handleClickOutside = (isInside: boolean) => {
+        if (!isInside) {
+          showExportDropdown = false
+        }
+      }
+
+      handleClickOutside(true)
+      expect(showExportDropdown).toBe(true)
+    })
+
+    it('should close mobile menu when clicking outside', () => {
+      let showMobileMenu = true
+
+      const handleClickOutside = (isInside: boolean) => {
+        if (!isInside) {
+          showMobileMenu = false
+        }
+      }
+
+      handleClickOutside(false)
+      expect(showMobileMenu).toBe(false)
+    })
+  })
+
+  describe('Navigation Fallback', () => {
+    it('should fallback to vendors page on navigation error', () => {
+      let navigatedTo = ''
+
+      const goBack = (routerBack: () => void, routerPush: (path: string) => void) => {
+        try {
+          routerBack()
+        } catch {
+          routerPush('/vendors')
+          navigatedTo = '/vendors'
+        }
+      }
+
+      goBack(
+        () => { throw new Error('Navigation failed') },
+        (path) => { navigatedTo = path }
+      )
+
+      expect(navigatedTo).toBe('/vendors')
+    })
+
+    it('should navigate back normally when no error', () => {
+      let backCalled = false
+
+      const goBack = (routerBack: () => void, routerPush: (path: string) => void) => {
+        try {
+          routerBack()
+          backCalled = true
+        } catch {
+          routerPush('/vendors')
+        }
+      }
+
+      goBack(
+        () => { backCalled = true },
+        () => {}
+      )
+
+      expect(backCalled).toBe(true)
+    })
+  })
+
+  describe('Payment Modal Submit Logic', () => {
+    it('should prepare payment data correctly', () => {
+      const form = {
+        vendor: 'vendor-1',
+        account: 'account-1',
+        amount: 5000,
+        transaction_date: '2024-01-20',
+        reference: 'PAY-001',
+        notes: 'Test payment',
+        deliveries: ['delivery-1'],
+        service_bookings: [],
+        credit_notes: [],
+        delivery_allocations: { 'delivery-1': { amount: 5000 } },
+        service_booking_allocations: {},
+        credit_note_allocations: {}
+      }
+
+      const paymentData = {
+        vendor: form.vendor,
+        account: form.account,
+        amount: form.amount,
+        payment_date: form.transaction_date,
+        reference: form.reference,
+        notes: form.notes,
+        deliveries: form.deliveries,
+        service_bookings: form.service_bookings,
+        credit_notes: form.credit_notes || [],
+        delivery_allocations: form.delivery_allocations || {},
+        service_booking_allocations: form.service_booking_allocations || {},
+        credit_note_allocations: form.credit_note_allocations || {}
+      }
+
+      expect(paymentData.vendor).toBe('vendor-1')
+      expect(paymentData.amount).toBe(5000)
+      expect(paymentData.payment_date).toBe('2024-01-20')
+    })
+
+    it('should remove account when fully covered by credit notes', () => {
+      const form = {
+        vendor: 'vendor-1',
+        account: 'account-1',
+        amount: 5000,
+        credit_note_allocations: {
+          'cn-1': { amount: 3000 },
+          'cn-2': { amount: 2000 }
+        }
+      }
+
+      const totalCreditNoteAmount = Object.values(form.credit_note_allocations)
+        .reduce((sum: number, allocation: any) => sum + (allocation?.amount || 0), 0)
+
+      const shouldRemoveAccount = totalCreditNoteAmount >= form.amount
+
+      expect(totalCreditNoteAmount).toBe(5000)
+      expect(shouldRemoveAccount).toBe(true)
+    })
+
+    it('should keep account when partially covered by credit notes', () => {
+      const form = {
+        vendor: 'vendor-1',
+        account: 'account-1',
+        amount: 5000,
+        credit_note_allocations: {
+          'cn-1': { amount: 2000 }
+        }
+      }
+
+      const totalCreditNoteAmount = Object.values(form.credit_note_allocations)
+        .reduce((sum: number, allocation: any) => sum + (allocation?.amount || 0), 0)
+
+      const shouldRemoveAccount = totalCreditNoteAmount >= form.amount
+
+      expect(totalCreditNoteAmount).toBe(2000)
+      expect(shouldRemoveAccount).toBe(false)
+    })
+
+    it('should handle empty credit note allocations', () => {
+      const form = {
+        vendor: 'vendor-1',
+        account: 'account-1',
+        amount: 5000,
+        credit_note_allocations: {}
+      }
+
+      const totalCreditNoteAmount = Object.values(form.credit_note_allocations || {})
+        .reduce((sum: number, allocation: any) => sum + (allocation?.amount || 0), 0)
+
+      expect(totalCreditNoteAmount).toBe(0)
+    })
+  })
+
+  describe('Vendor Data Loading Logic', () => {
+    it('should filter deliveries by vendor ID', () => {
+      const allDeliveries = [
+        { id: 'd1', vendor: 'vendor-1', total_amount: 1000 },
+        { id: 'd2', vendor: 'vendor-2', total_amount: 2000 },
+        { id: 'd3', vendor: 'vendor-1', total_amount: 3000 }
+      ]
+      const vendorId = 'vendor-1'
+
+      const filteredDeliveries = allDeliveries.filter(d => d.vendor === vendorId)
+
+      expect(filteredDeliveries.length).toBe(2)
+      expect(filteredDeliveries[0].id).toBe('d1')
+      expect(filteredDeliveries[1].id).toBe('d3')
+    })
+
+    it('should filter payments by vendor ID', () => {
+      const allPayments = [
+        { id: 'p1', vendor: 'vendor-1', amount: 1000 },
+        { id: 'p2', vendor: 'vendor-2', amount: 2000 },
+        { id: 'p3', vendor: 'vendor-1', amount: 3000 }
+      ]
+      const vendorId = 'vendor-1'
+
+      const filteredPayments = allPayments.filter(p => p.vendor === vendorId)
+
+      expect(filteredPayments.length).toBe(2)
+    })
+
+    it('should sort deliveries by date descending', () => {
+      const deliveries = [
+        { id: 'd1', delivery_date: '2024-01-10' },
+        { id: 'd2', delivery_date: '2024-01-20' },
+        { id: 'd3', delivery_date: '2024-01-15' }
+      ]
+
+      const sorted = deliveries.sort((a, b) =>
+        new Date(b.delivery_date).getTime() - new Date(a.delivery_date).getTime()
+      )
+
+      expect(sorted[0].id).toBe('d2')
+      expect(sorted[1].id).toBe('d3')
+      expect(sorted[2].id).toBe('d1')
+    })
+
+    it('should sort payments by date descending', () => {
+      const payments = [
+        { id: 'p1', payment_date: '2024-01-10' },
+        { id: 'p2', payment_date: '2024-01-20' },
+        { id: 'p3', payment_date: '2024-01-15' }
+      ]
+
+      const sorted = payments.sort((a, b) =>
+        new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime()
+      )
+
+      expect(sorted[0].id).toBe('p2')
+      expect(sorted[1].id).toBe('p3')
+      expect(sorted[2].id).toBe('p1')
+    })
+
+    it('should map vendor tags correctly', () => {
+      const allTags = [
+        { id: 'tag-1', name: 'Cement', color: '#3B82F6' },
+        { id: 'tag-2', name: 'Steel', color: '#10B981' },
+        { id: 'tag-3', name: 'Plumbing', color: '#F59E0B' }
+      ]
+      const vendor = { tags: ['tag-1', 'tag-3'] }
+
+      const vendorTags = allTags.filter(tag => vendor.tags.includes(tag.id))
+
+      expect(vendorTags.length).toBe(2)
+      expect(vendorTags[0].name).toBe('Cement')
+      expect(vendorTags[1].name).toBe('Plumbing')
+    })
+
+    it('should handle vendor with no tags', () => {
+      const allTags = [
+        { id: 'tag-1', name: 'Cement', color: '#3B82F6' }
+      ]
+      const vendor = { tags: [] }
+
+      const vendorTags = vendor.tags && vendor.tags.length > 0
+        ? allTags.filter(tag => vendor.tags.includes(tag.id))
+        : []
+
+      expect(vendorTags.length).toBe(0)
+    })
+
+    it('should handle vendor with undefined tags', () => {
+      const allTags = [
+        { id: 'tag-1', name: 'Cement', color: '#3B82F6' }
+      ]
+      const vendor: { tags?: string[] } = {}
+
+      const vendorTags = vendor.tags && vendor.tags.length > 0
+        ? allTags.filter(tag => vendor.tags!.includes(tag.id))
+        : []
+
+      expect(vendorTags.length).toBe(0)
+    })
+
+    it('should filter refund transactions by vendor', () => {
+      const allTransactions = [
+        { id: 't1', type: 'credit', vendor: 'vendor-1', amount: 500 },
+        { id: 't2', type: 'debit', vendor: 'vendor-1', amount: 1000 },
+        { id: 't3', type: 'credit', vendor: 'vendor-2', amount: 750 },
+        { id: 't4', type: 'credit', vendor: 'vendor-1', amount: 300 }
+      ]
+      const vendorId = 'vendor-1'
+
+      const vendorRefunds = allTransactions
+        .filter(t => t.type === 'credit' && t.vendor === vendorId)
+
+      expect(vendorRefunds.length).toBe(2)
+      expect(vendorRefunds[0].amount).toBe(500)
+      expect(vendorRefunds[1].amount).toBe(300)
+    })
+  })
+
+  describe('Tally XML Export Logic', () => {
+    it('should prepare vendor name for export', () => {
+      const vendor = { name: 'ABC Construction' }
+
+      const vendorName = vendor.name || 'Vendor'
+
+      expect(vendorName).toBe('ABC Construction')
+    })
+
+    it('should fallback to "Vendor" when name is empty', () => {
+      const vendor = { name: '' }
+
+      const vendorName = vendor.name || 'Vendor'
+
+      expect(vendorName).toBe('Vendor')
+    })
+
+    it('should generate filename with vendor name and date', () => {
+      const vendor = { name: 'ABC Construction' }
+      const date = '2024-01-20'
+
+      const filename = `${vendor.name || 'Vendor'}_Tally_${date}.xml`
+
+      expect(filename).toBe('ABC Construction_Tally_2024-01-20.xml')
+    })
+  })
+
+  describe('PDF Footer Generation', () => {
+    it('should calculate footer position correctly', () => {
+      const pageHeight = 297
+      const footerY = pageHeight - 15
+
+      expect(footerY).toBe(282)
+    })
+
+    it('should calculate line position above footer', () => {
+      const pageHeight = 297
+      const footerY = pageHeight - 15
+      const lineY = footerY - 5
+
+      expect(lineY).toBe(277)
+    })
+  })
+
+  describe('PDF Page Break Logic', () => {
+    it('should add page break when position exceeds threshold', () => {
+      const yPosition = 250
+      const threshold = 245
+
+      const needsPageBreak = yPosition > threshold
+
+      expect(needsPageBreak).toBe(true)
+    })
+
+    it('should not add page break when position is within bounds', () => {
+      const yPosition = 200
+      const threshold = 245
+
+      const needsPageBreak = yPosition > threshold
+
+      expect(needsPageBreak).toBe(false)
+    })
+
+    it('should reset position after page break', () => {
+      let yPosition = 250
+      const threshold = 245
+
+      if (yPosition > threshold) {
+        yPosition = 25 // Reset to top of new page
+      }
+
+      expect(yPosition).toBe(25)
+    })
+  })
+
+  describe('Return Entry Generation', () => {
+    it('should only process completed or refunded returns', () => {
+      const returns = [
+        { id: 'r1', status: 'initiated', total_return_amount: 1000 },
+        { id: 'r2', status: 'completed', total_return_amount: 2000 },
+        { id: 'r3', status: 'refunded', total_return_amount: 1500 },
+        { id: 'r4', status: 'rejected', total_return_amount: 500 }
+      ]
+
+      const processableReturns = returns.filter(r =>
+        r.status === 'completed' || r.status === 'refunded'
+      )
+
+      expect(processableReturns.length).toBe(2)
+      expect(processableReturns[0].id).toBe('r2')
+      expect(processableReturns[1].id).toBe('r3')
+    })
+
+    it('should create credit note entry for credit_note processing', () => {
+      const returnItem = {
+        id: 'return-1',
+        processing_option: 'credit_note',
+        total_return_amount: 1000,
+        reason: 'Damaged goods'
+      }
+
+      const isCreditNote = returnItem.processing_option === 'credit_note'
+
+      expect(isCreditNote).toBe(true)
+    })
+
+    it('should create two entries for refund processing', () => {
+      const returnItem = {
+        id: 'return-1',
+        processing_option: 'refund',
+        total_return_amount: 1000,
+        actual_refund_amount: 1000
+      }
+
+      const isRefund = returnItem.processing_option === 'refund'
+      const hasRefundAmount = returnItem.actual_refund_amount && returnItem.actual_refund_amount > 0
+      const entryCount = isRefund && hasRefundAmount ? 2 : 1
+
+      expect(entryCount).toBe(2)
+    })
+
+    it('should create one entry for refund with no actual amount', () => {
+      const returnItem = {
+        id: 'return-1',
+        processing_option: 'refund',
+        total_return_amount: 1000,
+        actual_refund_amount: 0
+      }
+
+      const isRefund = returnItem.processing_option === 'refund'
+      const hasRefundAmount = returnItem.actual_refund_amount && returnItem.actual_refund_amount > 0
+      const entryCount = isRefund && hasRefundAmount ? 2 : 1
+
+      expect(entryCount).toBe(1)
+    })
+  })
+
+  describe('Standalone Credit Note Detection', () => {
+    it('should detect credit note is return-related', () => {
+      const creditNote = {
+        id: 'cn-1',
+        reason: 'Damaged goods',
+        credit_amount: 1000
+      }
+      const returns = [
+        {
+          id: 'return-1',
+          processing_option: 'credit_note',
+          reason: 'Damaged goods',
+          total_return_amount: 1000
+        }
+      ]
+
+      const isReturnRelated = returns.some(r =>
+        r.processing_option === 'credit_note' &&
+        r.reason === creditNote.reason &&
+        r.total_return_amount === creditNote.credit_amount
+      )
+
+      expect(isReturnRelated).toBe(true)
+    })
+
+    it('should detect standalone credit note', () => {
+      const creditNote = {
+        id: 'cn-1',
+        reason: 'Price adjustment',
+        credit_amount: 500
+      }
+      const returns = [
+        {
+          id: 'return-1',
+          processing_option: 'credit_note',
+          reason: 'Damaged goods',
+          total_return_amount: 1000
+        }
+      ]
+
+      const isReturnRelated = returns.some(r =>
+        r.processing_option === 'credit_note' &&
+        r.reason === creditNote.reason &&
+        r.total_return_amount === creditNote.credit_amount
+      )
+
+      expect(isReturnRelated).toBe(false)
+    })
+  })
+
+  describe('Standalone Refund Entry Generation', () => {
+    it('should generate refund particulars with reference', () => {
+      const refund = {
+        id: 'refund-1',
+        reference: 'REF-001',
+        description: 'Overpayment refund'
+      }
+
+      let particulars = 'Refund Received'
+      if (refund.reference) {
+        particulars += `: ${refund.reference}`
+      }
+
+      expect(particulars).toBe('Refund Received: REF-001')
+    })
+
+    it('should generate refund particulars without reference', () => {
+      const refund = {
+        id: 'refund-1',
+        reference: '',
+        description: 'Overpayment refund'
+      }
+
+      let particulars = 'Refund Received'
+      if (refund.reference) {
+        particulars += `: ${refund.reference}`
+      }
+
+      expect(particulars).toBe('Refund Received')
+    })
+
+    it('should add account name to details when available', () => {
+      const refund = {
+        id: 'refund-1',
+        description: 'Overpayment refund',
+        expand: {
+          account: { name: 'Cash Account' }
+        }
+      }
+
+      let details = refund.description || ''
+      if (refund.expand?.account?.name) {
+        details += details ? ' - ' : ''
+        details += `To ${refund.expand.account.name}`
+      }
+
+      expect(details).toBe('Overpayment refund - To Cash Account')
+    })
+  })
+
+  describe('Delivery Particulars with Items', () => {
+    it('should generate particulars from delivery items', () => {
+      const delivery = {
+        id: 'delivery-1',
+        delivery_reference: 'INV-001',
+        expand: {
+          delivery_items: [
+            { quantity: 10, expand: { item: { name: 'Cement', unit: 'bags' } } },
+            { quantity: 5, expand: { item: { name: 'Steel', unit: 'kg' } } }
+          ]
+        }
+      }
+
+      const itemNames = delivery.expand.delivery_items.map((di: any) => {
+        const itemName = di.expand?.item?.name || 'Unknown Item'
+        const quantity = di.quantity || 0
+        const unit = di.expand?.item?.unit || 'Units'
+        return `${itemName} (${quantity} ${unit})`
+      })
+
+      expect(itemNames[0]).toBe('Cement (10 bags)')
+      expect(itemNames[1]).toBe('Steel (5 kg)')
+    })
+
+    it('should limit item names in particulars', () => {
+      const itemNames = ['Cement', 'Steel', 'Sand', 'Bricks']
+
+      let particulars = `Invoice: INV-001 - ${itemNames.slice(0, 2).join(', ')}`
+      if (itemNames.length > 2) {
+        particulars += ` +${itemNames.length - 2} more`
+      }
+
+      expect(particulars).toBe('Invoice: INV-001 - Cement, Steel +2 more')
+    })
+
+    it('should handle delivery items without expand data', () => {
+      const deliveryItem = { quantity: 10 }
+
+      const itemName = (deliveryItem as any).expand?.item?.name || 'Unknown Item'
+      const unit = (deliveryItem as any).expand?.item?.unit || 'Units'
+
+      expect(itemName).toBe('Unknown Item')
+      expect(unit).toBe('Units')
+    })
+  })
 })

@@ -1175,4 +1175,398 @@ describe('VendorDetailView', () => {
       expect(wrapper.vm.vendorCreditNotes.length).toBe(1)
     })
   })
+
+  describe('Return Status Class', () => {
+    it('should return correct class for initiated status', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      const result = wrapper.vm.getReturnStatusClass('initiated')
+      expect(result).toBe('status-pending')
+    })
+
+    it('should return correct class for approved status', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      const result = wrapper.vm.getReturnStatusClass('approved')
+      expect(result).toBe('status-approved')
+    })
+
+    it('should return correct class for rejected status', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      const result = wrapper.vm.getReturnStatusClass('rejected')
+      expect(result).toBe('status-rejected')
+    })
+
+    it('should return correct class for completed status', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      const result = wrapper.vm.getReturnStatusClass('completed')
+      expect(result).toBe('status-completed')
+    })
+
+    it('should return correct class for refunded status', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      const result = wrapper.vm.getReturnStatusClass('refunded')
+      expect(result).toBe('status-paid')
+    })
+
+    it('should return default class for unknown status', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      const result = wrapper.vm.getReturnStatusClass('unknown')
+      expect(result).toBe('status-pending')
+    })
+  })
+
+  describe('Date Formatting', () => {
+    it('should format date correctly', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      const result = wrapper.vm.formatDate('2024-01-15')
+      expect(result).toBeDefined()
+      expect(typeof result).toBe('string')
+    })
+  })
+
+  describe('Mobile Action Handler', () => {
+    it('should handle exportCsv mobile action', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.showMobileMenu = true
+      wrapper.vm.handleMobileAction('exportCsv')
+
+      expect(wrapper.vm.showMobileMenu).toBe(false)
+    })
+
+    it('should handle exportPdf mobile action', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.showMobileMenu = true
+      wrapper.vm.handleMobileAction('exportPdf')
+
+      expect(wrapper.vm.showMobileMenu).toBe(false)
+    })
+
+    it('should handle exportTallyXml mobile action', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.showMobileMenu = true
+      wrapper.vm.handleMobileAction('exportTallyXml')
+
+      expect(wrapper.vm.showMobileMenu).toBe(false)
+    })
+
+    it('should handle recordPayment mobile action', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.showMobileMenu = true
+      wrapper.vm.handleMobileAction('recordPayment')
+
+      expect(wrapper.vm.showMobileMenu).toBe(false)
+    })
+
+    it('should handle unknown mobile action gracefully', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.showMobileMenu = true
+      // Should not throw
+      expect(() => wrapper.vm.handleMobileAction('unknownAction')).not.toThrow()
+      expect(wrapper.vm.showMobileMenu).toBe(false)
+    })
+  })
+
+  describe('Click Outside Handler', () => {
+    it('should track export dropdown state changes', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showExportDropdown).toBe(false)
+
+      // Open dropdown
+      wrapper.vm.showExportDropdown = true
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.showExportDropdown).toBe(true)
+
+      // Close dropdown (simulating click outside behavior)
+      wrapper.vm.showExportDropdown = false
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.showExportDropdown).toBe(false)
+    })
+
+    it('should track mobile menu state changes', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showMobileMenu).toBe(false)
+
+      // Open menu
+      wrapper.vm.showMobileMenu = true
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.showMobileMenu).toBe(true)
+
+      // Close menu (simulating click outside behavior)
+      wrapper.vm.showMobileMenu = false
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.showMobileMenu).toBe(false)
+    })
+  })
+
+  describe('Keyboard Handler', () => {
+    it('should not close modal when pressing non-ESC key', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.openExportModal('csv')
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.showExportModal).toBe(true)
+
+      // Press Enter key (not ESC)
+      const enterEvent = new KeyboardEvent('keydown', { key: 'Enter' })
+      document.dispatchEvent(enterEvent)
+      await wrapper.vm.$nextTick()
+
+      // Modal should still be open
+      expect(wrapper.vm.showExportModal).toBe(true)
+    })
+
+    it('should do nothing when ESC pressed with no modal open', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showExportModal).toBe(false)
+
+      // Press ESC key
+      const escEvent = new KeyboardEvent('keydown', { key: 'Escape' })
+      document.dispatchEvent(escEvent)
+      await wrapper.vm.$nextTick()
+
+      // Should still be false
+      expect(wrapper.vm.showExportModal).toBe(false)
+    })
+  })
+
+  describe('Export with Date Filtering', () => {
+    it('should calculate opening balance when filtering by from date', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.exportAllData = false
+      wrapper.vm.exportFromDate = '2024-01-20'
+      wrapper.vm.exportToDate = ''
+      await wrapper.vm.$nextTick()
+
+      const result = wrapper.vm.getFilteredEntriesForExport()
+
+      // Should have opening balance or filtered entries
+      expect(result).toHaveProperty('openingBalance')
+      expect(result).toHaveProperty('entries')
+      expect(result).toHaveProperty('hasOpeningBalance')
+    })
+
+    it('should filter entries by to date', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.exportAllData = false
+      wrapper.vm.exportFromDate = ''
+      wrapper.vm.exportToDate = '2024-01-20'
+      await wrapper.vm.$nextTick()
+
+      const result = wrapper.vm.getFilteredEntriesForExport()
+
+      expect(result).toHaveProperty('entries')
+    })
+
+    it('should filter entries by date range', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.exportAllData = false
+      wrapper.vm.exportFromDate = '2024-01-15'
+      wrapper.vm.exportToDate = '2024-01-25'
+      await wrapper.vm.$nextTick()
+
+      const result = wrapper.vm.getFilteredEntriesForExport()
+
+      expect(result).toHaveProperty('entries')
+      expect(result).toHaveProperty('openingBalance')
+    })
+  })
+
+  describe('Go Back Navigation', () => {
+    it('should call router back method', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.goBack()
+
+      expect(mockBack).toHaveBeenCalled()
+    })
+  })
+
+  describe('Export Methods', () => {
+    it('should call exportLedger method without error', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      // Should not throw
+      expect(() => wrapper.vm.exportLedger()).not.toThrow()
+    })
+
+    it('should generate CSV content', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      const csv = wrapper.vm.generateLedgerCSV()
+
+      expect(csv).toBeDefined()
+      expect(typeof csv).toBe('string')
+    })
+
+    it('should generate CSV with date filter info', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.exportAllData = false
+      wrapper.vm.exportFromDate = '2024-01-15'
+      wrapper.vm.exportToDate = '2024-01-30'
+      await wrapper.vm.$nextTick()
+
+      const csv = wrapper.vm.generateLedgerCSV()
+
+      expect(csv).toBeDefined()
+    })
+
+    it('should call exportTallyXml method without error', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      // Should not throw
+      expect(() => wrapper.vm.exportTallyXml()).not.toThrow()
+    })
+  })
+
+  describe('Ledger Entry Computed Properties', () => {
+    it('should calculate total debits', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.totalDebits).toBeDefined()
+      expect(typeof wrapper.vm.totalDebits).toBe('number')
+    })
+
+    it('should calculate total credits', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.totalCredits).toBeDefined()
+      expect(typeof wrapper.vm.totalCredits).toBe('number')
+    })
+
+    it('should calculate final balance', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.finalBalance).toBeDefined()
+      expect(typeof wrapper.vm.finalBalance).toBe('number')
+    })
+
+    it('should calculate export preview count when filtering', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.exportAllData = false
+      wrapper.vm.exportFromDate = '2024-01-20'
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.exportPreviewCount).toBeDefined()
+      expect(typeof wrapper.vm.exportPreviewCount).toBe('number')
+    })
+
+    it('should calculate export opening balance when filtering', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.exportAllData = false
+      wrapper.vm.exportFromDate = '2024-01-20'
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.exportOpeningBalance).toBeDefined()
+      expect(typeof wrapper.vm.exportOpeningBalance).toBe('number')
+    })
+  })
+
+  describe('Payment Modal Functions', () => {
+    it('should set correct mode when recording payment', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.recordPayment()
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.paymentModalMode).toBe('PAY_NOW')
+      expect(wrapper.vm.currentPayment).toBeNull()
+      expect(wrapper.vm.currentAllocations).toEqual([])
+    })
+
+    it('should reset allocations when closing modal', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Set some allocations
+      wrapper.vm.currentAllocations = [{ id: 'alloc-1' }]
+      wrapper.vm.showPaymentModal = true
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.handlePaymentModalClose()
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.currentAllocations).toEqual([])
+    })
+  })
 })
