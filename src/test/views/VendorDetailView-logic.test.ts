@@ -1191,7 +1191,6 @@ describe('VendorDetailView Logic', () => {
         { id: '3', date: '2024-01-20', credit: 3000, debit: 0 }
       ]
 
-      const fromDate = null
       const toDate = new Date('2024-01-15')
 
       const filtered = entries.filter(entry => {
