@@ -38,7 +38,7 @@ export type LedgerExportOptions = {
   };
 };
 
-const addFooter = (doc: jsPDF, pageWidth: number, pageHeight: number, margin: number) => {
+const addFooter = (doc: jsPDF, pageWidth: number, pageHeight: number, margin: number, pageNum: number) => {
   const footerY = pageHeight - 15;
 
   // Horizontal line
@@ -52,7 +52,6 @@ const addFooter = (doc: jsPDF, pageWidth: number, pageHeight: number, margin: nu
   doc.text('Generated with SiteWise - One stop solution for construction site management', margin, footerY);
 
   // Page number (right aligned)
-  const pageNum = doc.internal.getCurrentPageInfo().pageNumber;
   doc.text(`Page ${pageNum}`, pageWidth - margin - 15, footerY);
 };
 
@@ -287,7 +286,7 @@ export const generateLedgerPDF = async (options: LedgerExportOptions): Promise<j
   const totalPages = doc.internal.pages.length - 1;
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    addFooter(doc, pageWidth, pageHeight, margin);
+    addFooter(doc, pageWidth, pageHeight, margin, i);
   }
 
   return doc;
