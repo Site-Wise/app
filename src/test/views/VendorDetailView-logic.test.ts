@@ -1162,6 +1162,7 @@ describe('VendorDetailView Logic', () => {
       ]
 
       const fromDate = new Date('2024-01-15')
+      let openingBalance = 0
 
       const filtered = entries.filter(entry => {
         const entryDate = new Date(entry.date)
