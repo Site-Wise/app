@@ -336,15 +336,15 @@
                 <!-- Export Dropdown Menu -->
                 <div v-if="showExportDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
                   <div class="py-1">
-                    <button @click="openExportModal('csv'); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <button @click="exportLedger(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                       <FileSpreadsheet class="mr-3 h-4 w-4 text-green-600" />
                       {{ t('vendors.exportCsv') }}
                     </button>
-                    <button @click="openExportModal('pdf'); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <button @click="exportLedgerPDF(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                       <FileText class="mr-3 h-4 w-4 text-red-600" />
                       {{ t('vendors.exportPdf') }}
                     </button>
-                    <button @click="openExportModal('tally'); showExportDropdown = false" class="relative flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <button @click="exportTallyXml(); showExportDropdown = false" class="relative flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                       <FileText class="mr-3 h-4 w-4 text-blue-600" />
                       {{ t('vendors.exportTallyXml') }}
                       <StatusBadge type="beta" position="absolute" />
@@ -433,7 +433,7 @@
                       {{ formatDate(entry.date) }}
                     </td>
                     <td class="px-3 py-2 text-gray-900 dark:text-white">
-                      <div class="flex items-center gap-1">
+                      <div class="flex items-center justify-between gap-2">
                         <span class="truncate" :title="entry.particulars">{{ entry.particulars }}</span>
                         <ExternalLink v-if="isEntryClickable(entry)" class="h-3 w-3 text-gray-400 flex-shrink-0" />
                       </div>
@@ -505,65 +505,6 @@
                 {{ finalBalance >= 0 ? t('vendors.totalOutstanding') : t('vendors.creditBalance') }}: ₹{{ Math.abs(finalBalance).toFixed(2) }}
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Export Confirmation Modal -->
-    <div v-if="showExportModal" class="fixed inset-0 z-[60] overflow-y-auto">
-      <div class="flex min-h-full items-center justify-center p-4">
-        <!-- Backdrop -->
-        <div class="fixed inset-0 bg-black/50 transition-opacity" @click="closeExportModal"></div>
-
-        <!-- Modal Panel -->
-        <div class="relative w-full max-w-md transform rounded-lg bg-white dark:bg-gray-800 p-6 shadow-xl transition-all">
-          <!-- Header -->
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t('vendors.exportLedger') }}
-            </h3>
-            <button @click="closeExportModal" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
-              <X class="h-5 w-5" />
-            </button>
-          </div>
-
-          <!-- Export Format Display -->
-          <div class="mb-6 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div class="flex items-center">
-              <FileSpreadsheet v-if="exportFormat === 'csv'" class="h-5 w-5 text-green-600 mr-2" />
-              <FileText v-else-if="exportFormat === 'pdf'" class="h-5 w-5 text-red-600 mr-2" />
-              <FileText v-else class="h-5 w-5 text-blue-600 mr-2" />
-              <span class="font-medium text-gray-900 dark:text-white">
-                {{ exportFormat === 'csv' ? t('vendors.exportCsv') : exportFormat === 'pdf' ? t('vendors.exportPdf') : t('vendors.exportTallyXml') }}
-              </span>
-            </div>
-          </div>
-
-          <!-- Export Info -->
-          <div class="mb-6 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm">
-            <p class="text-blue-700 dark:text-blue-300">
-              <span v-if="isDateFilterActive">
-                {{ t('vendors.exportingFilteredEntries', { count: displayedLedgerEntries.length }) }}
-                <span v-if="hasLedgerOpeningBalance" class="block mt-1">
-                  {{ t('vendors.openingBalance') }}: ₹{{ Math.abs(ledgerOpeningBalance).toFixed(2) }} {{ ledgerOpeningBalance >= 0 ? 'Cr' : 'Dr' }}
-                </span>
-              </span>
-              <span v-else>
-                {{ t('vendors.exportingAllEntries', { count: ledgerEntries.length }) }}
-              </span>
-            </p>
-          </div>
-
-          <!-- Actions -->
-          <div class="flex justify-end gap-3">
-            <button @click="closeExportModal" class="btn-outline">
-              {{ t('common.cancel') }}
-            </button>
-            <button @click="executeExport" class="btn-primary">
-              <Download class="h-4 w-4 mr-2" />
-              {{ t('common.export') }}
-            </button>
           </div>
         </div>
       </div>
@@ -804,11 +745,6 @@ const selectedEntry = ref<{
   credit: number;
   runningBalance: number;
 } | null>(null);
-
-// Export modal state
-const showExportModal = ref(false);
-const exportFormat = ref<'csv' | 'pdf' | 'tally'>('csv');
-
 
 const outstandingAmount = computed(() => {
   if (!vendor.value) return 0;
@@ -1209,38 +1145,6 @@ const selectedPayment = computed(() => {
   if (!selectedEntry.value || selectedEntry.value.type !== 'payment') return null;
   return vendorPayments.value.find(p => p.id === selectedEntry.value?.id) || null;
 });
-
-// Export modal functions
-const openExportModal = (format: 'csv' | 'pdf' | 'tally') => {
-  exportFormat.value = format;
-  showExportModal.value = true;
-};
-
-const closeExportModal = () => {
-  showExportModal.value = false;
-};
-
-const executeExport = async () => {
-  try {
-    switch (exportFormat.value) {
-      case 'csv':
-        exportLedger();
-        break;
-      case 'pdf':
-        await exportLedgerPDF();
-        break;
-      case 'tally':
-        exportTallyXml();
-        break;
-    }
-    closeExportModal();
-  } catch (err) {
-    console.error('Export error:', err);
-  }
-};
-
-
-
 
 const goBack = () => {
   try {
@@ -1848,11 +1752,11 @@ const handleClickOutside = (event: Event) => {
   }
 };
 
-// Handle ESC key for closing modals
+// Handle ESC key for closing modals (check topmost modal first)
 const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
-    if (showExportModal.value) {
-      closeExportModal();
+    if (showEntryDetailModal.value) {
+      closeEntryDetail();
     } else if (showLedgerModal.value) {
       closeLedgerModal();
     }
