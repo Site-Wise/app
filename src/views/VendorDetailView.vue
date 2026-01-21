@@ -16,32 +16,10 @@
       </div>
       <!-- Desktop Actions -->
       <div class="hidden md:flex items-center space-x-3">
-        <div class="relative export-dropdown">
-          <button @click="showExportDropdown = !showExportDropdown" class="btn-outline flex items-center">
-            <Download class="mr-2 h-4 w-4" />
-            {{ t('vendors.exportLedger') }}
-            <ChevronDown class="ml-2 h-4 w-4" />
-          </button>
-          
-          <!-- Export Dropdown Menu -->
-          <div v-if="showExportDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
-            <div class="py-1">
-              <button @click="openExportModal('csv'); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <FileSpreadsheet class="mr-3 h-4 w-4 text-green-600" />
-                {{ t('vendors.exportCsv') }}
-              </button>
-              <button @click="openExportModal('pdf'); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <FileText class="mr-3 h-4 w-4 text-red-600" />
-                {{ t('vendors.exportPdf') }}
-              </button>
-              <button @click="openExportModal('tally'); showExportDropdown = false" class="relative flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <FileText class="mr-3 h-4 w-4 text-blue-600" />
-                {{ t('vendors.exportTallyXml') }}
-                <StatusBadge type="beta" position="absolute" />
-              </button>
-            </div>
-          </div>
-        </div>
+        <button @click="openLedgerModal()" class="btn-outline flex items-center">
+          <BookOpen class="mr-2 h-4 w-4" />
+          {{ t('vendors.viewLedger') }}
+        </button>
         <button @click="createReturn()" class="btn-outline">
           <RotateCcw class="mr-2 h-4 w-4" />
           {{ t('vendors.createReturn') }}
@@ -61,28 +39,10 @@
         <!-- Mobile Dropdown Menu -->
         <div v-if="showMobileMenu" class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
           <div class="py-1">
-            <!-- Export Options -->
-            <div class="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700">
-              {{ t('vendors.exportLedger') }}
-            </div>
-            <button @click="openExportModal('csv'); showMobileMenu = false" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-              <FileSpreadsheet class="mr-3 h-5 w-5 text-green-600" />
-              {{ t('vendors.exportCsv') }}
+            <button @click="handleMobileAction('viewLedger')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <BookOpen class="mr-3 h-5 w-5 text-gray-600" />
+              {{ t('vendors.viewLedger') }}
             </button>
-            <button @click="openExportModal('pdf'); showMobileMenu = false" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-              <FileText class="mr-3 h-5 w-5 text-red-600" />
-              {{ t('vendors.exportPdf') }}
-            </button>
-            <button @click="openExportModal('tally'); showMobileMenu = false" class="relative flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-              <FileText class="mr-3 h-5 w-5 text-blue-600" />
-              {{ t('vendors.exportTallyXml') }}
-              <StatusBadge type="beta" position="absolute" />
-            </button>
-            
-            <!-- Divider -->
-            <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
-            
-            <!-- Other Actions -->
             <button @click="handleMobileAction('createReturn')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
               <RotateCcw class="mr-3 h-5 w-5 text-gray-600" />
               {{ t('vendors.createReturn') }}
@@ -297,114 +257,6 @@
     </div>
     </div>
 
-    <!-- Ledger Section -->
-    <div class="card mb-8">
-      <!-- Ledger Header -->
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('vendors.vendorLedger') }}</h2>
-        <span class="text-sm text-gray-500 dark:text-gray-400">
-          {{ ledgerEntries.length }} {{ t('vendors.entries') }}
-        </span>
-      </div>
-
-      <!-- Ledger Table -->
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm table-fixed">
-          <thead class="bg-gray-50 dark:bg-gray-700">
-            <tr>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
-                {{ t('vendors.date') }}
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-auto">
-                {{ t('vendors.particulars') }}
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell w-24">
-                {{ t('vendors.reference') }}
-              </th>
-              <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20">
-                {{ t('vendors.debit') }}
-              </th>
-              <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20">
-                {{ t('vendors.credit') }}
-              </th>
-              <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
-                {{ t('vendors.balance') }}
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
-            <!-- Ledger Entries -->
-            <tr v-for="entry in ledgerEntries" :key="entry.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-              <td class="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap">
-                {{ formatDate(entry.date) }}
-              </td>
-              <td class="px-3 py-2 text-gray-900 dark:text-white">
-                <div class="truncate" :title="entry.particulars">{{ entry.particulars }}</div>
-                <div v-if="entry.details" class="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate" :title="entry.details">
-                  {{ entry.details }}
-                </div>
-              </td>
-              <td class="px-3 py-2 text-gray-500 dark:text-gray-400 hidden md:table-cell truncate" :title="entry.reference">
-                {{ entry.reference || '-' }}
-              </td>
-              <td class="px-3 py-2 text-right whitespace-nowrap">
-                <span v-if="entry.debit > 0" class="text-green-600 dark:text-green-400 font-medium">
-                  ₹{{ entry.debit.toFixed(2) }}
-                </span>
-                <span v-else class="text-gray-400">-</span>
-              </td>
-              <td class="px-3 py-2 text-right whitespace-nowrap">
-                <span v-if="entry.credit > 0" class="text-red-600 dark:text-red-400 font-medium">
-                  ₹{{ entry.credit.toFixed(2) }}
-                </span>
-                <span v-else class="text-gray-400">-</span>
-              </td>
-              <td class="px-3 py-2 text-right font-medium whitespace-nowrap" :class="entry.runningBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
-                ₹{{ Math.abs(entry.runningBalance).toFixed(2) }}
-                <span class="text-xs ml-1">{{ entry.runningBalance >= 0 ? 'Cr' : 'Dr' }}</span>
-              </td>
-            </tr>
-
-            <!-- Empty State -->
-            <tr v-if="ledgerEntries.length === 0">
-              <td colspan="6" class="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
-                {{ t('vendors.noLedgerEntries') }}
-              </td>
-            </tr>
-
-            <!-- Totals Row -->
-            <tr v-if="ledgerEntries.length > 0" class="bg-gray-100 dark:bg-gray-700 font-medium">
-              <td class="px-3 py-2 text-gray-900 dark:text-white" colspan="2">
-                {{ t('vendors.totals') }}
-              </td>
-              <td class="px-3 py-2 hidden md:table-cell"></td>
-              <td class="px-3 py-2 text-right text-green-600 dark:text-green-400 whitespace-nowrap">
-                ₹{{ totalDebits.toFixed(2) }}
-              </td>
-              <td class="px-3 py-2 text-right text-red-600 dark:text-red-400 whitespace-nowrap">
-                ₹{{ totalCredits.toFixed(2) }}
-              </td>
-              <td class="px-3 py-2 text-right whitespace-nowrap" :class="finalBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
-                ₹{{ Math.abs(finalBalance).toFixed(2) }}
-                <span class="text-xs ml-1">{{ finalBalance >= 0 ? 'Cr' : 'Dr' }}</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Ledger Summary -->
-      <div v-if="ledgerEntries.length > 0" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div class="text-sm text-gray-600 dark:text-gray-400">
-            {{ t('vendors.showingAllEntries') }} ({{ ledgerEntries.length }} {{ t('vendors.entries') }})
-          </div>
-          <div class="text-lg font-semibold" :class="finalBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
-            {{ finalBalance >= 0 ? t('vendors.totalOutstanding') : t('vendors.creditBalance') }}: ₹{{ Math.abs(finalBalance).toFixed(2) }}
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- Payment Modal -->
     <PaymentModal
@@ -423,8 +275,162 @@
       @close="handlePaymentModalClose"
     />
 
-    <!-- Export Ledger Modal -->
-    <div v-if="showExportModal" class="fixed inset-0 z-50 overflow-y-auto">
+    <!-- Ledger Modal -->
+    <div v-if="showLedgerModal" class="fixed inset-0 z-50 overflow-y-auto">
+      <div class="flex min-h-full items-center justify-center p-4">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-black/50 transition-opacity" @click="closeLedgerModal"></div>
+
+        <!-- Modal Panel -->
+        <div class="relative w-full max-w-5xl transform rounded-lg bg-white dark:bg-gray-800 shadow-xl transition-all max-h-[90vh] flex flex-col">
+          <!-- Header -->
+          <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                {{ t('vendors.vendorLedger') }}
+              </h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {{ vendor?.name || vendor?.contact_person }}
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <!-- Export Dropdown -->
+              <div class="relative export-dropdown">
+                <button @click="showExportDropdown = !showExportDropdown" class="btn-outline flex items-center text-sm">
+                  <Download class="mr-2 h-4 w-4" />
+                  {{ t('vendors.exportLedger') }}
+                  <ChevronDown class="ml-2 h-4 w-4" />
+                </button>
+
+                <!-- Export Dropdown Menu -->
+                <div v-if="showExportDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+                  <div class="py-1">
+                    <button @click="openExportModal('csv'); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                      <FileSpreadsheet class="mr-3 h-4 w-4 text-green-600" />
+                      {{ t('vendors.exportCsv') }}
+                    </button>
+                    <button @click="openExportModal('pdf'); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                      <FileText class="mr-3 h-4 w-4 text-red-600" />
+                      {{ t('vendors.exportPdf') }}
+                    </button>
+                    <button @click="openExportModal('tally'); showExportDropdown = false" class="relative flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                      <FileText class="mr-3 h-4 w-4 text-blue-600" />
+                      {{ t('vendors.exportTallyXml') }}
+                      <StatusBadge type="beta" position="absolute" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <button @click="closeLedgerModal" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                <X class="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Ledger Table -->
+          <div class="flex-1 overflow-auto p-6">
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm table-fixed min-w-[600px]">
+                <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                  <tr>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                      {{ t('vendors.date') }}
+                    </th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-auto">
+                      {{ t('vendors.particulars') }}
+                    </th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">
+                      {{ t('vendors.reference') }}
+                    </th>
+                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                      {{ t('vendors.debit') }}
+                    </th>
+                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                      {{ t('vendors.credit') }}
+                    </th>
+                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">
+                      {{ t('vendors.balance') }}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                  <!-- Ledger Entries -->
+                  <tr v-for="entry in ledgerEntries" :key="entry.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td class="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap">
+                      {{ formatDate(entry.date) }}
+                    </td>
+                    <td class="px-3 py-2 text-gray-900 dark:text-white">
+                      <div class="truncate" :title="entry.particulars">{{ entry.particulars }}</div>
+                      <div v-if="entry.details" class="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate" :title="entry.details">
+                        {{ entry.details }}
+                      </div>
+                    </td>
+                    <td class="px-3 py-2 text-gray-500 dark:text-gray-400 truncate" :title="entry.reference">
+                      {{ entry.reference || '-' }}
+                    </td>
+                    <td class="px-3 py-2 text-right whitespace-nowrap">
+                      <span v-if="entry.debit > 0" class="text-green-600 dark:text-green-400 font-medium">
+                        ₹{{ entry.debit.toFixed(2) }}
+                      </span>
+                      <span v-else class="text-gray-400">-</span>
+                    </td>
+                    <td class="px-3 py-2 text-right whitespace-nowrap">
+                      <span v-if="entry.credit > 0" class="text-red-600 dark:text-red-400 font-medium">
+                        ₹{{ entry.credit.toFixed(2) }}
+                      </span>
+                      <span v-else class="text-gray-400">-</span>
+                    </td>
+                    <td class="px-3 py-2 text-right font-medium whitespace-nowrap" :class="entry.runningBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+                      ₹{{ Math.abs(entry.runningBalance).toFixed(2) }}
+                      <span class="text-xs ml-1">{{ entry.runningBalance >= 0 ? 'Cr' : 'Dr' }}</span>
+                    </td>
+                  </tr>
+
+                  <!-- Empty State -->
+                  <tr v-if="ledgerEntries.length === 0">
+                    <td colspan="6" class="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
+                      {{ t('vendors.noLedgerEntries') }}
+                    </td>
+                  </tr>
+
+                  <!-- Totals Row -->
+                  <tr v-if="ledgerEntries.length > 0" class="bg-gray-100 dark:bg-gray-700 font-medium">
+                    <td class="px-3 py-2 text-gray-900 dark:text-white" colspan="3">
+                      {{ t('vendors.totals') }}
+                    </td>
+                    <td class="px-3 py-2 text-right text-green-600 dark:text-green-400 whitespace-nowrap">
+                      ₹{{ totalDebits.toFixed(2) }}
+                    </td>
+                    <td class="px-3 py-2 text-right text-red-600 dark:text-red-400 whitespace-nowrap">
+                      ₹{{ totalCredits.toFixed(2) }}
+                    </td>
+                    <td class="px-3 py-2 text-right whitespace-nowrap" :class="finalBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+                      ₹{{ Math.abs(finalBalance).toFixed(2) }}
+                      <span class="text-xs ml-1">{{ finalBalance >= 0 ? 'Cr' : 'Dr' }}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Footer Summary -->
+          <div v-if="ledgerEntries.length > 0" class="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div class="text-sm text-gray-600 dark:text-gray-400">
+                {{ t('vendors.showingAllEntries') }} ({{ ledgerEntries.length }} {{ t('vendors.entries') }})
+              </div>
+              <div class="text-lg font-semibold" :class="finalBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+                {{ finalBalance >= 0 ? t('vendors.totalOutstanding') : t('vendors.creditBalance') }}: ₹{{ Math.abs(finalBalance).toFixed(2) }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Export Options Modal -->
+    <div v-if="showExportModal" class="fixed inset-0 z-[60] overflow-y-auto">
       <div class="flex min-h-full items-center justify-center p-4">
         <!-- Backdrop -->
         <div class="fixed inset-0 bg-black/50 transition-opacity" @click="closeExportModal"></div>
@@ -551,8 +557,9 @@ import {
   MoreVertical,
   AlertCircle,
   CheckCircle,
-X,
-  Calendar
+  X,
+  Calendar,
+  BookOpen
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useToast } from '../composables/useToast';
@@ -617,6 +624,9 @@ const showMobileMenu = ref(false);
 const paymentModalMode = ref<'CREATE' | 'PAY_NOW' | 'EDIT'>('PAY_NOW');
 const currentPayment = ref<Payment | null>(null);
 const currentAllocations = ref<PaymentAllocation[]>([]);
+
+// Ledger modal state
+const showLedgerModal = ref(false);
 
 // Export modal state
 const showExportModal = ref(false);
@@ -976,6 +986,16 @@ const exportOpeningBalance = computed(() => {
   if (exportAllData.value) return 0;
   return getFilteredEntriesForExport().openingBalance;
 });
+
+// Ledger modal functions
+const openLedgerModal = () => {
+  showLedgerModal.value = true;
+};
+
+const closeLedgerModal = () => {
+  showLedgerModal.value = false;
+  showExportDropdown.value = false;
+};
 
 // Export modal functions
 const openExportModal = (format: 'csv' | 'pdf' | 'tally') => {
@@ -1582,19 +1602,13 @@ const createReturn = () => {
 const handleMobileAction = async (action: string) => {
   // Close the menu first
   showMobileMenu.value = false;
-  
+
   // Then execute the action after a small delay to ensure menu closes
   setTimeout(async () => {
     try {
       switch (action) {
-        case 'exportCsv':
-          exportLedger();
-          break;
-        case 'exportPdf':
-          await exportLedgerPDF();
-          break;
-        case 'exportTallyXml':
-          exportTallyXml();
+        case 'viewLedger':
+          openLedgerModal();
           break;
         case 'createReturn':
           createReturn();
@@ -1630,6 +1644,8 @@ const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
     if (showExportModal.value) {
       closeExportModal();
+    } else if (showLedgerModal.value) {
+      closeLedgerModal();
     }
   }
 };

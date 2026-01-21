@@ -372,6 +372,7 @@
     "paymentInformation": "Payment Information",
     "financialSummary": "Financial Summary",
     "paymentStatusBreakdown": "Payment Status Breakdown",
+    "viewLedger": "View Ledger",
     "exportLedger": "Export Ledger",
     "exportCsv": "Export CSV",
     "exportPdf": "Export PDF",

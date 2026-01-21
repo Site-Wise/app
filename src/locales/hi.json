@@ -372,6 +372,7 @@
     "paymentInformation": "भुगतान जानकारी",
     "financialSummary": "वित्तीय सारांश",
     "paymentStatusBreakdown": "भुगतान स्थिति विवरण",
+    "viewLedger": "खाता बही देखें",
     "exportLedger": "खाता बही निर्यात करें",
     "exportCsv": "CSV निर्यात करें",
     "exportPdf": "PDF निर्यात करें",

@@ -11,6 +11,7 @@ vi.mock('../../composables/useI18n', () => ({
         'vendors.vendorDetails': 'Vendor Details',
         'vendors.contactInformation': 'Contact Information',
         'vendors.paymentInformation': 'Payment Information',
+        'vendors.viewLedger': 'View Ledger',
         'vendors.exportLedger': 'Export Ledger',
         'vendors.exportCsv': 'Export CSV',
         'vendors.exportPdf': 'Export PDF',
@@ -361,13 +362,13 @@ describe('VendorDetailView', () => {
   })
 
   describe('Export Functionality', () => {
-    it('should show export dropdown button', async () => {
+    it('should show View Ledger button', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
-      // Should show export button
-      expect(wrapper.text()).toContain('Export Ledger')
+      // Should show View Ledger button (export moved inside ledger modal)
+      expect(wrapper.text()).toContain('View Ledger')
     })
 
     it('should handle PDF export with proper logo aspect ratio', async () => {
@@ -468,46 +469,47 @@ describe('VendorDetailView', () => {
       expect(wrapper.text()).toContain('Create Return')
     })
 
-    it('should have XML export option in export dropdown', async () => {
+    it('should show View Ledger button', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
-      // Find export dropdown button
-      const exportButton = wrapper.findAll('button').find(btn => btn.text().includes('Export Ledger'));
-      expect(exportButton?.exists()).toBe(true);
-      
-      // Click to open dropdown
-      await exportButton?.trigger('click');
+      // Find View Ledger button
+      const viewLedgerButton = wrapper.findAll('button').find(btn => btn.text().includes('View Ledger'));
+      expect(viewLedgerButton?.exists()).toBe(true);
+    });
+
+    it('should have XML export option in export dropdown inside ledger modal', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Open ledger modal first
+      wrapper.vm.showLedgerModal = true
+      wrapper.vm.showExportDropdown = true
       await wrapper.vm.$nextTick()
 
       // Check if XML export option exists - it shows as translation key in tests
-      const xmlExportButton = wrapper.findAll('button').find(btn => 
-        btn.text().includes('Export for Tally') || 
-        btn.text().includes('vendors.exportTallyXml') ||
-        btn.text().includes('exportTallyXml')
-      );
-      
-      expect(xmlExportButton?.exists()).toBe(true);
-    });
-
-    it('should open export modal when Tally export is clicked', async () => {
-      await wrapper.vm.$nextTick()
-      await new Promise(resolve => setTimeout(resolve, 50))
-      await wrapper.vm.$nextTick()
-
-      // Open export dropdown
-      const exportButton = wrapper.findAll('button').find(btn => btn.text().includes('Export Ledger'))
-      await exportButton?.trigger('click')
-      await wrapper.vm.$nextTick()
-
-      // Click XML export option - use translation key that appears in tests
       const xmlExportButton = wrapper.findAll('button').find(btn =>
         btn.text().includes('Export for Tally') ||
         btn.text().includes('vendors.exportTallyXml') ||
         btn.text().includes('exportTallyXml')
-      )
-      await xmlExportButton?.trigger('click')
+      );
+
+      expect(xmlExportButton?.exists()).toBe(true);
+    });
+
+    it('should open export modal when Tally export is clicked from ledger modal', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Open ledger modal first, then export modal with tally format
+      wrapper.vm.showLedgerModal = true
+      await wrapper.vm.$nextTick()
+
+      // Open export modal directly via method
+      wrapper.vm.openExportModal('tally')
       await wrapper.vm.$nextTick()
 
       // Modal should open with tally format
@@ -1093,37 +1095,69 @@ describe('VendorDetailView', () => {
     })
   })
 
-  describe('Export Dropdown Options', () => {
-    it('should show Export CSV option in dropdown', async () => {
+  describe('Ledger Modal and Export Dropdown Options', () => {
+    it('should open ledger modal when openLedgerModal is called', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
-      // Open dropdown
+      expect(wrapper.vm.showLedgerModal).toBe(false)
+      wrapper.vm.openLedgerModal()
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showLedgerModal).toBe(true)
+    })
+
+    it('should close ledger modal when closeLedgerModal is called', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.showLedgerModal = true
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.closeLedgerModal()
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showLedgerModal).toBe(false)
+    })
+
+    it('should show Export CSV option in dropdown inside ledger modal', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Open ledger modal first
+      wrapper.vm.showLedgerModal = true
+      // Then open dropdown
       wrapper.vm.showExportDropdown = true
       await wrapper.vm.$nextTick()
 
       expect(wrapper.text()).toContain('Export CSV')
     })
 
-    it('should show Export PDF option in dropdown', async () => {
+    it('should show Export PDF option in dropdown inside ledger modal', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
-      // Open dropdown
+      // Open ledger modal first
+      wrapper.vm.showLedgerModal = true
+      // Then open dropdown
       wrapper.vm.showExportDropdown = true
       await wrapper.vm.$nextTick()
 
       expect(wrapper.text()).toContain('Export PDF')
     })
 
-    it('should show Export for Tally option in dropdown', async () => {
+    it('should show Export for Tally option in dropdown inside ledger modal', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
-      // Open dropdown
+      // Open ledger modal first
+      wrapper.vm.showLedgerModal = true
+      // Then open dropdown
       wrapper.vm.showExportDropdown = true
       await wrapper.vm.$nextTick()
 
@@ -1245,35 +1279,24 @@ describe('VendorDetailView', () => {
   })
 
   describe('Mobile Action Handler', () => {
-    it('should handle exportCsv mobile action', async () => {
+    it('should handle viewLedger mobile action', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
       wrapper.vm.showMobileMenu = true
-      wrapper.vm.handleMobileAction('exportCsv')
+      wrapper.vm.handleMobileAction('viewLedger')
 
       expect(wrapper.vm.showMobileMenu).toBe(false)
     })
 
-    it('should handle exportPdf mobile action', async () => {
+    it('should handle createReturn mobile action', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
       wrapper.vm.showMobileMenu = true
-      wrapper.vm.handleMobileAction('exportPdf')
-
-      expect(wrapper.vm.showMobileMenu).toBe(false)
-    })
-
-    it('should handle exportTallyXml mobile action', async () => {
-      await wrapper.vm.$nextTick()
-      await new Promise(resolve => setTimeout(resolve, 50))
-      await wrapper.vm.$nextTick()
-
-      wrapper.vm.showMobileMenu = true
-      wrapper.vm.handleMobileAction('exportTallyXml')
+      wrapper.vm.handleMobileAction('createReturn')
 
       expect(wrapper.vm.showMobileMenu).toBe(false)
     })
@@ -1364,6 +1387,7 @@ describe('VendorDetailView', () => {
       await wrapper.vm.$nextTick()
 
       expect(wrapper.vm.showExportModal).toBe(false)
+      expect(wrapper.vm.showLedgerModal).toBe(false)
 
       // Press ESC key
       const escEvent = new KeyboardEvent('keydown', { key: 'Escape' })
@@ -1372,6 +1396,26 @@ describe('VendorDetailView', () => {
 
       // Should still be false
       expect(wrapper.vm.showExportModal).toBe(false)
+      expect(wrapper.vm.showLedgerModal).toBe(false)
+    })
+
+    it('should close ledger modal when ESC is pressed', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      // Open ledger modal
+      wrapper.vm.showLedgerModal = true
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.showLedgerModal).toBe(true)
+
+      // Press ESC key
+      const escEvent = new KeyboardEvent('keydown', { key: 'Escape' })
+      document.dispatchEvent(escEvent)
+      await wrapper.vm.$nextTick()
+
+      // Ledger modal should be closed
+      expect(wrapper.vm.showLedgerModal).toBe(false)
     })
   })
 
