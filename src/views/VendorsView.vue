@@ -259,6 +259,7 @@ import { DeliveryPaymentCalculator, type DeliveryWithPaymentStatus } from '../se
 import { usePermissions } from '../composables/usePermissions';
 import StatusBadge from '../components/StatusBadge.vue';
 import JSZip from 'jszip';
+import { generateLedgerPDF, getLedgerExportTranslations } from '../services/ledgerExportUtils';
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
@@ -749,8 +750,6 @@ const exportAllLedgersPDF = async () => {
   exportTotal.value = vendors.value.length;
 
   try {
-    // Dynamically import jsPDF
-    const { default: jsPDF } = await import('jspdf');
     const zip = new JSZip();
 
     // Load all data needed for ledger entries
@@ -783,67 +782,15 @@ const exportAllLedgersPDF = async () => {
       );
 
       if (entries.length > 0) {
-        // Create PDF for this vendor
-        const doc = new jsPDF({ orientation: 'landscape' });
-
-        // Title
-        doc.setFontSize(16);
-        doc.text(`${t('vendors.vendorLedger')}: ${vendorName}`, 14, 15);
-        doc.setFontSize(10);
-        doc.text(`${t('vendors.generated')}: ${new Date().toLocaleDateString()}`, 14, 22);
-
-        // Table headers
-        let y = 35;
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text(t('vendors.date'), 14, y);
-        doc.text(t('vendors.particulars'), 45, y);
-        doc.text(t('vendors.reference'), 130, y);
-        doc.text(t('vendors.debit'), 175, y);
-        doc.text(t('vendors.credit'), 205, y);
-        doc.text(t('vendors.balance'), 235, y);
-
-        y += 5;
-        doc.line(14, y, 280, y);
-        y += 5;
-
-        // Table rows
-        doc.setFont('helvetica', 'normal');
-        for (const entry of entries) {
-          if (y > 180) {
-            doc.addPage();
-            y = 20;
-          }
-
-          const balanceDisplay = entry.runningBalance >= 0
-            ? `${entry.runningBalance.toFixed(2)} Dr`
-            : `${Math.abs(entry.runningBalance).toFixed(2)} Cr`;
-
-          doc.text(new Date(entry.date).toLocaleDateString('en-CA'), 14, y);
-          doc.text(entry.particulars.substring(0, 50), 45, y);
-          doc.text((entry.reference || '-').substring(0, 20), 130, y);
-          doc.text(entry.debit > 0 ? `₹${entry.debit.toFixed(2)}` : '', 175, y);
-          doc.text(entry.credit > 0 ? `₹${entry.credit.toFixed(2)}` : '', 205, y);
-          doc.text(balanceDisplay, 235, y);
-          y += 7;
-        }
-
-        // Totals
-        y += 3;
-        doc.line(14, y, 280, y);
-        y += 7;
-        doc.setFont('helvetica', 'bold');
-        const totalDebits = entries.reduce((sum, e) => sum + e.debit, 0);
-        const totalCredits = entries.reduce((sum, e) => sum + e.credit, 0);
-        const finalBalance = totalDebits - totalCredits;
-        const finalBalanceDisplay = finalBalance >= 0
-          ? `${finalBalance.toFixed(2)} Dr`
-          : `${Math.abs(finalBalance).toFixed(2)} Cr`;
-
-        doc.text(t('vendors.totals'), 45, y);
-        doc.text(`₹${totalDebits.toFixed(2)}`, 175, y);
-        doc.text(`₹${totalCredits.toFixed(2)}`, 205, y);
-        doc.text(finalBalanceDisplay, 235, y);
+        // Use shared PDF generation utility
+        const doc = await generateLedgerPDF({
+          vendorName,
+          contactPerson: vendor.contact_person,
+          entries,
+          openingBalance: 0,
+          hasOpeningBalance: false,
+          translations: getLedgerExportTranslations(t)
+        });
 
         const pdfBlob = doc.output('blob');
         const filename = `${sanitizeFilename(vendorName)}_Ledger.pdf`;

@@ -638,7 +638,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { useRoute, useRouter } from 'vue-router';
-import { jsPDF } from 'jspdf';
+import { generateLedgerPDF, getLedgerExportTranslations } from '../services/ledgerExportUtils';
 import {
   ArrowLeft,
   Download,
@@ -1296,247 +1296,21 @@ const exportLedger = () => {
   document.body.removeChild(link);
 };
 
-const addFooter = (doc: any, pageWidth: number, pageHeight: number, margin: number) => {
-  const footerY = pageHeight - 15;
-  
-  // Horizontal line
-  doc.setDrawColor(200, 200, 200);
-  doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
-  
-  // Footer text
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(107, 114, 128); // Gray color
-  doc.text('Generated with SiteWise - One stop solution for construction site management', margin, footerY);
-  
-  // Page number (right aligned)
-  const pageNum = doc.internal.getCurrentPageInfo().pageNumber;
-  doc.text(`Page ${pageNum}`, pageWidth - margin - 15, footerY);
-};
-
 const exportLedgerPDF = async () => {
   if (!vendor.value) return;
 
-  const doc = new jsPDF();
-  const pageWidth = doc.internal.pageSize.width;
-  const pageHeight = doc.internal.pageSize.height;
-  const margin = 14;
-  let yPosition = 25;
   const filtered = getFilteredEntriesForExport();
-  const hasDateFilter = isDateFilterActive.value;
 
-  // Load and add logo
-  try {
-    const logoImg = new Image();
-    logoImg.crossOrigin = 'anonymous';
-
-    await new Promise((resolve, reject) => {
-      logoImg.onload = resolve;
-      logoImg.onerror = reject;
-      logoImg.src = '/logo.png';
-    });
-
-    // Add logo to the right side of header with proper aspect ratio
-    const maxLogoWidth = 25;
-    const maxLogoHeight = 15;
-
-    // Calculate aspect ratio and fit within bounds
-    const aspectRatio = logoImg.naturalWidth / logoImg.naturalHeight;
-    let logoWidth = maxLogoWidth;
-    let logoHeight = maxLogoWidth / aspectRatio;
-
-    // If height exceeds max, scale by height instead
-    if (logoHeight > maxLogoHeight) {
-      logoHeight = maxLogoHeight;
-      logoWidth = maxLogoHeight * aspectRatio;
-    }
-
-    const logoX = pageWidth - margin - logoWidth;
-    const logoY = yPosition - 5;
-
-    doc.addImage(logoImg, 'PNG', logoX, logoY, logoWidth, logoHeight);
-  } catch (error) {
-    console.warn('Could not load logo for PDF:', error);
-    // Continue without logo if it fails to load
-  }
-
-  // Document title (no SiteWise text in header, just logo)
-  yPosition += 10;
-  doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(0, 0, 0); // Black for main content
-  doc.text(t('vendors.vendorLedger'), margin, yPosition);
-
-  // Vendor information
-  yPosition += 12;
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "normal");
-  doc.text(`${t('vendors.vendor')}: ${vendor.value.name}`, margin, yPosition);
-
-  yPosition += 6;
-  if (vendor.value.contact_person) {
-    doc.text(`${t('vendors.contact')}: ${vendor.value.contact_person}`, margin, yPosition);
-    yPosition += 6;
-  }
-
-  doc.text(`${t('vendors.generated')}: ${new Date().toLocaleDateString('en-CA')}`, margin, yPosition);
-
-  // Show filter period if active
-  if (hasDateFilter) {
-    yPosition += 6;
-    const periodText = `${t('vendors.filterPeriod')}: ${ledgerFromDate.value || t('vendors.beginning')} - ${ledgerToDate.value || t('vendors.today')}`;
-    doc.text(periodText, margin, yPosition);
-  }
-
-  yPosition += 15;
-
-  // Table headers with adjusted column widths for better text fitting
-  // Total usable width: pageWidth - 2*margin = 210 - 28 = 182mm
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  const headers = [t('vendors.date'), t('vendors.particulars'), t('vendors.reference'), t('vendors.debit'), t('vendors.credit'), t('vendors.balance')];
-  // Adjusted widths: date=22, particulars=70, reference=25, debit=22, credit=22, balance=22 = 183 (close enough)
-  const colWidths = [22, 70, 25, 22, 22, 22];
-  let xPos = margin;
-
-  headers.forEach((header, i) => {
-    doc.text(header, xPos, yPosition);
-    xPos += colWidths[i];
+  const doc = await generateLedgerPDF({
+    vendorName: vendor.value.name || '',
+    contactPerson: vendor.value.contact_person,
+    entries: filtered.entries,
+    openingBalance: filtered.openingBalance,
+    hasOpeningBalance: filtered.hasOpeningBalance,
+    filterFromDate: ledgerFromDate.value || undefined,
+    filterToDate: ledgerToDate.value || undefined,
+    translations: getLedgerExportTranslations(t)
   });
-
-  yPosition += 6;
-  doc.line(margin, yPosition, pageWidth - margin, yPosition);
-  yPosition += 5;
-
-  // Table rows
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-
-  // Add opening balance row if filtering
-  if (filtered.hasOpeningBalance) {
-    xPos = margin;
-
-    const openingBalanceDisplay = filtered.openingBalance >= 0
-      ? `${Math.abs(filtered.openingBalance).toFixed(0)} Cr`
-      : `${Math.abs(filtered.openingBalance).toFixed(0)} Dr`;
-
-    doc.text(ledgerFromDate.value || '', xPos, yPosition);
-    xPos += colWidths[0];
-    doc.text(t('vendors.openingBalance'), xPos, yPosition);
-    xPos += colWidths[1];
-    doc.text('', xPos, yPosition);
-    xPos += colWidths[2];
-    doc.text('', xPos, yPosition);
-    xPos += colWidths[3];
-    doc.text('', xPos, yPosition);
-    xPos += colWidths[4];
-    doc.text(openingBalanceDisplay, xPos, yPosition);
-
-    yPosition += 5;
-  }
-
-  // Calculate export totals
-  let exportTotalDebits = 0;
-  let exportTotalCredits = 0;
-
-  // Use filtered ledger entries
-  filtered.entries.forEach(entry => {
-    if (yPosition > 245) { // Leave more space for footer
-      doc.addPage();
-      yPosition = 25;
-    }
-
-    xPos = margin;
-
-    // Truncate particulars to fit in column instead of wrapping
-    const maxParticularsWidth = colWidths[1] - 2;
-    let particularsText = entry.particulars;
-    while (doc.getTextWidth(particularsText) > maxParticularsWidth && particularsText.length > 3) {
-      particularsText = particularsText.slice(0, -4) + '...';
-    }
-
-    // Truncate reference similarly
-    const maxRefWidth = colWidths[2] - 2;
-    let refText = entry.reference || '-';
-    while (doc.getTextWidth(refText) > maxRefWidth && refText.length > 3) {
-      refText = refText.slice(0, -4) + '...';
-    }
-
-    // Balance display with Cr/Dr notation
-    const balanceDisplay = entry.runningBalance >= 0
-      ? `${Math.abs(entry.runningBalance).toFixed(0)} Cr`
-      : `${Math.abs(entry.runningBalance).toFixed(0)} Dr`;
-
-    // Draw each column
-    doc.text(new Date(entry.date).toLocaleDateString('en-CA'), xPos, yPosition);
-    xPos += colWidths[0];
-
-    doc.text(particularsText, xPos, yPosition);
-    xPos += colWidths[1];
-
-    doc.text(refText, xPos, yPosition);
-    xPos += colWidths[2];
-
-    doc.text(entry.debit > 0 ? entry.debit.toFixed(0) : '-', xPos, yPosition);
-    xPos += colWidths[3];
-
-    doc.text(entry.credit > 0 ? entry.credit.toFixed(0) : '-', xPos, yPosition);
-    xPos += colWidths[4];
-
-    doc.text(balanceDisplay, xPos, yPosition);
-
-    exportTotalDebits += entry.debit;
-    exportTotalCredits += entry.credit;
-
-    yPosition += 5;
-  });
-
-  // Summary
-  if (yPosition > 210) { // Leave more space for footer
-    doc.addPage();
-    yPosition = 25;
-  }
-
-  yPosition += 8;
-  doc.line(margin, yPosition, pageWidth - margin, yPosition);
-  yPosition += 6;
-
-  // Add totals
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  xPos = margin;
-
-  doc.text(t('vendors.totals'), xPos, yPosition);
-  xPos += colWidths[0] + colWidths[1] + colWidths[2];
-
-  doc.text(exportTotalDebits.toFixed(0), xPos, yPosition);
-  xPos += colWidths[3];
-
-  doc.text(exportTotalCredits.toFixed(0), xPos, yPosition);
-  xPos += colWidths[4];
-
-  const exportFinalBalance = filtered.openingBalance + exportTotalCredits - exportTotalDebits;
-  const finalBalanceDisplay = exportFinalBalance >= 0
-    ? `${Math.abs(exportFinalBalance).toFixed(0)} Cr`
-    : `${Math.abs(exportFinalBalance).toFixed(0)} Dr`;
-  doc.text(finalBalanceDisplay, xPos, yPosition);
-
-  yPosition += 8;
-
-  // Final balance summary
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  const balanceText = exportFinalBalance >= 0
-    ? `${t('vendors.totalOutstanding')}: ₹${exportFinalBalance.toFixed(0)}`
-    : `${t('vendors.creditBalance')}: ₹${Math.abs(exportFinalBalance).toFixed(0)}`;
-  doc.text(balanceText, margin, yPosition);
-
-  // Add footer to all pages
-  const totalPages = doc.internal.pages.length - 1; // Subtract 1 because pages array includes a null first element
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    addFooter(doc, pageWidth, pageHeight, margin);
-  }
 
   // Save the PDF
   doc.save(`${vendor.value.name}_${t('vendors.ledger')}_${new Date().toISOString().split('T')[0]}.pdf`);
