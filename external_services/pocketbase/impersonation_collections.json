@@ -1,0 +1,277 @@
+{
+  "collections": [
+    {
+      "name": "impersonation_requests",
+      "type": "base",
+      "schema": [
+        {
+          "name": "support_user",
+          "type": "relation",
+          "required": true,
+          "options": {
+            "collectionId": "users",
+            "cascadeDelete": false,
+            "maxSelect": 1,
+            "displayFields": ["name", "email"]
+          }
+        },
+        {
+          "name": "target_user",
+          "type": "relation",
+          "required": true,
+          "options": {
+            "collectionId": "users",
+            "cascadeDelete": false,
+            "maxSelect": 1,
+            "displayFields": ["name", "email"]
+          }
+        },
+        {
+          "name": "target_site",
+          "type": "relation",
+          "required": true,
+          "options": {
+            "collectionId": "sites",
+            "cascadeDelete": false,
+            "maxSelect": 1,
+            "displayFields": ["name"]
+          }
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "required": true,
+          "options": {
+            "min": 10,
+            "max": 1000
+          }
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "options": {
+            "maxSelect": 1,
+            "values": ["pending", "approved", "denied", "expired", "cancelled"]
+          }
+        },
+        {
+          "name": "requested_at",
+          "type": "date",
+          "required": true
+        },
+        {
+          "name": "responded_at",
+          "type": "date",
+          "required": false
+        },
+        {
+          "name": "expires_at",
+          "type": "date",
+          "required": true
+        },
+        {
+          "name": "session_duration_minutes",
+          "type": "number",
+          "required": true,
+          "options": {
+            "min": 5,
+            "max": 60
+          }
+        },
+        {
+          "name": "denied_reason",
+          "type": "text",
+          "required": false,
+          "options": {
+            "max": 500
+          }
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_impersonation_requests_status ON impersonation_requests (status)",
+        "CREATE INDEX idx_impersonation_requests_target_site ON impersonation_requests (target_site)",
+        "CREATE INDEX idx_impersonation_requests_support_user ON impersonation_requests (support_user)",
+        "CREATE INDEX idx_impersonation_requests_expires_at ON impersonation_requests (expires_at)"
+      ],
+      "listRule": "@request.auth.id != \"\" && (support_user = @request.auth.id || @collection.site_users.user ?= @request.auth.id && @collection.site_users.site ?= target_site && @collection.site_users.role ?= \"owner\")",
+      "viewRule": "@request.auth.id != \"\" && (support_user = @request.auth.id || @collection.site_users.user ?= @request.auth.id && @collection.site_users.site ?= target_site && @collection.site_users.role ?= \"owner\")",
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null
+    },
+    {
+      "name": "impersonation_sessions",
+      "type": "base",
+      "schema": [
+        {
+          "name": "request",
+          "type": "relation",
+          "required": true,
+          "options": {
+            "collectionId": "impersonation_requests",
+            "cascadeDelete": false,
+            "maxSelect": 1
+          }
+        },
+        {
+          "name": "support_user",
+          "type": "relation",
+          "required": true,
+          "options": {
+            "collectionId": "users",
+            "cascadeDelete": false,
+            "maxSelect": 1,
+            "displayFields": ["name", "email"]
+          }
+        },
+        {
+          "name": "target_user",
+          "type": "relation",
+          "required": true,
+          "options": {
+            "collectionId": "users",
+            "cascadeDelete": false,
+            "maxSelect": 1,
+            "displayFields": ["name", "email"]
+          }
+        },
+        {
+          "name": "target_site",
+          "type": "relation",
+          "required": true,
+          "options": {
+            "collectionId": "sites",
+            "cascadeDelete": false,
+            "maxSelect": 1,
+            "displayFields": ["name"]
+          }
+        },
+        {
+          "name": "effective_role",
+          "type": "select",
+          "required": true,
+          "options": {
+            "maxSelect": 1,
+            "values": ["supervisor", "accountant"]
+          }
+        },
+        {
+          "name": "started_at",
+          "type": "date",
+          "required": true
+        },
+        {
+          "name": "expires_at",
+          "type": "date",
+          "required": true
+        },
+        {
+          "name": "ended_at",
+          "type": "date",
+          "required": false
+        },
+        {
+          "name": "ended_by",
+          "type": "relation",
+          "required": false,
+          "options": {
+            "collectionId": "users",
+            "cascadeDelete": false,
+            "maxSelect": 1
+          }
+        },
+        {
+          "name": "end_reason",
+          "type": "select",
+          "required": false,
+          "options": {
+            "maxSelect": 1,
+            "values": ["manual", "expired", "revoked"]
+          }
+        },
+        {
+          "name": "is_active",
+          "type": "bool",
+          "required": true
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_impersonation_sessions_is_active ON impersonation_sessions (is_active)",
+        "CREATE INDEX idx_impersonation_sessions_target_site ON impersonation_sessions (target_site)",
+        "CREATE INDEX idx_impersonation_sessions_support_user ON impersonation_sessions (support_user)",
+        "CREATE INDEX idx_impersonation_sessions_expires_at ON impersonation_sessions (expires_at)"
+      ],
+      "listRule": "@request.auth.id != \"\" && (support_user = @request.auth.id || @collection.site_users.user ?= @request.auth.id && @collection.site_users.site ?= target_site && @collection.site_users.role ?= \"owner\")",
+      "viewRule": "@request.auth.id != \"\" && (support_user = @request.auth.id || @collection.site_users.user ?= @request.auth.id && @collection.site_users.site ?= target_site && @collection.site_users.role ?= \"owner\")",
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null
+    },
+    {
+      "name": "support_user_settings",
+      "type": "base",
+      "schema": [
+        {
+          "name": "user",
+          "type": "relation",
+          "required": true,
+          "unique": true,
+          "options": {
+            "collectionId": "users",
+            "cascadeDelete": true,
+            "maxSelect": 1,
+            "displayFields": ["name", "email"]
+          }
+        },
+        {
+          "name": "is_support_agent",
+          "type": "bool",
+          "required": true
+        },
+        {
+          "name": "support_level",
+          "type": "select",
+          "required": true,
+          "options": {
+            "maxSelect": 1,
+            "values": ["tier1", "tier2", "admin"]
+          }
+        },
+        {
+          "name": "max_session_duration",
+          "type": "number",
+          "required": true,
+          "options": {
+            "min": 5,
+            "max": 120
+          }
+        },
+        {
+          "name": "enabled_at",
+          "type": "date",
+          "required": false
+        },
+        {
+          "name": "enabled_by",
+          "type": "relation",
+          "required": false,
+          "options": {
+            "collectionId": "users",
+            "cascadeDelete": false,
+            "maxSelect": 1
+          }
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_support_user_settings_user ON support_user_settings (user)",
+        "CREATE INDEX idx_support_user_settings_is_support ON support_user_settings (is_support_agent)"
+      ],
+      "listRule": null,
+      "viewRule": "@request.auth.id = user",
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null
+    }
+  ]
+}
