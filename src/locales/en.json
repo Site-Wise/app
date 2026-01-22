@@ -125,6 +125,7 @@
     "serviceBookings": "Service Bookings",
     "quotations": "Quotations",
     "users": "Users",
+    "auditLogs": "Audit Logs",
     "settings": "Settings",
     "helpTour": "Show Help Tour",
     "profile": "Profile",
@@ -1507,5 +1508,35 @@
     "confirmDelete": "Are you sure you want to delete this saved setting?",
     "export": "Export Data",
     "exportCSV": "Export to CSV"
+  },
+  "auditLogs": {
+    "title": "Audit Logs",
+    "subtitle": "Track all changes made to your site data",
+    "filters": "Filters",
+    "entityType": "Entity Type",
+    "action": "Action",
+    "user": "User",
+    "role": "Role",
+    "dateRange": "Date Range",
+    "totalLogs": "Total Logs",
+    "activityLog": "Activity Log",
+    "showingLogs": "Showing {count} of {total} logs",
+    "noLogs": "No Audit Logs",
+    "noLogsDescription": "No changes have been recorded yet. Audit logs will appear here when data is created, updated, or deleted.",
+    "logDetails": "Log Details",
+    "entityName": "Entity Name",
+    "entityId": "Entity ID",
+    "changesDetail": "Changes Detail",
+    "oldValue": "Old Value",
+    "newValue": "New Value",
+    "recordCreated": "A new record was created",
+    "recordDeleted": "The record was deleted",
+    "unknownUser": "Unknown User",
+    "page": "Page {current} of {total}",
+    "actions": {
+      "create": "Created",
+      "update": "Updated",
+      "delete": "Deleted"
+    }
   }
 }

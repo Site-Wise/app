@@ -487,6 +487,35 @@ export interface AnalyticsResult {
   costOverTimeByTag: { tagId: string; tagName: string; data: { date: string; cost: number }[] }[];
 }
 
+// ========================================
+// AUDIT LOGS
+// ========================================
+
+export interface AuditLog {
+  id: string;
+  site: string;
+  user_id: string;
+  user_email: string;
+  user_role: 'owner' | 'supervisor' | 'accountant' | '';
+  action: 'CREATE' | 'UPDATE' | 'DELETE';
+  entity_type: string;
+  entity_id: string;
+  entity_name: string;
+  timestamp: string;
+  changes?: Record<string, { old: unknown; new: unknown }>;
+  created?: string;
+  updated?: string;
+}
+
+export interface AuditLogFilters {
+  entity_type?: string;
+  entity_id?: string;
+  user_id?: string;
+  action?: 'CREATE' | 'UPDATE' | 'DELETE';
+  from_date?: string;
+  to_date?: string;
+}
+
 // Site context management
 let currentSiteId: string | null = null;
 let currentUserRole: 'owner' | 'supervisor' | 'accountant' | null = null;
@@ -4960,6 +4989,153 @@ class AnalyticsSettingService {
   }
 }
 
+// ========================================
+// AUDIT LOG SERVICE
+// ========================================
+
+export class AuditLogService {
+  /**
+   * Get audit logs for the current site with optional filters
+   */
+  async getAll(filters?: AuditLogFilters, limit = 100, offset = 0): Promise<{ logs: AuditLog[]; totalCount: number }> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    // Only owners can view audit logs
+    const userRole = getCurrentUserRole();
+    if (userRole !== 'owner') {
+      throw new Error('Permission denied: Only site owners can view audit logs');
+    }
+
+    // Build filter string
+    const filterParts: string[] = [`site="${siteId}"`];
+
+    if (filters?.entity_type) {
+      filterParts.push(`entity_type="${filters.entity_type}"`);
+    }
+    if (filters?.entity_id) {
+      filterParts.push(`entity_id="${filters.entity_id}"`);
+    }
+    if (filters?.user_id) {
+      filterParts.push(`user_id="${filters.user_id}"`);
+    }
+    if (filters?.action) {
+      filterParts.push(`action="${filters.action}"`);
+    }
+    if (filters?.from_date) {
+      filterParts.push(`timestamp>="${filters.from_date}"`);
+    }
+    if (filters?.to_date) {
+      filterParts.push(`timestamp<="${filters.to_date}"`);
+    }
+
+    const filterString = filterParts.join(' && ');
+
+    const result = await pb.collection('audit_logs').getList(1 + Math.floor(offset / limit), limit, {
+      filter: filterString,
+      sort: '-timestamp'
+    });
+
+    return {
+      logs: result.items.map(record => this.mapRecordToAuditLog(record)),
+      totalCount: result.totalItems
+    };
+  }
+
+  /**
+   * Get audit logs for a specific entity
+   */
+  async getByEntity(entityType: string, entityId: string): Promise<AuditLog[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const userRole = getCurrentUserRole();
+    if (userRole !== 'owner') {
+      throw new Error('Permission denied: Only site owners can view audit logs');
+    }
+
+    const records = await pb.collection('audit_logs').getFullList({
+      filter: `site="${siteId}" && entity_type="${entityType}" && entity_id="${entityId}"`,
+      sort: '-timestamp'
+    });
+
+    return records.map(record => this.mapRecordToAuditLog(record));
+  }
+
+  /**
+   * Get distinct entity types that have been logged
+   */
+  async getEntityTypes(): Promise<string[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const userRole = getCurrentUserRole();
+    if (userRole !== 'owner') {
+      throw new Error('Permission denied: Only site owners can view audit logs');
+    }
+
+    // Get a sample of logs to extract unique entity types
+    const records = await pb.collection('audit_logs').getFullList({
+      filter: `site="${siteId}"`,
+      fields: 'entity_type'
+    });
+
+    const entityTypes = new Set<string>();
+    for (const record of records) {
+      entityTypes.add(record.entity_type);
+    }
+
+    return Array.from(entityTypes).sort();
+  }
+
+  /**
+   * Get distinct users who have made changes
+   */
+  async getUsers(): Promise<{ user_id: string; user_email: string }[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const userRole = getCurrentUserRole();
+    if (userRole !== 'owner') {
+      throw new Error('Permission denied: Only site owners can view audit logs');
+    }
+
+    const records = await pb.collection('audit_logs').getFullList({
+      filter: `site="${siteId}"`,
+      fields: 'user_id,user_email'
+    });
+
+    const usersMap = new Map<string, string>();
+    for (const record of records) {
+      if (record.user_id && !usersMap.has(record.user_id)) {
+        usersMap.set(record.user_id, record.user_email || '');
+      }
+    }
+
+    return Array.from(usersMap.entries())
+      .map(([user_id, user_email]) => ({ user_id, user_email }))
+      .sort((a, b) => a.user_email.localeCompare(b.user_email));
+  }
+
+  private mapRecordToAuditLog(record: RecordModel): AuditLog {
+    return {
+      id: record.id,
+      site: record.site,
+      user_id: record.user_id || '',
+      user_email: record.user_email || '',
+      user_role: record.user_role || '',
+      action: record.action,
+      entity_type: record.entity_type,
+      entity_id: record.entity_id,
+      entity_name: record.entity_name || '',
+      timestamp: record.timestamp,
+      changes: record.changes || undefined,
+      created: record.created,
+      updated: record.updated
+    };
+  }
+}
+
 export const authService = new AuthService();
 export const siteService = new SiteService();
 export const siteUserService = new SiteUserService();
@@ -4982,3 +5158,4 @@ export const creditNoteUsageService = new CreditNoteUsageService();
 export const deliveryService = new DeliveryService();
 export const deliveryItemService = new DeliveryItemService();
 export const analyticsSettingService = new AnalyticsSettingService();
+export const auditLogService = new AuditLogService();
