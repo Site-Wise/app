@@ -7,15 +7,56 @@
           {{ t('vendors.subtitle') }}
         </p>
       </div>
-      <button @click="handleAddVendor" :disabled="!canCreateVendor" :class="[
-        canCreateVendor ? 'btn-primary' : 'btn-disabled',
-        'hidden md:flex items-center'
-      ]"
-        :title="!canCreateVendor ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
-        data-keyboard-shortcut="n">
-        <Plus class="mr-2 h-4 w-4" />
-        {{ t('vendors.addVendor') }}
-      </button>
+      <div class="flex items-center space-x-3">
+        <!-- Export All Ledgers Dropdown -->
+        <div class="relative export-all-dropdown hidden md:block">
+          <button
+            @click="showExportDropdown = !showExportDropdown"
+            :disabled="exporting || vendors.length === 0"
+            :class="[
+              vendors.length > 0 && !exporting ? 'btn-outline' : 'btn-disabled',
+              'flex items-center'
+            ]"
+            :title="t('vendors.exportAllLedgers')"
+          >
+            <Loader2 v-if="exporting" class="mr-2 h-4 w-4 animate-spin" />
+            <Download v-else class="mr-2 h-4 w-4" />
+            <span v-if="exporting && exportTotal > 0">
+              {{ exportProgress }}/{{ exportTotal }}
+            </span>
+            <span v-else>{{ t('vendors.exportAllLedgers') }}</span>
+            <ChevronDown class="ml-2 h-4 w-4" />
+          </button>
+
+          <!-- Export Dropdown Menu -->
+          <div v-if="showExportDropdown && !exporting" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+            <div class="py-1">
+              <button @click="exportAllLedgersCSV(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <FileSpreadsheet class="mr-3 h-4 w-4 text-green-600" />
+                {{ t('vendors.exportCsv') }}
+              </button>
+              <button @click="exportAllLedgersPDF(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <FileText class="mr-3 h-4 w-4 text-red-600" />
+                {{ t('vendors.exportPdf') }}
+              </button>
+              <button @click="exportAllLedgersTally(); showExportDropdown = false" class="relative flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <FileText class="mr-3 h-4 w-4 text-blue-600" />
+                {{ t('vendors.exportTallyXml') }}
+                <StatusBadge type="beta" position="absolute" />
+              </button>
+            </div>
+          </div>
+        </div>
+        <button @click="handleAddVendor" :disabled="!canCreateVendor" :class="[
+          canCreateVendor ? 'btn-primary' : 'btn-disabled',
+          'hidden md:flex items-center'
+        ]"
+          :title="!canCreateVendor ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
+          data-keyboard-shortcut="n">
+          <Plus class="mr-2 h-4 w-4" />
+          {{ t('vendors.addVendor') }}
+        </button>
+      </div>
     </div>
 
     <!-- Search Box -->
@@ -187,7 +228,7 @@ import { ref, reactive, onMounted, computed, nextTick } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { useKeyboardShortcutSingle } from '../composables/useKeyboardShortcut';
 import { useRouter } from 'vue-router';
-import { Users, Plus, Edit2, Trash2, Loader2, Mail, Phone, MapPin } from 'lucide-vue-next';
+import { Users, Plus, Edit2, Trash2, Loader2, Mail, Phone, MapPin, Download, ChevronDown, FileSpreadsheet, FileText } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
@@ -202,11 +243,30 @@ import {
   serviceBookingService,
   paymentService,
   tagService,
+  vendorReturnService,
+  vendorCreditNoteService,
+  paymentAllocationService,
   VendorService,
   type Vendor,
+  type Delivery,
+  type Payment,
+  type VendorReturn,
+  type VendorCreditNote,
+  type PaymentAllocation,
   type Tag as TagType
 } from '../services/pocketbase';
+import { DeliveryPaymentCalculator, type DeliveryWithPaymentStatus } from '../services/deliveryUtils';
 import { usePermissions } from '../composables/usePermissions';
+import StatusBadge from '../components/StatusBadge.vue';
+import JSZip from 'jszip';
+import {
+  generateLedgerPDF,
+  getLedgerExportTranslations,
+  generateLedgerCSV,
+  getLedgerCSVTranslations,
+  type LedgerEntry
+} from '../services/ledgerExportUtils';
+import { TallyXmlExporter } from '../utils/tallyXmlExport';
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
@@ -248,6 +308,10 @@ const vendorTags = ref<Map<string, TagType[]>>(new Map());
 const showAddModal = ref(false);
 const editingVendor = ref<Vendor | null>(null);
 const loading = ref(false);
+const exporting = ref(false);
+const showExportDropdown = ref(false);
+const exportProgress = ref(0);
+const exportTotal = ref(0);
 
 const firstInputRef = ref<HTMLInputElement>();
 
@@ -433,6 +497,383 @@ const closeModal = () => {
   });
 };
 
+// Helper function to build ledger entries for a single vendor
+const buildVendorLedgerEntries = (
+  _vendorId: string,
+  vendorDeliveries: Delivery[],
+  vendorPayments: Payment[],
+  vendorReturns: VendorReturn[],
+  vendorCreditNotes: VendorCreditNote[],
+  allPaymentAllocations: PaymentAllocation[]
+): LedgerEntry[] => {
+  // Enhance deliveries with payment status
+  const enhancedDeliveries = DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus(
+    vendorDeliveries,
+    allPaymentAllocations.filter((pa: PaymentAllocation) =>
+      vendorDeliveries.some((d: Delivery) => d.id === pa.delivery)
+    )
+  );
+
+  const entries: LedgerEntry[] = [];
+
+  // Add delivery entries (debits)
+  enhancedDeliveries.forEach((delivery: DeliveryWithPaymentStatus) => {
+    let particulars = `${t('vendors.delivery')} #${delivery.id?.slice(-6) || t('vendors.unknown')}`;
+    if (delivery.delivery_reference) {
+      particulars = `Invoice: ${delivery.delivery_reference}`;
+    }
+
+    entries.push({
+      date: delivery.delivery_date,
+      particulars,
+      reference: delivery.delivery_reference || '',
+      debit: delivery.total_amount,
+      credit: 0,
+      runningBalance: 0
+    });
+  });
+
+  // Add return entries (credit note or refund)
+  vendorReturns.forEach((returnItem: VendorReturn) => {
+    if (returnItem.status === 'completed' || returnItem.status === 'refunded') {
+      if (returnItem.processing_option === 'credit_note') {
+        entries.push({
+          date: returnItem.completion_date || returnItem.return_date,
+          particulars: `Credit Note for Return #${returnItem.id?.slice(-6)}`,
+          reference: `RET-${returnItem.id?.slice(-6)}`,
+          debit: 0,
+          credit: returnItem.total_return_amount,
+          runningBalance: 0
+        });
+      } else if (returnItem.processing_option === 'refund') {
+        entries.push({
+          date: returnItem.completion_date || returnItem.return_date,
+          particulars: `Goods Returned #${returnItem.id?.slice(-6)}`,
+          reference: `RET-${returnItem.id?.slice(-6)}`,
+          debit: 0,
+          credit: returnItem.total_return_amount,
+          runningBalance: 0
+        });
+      }
+    }
+  });
+
+  // Add standalone credit notes (not related to returns)
+  vendorCreditNotes.forEach((creditNote: VendorCreditNote) => {
+    const isReturnRelated = vendorReturns.some((returnItem: VendorReturn) =>
+      returnItem.processing_option === 'credit_note' &&
+      returnItem.reason === creditNote.reason &&
+      returnItem.total_return_amount === creditNote.credit_amount
+    );
+
+    if (creditNote.credit_amount > 0 && !isReturnRelated) {
+      entries.push({
+        date: creditNote.issue_date,
+        particulars: `${t('vendors.creditNoteIssued')} - ${creditNote.reason || ''}`,
+        reference: creditNote.reference || `CN-${creditNote.id?.slice(-6)}`,
+        debit: 0,
+        credit: creditNote.credit_amount,
+        runningBalance: 0
+      });
+    }
+  });
+
+  // Add payment entries (credits)
+  vendorPayments.forEach((payment: Payment) => {
+    entries.push({
+      date: payment.payment_date,
+      particulars: `${t('vendors.paymentMade')} - ${payment.reference || t('common.payment')}`,
+      reference: payment.reference || '',
+      debit: 0,
+      credit: payment.amount,
+      runningBalance: 0
+    });
+  });
+
+  // Sort entries by date
+  entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  // Calculate running balance (Debit increases balance, Credit decreases balance)
+  let runningBalance = 0;
+  entries.forEach(entry => {
+    runningBalance += entry.debit - entry.credit;
+    entry.runningBalance = runningBalance;
+  });
+
+  return entries;
+};
+
+// Helper to sanitize filename
+const sanitizeFilename = (name: string): string => {
+  return name.replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '_').substring(0, 50);
+};
+
+// Export all vendor ledgers as CSV files in a ZIP
+const exportAllLedgersCSV = async () => {
+  if (vendors.value.length === 0) return;
+
+  exporting.value = true;
+  exportProgress.value = 0;
+  exportTotal.value = vendors.value.length;
+
+  try {
+    const zip = new JSZip();
+
+    // Load all data needed for ledger entries
+    const [allPaymentAllocations, allReturns, allCreditNotes] = await Promise.all([
+      paymentAllocationService.getAll(),
+      vendorReturnService.getAll(),
+      vendorCreditNoteService.getAll()
+    ]);
+
+    let filesCreated = 0;
+
+    // Process each vendor
+    for (const vendor of vendors.value) {
+      const vendorId = vendor.id!;
+      const vendorName = vendor.contact_person || vendor.name || t('common.unnamedVendor');
+
+      // Filter data for this vendor
+      const vendorDeliveries = deliveries.value.filter((d: Delivery) => d.vendor === vendorId);
+      const vendorPayments = payments.value.filter((p: Payment) => p.vendor === vendorId);
+      const vendorReturns = allReturns.filter((r: VendorReturn) => r.vendor === vendorId);
+      const vendorCreditNotes = allCreditNotes.filter((cn: VendorCreditNote) => cn.vendor === vendorId);
+
+      const entries = buildVendorLedgerEntries(
+        vendorId,
+        vendorDeliveries,
+        vendorPayments,
+        vendorReturns,
+        vendorCreditNotes,
+        allPaymentAllocations
+      );
+
+      if (entries.length > 0) {
+        // Use shared CSV generation utility
+        const csvContent = generateLedgerCSV({
+          vendorName,
+          entries,
+          openingBalance: 0,
+          hasOpeningBalance: false,
+          translations: getLedgerCSVTranslations(t)
+        });
+        const filename = `${sanitizeFilename(vendorName)}_Ledger.csv`;
+        zip.file(filename, csvContent);
+        filesCreated++;
+      }
+
+      exportProgress.value++;
+    }
+
+    if (filesCreated === 0) {
+      error(t('vendors.noLedgerEntries'));
+      return;
+    }
+
+    // Generate and download ZIP
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(zipBlob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `All_Vendor_Ledgers_CSV_${new Date().toISOString().split('T')[0]}.zip`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    success(t('vendors.exportAllLedgersSuccess'));
+  } catch (err) {
+    console.error('Error exporting all ledgers:', err);
+    error(t('messages.error'));
+  } finally {
+    exporting.value = false;
+    exportProgress.value = 0;
+    exportTotal.value = 0;
+  }
+};
+
+// Export all vendor ledgers as PDF files in a ZIP
+const exportAllLedgersPDF = async () => {
+  if (vendors.value.length === 0) return;
+
+  exporting.value = true;
+  exportProgress.value = 0;
+  exportTotal.value = vendors.value.length;
+
+  try {
+    const zip = new JSZip();
+
+    // Load all data needed for ledger entries
+    const [allPaymentAllocations, allReturns, allCreditNotes] = await Promise.all([
+      paymentAllocationService.getAll(),
+      vendorReturnService.getAll(),
+      vendorCreditNoteService.getAll()
+    ]);
+
+    let filesCreated = 0;
+
+    // Process each vendor
+    for (const vendor of vendors.value) {
+      const vendorId = vendor.id!;
+      const vendorName = vendor.contact_person || vendor.name || t('common.unnamedVendor');
+
+      // Filter data for this vendor
+      const vendorDeliveries = deliveries.value.filter((d: Delivery) => d.vendor === vendorId);
+      const vendorPayments = payments.value.filter((p: Payment) => p.vendor === vendorId);
+      const vendorReturns = allReturns.filter((r: VendorReturn) => r.vendor === vendorId);
+      const vendorCreditNotes = allCreditNotes.filter((cn: VendorCreditNote) => cn.vendor === vendorId);
+
+      const entries = buildVendorLedgerEntries(
+        vendorId,
+        vendorDeliveries,
+        vendorPayments,
+        vendorReturns,
+        vendorCreditNotes,
+        allPaymentAllocations
+      );
+
+      if (entries.length > 0) {
+        // Use shared PDF generation utility
+        const doc = await generateLedgerPDF({
+          vendorName,
+          contactPerson: vendor.contact_person,
+          entries,
+          openingBalance: 0,
+          hasOpeningBalance: false,
+          translations: getLedgerExportTranslations(t)
+        });
+
+        const pdfBlob = doc.output('blob');
+        const filename = `${sanitizeFilename(vendorName)}_Ledger.pdf`;
+        zip.file(filename, pdfBlob);
+        filesCreated++;
+      }
+
+      exportProgress.value++;
+    }
+
+    if (filesCreated === 0) {
+      error(t('vendors.noLedgerEntries'));
+      return;
+    }
+
+    // Generate and download ZIP
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(zipBlob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `All_Vendor_Ledgers_PDF_${new Date().toISOString().split('T')[0]}.zip`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    success(t('vendors.exportAllLedgersSuccess'));
+  } catch (err) {
+    console.error('Error exporting all ledgers as PDF:', err);
+    error(t('messages.error'));
+  } finally {
+    exporting.value = false;
+    exportProgress.value = 0;
+    exportTotal.value = 0;
+  }
+};
+
+// Export all vendor ledgers as Tally XML files in a ZIP
+const exportAllLedgersTally = async () => {
+  if (vendors.value.length === 0) return;
+
+  exporting.value = true;
+  exportProgress.value = 0;
+  exportTotal.value = vendors.value.length;
+
+  try {
+    const zip = new JSZip();
+
+    // Load all data needed for ledger entries
+    const [allPaymentAllocations, allReturns, allCreditNotes] = await Promise.all([
+      paymentAllocationService.getAll(),
+      vendorReturnService.getAll(),
+      vendorCreditNoteService.getAll()
+    ]);
+
+    let filesCreated = 0;
+
+    // Process each vendor
+    for (const vendor of vendors.value) {
+      const vendorId = vendor.id!;
+      const vendorName = vendor.contact_person || vendor.name || t('common.unnamedVendor');
+
+      // Filter data for this vendor
+      const vendorDeliveries = deliveries.value.filter((d: Delivery) => d.vendor === vendorId);
+      const vendorPayments = payments.value.filter((p: Payment) => p.vendor === vendorId);
+      const vendorReturns = allReturns.filter((r: VendorReturn) => r.vendor === vendorId);
+      const vendorCreditNotes = allCreditNotes.filter((cn: VendorCreditNote) => cn.vendor === vendorId);
+
+      const entries = buildVendorLedgerEntries(
+        vendorId,
+        vendorDeliveries,
+        vendorPayments,
+        vendorReturns,
+        vendorCreditNotes,
+        allPaymentAllocations
+      );
+
+      if (entries.length > 0) {
+        // Use shared TallyXmlExporter utility
+        const ledgerData = TallyXmlExporter.prepareLedgerData(
+          vendor,
+          vendorDeliveries,
+          vendorPayments,
+          vendorCreditNotes,
+          [], // No credit note usages needed for bulk export
+          vendorReturns
+        );
+        const xmlContent = TallyXmlExporter.generateVendorLedgerXml(ledgerData, {
+          companyName: 'SiteWise Construction',
+          periodFrom: '01-04-2024',
+          periodTo: '31-03-2025',
+          includeNarration: true,
+          includeVoucherNumber: true
+        });
+        const filename = `${sanitizeFilename(vendorName)}_Ledger.xml`;
+        zip.file(filename, xmlContent);
+        filesCreated++;
+      }
+
+      exportProgress.value++;
+    }
+
+    if (filesCreated === 0) {
+      error(t('vendors.noLedgerEntries'));
+      return;
+    }
+
+    // Generate and download ZIP
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(zipBlob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `All_Vendor_Ledgers_Tally_${new Date().toISOString().split('T')[0]}.zip`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    success(t('vendors.exportAllLedgersSuccess'));
+  } catch (err) {
+    console.error('Error exporting all ledgers as Tally XML:', err);
+    error(t('messages.error'));
+  } finally {
+    exporting.value = false;
+    exportProgress.value = 0;
+    exportTotal.value = 0;
+  }
+};
+
 const handleQuickAction = async () => {
   showAddModal.value = true;
   await nextTick();
@@ -446,6 +887,15 @@ useKeyboardShortcutSingle('n', handleAddVendor, { shiftKey: true, altKey: true }
 
 // Event listeners using @vueuse/core
 useEventListener(window, 'show-add-modal', handleQuickAction);
+
+// Handle click outside to close export dropdown
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+  if (showExportDropdown.value && !target.closest('.export-all-dropdown')) {
+    showExportDropdown.value = false;
+  }
+};
+useEventListener(document, 'click', handleClickOutside);
 
 onMounted(() => {
   // Data loading is handled automatically by useSiteData
