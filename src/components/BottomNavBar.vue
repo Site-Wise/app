@@ -1,6 +1,6 @@
 <template>
   <nav
-    class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 h-nav-safe"
+    class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 h-nav-safe will-change-transform"
     role="navigation"
     :aria-label="t('nav.mainNavigation')"
   >
