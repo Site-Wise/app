@@ -195,6 +195,11 @@
     "createNewAccount": "Create new account",
     "createAccount": "Create Account",
     "backToLogin": "Back to login",
+    "phoneInvalid": "Please enter a valid 10-digit mobile number (without country code)",
+    "emailInvalid": "Please enter a valid email address",
+    "emailNotVerified": "Please verify your email address before logging in. A new verification link has been sent to your email.",
+    "registrationSuccessTitle": "Account created successfully!",
+    "registrationSuccessMessage": "Please check your email and click the verification link to activate your account before logging in.",
     "turnstileRequired": "Please complete the security verification",
     "turnstileError": "Security verification failed. Please try again.",
     "turnstileExpired": "Security verification expired. Please complete it again."
