@@ -301,50 +301,61 @@
         <!-- Modal Panel -->
         <div class="relative w-full max-w-5xl transform rounded-lg bg-white dark:bg-gray-800 shadow-xl transition-all max-h-[90vh] flex flex-col">
           <!-- Header -->
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-6 border-b border-gray-200 dark:border-gray-700 gap-4">
-            <div class="flex-shrink-0">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ t('vendors.vendorLedger') }}
-              </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {{ vendor?.name || vendor?.contact_person }}
-              </p>
+          <div class="relative p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+            <!-- Close button - always top-right -->
+            <button @click="closeLedgerModal" class="absolute top-4 right-4 sm:top-6 sm:right-6 p-1 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 z-10">
+              <X class="h-5 w-5" />
+            </button>
+
+            <!-- Title row -->
+            <div class="flex items-start justify-between pr-8 mb-4">
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                  {{ t('vendors.vendorLedger') }}
+                </h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  {{ vendor?.name || vendor?.contact_person }}
+                </p>
+              </div>
             </div>
 
-            <!-- Date Filter Section -->
-            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-              <div class="flex items-center gap-2">
-                <label class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ t('vendors.from') }}:</label>
-                <input
-                  v-model="ledgerFromDate"
-                  type="date"
-                  class="input text-sm py-1.5 px-2 w-32"
-                  :placeholder="t('vendors.beginning')"
-                />
+            <!-- Filters and actions row -->
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+              <!-- Date Filter Section - full width on mobile -->
+              <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1">
+                <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-3">
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                    <label class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ t('vendors.from') }}:</label>
+                    <input
+                      v-model="ledgerFromDate"
+                      type="date"
+                      class="input text-sm py-2 sm:py-1.5 px-3 sm:px-2 w-full sm:w-32"
+                      :placeholder="t('vendors.beginning')"
+                    />
+                  </div>
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                    <label class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ t('vendors.to') }}:</label>
+                    <input
+                      v-model="ledgerToDate"
+                      type="date"
+                      class="input text-sm py-2 sm:py-1.5 px-3 sm:px-2 w-full sm:w-32"
+                    />
+                  </div>
+                </div>
+                <button
+                  v-if="isDateFilterActive"
+                  @click="resetDateFilter"
+                  class="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1 self-start sm:self-auto min-h-[44px] sm:min-h-0"
+                  :title="t('vendors.resetDateFilter')"
+                >
+                  <RotateCcw class="h-4 w-4" />
+                  <span>{{ t('vendors.reset') }}</span>
+                </button>
               </div>
-              <div class="flex items-center gap-2">
-                <label class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ t('vendors.to') }}:</label>
-                <input
-                  v-model="ledgerToDate"
-                  type="date"
-                  class="input text-sm py-1.5 px-2 w-32"
-                />
-              </div>
-              <button
-                v-if="isDateFilterActive"
-                @click="resetDateFilter"
-                class="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
-                :title="t('vendors.resetDateFilter')"
-              >
-                <RotateCcw class="h-4 w-4" />
-                <span class="hidden sm:inline">{{ t('vendors.reset') }}</span>
-              </button>
-            </div>
 
-            <div class="flex items-center gap-3 flex-shrink-0">
               <!-- Export Dropdown -->
-              <div class="relative export-dropdown">
-                <button @click="showExportDropdown = !showExportDropdown" class="btn-outline flex items-center text-sm">
+              <div class="relative export-dropdown flex-shrink-0">
+                <button @click="showExportDropdown = !showExportDropdown" class="btn-outline flex items-center text-sm w-full sm:w-auto justify-center min-h-[44px] sm:min-h-0">
                   <Download class="mr-2 h-4 w-4" />
                   {{ t('vendors.exportLedger') }}
                   <ChevronDown class="ml-2 h-4 w-4" />
@@ -353,15 +364,15 @@
                 <!-- Export Dropdown Menu -->
                 <div v-if="showExportDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
                   <div class="py-1">
-                    <button @click="exportLedger(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <button @click="exportLedger(); showExportDropdown = false" class="flex items-center w-full px-4 py-3 sm:py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                       <FileSpreadsheet class="mr-3 h-4 w-4 text-green-600" />
                       {{ t('vendors.exportCsv') }}
                     </button>
-                    <button @click="exportLedgerPDF(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <button @click="exportLedgerPDF(); showExportDropdown = false" class="flex items-center w-full px-4 py-3 sm:py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                       <FileText class="mr-3 h-4 w-4 text-red-600" />
                       {{ t('vendors.exportPdf') }}
                     </button>
-                    <button @click="exportTallyXml(); showExportDropdown = false" class="relative flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <button @click="exportTallyXml(); showExportDropdown = false" class="relative flex items-center w-full px-4 py-3 sm:py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                       <FileText class="mr-3 h-4 w-4 text-blue-600" />
                       {{ t('vendors.exportTallyXml') }}
                       <StatusBadge type="beta" position="absolute" />
@@ -369,9 +380,6 @@
                   </div>
                 </div>
               </div>
-              <button @click="closeLedgerModal" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
-                <X class="h-5 w-5" />
-              </button>
             </div>
           </div>
 
