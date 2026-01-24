@@ -137,10 +137,6 @@
             </button>
           </div>
 
-          <!-- Mobile Dropdown Menu -->
-          <div class="lg:hidden">
-            <CardDropdownMenu :actions="getVendorActions(vendor)" @action="handleVendorAction(vendor, $event)" />
-          </div>
         </div>
       </div>
 
@@ -235,7 +231,6 @@ import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
 import TagSelector from '../components/TagSelector.vue';
 import SearchBox from '../components/SearchBox.vue';
-import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import { useVendorSearch } from '../composables/useSearch';
 import {
   vendorService,
@@ -380,35 +375,6 @@ const reloadAllData = async () => {
   // Other data will be reloaded automatically by useSiteData
 };
 
-const getVendorActions = (_vendor: Vendor) => {
-  return [
-    {
-      key: 'edit',
-      label: t('common.edit'),
-      icon: Edit2,
-      variant: 'default' as const,
-      disabled: !canEditDelete
-    },
-    {
-      key: 'delete',
-      label: t('common.deleteAction'),
-      icon: Trash2,
-      variant: 'danger' as const,
-      disabled: !canEditDelete
-    }
-  ];
-};
-
-const handleVendorAction = (vendor: Vendor, action: string) => {
-  switch (action) {
-    case 'edit':
-      editVendor(vendor);
-      break;
-    case 'delete':
-      deleteVendor(vendor.id!);
-      break;
-  }
-};
 
 const handleAddVendor = async () => {
   if (!canCreateVendor) {

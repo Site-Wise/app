@@ -93,10 +93,6 @@
             </button>
           </div>
 
-          <!-- Mobile Dropdown Menu -->
-          <div class="lg:hidden" data-tour="mobile-actions-menu">
-            <CardDropdownMenu :actions="getItemActions(item)" @action="handleItemAction(item, $event)" />
-          </div>
         </div>
       </div>
 
@@ -188,7 +184,6 @@ import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
 import TagSelector from '../components/TagSelector.vue';
 import SearchBox from '../components/SearchBox.vue';
-import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import { useItemSearch } from '../composables/useSearch';
 import {
   itemService,
@@ -306,45 +301,6 @@ const viewItemDetail = (itemId: string) => {
   router.push(`/items/${itemId}`);
 };
 
-const getItemActions = (_item: Item) => {
-  return [
-    {
-      key: 'edit',
-      label: t('items.editItem'),
-      icon: Edit2,
-      variant: 'default' as const,
-      disabled: !canEditDelete
-    },
-    {
-      key: 'clone',
-      label: t('items.cloneItem'),
-      icon: Copy,
-      variant: 'default' as const,
-      disabled: !canCreateItem
-    },
-    {
-      key: 'delete',
-      label: t('items.deleteItem'),
-      icon: Trash2,
-      variant: 'danger' as const,
-      disabled: !canEditDelete
-    }
-  ];
-};
-
-const handleItemAction = (item: Item, action: string) => {
-  switch (action) {
-    case 'edit':
-      editItem(item);
-      break;
-    case 'clone':
-      cloneItem(item);
-      break;
-    case 'delete':
-      deleteItem(item.id!);
-      break;
-  }
-};
 
 const handleAddItem = async () => {
   if (!canCreateItem) {

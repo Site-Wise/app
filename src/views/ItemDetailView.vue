@@ -12,7 +12,8 @@
           <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Item Details & Delivery History</p>
         </div>
       </div>
-      <div class="flex items-center space-x-3">
+      <!-- Desktop Actions -->
+      <div class="hidden md:flex items-center space-x-3">
         <button @click="exportItemReport" class="btn-outline">
           <Download class="mr-2 h-4 w-4" />
           Export Report
@@ -21,6 +22,42 @@
           <TruckIcon class="mr-2 h-4 w-4" />
           Record Delivery
         </button>
+        <button @click="openEditModal()" class="btn-outline flex items-center">
+          <Edit2 class="mr-2 h-4 w-4" />
+          {{ t('common.edit') }}
+        </button>
+        <button @click="handleDelete()" class="btn-outline text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/20 flex items-center">
+          <Trash2 class="mr-2 h-4 w-4" />
+          {{ t('common.deleteAction') }}
+        </button>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div class="md:hidden relative mobile-menu">
+        <button @click="showMobileMenu = !showMobileMenu" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <MoreVertical class="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        </button>
+        <div v-if="showMobileMenu" class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+          <div class="py-1">
+            <button @click="showMobileMenu = false; exportItemReport()" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <Download class="mr-3 h-5 w-5 text-gray-600" />
+              Export Report
+            </button>
+            <button @click="showMobileMenu = false; recordDelivery()" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <TruckIcon class="mr-3 h-5 w-5 text-gray-600" />
+              Record Delivery
+            </button>
+            <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+            <button @click="showMobileMenu = false; openEditModal()" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <Edit2 class="mr-3 h-5 w-5 text-gray-600" />
+              {{ t('common.edit') }}
+            </button>
+            <button @click="showMobileMenu = false; handleDelete()" class="flex items-center w-full px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+              <Trash2 class="mr-3 h-5 w-5 text-red-500" />
+              {{ t('common.deleteAction') }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -194,6 +231,100 @@
         </div>
       </div>
     </div>
+
+    <!-- Edit Item Modal -->
+    <div v-if="showEditModal"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="closeEditModal"
+      @keydown.esc="closeEditModal" tabindex="-1">
+      <div
+        class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4 mb-20 lg:mb-4"
+        @click.stop>
+        <div class="mt-3">
+          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            {{ t('items.editItem') }}
+          </h3>
+
+          <form @submit.prevent="saveItem" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.name') }}</label>
+              <input ref="editNameInputRef" v-model="editForm.name" type="text" required class="input mt-1"
+                :placeholder="t('forms.enterItemName')" autofocus />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.description') }}</label>
+              <textarea v-model="editForm.description" class="input mt-1" rows="3"
+                :placeholder="t('forms.enterDescription')"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.unit') }}</label>
+              <select v-model="editForm.unit" required class="input mt-1">
+                <option value="">{{ t('forms.selectUnit') }}</option>
+                <option value="pcs">{{ t('units.pcs') }} (pcs)</option>
+                <option value="pkt">{{ t('units.pkt') }} (pkt)</option>
+                <option value="each">{{ t('units.each') }} (each)</option>
+                <option value="ft">{{ t('units.ft') }} (ft)</option>
+                <option value="m">{{ t('units.m') }} (m)</option>
+                <option value="m2">{{ t('units.m2') }} (m²)</option>
+                <option value="sqft">{{ t('units.sqft') }} (sqft)</option>
+                <option value="m3">{{ t('units.m3') }} (m³)</option>
+                <option value="ft3">{{ t('units.ft3') }} (ft³)</option>
+                <option value="l">{{ t('units.l') }} (l)</option>
+                <option value="kg">{{ t('units.kg') }} (kg)</option>
+                <option value="ton">{{ t('units.ton') }} (ton)</option>
+                <option value="bag">{{ t('units.bag') }} (bag)</option>
+                <option value="box">{{ t('units.box') }} (box)</option>
+              </select>
+            </div>
+
+            <div class="flex space-x-3 pt-4">
+              <button type="submit" :disabled="editLoading" class="flex-1 btn-primary">
+                <Loader2 v-if="editLoading" class="mr-2 h-4 w-4 animate-spin" />
+                {{ t('common.update') }}
+              </button>
+              <button type="button" @click="closeEditModal" class="flex-1 btn-outline">
+                {{ t('common.cancel') }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="closeDeleteModal"
+      @keydown.esc="closeDeleteModal" tabindex="-1">
+      <div
+        class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4"
+        @click.stop>
+        <div class="mt-3">
+          <div class="flex items-center mb-4">
+            <div class="p-2 bg-red-100 dark:bg-red-900/30 rounded-full mr-3">
+              <AlertTriangle class="h-6 w-6 text-red-600 dark:text-red-400" />
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+              {{ t('common.deleteAction') }} {{ t('common.item') }}
+            </h3>
+          </div>
+
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            {{ deleteConfirmMessage }}
+          </p>
+
+          <div class="flex space-x-3 pt-2">
+            <button @click="confirmDelete" :disabled="deleteLoading" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+              <Loader2 v-if="deleteLoading" class="mr-2 h-4 w-4 animate-spin inline" />
+              {{ t('common.deleteAction') }}
+            </button>
+            <button @click="closeDeleteModal" class="flex-1 btn-outline">
+              {{ t('common.cancel') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div v-else class="flex items-center justify-center min-h-96">
@@ -202,9 +333,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from 'vue';
+import { ref, reactive, onMounted, computed, nextTick } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { useI18n } from '../composables/useI18n';
+import { useToast } from '../composables/useToast';
 import { useRoute, useRouter } from 'vue-router';
 import {
   ArrowLeft,
@@ -214,7 +346,11 @@ import {
   DollarSign,
   BarChart3,
   Eye,
-  Loader2
+  Loader2,
+  Edit2,
+  Trash2,
+  AlertTriangle,
+  MoreVertical
 } from 'lucide-vue-next';
 import {
   itemService,
@@ -234,10 +370,24 @@ interface ExtendedDeliveryItem extends DeliveryItem {
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const { success, error: showError } = useToast();
 
 const item = ref<Item | null>(null);
 const itemDeliveries = ref<ExtendedDeliveryItem[]>([]);
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
+const showMobileMenu = ref(false);
+
+// Edit/Delete state
+const showEditModal = ref(false);
+const editLoading = ref(false);
+const showDeleteModal = ref(false);
+const deleteLoading = ref(false);
+const editNameInputRef = ref<HTMLInputElement>();
+const editForm = reactive({
+  name: '',
+  description: '',
+  unit: ''
+});
 
 const totalDeliveredQuantity = computed(() => {
   return itemDeliveries.value.reduce((sum, deliveryItem) => sum + deliveryItem.quantity, 0);
@@ -509,11 +659,90 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
 };
 
+// Delete confirmation message with related entries info
+const deleteConfirmMessage = computed(() => {
+  if (itemDeliveries.value.length > 0) {
+    return t('messages.confirmDeleteWithRelated', {
+      item: t('common.item'),
+      details: t('messages.relatedDeliveries', { count: itemDeliveries.value.length })
+    });
+  }
+  return t('messages.confirmDelete', { item: t('common.item') });
+});
+
+// Edit item functions
+const openEditModal = async () => {
+  if (!item.value) return;
+  Object.assign(editForm, {
+    name: item.value.name,
+    description: item.value.description || '',
+    unit: item.value.unit
+  });
+  showEditModal.value = true;
+  await nextTick();
+  editNameInputRef.value?.focus();
+};
+
+const closeEditModal = () => {
+  showEditModal.value = false;
+};
+
+const saveItem = async () => {
+  if (!item.value) return;
+
+  editLoading.value = true;
+  try {
+    await itemService.update(item.value.id!, editForm);
+    success(t('messages.updateSuccess', { item: t('common.item') }));
+    closeEditModal();
+    await loadItemData();
+  } catch (err) {
+    console.error('Error updating item:', err);
+    showError(t('messages.error'));
+  } finally {
+    editLoading.value = false;
+  }
+};
+
+// Delete item functions
+const handleDelete = () => {
+  showDeleteModal.value = true;
+};
+
+const closeDeleteModal = () => {
+  showDeleteModal.value = false;
+};
+
+const confirmDelete = async () => {
+  if (!item.value) return;
+
+  deleteLoading.value = true;
+  try {
+    await itemService.delete(item.value.id!);
+    success(t('messages.deleteSuccess', { item: t('common.item') }));
+    router.push('/items');
+  } catch (err) {
+    console.error('Error deleting item:', err);
+    showError(t('messages.error'));
+  } finally {
+    deleteLoading.value = false;
+  }
+};
+
 // Event listeners using @vueuse/core
 const handleResize = () => {
   setTimeout(drawPriceChart, 100);
 };
 useEventListener(window, 'resize', handleResize);
+
+// Click outside handler for mobile menu
+const handleClickOutside = (event: Event) => {
+  const mobileMenu = document.querySelector('.mobile-menu');
+  if (mobileMenu && !mobileMenu.contains(event.target as Node)) {
+    showMobileMenu.value = false;
+  }
+};
+useEventListener(document, 'click', handleClickOutside);
 
 onMounted(() => {
   loadItemData();
