@@ -54,6 +54,19 @@
         <!-- Login Form -->
         <div v-if="activeTab === 'login'" class="mt-6" role="tabpanel" id="login-panel" aria-labelledby="login-tab">
           <form @submit.prevent="handleLogin" class="space-y-6">
+            <div v-if="registrationSuccess" class="rounded-md bg-green-50 dark:bg-green-900/30 p-4">
+              <div class="flex">
+                <CheckCircle2 class="h-5 w-5 text-green-500 dark:text-green-400 flex-shrink-0" />
+                <div class="ml-3">
+                  <h3 class="text-sm font-medium text-green-800 dark:text-green-300">
+                    {{ t('auth.registrationSuccessTitle') }}
+                  </h3>
+                  <p class="mt-1 text-sm text-green-700 dark:text-green-400">
+                    {{ t('auth.registrationSuccessMessage') }}
+                  </p>
+                </div>
+              </div>
+            </div>
             <div v-if="error" class="rounded-md bg-error-50 dark:bg-error-900/30 p-4">
               <div class="flex">
                 <AlertCircle class="h-5 w-5 text-error-400 dark:text-error-300" />
@@ -192,8 +205,16 @@
                   autocomplete="email"
                   required
                   class="input"
+                  :class="[
+                    registerForm.email && !isEmailValid
+                      ? 'border-error-500 focus:border-error-500 focus:ring-error-500 dark:border-error-500'
+                      : ''
+                  ]"
                   :placeholder="t('forms.enterEmail')"
                 />
+              </div>
+              <div v-if="registerForm.email && !isEmailValid" class="mt-1 text-sm text-error-600 dark:text-error-400">
+                {{ t('auth.emailInvalid') }}
               </div>
             </div>
 
@@ -218,8 +239,17 @@
                   autocomplete="tel"
                   required
                   class="input rounded-l-none flex-1"
+                  :class="[
+                    registerForm.phone && !isPhoneValid
+                      ? 'border-error-500 focus:border-error-500 focus:ring-error-500 dark:border-error-500'
+                      : ''
+                  ]"
                   :placeholder="t('forms.enterPhoneNumber')"
+                  maxlength="15"
                 />
+              </div>
+              <div v-if="registerForm.phone && !isPhoneValid" class="mt-1 text-sm text-error-600 dark:text-error-400">
+                {{ t('auth.phoneInvalid') }}
               </div>
             </div>
 
@@ -359,8 +389,8 @@
             <div class="flex space-x-3">
               <button
                 type="submit"
-                :disabled="registerLoading || !registerTurnstileToken || !passwordsMatch || !registerForm.legalAccepted"
-                class="flex-1 btn-primary"
+                :disabled="registerLoading || !registerTurnstileToken || !passwordsMatch || !registerForm.legalAccepted || !isPhoneValid || !isEmailValid"
+                class="flex-1 btn-primary disabled:btn-disabled disabled:pointer-events-none disabled:cursor-not-allowed"
               >
                 <Loader2 v-if="registerLoading" class="mr-2 h-4 w-4 animate-spin" />
                 {{ t('auth.createAccount') }}
@@ -400,12 +430,12 @@ import { useAuth } from '../composables/useAuth';
 import { useSite } from '../composables/useSite';
 import { useI18n } from '../composables/useI18n';
 import { useTheme } from '../composables/useTheme';
-import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-vue-next';
+import { AlertCircle, CheckCircle2, Loader2, Eye, EyeOff } from 'lucide-vue-next';
 import TurnstileWidget from '../components/TurnstileWidget.vue';
 import LegalModal from '../components/LegalModal.vue';
 
 const router = useRouter();
-const { login, register } = useAuth();
+const { login, register, logout, requestEmailVerification } = useAuth();
 const { t } = useI18n();
 const { isDark } = useTheme();
 
@@ -416,6 +446,7 @@ const activeTab = ref('login');
 const showValidationErrors = ref(false);
 const showTermsModal = ref(false);
 const showPrivacyModal = ref(false);
+const registrationSuccess = ref(false);
 
 // Password visibility states
 const showLoginPassword = ref(false);
@@ -445,6 +476,36 @@ const registerForm = reactive({
   legalAccepted: false
 });
 
+// Phone validation
+const sanitizedPhone = computed(() => {
+  let phone = registerForm.phone.trim();
+  // Strip common prefixes users might add redundantly
+  if (phone.startsWith('+91')) {
+    phone = phone.slice(3);
+  } else if (phone.startsWith('91') && phone.length > 10) {
+    phone = phone.slice(2);
+  } else if (phone.startsWith('0')) {
+    phone = phone.slice(1);
+  }
+  // Remove any spaces, dashes, or dots
+  phone = phone.replace(/[\s\-\.]/g, '');
+  return phone;
+});
+
+const isPhoneValid = computed(() => {
+  if (!registerForm.phone) return true; // required handled by HTML
+  const phone = sanitizedPhone.value;
+  // Indian mobile numbers: exactly 10 digits, starting with 6-9
+  return /^[6-9]\d{9}$/.test(phone);
+});
+
+// Email validation
+const isEmailValid = computed(() => {
+  if (!registerForm.email) return true; // required handled by HTML
+  // Standard email format check
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerForm.email.trim());
+});
+
 // Password validation
 const passwordsMatch = computed(() => {
   return registerForm.password === registerForm.confirmPassword;
@@ -458,10 +519,28 @@ const handleLogin = async () => {
 
   loading.value = true;
   error.value = '';
-  
+  registrationSuccess.value = false;
+
   try {
     const result = await login(form.email, form.password, turnstileToken.value);
     if (result.success) {
+      // Check if user's email is verified
+      if (!result.verified) {
+        // User not verified - log them out and show message
+        await logout();
+        error.value = t('auth.emailNotVerified');
+        // Offer to resend verification email
+        try {
+          await requestEmailVerification(form.email);
+        } catch (e) {
+          // Ignore - just informing the user
+        }
+        if (loginTurnstileRef.value && typeof loginTurnstileRef.value.reset === 'function') {
+          loginTurnstileRef.value.reset();
+          turnstileToken.value = '';
+        }
+        return;
+      }
       // Load user sites before navigation to prevent race condition
       const { loadUserSites } = useSite();
       await loadUserSites();
@@ -499,6 +578,18 @@ const handleRegister = async () => {
     return;
   }
 
+  // Validate email format
+  if (!isEmailValid.value) {
+    error.value = t('auth.emailInvalid');
+    return;
+  }
+
+  // Validate phone number
+  if (!isPhoneValid.value) {
+    error.value = t('auth.phoneInvalid');
+    return;
+  }
+
   // Validate passwords match
   if (!passwordsMatch.value) {
     error.value = t('auth.passwordsDoNotMatch');
@@ -507,26 +598,30 @@ const handleRegister = async () => {
 
   registerLoading.value = true;
   error.value = '';
-  
+
   try {
     const result = await register(
-      registerForm.email, 
-      registerForm.password, 
-      registerForm.name, 
+      registerForm.email,
+      registerForm.password,
+      registerForm.name,
       registerTurnstileToken.value,
-      registerForm.phone,
+      sanitizedPhone.value,
       registerForm.countryCode,
       registerForm.couponCode,
       registerForm.legalAccepted
     );
     if (result.success) {
+      // Request email verification
+      try {
+        await requestEmailVerification(registerForm.email);
+      } catch (verifyErr) {
+        // Don't block registration if verification request fails
+        console.warn('Email verification request failed:', verifyErr);
+      }
+      // Switch to login tab and show verification message
       activeTab.value = 'login';
       error.value = '';
-      // Auto-login after registration (without requiring another Turnstile)
-      const loginResult = await login(registerForm.email, registerForm.password);
-      if (loginResult.success) {
-        router.push('/');
-      }
+      registrationSuccess.value = true;
     } else {
       error.value = result.error || t('auth.registrationFailed');
       // Reset Turnstile on failure
