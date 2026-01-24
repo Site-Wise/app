@@ -130,10 +130,6 @@
             </button>
           </div>
 
-          <!-- Mobile Dropdown Menu -->
-          <div class="lg:hidden">
-            <CardDropdownMenu :actions="getServiceActions(service)" @action="handleServiceAction(service, $event)" />
-          </div>
         </div>
       </div>
 
@@ -270,7 +266,6 @@ import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
 import { useModalState } from '../composables/useModalState';
 import TagSelector from '../components/TagSelector.vue';
-import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import SearchBox from '../components/SearchBox.vue';
 import {
   serviceService,
@@ -453,45 +448,6 @@ const closeModal = () => {
   closeModalState('services-edit-modal');
 };
 
-const getServiceActions = (service: Service) => {
-  return [
-    {
-      key: 'edit',
-      label: t('common.edit'),
-      icon: Edit2,
-      variant: 'default' as const,
-      hidden: !canUpdate.value
-    },
-    {
-      key: 'toggle-status',
-      label: service.is_active ? t('services.deactivate') : t('services.activate'),
-      icon: service.is_active ? EyeOff : Eye,
-      variant: 'default' as const,
-      hidden: !canUpdate.value
-    },
-    {
-      key: 'delete',
-      label: t('common.deleteAction'),
-      icon: Trash2,
-      variant: 'danger' as const,
-      disabled: !canDelete
-    }
-  ];
-};
-
-const handleServiceAction = (service: Service, action: string) => {
-  switch (action) {
-    case 'edit':
-      editService(service);
-      break;
-    case 'toggle-status':
-      toggleServiceStatus(service);
-      break;
-    case 'delete':
-      deleteService(service.id!);
-      break;
-  }
-};
 
 const handleAddService = async () => {
   if (!canCreateService.value) {
