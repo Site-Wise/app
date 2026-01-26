@@ -24,7 +24,7 @@
     "driver.js": "^1.4.0",
     "jspdf": "^4.0.0",
     "jszip": "^3.10.1",
-    "lucide-vue-next": "^0.562.0",
+    "lucide-vue-next": "^0.563.0",
     "pdfjs-dist": "^5.4.530",
     "pinia": "^3.0.4",
     "pocketbase": "^0.26.6",
