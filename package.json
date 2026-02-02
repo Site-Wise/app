@@ -25,7 +25,7 @@
     "jspdf": "^4.0.0",
     "jszip": "^3.10.1",
     "lucide-vue-next": "^0.562.0",
-    "pdfjs-dist": "^5.4.530",
+    "pdfjs-dist": "^5.4.624",
     "pinia": "^3.0.4",
     "pocketbase": "^0.26.6",
     "vue": "^3.5.27",
