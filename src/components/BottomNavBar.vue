@@ -128,6 +128,7 @@ import {
   Wrench,
   RotateCcw,
   TrendingUp,
+  Calculator,
 } from 'lucide-vue-next';
 
 const route = useRoute();
@@ -210,6 +211,13 @@ const secondaryNavItems = computed(() => [
     to: '/analytics',
     icon: TrendingUp,
     current: route.name === 'Analytics',
+  },
+  {
+    name: 'Tools',
+    nameKey: 'nav.tools',
+    to: '/tools',
+    icon: Calculator,
+    current: route.name === 'Tools',
   },
   {
     name: 'Vendor Returns',
