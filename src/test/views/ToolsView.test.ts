@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { ref, nextTick } from 'vue';
+import { nextTick } from 'vue';
 
 // Mock the i18n composable
 vi.mock('../../composables/useI18n', () => ({
