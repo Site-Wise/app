@@ -299,6 +299,12 @@ describe('Router Navigation Guards', () => {
       await router.isReady()
       expect(router.currentRoute.value.path).toBe('/invites')
     })
+
+    it('should allow access to tools view', async () => {
+      await router.push('/tools')
+      await router.isReady()
+      expect(router.currentRoute.value.path).toBe('/tools')
+    })
   })
 
   describe('Detail Route Access', () => {
@@ -400,16 +406,21 @@ describe('Router Navigation Guards', () => {
       expect(routes.find((r) => r.path === '/vendors')).toBeDefined()
       expect(routes.find((r) => r.path === '/users')).toBeDefined()
       expect(routes.find((r) => r.path === '/subscription')).toBeDefined()
+      expect(routes.find((r) => r.path === '/tools')).toBeDefined()
     })
 
     it('should have route meta configurations', () => {
       const routes = router.getRoutes()
       const dashboardRoute = routes.find((r) => r.path === '/')
       const subscriptionRoute = routes.find((r) => r.path === '/subscription')
+      const toolsRoute = routes.find((r) => r.path === '/tools')
 
       expect(dashboardRoute?.meta.requiresAuth).toBe(true)
       expect(dashboardRoute?.meta.requiresSite).toBe(true)
       expect(subscriptionRoute?.meta.ownerOnly).toBe(true)
+      expect(toolsRoute?.meta.requiresAuth).toBe(true)
+      expect(toolsRoute?.meta.requiresSite).toBe(true)
+      expect(toolsRoute?.meta.permission).toBe('canRead')
     })
   })
 })
