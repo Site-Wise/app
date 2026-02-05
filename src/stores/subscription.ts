@@ -57,9 +57,9 @@ export interface SubscriptionUsage {
   deliveries_count: number
   service_bookings_count: number
   payments_count: number
-  accounts_count?: number
-  vendor_returns_count?: number
-  services_count?: number
+  accounts_count: number
+  services_count: number
+  vendor_returns_count: number
   created: string
   updated: string
 }
@@ -122,8 +122,8 @@ export const useSubscriptionStore = defineStore('subscription', () => {
       service_bookings_count: 0,
       payments_count: 0,
       accounts_count: 0,
-      vendor_returns_count: 0,
-      services_count: 0
+      services_count: 0,
+      vendor_returns_count: 0
     }
 
     return {
@@ -163,25 +163,25 @@ export const useSubscriptionStore = defineStore('subscription', () => {
         exceeded: isLimited(plan.features.max_payments) && usage.payments_count >= plan.features.max_payments
       },
       accounts: {
-        current: usage.accounts_count || 0,
+        current: usage.accounts_count,
         max: plan.features.max_accounts,
         unlimited: isUnlimited(plan.features.max_accounts),
         disabled: isDisabled(plan.features.max_accounts),
-        exceeded: isLimited(plan.features.max_accounts) && (usage.accounts_count || 0) >= plan.features.max_accounts
-      },
-      vendor_returns: {
-        current: usage.vendor_returns_count || 0,
-        max: plan.features.max_vendor_returns,
-        unlimited: isUnlimited(plan.features.max_vendor_returns),
-        disabled: isDisabled(plan.features.max_vendor_returns),
-        exceeded: isLimited(plan.features.max_vendor_returns) && (usage.vendor_returns_count || 0) >= plan.features.max_vendor_returns
+        exceeded: isLimited(plan.features.max_accounts) && usage.accounts_count >= plan.features.max_accounts
       },
       services: {
-        current: usage.services_count || 0,
+        current: usage.services_count,
         max: plan.features.max_services,
         unlimited: isUnlimited(plan.features.max_services),
         disabled: isDisabled(plan.features.max_services),
-        exceeded: isLimited(plan.features.max_services) && (usage.services_count || 0) >= plan.features.max_services
+        exceeded: isLimited(plan.features.max_services) && usage.services_count >= plan.features.max_services
+      },
+      vendor_returns: {
+        current: usage.vendor_returns_count,
+        max: plan.features.max_vendor_returns,
+        unlimited: isUnlimited(plan.features.max_vendor_returns),
+        disabled: isDisabled(plan.features.max_vendor_returns),
+        exceeded: isLimited(plan.features.max_vendor_returns) && usage.vendor_returns_count >= plan.features.max_vendor_returns
       }
     }
   })
@@ -189,16 +189,16 @@ export const useSubscriptionStore = defineStore('subscription', () => {
   const isReadOnly = computed(() => {
     if (!isSubscriptionActive.value) return true
     if (!usageLimits.value) return false
-    
+
     const limits = usageLimits.value
-    return limits.items.exceeded || 
-           limits.vendors.exceeded || 
-           limits.deliveries.exceeded || 
-           limits.service_bookings.exceeded || 
+    return limits.items.exceeded ||
+           limits.vendors.exceeded ||
+           limits.deliveries.exceeded ||
+           limits.service_bookings.exceeded ||
            limits.payments.exceeded ||
            limits.accounts.exceeded ||
-           limits.vendor_returns.exceeded ||
-           limits.services.exceeded
+           limits.services.exceeded ||
+           limits.vendor_returns.exceeded
   })
 
   // Actions
@@ -280,9 +280,9 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     }
   }
 
-  function checkCreateLimit(type: 'items' | 'vendors' | 'deliveries' | 'service_bookings' | 'payments' | 'accounts' | 'vendor_returns' | 'services' | 'sites'): boolean {
+  function checkCreateLimit(type: 'items' | 'vendors' | 'deliveries' | 'service_bookings' | 'payments' | 'accounts' | 'services' | 'vendor_returns' | 'sites'): boolean {
     if (!currentSubscription.value) return false
-    
+
     const plan = currentSubscription.value.expand?.subscription_plan
     if (!plan || !plan.features) return false
 
@@ -294,10 +294,10 @@ export const useSubscriptionStore = defineStore('subscription', () => {
       service_bookings_count: 0,
       payments_count: 0,
       accounts_count: 0,
-      vendor_returns_count: 0,
-      services_count: 0
+      services_count: 0,
+      vendor_returns_count: 0
     }
-    
+
     switch (type) {
       case 'items':
         if (isDisabled(plan.features.max_items)) return false
@@ -316,16 +316,16 @@ export const useSubscriptionStore = defineStore('subscription', () => {
         return isUnlimited(plan.features.max_payments) || usage.payments_count < plan.features.max_payments
       case 'accounts':
         if (isDisabled(plan.features.max_accounts)) return false
-        return isUnlimited(plan.features.max_accounts) || (usage.accounts_count || 0) < plan.features.max_accounts
-      case 'vendor_returns':
-        if (isDisabled(plan.features.max_vendor_returns)) return false
-        return isUnlimited(plan.features.max_vendor_returns) || (usage.vendor_returns_count || 0) < plan.features.max_vendor_returns
+        return isUnlimited(plan.features.max_accounts) || usage.accounts_count < plan.features.max_accounts
       case 'services':
         if (isDisabled(plan.features.max_services)) return false
-        return isUnlimited(plan.features.max_services) || (usage.services_count || 0) < plan.features.max_services
+        return isUnlimited(plan.features.max_services) || usage.services_count < plan.features.max_services
+      case 'vendor_returns':
+        if (isDisabled(plan.features.max_vendor_returns)) return false
+        return isUnlimited(plan.features.max_vendor_returns) || usage.vendor_returns_count < plan.features.max_vendor_returns
       case 'sites':
         if (isDisabled(plan.features.max_sites)) return false
-        return isUnlimited(plan.features.max_sites) || true // Site count is not tracked in usage, so we only check if sites are disabled
+        return isUnlimited(plan.features.max_sites) || true // Site count is not tracked in usage
       default:
         return false
     }
