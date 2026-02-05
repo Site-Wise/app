@@ -1511,6 +1511,44 @@
     "export": "Export Data",
     "exportCSV": "Export to CSV"
   },
+  "newUserOnboarding": {
+    "welcome": "Welcome to Site-Wise!",
+    "welcomeSubtitle": "Let's get your construction site set up. Follow these steps to start tracking your deliveries, payments, and more.",
+    "gettingStarted": "Getting Started",
+    "completed": "Completed",
+    "skipForNow": "Skip setup guide for now",
+    "steps": {
+      "addVendor": {
+        "title": "Add Your First Vendor",
+        "description": "Vendors are the suppliers and service providers you work with. Add them to track deliveries and payments.",
+        "action": "Add Vendor"
+      },
+      "addActivity": {
+        "title": "Record Your First Activity",
+        "description": "Now track material deliveries or book services from your vendors to start monitoring expenses.",
+        "locked": "Complete step 1 first to unlock this step",
+        "recordDelivery": "Record Delivery",
+        "bookService": "Book Service"
+      }
+    },
+    "tips": {
+      "items": {
+        "title": "Track Items",
+        "description": "Add construction materials like cement, steel, and bricks to track quantities and costs.",
+        "action": "Manage Items"
+      },
+      "services": {
+        "title": "Define Services",
+        "description": "Set up services like labor, equipment rental, and professional fees.",
+        "action": "Manage Services"
+      },
+      "accounts": {
+        "title": "Payment Accounts",
+        "description": "Add your bank accounts and payment methods to track where money goes.",
+        "action": "Manage Accounts"
+      }
+    }
+  },
   "tools": {
     "title": "Tools",
     "subtitle": "Calculation tools for construction estimates",
