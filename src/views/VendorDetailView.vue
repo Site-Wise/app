@@ -28,6 +28,14 @@
           <CreditCard class="mr-2 h-4 w-4" />
           {{ t('vendors.recordPayment') }}
         </button>
+        <button @click="openEditModal()" class="btn-outline flex items-center">
+          <Edit2 class="mr-2 h-4 w-4" />
+          {{ t('common.edit') }}
+        </button>
+        <button @click="handleDelete()" class="btn-outline text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/20 flex items-center">
+          <Trash2 class="mr-2 h-4 w-4" />
+          {{ t('common.deleteAction') }}
+        </button>
       </div>
 
       <!-- Mobile Menu -->
@@ -47,9 +55,18 @@
               <RotateCcw class="mr-3 h-5 w-5 text-gray-600" />
               {{ t('vendors.createReturn') }}
             </button>
-            <button @click="handleMobileAction('recordPayment')" class="flex items-center w-full px-4 py-3 text-sm text-white bg-blue-600 hover:bg-blue-700">
-              <CreditCard class="mr-3 h-5 w-5 text-white" />
+            <button @click="handleMobileAction('recordPayment')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <CreditCard class="mr-3 h-5 w-5 text-gray-600" />
               {{ t('vendors.recordPayment') }}
+            </button>
+            <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+            <button @click="handleMobileAction('edit')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <Edit2 class="mr-3 h-5 w-5 text-gray-600" />
+              {{ t('common.edit') }}
+            </button>
+            <button @click="handleMobileAction('delete')" class="flex items-center w-full px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+              <Trash2 class="mr-3 h-5 w-5 text-red-500" />
+              {{ t('common.deleteAction') }}
             </button>
           </div>
         </div>
@@ -284,50 +301,61 @@
         <!-- Modal Panel -->
         <div class="relative w-full max-w-5xl transform rounded-lg bg-white dark:bg-gray-800 shadow-xl transition-all max-h-[90vh] flex flex-col">
           <!-- Header -->
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-6 border-b border-gray-200 dark:border-gray-700 gap-4">
-            <div class="flex-shrink-0">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ t('vendors.vendorLedger') }}
-              </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {{ vendor?.name || vendor?.contact_person }}
-              </p>
+          <div class="relative p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+            <!-- Close button - always top-right -->
+            <button @click="closeLedgerModal" class="absolute top-4 right-4 sm:top-6 sm:right-6 p-1 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 z-10">
+              <X class="h-5 w-5" />
+            </button>
+
+            <!-- Title row -->
+            <div class="flex items-start justify-between pr-8 mb-4">
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                  {{ t('vendors.vendorLedger') }}
+                </h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  {{ vendor?.name || vendor?.contact_person }}
+                </p>
+              </div>
             </div>
 
-            <!-- Date Filter Section -->
-            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-              <div class="flex items-center gap-2">
-                <label class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ t('vendors.from') }}:</label>
-                <input
-                  v-model="ledgerFromDate"
-                  type="date"
-                  class="input text-sm py-1.5 px-2 w-32"
-                  :placeholder="t('vendors.beginning')"
-                />
+            <!-- Filters and actions row -->
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+              <!-- Date Filter Section - full width on mobile -->
+              <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1">
+                <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-3">
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                    <label class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ t('vendors.from') }}:</label>
+                    <input
+                      v-model="ledgerFromDate"
+                      type="date"
+                      class="input text-sm py-2 sm:py-1.5 px-3 sm:px-2 w-full sm:w-32"
+                      :placeholder="t('vendors.beginning')"
+                    />
+                  </div>
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                    <label class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ t('vendors.to') }}:</label>
+                    <input
+                      v-model="ledgerToDate"
+                      type="date"
+                      class="input text-sm py-2 sm:py-1.5 px-3 sm:px-2 w-full sm:w-32"
+                    />
+                  </div>
+                </div>
+                <button
+                  v-if="isDateFilterActive"
+                  @click="resetDateFilter"
+                  class="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1 self-start sm:self-auto min-h-[44px] sm:min-h-0"
+                  :title="t('vendors.resetDateFilter')"
+                >
+                  <RotateCcw class="h-4 w-4" />
+                  <span>{{ t('vendors.reset') }}</span>
+                </button>
               </div>
-              <div class="flex items-center gap-2">
-                <label class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ t('vendors.to') }}:</label>
-                <input
-                  v-model="ledgerToDate"
-                  type="date"
-                  class="input text-sm py-1.5 px-2 w-32"
-                />
-              </div>
-              <button
-                v-if="isDateFilterActive"
-                @click="resetDateFilter"
-                class="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
-                :title="t('vendors.resetDateFilter')"
-              >
-                <RotateCcw class="h-4 w-4" />
-                <span class="hidden sm:inline">{{ t('vendors.reset') }}</span>
-              </button>
-            </div>
 
-            <div class="flex items-center gap-3 flex-shrink-0">
               <!-- Export Dropdown -->
-              <div class="relative export-dropdown">
-                <button @click="showExportDropdown = !showExportDropdown" class="btn-outline flex items-center text-sm">
+              <div class="relative export-dropdown flex-shrink-0">
+                <button @click="showExportDropdown = !showExportDropdown" class="btn-outline flex items-center text-sm w-full sm:w-auto justify-center min-h-[44px] sm:min-h-0">
                   <Download class="mr-2 h-4 w-4" />
                   {{ t('vendors.exportLedger') }}
                   <ChevronDown class="ml-2 h-4 w-4" />
@@ -336,15 +364,15 @@
                 <!-- Export Dropdown Menu -->
                 <div v-if="showExportDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
                   <div class="py-1">
-                    <button @click="exportLedger(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <button @click="exportLedger(); showExportDropdown = false" class="flex items-center w-full px-4 py-3 sm:py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                       <FileSpreadsheet class="mr-3 h-4 w-4 text-green-600" />
                       {{ t('vendors.exportCsv') }}
                     </button>
-                    <button @click="exportLedgerPDF(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <button @click="exportLedgerPDF(); showExportDropdown = false" class="flex items-center w-full px-4 py-3 sm:py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                       <FileText class="mr-3 h-4 w-4 text-red-600" />
                       {{ t('vendors.exportPdf') }}
                     </button>
-                    <button @click="exportTallyXml(); showExportDropdown = false" class="relative flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <button @click="exportTallyXml(); showExportDropdown = false" class="relative flex items-center w-full px-4 py-3 sm:py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                       <FileText class="mr-3 h-4 w-4 text-blue-600" />
                       {{ t('vendors.exportTallyXml') }}
                       <StatusBadge type="beta" position="absolute" />
@@ -352,9 +380,6 @@
                   </div>
                 </div>
               </div>
-              <button @click="closeLedgerModal" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
-                <X class="h-5 w-5" />
-              </button>
             </div>
           </div>
 
@@ -627,6 +652,100 @@
         </div>
       </div>
     </div>
+
+    <!-- Edit Vendor Modal -->
+    <div v-if="showEditModal"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="closeEditModal"
+      @keydown.esc="closeEditModal" tabindex="-1">
+      <div
+        class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4 mb-20 lg:mb-4"
+        @click.stop>
+        <div class="mt-3">
+          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            {{ t('vendors.editVendor') }}
+          </h3>
+
+          <form @submit.prevent="saveVendor" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.contactPerson') }}</label>
+              <input ref="editFirstInputRef" v-model="editForm.contact_person" type="text" class="input mt-1"
+                :placeholder="t('forms.enterContactPerson')" autofocus />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.companyName') }}</label>
+              <input v-model="editForm.name" type="text" class="input mt-1" :placeholder="t('forms.enterCompanyName')" />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.paymentDetails') }}</label>
+              <textarea v-model="editForm.payment_details" class="input mt-1" rows="2"
+                :placeholder="t('forms.enterPaymentDetails')"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.email') }}</label>
+              <input v-model="editForm.email" type="email" class="input mt-1" :placeholder="t('forms.enterEmail')" />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.phone') }}</label>
+              <input v-model="editForm.phone" type="tel" class="input mt-1" :placeholder="t('forms.enterPhone')" />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.address') }}</label>
+              <textarea v-model="editForm.address" class="input mt-1" rows="2"
+                :placeholder="t('forms.enterAddress')"></textarea>
+            </div>
+
+            <div class="flex space-x-3 pt-4">
+              <button type="submit" :disabled="editLoading" class="flex-1 btn-primary">
+                <Loader2 v-if="editLoading" class="mr-2 h-4 w-4 animate-spin" />
+                {{ t('common.update') }}
+              </button>
+              <button type="button" @click="closeEditModal" class="flex-1 btn-outline">
+                {{ t('common.cancel') }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="closeDeleteModal"
+      @keydown.esc="closeDeleteModal" tabindex="-1">
+      <div
+        class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4"
+        @click.stop>
+        <div class="mt-3">
+          <div class="flex items-center mb-4">
+            <div class="p-2 bg-red-100 dark:bg-red-900/30 rounded-full mr-3">
+              <AlertTriangle class="h-6 w-6 text-red-600 dark:text-red-400" />
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+              {{ t('common.deleteAction') }} {{ t('common.vendor') }}
+            </h3>
+          </div>
+
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            {{ deleteConfirmMessage }}
+          </p>
+
+          <div class="flex space-x-3 pt-2">
+            <button @click="confirmDelete" :disabled="deleteLoading" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+              <Loader2 v-if="deleteLoading" class="mr-2 h-4 w-4 animate-spin inline" />
+              {{ t('common.deleteAction') }}
+            </button>
+            <button @click="closeDeleteModal" class="flex-1 btn-outline">
+              {{ t('common.cancel') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div v-else class="flex items-center justify-center min-h-96">
@@ -635,7 +754,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, computed, nextTick } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { useRoute, useRouter } from 'vue-router';
 import {
@@ -661,11 +780,14 @@ import {
   ChevronDown,
   MoreVertical,
   AlertCircle,
+  AlertTriangle,
   CheckCircle,
   X,
   BookOpen,
   Smartphone,
-  ExternalLink
+  ExternalLink,
+  Edit2,
+  Trash2
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useToast } from '../composables/useToast';
@@ -725,6 +847,21 @@ const showPaymentModal = ref(false);
 const paymentLoading = ref(false);
 const showExportDropdown = ref(false);
 const showMobileMenu = ref(false);
+
+// Edit/Delete state
+const showEditModal = ref(false);
+const editLoading = ref(false);
+const showDeleteModal = ref(false);
+const deleteLoading = ref(false);
+const editFirstInputRef = ref<HTMLInputElement>();
+const editForm = reactive({
+  contact_person: '',
+  name: '',
+  payment_details: '',
+  email: '',
+  phone: '',
+  address: ''
+});
 
 // Payment modal state
 const paymentModalMode = ref<'CREATE' | 'PAY_NOW' | 'EDIT'>('PAY_NOW');
@@ -1387,6 +1524,96 @@ const createReturn = () => {
   });
 };
 
+// Delete confirmation message with related entries info
+const deleteConfirmMessage = computed(() => {
+  const details: string[] = [];
+
+  if (vendorDeliveries.value.length > 0) {
+    details.push(t('messages.relatedDeliveries', { count: vendorDeliveries.value.length }));
+  }
+  if (vendorServiceBookings.value.length > 0) {
+    details.push(t('messages.relatedServiceBookings', { count: vendorServiceBookings.value.length }));
+  }
+  if (vendorReturns.value.length > 0) {
+    details.push(t('messages.relatedReturns', { count: vendorReturns.value.length }));
+  }
+
+  if (details.length > 0) {
+    return t('messages.confirmDeleteWithRelated', {
+      item: t('common.vendor'),
+      details: details.join(', ')
+    });
+  }
+
+  return t('messages.confirmDelete', { item: t('common.vendor') });
+});
+
+// Edit vendor functions
+const openEditModal = async () => {
+  if (!vendor.value) return;
+  Object.assign(editForm, {
+    contact_person: vendor.value.contact_person || '',
+    name: vendor.value.name || '',
+    payment_details: vendor.value.payment_details || '',
+    email: vendor.value.email || '',
+    phone: vendor.value.phone || '',
+    address: vendor.value.address || ''
+  });
+  showEditModal.value = true;
+  await nextTick();
+  editFirstInputRef.value?.focus();
+};
+
+const closeEditModal = () => {
+  showEditModal.value = false;
+};
+
+const saveVendor = async () => {
+  if (!vendor.value) return;
+  if (!editForm.contact_person.trim() && !editForm.name.trim()) {
+    error('Please provide either a contact person or company name');
+    return;
+  }
+
+  editLoading.value = true;
+  try {
+    await vendorService.update(vendor.value.id!, editForm);
+    success(t('messages.updateSuccess', { item: t('common.vendor') }));
+    closeEditModal();
+    await loadVendorData();
+  } catch (err) {
+    console.error('Error updating vendor:', err);
+    error(t('messages.error'));
+  } finally {
+    editLoading.value = false;
+  }
+};
+
+// Delete vendor functions
+const handleDelete = () => {
+  showDeleteModal.value = true;
+};
+
+const closeDeleteModal = () => {
+  showDeleteModal.value = false;
+};
+
+const confirmDelete = async () => {
+  if (!vendor.value) return;
+
+  deleteLoading.value = true;
+  try {
+    await vendorService.delete(vendor.value.id!);
+    success(t('messages.deleteSuccess', { item: t('common.vendor') }));
+    router.push('/vendors');
+  } catch (err) {
+    console.error('Error deleting vendor:', err);
+    error(t('messages.error'));
+  } finally {
+    deleteLoading.value = false;
+  }
+};
+
 // Handle mobile menu actions
 const handleMobileAction = async (action: string) => {
   // Close the menu first
@@ -1404,6 +1631,12 @@ const handleMobileAction = async (action: string) => {
           break;
         case 'recordPayment':
           recordPayment();
+          break;
+        case 'edit':
+          openEditModal();
+          break;
+        case 'delete':
+          handleDelete();
           break;
         default:
           console.warn('Unknown mobile action:', action);

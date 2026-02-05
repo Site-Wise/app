@@ -11,7 +11,8 @@
           <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Service Details & Booking History</p>
         </div>
       </div>
-      <div class="flex items-center space-x-3">
+      <!-- Desktop Actions -->
+      <div class="hidden md:flex items-center space-x-3">
         <button @click="exportServiceReport" class="btn-outline">
           <Download class="mr-2 h-4 w-4" />
           Export Report
@@ -20,6 +21,42 @@
           <Calendar class="mr-2 h-4 w-4" />
           Book Service
         </button>
+        <button @click="openEditModal()" class="btn-outline flex items-center">
+          <Edit2 class="mr-2 h-4 w-4" />
+          {{ t('common.edit') }}
+        </button>
+        <button @click="handleDelete()" class="btn-outline text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/20 flex items-center">
+          <Trash2 class="mr-2 h-4 w-4" />
+          {{ t('common.deleteAction') }}
+        </button>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div class="md:hidden relative mobile-menu">
+        <button @click="showMobileMenu = !showMobileMenu" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <MoreVertical class="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        </button>
+        <div v-if="showMobileMenu" class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+          <div class="py-1">
+            <button @click="showMobileMenu = false; exportServiceReport()" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <Download class="mr-3 h-5 w-5 text-gray-600" />
+              Export Report
+            </button>
+            <button @click="showMobileMenu = false; bookService()" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <Calendar class="mr-3 h-5 w-5 text-gray-600" />
+              Book Service
+            </button>
+            <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+            <button @click="showMobileMenu = false; openEditModal()" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <Edit2 class="mr-3 h-5 w-5 text-gray-600" />
+              {{ t('common.edit') }}
+            </button>
+            <button @click="showMobileMenu = false; handleDelete()" class="flex items-center w-full px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+              <Trash2 class="mr-3 h-5 w-5 text-red-500" />
+              {{ t('common.deleteAction') }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -173,26 +210,145 @@
         </div>
       </div>
     </div>
+
+    <!-- Edit Service Modal -->
+    <div v-if="showEditModal"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="closeEditModal"
+      @keydown.esc="closeEditModal" tabindex="-1">
+      <div
+        class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4 mb-20 lg:mb-4"
+        @click.stop>
+        <div class="mt-3">
+          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            {{ t('services.editService') }}
+          </h3>
+
+          <form @submit.prevent="saveService" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.serviceName') }}</label>
+              <input ref="editNameInputRef" v-model="editForm.name" type="text" required class="input mt-1"
+                :placeholder="t('forms.enterServiceName')" autofocus />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.category') }}</label>
+              <select v-model="editForm.category" required class="input mt-1">
+                <option value="">{{ t('forms.selectCategory') }}</option>
+                <option value="labor">{{ t('services.categories.labor') }}</option>
+                <option value="equipment">{{ t('services.categories.equipment') }}</option>
+                <option value="professional">{{ t('services.categories.professional') }}</option>
+                <option value="transport">{{ t('services.categories.transport') }}</option>
+                <option value="other">{{ t('services.categories.other') }}</option>
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.unit') }}</label>
+                <select v-model="editForm.unit" required class="input mt-1">
+                  <option value="">{{ t('forms.selectUnit') }}</option>
+                  <option value="hour">{{ t('services.units.hour') }}</option>
+                  <option value="day">{{ t('services.units.day') }}</option>
+                  <option value="job">{{ t('services.units.job') }}</option>
+                  <option value="sqft">{{ t('services.units.sqft') }}</option>
+                  <option value="month">{{ t('services.units.month') }}</option>
+                  <option value="kg">{{ t('services.units.kg') }}</option>
+                  <option value="rft">{{ t('services.units.rft') }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.standardRate') }}</label>
+                <input v-model.number="editForm.standard_rate" type="number" step="0.01" class="input mt-1"
+                  :placeholder="t('forms.enterRate')" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.description') }}</label>
+              <textarea v-model="editForm.description" class="input mt-1" rows="3"
+                :placeholder="t('forms.enterServiceDescription')"></textarea>
+            </div>
+
+            <div class="flex items-center">
+              <input v-model="editForm.is_active" type="checkbox" id="edit_is_active"
+                class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500" />
+              <label for="edit_is_active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ t('services.isActive') }}</label>
+            </div>
+
+            <div class="flex space-x-3 pt-4">
+              <button type="submit" :disabled="editLoading" class="flex-1 btn-primary">
+                <Loader2 v-if="editLoading" class="mr-2 h-4 w-4 animate-spin" />
+                {{ t('common.update') }}
+              </button>
+              <button type="button" @click="closeEditModal" class="flex-1 btn-outline">
+                {{ t('common.cancel') }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="closeDeleteModal"
+      @keydown.esc="closeDeleteModal" tabindex="-1">
+      <div
+        class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4"
+        @click.stop>
+        <div class="mt-3">
+          <div class="flex items-center mb-4">
+            <div class="p-2 bg-red-100 dark:bg-red-900/30 rounded-full mr-3">
+              <AlertTriangle class="h-6 w-6 text-red-600 dark:text-red-400" />
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+              {{ t('common.deleteAction') }} {{ t('common.service') }}
+            </h3>
+          </div>
+
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            {{ deleteConfirmMessage }}
+          </p>
+
+          <div class="flex space-x-3 pt-2">
+            <button @click="confirmDelete" :disabled="deleteLoading" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+              <Loader2 v-if="deleteLoading" class="mr-2 h-4 w-4 animate-spin inline" />
+              {{ t('common.deleteAction') }}
+            </button>
+            <button @click="closeDeleteModal" class="flex-1 btn-outline">
+              {{ t('common.cancel') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-  
+
   <div v-else class="flex items-center justify-center min-h-96">
     <Loader2 class="h-8 w-8 animate-spin text-gray-400" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, computed, nextTick } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { useRoute, useRouter } from 'vue-router';
-import { 
-  ArrowLeft, 
-  Download, 
-  Calendar, 
-  Clock, 
+import {
+  ArrowLeft,
+  Download,
+  Calendar,
+  Clock,
   DollarSign,
-  Loader2
+  Loader2,
+  Edit2,
+  Trash2,
+  AlertTriangle,
+  MoreVertical
 } from 'lucide-vue-next';
-import { 
-  serviceService, 
+import { useI18n } from '../composables/useI18n';
+import { useToast } from '../composables/useToast';
+import {
+  serviceService,
   serviceBookingService,
   type Service,
   type ServiceBooking
@@ -200,9 +356,28 @@ import {
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
+const { success, error: showError } = useToast();
 
 const service = ref<Service | null>(null);
 const serviceBookings = ref<ServiceBooking[]>([]);
+const showMobileMenu = ref(false);
+
+// Edit/Delete state
+const showEditModal = ref(false);
+const editLoading = ref(false);
+const showDeleteModal = ref(false);
+const deleteLoading = ref(false);
+const editNameInputRef = ref<HTMLInputElement>();
+const editForm = reactive({
+  name: '',
+  service_type: '',
+  category: '' as Service['category'],
+  unit: '',
+  standard_rate: 0,
+  description: '',
+  is_active: true
+});
 
 const totalHours = computed(() => {
   return serviceBookings.value.reduce((sum, booking) => sum + booking.duration, 0);
@@ -318,6 +493,90 @@ const generateServiceReportCSV = () => {
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
 };
+
+// Delete confirmation message with related entries info
+const deleteConfirmMessage = computed(() => {
+  if (serviceBookings.value.length > 0) {
+    return t('messages.confirmDeleteWithRelated', {
+      item: t('common.service'),
+      details: t('messages.relatedServiceBookings', { count: serviceBookings.value.length })
+    });
+  }
+  return t('messages.confirmDelete', { item: t('common.service') });
+});
+
+// Edit service functions
+const openEditModal = async () => {
+  if (!service.value) return;
+  Object.assign(editForm, {
+    name: service.value.name,
+    service_type: service.value.service_type,
+    category: service.value.category,
+    unit: service.value.unit,
+    standard_rate: service.value.standard_rate || 0,
+    description: service.value.description || '',
+    is_active: service.value.is_active
+  });
+  showEditModal.value = true;
+  await nextTick();
+  editNameInputRef.value?.focus();
+};
+
+const closeEditModal = () => {
+  showEditModal.value = false;
+};
+
+const saveService = async () => {
+  if (!service.value) return;
+
+  editLoading.value = true;
+  try {
+    await serviceService.update(service.value.id!, editForm);
+    success(t('messages.updateSuccess', { item: t('common.service') }));
+    closeEditModal();
+    await loadServiceData();
+  } catch (err) {
+    console.error('Error updating service:', err);
+    showError(t('messages.error'));
+  } finally {
+    editLoading.value = false;
+  }
+};
+
+// Delete service functions
+const handleDelete = () => {
+  showDeleteModal.value = true;
+};
+
+const closeDeleteModal = () => {
+  showDeleteModal.value = false;
+};
+
+const confirmDelete = async () => {
+  if (!service.value) return;
+
+  deleteLoading.value = true;
+  try {
+    await serviceService.delete(service.value.id!);
+    success(t('messages.deleteSuccess', { item: t('common.service') }));
+    router.push('/services');
+  } catch (err) {
+    console.error('Error deleting service:', err);
+    showError(t('messages.error'));
+  } finally {
+    deleteLoading.value = false;
+  }
+};
+
+// Click outside handler for mobile menu
+const handleClickOutside = (event: Event) => {
+  const mobileMenu = document.querySelector('.mobile-menu');
+  if (mobileMenu && !mobileMenu.contains(event.target as Node)) {
+    showMobileMenu.value = false;
+  }
+};
+
+useEventListener(document, 'click', handleClickOutside);
 
 onMounted(() => {
   loadServiceData();
