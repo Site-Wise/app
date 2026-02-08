@@ -24,8 +24,14 @@ export default defineConfig({
         theme_color: '#2563eb',
         background_color: '#ffffff',
         display: 'standalone',
+        id: '/',
         scope: '/',
         start_url: '/',
+        url_handlers: [
+          {
+            origin: 'https://app.sitewise.in'
+          }
+        ],
         icons: [
           {
             src: 'pwa-192x192.png',

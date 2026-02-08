@@ -1,0 +1,10 @@
+{
+  "web_apps": [
+    {
+      "manifest": "https://app.sitewise.in/manifest.webmanifest",
+      "details": {
+        "paths": ["/*"]
+      }
+    }
+  ]
+}
