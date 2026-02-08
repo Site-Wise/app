@@ -27,7 +27,8 @@ export default defineConfig({
         id: '/',
         scope: '/',
         start_url: '/',
-        url_handlers: [
+        handle_links: 'preferred',
+        scope_extensions: [
           {
             origin: 'https://app.sitewise.in'
           }
