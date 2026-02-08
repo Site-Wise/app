@@ -51,14 +51,14 @@
             <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
               {{ t('newUserOnboarding.steps.addVendor.description') }}
             </p>
-            <router-link
+            <button
               v-if="!hasVendors"
-              to="/vendors"
+              @click="quickAction('/vendors')"
               class="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
               <Plus class="w-4 h-4" />
               {{ t('newUserOnboarding.steps.addVendor.action') }}
-            </router-link>
+            </button>
           </div>
         </div>
 
@@ -97,20 +97,20 @@
 
             <!-- Two action buttons for deliveries and service bookings -->
             <div v-if="!hasDeliveriesOrBookings" class="flex flex-wrap gap-2 mt-3">
-              <router-link
-                to="/delivery"
+              <button
+                @click="quickAction('/deliveries')"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
               >
                 <Truck class="w-4 h-4" />
                 {{ t('newUserOnboarding.steps.addActivity.recordDelivery') }}
-              </router-link>
-              <router-link
-                to="/service-bookings"
+              </button>
+              <button
+                @click="quickAction('/service-bookings')"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-secondary-600 hover:bg-secondary-700 text-white text-sm font-medium rounded-lg transition-colors"
               >
                 <Wrench class="w-4 h-4" />
                 {{ t('newUserOnboarding.steps.addActivity.bookService') }}
-              </router-link>
+              </button>
             </div>
           </div>
         </div>
@@ -218,6 +218,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 import {
   Rocket,
   CheckCircle2,
@@ -232,6 +233,7 @@ import {
 import { useI18n } from '../composables/useI18n';
 
 const { t } = useI18n();
+const router = useRouter();
 
 const props = defineProps<{
   vendorCount: number;
@@ -247,4 +249,13 @@ const hasVendors = computed(() => props.vendorCount > 0);
 const hasDeliveriesOrBookings = computed(() =>
   props.deliveryCount > 0 || props.serviceBookingCount > 0
 );
+
+// Quick action to navigate and open modal
+const quickAction = (route: string) => {
+  router.push(route);
+  // Dispatch event after route change to open the add modal
+  setTimeout(() => {
+    window.dispatchEvent(new CustomEvent('show-add-modal'));
+  }, 100);
+};
 </script>
