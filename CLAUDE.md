@@ -632,7 +632,113 @@ npm run build        # Production build
 npm run build:tauri  # Tauri build
 npm test            # Run tests
 npx vue-tsc --noEmit # Type check
+
+# Android Commands (after setup)
+npm run tauri android dev         # Android development
+npm run tauri android build       # Build for all architectures
+npm run tauri android build -- --split-per-abi  # Build individual APKs per architecture
 ```
+
+## Android Deployment
+
+### Prerequisites
+
+#### 1. Android SDK Setup
+Install Android Studio or Android Command Line Tools:
+- Download from: https://developer.android.com/studio
+- Set `ANDROID_HOME` environment variable to SDK location
+- Minimum SDK version: 24 (Android 7.0)
+
+#### 2. Rust Android Targets
+✅ **Already installed:**
+```bash
+rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+```
+
+#### 3. Java Development Kit
+- JDK 17 or higher required
+- Set `JAVA_HOME` environment variable
+
+### Supported CPU Architectures
+
+SiteWise Android app supports all major mobile CPU architectures:
+
+| Architecture | Target | Description | Support |
+|--------------|--------|-------------|---------|
+| **arm64-v8a** | aarch64-linux-android | 64-bit ARM (Modern phones/tablets) | ✅ Primary |
+| **armeabi-v7a** | armv7-linux-androideabi | 32-bit ARM (Older devices) | ✅ Legacy |
+| **x86_64** | x86_64-linux-android | 64-bit Intel (Emulators/tablets) | ✅ Testing |
+| **x86** | i686-linux-android | 32-bit Intel (Old emulators) | ✅ Legacy |
+
+### Multi-Target Build Strategy
+
+**Default (Recommended for Production):**
+```bash
+npm run tauri android build
+```
+- Generates universal APK/AAB containing all architectures
+- Best for Google Play distribution (handles device matching automatically)
+- Single file upload, smaller download per device
+
+**Split per ABI (Testing/Side-loading):**
+```bash
+npm run tauri android build -- --split-per-abi
+```
+- Generates individual APK for each architecture
+- Smaller individual file sizes
+- Useful for testing on specific devices
+- More manual distribution work
+
+**Specific Architecture Only:**
+```bash
+npm run tauri android build -- --target aarch64  # arm64 only
+npm run tauri android build -- --target armv7    # armv7 only
+```
+
+### Phone and Tablet Support
+
+The AndroidManifest.xml (generated after `tauri android init`) includes:
+- `<supports-screens>` for all screen sizes
+- Minimum SDK 24 ensures broad compatibility
+- Responsive UI design works across all form factors
+
+### Initial Setup Process
+
+1. **Set up Android environment:**
+```bash
+export ANDROID_HOME=/path/to/android/sdk
+export JAVA_HOME=/path/to/jdk
+```
+
+2. **Initialize Android project:**
+```bash
+npm run tauri android init
+```
+
+3. **Development:**
+```bash
+npm run tauri android dev
+```
+
+4. **Build for production:**
+```bash
+npm run tauri android build
+```
+
+### Google Play Distribution
+
+For Google Play publishing:
+1. Use universal APK/AAB (default build)
+2. Configure signing in `src-tauri/gen/android/app/build.gradle.kts`
+3. Follow code signing guide: https://v2.tauri.app/distribute/sign/android/
+4. Upload AAB to Play Console (handles all architectures automatically)
+
+### Configuration Files
+
+After initialization, key files are:
+- `src-tauri/gen/android/app/build.gradle.kts` - Gradle build configuration
+- `src-tauri/gen/android/app/src/main/AndroidManifest.xml` - App manifest
+- `src-tauri/tauri.conf.json` - Tauri configuration (includes Android settings)
 
 ## Environment
 ```env
