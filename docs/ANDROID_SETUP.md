@@ -296,13 +296,34 @@ npm run tauri android build
 - [ ] Code signing configured (for release)
 - [ ] Google Play listing created (if applicable)
 
+## CI/CD Automated Builds
+
+### GitHub Actions Integration
+
+SiteWise has CI/CD configured to automatically build Android releases when you push version tags!
+
+**See:** [`docs/CI_ANDROID_SETUP.md`](./CI_ANDROID_SETUP.md) for complete CI/CD documentation.
+
+**Quick Overview:**
+- Push tag like `v1.0.0` → CI automatically builds Android APK/AAB
+- Builds for all 4 architectures (universal APK/AAB)
+- Creates draft GitHub release with build artifacts
+- Requires Android signing secrets in GitHub (one-time setup)
+
 ## Next Steps
 
+### For Local Development
 1. Complete Android SDK setup (see Steps 1-2)
 2. Run `npm run tauri android init`
 3. Test on device/emulator
 4. Configure signing for release builds
 5. Build and distribute!
+
+### For Automated Releases (CI/CD)
+1. Generate Android keystore (if not exists)
+2. Configure GitHub secrets (see `CI_ANDROID_SETUP.md`)
+3. Push version tag to trigger automatic builds
+4. Review and publish draft release
 
 ## Resources
 
@@ -311,3 +332,4 @@ npm run tauri android build
 - [Android Code Signing](https://v2.tauri.app/distribute/sign/android/)
 - [Google Play Distribution](https://v2.tauri.app/distribute/google-play/)
 - [Android Developer Documentation](https://developer.android.com/docs)
+- [CI/CD Setup Guide](./CI_ANDROID_SETUP.md) - **Automated builds with GitHub Actions**
