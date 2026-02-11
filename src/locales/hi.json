@@ -915,6 +915,10 @@
   },
   "messages": {
     "confirmDelete": "क्या आप वाकई इस {item} को हटाना चाहते हैं?",
+    "confirmDeleteWithRelated": "इस {item} से {details} जुड़े हैं। हटाने से ये रिकॉर्ड प्रभावित हो सकते हैं। क्या आप आगे बढ़ना चाहते हैं?",
+    "relatedDeliveries": "{count} डिलीवरी",
+    "relatedServiceBookings": "{count} सेवा बुकिंग",
+    "relatedReturns": "{count} वापसी",
     "deleteSuccess": "{item} सफलतापूर्वक हटा दिया गया",
     "saveSuccess": "{item} सफलतापूर्वक सेव किया गया",
     "updateSuccess": "{item} सफलतापूर्वक अपडेट किया गया",

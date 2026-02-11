@@ -913,6 +913,10 @@
   },
   "messages": {
     "confirmDelete": "Are you sure you want to delete this {item}?",
+    "confirmDeleteWithRelated": "This {item} has {details} associated with it. Deleting may affect these records. Are you sure you want to proceed?",
+    "relatedDeliveries": "{count} delivery(ies)",
+    "relatedServiceBookings": "{count} service booking(s)",
+    "relatedReturns": "{count} return(s)",
     "deleteSuccess": "{item} deleted successfully",
     "saveSuccess": "{item} saved successfully",
     "updateSuccess": "{item} updated successfully",
