@@ -47,8 +47,85 @@
       </div>
     </div>
 
-    <!-- Quotations Table -->
-    <div class="card overflow-x-auto">
+    <!-- Mobile Quotation Cards -->
+    <div class="lg:hidden space-y-3">
+      <!-- Sort Controls -->
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-xs text-gray-500 dark:text-gray-400">Sort:</span>
+        <button @click="handleMobileSort('date')"
+          class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors"
+          :class="mobileSortField === 'date' ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'">
+          {{ t('quotations.validUntil') }}
+          <component :is="getMobileSortIcon('date')" class="h-3 w-3" v-if="mobileSortField === 'date'" />
+        </button>
+        <button @click="handleMobileSort('price')"
+          class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors"
+          :class="mobileSortField === 'price' ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'">
+          {{ t('quotations.unitPrice') }}
+          <component :is="getMobileSortIcon('price')" class="h-3 w-3" v-if="mobileSortField === 'price'" />
+        </button>
+        <button @click="handleMobileSort('vendor')"
+          class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors"
+          :class="mobileSortField === 'vendor' ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'">
+          {{ t('common.vendor') }}
+          <component :is="getMobileSortIcon('vendor')" class="h-3 w-3" v-if="mobileSortField === 'vendor'" />
+        </button>
+      </div>
+
+      <div v-for="quotation in sortedQuotations" :key="quotation.id"
+        class="mobile-card"
+        @click="editQuotation(quotation)">
+        <div class="flex items-start justify-between">
+          <!-- Left: Item + Vendor + Date -->
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+              {{ quotation.expand?.item?.name || t('common.unknown') + ' ' + t('common.item') }}
+            </div>
+            <div class="text-xs text-gray-500 dark:text-gray-400 truncate">
+              {{ getUnitDisplay(quotation.expand?.item?.unit || 'units') }}
+            </div>
+            <div v-if="quotation.expand?.vendor?.contact_person" class="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+              {{ quotation.expand.vendor.contact_person }}
+            </div>
+          </div>
+
+          <!-- Right: Price + Actions -->
+          <div class="flex items-start gap-2 ml-3">
+            <div class="text-right">
+              <div class="text-base font-bold text-gray-900 dark:text-white tabular-nums">₹{{ quotation.unit_price.toFixed(2) }}</div>
+              <span :class="`status-${quotation.status}`" class="mt-0.5 inline-block">
+                {{ quotation.status }}
+              </span>
+            </div>
+            <div @click.stop>
+              <CardDropdownMenu
+                :actions="getQuotationActions(quotation)"
+                @action="handleQuotationAction(quotation, $event)"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom row: Date + Min Qty -->
+        <div class="flex items-center gap-3 mt-2.5 pt-2.5 border-t border-gray-100 dark:border-gray-700/50">
+          <div v-if="quotation.valid_until" class="text-xs text-gray-500 dark:text-gray-400">
+            {{ t('quotations.validUntil') }}: {{ formatDate(quotation.valid_until) }}
+          </div>
+          <div v-if="quotation.minimum_quantity" class="text-xs text-gray-500 dark:text-gray-400">
+            {{ t('quotations.minimumQuantity') }}: {{ quotation.minimum_quantity }}
+          </div>
+        </div>
+      </div>
+
+      <div v-if="quotations.length === 0" class="text-center py-12">
+        <FileText class="mx-auto h-12 w-12 text-gray-400" />
+        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('quotations.noQuotations') }}</h3>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('quotations.getStarted') }}</p>
+      </div>
+    </div>
+
+    <!-- Desktop Quotations Table -->
+    <div class="hidden lg:block card overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead class="bg-gray-50 dark:bg-gray-700">
           <tr>
@@ -85,8 +162,7 @@
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-              <!-- Desktop Action Buttons -->
-              <div class="hidden lg:flex items-center space-x-2" @click.stop>
+              <div class="flex items-center space-x-2" @click.stop>
                 <button
                   @click="editQuotation(quotation)"
                   class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
@@ -102,19 +178,11 @@
                   <Trash2 class="h-4 w-4" />
                 </button>
               </div>
-
-              <!-- Mobile Dropdown Menu -->
-              <div class="lg:hidden">
-                <CardDropdownMenu
-                  :actions="getQuotationActions(quotation)"
-                  @action="handleQuotationAction(quotation, $event)"
-                />
-              </div>
             </td>
           </tr>
         </tbody>
       </table>
-      
+
       <div v-if="quotations.length === 0" class="text-center py-12">
         <FileText class="mx-auto h-12 w-12 text-gray-400" />
         <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('quotations.noQuotations') }}</h3>
@@ -201,7 +269,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, nextTick } from 'vue';
 import { useEventListener } from '@vueuse/core';
-import { FileText, Plus, Edit2, Trash2, Loader2 } from 'lucide-vue-next';
+import { FileText, Plus, Edit2, Trash2, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-vue-next';
 import { 
   quotationService, 
   itemService, 
@@ -373,6 +441,43 @@ const handleAddQuotation = async () => {
 };
 
 // Site change is handled automatically by useSiteData
+
+// Mobile sort state
+type SortField = 'date' | 'price' | 'item' | 'vendor';
+const mobileSortField = ref<SortField>('date');
+const mobileSortOrder = ref<'asc' | 'desc'>('desc');
+
+const sortedQuotations = computed(() => {
+  const list = [...quotations.value];
+  list.sort((a, b) => {
+    let cmp = 0;
+    if (mobileSortField.value === 'date') {
+      cmp = (a.valid_until || '').localeCompare(b.valid_until || '');
+    } else if (mobileSortField.value === 'price') {
+      cmp = a.unit_price - b.unit_price;
+    } else if (mobileSortField.value === 'item') {
+      cmp = (a.expand?.item?.name || '').localeCompare(b.expand?.item?.name || '');
+    } else if (mobileSortField.value === 'vendor') {
+      cmp = (a.expand?.vendor?.contact_person || '').localeCompare(b.expand?.vendor?.contact_person || '');
+    }
+    return mobileSortOrder.value === 'asc' ? cmp : -cmp;
+  });
+  return list;
+});
+
+const handleMobileSort = (field: SortField) => {
+  if (mobileSortField.value === field) {
+    mobileSortOrder.value = mobileSortOrder.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    mobileSortField.value = field;
+    mobileSortOrder.value = field === 'date' ? 'desc' : 'asc';
+  }
+};
+
+const getMobileSortIcon = (field: SortField) => {
+  if (mobileSortField.value !== field) return ArrowUpDown;
+  return mobileSortOrder.value === 'asc' ? ArrowUp : ArrowDown;
+};
 
 const getQuotationActions = (_quotation: Quotation) => {
   return [

@@ -1,20 +1,28 @@
 <template>
   <div>
-    <!-- Header - Mobile optimized -->
-    <div class="mb-6 lg:mb-8">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <!-- Header - Desktop -->
+    <div class="hidden lg:block mb-8">
+      <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{{ t('dashboard.title') }}</h1>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('dashboard.title') }}</h1>
           <p class="mt-0.5 text-sm text-gray-600 dark:text-gray-400">
             {{ t('dashboard.subtitle', { siteName: currentSite?.name || 'your construction site' }) }}
           </p>
         </div>
-        <div v-if="currentSite" class="flex items-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-1.5">
+        <div v-if="currentSite" class="flex items-center text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-1.5">
           <span>{{ currentSite.total_units }} {{ t('dashboard.units') }}</span>
           <span class="mx-1.5">•</span>
           <span>{{ currentSite.total_planned_area.toLocaleString() }} {{ t('dashboard.sqft') }}</span>
         </div>
       </div>
+    </div>
+
+    <!-- Header - Mobile -->
+    <div class="lg:hidden mb-5">
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">{{ t('dashboard.title') }}</h1>
+      <p class="mt-0.5 text-sm text-gray-600 dark:text-gray-400">
+        {{ t('dashboard.subtitle', { siteName: currentSite?.name || 'your construction site' }) }}
+      </p>
     </div>
 
     <!-- Loading State -->
@@ -33,78 +41,142 @@
 
     <!-- Regular Dashboard Content -->
     <template v-else>
-      <!-- Stats Cards - 2x2 grid on mobile for better space usage -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8" data-tour="quick-stats">
-        <div class="card p-3 sm:p-5">
-          <div class="flex flex-col sm:flex-row sm:items-center">
-            <div class="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg w-fit mb-2 sm:mb-0">
-              <TrendingUp class="h-5 w-5 sm:h-8 sm:w-8 text-primary-600 dark:text-primary-400" />
+      <!-- Mobile Stats Layout -->
+      <div class="lg:hidden mb-5" data-tour="quick-stats">
+        <!-- Hero Metric - Total Expenses -->
+        <div class="mobile-hero-card mb-4">
+          <div class="relative z-10">
+            <div class="flex items-center justify-between mb-1">
+              <p class="text-sm font-medium text-blue-100">{{ t('dashboard.totalExpenses') }}</p>
+              <div v-if="currentSite" class="text-xs text-blue-200 bg-white/10 rounded-full px-2.5 py-0.5">
+                {{ currentSite.total_units }} {{ t('dashboard.units') }} • {{ currentSite.total_planned_area.toLocaleString() }} {{ t('dashboard.sqft') }}
+              </div>
             </div>
-            <div class="sm:ml-4">
-              <p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.totalExpenses') }}</p>
-              <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">₹{{
-                formatCompactAmount(stats.totalExpenses) }}
-              </p>
+            <p class="text-3xl font-bold text-white tracking-tight">₹{{ formatCompactAmount(stats.totalExpenses) }}</p>
+            <div class="flex items-center gap-4 mt-3">
+              <div class="flex items-center gap-1.5">
+                <div class="w-2 h-2 rounded-full bg-red-300"></div>
+                <span class="text-xs text-blue-100">{{ t('dashboard.outstandingAmount') }}: ₹{{ formatCompactAmount(stats.outstandingAmount) }}</span>
+              </div>
+            </div>
+          </div>
+          <!-- Decorative circles -->
+          <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4"></div>
+          <div class="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-1/3 -translate-x-1/4"></div>
+        </div>
+
+        <!-- Scrollable Stat Pills -->
+        <div class="mobile-scroll-row">
+          <div class="mobile-stat-pill">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="p-1.5 bg-secondary-100 dark:bg-secondary-900/30 rounded-lg">
+                <Calendar class="h-4 w-4 text-secondary-600 dark:text-secondary-400" />
+              </div>
+              <span class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.currentMonthExpenses') }}</span>
+            </div>
+            <p class="text-lg font-bold text-gray-900 dark:text-white">₹{{ formatCompactAmount(stats.currentMonthExpenses) }}</p>
+          </div>
+
+          <div class="mobile-stat-pill">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="p-1.5 bg-warning-100 dark:bg-warning-900/30 rounded-lg">
+                <Calculator class="h-4 w-4 text-warning-600 dark:text-warning-400" />
+              </div>
+              <span class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.expensePerSqft') }}</span>
+            </div>
+            <p class="text-lg font-bold text-gray-900 dark:text-white">₹{{ stats.expensePerSqft.toLocaleString() }}</p>
+          </div>
+
+          <div class="mobile-stat-pill">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="p-1.5 bg-error-100 dark:bg-error-900/30 rounded-lg">
+                <DollarSign class="h-4 w-4 text-error-600 dark:text-error-400" />
+              </div>
+              <span class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.outstandingAmount') }}</span>
+            </div>
+            <p class="text-lg font-bold text-gray-900 dark:text-white">₹{{ formatCompactAmount(stats.outstandingAmount) }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop Stats Grid -->
+      <div class="hidden lg:grid grid-cols-4 gap-6 mb-8" data-tour="quick-stats">
+        <div class="card p-5">
+          <div class="flex items-center">
+            <div class="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+              <TrendingUp class="h-8 w-8 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.totalExpenses') }}</p>
+              <p class="text-2xl font-semibold text-gray-900 dark:text-white">₹{{ formatCompactAmount(stats.totalExpenses) }}</p>
             </div>
           </div>
         </div>
 
-        <div class="card p-3 sm:p-5">
-          <div class="flex flex-col sm:flex-row sm:items-center">
-            <div class="p-2 bg-secondary-100 dark:bg-secondary-900/30 rounded-lg w-fit mb-2 sm:mb-0">
-              <Calendar class="h-5 w-5 sm:h-8 sm:w-8 text-secondary-600 dark:text-secondary-400" />
+        <div class="card p-5">
+          <div class="flex items-center">
+            <div class="p-2 bg-secondary-100 dark:bg-secondary-900/30 rounded-lg">
+              <Calendar class="h-8 w-8 text-secondary-600 dark:text-secondary-400" />
             </div>
-            <div class="sm:ml-4">
-              <p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 line-clamp-1">{{ t('dashboard.currentMonthExpenses') }}</p>
-              <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">₹{{
-                formatCompactAmount(stats.currentMonthExpenses) }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="card p-3 sm:p-5">
-          <div class="flex flex-col sm:flex-row sm:items-center">
-            <div class="p-2 bg-warning-100 dark:bg-warning-900/30 rounded-lg w-fit mb-2 sm:mb-0">
-              <Calculator class="h-5 w-5 sm:h-8 sm:w-8 text-warning-600 dark:text-warning-400" />
-            </div>
-            <div class="sm:ml-4">
-              <p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.expensePerSqft') }}</p>
-              <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">₹{{ stats.expensePerSqft.toLocaleString() }}</p>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.currentMonthExpenses') }}</p>
+              <p class="text-2xl font-semibold text-gray-900 dark:text-white">₹{{ formatCompactAmount(stats.currentMonthExpenses) }}</p>
             </div>
           </div>
         </div>
 
-        <div class="card p-3 sm:p-5">
-          <div class="flex flex-col sm:flex-row sm:items-center">
-            <div class="p-2 bg-error-100 dark:bg-error-900/30 rounded-lg w-fit mb-2 sm:mb-0">
-              <DollarSign class="h-5 w-5 sm:h-8 sm:w-8 text-error-600 dark:text-error-400" />
+        <div class="card p-5">
+          <div class="flex items-center">
+            <div class="p-2 bg-warning-100 dark:bg-warning-900/30 rounded-lg">
+              <Calculator class="h-8 w-8 text-warning-600 dark:text-warning-400" />
             </div>
-            <div class="sm:ml-4">
-              <p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.outstandingAmount') }}</p>
-              <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">₹{{
-                formatCompactAmount(stats.outstandingAmount) }}</p>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.expensePerSqft') }}</p>
+              <p class="text-2xl font-semibold text-gray-900 dark:text-white">₹{{ stats.expensePerSqft.toLocaleString() }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-center">
+            <div class="p-2 bg-error-100 dark:bg-error-900/30 rounded-lg">
+              <DollarSign class="h-8 w-8 text-error-600 dark:text-error-400" />
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.outstandingAmount') }}</p>
+              <p class="text-2xl font-semibold text-gray-900 dark:text-white">₹{{ formatCompactAmount(stats.outstandingAmount) }}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Payments Chart -->
-      <div class="card p-4 sm:p-6" data-tour="recent-activities">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-          <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">{{ t('dashboard.paymentsLastSevenDays') }}</h2>
-          <div class="flex items-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-1.5">
+      <!-- Payments Chart - Mobile -->
+      <div class="lg:hidden" data-tour="recent-activities">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('dashboard.paymentsLastSevenDays') }}</h2>
+          <span class="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-full px-2.5 py-1">
+            ₹{{ formatCompactAmount(weeklyPaymentTotal) }}
+          </span>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-3">
+          <div class="h-44">
+            <Line :data="chartData" :options="mobileChartOptions" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Payments Chart - Desktop -->
+      <div class="hidden lg:block card p-6" data-tour="recent-activities">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('dashboard.paymentsLastSevenDays') }}</h2>
+          <div class="flex items-center text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-1.5">
             <BarChart3 class="h-4 w-4 mr-2" />
             {{ t('dashboard.totalPaid') }}: ₹{{ formatCompactAmount(weeklyPaymentTotal) }}
           </div>
         </div>
-        <div class="w-full">
-          <!-- Chart Container -->
-          <div
-            class="relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl p-3 sm:p-6 border border-gray-200 dark:border-gray-700">
-            <!-- Chart.js Line Chart -->
-            <div class="h-48 sm:h-64">
-              <Line :data="chartData" :options="chartOptions" />
-            </div>
+        <div class="relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <div class="h-64">
+            <Line :data="chartData" :options="chartOptions" />
           </div>
         </div>
       </div>
@@ -391,6 +463,61 @@ const chartOptions = computed(() => {
     },
     elements: {
       point: {
+        hoverBackgroundColor: 'rgb(59, 130, 246)',
+        hoverBorderColor: 'white'
+      }
+    }
+  };
+});
+
+const mobileChartOptions = computed(() => {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: 'white',
+        bodyColor: 'white',
+        borderColor: 'rgb(59, 130, 246)',
+        borderWidth: 1,
+        cornerRadius: 8,
+        callbacks: {
+          label: function (context: any) {
+            return `₹${context.parsed.y.toLocaleString()}`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: {
+          color: 'rgb(156, 163, 175)',
+          font: { size: 11 }
+        }
+      },
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.05)',
+          drawBorder: false
+        },
+        ticks: {
+          color: 'rgb(156, 163, 175)',
+          font: { size: 10 },
+          maxTicksLimit: 4,
+          callback: function (value: any) {
+            return '₹' + formatAmount(value);
+          }
+        }
+      }
+    },
+    elements: {
+      point: {
+        radius: 4,
+        hoverRadius: 6,
         hoverBackgroundColor: 'rgb(59, 130, 246)',
         hoverBorderColor: 'white'
       }

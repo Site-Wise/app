@@ -64,8 +64,78 @@
       <SearchBox v-model="searchQuery" :placeholder="t('search.vendors')" :search-loading="searchLoading" />
     </div>
 
-    <!-- Vendors Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Mobile Vendor List -->
+    <div class="lg:hidden space-y-3">
+      <div v-for="vendor in vendors" :key="vendor.id"
+        class="mobile-card cursor-pointer"
+        @click="viewVendorDetail(vendor.id!)">
+        <div class="flex items-start justify-between">
+          <div class="flex-1 min-w-0">
+            <!-- Name & Company -->
+            <div class="mb-2">
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                {{ vendor.contact_person || vendor.name || 'Unnamed Vendor' }}
+              </h3>
+              <p v-if="vendor.name && vendor.contact_person" class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                {{ vendor.name }}
+              </p>
+            </div>
+
+            <!-- Phone (tappable link) -->
+            <div v-if="vendor.phone" class="mb-2" @click.stop>
+              <a :href="'tel:' + vendor.phone"
+                class="inline-flex items-center gap-1.5 text-xs text-primary-600 dark:text-primary-400 font-medium py-1 px-2 -ml-2 rounded-lg active:bg-primary-50 dark:active:bg-primary-900/20">
+                <Phone class="h-3.5 w-3.5" />
+                {{ vendor.phone }}
+              </a>
+            </div>
+
+            <!-- Financial Summary -->
+            <div class="flex items-center gap-4 mt-2">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ t('vendors.outstanding') }}</span>
+                <span class="text-sm font-bold tabular-nums"
+                  :class="getVendorOutstanding(vendor.id!) > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'">
+                  ₹{{ getVendorOutstanding(vendor.id!).toFixed(0) }}
+                </span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ t('vendors.totalPaid') }}</span>
+                <span class="text-sm font-bold tabular-nums"
+                  :class="getVendorPaid(vendor.id!) > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'">
+                  ₹{{ getVendorPaid(vendor.id!).toFixed(0) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Tags -->
+            <div v-if="vendorTags.get(vendor.id!)?.length" class="mt-2.5 flex flex-wrap gap-1">
+              <span v-for="tag in vendorTags.get(vendor.id!)" :key="tag.id"
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold text-white"
+                :style="{ backgroundColor: tag.color }">
+                {{ tag.name }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Mobile Dropdown Menu -->
+          <div class="ml-2 -mt-1" @click.stop>
+            <CardDropdownMenu :actions="getVendorActions(vendor)" @action="handleVendorAction(vendor, $event)" />
+          </div>
+        </div>
+      </div>
+
+      <div v-if="vendors.length === 0">
+        <div class="text-center py-12">
+          <Users class="mx-auto h-12 w-12 text-gray-400" />
+          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('vendors.noVendors') }}</h3>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('vendors.getStarted') }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Desktop Vendors Grid -->
+    <div class="hidden lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div v-for="vendor in vendors" :key="vendor.id"
         class="card hover:shadow-md transition-shadow duration-200 cursor-pointer"
         @click="viewVendorDetail(vendor.id!)">
@@ -95,13 +165,17 @@
             <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div class="flex justify-between items-center mb-2">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.outstanding') }}</span>
-                <span class="text-sm font-semibold text-red-600 dark:text-red-400">₹{{
-                  getVendorOutstanding(vendor.id!).toFixed(0) }}</span>
+                <span class="text-sm font-semibold"
+                  :class="getVendorOutstanding(vendor.id!) > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'">
+                  ₹{{ getVendorOutstanding(vendor.id!).toFixed(0) }}
+                </span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.totalPaid') }}</span>
-                <span class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{
-                  getVendorPaid(vendor.id!).toFixed(0) }}</span>
+                <span class="text-sm font-semibold"
+                  :class="getVendorPaid(vendor.id!) > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'">
+                  ₹{{ getVendorPaid(vendor.id!).toFixed(0) }}
+                </span>
               </div>
             </div>
 
@@ -118,7 +192,7 @@
           </div>
 
           <!-- Desktop Action Buttons -->
-          <div class="hidden lg:flex items-center space-x-2" @click.stop>
+          <div class="flex items-center space-x-2" @click.stop>
             <button @click="editVendor(vendor)" :disabled="!canEditDelete" :class="[
               canEditDelete
                 ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
@@ -135,11 +209,6 @@
             ]" :title="t('common.deleteAction')">
               <Trash2 class="h-4 w-4" />
             </button>
-          </div>
-
-          <!-- Mobile Dropdown Menu -->
-          <div class="lg:hidden">
-            <CardDropdownMenu :actions="getVendorActions(vendor)" @action="handleVendorAction(vendor, $event)" />
           </div>
         </div>
       </div>

@@ -19,13 +19,18 @@
       >
         <component
           :is="item.icon"
-          class="h-6 w-6 mb-1 transition-transform duration-200"
+          class="h-6 w-6 transition-transform duration-200"
           :class="{ 'scale-110': item.current }"
           :aria-hidden="true"
         />
         <span class="text-xs font-medium truncate max-w-[4rem]">
           {{ t(item.nameKey) }}
         </span>
+        <!-- Active indicator pill -->
+        <div
+          class="w-6 h-1 rounded-full mt-0.5 transition-colors duration-200"
+          :class="item.current ? 'bg-primary-600 dark:bg-primary-400' : 'bg-transparent'"
+        />
       </router-link>
 
       <!-- More menu button -->
@@ -41,11 +46,16 @@
         aria-haspopup="menu"
       >
         <MoreHorizontal
-          class="h-6 w-6 mb-1 transition-transform duration-200"
+          class="h-6 w-6 transition-transform duration-200"
           :class="{ 'scale-110': isMoreActive }"
           :aria-hidden="true"
         />
         <span class="text-xs font-medium">{{ t('nav.more') }}</span>
+        <!-- Active indicator pill -->
+        <div
+          class="w-6 h-1 rounded-full mt-0.5 transition-colors duration-200"
+          :class="isMoreActive ? 'bg-primary-600 dark:bg-primary-400' : 'bg-transparent'"
+        />
       </button>
     </div>
 
@@ -72,12 +82,12 @@
 
         <!-- Menu items -->
         <div class="px-4 pb-4 max-h-[60vh] overflow-y-auto">
-          <div class="grid grid-cols-4 gap-3">
+          <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
             <router-link
               v-for="item in secondaryNavItems"
               :key="item.name"
               :to="item.to"
-              class="flex flex-col items-center justify-center p-3 rounded-xl touch-feedback"
+              class="flex flex-col items-center justify-center p-4 rounded-xl touch-feedback"
               :class="[
                 item.current
                   ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
@@ -87,7 +97,7 @@
             >
               <component
                 :is="item.icon"
-                class="h-6 w-6 mb-2"
+                class="h-7 w-7 mb-2"
                 :aria-hidden="true"
               />
               <span class="text-xs font-medium text-center leading-tight">
