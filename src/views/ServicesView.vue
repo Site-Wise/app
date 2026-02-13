@@ -28,116 +28,170 @@
       <Loader2 class="h-8 w-8 animate-spin text-primary-600" />
     </div>
 
-    <!-- Services Grid -->
-    <div v-else-if="services && services.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="service in services" :key="service.id"
-        class="card hover:shadow-md transition-shadow duration-200 cursor-pointer"
-        @click="viewServiceDetail(service.id!)">
-        <div class="flex items-start justify-between">
-          <div class="flex-1">
-            <div class="flex items-center space-x-2 mb-2">
-              <component :is="getServiceIcon(service.category)" class="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ service.name }}</h3>
-              <span v-if="!service.is_active"
-                class="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-xs rounded-full">
-                {{ t('common.inactive') }}
-              </span>
-            </div>
-
-            <div class="space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('services.serviceType') }}:</span>
-                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ service.service_type }}</span>
+    <!-- Services List -->
+    <template v-else-if="services && services.length > 0">
+      <!-- Mobile Card List -->
+      <div class="lg:hidden space-y-3">
+        <div v-for="service in services" :key="service.id"
+          class="mobile-card"
+          @click="viewServiceDetail(service.id!)">
+          <div class="flex items-start justify-between">
+            <div class="flex-1 min-w-0">
+              <!-- Service name prominent -->
+              <div class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                {{ service.name }}
               </div>
-
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('services.category') }}:</span>
-                <span class="text-sm font-medium text-gray-900 dark:text-white capitalize">{{
-                  t(`services.categories.${service.category}`) }}</span>
-              </div>
-
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('services.unit') }}:</span>
-                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ service.unit }}</span>
-              </div>
-
-              <div v-if="service.standard_rate"
-                class="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.standardRate')
-                }}:</span>
-                <span class="text-lg font-bold text-primary-600 dark:text-primary-400">
-                  ₹{{ service.standard_rate.toFixed(2) }}/{{ service.unit }}
+              <!-- Category as colored pill -->
+              <div class="flex items-center gap-2 mt-1">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium capitalize"
+                  :class="{
+                    'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300': service.category === 'labor',
+                    'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300': service.category === 'equipment',
+                    'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300': service.category === 'professional',
+                    'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300': service.category === 'transport',
+                    'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300': service.category === 'other'
+                  }">
+                  {{ t(`services.categories.${service.category}`) }}
+                </span>
+                <span v-if="!service.is_active"
+                  class="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-[10px] font-medium rounded-full">
+                  {{ t('common.inactive') }}
                 </span>
               </div>
-            </div>
-
-            <div v-if="service.description" class="mt-3 text-sm text-gray-600 dark:text-gray-400">
-              {{ service.description }}
-            </div>
-
-            <!-- Tags -->
-            <div v-if="serviceTags.get(service.id!)?.length" class="mt-4">
-              <div class="flex flex-wrap gap-1">
+              <!-- Description truncated -->
+              <p v-if="service.description" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                {{ service.description }}
+              </p>
+              <!-- Tags as small colored pills -->
+              <div v-if="serviceTags.get(service.id!)?.length" class="flex flex-wrap gap-1 mt-2">
                 <span v-for="tag in serviceTags.get(service.id!)" :key="tag.id"
-                  class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium text-white"
+                  class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium text-white"
                   :style="{ backgroundColor: tag.color }">
                   {{ tag.name }}
                 </span>
               </div>
             </div>
-
-            <!-- Service Summary -->
-            <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div class="flex justify-between items-center mb-2">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.totalBookings')
-                }}</span>
-                <span class="text-sm font-semibold text-blue-600 dark:text-blue-400">{{
-                  getServiceBookingsCount(service.id!) }}</span>
+            <div class="flex items-start gap-2 ml-3">
+              <!-- Rate shown prominently -->
+              <div class="text-right">
+                <div v-if="service.standard_rate" class="text-base font-bold tabular-nums text-primary-600 dark:text-primary-400">
+                  ₹{{ service.standard_rate.toFixed(2) }}
+                </div>
+                <div v-if="service.standard_rate" class="text-[10px] text-gray-500 dark:text-gray-400">
+                  /{{ service.unit }}
+                </div>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.avgRate') }}</span>
-                <span class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{
-                  getServiceAverageRate(service.id!).toFixed(2) }}</span>
-              </div>
+              <CardDropdownMenu :actions="getServiceActions(service)" @action="handleServiceAction(service, $event)" @click.stop />
             </div>
-          </div>
-
-          <!-- Desktop Action Buttons -->
-          <div class="hidden lg:flex items-center space-x-2" @click.stop>
-            <button @click="editService(service)" :disabled="!canUpdate" :class="[
-              canUpdate
-                ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
-                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
-              'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
-            ]" :title="t('common.edit')">
-              <Edit2 class="h-4 w-4" />
-            </button>
-            <button @click="toggleServiceStatus(service)" :disabled="!canUpdate" :class="[
-              canUpdate
-                ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
-                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
-              'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
-            ]" :title="service.is_active ? t('services.deactivate') : t('services.activate')">
-              <component :is="service.is_active ? EyeOff : Eye" class="h-4 w-4" />
-            </button>
-            <button @click="deleteService(service.id!)" :disabled="!canDelete" :class="[
-              canDelete
-                ? 'text-red-400 hover:text-red-600 dark:hover:text-red-300'
-                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
-              'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
-            ]" :title="t('common.deleteAction')">
-              <Trash2 class="h-4 w-4" />
-            </button>
-          </div>
-
-          <!-- Mobile Dropdown Menu -->
-          <div class="lg:hidden">
-            <CardDropdownMenu :actions="getServiceActions(service)" @action="handleServiceAction(service, $event)" />
           </div>
         </div>
       </div>
 
-    </div>
+      <!-- Desktop Services Grid -->
+      <div class="hidden lg:grid lg:grid-cols-3 gap-6">
+        <div v-for="service in services" :key="service.id"
+          class="card hover:shadow-md transition-shadow duration-200 cursor-pointer"
+          @click="viewServiceDetail(service.id!)">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <div class="flex items-center space-x-2 mb-2">
+                <component :is="getServiceIcon(service.category)" class="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ service.name }}</h3>
+                <span v-if="!service.is_active"
+                  class="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-xs rounded-full">
+                  {{ t('common.inactive') }}
+                </span>
+              </div>
+
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('services.serviceType') }}:</span>
+                  <span class="text-sm font-medium text-gray-900 dark:text-white">{{ service.service_type }}</span>
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('services.category') }}:</span>
+                  <span class="text-sm font-medium text-gray-900 dark:text-white capitalize">{{
+                    t(`services.categories.${service.category}`) }}</span>
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('services.unit') }}:</span>
+                  <span class="text-sm font-medium text-gray-900 dark:text-white">{{ service.unit }}</span>
+                </div>
+
+                <div v-if="service.standard_rate"
+                  class="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.standardRate')
+                  }}:</span>
+                  <span class="text-lg font-bold text-primary-600 dark:text-primary-400">
+                    ₹{{ service.standard_rate.toFixed(2) }}/{{ service.unit }}
+                  </span>
+                </div>
+              </div>
+
+              <div v-if="service.description" class="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                {{ service.description }}
+              </div>
+
+              <!-- Tags -->
+              <div v-if="serviceTags.get(service.id!)?.length" class="mt-4">
+                <div class="flex flex-wrap gap-1">
+                  <span v-for="tag in serviceTags.get(service.id!)" :key="tag.id"
+                    class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium text-white"
+                    :style="{ backgroundColor: tag.color }">
+                    {{ tag.name }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Service Summary -->
+              <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.totalBookings')
+                  }}</span>
+                  <span class="text-sm font-semibold text-blue-600 dark:text-blue-400">{{
+                    getServiceBookingsCount(service.id!) }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.avgRate') }}</span>
+                  <span class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{
+                    getServiceAverageRate(service.id!).toFixed(2) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Desktop Action Buttons -->
+            <div class="flex items-center space-x-2" @click.stop>
+              <button @click="editService(service)" :disabled="!canUpdate" :class="[
+                canUpdate
+                  ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+                  : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+                'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+              ]" :title="t('common.edit')">
+                <Edit2 class="h-4 w-4" />
+              </button>
+              <button @click="toggleServiceStatus(service)" :disabled="!canUpdate" :class="[
+                canUpdate
+                  ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+                  : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+                'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+              ]" :title="service.is_active ? t('services.deactivate') : t('services.activate')">
+                <component :is="service.is_active ? EyeOff : Eye" class="h-4 w-4" />
+              </button>
+              <button @click="deleteService(service.id!)" :disabled="!canDelete" :class="[
+                canDelete
+                  ? 'text-red-400 hover:text-red-600 dark:hover:text-red-300'
+                  : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+                'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+              ]" :title="t('common.deleteAction')">
+                <Trash2 class="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
 
     <!-- Empty State -->
     <div v-else class="text-center py-12">

@@ -33,15 +33,99 @@
       <SearchBox v-model="searchQuery" :placeholder="t('search.accounts')" :search-loading="searchLoading" />
     </div>
 
-    <!-- Accounts Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Mobile Account List -->
+    <div class="lg:hidden space-y-3">
+      <div v-for="account in accounts" :key="account.id"
+        class="mobile-card cursor-pointer"
+        @click="viewAccountDetail(account.id!)">
+        <div class="flex items-start justify-between">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="p-2 rounded-full"
+                :class="{
+                  'bg-blue-100 dark:bg-blue-900/30': account.type === 'bank',
+                  'bg-purple-100 dark:bg-purple-900/30': account.type === 'credit_card',
+                  'bg-green-100 dark:bg-green-900/30': account.type === 'cash',
+                  'bg-orange-100 dark:bg-orange-900/30': account.type === 'digital_wallet',
+                  'bg-gray-100 dark:bg-gray-700': account.type === 'other'
+                }">
+                <component :is="getAccountIcon(account.type)" class="h-5 w-5"
+                  :class="{
+                    'text-blue-600 dark:text-blue-400': account.type === 'bank',
+                    'text-purple-600 dark:text-purple-400': account.type === 'credit_card',
+                    'text-green-600 dark:text-green-400': account.type === 'cash',
+                    'text-orange-600 dark:text-orange-400': account.type === 'digital_wallet',
+                    'text-gray-500 dark:text-gray-400': account.type === 'other'
+                  }" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ account.name }}</h3>
+                  <span v-if="!account.is_active"
+                    class="px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-[10px] rounded-full flex-shrink-0">
+                    {{ t('common.inactive') }}
+                  </span>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 capitalize">{{ account.type.replace('_', ' ') }}
+                  <span v-if="account.bank_name"> &middot; {{ account.bank_name }}</span>
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('accounts.currentBalance') }}</span>
+              <span class="text-base font-bold tabular-nums"
+                :class="account.current_balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
+                ₹{{ account.current_balance.toFixed(2) }}
+              </span>
+            </div>
+
+            <div v-if="account.account_number" class="mt-1 text-xs text-gray-400 dark:text-gray-500 tabular-nums">
+              {{ maskAccountNumber(account.account_number) }}
+            </div>
+          </div>
+
+          <!-- Mobile Dropdown Menu -->
+          <div class="ml-2 -mt-1" @click.stop>
+            <CardDropdownMenu :actions="getAccountActions(account)" @action="handleAccountAction(account, $event)" />
+          </div>
+        </div>
+      </div>
+
+      <div v-if="accounts.length === 0">
+        <div class="text-center py-12">
+          <CreditCard class="mx-auto h-12 w-12 text-gray-400" />
+          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('accounts.noAccounts') }}</h3>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('accounts.getStarted') }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Desktop Accounts Grid -->
+    <div class="hidden lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div v-for="account in accounts" :key="account.id"
         class="card hover:shadow-md transition-shadow duration-200 cursor-pointer"
         @click="viewAccountDetail(account.id!)">
         <div class="flex items-start justify-between">
           <div class="flex-1">
             <div class="flex items-center space-x-2 mb-2">
-              <component :is="getAccountIcon(account.type)" class="h-5 w-5 text-gray-500 dark:text-gray-400" />
+              <div class="p-1.5 rounded-full"
+                :class="{
+                  'bg-blue-100 dark:bg-blue-900/30': account.type === 'bank',
+                  'bg-purple-100 dark:bg-purple-900/30': account.type === 'credit_card',
+                  'bg-green-100 dark:bg-green-900/30': account.type === 'cash',
+                  'bg-orange-100 dark:bg-orange-900/30': account.type === 'digital_wallet',
+                  'bg-gray-100 dark:bg-gray-700': account.type === 'other'
+                }">
+                <component :is="getAccountIcon(account.type)" class="h-5 w-5"
+                  :class="{
+                    'text-blue-600 dark:text-blue-400': account.type === 'bank',
+                    'text-purple-600 dark:text-purple-400': account.type === 'credit_card',
+                    'text-green-600 dark:text-green-400': account.type === 'cash',
+                    'text-orange-600 dark:text-orange-400': account.type === 'digital_wallet',
+                    'text-gray-500 dark:text-gray-400': account.type === 'other'
+                  }" />
+              </div>
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ account.name }}</h3>
               <span v-if="!account.is_active"
                 class="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-xs rounded-full">
@@ -70,7 +154,7 @@
               <div class="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('accounts.currentBalance')
                 }}:</span>
-                <span class="text-lg font-bold"
+                <span class="text-lg font-bold tabular-nums"
                   :class="account.current_balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
                   ₹{{ account.current_balance.toFixed(2) }}
                 </span>
@@ -83,7 +167,7 @@
           </div>
 
           <!-- Desktop Action Buttons -->
-          <div class="hidden lg:flex items-center space-x-2" @click.stop>
+          <div class="flex items-center space-x-2" @click.stop>
             <button @click="editAccount(account)"
               class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
               :title="t('common.edit')">
@@ -103,11 +187,6 @@
               <Trash2 class="h-4 w-4" />
             </button>
           </div>
-
-          <!-- Mobile Dropdown Menu -->
-          <div class="lg:hidden">
-            <CardDropdownMenu :actions="getAccountActions(account)" @action="handleAccountAction(account, $event)" />
-          </div>
         </div>
       </div>
 
@@ -120,8 +199,43 @@
       </div>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Mobile Summary: Horizontal scroll pills -->
+    <div class="lg:hidden mt-6">
+      <div class="mobile-scroll-row">
+        <div class="mobile-stat-pill">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <TrendingUp class="h-4 w-4 text-green-600 dark:text-green-400" />
+            </div>
+            <span class="text-xs font-medium text-green-700 dark:text-green-300">{{ t('accounts.totalBalance') }}</span>
+          </div>
+          <p class="text-lg font-bold tabular-nums text-green-900 dark:text-green-100">₹{{ totalBalance.toFixed(2) }}</p>
+        </div>
+
+        <div class="mobile-stat-pill">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <CreditCard class="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <span class="text-xs font-medium text-blue-700 dark:text-blue-300">{{ t('accounts.activeAccounts') }}</span>
+          </div>
+          <p class="text-lg font-bold tabular-nums text-blue-900 dark:text-blue-100">{{ activeAccountsCount }}</p>
+        </div>
+
+        <div class="mobile-stat-pill">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="p-1.5 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+              <AlertTriangle class="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            <span class="text-xs font-medium text-yellow-700 dark:text-yellow-300">{{ t('accounts.lowBalance') }}</span>
+          </div>
+          <p class="text-lg font-bold tabular-nums text-yellow-900 dark:text-yellow-100">{{ lowBalanceCount }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Desktop Summary Cards -->
+    <div class="hidden lg:grid mt-8 grid-cols-1 md:grid-cols-3 gap-6">
       <div class="card bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700">
         <div class="flex items-center">
           <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">

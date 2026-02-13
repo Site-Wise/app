@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- Header - Mobile optimized -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 lg:gap-4 mb-4 lg:mb-6">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{{ t('items.title') }}</h1>
         <p class="mt-0.5 text-sm text-gray-600 dark:text-gray-400">
@@ -20,46 +20,52 @@
     </div>
 
     <!-- Search Box -->
-    <div class="w-full lg:w-96 mb-6" data-tour="search-bar">
+    <div class="w-full lg:w-96 mb-4 lg:mb-6" data-tour="search-bar">
       <SearchBox v-model="searchQuery" :placeholder="t('search.items')" :search-loading="searchLoading" />
     </div>
 
-    <!-- Items Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6" data-tour="items-table">
-      <div v-for="item in items" :key="item.id" class="card-interactive" @click="viewItemDetail(item.id!)">
+    <!-- Items Grid: vertical stack on mobile, grid on lg+ -->
+    <div class="flex flex-col space-y-3 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6" data-tour="items-table">
+      <div v-for="item in items" :key="item.id"
+        class="mobile-card lg:card-interactive"
+        @click="viewItemDetail(item.id!)">
         <div class="flex items-start justify-between">
-          <div class="flex-1">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ item.name }}</h3>
-            <p v-if="item.description" class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ item.description }}</p>
-            <div class="mt-3 flex items-center space-x-4">
-              <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                <Package class="mr-1 h-4 w-4" />
+          <div class="flex-1 min-w-0">
+            <!-- Item name: prominent on mobile -->
+            <h3 class="text-sm font-semibold lg:text-lg text-gray-900 dark:text-white truncate">{{ item.name }}</h3>
+
+            <!-- Unit badge: subtle pill on mobile -->
+            <div class="mt-1.5 lg:mt-3 flex items-center space-x-4">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                <Package class="mr-1 h-3 w-3 lg:h-4 lg:w-4" />
                 {{ getUnitDisplay(item.unit) }}
-              </div>
+              </span>
             </div>
 
-            <!-- Tags -->
-            <div v-if="itemTags.get(item.id!)?.length" class="mt-3">
+            <!-- Description: truncated to 2 lines on mobile -->
+            <p v-if="item.description" class="text-xs lg:text-sm text-gray-600 dark:text-gray-400 mt-1.5 line-clamp-2 lg:line-clamp-none">{{ item.description }}</p>
+
+            <!-- Tags: small colored pills -->
+            <div v-if="itemTags.get(item.id!)?.length" class="mt-2 lg:mt-3">
               <div class="flex flex-wrap gap-1">
                 <span v-for="tag in itemTags.get(item.id!)" :key="tag.id"
-                  class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium text-white"
+                  class="inline-flex items-center px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-full lg:rounded-md text-[10px] lg:text-xs font-medium text-white"
                   :style="{ backgroundColor: tag.color }">
                   {{ tag.name }}
                 </span>
               </div>
             </div>
 
-            <!-- Delivery Summary -->
-            <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div class="flex justify-between items-center mb-2">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.totalDelivered')
-                  }}</span>
-                <span class="text-sm font-semibold text-blue-600 dark:text-blue-400">{{
+            <!-- Delivery Summary: compact on mobile -->
+            <div class="mt-3 lg:mt-4 p-2 lg:p-3 bg-gray-50 dark:bg-gray-700/50 lg:dark:bg-gray-700 rounded-lg">
+              <div class="flex justify-between items-center lg:mb-2">
+                <span class="text-xs lg:text-sm font-medium text-gray-500 lg:text-gray-700 dark:text-gray-400 lg:dark:text-gray-300">{{ t('items.totalDelivered') }}</span>
+                <span class="text-xs lg:text-sm font-semibold text-blue-600 dark:text-blue-400">{{
                   getItemDeliveredQuantity(item.id!).toFixed(1) }} {{ getUnitDisplay(item.unit) }}</span>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.avgPrice') }}</span>
-                <span class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{
+              <div class="flex justify-between items-center mt-1 lg:mt-0">
+                <span class="text-xs lg:text-sm font-medium text-gray-500 lg:text-gray-700 dark:text-gray-400 lg:dark:text-gray-300">{{ t('items.avgPrice') }}</span>
+                <span class="text-xs lg:text-sm font-semibold text-green-600 dark:text-green-400">₹{{
                   getItemAveragePrice(item.id!).toFixed(1) }}</span>
               </div>
             </div>
@@ -100,7 +106,7 @@
         </div>
       </div>
 
-      <div v-if="items.length === 0" class="col-span-full">
+      <div v-if="items.length === 0" class="lg:col-span-full">
         <div class="text-center py-12">
           <Package class="mx-auto h-12 w-12 text-gray-400" />
           <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('items.noItems') }}</h3>

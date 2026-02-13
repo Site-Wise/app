@@ -252,70 +252,86 @@
     </div>
 
     <!-- Mobile/Tablet List View -->
-    <div class="lg:hidden">
-      <div class="space-y-4">
-        <div v-if="loading" class="text-center py-8">
-          <Loader2 class="w-8 h-8 animate-spin mx-auto text-gray-400" />
-        </div>
-        <div v-else-if="deliveries.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
-          {{ searchQuery.trim() ? t('delivery.noSearchResults') : t('delivery.noDeliveries') }}
-        </div>
-        <div v-else v-for="delivery in deliveries" :key="delivery.id" 
-             class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-          
-          <!-- Mobile Card Header -->
-          <div class="flex items-start justify-between mb-3">
-            <div class="flex-1">
-              <div class="flex items-center gap-2">
-                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
-                  {{ delivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}
-                </h3>
-                <span v-if="delivery.expand?.vendor?.name" class="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {{ delivery.expand.vendor.name }}
-                </span>
-              </div>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {{ formatDate(delivery.delivery_date) }}
-                <span v-if="delivery.delivery_reference" class="ml-2">
-                  • Ref: {{ delivery.delivery_reference }}
-                </span>
-              </p>
+    <div class="lg:hidden space-y-3">
+      <!-- Sort Controls -->
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-xs text-gray-500 dark:text-gray-400">Sort:</span>
+        <button @click="handleSort('date')"
+          class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors"
+          :class="sortField === 'date' ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'">
+          {{ t('common.date') }}
+          <component :is="getSortIcon('date')" class="h-3 w-3" v-if="sortField === 'date'" />
+        </button>
+        <button @click="handleSort('amount')"
+          class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors"
+          :class="sortField === 'amount' ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'">
+          {{ t('common.amount') }}
+          <component :is="getSortIcon('amount')" class="h-3 w-3" v-if="sortField === 'amount'" />
+        </button>
+        <button @click="handleSort('vendor')"
+          class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors"
+          :class="sortField === 'vendor' ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'">
+          {{ t('common.vendor') }}
+          <component :is="getSortIcon('vendor')" class="h-3 w-3" v-if="sortField === 'vendor'" />
+        </button>
+      </div>
+
+      <!-- Loading State -->
+      <div v-if="loading" class="text-center py-8">
+        <Loader2 class="w-8 h-8 animate-spin mx-auto text-gray-400" />
+      </div>
+
+      <!-- Empty State -->
+      <div v-else-if="deliveries.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+        {{ searchQuery.trim() ? t('delivery.noSearchResults') : t('delivery.noDeliveries') }}
+      </div>
+
+      <!-- Delivery Cards -->
+      <div v-else v-for="delivery in sortedDeliveries" :key="delivery.id"
+        class="mobile-card"
+        @click="viewDelivery(delivery)">
+        <!-- Top row: Vendor name (left) + Total amount (right) -->
+        <div class="flex items-start justify-between">
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+              {{ delivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}
             </div>
-            
-            <!-- Mobile Actions Menu -->
-            <div class="relative">
+            <div v-if="delivery.expand?.vendor?.name" class="text-xs text-gray-500 dark:text-gray-400 truncate">
+              {{ delivery.expand.vendor.name }}
+            </div>
+          </div>
+
+          <!-- Right: Amount + Actions -->
+          <div class="flex items-start gap-2 ml-3">
+            <div class="text-right">
+              <div class="text-base font-bold text-gray-900 dark:text-white tabular-nums">₹{{ delivery.total_amount.toFixed(2) }}</div>
+            </div>
+            <div @click.stop>
               <CardDropdownMenu
                 :actions="getDeliveryActions(delivery)"
                 @action="handleDeliveryAction(delivery, $event)"
               />
             </div>
           </div>
+        </div>
 
-          <!-- Mobile Card Content -->
-          <div class="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <span class="text-gray-500 dark:text-gray-400">{{ t('delivery.itemCount') }}:</span>
-              <span class="ml-1 text-gray-900 dark:text-white font-medium">
-                {{ delivery.expand?.delivery_items?.length || 0 }}
-              </span>
-            </div>
-            <div>
-              <span class="text-gray-500 dark:text-gray-400">{{ t('common.total') }}:</span>
-              <span class="ml-1 text-gray-900 dark:text-white font-medium">
-                ₹{{ delivery.total_amount.toFixed(2) }}
-              </span>
-            </div>
-            <div class="col-span-2">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('delivery.paymentStatus') }}:</span>
-              <span :class="`ml-1 status-${delivery.payment_status}`">
-                {{ t(`common.${delivery.payment_status}`) }}
-              </span>
-              <!-- Show outstanding amount for partial payments -->
-              <div v-if="delivery.payment_status === 'partial'" class="text-xs text-gray-500 dark:text-gray-400">
-                ₹{{ delivery.outstanding.toFixed(2) }} pending
-              </div>
-            </div>
-          </div>
+        <!-- Second row: Date + Reference -->
+        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          {{ formatDate(delivery.delivery_date) }}
+          <span v-if="delivery.delivery_reference" class="ml-1.5">&bull; Ref: {{ delivery.delivery_reference }}</span>
+        </div>
+
+        <!-- Third row: Item count + Status badge -->
+        <div class="flex items-center gap-3 mt-2.5 pt-2.5 border-t border-gray-100 dark:border-gray-700/50">
+          <span class="text-xs text-gray-500 dark:text-gray-400">
+            {{ delivery.expand?.delivery_items?.length || 0 }} {{ t('delivery.items') }}
+          </span>
+          <span :class="`status-${delivery.payment_status}`">
+            {{ t(`common.${delivery.payment_status}`) }}
+          </span>
+          <span v-if="delivery.payment_status === 'partial'" class="text-[10px] text-gray-500 dark:text-gray-400">
+            ₹{{ delivery.outstanding.toFixed(2) }} pending
+          </span>
         </div>
       </div>
     </div>
@@ -537,7 +553,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useEventListener } from '@vueuse/core';
-import { Plus, Edit2, Trash2, Loader2, Eye, X, Images, MoreVertical, AlertCircle, Link2 } from 'lucide-vue-next';
+import { Plus, Edit2, Trash2, Loader2, Eye, X, Images, MoreVertical, AlertCircle, Link2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
@@ -657,6 +673,46 @@ const canCreateDelivery = computed(() => {
 
 const canEditDelete = computed(() => {
   return !isReadOnly.value && canDelete.value;
+});
+
+// Sort state for mobile cards
+type SortField = 'date' | 'amount' | 'vendor' | null;
+type SortOrder = 'asc' | 'desc';
+const sortField = ref<SortField>('date');
+const sortOrder = ref<SortOrder>('desc');
+
+const handleSort = (field: SortField) => {
+  if (sortField.value === field) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortField.value = field;
+    sortOrder.value = 'desc';
+  }
+};
+
+const getSortIcon = (field: SortField) => {
+  if (sortField.value !== field) return ArrowUpDown;
+  return sortOrder.value === 'asc' ? ArrowUp : ArrowDown;
+};
+
+// Sorted deliveries for mobile view
+const sortedDeliveries = computed((): DeliveryWithPaymentStatus[] => {
+  const list = [...deliveries.value];
+  if (!sortField.value) return list;
+
+  return list.sort((a, b) => {
+    let cmp = 0;
+    if (sortField.value === 'date') {
+      cmp = new Date(a.delivery_date).getTime() - new Date(b.delivery_date).getTime();
+    } else if (sortField.value === 'amount') {
+      cmp = a.total_amount - b.total_amount;
+    } else if (sortField.value === 'vendor') {
+      const va = a.expand?.vendor?.contact_person || '';
+      const vb = b.expand?.vendor?.contact_person || '';
+      cmp = va.localeCompare(vb);
+    }
+    return sortOrder.value === 'desc' ? -cmp : cmp;
+  });
 });
 
 const allImages = computed(() => {

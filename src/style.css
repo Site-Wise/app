@@ -212,4 +212,74 @@
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
+
+  /* Mobile-native card list item */
+  .mobile-card {
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 transition-all duration-150 active:scale-[0.99] active:bg-gray-50 dark:active:bg-gray-700;
+  }
+
+  /* Mobile section header */
+  .mobile-section-header {
+    @apply text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 px-1 mb-2;
+  }
+
+  /* Mobile hero metric card */
+  .mobile-hero-card {
+    @apply relative overflow-hidden rounded-2xl p-5;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
+  }
+
+  .mobile-hero-card.dark {
+    background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 50%, #172554 100%);
+  }
+
+  /* Horizontal scroll container */
+  .mobile-scroll-row {
+    @apply flex gap-3 overflow-x-auto pb-2 -mx-4 px-4;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .mobile-scroll-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-scroll-row > * {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+
+  /* Skeleton loading animation */
+  .skeleton {
+    @apply bg-gray-200 dark:bg-gray-700 rounded animate-pulse;
+  }
+
+  /* Mobile stat pill */
+  .mobile-stat-pill {
+    @apply flex flex-col bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 min-w-[140px];
+  }
+
+  /* Mobile list divider */
+  .mobile-list-divider {
+    @apply border-t border-gray-100 dark:border-gray-700/50;
+  }
+
+  /* Mobile amount display */
+  .mobile-amount {
+    @apply text-base font-bold tabular-nums;
+  }
+
+  .mobile-amount-positive {
+    @apply mobile-amount text-green-600 dark:text-green-400;
+  }
+
+  .mobile-amount-negative {
+    @apply mobile-amount text-red-600 dark:text-red-400;
+  }
+
+  .mobile-amount-neutral {
+    @apply mobile-amount text-gray-900 dark:text-white;
+  }
 }
