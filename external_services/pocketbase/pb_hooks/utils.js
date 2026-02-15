@@ -112,9 +112,12 @@ module.exports = {
       usage.set('period_end', periodEnd.toISOString())
       usage.set('items_count', 0)
       usage.set('vendors_count', 0)
-      usage.set('incoming_deliveries_count', 0)
+      usage.set('deliveries_count', 0)
       usage.set('service_bookings_count', 0)
       usage.set('payments_count', 0)
+      usage.set('accounts_count', 0)
+      usage.set('services_count', 0)
+      usage.set('vendor_returns_count', 0)
 
       $app.save(usage)
 
