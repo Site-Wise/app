@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue';
-import { authService } from '../services/pocketbase';
+import { authService, pb } from '../services/pocketbase';
 import type { User } from '../services/pocketbase';
 
 const user = ref<User | null>(authService.currentUser);
@@ -16,9 +16,10 @@ export function useAuth() {
     try {
       const authData = await authService.login(email, password, turnstileToken);
       user.value = authData.record as unknown as User;
-      return { success: true };
+      const verified = !!(authData.record as any)?.verified;
+      return { success: true, verified };
     } catch (error: any) {
-      return { success: false, error: error.message };
+      return { success: false, verified: false, error: error.message };
     }
   };
 
@@ -54,6 +55,10 @@ export function useAuth() {
     }
   };
 
+  const requestEmailVerification = async (email: string) => {
+    await pb.collection('users').requestVerification(email);
+  };
+
   // Expose updateUser for manual refresh if needed
   const refreshAuth = () => {
     updateUser();
@@ -65,6 +70,7 @@ export function useAuth() {
     login,
     register,
     logout,
+    requestEmailVerification,
     refreshAuth
   };
 }
