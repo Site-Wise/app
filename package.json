@@ -34,23 +34,23 @@
     "vue-toastification": "^2.0.0-rc.5"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.10.0",
+    "@tauri-apps/cli": "^2.10.1",
     "@types/markdown-it": "^14.1.2",
-    "@types/node": "^25.2.2",
+    "@types/node": "^25.3.5",
     "@vitejs/plugin-vue": "^6.0.4",
     "@vitest/coverage-v8": "^4.0.18",
     "@vitest/ui": "^4.0.18",
     "@vue/test-utils": "^2.4.1",
-    "autoprefixer": "^10.4.24",
-    "happy-dom": "^20.5.3",
-    "markdown-it": "^14.1.0",
-    "postcss": "^8.5.6",
+    "autoprefixer": "^10.4.27",
+    "happy-dom": "^20.8.3",
+    "markdown-it": "^14.1.1",
+    "postcss": "^8.5.8",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^4.0.18",
-    "vue-tsc": "^3.2.4",
+    "vue-tsc": "^3.2.5",
     "workbox-window": "^7.3.0"
   }
 }
