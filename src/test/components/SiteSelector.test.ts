@@ -432,7 +432,7 @@ describe('SiteSelector', () => {
       const manageButton = wrapper.find('[title="Manage Site"]')
       await manageButton.trigger('click')
       
-      const manageModal = wrapper.find('.fixed.inset-0.bg-black.bg-opacity-50')
+      const manageModal = wrapper.find('.fixed.inset-0.bg-black\\/60')
       const updateForm = manageModal.find('form')
       if (updateForm.exists()) {
         await updateForm.trigger('submit')
@@ -451,7 +451,7 @@ describe('SiteSelector', () => {
       const manageButton = wrapper.find('[title="Manage Site"]')
       await manageButton.trigger('click')
       
-      const manageModal = wrapper.find('.fixed.inset-0.bg-black.bg-opacity-50')
+      const manageModal = wrapper.find('.fixed.inset-0.bg-black\\/60')
       const updateForm = manageModal.find('form')
       if (updateForm.exists()) {
         await updateForm.trigger('submit')
@@ -483,7 +483,7 @@ describe('SiteSelector', () => {
       await manageButton.trigger('click')
       
       // Close modal
-      const manageModal = wrapper.find('.fixed.inset-0.bg-black.bg-opacity-50')
+      const manageModal = wrapper.find('.fixed.inset-0.bg-black\\/60')
       const buttons = manageModal.findAll('button')
       const cancelButton = buttons.find((btn: any) => btn.text().includes('Cancel'))
       if (cancelButton?.exists()) {

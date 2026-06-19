@@ -223,13 +223,20 @@ describe('DashboardView', () => {
   })
 
   it('should render dashboard title', () => {
-    expect(wrapper.find('h1').text()).toBe('Dashboard')
+    // "Dashboard" moved into the eyebrow label ("Dashboard · <Month Year>");
+    // the h1 now shows the site subtitle.
+    expect(wrapper.find('.sw-eyebrow').text()).toContain('Dashboard')
+    expect(wrapper.find('h1').text()).toContain('Overview of Test Construction Site management')
   })
 
   it('should display current site information', () => {
-    expect(wrapper.text()).toContain('Test Construction Site')
-    expect(wrapper.text()).toContain('100 units')
-    expect(wrapper.text()).toContain('50,000 sqft')
+    const text = wrapper.text()
+    expect(text).toContain('Test Construction Site')
+    // Site stats render as separate spans (value + label)
+    expect(text).toContain('100')
+    expect(text).toContain('units')
+    expect(text).toContain('50,000')
+    expect(text).toContain('sqft')
   })
 
   it('should render expense stats cards', async () => {

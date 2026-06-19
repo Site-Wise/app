@@ -490,15 +490,15 @@ describe('PaymentsView - Mobile Responsive Design', () => {
 
     it('should display amount in green color', async () => {
       wrapper = createWrapper()
-      
+
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
       const mobileCells = wrapper.findAll('td.lg\\:hidden')
       const secondColumn = mobileCells[1]
-      const greenAmount = secondColumn.find('.text-green-600')
-      
+      const greenAmount = secondColumn.find('.text-forest')
+
       expect(greenAmount.exists()).toBe(true)
       expect(greenAmount.text()).toContain('₹5000.00')
     })

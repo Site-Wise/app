@@ -380,11 +380,12 @@ describe('PaymentModal.vue', () => {
     await nextTick();
 
     expect(wrapper.vm.selectedCreditNoteAmount).toBe(50);
-    expect(wrapper.html()).toContain('Selected credit notes: ₹50.00');
+    // Amount values are now rendered inside separate <span class="font-mono tabular-nums">
+    // elements, so the label and value are not contiguous in the HTML string.
+    expect(wrapper.html()).toContain('Selected credit notes:');
     expect(wrapper.html()).toContain('Account payment:');
-    expect(wrapper.html()).toContain(' ₹50.00');
-    expect(wrapper.html()).toContain('Credit notes:');
     expect(wrapper.html()).toContain('₹50.00');
+    expect(wrapper.html()).toContain('Credit notes:');
     expect(wrapper.html()).toContain('Total payment:');
     expect(wrapper.html()).toContain('₹100.00');
   });

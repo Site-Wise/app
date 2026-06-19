@@ -213,7 +213,15 @@
     "totalPaid": "Total Paid",
     "viewAll": "View all",
     "units": "units",
-    "sqft": "sqft"
+    "sqft": "sqft",
+    "recentTransactions": "Recent transactions",
+    "noTransactions": "No recent transactions yet",
+    "vsLastMonth": "vs last month",
+    "perSqftNote": "per sqft",
+    "thisMonthNote": "this month",
+    "unpaidNote": "{count} unpaid",
+    "allSettled": "all settled",
+    "material": "Material"
   },
   "items": {
     "title": "Items",

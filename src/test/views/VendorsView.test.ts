@@ -303,7 +303,7 @@ describe('VendorsView', () => {
       await wrapper.vm.$nextTick()
 
       // Find vendor cards
-      const vendorCards = wrapper.findAll('.card')
+      const vendorCards = wrapper.findAll('.sw-card')
       expect(vendorCards.length).toBeGreaterThan(0)
 
       // Click on the first vendor card

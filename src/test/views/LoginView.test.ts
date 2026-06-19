@@ -101,7 +101,9 @@ describe('LoginComponent', () => {
     pinia = testPinia
     siteStore = testSiteStore
     router = createMockRouter()
-    mockPush = vi.fn()
+    // router.push returns a Promise in real vue-router; mirror that so callers
+    // that chain .catch() (e.g. switchTo) don't throw.
+    mockPush = vi.fn().mockResolvedValue(undefined)
     router.push = mockPush
 
     // Set environment variables for Turnstile
@@ -335,8 +337,9 @@ describe('LoginComponent', () => {
     })
 
     it('hides register form when back to login button is clicked', async () => {
-      const backButton = wrapper.findAll('button').find((btn: any) => 
-        btn.text().includes('Back to Login')
+      // The old "Back to Login" button is now a "Sign In" switch button (footer of register form).
+      const backButton = wrapper.findAll('button').find((btn: any) =>
+        btn.text().includes('Sign In')
       )
       await backButton.trigger('click')
       await nextTick()

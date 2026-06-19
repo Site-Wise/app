@@ -169,7 +169,7 @@ describe('TimeCalculatorModal', () => {
       await endTimeInput.setValue('17:00')
       await nextTick()
 
-      const durationDisplay = wrapper.find('.bg-blue-50')
+      const durationDisplay = wrapper.find('.bg-amber-50')
       expect(durationDisplay.exists()).toBe(true)
       expect(durationDisplay.text()).toContain('8 hours')
     })
@@ -184,7 +184,7 @@ describe('TimeCalculatorModal', () => {
       await endTimeInput.setValue('10:00')
       await nextTick()
 
-      const durationDisplay = wrapper.find('.bg-blue-50')
+      const durationDisplay = wrapper.find('.bg-amber-50')
       expect(durationDisplay.text()).toContain('1 hour')
       expect(durationDisplay.text()).not.toContain('1 hours')
     })
@@ -199,7 +199,7 @@ describe('TimeCalculatorModal', () => {
       await endTimeInput.setValue('06:00')
       await nextTick()
 
-      const durationDisplay = wrapper.find('.bg-blue-50')
+      const durationDisplay = wrapper.find('.bg-amber-50')
       expect(durationDisplay.text()).toContain('next day')
     })
 
@@ -214,7 +214,7 @@ describe('TimeCalculatorModal', () => {
       await endTimeInput.setValue('')
       await nextTick()
 
-      const durationDisplay = wrapper.find('.bg-blue-50')
+      const durationDisplay = wrapper.find('.bg-amber-50')
       expect(durationDisplay.exists()).toBe(false)
     })
   })
@@ -227,7 +227,7 @@ describe('TimeCalculatorModal', () => {
       wrapper.vm.errorMessage = 'End time must be after start time'
       await nextTick()
 
-      const errorDisplay = wrapper.find('.bg-red-50')
+      const errorDisplay = wrapper.find('.bg-clay-50')
       expect(errorDisplay.exists()).toBe(true)
       expect(errorDisplay.text()).toContain('End time must be after start time')
     })
@@ -239,7 +239,7 @@ describe('TimeCalculatorModal', () => {
       wrapper.vm.errorMessage = 'Duration cannot exceed 24 hours'
       await nextTick()
 
-      const errorDisplay = wrapper.find('.bg-red-50')
+      const errorDisplay = wrapper.find('.bg-clay-50')
       expect(errorDisplay.exists()).toBe(true)
       expect(errorDisplay.text()).toContain('Duration cannot exceed 24 hours')
     })

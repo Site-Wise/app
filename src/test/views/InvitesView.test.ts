@@ -430,9 +430,9 @@ describe('InvitesView', () => {
     })
 
     it('should get correct role badge class', () => {
-      expect(wrapper.vm.getRoleBadgeClass('owner')).toContain('bg-blue-100')
-      expect(wrapper.vm.getRoleBadgeClass('supervisor')).toContain('bg-green-100')
-      expect(wrapper.vm.getRoleBadgeClass('accountant')).toContain('bg-amber-100')
+      expect(wrapper.vm.getRoleBadgeClass('owner')).toContain('sw-badge--accent')
+      expect(wrapper.vm.getRoleBadgeClass('supervisor')).toContain('sw-badge--success')
+      expect(wrapper.vm.getRoleBadgeClass('accountant')).toContain('sw-badge--neutral')
     })
 
     it('should format time left correctly', () => {

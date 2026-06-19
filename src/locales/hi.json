@@ -213,7 +213,15 @@
     "totalPaid": "कुल भुगतान",
     "viewAll": "सभी देखें",
     "units": "इकाइयां",
-    "sqft": "वर्ग फुट"
+    "sqft": "वर्ग फुट",
+    "recentTransactions": "हाल के लेन-देन",
+    "noTransactions": "अभी तक कोई हाल का लेन-देन नहीं",
+    "vsLastMonth": "पिछले महीने की तुलना में",
+    "perSqftNote": "प्रति वर्ग फुट",
+    "thisMonthNote": "इस महीने",
+    "unpaidNote": "{count} अवैतनिक",
+    "allSettled": "सब चुकता",
+    "material": "सामग्री"
   },
   "items": {
     "title": "वस्तुएं",

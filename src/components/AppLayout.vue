@@ -7,10 +7,9 @@
       class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-ink-3 shadow-card transform transition-transform duration-300 ease-in-out lg:translate-x-0"
       :class="{ '-translate-x-full': !sidebarOpen, 'translate-x-0': sidebarOpen }">
       <div class="flex items-center justify-between h-16 px-4 border-b border-stone-200 dark:border-ink-4">
-        <router-link class="flex items-center" to="/">
-          <img src="/logo.webp" alt="SiteWise Logo" class="h-12 rounded-lg" />
-          <span class="ml-2 font-display text-xl font-bold leading-tight text-ink dark:text-cream">Site</span>
-          <span class="font-display text-xl font-bold leading-tight text-amber-700 dark:text-amber-400">Wise</span>
+        <router-link class="flex items-center gap-2.5" to="/">
+          <img src="/sitewise-mark.svg" alt="Sitewise" class="h-9 w-9" />
+          <span class="font-display text-xl font-bold tracking-tight leading-tight text-ink dark:text-cream">Sitewise</span>
         </router-link>
         <!-- Close button for mobile -->
         <button @click="sidebarOpen = false"
@@ -52,10 +51,11 @@
             <!-- Quick action buttons in header for desktop -->
             <div class="hidden md:flex items-center space-x-2">
               <button v-for="action in baseFabActions" :key="action.type" @click="quickAction(action.type)"
-                class="flex items-center px-3 py-2 text-sm text-stone-700 dark:text-stone-300 bg-stone-100 dark:bg-ink-4 rounded-md hover:bg-stone-200 dark:hover:bg-ink-2 transition-colors duration-200 ease-snap active:scale-[0.98]"
+                class="flex items-center justify-center h-9 w-9 lg:w-auto lg:px-3 text-sm text-stone-700 dark:text-stone-300 bg-stone-100 dark:bg-ink-4 rounded-md hover:bg-stone-200 dark:hover:bg-ink-2 transition-colors duration-200 ease-snap active:scale-[0.98]"
+                :title="t(action.labelKey)"
                 :aria-label="t(action.labelKey)">
-                <component :is="action.icon" class="mr-1 h-4 w-4" :aria-hidden="true" />
-                <span class="text-sm font-medium">{{ t(action.labelKey) }}</span>
+                <component :is="action.icon" class="h-4 w-4 lg:mr-1" :aria-hidden="true" />
+                <span class="hidden lg:inline text-sm font-medium">{{ t(action.labelKey) }}</span>
               </button>
             </div>
           </div>

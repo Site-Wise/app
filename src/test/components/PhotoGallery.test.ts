@@ -163,7 +163,7 @@ describe('PhotoGallery.vue', () => {
       },
     });
 
-    expect(wrapper.find('.bg-black.bg-opacity-70').text()).toBe('+2');
+    expect(wrapper.find('.bg-ink\\/70').text()).toBe('+2');
   });
 
   it('shows the loading spinner', async () => {

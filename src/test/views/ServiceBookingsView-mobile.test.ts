@@ -377,10 +377,10 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
 
       // Check for payment status color classes
       const pendingAmount = amountCells.find((cell: any) => cell.text().includes('500.00'))
-      expect(pendingAmount?.classes()).toContain('text-red-600') // pending = red
+      expect(pendingAmount?.classes()).toContain('text-clay-600') // pending = clay
 
       const paidAmount = amountCells.find((cell: any) => cell.text().includes('450.00'))
-      expect(paidAmount?.classes()).toContain('text-green-600') // paid = green
+      expect(paidAmount?.classes()).toContain('text-forest-600') // paid = forest
     })
 
     it('should only show booking status without payment status text', () => {
