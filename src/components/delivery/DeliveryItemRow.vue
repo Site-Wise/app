@@ -1,5 +1,5 @@
 <template>
-  <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+  <div class="border border-stone-200 dark:border-ink-4 rounded-xl p-4 bg-white dark:bg-ink-3">
     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
       <!-- Item Selection -->
       <div class="md:col-span-4">
@@ -14,14 +14,14 @@
           :label="t('common.item') + ' *'"
           :placeholder="t('forms.selectItem')"
         />
-        <div v-if="errors.item" class="text-red-600 dark:text-red-400 text-xs mt-1">
+        <div v-if="errors.item" class="text-clay-600 dark:text-clay-400 text-xs mt-1">
           {{ errors.item }}
         </div>
       </div>
 
       <!-- Quantity -->
       <div class="md:col-span-2">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label class="sw-eyebrow block mb-2">
           {{ t('common.quantity') }} *
         </label>
         <input
@@ -33,21 +33,21 @@
           min="0.01"
           step="0.01"
           required
-          class="input"
-          :class="{ 'border-red-300': errors.quantity }"
+          class="input font-mono sw-tabular"
+          :class="{ 'border-clay-400 dark:border-clay-500': errors.quantity }"
           placeholder="0"
         />
-        <div v-if="errors.quantity" class="text-red-600 dark:text-red-400 text-xs mt-1">
+        <div v-if="errors.quantity" class="text-clay-600 dark:text-clay-400 text-xs mt-1">
           {{ errors.quantity }}
         </div>
-        <div v-if="selectedItemUnit" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        <div v-if="selectedItemUnit" class="text-xs text-stone-500 dark:text-stone-400 mt-1">
           {{ getUnitDisplay(selectedItemUnit) }}
         </div>
       </div>
 
       <!-- Unit Price -->
       <div class="md:col-span-2 relative">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label class="sw-eyebrow block mb-2">
           {{ t('forms.unitPrice') }} *
         </label>
         <div class="relative">
@@ -60,25 +60,25 @@
             min="0.01"
             step="0.01"
             required
-            class="input pr-10"
-            :class="{ 'border-red-300': errors.unit_price }"
+            class="input pr-10 font-mono sw-tabular"
+            :class="{ 'border-clay-400 dark:border-clay-500': errors.unit_price }"
             :placeholder="lastPrice !== null ? `Last: ₹${lastPrice.toFixed(2)}` : '0.00'"
           />
           <button
             type="button"
             @click="toggleTaxInput('unit_price')"
-            class="tax-trigger absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
+            class="tax-trigger absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 rounded transition-colors"
             :title="t('delivery.addTax')"
           >
             <Percent class="h-4 w-4" />
           </button>
         </div>
-        <div v-if="errors.unit_price" class="text-red-600 dark:text-red-400 text-xs mt-1">
+        <div v-if="errors.unit_price" class="text-clay-600 dark:text-clay-400 text-xs mt-1">
           {{ errors.unit_price }}
         </div>
 
         <!-- Tax Input for Unit Price -->
-        <div v-if="showTaxInput === 'unit_price'" class="tax-overlay absolute z-10 mt-1 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg">
+        <div v-if="showTaxInput === 'unit_price'" class="tax-overlay absolute z-10 mt-1 p-3 bg-white dark:bg-ink-3 border border-stone-200 dark:border-ink-4 rounded-lg shadow-modal">
           <div class="flex items-center space-x-2">
             <input
               v-model.number="taxRate"
@@ -86,24 +86,24 @@
               min="0"
               max="100"
               step="0.1"
-              class="w-16 px-2 py-1 text-center text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              class="w-16 px-2 py-1 text-center text-sm font-mono sw-tabular border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               placeholder="0"
               autofocus
               @keydown.enter.prevent="applyTax('unit_price')"
               @keydown.escape="showTaxInput = null"
             />
-            <span class="text-sm text-gray-600 dark:text-gray-400">%</span>
+            <span class="text-sm text-stone-600 dark:text-stone-400">%</span>
             <button
               type="button"
               @click="applyTax('unit_price')"
-              class="px-2 py-1 text-xs bg-primary-600 hover:bg-primary-700 text-white rounded transition-colors"
+              class="px-2 py-1 text-xs btn-primary"
             >
               {{ t('common.apply') }}
             </button>
             <button
               type="button"
               @click="showTaxInput = null"
-              class="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors"
+              class="px-2 py-1 text-xs btn-outline"
             >
               {{ t('common.cancel') }}
             </button>
@@ -113,7 +113,7 @@
 
       <!-- Total Amount -->
       <div class="md:col-span-2 relative">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label class="sw-eyebrow block mb-2">
           {{ t('common.total') }} *
         </label>
         <div class="relative">
@@ -126,25 +126,25 @@
             min="0.01"
             step="0.01"
             required
-            class="input pr-10"
-            :class="{ 'border-red-300': errors.total_amount }"
+            class="input pr-10 font-mono sw-tabular"
+            :class="{ 'border-clay-400 dark:border-clay-500': errors.total_amount }"
             placeholder="0.00"
           />
           <button
             type="button"
             @click="toggleTaxInput('total_amount')"
-            class="tax-trigger absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
+            class="tax-trigger absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 rounded transition-colors"
             :title="t('delivery.addTax')"
           >
             <Percent class="h-4 w-4" />
           </button>
         </div>
-        <div v-if="errors.total_amount" class="text-red-600 dark:text-red-400 text-xs mt-1">
+        <div v-if="errors.total_amount" class="text-clay-600 dark:text-clay-400 text-xs mt-1">
           {{ errors.total_amount }}
         </div>
 
         <!-- Tax Input for Total Amount -->
-        <div v-if="showTaxInput === 'total_amount'" class="tax-overlay absolute z-10 mt-1 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg">
+        <div v-if="showTaxInput === 'total_amount'" class="tax-overlay absolute z-10 mt-1 p-3 bg-white dark:bg-ink-3 border border-stone-200 dark:border-ink-4 rounded-lg shadow-modal">
           <div class="flex items-center space-x-2">
             <input
               v-model.number="taxRate"
@@ -152,24 +152,24 @@
               min="0"
               max="100"
               step="0.1"
-              class="w-16 px-2 py-1 text-center text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              class="w-16 px-2 py-1 text-center text-sm font-mono sw-tabular border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               placeholder="0"
               autofocus
               @keydown.enter.prevent="applyTax('total_amount')"
               @keydown.escape="showTaxInput = null"
             />
-            <span class="text-sm text-gray-600 dark:text-gray-400">%</span>
+            <span class="text-sm text-stone-600 dark:text-stone-400">%</span>
             <button
               type="button"
               @click="applyTax('total_amount')"
-              class="px-2 py-1 text-xs bg-primary-600 hover:bg-primary-700 text-white rounded transition-colors"
+              class="px-2 py-1 text-xs btn-primary"
             >
               {{ t('common.apply') }}
             </button>
             <button
               type="button"
               @click="showTaxInput = null"
-              class="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors"
+              class="px-2 py-1 text-xs btn-outline"
             >
               {{ t('common.cancel') }}
             </button>
@@ -179,12 +179,12 @@
 
       <!-- Actions -->
       <div v-if="!hideRemoveButton" class="md:col-span-2">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 invisible">
+        <label class="sw-eyebrow block mb-2 invisible">
           {{ t('common.actions') }}
         </label>
         <button
           @click="$emit('remove', index)"
-          class="btn-outline text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border-red-300 hover:border-red-400 dark:border-red-600 dark:hover:border-red-500 w-full md:w-auto"
+          class="btn-outline text-clay-600 hover:text-clay-700 dark:text-clay-400 dark:hover:text-clay-300 border-clay-300 hover:border-clay-400 dark:border-clay-600 dark:hover:border-clay-500 w-full md:w-auto"
           :title="t('delivery.removeItem')"
         >
           <Trash2 class="h-4 w-4" />
@@ -195,7 +195,7 @@
 
     <!-- Item Notes -->
     <div class="mt-4">
-      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <label class="sw-eyebrow block mb-2">
         {{ t('delivery.itemNotes') }}
       </label>
       <textarea 
@@ -208,8 +208,8 @@
     </div>
 
     <!-- Validation Messages -->
-    <div v-if="hasErrors" class="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-      <div class="text-red-800 dark:text-red-200 text-sm">
+    <div v-if="hasErrors" class="mt-3 p-3 bg-clay-50 dark:bg-clay-900/20 border border-clay-200 dark:border-clay-800 rounded-md">
+      <div class="text-clay-800 dark:text-clay-200 text-sm">
         <div class="font-medium mb-1">{{ t('forms.validationError') }}</div>
         <ul class="list-disc list-inside space-y-1">
           <li v-for="(error, key) in Object.values(errors).filter(e => e)" :key="key">{{ error }}</li>

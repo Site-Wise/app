@@ -1,18 +1,18 @@
 <template>
-  <div v-if="isVisible" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]"
+  <div v-if="isVisible" class="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-[60]"
     @click="handleBackdropClick" @keydown.esc="handleEscape" tabindex="-1">
     <div
-      class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4 mb-20 lg:mb-4"
+      class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 m-4 mb-20 lg:mb-4"
       @click.stop>
       <div class="mt-3">
         <!-- Dynamic Header -->
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center">
             <component :is="modalIcon" class="h-6 w-6 mr-3" :class="modalIconColor" />
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ modalTitle }}</h3>
+            <h3 class="font-display text-lg font-semibold text-ink dark:text-cream">{{ modalTitle }}</h3>
           </div>
           <button type="button" @click="handleEscape"
-            class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            class="p-2 text-stone-400 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors"
             :title="t('common.close')">
             <X class="h-5 w-5" />
           </button>
@@ -20,10 +20,10 @@
 
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <!-- Payment Info Section -->
-          <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
+          <div class="bg-stone-50 dark:bg-ink-2 rounded-lg p-4 space-y-3">
             <!-- Vendor Selection (CREATE/PAY_NOW) or Display (EDIT) -->
             <div v-if="mode !== 'EDIT'">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.vendor') }}</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.vendor') }}</label>
               <VendorSearchBox ref="vendorInputRef" v-model="form.vendor" :vendors="vendors" :deliveries="deliveries"
                 :serviceBookings="serviceBookings" :payments="payments" :placeholder="t('forms.selectVendor')"
                 :autofocus="mode === 'CREATE'" :required="true" :outstanding-amount="vendorOutstanding"
@@ -31,13 +31,13 @@
                 name="vendor" @vendor-selected="handleVendorSelected" @focus="handleVendorFocus" class="mt-1" />
             </div>
             <div v-else class="flex justify-between">
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.vendor') }}:</span>
-              <span class="text-sm text-gray-900 dark:text-white">{{ payment?.expand?.vendor?.contact_person }}</span>
+              <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.vendor') }}:</span>
+              <span class="text-sm text-ink dark:text-cream">{{ payment?.expand?.vendor?.contact_person }}</span>
             </div>
 
             <!-- Account Selection (CREATE/PAY_NOW) or Display (EDIT) -->
             <div v-if="mode !== 'EDIT'">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.paymentAccount')
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('payments.paymentAccount')
                 }}</label>
               <select v-model="form.account" required class="input mt-1" name="account" :disabled="loading">
                 <option value="">{{ t('forms.selectAccount') }}</option>
@@ -47,23 +47,23 @@
               </select>
             </div>
             <div v-else-if="payment?.expand?.account" class="flex justify-between">
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.paymentAccount')
+              <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('payments.paymentAccount')
                 }}:</span>
               <div class="flex items-center">
                 <component :is="getAccountIcon(payment.expand.account.type)"
-                  class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <span class="text-sm text-gray-900 dark:text-white">{{ payment.expand.account.name }}</span>
+                  class="mr-2 h-4 w-4 text-stone-500 dark:text-stone-400" />
+                <span class="text-sm text-ink dark:text-cream">{{ payment.expand.account.name }}</span>
               </div>
             </div>
 
             <!-- Credit Notes Section (CREATE/PAY_NOW only) -->
             <div v-if="mode !== 'EDIT' && form.vendor && availableCreditNotes.length > 0">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{
                 t('payments.availableCreditNotes') }}</label>
               <div class="mt-2 space-y-2 max-h-32 overflow-y-auto">
                 <div v-for="creditNote in availableCreditNotes" :key="creditNote.id" :class="[
                   'p-2 rounded transition-colors cursor-pointer',
-                  'hover:bg-gray-50 dark:hover:bg-gray-700',
+                  'hover:bg-stone-100 dark:hover:bg-ink-4',
                   loading ? 'cursor-not-allowed' : 'cursor-pointer'
                 ]" @click="handleCreditNoteRowClick(creditNote.id)">
                   <TriStateCheckbox :id="`credit-note-${creditNote.id}`"
@@ -76,9 +76,9 @@
                     @change="handleCreditNoteTriStateChange(creditNote.id, $event)">
                     <template #amount-display>
                       <div class="text-right">
-                        <span class="text-green-600 dark:text-green-400 font-medium">₹{{ creditNote.balance.toFixed(2)
+                        <span class="text-forest font-medium font-mono tabular-nums">₹{{ creditNote.balance.toFixed(2)
                           }}</span>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                        <div class="text-xs font-mono tabular-nums text-stone-500 dark:text-stone-400">
                           of ₹{{ creditNote.credit_amount.toFixed(2) }}
                         </div>
                       </div>
@@ -86,77 +86,78 @@
                   </TriStateCheckbox>
                 </div>
               </div>
-              <div v-if="selectedCreditNoteAmount > 0" class="mt-2 text-sm text-green-600 dark:text-green-400">
-                Selected credit notes: ₹{{ selectedCreditNoteAmount.toFixed(2) }}
+              <div v-if="selectedCreditNoteAmount > 0" class="mt-2 text-sm text-forest">
+                Selected credit notes: <span class="font-mono tabular-nums">₹{{ selectedCreditNoteAmount.toFixed(2) }}</span>
               </div>
             </div>
 
             <!-- Validation Error Display -->
             <div v-if="validationError"
-              class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+              class="bg-clay/5 dark:bg-clay/10 border border-clay/30 dark:border-clay/40 rounded-lg p-3">
               <div class="flex items-center">
-                <svg class="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <svg class="w-5 h-5 text-clay mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd"
                     d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
                     clip-rule="evenodd" />
                 </svg>
-                <span class="text-sm font-medium text-red-800 dark:text-red-300">Validation Error</span>
+                <span class="text-sm font-medium text-clay">Validation Error</span>
               </div>
-              <p class="text-sm text-red-700 dark:text-red-400 mt-1">{{ validationError }}</p>
+              <p class="text-sm text-clay mt-1">{{ validationError }}</p>
             </div>
 
             <!-- Payment Date (CREATE/PAY_NOW) or Display (EDIT) -->
             <div v-if="mode !== 'EDIT'">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.paymentDate')
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('payments.paymentDate')
                 }}</label>
               <input v-model="form.transaction_date" type="date" required class="input mt-1" :disabled="loading" />
             </div>
             <div v-else class="flex justify-between">
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('payments.paymentDate') }}:</span>
-              <span class="text-sm text-gray-900 dark:text-white">{{ formatDate(payment?.payment_date || '') }}</span>
+              <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('payments.paymentDate') }}:</span>
+              <span class="text-sm font-mono tabular-nums text-ink dark:text-cream">{{ formatDate(payment?.payment_date || '') }}</span>
             </div>
 
             <!-- Amount (CREATE/PAY_NOW) or Display (EDIT) -->
             <div v-if="mode !== 'EDIT'">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.amount') }}</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.amount') }}</label>
               <div class="flex items-center space-x-2">
-                <input v-model.number="form.amount" type="number" step="0.01" required class="input mt-1 flex-1"
+                <input v-model.number="form.amount" type="number" step="0.01" required class="input mt-1 flex-1 font-mono tabular-nums"
                   placeholder="0.00" :disabled="loading" @input="handleAmountChange" />
                 <button v-if="form.vendor && actualVendorOutstanding > 0 && form.amount !== actualVendorOutstanding"
                   type="button" @click="payAllOutstanding" :disabled="loading"
-                  class="mt-1 px-3 py-2 text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 border border-primary-300 dark:border-primary-600 rounded-md hover:bg-primary-50 dark:hover:bg-primary-900/20 disabled:opacity-50 disabled:cursor-not-allowed">
-                  Pay All (₹{{ actualVendorOutstanding.toFixed(2) }})
+                  class="mt-1 px-3 py-2 text-xs font-medium text-amber-700 dark:text-amber hover:text-amber-800 dark:hover:text-amber-600 border border-amber/40 dark:border-amber/40 rounded-md hover:bg-amber/10 dark:hover:bg-amber/10 disabled:opacity-50 disabled:cursor-not-allowed">
+                  Pay All (<span class="font-mono tabular-nums">₹{{ actualVendorOutstanding.toFixed(2) }}</span>)
                 </button>
               </div>
               <!-- Payment breakdown when credit notes are involved -->
-              <div v-if="selectedCreditNoteAmount > 0" class="mt-2 text-sm bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+              <div v-if="selectedCreditNoteAmount > 0" class="mt-2 text-sm bg-amber/5 dark:bg-amber/10 p-2 rounded">
                 <div class="flex justify-between">
-                  <span class="text-gray-700 dark:text-gray-300">Account payment:</span>
+                  <span class="text-stone-700 dark:text-stone-300">Account payment:</span>
                   <span :class="[
-                    accountPaymentAmount >= 0 ? 'text-gray-900 dark:text-white' : 'text-red-600 dark:text-red-400',
+                    'font-mono tabular-nums',
+                    accountPaymentAmount >= 0 ? 'text-ink dark:text-cream' : 'text-clay',
                     accountPaymentAmount === 0 ? 'italic' : ''
                   ]">
                     ₹{{ accountPaymentAmount.toFixed(2) }}
                     <span v-if="accountPaymentAmount === 0"
-                      class="text-xs text-gray-500 dark:text-gray-400 ml-1">(covered by credit
+                      class="text-xs text-stone-500 dark:text-stone-400 ml-1">(covered by credit
                       notes)</span>
                   </span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-700 dark:text-gray-300">Credit notes:</span>
-                  <span class="text-green-600 dark:text-green-400">
+                  <span class="text-stone-700 dark:text-stone-300">Credit notes:</span>
+                  <span class="text-forest font-mono tabular-nums">
                     ₹{{ selectedCreditNoteAmount.toFixed(2) }}
                     <span v-if="hasPartialCreditNoteUsage" class="text-xs ml-1">(partial usage)</span>
                   </span>
                 </div>
-                <hr class="my-1 border-gray-300 dark:border-gray-600">
+                <hr class="my-1 border-stone-300 dark:border-ink-4">
                 <div class="flex justify-between font-medium">
-                  <span class="text-gray-900 dark:text-white">Total payment:</span>
-                  <span class="text-gray-900 dark:text-white">₹{{ form.amount.toFixed(2) }}</span>
+                  <span class="text-ink dark:text-cream">Total payment:</span>
+                  <span class="text-ink dark:text-cream font-mono tabular-nums">₹{{ form.amount.toFixed(2) }}</span>
                 </div>
                 <!-- Info message for credit note priority -->
                 <div v-if="accountPaymentAmount === 0 && selectedCreditNoteAmount >= form.amount"
-                  class="mt-2 text-xs text-green-600 dark:text-green-400">
+                  class="mt-2 text-xs text-forest">
                   ✓ Payment fully covered by credit notes (priority over account)
                 </div>
               </div>
@@ -165,8 +166,8 @@
               <!-- Payment Amount Breakdown in View Mode -->
               <div class="space-y-2">
                 <div class="flex justify-between">
-                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.amount') }}:</span>
-                  <span class="text-sm font-semibold text-gray-900 dark:text-white">₹{{ payment?.amount.toFixed(2)
+                  <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.amount') }}:</span>
+                  <span class="text-sm font-semibold font-mono tabular-nums text-ink dark:text-cream">₹{{ payment?.amount.toFixed(2)
                     }}</span>
                 </div>
 
@@ -174,33 +175,33 @@
                 <div v-if="payment?.credit_notes && payment.credit_notes.length > 0" class="ml-4 space-y-1 text-xs">
                   <!-- Credit Note Usage Amount -->
                   <div class="flex justify-between">
-                    <span class="text-green-600 dark:text-green-400">Credit Notes Used:</span>
-                    <span class="text-green-600 dark:text-green-400">₹{{ totalCreditNoteUsed.toFixed(2) }}</span>
+                    <span class="text-forest">Credit Notes Used:</span>
+                    <span class="text-forest font-mono tabular-nums">₹{{ totalCreditNoteUsed.toFixed(2) }}</span>
                   </div>
 
                   <!-- Account Payment Amount (only if payment has account and amount > 0) -->
                   <div v-if="payment?.expand?.account && accountPaymentAmountInView > 0" class="flex justify-between">
-                    <span class="text-blue-600 dark:text-blue-400">Account Payment:</span>
-                    <span class="text-blue-600 dark:text-blue-400">₹{{ accountPaymentAmountInView.toFixed(2) }}</span>
+                    <span class="text-amber-700 dark:text-amber">Account Payment:</span>
+                    <span class="text-amber-700 dark:text-amber font-mono tabular-nums">₹{{ accountPaymentAmountInView.toFixed(2) }}</span>
                   </div>
 
                   <!-- Payment Method Indicator -->
                   <div class="flex justify-between">
-                    <span class="text-gray-600 dark:text-gray-400 italic">Payment Method:</span>
-                    <span class="text-gray-600 dark:text-gray-400 italic">
+                    <span class="text-stone-600 dark:text-stone-400 italic">Payment Method:</span>
+                    <span class="text-stone-600 dark:text-stone-400 italic">
                       {{ !payment?.expand?.account ? 'Credit Note Only' : 'Mixed (Account + Credit Notes)' }}
                     </span>
                   </div>
 
                   <!-- Individual Credit Note Details -->
                   <div v-if="creditNoteUsageData.length > 0"
-                    class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">Credit Note Details:</div>
+                    class="mt-2 pt-2 border-t border-stone-200 dark:border-ink-4">
+                    <div class="text-xs text-stone-500 dark:text-stone-400 mb-1">Credit Note Details:</div>
                     <div v-for="usage in creditNoteUsageData" :key="usage.id" class="flex justify-between">
-                      <span class="text-gray-600 dark:text-gray-400">
+                      <span class="text-stone-600 dark:text-stone-400 font-mono">
                         {{ usage.expand?.credit_note?.reference || `CN-${usage.credit_note?.slice(-6)}` }}:
                       </span>
-                      <span class="text-gray-600 dark:text-gray-400">₹{{ usage.amount_used.toFixed(2) }}</span>
+                      <span class="text-stone-600 dark:text-stone-400 font-mono tabular-nums">₹{{ usage.amount_used.toFixed(2) }}</span>
                     </div>
                   </div>
                 </div>
@@ -211,26 +212,26 @@
 
           <!-- Allocation Progress Section (All Modes) -->
           <div v-if="showAllocationProgress"
-            class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-            <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">{{ t('payments.allocationStatus') }}</h4>
+            class="bg-amber/5 dark:bg-amber/10 rounded-lg p-4 border border-amber/30 dark:border-amber/40">
+            <h4 class="text-sm font-medium text-ink dark:text-cream mb-3">{{ t('payments.allocationStatus') }}</h4>
 
             <div class="space-y-2">
               <div class="flex justify-between text-sm">
-                <span class="text-gray-700 dark:text-gray-300">{{ t('payments.allocated') }}:</span>
-                <span class="text-green-600 dark:text-green-400 font-medium">₹{{ allocatedAmount.toFixed(2) }}</span>
+                <span class="text-stone-700 dark:text-stone-300">{{ t('payments.allocated') }}:</span>
+                <span class="text-forest font-medium font-mono tabular-nums">₹{{ allocatedAmount.toFixed(2) }}</span>
               </div>
               <div class="flex justify-between text-sm">
-                <span class="text-gray-700 dark:text-gray-300">{{ t('payments.unallocated') }}:</span>
-                <span class="text-orange-600 dark:text-orange-400 font-medium">₹{{ unallocatedAmount.toFixed(2)
+                <span class="text-stone-700 dark:text-stone-300">{{ t('payments.unallocated') }}:</span>
+                <span class="text-amber-700 dark:text-amber font-medium font-mono tabular-nums">₹{{ unallocatedAmount.toFixed(2)
                   }}</span>
               </div>
 
               <!-- Progress bar -->
-              <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3 mt-2 overflow-hidden">
-                <div class="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full transition-all duration-300"
+              <div class="w-full bg-stone-200 dark:bg-ink-4 rounded-full h-3 mt-2 overflow-hidden">
+                <div class="bg-forest h-3 rounded-full transition-all duration-300"
                   :style="{ width: `${Math.min(100, allocationPercentage)}%` }"></div>
               </div>
-              <div class="text-xs text-gray-500 dark:text-gray-400 text-center">
+              <div class="text-xs font-mono tabular-nums text-stone-500 dark:text-stone-400 text-center">
                 {{ allocationPercentage }}% allocated
               </div>
             </div>
@@ -238,43 +239,43 @@
 
           <!-- Current Allocations (EDIT mode only) -->
           <div v-if="mode === 'EDIT' && currentAllocations.length > 0" class="space-y-2">
-            <h4 class="text-sm font-medium text-gray-900 dark:text-white">{{ t('payments.currentAllocations') }}</h4>
-            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden">
-              <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-                <thead class="bg-gray-100 dark:bg-gray-600">
+            <h4 class="text-sm font-medium text-ink dark:text-cream">{{ t('payments.currentAllocations') }}</h4>
+            <div class="bg-stone-50 dark:bg-ink-2 rounded-lg overflow-hidden">
+              <table class="min-w-full divide-y divide-stone-200 dark:divide-ink-4">
+                <thead class="bg-stone-100 dark:bg-ink-4">
                   <tr>
                     <th
-                      class="px-4 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      class="px-4 py-2 text-left sw-eyebrow text-stone-500 dark:text-stone-400">
                       {{ t('common.type') }}</th>
                     <th
-                      class="px-4 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      class="px-4 py-2 text-left sw-eyebrow text-stone-500 dark:text-stone-400">
                       {{ t('common.date') }}</th>
                     <th
-                      class="px-4 py-2 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      class="px-4 py-2 text-right sw-eyebrow text-stone-500 dark:text-stone-400">
                       {{ t('common.amount') }}</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                <tbody class="divide-y divide-stone-200 dark:divide-ink-4">
                   <tr v-for="allocation in currentAllocations" :key="allocation.id"
-                    class="hover:bg-gray-50 dark:hover:bg-gray-600">
+                    class="hover:bg-stone-100 dark:hover:bg-ink-4">
                     <td class="px-4 py-3 text-sm">
-                      <div v-if="allocation.delivery" class="text-gray-900 dark:text-white">
+                      <div v-if="allocation.delivery" class="text-ink dark:text-cream">
                         <div class="font-medium">{{ t('common.delivery') }}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">{{
+                        <div class="text-xs font-mono tabular-nums text-stone-500 dark:text-stone-400">{{
                           formatDate(allocation.expand?.delivery?.delivery_date || '') }}</div>
                       </div>
-                      <div v-else-if="allocation.service_booking" class="text-gray-900 dark:text-white">
+                      <div v-else-if="allocation.service_booking" class="text-ink dark:text-cream">
                         <div class="font-medium">{{ t('common.serviceBooking') }}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                        <div class="text-xs text-stone-500 dark:text-stone-400">
                           {{ allocation.expand?.service_booking?.expand?.service?.name || 'Service' }}
                         </div>
                       </div>
                     </td>
-                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                    <td class="px-4 py-3 text-sm font-mono tabular-nums text-ink dark:text-cream">
                       {{ allocation.delivery ? formatDate(allocation.expand?.delivery?.delivery_date || '') :
                         formatDate(allocation.expand?.service_booking?.start_date || '') }}
                     </td>
-                    <td class="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
+                    <td class="px-4 py-3 text-sm text-right font-medium font-mono tabular-nums text-ink dark:text-cream">
                       ₹{{ allocation.allocated_amount.toFixed(2) }}
                     </td>
                   </tr>
@@ -285,17 +286,17 @@
 
           <!-- Allocation Complete Message (EDIT mode when fully allocated) -->
           <div v-if="mode === 'EDIT' && unallocatedAmount <= 0"
-            class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            class="bg-forest/5 dark:bg-forest/10 border border-forest/30 dark:border-forest/40 rounded-lg p-4">
             <div class="flex items-center">
-              <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <svg class="w-5 h-5 text-forest mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                   clip-rule="evenodd" />
               </svg>
-              <span class="text-sm font-medium text-green-800 dark:text-green-300">{{ t('payments.fullyAllocated')
+              <span class="text-sm font-medium text-forest">{{ t('payments.fullyAllocated')
                 }}</span>
             </div>
-            <p class="text-sm text-green-700 dark:text-green-400 mt-1">This payment has been fully allocated to
+            <p class="text-sm text-forest mt-1">This payment has been fully allocated to
               deliveries and
               service bookings.</p>
           </div>
@@ -303,39 +304,39 @@
           <!-- Delivery/Booking Selection -->
           <div v-if="showDeliverySelection" class="space-y-3">
             <div class="flex justify-between items-center">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{
                 t('payments.selectItemsToPay')
                 }}</label>
-              <span v-if="mode === 'EDIT'" class="text-xs text-orange-600 dark:text-orange-400 font-medium">
+              <span v-if="mode === 'EDIT'" class="text-xs text-amber-700 dark:text-amber font-medium font-mono tabular-nums">
                 Max: ₹{{ unallocatedAmount.toFixed(2) }}
               </span>
             </div>
 
             <!-- Warning when account is required but not selected -->
             <div v-if="isAccountRequiredForSelection"
-              class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+              class="bg-amber/5 dark:bg-amber/10 border border-amber/30 dark:border-amber/40 rounded-lg p-3">
               <div class="flex items-center">
-                <svg class="w-5 h-5 text-yellow-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <svg class="w-5 h-5 text-amber-700 dark:text-amber mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd"
                     d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
                     clip-rule="evenodd" />
                 </svg>
-                <span class="text-sm font-medium text-yellow-800 dark:text-yellow-300">Account Required</span>
+                <span class="text-sm font-medium text-amber-800 dark:text-amber">Account Required</span>
               </div>
-              <p class="text-sm text-yellow-700 dark:text-yellow-400 mt-1">Available credit notes are insufficient.
+              <p class="text-sm text-amber-700 dark:text-amber mt-1">Available credit notes are insufficient.
                 Please select
                 an account to proceed with delivery selection.</p>
             </div>
 
             <!-- Deliveries -->
             <div v-if="selectableDeliveries.length > 0">
-              <h4 class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{{ t('common.deliveries') }}</h4>
+              <h4 class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-2">{{ t('common.deliveries') }}</h4>
               <div class="space-y-2 max-h-40 overflow-y-auto">
                 <div v-for="delivery in selectableDeliveries" :key="delivery.id" :class="[
                   'p-2 rounded transition-colors cursor-pointer',
                   isAccountRequiredForSelection
                     ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-700',
+                    : 'hover:bg-stone-100 dark:hover:bg-ink-4',
                   (loading || isAccountRequiredForSelection || isDeliveryDisabled(delivery.id))
                     ? 'cursor-not-allowed'
                     : 'cursor-pointer'
@@ -354,14 +355,14 @@
 
             <!-- Service Bookings -->
             <div v-if="selectableBookings.length > 0">
-              <h4 class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{{ t('common.serviceBookings') }}
+              <h4 class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-2">{{ t('common.serviceBookings') }}
               </h4>
               <div class="space-y-2 max-h-40 overflow-y-auto">
                 <div v-for="booking in selectableBookings" :key="booking.id" :class="[
                   'p-2 rounded transition-colors cursor-pointer',
                   isAccountRequiredForSelection
                     ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-700',
+                    : 'hover:bg-stone-100 dark:hover:bg-ink-4',
                   (loading || isAccountRequiredForSelection || !!(booking.id && isBookingDisabled(booking.id)))
                     ? 'cursor-not-allowed'
                     : 'cursor-pointer'
@@ -381,8 +382,8 @@
 
             <!-- No items available message -->
             <div v-if="selectableDeliveries.length === 0 && selectableBookings.length === 0 && form.vendor"
-              class="text-center py-4 text-gray-500 dark:text-gray-400">
-              <svg class="mx-auto h-8 w-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              class="text-center py-4 text-stone-500 dark:text-stone-400">
+              <svg class="mx-auto h-8 w-8 text-stone-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
@@ -395,13 +396,13 @@
           <!-- Additional Fields -->
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reference</label>
-              <input v-model="form.reference" type="text" class="input mt-1"
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Reference</label>
+              <input v-model="form.reference" type="text" class="input mt-1 font-mono"
                 placeholder="Check number, transfer ID, etc." :disabled="loading" />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Notes</label>
               <textarea v-model="form.notes" class="input mt-1" rows="3" placeholder="Payment notes"
                 :disabled="loading"></textarea>
             </div>
@@ -669,10 +670,10 @@ const modalIcon = computed(() => {
 
 const modalIconColor = computed(() => {
   switch (props.mode) {
-    case 'CREATE': return 'text-green-600';
-    case 'PAY_NOW': return 'text-blue-600';
-    case 'EDIT': return 'text-orange-600';
-    default: return 'text-gray-600';
+    case 'CREATE': return 'text-forest';
+    case 'PAY_NOW': return 'text-amber-700 dark:text-amber';
+    case 'EDIT': return 'text-stone-600 dark:text-stone-400';
+    default: return 'text-stone-600 dark:text-stone-400';
   }
 });
 

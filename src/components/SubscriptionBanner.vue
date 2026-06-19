@@ -1,20 +1,20 @@
 <template>
   <div
     v-if="showBanner"
-    class="bg-amber-50 border-b border-amber-200 px-4 py-3"
+    class="bg-amber-50 dark:bg-amber-500/10 border-b border-amber-200 dark:border-amber-500/30 px-4 py-3"
   >
     <div class="flex items-center justify-between max-w-7xl mx-auto">
       <div class="flex items-center space-x-3">
         <div class="flex-shrink-0">
-          <svg class="h-5 w-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+          <svg class="h-5 w-5 text-amber-700 dark:text-amber-400" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
           </svg>
         </div>
         <div>
-          <p class="text-sm font-medium text-amber-800">
+          <p class="text-sm font-medium text-ink dark:text-cream">
             {{ bannerMessage }}
           </p>
-          <p v-if="usageLimits" class="text-xs text-amber-700 mt-1">
+          <p v-if="usageLimits" class="text-xs text-stone-600 dark:text-stone-400 mt-1">
             {{ usageDetails }}
           </p>
         </div>
@@ -23,14 +23,14 @@
         <router-link
           v-if="!isUpgradePending"
           :to="{ name: 'subscription' }"
-          class="bg-amber-600 text-white px-3 py-1 rounded-md text-sm font-medium hover:bg-amber-700 transition-colors"
+          class="bg-amber-500 text-ink px-3 py-1 rounded-md text-sm font-medium hover:bg-amber-600 transition-colors"
         >
           {{ t('subscription.upgrade') }}
         </router-link>
         <button
           v-if="canDismiss"
           @click="dismissBanner"
-          class="text-amber-600 hover:text-amber-800 p-1"
+          class="text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 p-1"
           :aria-label="t('common.dismiss')"
         >
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

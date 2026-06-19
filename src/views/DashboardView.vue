@@ -4,22 +4,24 @@
     <div class="mb-6 lg:mb-8">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{{ t('dashboard.title') }}</h1>
-          <p class="mt-0.5 text-sm text-gray-600 dark:text-gray-400">
+          <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('dashboard.title') }}</p>
+          <h1 class="font-display text-xl sm:text-2xl font-bold text-ink dark:text-cream">
             {{ t('dashboard.subtitle', { siteName: currentSite?.name || 'your construction site' }) }}
-          </p>
+          </h1>
         </div>
-        <div v-if="currentSite" class="flex items-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-1.5">
-          <span>{{ currentSite.total_units }} {{ t('dashboard.units') }}</span>
-          <span class="mx-1.5">•</span>
-          <span>{{ currentSite.total_planned_area.toLocaleString() }} {{ t('dashboard.sqft') }}</span>
+        <div v-if="currentSite" class="flex items-center text-xs sm:text-sm text-stone-600 dark:text-stone-300 bg-cream-2 dark:bg-ink-2 border border-stone-200 dark:border-ink-4 rounded-md px-3 py-1.5">
+          <span class="font-mono sw-tabular">{{ currentSite.total_units }}</span>
+          <span class="ml-1">{{ t('dashboard.units') }}</span>
+          <span class="mx-1.5 text-stone-400">•</span>
+          <span class="font-mono sw-tabular">{{ currentSite.total_planned_area.toLocaleString() }}</span>
+          <span class="ml-1">{{ t('dashboard.sqft') }}</span>
         </div>
       </div>
     </div>
 
     <!-- Loading State -->
     <div v-if="loading" class="flex items-center justify-center py-12">
-      <Loader2 class="h-8 w-8 animate-spin text-gray-400" />
+      <Loader2 class="h-8 w-8 animate-spin text-amber" />
     </div>
 
     <!-- New User Onboarding -->
@@ -37,12 +39,12 @@
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8" data-tour="quick-stats">
         <div class="card p-3 sm:p-5">
           <div class="flex flex-col sm:flex-row sm:items-center">
-            <div class="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg w-fit mb-2 sm:mb-0">
-              <TrendingUp class="h-5 w-5 sm:h-8 sm:w-8 text-primary-600 dark:text-primary-400" />
+            <div class="p-2 bg-amber/15 rounded-md w-fit mb-2 sm:mb-0">
+              <TrendingUp class="h-5 w-5 sm:h-8 sm:w-8 text-amber-700 dark:text-amber" />
             </div>
             <div class="sm:ml-4">
-              <p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.totalExpenses') }}</p>
-              <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">₹{{
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('dashboard.totalExpenses') }}</p>
+              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">₹{{
                 formatCompactAmount(stats.totalExpenses) }}
               </p>
             </div>
@@ -51,12 +53,12 @@
 
         <div class="card p-3 sm:p-5">
           <div class="flex flex-col sm:flex-row sm:items-center">
-            <div class="p-2 bg-secondary-100 dark:bg-secondary-900/30 rounded-lg w-fit mb-2 sm:mb-0">
-              <Calendar class="h-5 w-5 sm:h-8 sm:w-8 text-secondary-600 dark:text-secondary-400" />
+            <div class="p-2 bg-stone-200/60 dark:bg-ink-2 rounded-md w-fit mb-2 sm:mb-0">
+              <Calendar class="h-5 w-5 sm:h-8 sm:w-8 text-stone-600 dark:text-stone-300" />
             </div>
             <div class="sm:ml-4">
-              <p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 line-clamp-1">{{ t('dashboard.currentMonthExpenses') }}</p>
-              <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">₹{{
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400 line-clamp-1">{{ t('dashboard.currentMonthExpenses') }}</p>
+              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">₹{{
                 formatCompactAmount(stats.currentMonthExpenses) }}</p>
             </div>
           </div>
@@ -64,24 +66,24 @@
 
         <div class="card p-3 sm:p-5">
           <div class="flex flex-col sm:flex-row sm:items-center">
-            <div class="p-2 bg-warning-100 dark:bg-warning-900/30 rounded-lg w-fit mb-2 sm:mb-0">
-              <Calculator class="h-5 w-5 sm:h-8 sm:w-8 text-warning-600 dark:text-warning-400" />
+            <div class="p-2 bg-amber/15 rounded-md w-fit mb-2 sm:mb-0">
+              <Calculator class="h-5 w-5 sm:h-8 sm:w-8 text-amber-700 dark:text-amber" />
             </div>
             <div class="sm:ml-4">
-              <p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.expensePerSqft') }}</p>
-              <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">₹{{ stats.expensePerSqft.toLocaleString() }}</p>
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('dashboard.expensePerSqft') }}</p>
+              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">₹{{ stats.expensePerSqft.toLocaleString() }}</p>
             </div>
           </div>
         </div>
 
         <div class="card p-3 sm:p-5">
           <div class="flex flex-col sm:flex-row sm:items-center">
-            <div class="p-2 bg-error-100 dark:bg-error-900/30 rounded-lg w-fit mb-2 sm:mb-0">
-              <DollarSign class="h-5 w-5 sm:h-8 sm:w-8 text-error-600 dark:text-error-400" />
+            <div class="p-2 bg-clay/15 rounded-md w-fit mb-2 sm:mb-0">
+              <DollarSign class="h-5 w-5 sm:h-8 sm:w-8 text-clay" />
             </div>
             <div class="sm:ml-4">
-              <p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('dashboard.outstandingAmount') }}</p>
-              <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">₹{{
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('dashboard.outstandingAmount') }}</p>
+              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">₹{{
                 formatCompactAmount(stats.outstandingAmount) }}</p>
             </div>
           </div>
@@ -91,16 +93,16 @@
       <!-- Payments Chart -->
       <div class="card p-4 sm:p-6" data-tour="recent-activities">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-          <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">{{ t('dashboard.paymentsLastSevenDays') }}</h2>
-          <div class="flex items-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-1.5">
-            <BarChart3 class="h-4 w-4 mr-2" />
-            {{ t('dashboard.totalPaid') }}: ₹{{ formatCompactAmount(weeklyPaymentTotal) }}
+          <h2 class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('dashboard.paymentsLastSevenDays') }}</h2>
+          <div class="flex items-center text-xs sm:text-sm text-stone-600 dark:text-stone-300 bg-cream-2 dark:bg-ink-2 border border-stone-200 dark:border-ink-4 rounded-md px-3 py-1.5">
+            <BarChart3 class="h-4 w-4 mr-2 text-amber-700 dark:text-amber" />
+            {{ t('dashboard.totalPaid') }}: <span class="ml-1 font-mono sw-tabular text-ink dark:text-cream">₹{{ formatCompactAmount(weeklyPaymentTotal) }}</span>
           </div>
         </div>
         <div class="w-full">
           <!-- Chart Container -->
           <div
-            class="relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl p-3 sm:p-6 border border-gray-200 dark:border-gray-700">
+            class="relative bg-cream-2 dark:bg-ink-2 rounded-lg p-3 sm:p-6 border border-stone-200 dark:border-ink-4">
             <!-- Chart.js Line Chart -->
             <div class="h-48 sm:h-64">
               <Line :data="chartData" :options="chartOptions" />
@@ -141,6 +143,7 @@ ChartJS.register(
 import { useSite } from '../composables/useSite';
 import { useSiteData } from '../composables/useSiteData';
 import { useI18n } from '../composables/useI18n';
+import { useTheme } from '../composables/useTheme';
 import {
   paymentService,
   deliveryService,
@@ -153,6 +156,7 @@ import { useSiteStore } from '../stores/site';
 import NewUserOnboarding from '../components/NewUserOnboarding.vue';
 
 const { t } = useI18n();
+const { isDark } = useTheme();
 
 const { currentSite } = useSite();
 const siteStore = useSiteStore();
@@ -322,13 +326,13 @@ const chartData = computed(() => {
       {
         label: 'Daily Payments',
         data: paymentChartData.value.map(day => day.amount),
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderColor: 'rgb(255, 184, 0)',
+        backgroundColor: 'rgba(255, 184, 0, 0.12)',
         borderWidth: 3,
         fill: true,
         tension: 0.4,
-        pointBackgroundColor: 'rgb(59, 130, 246)',
-        pointBorderColor: 'white',
+        pointBackgroundColor: 'rgb(255, 184, 0)',
+        pointBorderColor: '#FAFAF7',
         pointBorderWidth: 2,
         pointRadius: 6,
         pointHoverRadius: 8,
@@ -338,6 +342,9 @@ const chartData = computed(() => {
 });
 
 const chartOptions = computed(() => {
+  // Mode-aware axis/grid colors so labels stay legible on both light and dark cards
+  const gridColor = isDark.value ? 'rgba(250, 250, 247, 0.10)' : 'rgba(10, 14, 13, 0.10)';
+  const tickColor = isDark.value ? 'rgb(214, 211, 209)' : 'rgb(87, 83, 78)'; // stone-300 / stone-600
   return {
     responsive: true,
     maintainAspectRatio: false,
@@ -346,12 +353,12 @@ const chartOptions = computed(() => {
         display: false
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: 'white',
-        bodyColor: 'white',
-        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(10, 14, 13, 0.92)',
+        titleColor: '#FAFAF7',
+        bodyColor: '#FAFAF7',
+        borderColor: 'rgb(255, 184, 0)',
         borderWidth: 1,
-        cornerRadius: 8,
+        cornerRadius: 6,
         callbacks: {
           label: function (context: any) {
             return `₹${context.parsed.y.toLocaleString()}`;
@@ -362,11 +369,11 @@ const chartOptions = computed(() => {
     scales: {
       x: {
         grid: {
-          color: 'rgba(0, 0, 0, 0.1)',
+          color: gridColor,
           drawBorder: false
         },
         ticks: {
-          color: 'rgb(107, 114, 128)',
+          color: tickColor,
           font: {
             size: 12
           }
@@ -375,11 +382,11 @@ const chartOptions = computed(() => {
       y: {
         beginAtZero: true,
         grid: {
-          color: 'rgba(0, 0, 0, 0.1)',
+          color: gridColor,
           drawBorder: false
         },
         ticks: {
-          color: 'rgb(107, 114, 128)',
+          color: tickColor,
           font: {
             size: 12
           },
@@ -391,8 +398,8 @@ const chartOptions = computed(() => {
     },
     elements: {
       point: {
-        hoverBackgroundColor: 'rgb(59, 130, 246)',
-        hoverBorderColor: 'white'
+        hoverBackgroundColor: 'rgb(255, 184, 0)',
+        hoverBorderColor: '#FAFAF7'
       }
     }
   };

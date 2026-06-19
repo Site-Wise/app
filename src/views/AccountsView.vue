@@ -3,8 +3,8 @@
     <!-- Desktop Header with Add Button -->
     <div class="hidden md:flex items-center justify-between mb-8">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('accounts.title') }}</h1>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <h1 class="font-display text-2xl font-bold text-ink dark:text-cream">{{ t('accounts.title') }}</h1>
+        <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">
           {{ t('accounts.subtitle') }}
         </p>
       </div>
@@ -21,8 +21,8 @@
     <!-- Mobile Header -->
     <div class="md:hidden mb-6">
       <div class="mb-4">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('accounts.title') }}</h1>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <h1 class="font-display text-2xl font-bold text-ink dark:text-cream">{{ t('accounts.title') }}</h1>
+        <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">
           {{ t('accounts.subtitle') }}
         </p>
       </div>
@@ -41,43 +41,43 @@
         <div class="flex items-start justify-between">
           <div class="flex-1">
             <div class="flex items-center space-x-2 mb-2">
-              <component :is="getAccountIcon(account.type)" class="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ account.name }}</h3>
+              <component :is="getAccountIcon(account.type)" class="h-5 w-5 text-stone-500 dark:text-stone-400" />
+              <h3 class="font-display text-lg font-semibold text-ink dark:text-cream">{{ account.name }}</h3>
               <span v-if="!account.is_active"
-                class="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-xs rounded-full">
+                class="sw-badge sw-badge--danger">
                 {{ t('common.inactive') }}
               </span>
             </div>
 
             <div class="space-y-2">
               <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('common.type') }}:</span>
-                <span class="text-sm font-medium text-gray-900 dark:text-white capitalize">{{ account.type.replace('_',
+                <span class="text-sm text-stone-600 dark:text-stone-400">{{ t('common.type') }}:</span>
+                <span class="text-sm font-medium text-ink dark:text-cream capitalize">{{ account.type.replace('_',
                   ' ') }}</span>
               </div>
 
               <div v-if="account.account_number" class="flex items-center justify-between">
-                <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('common.account') }}:</span>
-                <span class="text-sm font-medium text-gray-900 dark:text-white">{{
+                <span class="text-sm text-stone-600 dark:text-stone-400">{{ t('common.account') }}:</span>
+                <span class="text-sm font-medium font-mono tabular-nums text-ink dark:text-cream">{{
                   maskAccountNumber(account.account_number) }}</span>
               </div>
 
               <div v-if="account.bank_name" class="flex items-center justify-between">
-                <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('accounts.bankName') }}:</span>
-                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ account.bank_name }}</span>
+                <span class="text-sm text-stone-600 dark:text-stone-400">{{ t('accounts.bankName') }}:</span>
+                <span class="text-sm font-medium text-ink dark:text-cream">{{ account.bank_name }}</span>
               </div>
 
-              <div class="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('accounts.currentBalance')
+              <div class="flex items-center justify-between pt-2 border-t border-stone-200 dark:border-ink-4">
+                <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.currentBalance')
                 }}:</span>
-                <span class="text-lg font-bold"
-                  :class="account.current_balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
+                <span class="text-lg font-bold font-mono tabular-nums"
+                  :class="account.current_balance >= 0 ? 'text-forest' : 'text-clay'">
                   ₹{{ account.current_balance.toFixed(2) }}
                 </span>
               </div>
             </div>
 
-            <div v-if="account.description" class="mt-3 text-sm text-gray-600 dark:text-gray-400">
+            <div v-if="account.description" class="mt-3 text-sm text-stone-600 dark:text-stone-400">
               {{ account.description }}
             </div>
           </div>
@@ -85,20 +85,20 @@
           <!-- Desktop Action Buttons -->
           <div class="hidden lg:flex items-center space-x-2" @click.stop>
             <button @click="editAccount(account)"
-              class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+              class="p-2 text-stone-400 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200"
               :title="t('common.edit')">
               <Edit2 class="h-4 w-4" />
             </button>
             <button @click="toggleAccountStatus(account)"
-              class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+              class="p-2 text-stone-400 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200"
               :title="account.is_active ? t('users.deactivate') : t('users.activate')">
               <component :is="account.is_active ? EyeOff : Eye" class="h-4 w-4" />
             </button>
             <button @click="deleteAccount(account.id!)" :disabled="!canDelete" :class="[
               canDelete
-                ? 'text-red-400 hover:text-red-600 dark:hover:text-red-300'
-                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
-              'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+                ? 'text-clay hover:text-clay'
+                : 'text-stone-300 dark:text-stone-600 cursor-not-allowed',
+              'p-2 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200'
             ]" :title="t('common.deleteAction')">
               <Trash2 class="h-4 w-4" />
             </button>
@@ -113,47 +113,47 @@
 
       <div v-if="accounts.length === 0" class="col-span-full">
         <div class="text-center py-12">
-          <CreditCard class="mx-auto h-12 w-12 text-gray-400" />
-          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('accounts.noAccounts') }}</h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('accounts.getStarted') }}</p>
+          <CreditCard class="mx-auto h-12 w-12 text-stone-400" />
+          <h3 class="mt-2 text-sm font-medium text-ink dark:text-cream">{{ t('accounts.noAccounts') }}</h3>
+          <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">{{ t('accounts.getStarted') }}</p>
         </div>
       </div>
     </div>
 
     <!-- Summary Cards -->
     <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="card bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700">
+      <div class="card bg-forest/5 dark:bg-forest/10 border-forest/30 dark:border-forest/40">
         <div class="flex items-center">
-          <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-            <TrendingUp class="h-6 w-6 text-green-600 dark:text-green-400" />
+          <div class="p-2 bg-forest/10 dark:bg-forest/20 rounded-lg">
+            <TrendingUp class="h-6 w-6 text-forest" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-green-700 dark:text-green-300">{{ t('accounts.totalBalance') }}</p>
-            <p class="text-2xl font-bold text-green-900 dark:text-green-100">₹{{ totalBalance.toFixed(2) }}</p>
+            <p class="sw-eyebrow text-stone-600 dark:text-stone-400">{{ t('accounts.totalBalance') }}</p>
+            <p class="sw-stat font-mono tabular-nums text-forest">₹{{ totalBalance.toFixed(2) }}</p>
           </div>
         </div>
       </div>
 
-      <div class="card bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700">
+      <div class="card">
         <div class="flex items-center">
-          <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-            <CreditCard class="h-6 w-6 text-blue-600 dark:text-blue-400" />
+          <div class="p-2 bg-amber/15 dark:bg-amber/20 rounded-lg">
+            <CreditCard class="h-6 w-6 text-amber-700 dark:text-amber" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-blue-700 dark:text-blue-300">{{ t('accounts.activeAccounts') }}</p>
-            <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ activeAccountsCount }}</p>
+            <p class="sw-eyebrow text-stone-600 dark:text-stone-400">{{ t('accounts.activeAccounts') }}</p>
+            <p class="sw-stat font-mono tabular-nums text-ink dark:text-cream">{{ activeAccountsCount }}</p>
           </div>
         </div>
       </div>
 
-      <div class="card bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700">
+      <div class="card bg-amber/5 dark:bg-amber/10 border-amber/30 dark:border-amber/40">
         <div class="flex items-center">
-          <div class="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-            <AlertTriangle class="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+          <div class="p-2 bg-amber/15 dark:bg-amber/20 rounded-lg">
+            <AlertTriangle class="h-6 w-6 text-amber-700 dark:text-amber" />
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-yellow-700 dark:text-yellow-300">{{ t('accounts.lowBalance') }}</p>
-            <p class="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{{ lowBalanceCount }}</p>
+            <p class="sw-eyebrow text-stone-600 dark:text-stone-400">{{ t('accounts.lowBalance') }}</p>
+            <p class="sw-stat font-mono tabular-nums text-ink dark:text-cream">{{ lowBalanceCount }}</p>
           </div>
         </div>
       </div>
@@ -161,26 +161,26 @@
 
     <!-- Add/Edit Modal -->
     <div v-if="showAddModal || editingAccount"
-      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="closeModal"
+      class="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-[60]" @click="closeModal"
       @keydown.esc="closeModal" tabindex="-1">
       <div
-        class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4 mb-20 lg:mb-4"
+        class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 m-4 mb-20 lg:mb-4"
         @click.stop>
         <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+          <h3 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">
             {{ editingAccount ? t('accounts.editAccount') : t('accounts.addAccount') }}
           </h3>
 
           <form @submit.prevent="saveAccount" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('accounts.accountName')
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.accountName')
               }}</label>
               <input ref="firstInputRef" v-model="form.name" type="text" required class="input mt-1"
                 :placeholder="t('forms.enterAccountName')" autofocus />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('accounts.accountType')
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.accountType')
               }}</label>
               <select v-model="form.type" required class="input mt-1">
                 <option value="">{{ t('forms.selectAccountType') }}</option>
@@ -193,27 +193,27 @@
             </div>
 
             <div v-if="form.type === 'bank' || form.type === 'credit_card'">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('accounts.accountNumber')
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.accountNumber')
               }}</label>
               <input v-model="form.account_number" type="text" class="input mt-1"
                 :placeholder="t('forms.enterAccountNumber')" />
             </div>
 
             <div v-if="form.type === 'bank' || form.type === 'credit_card'">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('accounts.bankName')
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.bankName')
               }}</label>
               <input v-model="form.bank_name" type="text" class="input mt-1" :placeholder="t('forms.enterBankName')" />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('accounts.openingBalance')
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.openingBalance')
               }}</label>
-              <input v-model.number="form.opening_balance" type="number" step="0.01" required class="input mt-1"
+              <input v-model.number="form.opening_balance" type="number" step="0.01" required class="input mt-1 font-mono tabular-nums"
                 :placeholder="t('forms.enterOpeningBalance')" />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.description')
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.description')
               }}</label>
               <textarea v-model="form.description" class="input mt-1" rows="2"
                 :placeholder="t('forms.enterDescription')"></textarea>
@@ -221,8 +221,8 @@
 
             <div class="flex items-center">
               <input v-model="form.is_active" type="checkbox" id="is_active"
-                class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500" />
-              <label for="is_active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ t('accounts.isActive')
+                class="rounded border-stone-300 dark:border-ink-4 text-amber focus:ring-amber" />
+              <label for="is_active" class="ml-2 text-sm text-stone-700 dark:text-stone-300">{{ t('accounts.isActive')
               }}</label>
             </div>
 

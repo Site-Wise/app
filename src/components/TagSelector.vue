@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-3">
-    <label v-if="showLabel" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+    <label v-if="showLabel" class="block text-sm font-medium text-stone-700 dark:text-stone-300">
       {{ label || t('tags.selectTags') }}
     </label>
 
@@ -11,7 +11,7 @@
         :style="{ backgroundColor: tag.color }">
         <span>{{ tag.name }}</span>
         <button type="button" @click="removeTag(tag.id!)"
-          class="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-black hover:bg-opacity-20">
+          class="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-md hover:bg-black hover:bg-opacity-20">
           <X class="w-3 h-3" />
         </button>
       </div>
@@ -24,35 +24,35 @@
           :placeholder="placeholder || t('tags.searchOrCreateTag')" @input="handleSearch"
           @keydown.enter.prevent="handleEnterKey" @keydown.escape="hideDropdown" @focus="showDropdown = true" />
         <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
-          <Search class="h-4 w-4 text-gray-400" />
+          <Search class="h-4 w-4 text-stone-500 dark:text-stone-400" />
         </div>
       </div>
 
       <!-- Dropdown -->
       <div v-if="showDropdown && (filteredTags.length > 0 || canCreateNew)"
-        class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-800 shadow-xl rounded-lg border border-gray-200 dark:border-gray-700 max-h-60 overflow-auto">
+        class="absolute z-50 mt-1 w-full bg-white dark:bg-ink-3 shadow-modal rounded-lg border border-stone-200 dark:border-ink-4 max-h-60 overflow-auto">
         <!-- Existing Tags -->
         <div v-for="tag in filteredTags" :key="tag.id"
-          class="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer touch-manipulation"
+          class="flex items-center px-3 py-2 hover:bg-stone-50 dark:hover:bg-ink-4 cursor-pointer touch-manipulation"
           @click="selectTag(tag)">
           <div class="w-3 h-3 rounded-full mr-3 flex-shrink-0" :style="{ backgroundColor: tag.color }"></div>
-          <span class="flex-1 text-sm text-gray-900 dark:text-gray-100">{{ tag.name }}</span>
-          <span class="text-xs text-gray-500 dark:text-gray-400">({{ tag.usage_count || 0 }})</span>
+          <span class="flex-1 text-sm text-ink dark:text-cream">{{ tag.name }}</span>
+          <span class="text-xs font-mono text-stone-500 dark:text-stone-400">({{ tag.usage_count || 0 }})</span>
         </div>
 
         <!-- Create New Tag -->
         <div v-if="canCreateNew && searchQuery.trim()"
-          class="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-t border-gray-200 dark:border-gray-600"
+          class="flex items-center px-3 py-2 hover:bg-stone-50 dark:hover:bg-ink-4 cursor-pointer border-t border-stone-200 dark:border-ink-4"
           @click="createNewTag">
-          <Plus class="w-4 h-4 mr-2 text-green-600 dark:text-green-400" />
-          <span class="text-sm text-green-600 dark:text-green-400">
+          <Plus class="w-4 h-4 mr-2 text-forest-600 dark:text-forest-400" />
+          <span class="text-sm text-forest-600 dark:text-forest-400">
             {{ t('tags.createTag', { name: searchQuery.trim() }) }}
           </span>
         </div>
 
         <!-- No Results -->
         <div v-if="!canCreateNew && filteredTags.length === 0 && searchQuery.trim()"
-          class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+          class="px-3 py-2 text-sm text-stone-500 dark:text-stone-400">
           {{ t('tags.noTagsFound') }}
         </div>
       </div>
@@ -60,14 +60,14 @@
 
     <!-- Type Selection for New Tags -->
     <div v-if="showTypeSelection" class="space-y-2">
-      <label class="block text-xs font-medium text-gray-600 dark:text-gray-400">
+      <label class="block text-xs font-medium text-stone-600 dark:text-stone-400">
         {{ t('tags.selectType') }}
       </label>
       <div class="flex flex-wrap gap-2">
         <button v-for="type in tagTypes" :key="type.value" type="button" @click="selectTagType(type.value)"
-          class="px-3 py-1 text-xs border rounded-md hover:bg-gray-50 dark:hover:bg-gray-700" :class="selectedType === type.value
-            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
-            : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300'">
+          class="px-3 py-1 text-xs border rounded-md hover:bg-stone-50 dark:hover:bg-ink-4" :class="selectedType === type.value
+            ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/15 text-amber-900 dark:text-amber-300'
+            : 'border-stone-300 dark:border-ink-4 text-stone-700 dark:text-stone-300'">
           {{ t(type.label) }}
         </button>
       </div>

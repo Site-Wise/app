@@ -17,7 +17,7 @@
         class="w-8 h-8 flex items-center justify-center"
         :class="[
           isRefreshing ? 'animate-spin' : '',
-          canRefresh && !isRefreshing ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500'
+          canRefresh && !isRefreshing ? 'text-amber-500 dark:text-amber-400' : 'text-stone-400 dark:text-stone-500'
         ]"
       >
         <RefreshCw class="w-5 h-5" :class="{ 'rotate-180': canRefresh && !isRefreshing }" />

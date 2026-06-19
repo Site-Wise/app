@@ -6,7 +6,7 @@
         v-for="(photo, index) in photos" 
         :key="index"
         @click="openGallery(index)"
-        class="relative group cursor-pointer overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-700 aspect-square"
+        class="relative group cursor-pointer overflow-hidden rounded-lg bg-stone-100 dark:bg-ink-4 aspect-square"
       >
         <img 
           :src="getPhotoUrl(photo)" 
@@ -16,13 +16,13 @@
         />
         <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
           <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <div class="bg-white dark:bg-gray-800 rounded-full p-2 shadow-lg">
-              <Eye class="h-5 w-5 text-gray-700 dark:text-gray-300" />
+            <div class="bg-white dark:bg-ink-3 rounded-full p-2 shadow-modal">
+              <Eye class="h-5 w-5 text-stone-700 dark:text-stone-300" />
             </div>
           </div>
         </div>
         <!-- Photo count indicator for first photo -->
-        <div v-if="index === 0 && photos.length > 1" class="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded-full">
+        <div v-if="index === 0 && photos.length > 1" class="absolute top-2 right-2 bg-ink/70 text-cream text-xs font-mono px-2 py-1 rounded-md">
           +{{ photos.length - 1 }}
         </div>
       </div>
@@ -30,9 +30,9 @@
 
     <!-- Empty State -->
     <div v-else class="text-center py-8">
-      <Camera class="mx-auto h-12 w-12 text-gray-400" />
-      <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('delivery.noPhotos') }}</h3>
-      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('delivery.noPhotosMessage') }}</p>
+      <Camera class="mx-auto h-12 w-12 text-stone-400 dark:text-stone-500" />
+      <h3 class="mt-2 text-sm font-medium text-ink dark:text-cream">{{ t('delivery.noPhotos') }}</h3>
+      <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">{{ t('delivery.noPhotosMessage') }}</p>
     </div>
 
     <!-- Gallery Modal -->
@@ -56,7 +56,7 @@
       </button>
 
       <!-- Photo Counter -->
-      <div class="absolute top-4 left-4 z-60 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+      <div class="absolute top-4 left-4 z-60 bg-black bg-opacity-50 text-white px-3 py-1 rounded-md text-sm font-mono sw-tabular">
         {{ currentPhotoIndex + 1 }} / {{ photos.length }}
       </div>
 
@@ -128,7 +128,7 @@
         <button 
           v-if="showDeleteButton"
           @click.stop="deletePhoto"
-          class="bg-red-600 bg-opacity-80 hover:bg-opacity-100 text-white rounded-full p-2 transition-all duration-200"
+          class="bg-clay-600 bg-opacity-80 hover:bg-opacity-100 text-white rounded-full p-2 transition-all duration-200"
           :title="t('files.delete')"
         >
           <Trash2 class="h-5 w-5" />
@@ -147,7 +147,7 @@
           class="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden cursor-pointer border-2 transition-all duration-200"
           :class="{ 
             'border-white': index === currentPhotoIndex, 
-            'border-transparent hover:border-gray-300': index !== currentPhotoIndex 
+            'border-transparent hover:border-stone-300': index !== currentPhotoIndex
           }"
         >
           <img 

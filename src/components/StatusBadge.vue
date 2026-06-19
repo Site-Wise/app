@@ -26,17 +26,17 @@ const badgeText = computed(() => {
 });
 
 const badgeClasses = computed(() => {
-  const baseClasses = 'inline-flex items-center font-medium rounded-full';
-  
+  const baseClasses = 'inline-flex items-center font-medium uppercase tracking-eyebrow rounded-md';
+
   const sizeClasses = {
     xs: 'px-2 py-0.5 text-xs',
     sm: 'px-2.5 py-1 text-sm',
     md: 'px-3 py-1.5 text-sm'
   };
-  
+
   const colorClasses = {
-    new: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-    beta: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+    new: 'bg-forest-100 text-forest-700 dark:bg-forest-500/15 dark:text-forest-300',
+    beta: 'bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-300'
   };
   
   const positionClasses = props.position === 'absolute' 

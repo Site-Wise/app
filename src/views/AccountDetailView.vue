@@ -3,14 +3,14 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-8">
       <div class="flex items-center space-x-4">
-        <button @click="goBack" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-          <ArrowLeft class="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        <button @click="goBack" class="p-2 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors">
+          <ArrowLeft class="h-5 w-5 text-stone-600 dark:text-stone-400" />
         </button>
         <div class="flex items-center space-x-3">
-          <component :is="getAccountIcon(account.type)" class="h-8 w-8 text-gray-500 dark:text-gray-400" />
+          <component :is="getAccountIcon(account.type)" class="h-8 w-8 text-stone-500 dark:text-stone-400" />
           <div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ account.name }}</h1>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            <h1 class="font-display text-2xl font-bold text-ink dark:text-cream">{{ account.name }}</h1>
+            <p class="mt-1 sw-eyebrow text-stone-500 dark:text-stone-400">
               {{ account.type.replace('_', ' ').toUpperCase() }} Account Transactions
             </p>
           </div>
@@ -30,14 +30,14 @@
           </button>
           
           <!-- Export Dropdown Menu -->
-          <div v-if="showExportDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+          <div v-if="showExportDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-ink-3 rounded-lg shadow-modal z-10 border border-stone-200 dark:border-ink-4">
             <div class="py-1">
-              <button @click="exportStatement(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <FileSpreadsheet class="mr-3 h-4 w-4 text-green-600" />
+              <button @click="exportStatement(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4">
+                <FileSpreadsheet class="mr-3 h-4 w-4 text-forest" />
                 Export CSV
               </button>
-              <button @click="handleExportPdf(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <FileText class="mr-3 h-4 w-4 text-red-600" />
+              <button @click="handleExportPdf(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4">
+                <FileText class="mr-3 h-4 w-4 text-clay" />
                 Export PDF
               </button>
             </div>
@@ -55,42 +55,42 @@
 
       <!-- Mobile Menu -->
       <div class="md:hidden relative mobile-menu">
-        <button @click="showMobileMenu = !showMobileMenu" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-          <MoreVertical class="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        <button @click="showMobileMenu = !showMobileMenu" class="p-2 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors">
+          <MoreVertical class="h-5 w-5 text-stone-600 dark:text-stone-400" />
         </button>
-        
+
         <!-- Mobile Dropdown Menu -->
-        <div v-if="showMobileMenu" class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+        <div v-if="showMobileMenu" class="absolute right-0 mt-2 w-56 bg-white dark:bg-ink-3 rounded-lg shadow-modal z-10 border border-stone-200 dark:border-ink-4">
           <div class="py-1">
             <!-- Recalculate Balance -->
-            <button @click="handleMobileAction('recalculateBalance')" :disabled="recalculating" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50">
-              <RefreshCw :class="{ 'animate-spin': recalculating }" class="mr-3 h-5 w-5 text-gray-600" />
+            <button @click="handleMobileAction('recalculateBalance')" :disabled="recalculating" class="flex items-center w-full px-4 py-3 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 disabled:opacity-50">
+              <RefreshCw :class="{ 'animate-spin': recalculating }" class="mr-3 h-5 w-5 text-stone-600 dark:text-stone-400" />
               Recalculate Balance
             </button>
-            
+
             <!-- Export Options -->
-            <div class="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700">
+            <div class="px-4 py-2 sw-eyebrow text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">
               Export Statement
             </div>
-            <button @click="handleMobileAction('exportCsv')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-              <FileSpreadsheet class="mr-3 h-5 w-5 text-green-600" />
+            <button @click="handleMobileAction('exportCsv')" class="flex items-center w-full px-4 py-3 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4">
+              <FileSpreadsheet class="mr-3 h-5 w-5 text-forest" />
               Export CSV
             </button>
-            <button @click="handleMobileAction('exportPdf')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-              <FileText class="mr-3 h-5 w-5 text-red-600" />
+            <button @click="handleMobileAction('exportPdf')" class="flex items-center w-full px-4 py-3 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4">
+              <FileText class="mr-3 h-5 w-5 text-clay" />
               Export PDF
             </button>
-            
+
             <!-- Divider -->
-            <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
-            
+            <div class="border-t border-stone-200 dark:border-ink-4 my-1"></div>
+
             <!-- Other Actions -->
-            <button @click="handleMobileAction('addCredit')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-              <Plus class="mr-3 h-5 w-5 text-gray-600" />
+            <button @click="handleMobileAction('addCredit')" class="flex items-center w-full px-4 py-3 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4">
+              <Plus class="mr-3 h-5 w-5 text-stone-600 dark:text-stone-400" />
               Add Credit Entry
             </button>
-            <button @click="handleMobileAction('editAccount')" class="flex items-center w-full px-4 py-3 text-sm text-white bg-blue-600 hover:bg-blue-700">
-              <Edit2 class="mr-3 h-5 w-5 text-white" />
+            <button @click="handleMobileAction('editAccount')" class="flex items-center w-full px-4 py-3 text-sm text-ink bg-amber hover:bg-amber-600">
+              <Edit2 class="mr-3 h-5 w-5 text-ink" />
               Edit Account
             </button>
           </div>
@@ -102,29 +102,29 @@
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
       <!-- Account Info -->
       <div class="card">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Account Details</h2>
+        <h2 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">Account Details</h2>
         <div class="space-y-3">
           <div>
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Type:</span>
-            <p class="text-gray-900 dark:text-white capitalize">{{ account.type.replace('_', ' ') }}</p>
+            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">Type:</span>
+            <p class="text-ink dark:text-cream capitalize">{{ account.type.replace('_', ' ') }}</p>
           </div>
           <div v-if="account.account_number">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Account Number:</span>
-            <p class="text-gray-900 dark:text-white">{{ maskAccountNumber(account.account_number) }}</p>
+            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">Account Number:</span>
+            <p class="font-mono tabular-nums text-ink dark:text-cream">{{ maskAccountNumber(account.account_number) }}</p>
           </div>
           <div v-if="account.bank_name">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Bank:</span>
-            <p class="text-gray-900 dark:text-white">{{ account.bank_name }}</p>
+            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">Bank:</span>
+            <p class="text-ink dark:text-cream">{{ account.bank_name }}</p>
           </div>
           <div>
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Status:</span>
-            <span :class="account.is_active ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
+            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">Status:</span>
+            <span :class="account.is_active ? 'text-forest' : 'text-clay'">
               {{ account.is_active ? 'Active' : 'Inactive' }}
             </span>
           </div>
           <div v-if="account.description">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Description:</span>
-            <p class="text-gray-900 dark:text-white">{{ account.description }}</p>
+            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">Description:</span>
+            <p class="text-ink dark:text-cream">{{ account.description }}</p>
           </div>
         </div>
       </div>
@@ -132,39 +132,39 @@
       <!-- Balance Summary -->
       <div class="lg:col-span-3">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="card bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700">
+          <div class="card">
             <div class="flex items-center">
-              <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Wallet class="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <div class="p-2 bg-amber/15 dark:bg-amber/20 rounded-lg">
+                <Wallet class="h-6 w-6 text-amber-700 dark:text-amber" />
               </div>
               <div class="ml-4">
-                <p class="text-sm font-medium text-blue-700 dark:text-blue-300">Opening Balance</p>
-                <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">₹{{ account.opening_balance.toFixed(2) }}</p>
+                <p class="sw-eyebrow text-stone-600 dark:text-stone-400">Opening Balance</p>
+                <p class="sw-stat font-mono tabular-nums text-ink dark:text-cream">₹{{ account.opening_balance.toFixed(2) }}</p>
               </div>
             </div>
           </div>
 
-          <div class="card" :class="account.current_balance >= 0 ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700'">
+          <div class="card" :class="account.current_balance >= 0 ? 'bg-forest/5 dark:bg-forest/10 border-forest/30 dark:border-forest/40' : 'bg-clay/5 dark:bg-clay/10 border-clay/30 dark:border-clay/40'">
             <div class="flex items-center">
-              <div class="p-2 rounded-lg" :class="account.current_balance >= 0 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'">
-                <TrendingUp v-if="account.current_balance >= 0" class="h-6 w-6 text-green-600 dark:text-green-400" />
-                <TrendingDown v-else class="h-6 w-6 text-red-600 dark:text-red-400" />
+              <div class="p-2 rounded-lg" :class="account.current_balance >= 0 ? 'bg-forest/10 dark:bg-forest/20' : 'bg-clay/10 dark:bg-clay/20'">
+                <TrendingUp v-if="account.current_balance >= 0" class="h-6 w-6 text-forest" />
+                <TrendingDown v-else class="h-6 w-6 text-clay" />
               </div>
               <div class="ml-4">
-                <p class="text-sm font-medium" :class="account.current_balance >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'">Current Balance</p>
-                <p class="text-2xl font-bold" :class="account.current_balance >= 0 ? 'text-green-900 dark:text-green-100' : 'text-red-900 dark:text-red-100'">₹{{ account.current_balance.toFixed(2) }}</p>
+                <p class="sw-eyebrow text-stone-600 dark:text-stone-400">Current Balance</p>
+                <p class="sw-stat font-mono tabular-nums" :class="account.current_balance >= 0 ? 'text-forest' : 'text-clay'">₹{{ account.current_balance.toFixed(2) }}</p>
               </div>
             </div>
           </div>
 
-          <div class="card bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700">
+          <div class="card">
             <div class="flex items-center">
-              <div class="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <ArrowDownCircle class="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              <div class="p-2 bg-amber/15 dark:bg-amber/20 rounded-lg">
+                <ArrowDownCircle class="h-6 w-6 text-amber-700 dark:text-amber" />
               </div>
               <div class="ml-4">
-                <p class="text-sm font-medium text-purple-700 dark:text-purple-300">Total Payments</p>
-                <p class="text-2xl font-bold text-purple-900 dark:text-purple-100">₹{{ totalPayments.toFixed(2) }}</p>
+                <p class="sw-eyebrow text-stone-600 dark:text-stone-400">Total Payments</p>
+                <p class="sw-stat font-mono tabular-nums text-ink dark:text-cream">₹{{ totalPayments.toFixed(2) }}</p>
               </div>
             </div>
           </div>
@@ -172,19 +172,19 @@
 
         <!-- Transaction Summary -->
         <div class="mt-6 card">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Transaction Summary</h3>
+          <h3 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">Transaction Summary</h3>
           <div class="grid grid-cols-3 gap-4">
             <div class="text-center">
-              <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ accountTransactions.length }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Total Transactions</p>
+              <p class="sw-stat font-mono tabular-nums text-ink dark:text-cream">{{ accountTransactions.length }}</p>
+              <p class="text-sm text-stone-600 dark:text-stone-400">Total Transactions</p>
             </div>
             <div class="text-center">
-              <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ thisMonthTransactions }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">This Month</p>
+              <p class="sw-stat font-mono tabular-nums text-forest">{{ thisMonthTransactions }}</p>
+              <p class="text-sm text-stone-600 dark:text-stone-400">This Month</p>
             </div>
             <div class="text-center">
-              <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">₹{{ averageTransaction.toFixed(2) }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Avg. Transaction</p>
+              <p class="sw-stat font-mono tabular-nums text-ink dark:text-cream">₹{{ averageTransaction.toFixed(2) }}</p>
+              <p class="text-sm text-stone-600 dark:text-stone-400">Avg. Transaction</p>
             </div>
           </div>
         </div>
@@ -194,7 +194,7 @@
     <!-- Transaction History -->
     <div class="card">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Transaction History</h2>
+        <h2 class="font-display text-lg font-semibold text-ink dark:text-cream">Transaction History</h2>
         <div class="flex items-center space-x-2">
           <select v-model="filterPeriod" class="input text-sm">
             <option value="all">All Time</option>
@@ -202,80 +202,80 @@
             <option value="quarter">This Quarter</option>
             <option value="year">This Year</option>
           </select>
-          <span class="text-sm text-gray-500 dark:text-gray-400">{{ filteredTransactions.length }} transactions</span>
+          <span class="text-sm font-mono tabular-nums text-stone-500 dark:text-stone-400">{{ filteredTransactions.length }} transactions</span>
         </div>
       </div>
-      
+
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead class="bg-gray-50 dark:bg-gray-700">
+        <table class="min-w-full divide-y divide-stone-200 dark:divide-ink-4">
+          <thead class="bg-stone-50 dark:bg-ink-4">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Description</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Balance</th>
+              <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">Date</th>
+              <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">Type</th>
+              <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">Description</th>
+              <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">Amount</th>
+              <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">Balance</th>
             </tr>
           </thead>
-          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody class="bg-white dark:bg-ink-3 divide-y divide-stone-200 dark:divide-ink-4">
             <tr v-for="transaction in filteredTransactions" :key="transaction.id">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-mono tabular-nums text-ink dark:text-cream">
                 {{ formatDate(transaction.transaction_date) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span :class="[
-                  'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                  transaction.type === 'credit' 
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' 
-                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                  'inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium',
+                  transaction.type === 'credit'
+                    ? 'bg-forest/10 text-forest dark:bg-forest/15'
+                    : 'bg-clay/10 text-clay dark:bg-clay/15'
                 ]">
                   {{ transaction.type === 'credit' ? 'Credit' : 'Debit' }}
                 </span>
               </td>
               <td class="px-6 py-4">
-                <div class="text-sm font-medium text-gray-900 dark:text-white">{{ transaction.description }}</div>
-                <div v-if="transaction.notes" class="text-sm text-gray-500 dark:text-gray-400">{{ transaction.notes }}</div>
-                <div v-if="transaction.reference" class="text-sm text-gray-500 dark:text-gray-400">Ref: {{ transaction.reference }}</div>
+                <div class="text-sm font-medium text-ink dark:text-cream">{{ transaction.description }}</div>
+                <div v-if="transaction.notes" class="text-sm text-stone-500 dark:text-stone-400">{{ transaction.notes }}</div>
+                <div v-if="transaction.reference" class="text-sm font-mono text-stone-500 dark:text-stone-400">Ref: {{ transaction.reference }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span :class="[
-                  'text-sm font-medium',
-                  transaction.type === 'credit' 
-                    ? 'text-green-600 dark:text-green-400' 
-                    : 'text-red-600 dark:text-red-400'
+                  'text-sm font-medium font-mono tabular-nums',
+                  transaction.type === 'credit'
+                    ? 'text-forest'
+                    : 'text-clay'
                 ]">
                   {{ transaction.type === 'credit' ? '+' : '-' }}₹{{ transaction.amount.toFixed(2) }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-mono tabular-nums text-ink dark:text-cream">
                 ₹{{ (transaction as any).running_balance?.toFixed(2) || '0.00' }}
               </td>
             </tr>
           </tbody>
         </table>
-        
+
         <div v-if="filteredTransactions.length === 0" class="text-center py-12">
-          <ArrowDownCircle class="mx-auto h-12 w-12 text-gray-400" />
-          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No transactions</h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">No transactions found for the selected period.</p>
+          <ArrowDownCircle class="mx-auto h-12 w-12 text-stone-400" />
+          <h3 class="mt-2 text-sm font-medium text-ink dark:text-cream">No transactions</h3>
+          <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">No transactions found for the selected period.</p>
         </div>
       </div>
     </div>
 
     <!-- Edit Account Modal -->
-    <div v-if="showEditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="showEditModal = false" @keydown.esc="showEditModal = false" tabindex="-1">
-      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-20 lg:mb-4" @click.stop>
+    <div v-if="showEditModal" class="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-[60]" @click="showEditModal = false" @keydown.esc="showEditModal = false" tabindex="-1">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 mb-20 lg:mb-4" @click.stop>
         <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Edit Account</h3>
-          
+          <h3 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">Edit Account</h3>
+
           <form @submit.prevent="saveAccount" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Account Name</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Account Name</label>
               <input v-model="editForm.name" type="text" required class="input mt-1" />
             </div>
-            
+
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Account Type</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Account Type</label>
               <select v-model="editForm.type" required class="input mt-1">
                 <option value="bank">Bank Account</option>
                 <option value="credit_card">Credit Card</option>
@@ -286,23 +286,23 @@
             </div>
             
             <div v-if="editForm.type === 'bank' || editForm.type === 'credit_card'">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Account Number</label>
-              <input v-model="editForm.account_number" type="text" class="input mt-1" />
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Account Number</label>
+              <input v-model="editForm.account_number" type="text" class="input mt-1 font-mono tabular-nums" />
             </div>
-            
+
             <div v-if="editForm.type === 'bank' || editForm.type === 'credit_card'">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Bank Name</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Bank Name</label>
               <input v-model="editForm.bank_name" type="text" class="input mt-1" />
             </div>
-            
+
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Description</label>
               <textarea v-model="editForm.description" class="input mt-1" rows="2"></textarea>
             </div>
-            
+
             <div class="flex items-center">
-              <input v-model="editForm.is_active" type="checkbox" id="edit_is_active" class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500" />
-              <label for="edit_is_active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Account is active</label>
+              <input v-model="editForm.is_active" type="checkbox" id="edit_is_active" class="rounded border-stone-300 dark:border-ink-4 text-amber focus:ring-amber" />
+              <label for="edit_is_active" class="ml-2 text-sm text-stone-700 dark:text-stone-300">Account is active</label>
             </div>
             
             <div class="flex space-x-3 pt-4">
@@ -320,37 +320,37 @@
     </div>
 
     <!-- Credit Entry Modal -->
-    <div v-if="showCreditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="showCreditModal = false" @keydown.esc="showCreditModal = false" tabindex="-1">
-      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-20 lg:mb-4" @click.stop>
+    <div v-if="showCreditModal" class="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-[60]" @click="showCreditModal = false" @keydown.esc="showCreditModal = false" tabindex="-1">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 mb-20 lg:mb-4" @click.stop>
         <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Add Credit Entry</h3>
-          
+          <h3 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">Add Credit Entry</h3>
+
           <form @submit.prevent="saveCreditEntry" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Amount</label>
-              <input v-model.number="creditForm.amount" type="number" min="0" step="0.01" required class="input mt-1" />
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Amount</label>
+              <input v-model.number="creditForm.amount" type="number" min="0" step="0.01" required class="input mt-1 font-mono tabular-nums" />
             </div>
-            
+
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-              <input v-model="creditForm.description" type="text" required class="input mt-1" 
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Description</label>
+              <input v-model="creditForm.description" type="text" required class="input mt-1"
                      placeholder="e.g., Bank deposit, Refund, Correction" />
             </div>
-            
+
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reference</label>
-              <input v-model="creditForm.reference" type="text" class="input mt-1" 
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Reference</label>
+              <input v-model="creditForm.reference" type="text" class="input mt-1 font-mono"
                      placeholder="e.g., Transaction ID, Check number" />
             </div>
-            
+
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Date</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Date</label>
               <input v-model="creditForm.transaction_date" type="date" required class="input mt-1" />
             </div>
-            
+
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
-              <textarea v-model="creditForm.notes" class="input mt-1" rows="2" 
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Notes</label>
+              <textarea v-model="creditForm.notes" class="input mt-1" rows="2"
                         placeholder="Additional details about this credit entry"></textarea>
             </div>
             
@@ -370,7 +370,7 @@
   </div>
   
   <div v-else class="flex items-center justify-center min-h-96">
-    <Loader2 class="h-8 w-8 animate-spin text-gray-400" />
+    <Loader2 class="h-8 w-8 animate-spin text-amber" />
   </div>
 </template>
 

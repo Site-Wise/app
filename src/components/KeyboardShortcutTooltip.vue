@@ -7,19 +7,19 @@
       aria-label="Keyboard shortcuts help"
     >
       <!-- Overlay with shortcuts panel -->
-      <div class="absolute bottom-4 right-4 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 p-4 max-w-md pointer-events-auto">
+      <div class="absolute bottom-4 right-4 bg-white dark:bg-ink-3 rounded-lg shadow-modal border border-stone-200 dark:border-ink-4 p-4 max-w-md pointer-events-auto">
         <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Keyboard Shortcuts</h3>
-          <div class="text-xs text-gray-500 dark:text-gray-400">Hold Alt+Shift</div>
+          <h3 class="text-sm font-semibold text-ink dark:text-cream">Keyboard Shortcuts</h3>
+          <div class="text-xs text-stone-500 dark:text-stone-400">Hold Alt+Shift</div>
         </div>
-        
+
         <!-- Navigation shortcuts -->
         <div class="space-y-2">
-          <div class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Navigation</div>
+          <div class="text-xs font-medium text-stone-700 dark:text-stone-300 mb-1">Navigation</div>
           <div class="grid grid-cols-2 gap-1 text-xs">
             <div v-for="shortcut in navigationShortcuts" :key="shortcut.key" class="flex justify-between items-center py-1">
-              <span class="text-gray-600 dark:text-gray-400">{{ shortcut.label }}</span>
-              <kbd class="px-1.5 py-0.5 text-xs font-mono bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded border border-gray-300 dark:border-gray-600">
+              <span class="text-stone-600 dark:text-stone-400">{{ shortcut.label }}</span>
+              <kbd class="px-1.5 py-0.5 text-xs font-mono bg-stone-100 dark:bg-ink-4 text-ink dark:text-cream rounded-md border border-stone-300 dark:border-ink-4">
                 {{ shortcut.key.toUpperCase() }}
               </kbd>
             </div>
@@ -28,11 +28,11 @@
 
         <!-- Action shortcuts -->
         <div v-if="actionShortcuts.length > 0" class="mt-3 space-y-2">
-          <div class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Actions</div>
+          <div class="text-xs font-medium text-stone-700 dark:text-stone-300 mb-1">Actions</div>
           <div class="space-y-1 text-xs">
             <div v-for="shortcut in actionShortcuts" :key="shortcut.key" class="flex justify-between items-center py-1">
-              <span class="text-gray-600 dark:text-gray-400">{{ shortcut.label }}</span>
-              <kbd class="px-1.5 py-0.5 text-xs font-mono bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded border border-gray-300 dark:border-gray-600">
+              <span class="text-stone-600 dark:text-stone-400">{{ shortcut.label }}</span>
+              <kbd class="px-1.5 py-0.5 text-xs font-mono bg-stone-100 dark:bg-ink-4 text-ink dark:text-cream rounded-md border border-stone-300 dark:border-ink-4">
                 {{ getShortcutDisplay(shortcut.key, shortcut.requiresAltShift) }}
               </kbd>
             </div>
@@ -43,9 +43,9 @@
       <!-- Individual element tooltips -->
       <div v-for="tooltip in elementTooltips" :key="tooltip.id" 
            :style="{ top: tooltip.top + 'px', left: tooltip.left + 'px' }"
-           class="absolute bg-gray-900 dark:bg-gray-700 text-white text-xs px-2 py-1 rounded shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full -mt-2">
-        <div class="font-medium">{{ tooltip.key }}</div>
-        <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+           class="absolute bg-ink dark:bg-ink-4 text-cream text-xs px-2 py-1 rounded-md shadow-modal pointer-events-none transform -translate-x-1/2 -translate-y-full -mt-2">
+        <div class="font-mono font-medium">{{ tooltip.key }}</div>
+        <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-ink dark:border-t-ink-4"></div>
       </div>
     </div>
   </Teleport>

@@ -2,7 +2,7 @@
   <div class="relative" @click.stop>
     <button
       @click="isOpen = !isOpen"
-      class="p-2.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-150 touch-feedback min-h-touch min-w-[44px] flex items-center justify-center"
+      class="p-2.5 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 rounded-full hover:bg-stone-100 dark:hover:bg-ink-4 transition-all duration-150 ease-snap active:scale-[0.98] touch-feedback min-h-touch min-w-[44px] flex items-center justify-center"
       :title="t('common.actions')"
       :aria-expanded="isOpen"
       aria-haspopup="menu"
@@ -20,7 +20,7 @@
     >
       <div
         v-if="isOpen"
-        class="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-gray-800 rounded-xl shadow-lg ring-1 ring-black/5 dark:ring-white/10 z-50 overflow-hidden"
+        class="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-ink-3 rounded-lg shadow-modal border border-stone-200 dark:border-ink-4 z-50 overflow-hidden"
         role="menu"
         @click.stop
       >
@@ -34,10 +34,10 @@
               :class="[
                 'w-full text-left px-4 py-3.5 text-sm flex items-center space-x-3 transition-all duration-150 touch-feedback min-h-touch',
                 action.disabled
-                  ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                  ? 'text-stone-400 dark:text-stone-500 cursor-not-allowed'
                   : action.variant === 'danger'
-                    ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 active:bg-red-100 dark:active:bg-red-900/30'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600'
+                    ? 'text-clay-600 dark:text-clay-400 hover:bg-clay-50 dark:hover:bg-clay-900/20 active:bg-clay-100 dark:active:bg-clay-900/30'
+                    : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 active:bg-stone-200 dark:active:bg-ink-2'
               ]"
             >
               <component :is="action.icon" class="h-5 w-5 flex-shrink-0" />

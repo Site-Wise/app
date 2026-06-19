@@ -1,22 +1,22 @@
 <template>
-  <div v-if="isVisible" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="handleBackdropClick" @keydown.esc="handleEscape" tabindex="-1">
-    <div class="relative top-10 mx-auto p-6 border w-full max-w-5xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4 mb-20 lg:mb-4" @click.stop>
+  <div v-if="isVisible" class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-[60]" @click="handleBackdropClick" @keydown.esc="handleEscape" tabindex="-1">
+    <div class="relative top-10 mx-auto p-6 border w-full max-w-5xl shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 m-4 mb-20 lg:mb-4" @click.stop>
       <div class="mt-3">
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ title }}</h3>
-          <button @click="handleClose" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <h3 class="text-lg font-medium text-ink dark:text-cream">{{ title }}</h3>
+          <button @click="handleClose" class="text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream">
             <X class="h-6 w-6" />
           </button>
         </div>
-        
+
         <!-- Content -->
-        <div class="max-h-[70vh] overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 p-4">
-          <div v-html="content"></div>
+        <div class="max-h-[70vh] overflow-y-auto border border-stone-200 dark:border-ink-4 rounded-lg bg-stone-50 dark:bg-ink-2 p-4">
+          <div class="text-sm text-stone-700 dark:text-stone-300 [&_h1]:text-ink dark:[&_h1]:text-cream [&_h2]:text-ink dark:[&_h2]:text-cream [&_h3]:text-ink dark:[&_h3]:text-cream [&_strong]:text-ink dark:[&_strong]:text-cream" v-html="content"></div>
         </div>
-        
+
         <!-- Footer -->
-        <div class="flex justify-end mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div class="flex justify-end mt-6 pt-4 border-t border-stone-200 dark:border-ink-4">
           <button @click="handleClose" class="btn-outline">
             Close
           </button>

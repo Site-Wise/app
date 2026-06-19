@@ -3,7 +3,7 @@
     <Transition name="bottom-sheet-overlay">
       <div
         v-if="modelValue"
-        class="fixed inset-0 bg-black/50 z-[60]"
+        class="fixed inset-0 bg-black/60 z-[60]"
         @click="handleOverlayClick"
       />
     </Transition>
@@ -22,20 +22,20 @@
         <div
           v-if="isMobile"
           ref="sheetRef"
-          class="bg-white dark:bg-gray-800 rounded-t-2xl shadow-xl w-full max-h-[90vh] flex flex-col"
+          class="bg-white dark:bg-ink-3 rounded-t-2xl shadow-modal w-full max-h-[90vh] flex flex-col"
           @touchstart="handleTouchStart"
           @touchmove="handleTouchMove"
           @touchend="handleTouchEnd"
         >
           <!-- Handle bar for swipe to dismiss -->
           <div class="flex justify-center pt-3 pb-2 flex-shrink-0 cursor-grab active:cursor-grabbing">
-            <div class="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
+            <div class="w-10 h-1 bg-stone-300 dark:bg-stone-600 rounded-full" />
           </div>
 
           <!-- Header -->
-          <div v-if="title || $slots.header" class="px-4 pb-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <div v-if="title || $slots.header" class="px-4 pb-3 border-b border-stone-200 dark:border-ink-4 flex-shrink-0">
             <slot name="header">
-              <h2 :id="titleId" class="text-lg font-semibold text-gray-900 dark:text-white">
+              <h2 :id="titleId" class="font-display text-lg font-semibold text-ink dark:text-cream">
                 {{ title }}
               </h2>
             </slot>
@@ -47,7 +47,7 @@
           </div>
 
           <!-- Footer -->
-          <div v-if="$slots.footer" class="px-4 py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 pb-safe">
+          <div v-if="$slots.footer" class="px-4 py-4 border-t border-stone-200 dark:border-ink-4 flex-shrink-0 pb-safe">
             <slot name="footer" />
           </div>
         </div>
@@ -55,20 +55,20 @@
         <!-- Desktop Modal -->
         <div
           v-else
-          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full flex flex-col"
+          class="bg-white dark:bg-ink-3 rounded-xl shadow-modal w-full flex flex-col"
           :class="sizeClasses"
         >
           <!-- Header -->
-          <div v-if="title || $slots.header" class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
+          <div v-if="title || $slots.header" class="px-6 py-4 border-b border-stone-200 dark:border-ink-4 flex items-center justify-between flex-shrink-0">
             <slot name="header">
-              <h2 :id="titleId" class="text-lg font-semibold text-gray-900 dark:text-white">
+              <h2 :id="titleId" class="font-display text-lg font-semibold text-ink dark:text-cream">
                 {{ title }}
               </h2>
             </slot>
             <button
               v-if="showCloseButton"
               @click="close"
-              class="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              class="p-2 rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors"
               :aria-label="t('common.close')"
             >
               <X class="h-5 w-5" />
@@ -81,7 +81,7 @@
           </div>
 
           <!-- Footer -->
-          <div v-if="$slots.footer" class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <div v-if="$slots.footer" class="px-6 py-4 border-t border-stone-200 dark:border-ink-4 flex-shrink-0">
             <slot name="footer" />
           </div>
         </div>

@@ -3,8 +3,8 @@
     <!-- Desktop Header with Add Button -->
     <div class="hidden md:flex items-center justify-between mb-8">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('quotations.title') }}</h1>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <h1 class="font-display text-2xl font-bold text-ink dark:text-cream">{{ t('quotations.title') }}</h1>
+        <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">
           {{ t('quotations.subtitle') }}
         </p>
       </div>
@@ -22,61 +22,61 @@
     <!-- Mobile Header with Search -->
     <div class="md:hidden mb-6">
       <div class="mb-4">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('quotations.title') }}</h1>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <h1 class="font-display text-2xl font-bold text-ink dark:text-cream">{{ t('quotations.title') }}</h1>
+        <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">
           {{ t('quotations.subtitle') }}
         </p>
       </div>
-      
+
       <!-- Mobile Search Box -->
       <div class="relative">
         <input
           type="text"
           :placeholder="t('search.quotations')"
           v-model="searchQuery"
-          class="w-full px-4 py-3 pl-10 pr-10 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          class="input w-full pl-10 pr-10"
         />
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="h-5 w-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
         <div v-if="searchLoading" class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-          <Loader2 class="h-4 w-4 animate-spin text-gray-400" />
+          <Loader2 class="h-4 w-4 animate-spin text-amber" />
         </div>
       </div>
     </div>
 
     <!-- Quotations Table -->
     <div class="card overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-gray-50 dark:bg-gray-700">
+      <table class="min-w-full divide-y divide-stone-200 dark:divide-ink-4">
+        <thead class="bg-stone-50 dark:bg-ink-4">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.item') }}</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.vendor') }}</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('quotations.unitPrice') }}</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('quotations.minimumQuantity') }}</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('quotations.validUntil') }}</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.status') }}</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('common.actions') }}</th>
+            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('common.item') }}</th>
+            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('common.vendor') }}</th>
+            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('quotations.unitPrice') }}</th>
+            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('quotations.minimumQuantity') }}</th>
+            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('quotations.validUntil') }}</th>
+            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('common.status') }}</th>
+            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('common.actions') }}</th>
           </tr>
         </thead>
-        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+        <tbody class="bg-white dark:bg-ink-3 divide-y divide-stone-200 dark:divide-ink-4">
           <tr v-for="quotation in quotations" :key="quotation.id">
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ quotation.expand?.item?.name }}</div>
-              <div class="text-sm text-gray-500 dark:text-gray-400">{{ getUnitDisplay(quotation.expand?.item?.unit || 'units') }}</div>
+              <div class="text-sm font-medium text-ink dark:text-cream">{{ quotation.expand?.item?.name }}</div>
+              <div class="text-sm text-stone-500 dark:text-stone-400">{{ getUnitDisplay(quotation.expand?.item?.unit || 'units') }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-900 dark:text-white">{{ quotation.expand?.vendor?.contact_person }}</div>
+              <div class="text-sm text-ink dark:text-cream">{{ quotation.expand?.vendor?.contact_person }}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono tabular-nums text-ink dark:text-cream">
               ₹{{ quotation.unit_price.toFixed(2) }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono tabular-nums text-ink dark:text-cream">
               {{ quotation.minimum_quantity || '-' }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono tabular-nums text-ink dark:text-cream">
               {{ quotation.valid_until ? formatDate(quotation.valid_until) : '-' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
@@ -89,14 +89,14 @@
               <div class="hidden lg:flex items-center space-x-2" @click.stop>
                 <button
                   @click="editQuotation(quotation)"
-                  class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  class="p-2 text-stone-400 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200"
                   :title="t('common.edit')"
                 >
                   <Edit2 class="h-4 w-4" />
                 </button>
                 <button
                   @click="deleteQuotation(quotation.id!)"
-                  class="p-2 text-red-400 hover:text-red-600 dark:hover:text-red-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  class="p-2 text-clay hover:text-clay rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200"
                   :title="t('common.deleteAction')"
                 >
                   <Trash2 class="h-4 w-4" />
@@ -116,23 +116,23 @@
       </table>
       
       <div v-if="quotations.length === 0" class="text-center py-12">
-        <FileText class="mx-auto h-12 w-12 text-gray-400" />
-        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('quotations.noQuotations') }}</h3>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('quotations.getStarted') }}</p>
+        <FileText class="mx-auto h-12 w-12 text-stone-400" />
+        <h3 class="mt-2 text-sm font-medium text-ink dark:text-cream">{{ t('quotations.noQuotations') }}</h3>
+        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">{{ t('quotations.getStarted') }}</p>
       </div>
     </div>
 
     <!-- Add/Edit Modal -->
-    <div v-if="showAddModal || editingQuotation" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4 mb-20 lg:mb-4" @click.stop>
+    <div v-if="showAddModal || editingQuotation" class="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-[60]" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
+      <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 m-4 mb-20 lg:mb-4" @click.stop>
         <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+          <h3 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">
             {{ editingQuotation ? t('quotations.editQuotation') : t('quotations.addQuotation') }}
           </h3>
-          
+
           <form @submit.prevent="saveQuotation" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.item') }}</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.item') }}</label>
               <select ref="firstInputRef" v-model="form.item" required class="input mt-1" autofocus>
                 <option value="">{{ t('forms.selectItem') }}</option>
                 <option v-for="item in items" :key="item.id" :value="item.id">
@@ -142,7 +142,7 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.vendor') }}</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.vendor') }}</label>
               <select v-model="form.vendor" required class="input mt-1">
                 <option value="">{{ t('forms.selectVendor') }}</option>
                 <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
@@ -153,22 +153,22 @@
             
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('forms.unitPrice') }}</label>
-                <input v-model.number="form.unit_price" type="number" step="0.01" required class="input mt-1" :placeholder="t('forms.enterAmount')" />
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('forms.unitPrice') }}</label>
+                <input v-model.number="form.unit_price" type="number" step="0.01" required class="input mt-1 font-mono tabular-nums" :placeholder="t('forms.enterAmount')" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('quotations.minimumQuantity') }}</label>
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('quotations.minimumQuantity') }}</label>
                 <input v-model.number="form.minimum_quantity" type="number" class="input mt-1" :placeholder="t('forms.optional')" />
               </div>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('quotations.validUntil') }}</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('quotations.validUntil') }}</label>
               <input v-model="form.valid_until" type="date" class="input mt-1" />
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.status') }}</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.status') }}</label>
               <select v-model="form.status" required class="input mt-1">
                 <option value="pending">{{ t('common.pending') }}</option>
                 <option value="approved">{{ t('common.approved') }}</option>
@@ -178,7 +178,7 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.notes') }}</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.notes') }}</label>
               <textarea v-model="form.notes" class="input mt-1" rows="3" :placeholder="t('quotations.additionalNotes')"></textarea>
             </div>
             

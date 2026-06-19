@@ -2,15 +2,15 @@
   <div>
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('payments.title') }}</h1>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <h1 class="font-display text-2xl font-bold text-ink dark:text-cream">{{ t('payments.title') }}</h1>
+        <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">
           {{ t('payments.subtitle') }}
         </p>
       </div>
       <div class="hidden md:flex items-center space-x-3">
         <button @click="showDuePaymentsModal = true" v-if="hasOutstandingPayments"
           class="btn-outline flex items-center">
-          <AlertCircle class="mr-2 h-4 w-4 text-orange-500" />
+          <AlertCircle class="mr-2 h-4 w-4 text-clay" />
           {{ t('payments.viewDuePayments') }}
         </button>
         <button @click="handleAddPayment" :disabled="!canCreatePayment" :class="[
@@ -25,25 +25,25 @@
       <!-- Mobile Menu -->
       <div class="md:hidden relative header-mobile-menu">
         <button @click="showHeaderMobileMenu = !showHeaderMobileMenu"
-          class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-          <MoreVertical class="h-5 w-5 text-gray-600 dark:text-gray-400" />
+          class="p-2 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors">
+          <MoreVertical class="h-5 w-5 text-stone-600 dark:text-stone-400" />
         </button>
 
         <!-- Mobile Dropdown Menu -->
         <div v-if="showHeaderMobileMenu"
-          class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+          class="absolute right-0 mt-2 w-56 bg-white dark:bg-ink-3 rounded-lg shadow-modal z-10 border border-stone-200 dark:border-ink-4">
           <div class="py-1">
             <button v-if="hasOutstandingPayments" @click="handleHeaderMobileAction('viewDuePayments')"
-              class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-              <AlertCircle class="mr-3 h-5 w-5 text-orange-500" />
+              class="flex items-center w-full px-4 py-3 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4">
+              <AlertCircle class="mr-3 h-5 w-5 text-clay" />
               {{ t('payments.viewDuePayments') }}
             </button>
             <button @click="handleHeaderMobileAction('recordPayment')" :disabled="!canCreatePayment" :class="[
               canCreatePayment
-                ? 'flex items-center w-full px-4 py-3 text-sm text-white bg-blue-600 hover:bg-blue-700'
-                : 'flex items-center w-full px-4 py-3 text-sm text-gray-400 bg-gray-100 dark:bg-gray-700 cursor-not-allowed'
+                ? 'flex items-center w-full px-4 py-3 text-sm text-ink bg-amber hover:bg-amber-600'
+                : 'flex items-center w-full px-4 py-3 text-sm text-stone-400 bg-stone-100 dark:bg-ink-4 cursor-not-allowed'
             ]">
-              <Plus class="mr-3 h-5 w-5" :class="canCreatePayment ? 'text-white' : 'text-gray-400'" />
+              <Plus class="mr-3 h-5 w-5" :class="canCreatePayment ? 'text-ink' : 'text-stone-400'" />
               {{ t('payments.recordPayment') }}
             </button>
           </div>
@@ -61,15 +61,15 @@
 
         <!-- Desktop Search Results Summary -->
         <div v-if="searchQuery.trim() && !searchLoading"
-          class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+          class="flex items-center gap-4 text-sm text-stone-600 dark:text-stone-400">
           <div class="flex items-center gap-1">
-            <span class="font-medium text-gray-900 dark:text-white">{{ searchResultsCount }}</span>
+            <span class="font-medium font-mono tabular-nums text-ink dark:text-cream">{{ searchResultsCount }}</span>
             <span>{{ searchResultsCount === 1 ? t('payments.result') : t('payments.results') }}</span>
           </div>
-          <div class="h-4 border-l border-gray-300 dark:border-gray-600"></div>
+          <div class="h-4 border-l border-stone-300 dark:border-ink-4"></div>
           <div class="flex items-center gap-1">
             <span class="text-xs">{{ t('common.total') }}:</span>
-            <span class="font-semibold text-gray-900 dark:text-white">₹{{ searchResultsTotal.toFixed(2) }}</span>
+            <span class="font-semibold font-mono tabular-nums text-ink dark:text-cream">₹{{ searchResultsTotal.toFixed(2) }}</span>
           </div>
         </div>
       </div>
@@ -80,15 +80,15 @@
 
         <!-- Mobile Search Results Summary -->
         <div v-if="searchQuery.trim() && !searchLoading"
-          class="mt-3 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+          class="mt-3 flex items-center gap-4 text-sm text-stone-600 dark:text-stone-400">
           <div class="flex items-center gap-1">
-            <span class="font-medium text-gray-900 dark:text-white">{{ searchResultsCount }}</span>
+            <span class="font-medium font-mono tabular-nums text-ink dark:text-cream">{{ searchResultsCount }}</span>
             <span>{{ searchResultsCount === 1 ? t('payments.result') : t('payments.results') }}</span>
           </div>
-          <div class="h-4 border-l border-gray-300 dark:border-gray-600"></div>
+          <div class="h-4 border-l border-stone-300 dark:border-ink-4"></div>
           <div class="flex items-center gap-1">
             <span class="text-xs">{{ t('common.total') }}:</span>
-            <span class="font-semibold text-gray-900 dark:text-white">₹{{ searchResultsTotal.toFixed(2) }}</span>
+            <span class="font-semibold font-mono tabular-nums text-ink dark:text-cream">₹{{ searchResultsTotal.toFixed(2) }}</span>
           </div>
         </div>
       </div>
@@ -96,74 +96,74 @@
 
     <!-- Payments Table -->
     <div class="card overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+      <table class="min-w-full divide-y divide-stone-200 dark:divide-ink-4">
         <!-- Desktop Headers -->
-        <thead class="bg-gray-50 dark:bg-gray-700 hidden lg:table-header-group">
+        <thead class="bg-stone-50 dark:bg-ink-4 hidden lg:table-header-group">
           <tr>
             <th @click="handleSort('vendor')"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+              class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400 cursor-pointer hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors">
               <div class="flex items-center space-x-1">
                 <span>{{ t('common.vendor') }}</span>
                 <component :is="getSortIcon('vendor')" class="h-4 w-4"
-                  :class="sortField === 'vendor' ? 'text-primary-600 dark:text-primary-400' : ''" />
+                  :class="sortField === 'vendor' ? 'text-amber-700 dark:text-amber' : ''" />
               </div>
             </th>
             <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">
               {{ t('common.account') }}</th>
             <th @click="handleSort('amount')"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+              class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400 cursor-pointer hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors">
               <div class="flex items-center space-x-1">
                 <span>{{ t('common.amount') }}</span>
                 <component :is="getSortIcon('amount')" class="h-4 w-4"
-                  :class="sortField === 'amount' ? 'text-primary-600 dark:text-primary-400' : ''" />
+                  :class="sortField === 'amount' ? 'text-amber-700 dark:text-amber' : ''" />
               </div>
             </th>
             <th @click="handleSort('date')"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+              class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400 cursor-pointer hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors">
               <div class="flex items-center space-x-1">
                 <span>{{ t('common.date') }}</span>
                 <component :is="getSortIcon('date')" class="h-4 w-4"
-                  :class="sortField === 'date' ? 'text-primary-600 dark:text-primary-400' : ''" />
+                  :class="sortField === 'date' ? 'text-amber-700 dark:text-amber' : ''" />
               </div>
             </th>
             <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">
               {{ t('common.reference') }}</th>
             <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">
               {{ t('common.actions') }}</th>
           </tr>
         </thead>
 
         <!-- Mobile Headers -->
-        <thead class="bg-gray-50 dark:bg-gray-700 lg:hidden">
+        <thead class="bg-stone-50 dark:bg-ink-4 lg:hidden">
           <tr>
             <th @click="handleSort('vendor')"
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+              class="px-4 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400 cursor-pointer hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors">
               <div class="flex items-center space-x-1">
                 <span>{{ t('common.vendor') }}</span>
                 <component :is="getSortIcon('vendor')" class="h-3 w-3"
-                  :class="sortField === 'vendor' ? 'text-primary-600 dark:text-primary-400' : ''" />
+                  :class="sortField === 'vendor' ? 'text-amber-700 dark:text-amber' : ''" />
               </div>
             </th>
             <th
-              class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              class="px-4 py-3 text-right sw-eyebrow text-stone-500 dark:text-stone-400">
               {{ t('common.account') }}</th>
             <th
-              class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              class="px-4 py-3 text-right sw-eyebrow text-stone-500 dark:text-stone-400">
               {{ t('common.actions') }}</th>
           </tr>
         </thead>
-        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+        <tbody class="bg-white dark:bg-ink-3 divide-y divide-stone-200 dark:divide-ink-4">
           <tr v-for="payment in payments" :key="payment.id">
             <!-- Desktop Row -->
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div>
-                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                <div class="text-sm font-medium text-ink dark:text-cream">
                   {{ payment.expand?.vendor?.contact_person || t('common.unknown') + ' ' + t('common.vendor') }}
                 </div>
-                <div v-if="payment.expand?.vendor?.name" class="text-xs text-gray-500 dark:text-gray-400">
+                <div v-if="payment.expand?.vendor?.name" class="text-xs text-stone-500 dark:text-stone-400">
                   {{ payment.expand.vendor.name }}
                 </div>
               </div>
@@ -173,29 +173,29 @@
                 <!-- Account (only show if payment has an account) -->
                 <div v-if="payment.expand?.account" class="flex items-center">
                   <component :is="getAccountIcon(payment.expand.account.type)"
-                    class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                  <div class="text-sm text-gray-900 dark:text-white">{{ payment.expand.account.name }}</div>
+                    class="mr-2 h-4 w-4 text-stone-500 dark:text-stone-400" />
+                  <div class="text-sm text-ink dark:text-cream">{{ payment.expand.account.name }}</div>
                 </div>
                 <!-- Credit Notes -->
                 <div v-if="payment.credit_notes && payment.credit_notes.length > 0" class="flex items-center">
-                  <svg class="mr-2 h-4 w-4 text-green-500 dark:text-green-400" fill="none" stroke="currentColor"
+                  <svg class="mr-2 h-4 w-4 text-forest" fill="none" stroke="currentColor"
                     viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
-                  <div class="text-xs text-green-600 dark:text-green-400">
+                  <div class="text-xs text-forest">
                     {{ payment.credit_notes.length }} Credit Note{{ payment.credit_notes.length > 1 ? 's' : '' }}
                   </div>
                 </div>
                 <!-- Show "Credit Note Only" when no account is used -->
                 <div v-if="!payment.expand?.account && payment.credit_notes && payment.credit_notes.length > 0"
                   class="flex items-center">
-                  <svg class="mr-2 h-4 w-4 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor"
+                  <svg class="mr-2 h-4 w-4 text-amber-700 dark:text-amber" fill="none" stroke="currentColor"
                     viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
-                  <div class="text-xs text-blue-600 dark:text-blue-400 italic">
+                  <div class="text-xs text-amber-700 dark:text-amber italic">
                     Credit Note Only
                   </div>
                 </div>
@@ -203,12 +203,12 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
               <div class="flex items-center">
-                <div class="text-sm font-medium text-gray-900 dark:text-white">₹{{ payment.amount.toFixed(2) }}</div>
+                <div class="text-sm font-medium font-mono tabular-nums text-ink dark:text-cream">₹{{ payment.amount.toFixed(2) }}</div>
                 <!-- Allocation Status Indicator -->
                 <div v-if="payment.expand?.payment_allocations && payment.expand.payment_allocations.length > 0"
                   class="ml-2">
                   <span v-if="getAllocatedAmount(payment.expand.payment_allocations) === payment.amount"
-                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                    class="sw-badge sw-badge--success"
                     :title="t('payments.fullyAllocated')">
                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                       <path fill-rule="evenodd"
@@ -218,7 +218,7 @@
                     Allocated
                   </span>
                   <span v-else-if="getAllocatedAmount(payment.expand.payment_allocations) > 0"
-                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                    class="sw-badge sw-badge--neutral"
                     :title="`${t('payments.partiallyAllocated')}: ₹${getUnallocatedAmount(payment, payment.expand.payment_allocations).toFixed(2)} remaining`">
                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                       <path fill-rule="evenodd"
@@ -228,7 +228,7 @@
                     Partial
                   </span>
                   <span v-else
-                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400"
+                    class="sw-badge sw-badge--accent"
                     :title="t('payments.unallocated')">
                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                       <path fill-rule="evenodd"
@@ -240,29 +240,29 @@
                 </div>
               </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono tabular-nums text-ink dark:text-cream hidden lg:table-cell">
               {{ formatDate(payment.payment_date) }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-ink dark:text-cream hidden lg:table-cell">
               {{ payment.reference || '-' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium hidden lg:table-cell">
               <!-- Desktop Action Buttons -->
               <div class="hidden lg:flex items-center space-x-2" @click.stop>
                 <button @click="viewPayment(payment)"
-                  class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  class="p-2 text-stone-400 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200"
                   :title="t('common.view')">
                   <Eye class="h-4 w-4" />
                 </button>
                 <button v-if="canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])"
                   @click="startEditPayment(payment)"
-                  class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  class="p-2 text-stone-400 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200"
                   :title="t('common.edit')">
                   <Edit2 class="h-4 w-4" />
                 </button>
                 <button v-if="canPaymentBeDeleted(payment, payment.expand?.payment_allocations || [])"
                   @click="deletePayment(payment)"
-                  class="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  class="p-2 text-stone-400 hover:text-clay rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200"
                   :title="t('common.deleteAction')">
                   <Trash2 class="h-4 w-4" />
                 </button>
@@ -278,32 +278,32 @@
             <!-- Mobile Row -->
             <td class="px-4 py-4 lg:hidden">
               <div>
-                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                <div class="text-sm font-medium text-ink dark:text-cream">
                   {{ payment.expand?.vendor?.contact_person || t('common.unknown') + ' ' + t('common.vendor') }}
                 </div>
-                <div v-if="payment.expand?.vendor?.name" class="text-xs text-gray-500 dark:text-gray-400">
+                <div v-if="payment.expand?.vendor?.name" class="text-xs text-stone-500 dark:text-stone-400">
                   {{ payment.expand.vendor.name }}
                 </div>
               </div>
-              <div class="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">
+              <div class="text-xs font-medium font-mono tabular-nums text-stone-500 dark:text-stone-400 mt-1">
                 {{ formatDate(payment.payment_date) }}
               </div>
             </td>
             <td class="px-4 py-4 lg:hidden">
               <div class="text-right">
                 <div class="flex items-center justify-end">
-                  <div class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{ payment.amount.toFixed(2) }}
+                  <div class="text-sm font-semibold font-mono tabular-nums text-forest">₹{{ payment.amount.toFixed(2) }}
                   </div>
                   <!-- Mobile Allocation Status Indicator -->
                   <div v-if="payment.expand?.payment_allocations && payment.expand.payment_allocations.length > 0"
                     class="ml-2">
                     <span v-if="getAllocatedAmount(payment.expand.payment_allocations) === payment.amount"
-                      class="inline-flex w-2 h-2 bg-green-500 rounded-full"
+                      class="inline-flex w-2 h-2 bg-forest rounded-full"
                       :title="t('payments.fullyAllocated')"></span>
                     <span v-else-if="getAllocatedAmount(payment.expand.payment_allocations) > 0"
-                      class="inline-flex w-2 h-2 bg-yellow-500 rounded-full"
+                      class="inline-flex w-2 h-2 bg-stone-400 rounded-full"
                       :title="t('payments.partiallyAllocated')"></span>
-                    <span v-else class="inline-flex w-2 h-2 bg-orange-500 rounded-full"
+                    <span v-else class="inline-flex w-2 h-2 bg-amber rounded-full"
                       :title="t('payments.unallocated')"></span>
                   </div>
                 </div>
@@ -311,30 +311,30 @@
                   <!-- Account (only show if payment has an account) -->
                   <div v-if="payment.expand?.account" class="flex items-center justify-end">
                     <component :is="getAccountIcon(payment.expand.account.type)"
-                      class="mr-1 h-3 w-3 text-gray-500 dark:text-gray-400" />
-                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ payment.expand.account.name }}</div>
+                      class="mr-1 h-3 w-3 text-stone-500 dark:text-stone-400" />
+                    <div class="text-xs text-stone-500 dark:text-stone-400">{{ payment.expand.account.name }}</div>
                   </div>
                   <!-- Credit Notes -->
                   <div v-if="payment.credit_notes && payment.credit_notes.length > 0"
                     class="flex items-center justify-end">
-                    <svg class="mr-1 h-3 w-3 text-green-500 dark:text-green-400" fill="none" stroke="currentColor"
+                    <svg class="mr-1 h-3 w-3 text-forest" fill="none" stroke="currentColor"
                       viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <div class="text-xs text-green-600 dark:text-green-400">
+                    <div class="text-xs text-forest">
                       {{ payment.credit_notes.length }} Credit Note{{ payment.credit_notes.length > 1 ? 's' : '' }}
                     </div>
                   </div>
                   <!-- Show "Credit Note Only" when no account is used -->
                   <div v-if="!payment.expand?.account && payment.credit_notes && payment.credit_notes.length > 0"
                     class="flex items-center justify-end">
-                    <svg class="mr-1 h-3 w-3 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor"
+                    <svg class="mr-1 h-3 w-3 text-amber-700 dark:text-amber" fill="none" stroke="currentColor"
                       viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <div class="text-xs text-blue-600 dark:text-blue-400 italic">
+                    <div class="text-xs text-amber-700 dark:text-amber italic">
                       Credit Note Only
                     </div>
                   </div>
@@ -344,7 +344,7 @@
             <td class="px-4 py-4 lg:hidden">
               <div class="relative flex items-center justify-end">
                 <button @click="toggleMobileMenu(payment.id!)"
-                  class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  class="p-2 text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200"
                   :title="t('common.actions')">
                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path
@@ -358,16 +358,16 @@
                   leave-active-class="transition duration-150 ease-in"
                   leave-from-class="transform scale-100 opacity-100" leave-to-class="transform scale-95 opacity-0">
                   <div v-if="openMobileMenuId === payment.id"
-                    class="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-20 min-w-[120px] origin-top-right"
+                    class="absolute right-0 top-full mt-1 bg-white dark:bg-ink-3 rounded-lg shadow-modal border border-stone-200 dark:border-ink-4 py-1 z-20 min-w-[120px] origin-top-right"
                     @click.stop>
                     <button @click="viewPayment(payment); closeMobileMenu()"
-                      class="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150">
+                      class="w-full flex items-center px-3 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150">
                       <Eye class="h-4 w-4 mr-2" />
                       {{ t('common.view') }}
                     </button>
                     <button v-if="canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])"
                       @click="startEditPayment(payment); closeMobileMenu()"
-                      class="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150">
+                      class="w-full flex items-center px-3 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150">
                       <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -376,7 +376,7 @@
                     </button>
                     <button v-if="canPaymentBeDeleted(payment, payment.expand?.payment_allocations || [])"
                       @click="deletePayment(payment); closeMobileMenu()"
-                      class="w-full flex items-center px-3 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150">
+                      class="w-full flex items-center px-3 py-2 text-sm text-clay hover:bg-clay/10 dark:hover:bg-clay/15 transition-colors duration-150">
                       <Trash2 class="h-4 w-4 mr-2" />
                       {{ t('common.deleteAction') }}
                     </button>
@@ -389,9 +389,9 @@
       </table>
 
       <div v-if="payments.length === 0" class="text-center py-12">
-        <CreditCard class="mx-auto h-12 w-12 text-gray-400" />
-        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No payments recorded</h3>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Start tracking by recording a payment.</p>
+        <CreditCard class="mx-auto h-12 w-12 text-stone-400" />
+        <h3 class="mt-2 text-sm font-medium text-ink dark:text-cream">No payments recorded</h3>
+        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">Start tracking by recording a payment.</p>
       </div>
     </div>
 
@@ -408,67 +408,67 @@
       @close="handlePaymentModalClose" />
 
     <!-- View Payment Modal -->
-    <div v-if="viewingPayment" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]"
+    <div v-if="viewingPayment" class="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-[60]"
       @click="viewingPayment = null; closeModalState('payments-view-modal')"
       @keydown.esc="viewingPayment = null; closeModalState('payments-view-modal')" tabindex="-1">
       <div
-        class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-20 lg:mb-4"
+        class="relative top-20 mx-auto p-5 border w-96 shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 mb-20 lg:mb-4"
         @click.stop>
         <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Payment Details</h3>
+          <h3 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">Payment Details</h3>
 
           <div class="space-y-4">
             <div>
-              <span class="font-medium text-gray-700 dark:text-gray-300">Vendor:</span>
+              <span class="font-medium text-stone-700 dark:text-stone-300">Vendor:</span>
               <div class="ml-2 inline-block">
-                <span class="text-gray-900 dark:text-white">{{ viewingPayment.expand?.vendor?.contact_person ||
+                <span class="text-ink dark:text-cream">{{ viewingPayment.expand?.vendor?.contact_person ||
                   'UnknownVendor' }}</span>
-                <div v-if="viewingPayment.expand?.vendor?.name" class="text-xs text-gray-500 dark:text-gray-400">
+                <div v-if="viewingPayment.expand?.vendor?.name" class="text-xs text-stone-500 dark:text-stone-400">
                   {{ viewingPayment.expand.vendor.name }}
                 </div>
               </div>
             </div>
             <div>
-              <span class="font-medium text-gray-700 dark:text-gray-300">Account:</span>
+              <span class="font-medium text-stone-700 dark:text-stone-300">Account:</span>
               <div class="ml-2 flex items-center">
                 <component :is="getAccountIcon(viewingPayment.expand?.account?.type)"
-                  class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <span class="text-gray-900 dark:text-white">{{ viewingPayment.expand?.account?.name || 'Unknown Account'
+                  class="mr-2 h-4 w-4 text-stone-500 dark:text-stone-400" />
+                <span class="text-ink dark:text-cream">{{ viewingPayment.expand?.account?.name || 'Unknown Account'
                 }}</span>
               </div>
             </div>
             <div>
-              <span class="font-medium text-gray-700 dark:text-gray-300">Amount:</span>
-              <span class="ml-2 text-gray-900 dark:text-white">₹{{ viewingPayment.amount.toFixed(2) }}</span>
+              <span class="font-medium text-stone-700 dark:text-stone-300">Amount:</span>
+              <span class="ml-2 font-mono tabular-nums text-ink dark:text-cream">₹{{ viewingPayment.amount.toFixed(2) }}</span>
             </div>
             <div>
-              <span class="font-medium text-gray-700 dark:text-gray-300">Payment Date:</span>
-              <span class="ml-2 text-gray-900 dark:text-white">{{ formatDate(viewingPayment.payment_date) }}</span>
+              <span class="font-medium text-stone-700 dark:text-stone-300">Payment Date:</span>
+              <span class="ml-2 font-mono tabular-nums text-ink dark:text-cream">{{ formatDate(viewingPayment.payment_date) }}</span>
             </div>
             <div v-if="viewingPayment.reference">
-              <span class="font-medium text-gray-700 dark:text-gray-300">Reference:</span>
-              <span class="ml-2 text-gray-900 dark:text-white">{{ viewingPayment.reference }}</span>
+              <span class="font-medium text-stone-700 dark:text-stone-300">Reference:</span>
+              <span class="ml-2 font-mono text-ink dark:text-cream">{{ viewingPayment.reference }}</span>
             </div>
             <div v-if="viewingPayment.notes">
-              <span class="font-medium text-gray-700 dark:text-gray-300">Notes:</span>
-              <p class="ml-2 text-gray-600 dark:text-gray-400">{{ viewingPayment.notes }}</p>
+              <span class="font-medium text-stone-700 dark:text-stone-300">Notes:</span>
+              <p class="ml-2 text-stone-600 dark:text-stone-400">{{ viewingPayment.notes }}</p>
             </div>
 
             <!-- Credit Notes Used -->
             <div v-if="viewingPayment.credit_notes && viewingPayment.credit_notes.length > 0">
-              <span class="font-medium text-gray-700 dark:text-gray-300">Credit Notes Used:</span>
+              <span class="font-medium text-stone-700 dark:text-stone-300">Credit Notes Used:</span>
               <div class="ml-2 mt-2 space-y-2">
                 <div v-for="creditNoteId in viewingPayment.credit_notes" :key="creditNoteId"
-                  class="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                  class="flex items-center justify-between p-2 bg-forest/5 dark:bg-forest/10 rounded border border-forest/30 dark:border-forest/40">
                   <div>
-                    <p class="text-sm font-medium text-green-800 dark:text-green-300">
+                    <p class="text-sm font-medium text-forest">
                       {{ getCreditNoteDisplay(creditNoteId) }}
                     </p>
-                    <p class="text-xs text-green-600 dark:text-green-400">
+                    <p class="text-xs text-forest">
                       Applied to this payment
                     </p>
                   </div>
-                  <span class="text-sm font-semibold text-green-700 dark:text-green-300">
+                  <span class="text-sm font-semibold font-mono tabular-nums text-forest">
                     ₹{{ getCreditNoteAmount(creditNoteId) }}
                   </span>
                 </div>
@@ -479,46 +479,46 @@
 
           <!-- Payment Allocations -->
           <div v-if="viewingPaymentAllocations.length > 0" class="mt-6">
-            <h4 class="text-md font-medium text-gray-900 dark:text-white mb-3">{{ t('payments.paidFor') }}</h4>
+            <h4 class="font-display text-md font-semibold text-ink dark:text-cream mb-3">{{ t('payments.paidFor') }}</h4>
             <div v-if="loadingAllocations" class="flex items-center justify-center py-4">
-              <Loader2 class="h-5 w-5 animate-spin text-gray-500" />
+              <Loader2 class="h-5 w-5 animate-spin text-amber" />
             </div>
-            <div v-else class="bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden">
-              <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-                <thead class="bg-gray-100 dark:bg-gray-600">
+            <div v-else class="bg-stone-50 dark:bg-ink-2 rounded-lg overflow-hidden">
+              <table class="min-w-full divide-y divide-stone-200 dark:divide-ink-4">
+                <thead class="bg-stone-100 dark:bg-ink-4">
                   <tr>
                     <th
-                      class="px-4 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      class="px-4 py-2 text-left sw-eyebrow text-stone-500 dark:text-stone-400">
                       {{ t('common.type') }}</th>
                     <th
-                      class="px-4 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      class="px-4 py-2 text-left sw-eyebrow text-stone-500 dark:text-stone-400">
                       {{ t('common.date') }}</th>
                     <th
-                      class="px-4 py-2 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      class="px-4 py-2 text-right sw-eyebrow text-stone-500 dark:text-stone-400">
                       {{ t('common.amount') }}</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                <tbody class="divide-y divide-stone-200 dark:divide-ink-4">
                   <tr v-for="allocation in viewingPaymentAllocations" :key="allocation.id"
-                    class="hover:bg-gray-50 dark:hover:bg-gray-600">
+                    class="hover:bg-stone-100 dark:hover:bg-ink-4">
                     <td class="px-4 py-3 text-sm">
-                      <div v-if="allocation.delivery" class="text-gray-900 dark:text-white">
+                      <div v-if="allocation.delivery" class="text-ink dark:text-cream">
                         <div class="font-medium">{{ t('common.delivery') }}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">{{
+                        <div class="text-xs font-mono tabular-nums text-stone-500 dark:text-stone-400">{{
                           formatDate(allocation.expand?.delivery?.delivery_date || '') }}</div>
                       </div>
-                      <div v-else-if="allocation.service_booking" class="text-gray-900 dark:text-white">
+                      <div v-else-if="allocation.service_booking" class="text-ink dark:text-cream">
                         <div class="font-medium">{{ t('common.serviceBooking') }}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                        <div class="text-xs text-stone-500 dark:text-stone-400">
                           {{ allocation.expand?.service_booking?.expand?.service?.name || 'Service' }}
                         </div>
                       </div>
                     </td>
-                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                    <td class="px-4 py-3 text-sm font-mono tabular-nums text-ink dark:text-cream">
                       {{ allocation.delivery ? formatDate(allocation.expand?.delivery?.delivery_date || '') :
                         formatDate(allocation.expand?.service_booking?.start_date || '') }}
                     </td>
-                    <td class="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
+                    <td class="px-4 py-3 text-sm text-right font-medium font-mono tabular-nums text-ink dark:text-cream">
                       ₹{{ allocation.allocated_amount.toFixed(2) }}
                     </td>
                   </tr>

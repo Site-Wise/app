@@ -4,8 +4,9 @@
     <div class="mb-6">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{{ t('analytics.title') }}</h1>
-          <p class="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{{ t('analytics.subtitle') }}</p>
+          <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('analytics.title') }}</p>
+          <h1 class="font-display text-xl sm:text-2xl font-bold text-ink dark:text-cream">{{ t('analytics.title') }}</h1>
+          <p class="mt-0.5 text-sm text-stone-600 dark:text-stone-300">{{ t('analytics.subtitle') }}</p>
         </div>
         <button @click="showSaveModal = true" :disabled="!hasActiveFilters" :class="[
           hasActiveFilters ? 'btn-primary' : 'btn-disabled',
@@ -21,14 +22,14 @@
       <!-- Filters Panel - Left Sidebar on Desktop, Top on Mobile -->
       <div class="lg:col-span-1">
         <div class="card p-4 lg:sticky lg:top-4">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">{{ t('analytics.filters') }}</h2>
+          <h2 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">{{ t('analytics.filters') }}</h2>
 
           <!-- Tags Filter -->
           <div class="mb-4">
             <label class="label">{{ t('analytics.selectTags') }}</label>
             <TagSelector v-model="filters.tagIds" :showLabel=false :type-filter="'item_category'" :multiple="true"
               :allow-create="false" :track-usage="false" :placeholder="t('analytics.selectTags')" />
-            <p v-if="filters.tagIds.length === 0" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p v-if="filters.tagIds.length === 0" class="text-xs text-stone-500 dark:text-stone-400 mt-1">
               {{ t('analytics.noTagsSelected') }}
             </p>
           </div>
@@ -69,29 +70,29 @@
           </div>
 
           <!-- Saved Settings -->
-          <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+          <div class="mt-6 pt-6 border-t border-stone-200 dark:border-ink-4">
+            <p class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-3">
               {{ t('analytics.savedSettings') }}
-            </h3>
+            </p>
 
             <div v-if="loadingSettings" class="flex justify-center py-4">
-              <Loader2 class="h-5 w-5 animate-spin text-gray-400" />
+              <Loader2 class="h-5 w-5 animate-spin text-amber" />
             </div>
 
             <div v-else-if="savedSettings.length === 0"
-              class="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
+              class="text-sm text-stone-500 dark:text-stone-400 py-4 text-center">
               {{ t('analytics.noSettingsSaved') }}
             </div>
 
             <div v-else class="space-y-2">
               <div v-for="setting in savedSettings" :key="setting.id"
-                class="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                class="flex items-center justify-between p-2 rounded-md bg-cream-2 dark:bg-ink-2 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors">
                 <button @click="loadSetting(setting.id!)"
-                  class="flex-1 text-left text-sm text-gray-900 dark:text-white truncate" :title="setting.name">
+                  class="flex-1 text-left text-sm text-ink dark:text-cream truncate" :title="setting.name">
                   {{ setting.name }}
                 </button>
                 <button @click="confirmDeleteSetting(setting.id!)"
-                  class="ml-2 p-1 text-error-600 hover:bg-error-50 dark:hover:bg-error-900/20 rounded"
+                  class="ml-2 p-1 text-clay hover:bg-clay/10 rounded-md"
                   :title="t('analytics.deleteSetting')">
                   <Trash2 class="h-4 w-4" />
                 </button>
@@ -105,11 +106,11 @@
       <div class="lg:col-span-3">
         <!-- Empty State -->
         <div v-if="!analyticsData" class="card p-8 text-center">
-          <BarChart3 class="h-16 w-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          <BarChart3 class="h-16 w-16 mx-auto text-stone-300 dark:text-stone-600 mb-4" />
+          <h3 class="font-display text-lg font-semibold text-ink dark:text-cream mb-2">
             {{ t('analytics.results') }}
           </h3>
-          <p class="text-gray-600 dark:text-gray-400">
+          <p class="text-stone-600 dark:text-stone-300">
             {{ hasActiveFilters ? t('analytics.messages.calculateFirst') : t('analytics.messages.noFiltersApplied') }}
           </p>
         </div>
@@ -121,12 +122,12 @@
             <!-- Total Cost -->
             <div class="card p-3 sm:p-4">
               <div class="flex items-center mb-2">
-                <div class="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
-                  <DollarSign class="h-4 w-4 sm:h-5 sm:w-5 text-primary-600 dark:text-primary-400" />
+                <div class="p-2 bg-amber/15 rounded-md">
+                  <DollarSign class="h-4 w-4 sm:h-5 sm:w-5 text-amber-700 dark:text-amber" />
                 </div>
               </div>
-              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{{ t('analytics.summary.totalCost') }}</p>
-              <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('analytics.summary.totalCost') }}</p>
+              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
                 ₹{{ formatCompactAmount(analyticsData.totalCost) }}
               </p>
             </div>
@@ -134,13 +135,13 @@
             <!-- Average Cost Per Item -->
             <div class="card p-3 sm:p-4">
               <div class="flex items-center mb-2">
-                <div class="p-2 bg-secondary-100 dark:bg-secondary-900/30 rounded-lg">
-                  <Package class="h-4 w-4 sm:h-5 sm:w-5 text-secondary-600 dark:text-secondary-400" />
+                <div class="p-2 bg-stone-200/60 dark:bg-ink-2 rounded-md">
+                  <Package class="h-4 w-4 sm:h-5 sm:w-5 text-stone-600 dark:text-stone-300" />
                 </div>
               </div>
-              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{{
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{
                 t('analytics.summary.averageCostPerItem') }}</p>
-              <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">
+              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
                 ₹{{ formatCompactAmount(analyticsData.averageCostPerItem) }}
               </p>
             </div>
@@ -148,13 +149,13 @@
             <!-- Average Cost Per Delivery -->
             <div class="card p-3 sm:p-4">
               <div class="flex items-center mb-2">
-                <div class="p-2 bg-warning-100 dark:bg-warning-900/30 rounded-lg">
-                  <TruckIcon class="h-4 w-4 sm:h-5 sm:w-5 text-warning-600 dark:text-warning-400" />
+                <div class="p-2 bg-stone-200/60 dark:bg-ink-2 rounded-md">
+                  <TruckIcon class="h-4 w-4 sm:h-5 sm:w-5 text-stone-600 dark:text-stone-300" />
                 </div>
               </div>
-              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{{
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{
                 t('analytics.summary.averageCostPerDelivery') }}</p>
-              <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">
+              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
                 ₹{{ formatCompactAmount(analyticsData.averageCostPerDelivery) }}
               </p>
             </div>
@@ -162,12 +163,12 @@
             <!-- Item Count -->
             <div class="card p-3 sm:p-4">
               <div class="flex items-center mb-2">
-                <div class="p-2 bg-success-100 dark:bg-success-900/30 rounded-lg">
-                  <Hash class="h-4 w-4 sm:h-5 sm:w-5 text-success-600 dark:text-success-400" />
+                <div class="p-2 bg-forest/15 rounded-md">
+                  <Hash class="h-4 w-4 sm:h-5 sm:w-5 text-forest" />
                 </div>
               </div>
-              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{{ t('analytics.summary.itemCount') }}</p>
-              <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('analytics.summary.itemCount') }}</p>
+              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
                 {{ analyticsData.itemCount }}
               </p>
             </div>
@@ -175,13 +176,13 @@
             <!-- Delivery Count -->
             <div class="card p-3 sm:p-4">
               <div class="flex items-center mb-2">
-                <div class="p-2 bg-info-100 dark:bg-info-900/30 rounded-lg">
-                  <FileText class="h-4 w-4 sm:h-5 sm:w-5 text-info-600 dark:text-info-400" />
+                <div class="p-2 bg-stone-200/60 dark:bg-ink-2 rounded-md">
+                  <FileText class="h-4 w-4 sm:h-5 sm:w-5 text-stone-600 dark:text-stone-300" />
                 </div>
               </div>
-              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{{ t('analytics.summary.deliveryCount') }}
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('analytics.summary.deliveryCount') }}
               </p>
-              <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">
+              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
                 {{ analyticsData.deliveryCount }}
               </p>
             </div>
@@ -189,13 +190,13 @@
             <!-- Total Quantity -->
             <div class="card p-3 sm:p-4">
               <div class="flex items-center mb-2">
-                <div class="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                  <Boxes class="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 dark:text-purple-400" />
+                <div class="p-2 bg-stone-200/60 dark:bg-ink-2 rounded-md">
+                  <Boxes class="h-4 w-4 sm:h-5 sm:w-5 text-stone-600 dark:text-stone-300" />
                 </div>
               </div>
-              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{{ t('analytics.summary.totalQuantity') }}
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('analytics.summary.totalQuantity') }}
               </p>
-              <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">
+              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
                 {{ analyticsData.totalQuantity.toLocaleString() }}
               </p>
             </div>
@@ -203,7 +204,7 @@
 
           <!-- Cost by Tag Chart -->
           <div v-if="analyticsData.costByTag.length > 0" class="card p-6">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <h3 class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-4">
               {{ t('analytics.charts.costByTag') }}
             </h3>
             <div class="h-64 sm:h-80">
@@ -213,7 +214,7 @@
 
           <!-- Cost Over Time Chart -->
           <div v-if="analyticsData.costOverTime.length > 0" class="card p-6">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <h3 class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-4">
               {{ t('analytics.charts.costOverTime') }}
             </h3>
             <div class="h-64 sm:h-80">
@@ -223,25 +224,25 @@
 
           <!-- Quantity by Unit Breakdown -->
           <div v-if="analyticsData.quantityByUnit.length > 0" class="card p-6">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <h3 class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-4">
               {{ t('analytics.quantityByUnit.title') }}
             </h3>
             <div class="space-y-3">
               <div v-for="unitData in analyticsData.quantityByUnit" :key="unitData.unit"
-                class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                class="flex items-center justify-between p-3 bg-cream-2 dark:bg-ink-2 border border-stone-200 dark:border-ink-4 rounded-md">
                 <div class="flex-1">
                   <div class="flex items-center gap-2">
-                    <span class="text-sm font-medium text-gray-900 dark:text-white">
+                    <span class="text-sm font-medium text-ink dark:text-cream">
                       {{ unitData.unit }}
                     </span>
-                    <span class="text-xs text-gray-500 dark:text-gray-400">
+                    <span class="text-xs text-stone-500 dark:text-stone-400">
                       ({{ unitData.itemCount }} {{ unitData.itemCount === 1 ? t('analytics.quantityByUnit.item') :
                         t('analytics.quantityByUnit.items') }})
                     </span>
                   </div>
                 </div>
                 <div class="text-right">
-                  <div class="text-lg font-semibold text-primary-600 dark:text-primary-400">
+                  <div class="font-mono sw-tabular text-lg font-semibold text-ink dark:text-cream">
                     {{ unitData.quantity.toLocaleString() }}
                   </div>
                 </div>
@@ -255,8 +256,8 @@
     <!-- Save Setting Modal -->
     <div v-if="showSaveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
       @click.self="showSaveModal = false">
-      <div class="card p-6 max-w-md w-full">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+      <div class="card shadow-modal p-6 max-w-md w-full">
+        <h2 class="font-display text-xl font-semibold text-ink dark:text-cream mb-4">
           {{ t('analytics.saveFilters') }}
         </h2>
         <label class="label">{{ t('analytics.settingName') }}</label>
@@ -276,11 +277,11 @@
     <!-- Delete Confirmation Modal -->
     <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
       @click.self="showDeleteConfirm = false">
-      <div class="card p-6 max-w-md w-full">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+      <div class="card shadow-modal p-6 max-w-md w-full">
+        <h2 class="font-display text-xl font-semibold text-ink dark:text-cream mb-4">
           {{ t('analytics.deleteSetting') }}
         </h2>
-        <p class="text-gray-600 dark:text-gray-400 mb-6">
+        <p class="text-stone-600 dark:text-stone-300 mb-6">
           {{ t('analytics.confirmDelete') }}
         </p>
         <div class="flex gap-2 justify-end">
@@ -299,6 +300,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from '../composables/useI18n';
+import { useTheme } from '../composables/useTheme';
 import { useAnalytics } from '../composables/useAnalytics';
 import TagSelector from '../components/TagSelector.vue';
 import {
@@ -332,6 +334,7 @@ import { Pie, Bar } from 'vue-chartjs';
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend);
 
 const { t } = useI18n();
+const { isDark } = useTheme();
 
 const {
   filters,
@@ -378,31 +381,31 @@ const costByTagChartData = computed(() => {
     return { labels: [], datasets: [] };
   }
 
-  // Color palette for pie chart segments
+  // Color palette for pie chart segments (Sitewise brand-led: amber, forest, clay, then warm/cool spread)
   const colors = [
-    'rgba(34, 197, 94, 0.8)',    // Green
-    'rgba(59, 130, 246, 0.8)',   // Blue
-    'rgba(239, 68, 68, 0.8)',    // Red
-    'rgba(245, 158, 11, 0.8)',   // Amber
+    'rgba(255, 184, 0, 0.85)',   // Amber (accent)
+    'rgba(34, 197, 94, 0.8)',    // Forest
+    'rgba(232, 116, 60, 0.8)',   // Clay
+    'rgba(120, 113, 108, 0.8)',  // Stone
     'rgba(168, 85, 247, 0.8)',   // Purple
     'rgba(236, 72, 153, 0.8)',   // Pink
     'rgba(14, 165, 233, 0.8)',   // Sky
     'rgba(34, 211, 238, 0.8)',   // Cyan
     'rgba(99, 102, 241, 0.8)',   // Indigo
-    'rgba(234, 179, 8, 0.8)',    // Yellow
+    'rgba(202, 138, 4, 0.8)',    // Amber-deep
   ];
 
   const borderColors = [
+    'rgb(255, 184, 0)',
     'rgb(34, 197, 94)',
-    'rgb(59, 130, 246)',
-    'rgb(239, 68, 68)',
-    'rgb(245, 158, 11)',
+    'rgb(232, 116, 60)',
+    'rgb(120, 113, 108)',
     'rgb(168, 85, 247)',
     'rgb(236, 72, 153)',
     'rgb(14, 165, 233)',
     'rgb(34, 211, 238)',
     'rgb(99, 102, 241)',
-    'rgb(234, 179, 8)',
+    'rgb(202, 138, 4)',
   ];
 
   const backgroundColors = analyticsData.value.costByTag.map((_, index) => colors[index % colors.length]);
@@ -452,10 +455,10 @@ const costOverTimeChartData = computed(() => {
   if (analyticsData.value.costOverTimeByTag && analyticsData.value.costOverTimeByTag.length > 1) {
     // Color palette for different tags
     const tagColors = [
-      { bg: 'rgba(34, 197, 94, 0.2)', border: 'rgb(34, 197, 94)' },    // Green
-      { bg: 'rgba(59, 130, 246, 0.2)', border: 'rgb(59, 130, 246)' },  // Blue
-      { bg: 'rgba(239, 68, 68, 0.2)', border: 'rgb(239, 68, 68)' },    // Red
-      { bg: 'rgba(245, 158, 11, 0.2)', border: 'rgb(245, 158, 11)' },  // Amber
+      { bg: 'rgba(255, 184, 0, 0.25)', border: 'rgb(255, 184, 0)' },   // Amber (accent)
+      { bg: 'rgba(34, 197, 94, 0.2)', border: 'rgb(34, 197, 94)' },    // Forest
+      { bg: 'rgba(232, 116, 60, 0.2)', border: 'rgb(232, 116, 60)' },  // Clay
+      { bg: 'rgba(120, 113, 108, 0.2)', border: 'rgb(120, 113, 108)' },// Stone
       { bg: 'rgba(168, 85, 247, 0.2)', border: 'rgb(168, 85, 247)' },  // Purple
       { bg: 'rgba(236, 72, 153, 0.2)', border: 'rgb(236, 72, 153)' },  // Pink
       { bg: 'rgba(14, 165, 233, 0.2)', border: 'rgb(14, 165, 233)' },  // Sky
@@ -504,22 +507,30 @@ const costOverTimeChartData = computed(() => {
       {
         label: t('analytics.charts.costOverTime'),
         data: analyticsData.value.costOverTime.map(item => item.cost),
-        backgroundColor: 'rgba(34, 197, 94, 0.8)',
-        borderColor: 'rgb(34, 197, 94)',
+        backgroundColor: 'rgba(255, 184, 0, 0.85)',
+        borderColor: 'rgb(255, 184, 0)',
         borderWidth: 1
       }
     ]
   };
 });
 
+// Mode-aware text/grid colors so chart legends, axes and labels stay legible
+// on both the light cream card and the dark ink card.
+const chartTextColor = computed(() => (isDark.value ? 'rgb(214, 211, 209)' : 'rgb(68, 64, 60)')); // stone-300 / stone-700
+const chartGridColor = computed(() => (isDark.value ? 'rgba(250, 250, 247, 0.10)' : 'rgba(10, 14, 13, 0.10)'));
+
 // Pie chart options (for cost by tag)
-const pieChartOptions = {
+const pieChartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
     legend: {
       display: true,
-      position: 'right' as const
+      position: 'right' as const,
+      labels: {
+        color: chartTextColor.value
+      }
     },
     tooltip: {
       callbacks: {
@@ -534,16 +545,19 @@ const pieChartOptions = {
       }
     }
   }
-};
+}));
 
 // Bar chart options (for cost over time)
-const barChartOptions = {
+const barChartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
     legend: {
       display: true,
-      position: 'top' as const
+      position: 'top' as const,
+      labels: {
+        color: chartTextColor.value
+      }
     },
     tooltip: {
       callbacks: {
@@ -559,22 +573,30 @@ const barChartOptions = {
   scales: {
     x: {
       ticks: {
+        color: chartTextColor.value,
         maxRotation: 45,
         minRotation: 45,
         autoSkip: true,
         maxTicksLimit: 10
+      },
+      grid: {
+        color: chartGridColor.value
       }
     },
     y: {
       beginAtZero: true,
       ticks: {
+        color: chartTextColor.value,
         callback: function (value: any) {
           return '₹' + value.toLocaleString('en-IN');
         }
+      },
+      grid: {
+        color: chartGridColor.value
       }
     }
   }
-};
+}));
 
 // Handlers
 const handleSaveSetting = async () => {

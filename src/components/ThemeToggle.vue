@@ -2,8 +2,8 @@
   <div class="relative inline-block" ref="selectorRef">
     <button
       @click="dropdownOpen = !dropdownOpen"
-      class="flex items-center justify-between p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation w-full md:w-auto md:min-w-[40px]"
-      :class="{ 'bg-gray-100 dark:bg-gray-700': dropdownOpen }"
+      class="flex items-center justify-between p-2 rounded-md text-stone-600 hover:text-ink hover:bg-stone-100 dark:text-stone-300 dark:hover:text-cream dark:hover:bg-ink-4 transition-colors duration-200 ease-snap active:scale-[0.98] touch-manipulation w-full md:w-auto md:min-w-[40px]"
+      :class="{ 'bg-stone-100 dark:bg-ink-4': dropdownOpen }"
       :aria-expanded="dropdownOpen"
       aria-haspopup="menu"
       :aria-label="t('theme.toggleTheme')"
@@ -18,7 +18,7 @@
     
     <div
       v-if="dropdownOpen"
-      class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[60] max-h-64 overflow-y-auto"
+      class="absolute right-0 mt-2 w-48 bg-white dark:bg-ink-3 rounded-lg shadow-modal border border-stone-200 dark:border-ink-4 z-[60] max-h-64 overflow-y-auto"
       role="menu"
     >
       <div class="py-2">
@@ -26,11 +26,11 @@
           v-for="option in themeOptions"
           :key="option.value"
           @click="selectTheme(option.value as 'light' | 'dark' | 'system')"
-          class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group"
-          :class="{ 
-            'bg-primary-50 dark:bg-primary-900/20 border-l-4 border-primary-500': theme === option.value,
-            'text-primary-700 dark:text-primary-300': theme === option.value,
-            'text-gray-700 dark:text-gray-300': theme !== option.value
+          class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-stone-50 dark:hover:bg-ink-4 transition-colors duration-200 touch-manipulation group"
+          :class="{
+            'bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500': theme === option.value,
+            'text-amber-800 dark:text-amber-300': theme === option.value,
+            'text-stone-700 dark:text-stone-300': theme !== option.value
           }"
           role="menuitem"
         >
@@ -39,9 +39,9 @@
             <div class="font-medium text-sm truncate">{{ t(option.labelKey) }}</div>
           </div>
           <div class="ml-3 flex-shrink-0">
-            <Check 
-              v-if="theme === option.value" 
-              class="h-4 w-4 md:h-5 md:w-5 text-primary-600 dark:text-primary-400" 
+            <Check
+              v-if="theme === option.value"
+              class="h-4 w-4 md:h-5 md:w-5 text-amber-600 dark:text-amber-400"
             />
           </div>
         </button>

@@ -14,25 +14,25 @@
       aria-live="polite"
       aria-atomic="true"
     >
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 p-4">
+      <div class="bg-white dark:bg-ink-3 rounded-lg shadow-modal border border-stone-200 dark:border-ink-4 p-4">
         <div class="flex items-start">
           <div class="flex-shrink-0">
-            <div class="flex items-center justify-center w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full">
-              <Download class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <div class="flex items-center justify-center w-8 h-8 bg-amber-100 dark:bg-amber-500/15 rounded-full">
+              <Download class="w-4 h-4 text-amber-600 dark:text-amber-400" />
             </div>
           </div>
           <div class="ml-3 flex-1">
-            <div class="text-sm font-medium text-gray-900 dark:text-white">
+            <div class="text-sm font-medium text-ink dark:text-cream">
               {{ t('pwa.updateAvailable') }}
             </div>
-            <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <div class="mt-1 text-sm text-stone-600 dark:text-stone-400">
               {{ t('pwa.updateDescription') }}
             </div>
             <div class="mt-3 flex space-x-2">
               <button
                 @click="handleUpdate"
                 :disabled="isUpdating"
-                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-ink bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Loader2 v-if="isUpdating" class="w-3 h-3 mr-1 animate-spin" />
                 <Download v-else class="w-3 h-3 mr-1" />
@@ -41,7 +41,7 @@
               <button
                 @click="handleDismiss"
                 :disabled="isUpdating"
-                class="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                class="inline-flex items-center px-3 py-1.5 border border-stone-300 dark:border-ink-4 text-xs font-medium rounded-md text-stone-700 dark:text-stone-300 bg-white dark:bg-ink-3 hover:bg-stone-50 dark:hover:bg-ink-4 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {{ t('pwa.later') }}
               </button>
@@ -51,7 +51,7 @@
             <button
               @click="handleDismiss"
               :disabled="isUpdating"
-              class="inline-flex text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              class="inline-flex text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <span class="sr-only">{{ t('common.close') }}</span>
               <X class="w-4 h-4" />

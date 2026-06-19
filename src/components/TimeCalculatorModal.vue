@@ -1,13 +1,13 @@
 <template>
-  <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="$emit('close')"
+  <div class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-[60]" @click="$emit('close')"
     @keydown.esc="$emit('close')" tabindex="-1">
     <div
-      class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+      class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4"
       @click.stop>
       <div class="mt-3">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ t('serviceBookings.timeCalculator') }}</h3>
-          <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <h3 class="text-lg font-medium text-ink dark:text-cream">{{ t('serviceBookings.timeCalculator') }}</h3>
+          <button @click="$emit('close')" class="text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream">
             <X class="h-6 w-6" />
           </button>
         </div>
@@ -15,13 +15,13 @@
         <form @submit.prevent="calculateAndApply" class="space-y-4">
           <!-- Date Selection -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.date') }}</label>
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.date') }}</label>
             <input v-model="selectedDate" type="date" required class="input mt-1"  />
           </div>
 
           <!-- Start Time -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.startTime')
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('serviceBookings.startTime')
             }}</label>
             <input v-model="startTime" type="time" required class="input mt-1" @input="calculateDuration"
               ref="startTimeInputRef" />
@@ -29,26 +29,26 @@
 
           <!-- End Time -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('serviceBookings.endTime')
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('serviceBookings.endTime')
             }}</label>
             <input v-model="endTime" type="time" required class="input mt-1" @input="calculateDuration" />
           </div>
 
           <!-- Calculated Duration Display -->
           <div v-if="calculatedHours > 0"
-            class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-800">
+            class="p-3 bg-amber-50 dark:bg-amber-500/10 rounded-md border border-amber-200 dark:border-amber-700">
             <div class="flex items-center">
-              <Clock class="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
+              <Clock class="h-5 w-5 text-amber-600 dark:text-amber-400 mr-2" />
               <div>
-                <p class="text-sm font-medium text-blue-900 dark:text-blue-100">
+                <p class="text-sm font-medium text-ink dark:text-cream">
                   {{ t('serviceBookings.calculatedDuration') }}
                 </p>
-                <p class="text-lg font-bold text-blue-600 dark:text-blue-400">
+                <p class="text-lg font-mono font-bold sw-tabular text-ink dark:text-cream">
                   {{ calculatedHours }} {{ calculatedHours === 1 ? t('units.hour') : t('units.hours') }}
                 </p>
-                <p class="text-xs text-blue-700 dark:text-blue-300">
+                <p class="text-xs font-mono text-stone-600 dark:text-stone-300">
                   {{ formatTime(startTime) }} - {{ formatTime(endTime) }}
-                  <span v-if="isNextDay" class="ml-1 text-blue-600 dark:text-blue-400">({{ t('serviceBookings.nextDay')
+                  <span v-if="isNextDay" class="ml-1 text-amber-700 dark:text-amber-400">({{ t('serviceBookings.nextDay')
                   }})</span>
                 </p>
               </div>
@@ -57,8 +57,8 @@
 
           <!-- Error Message -->
           <div v-if="errorMessage"
-            class="p-3 bg-red-50 dark:bg-red-900/20 rounded-md border border-red-200 dark:border-red-800">
-            <p class="text-sm text-red-600 dark:text-red-400">{{ errorMessage }}</p>
+            class="p-3 bg-clay-50 dark:bg-clay-900/20 rounded-md border border-clay-200 dark:border-clay-800">
+            <p class="text-sm text-clay-600 dark:text-clay-400">{{ errorMessage }}</p>
           </div>
 
           <!-- Buttons -->

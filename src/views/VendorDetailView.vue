@@ -3,15 +3,15 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-8">
       <div class="flex items-center space-x-4">
-        <button @click="goBack" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-          <ArrowLeft class="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        <button @click="goBack" class="p-2 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors ease-snap">
+          <ArrowLeft class="h-5 w-5 text-stone-600 dark:text-stone-400" />
         </button>
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ vendor.contact_person || vendor.name ||
+          <h1 class="font-display text-2xl font-bold text-ink dark:text-cream">{{ vendor.contact_person || vendor.name ||
             t('vendors.unnamedVendor') }}</h1>
-          <p v-if="vendor.name && vendor.contact_person" class="text-lg text-gray-700 dark:text-gray-300">{{ vendor.name
+          <p v-if="vendor.name && vendor.contact_person" class="text-lg text-stone-700 dark:text-stone-300">{{ vendor.name
             }}</p>
-          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ t('vendors.vendorDetails') }}</p>
+          <p class="mt-1 sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('vendors.vendorDetails') }}</p>
         </div>
       </div>
       <!-- Desktop Actions -->
@@ -32,23 +32,23 @@
 
       <!-- Mobile Menu -->
       <div class="md:hidden relative mobile-menu">
-        <button @click="showMobileMenu = !showMobileMenu" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-          <MoreVertical class="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        <button @click="showMobileMenu = !showMobileMenu" class="p-2 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors ease-snap">
+          <MoreVertical class="h-5 w-5 text-stone-600 dark:text-stone-400" />
         </button>
-        
+
         <!-- Mobile Dropdown Menu -->
-        <div v-if="showMobileMenu" class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+        <div v-if="showMobileMenu" class="absolute right-0 mt-2 w-56 bg-white dark:bg-ink-3 rounded-md shadow-modal z-10 border border-stone-200 dark:border-ink-4">
           <div class="py-1">
-            <button @click="handleMobileAction('viewLedger')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-              <BookOpen class="mr-3 h-5 w-5 text-gray-600" />
+            <button @click="handleMobileAction('viewLedger')" class="flex items-center w-full px-4 py-3 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4">
+              <BookOpen class="mr-3 h-5 w-5 text-stone-600 dark:text-stone-400" />
               {{ t('vendors.viewLedger') }}
             </button>
-            <button @click="handleMobileAction('createReturn')" class="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-              <RotateCcw class="mr-3 h-5 w-5 text-gray-600" />
+            <button @click="handleMobileAction('createReturn')" class="flex items-center w-full px-4 py-3 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4">
+              <RotateCcw class="mr-3 h-5 w-5 text-stone-600 dark:text-stone-400" />
               {{ t('vendors.createReturn') }}
             </button>
-            <button @click="handleMobileAction('recordPayment')" class="flex items-center w-full px-4 py-3 text-sm text-white bg-blue-600 hover:bg-blue-700">
-              <CreditCard class="mr-3 h-5 w-5 text-white" />
+            <button @click="handleMobileAction('recordPayment')" class="flex items-center w-full px-4 py-3 text-sm text-ink bg-amber-500 hover:bg-amber-600">
+              <CreditCard class="mr-3 h-5 w-5 text-ink" />
               {{ t('vendors.recordPayment') }}
             </button>
           </div>
@@ -60,43 +60,43 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
       <!-- Vendor Information -->
       <div class="card">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">{{ t('vendors.contactInformation') }}</h2>
+        <h2 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">{{ t('vendors.contactInformation') }}</h2>
         <div class="space-y-3">
           <div v-if="vendor.contact_person" class="flex items-center text-sm">
-            <User class="mr-3 h-4 w-4 text-gray-400" />
-            <span class="text-gray-900 dark:text-white">{{ vendor.contact_person }}</span>
+            <User class="mr-3 h-4 w-4 text-stone-400" />
+            <span class="text-ink dark:text-cream">{{ vendor.contact_person }}</span>
           </div>
           <div v-if="vendor.name" class="flex items-center text-sm">
-            <Building2 class="mr-3 h-4 w-4 text-gray-400" />
-            <span class="text-gray-900 dark:text-white">{{ vendor.name }}</span>
+            <Building2 class="mr-3 h-4 w-4 text-stone-400" />
+            <span class="text-ink dark:text-cream">{{ vendor.name }}</span>
           </div>
           <div v-if="vendor.email" class="flex items-center text-sm">
-            <Mail class="mr-3 h-4 w-4 text-gray-400" />
+            <Mail class="mr-3 h-4 w-4 text-stone-400" />
             <a :href="`mailto:${vendor.email}`"
-              class="text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300">{{
+              class="text-ink dark:text-cream hover:text-amber-700 dark:hover:text-amber-400">{{
               vendor.email }}</a>
           </div>
           <div v-if="vendor.phone" class="flex items-center text-sm">
-            <Phone class="mr-3 h-4 w-4 text-gray-400" />
+            <Phone class="mr-3 h-4 w-4 text-stone-400" />
             <a :href="`tel:${vendor.phone}`"
-              class="text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300">{{
+              class="text-ink dark:text-cream hover:text-amber-700 dark:hover:text-amber-400">{{
               vendor.phone }}</a>
           </div>
           <div v-if="vendor.address" class="flex items-start text-sm">
-            <MapPin class="mr-3 h-4 w-4 text-gray-400 mt-0.5" />
-            <span class="text-gray-900 dark:text-white">{{ vendor.address }}</span>
+            <MapPin class="mr-3 h-4 w-4 text-stone-400 mt-0.5" />
+            <span class="text-ink dark:text-cream">{{ vendor.address }}</span>
           </div>
         </div>
 
         <div v-if="vendorTags.length > 0" class="mt-4">
-          <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('vendors.specialties') }}</h3>
+          <h3 class="sw-eyebrow text-stone-700 dark:text-stone-300 mb-2">{{ t('vendors.specialties') }}</h3>
           <div class="flex flex-wrap gap-1">
             <span
               v-for="tag in vendorTags"
               :key="tag.id"
-              class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium text-white"
-              :style="{ backgroundColor: tag.color }"
+              class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-stone-100 dark:bg-ink-4 text-ink dark:text-cream"
             >
+              <span class="h-2 w-2 rounded-[2px]" :style="{ backgroundColor: tag.color }"></span>
               {{ tag.name }}
             </span>
           </div>
@@ -105,10 +105,10 @@
 
       <!-- Payment Information -->
       <div v-if="vendor.payment_details" class="card">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">{{ t('vendors.paymentInformation') }}</h2>
-        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+        <h2 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">{{ t('vendors.paymentInformation') }}</h2>
+        <div class="bg-cream-2 dark:bg-ink-2 rounded-lg p-4">
           <pre
-            class="text-sm text-gray-900 dark:text-white whitespace-pre-wrap font-sans">{{ vendor.payment_details }}</pre>
+            class="text-sm text-ink dark:text-cream whitespace-pre-wrap font-sans">{{ vendor.payment_details }}</pre>
         </div>
       </div>
     </div>
@@ -117,38 +117,38 @@
     <div class="mb-8">
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="card bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700">
+        <div class="card bg-clay-50 dark:bg-clay-900/20 border-clay-200 dark:border-clay-700">
           <div class="flex items-center">
-            <div class="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-              <AlertCircle class="h-6 w-6 text-red-600 dark:text-red-400" />
+            <div class="p-2 bg-clay-100 dark:bg-clay-900/30 rounded-lg">
+              <AlertCircle class="h-6 w-6 text-clay-600 dark:text-clay-400" />
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-red-700 dark:text-red-300">{{ t('vendors.outstandingAmount') }}</p>
-              <p class="text-2xl font-bold text-red-900 dark:text-red-100">₹{{ outstandingAmount.toFixed(2) }}</p>
+              <p class="sw-eyebrow text-clay-700 dark:text-clay-300">{{ t('vendors.outstandingAmount') }}</p>
+              <p class="sw-stat text-clay-700 dark:text-clay-300">₹{{ outstandingAmount.toFixed(2) }}</p>
             </div>
           </div>
         </div>
 
-        <div class="card bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700">
+        <div class="card bg-forest-50 dark:bg-forest-900/20 border-forest-200 dark:border-forest-700">
           <div class="flex items-center">
-            <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <CheckCircle class="h-6 w-6 text-green-600 dark:text-green-400" />
+            <div class="p-2 bg-forest-100 dark:bg-forest-900/30 rounded-lg">
+              <CheckCircle class="h-6 w-6 text-forest-600 dark:text-forest-400" />
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-green-700 dark:text-green-300">{{ t('vendors.totalPaid') }}</p>
-              <p class="text-2xl font-bold text-green-900 dark:text-green-100">₹{{ totalPaid.toFixed(2) }}</p>
+              <p class="sw-eyebrow text-forest-700 dark:text-forest-300">{{ t('vendors.totalPaid') }}</p>
+              <p class="sw-stat text-forest-700 dark:text-forest-300">₹{{ totalPaid.toFixed(2) }}</p>
             </div>
           </div>
         </div>
 
-        <div class="card bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700">
+        <div class="card">
           <div class="flex items-center">
-            <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <TruckIcon class="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            <div class="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+              <TruckIcon class="h-6 w-6 text-amber-700 dark:text-amber-400" />
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-blue-700 dark:text-blue-300">{{ t('vendors.totalDeliveries') }}</p>
-              <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ vendorDeliveries.length }}</p>
+              <p class="sw-eyebrow text-stone-600 dark:text-stone-400">{{ t('vendors.totalDeliveries') }}</p>
+              <p class="sw-stat text-ink dark:text-cream">{{ vendorDeliveries.length }}</p>
             </div>
           </div>
         </div>
@@ -161,36 +161,36 @@
     <!-- Deliveries Summary -->
     <div class="card">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('vendors.recentDeliveries') }}</h2>
-        <span class="text-sm text-gray-500 dark:text-gray-400">{{ vendorDeliveries.length }} {{ t('vendors.total') }}</span>
+        <h2 class="font-display text-lg font-semibold text-ink dark:text-cream">{{ t('vendors.recentDeliveries') }}</h2>
+        <span class="text-sm text-stone-500 dark:text-stone-400">{{ vendorDeliveries.length }} {{ t('vendors.total') }}</span>
       </div>
       <div class="space-y-3 max-h-96 overflow-y-auto">
         <div v-for="delivery in vendorDeliveries.slice(0, 5)" :key="delivery.id"
-          class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          class="p-3 bg-cream-2 dark:bg-ink-2 rounded-lg">
           <div class="flex justify-between items-start mb-2">
             <div>
-              <h4 class="font-medium text-gray-900 dark:text-white">Delivery #{{ delivery.id?.slice(-6) }}</h4>
-              <p class="text-sm text-gray-600 dark:text-gray-400">{{ formatDate(delivery.delivery_date) }}</p>
+              <h4 class="font-medium text-ink dark:text-cream">Delivery #<span class="font-mono sw-tabular">{{ delivery.id?.slice(-6) }}</span></h4>
+              <p class="text-sm text-stone-600 dark:text-stone-400">{{ formatDate(delivery.delivery_date) }}</p>
             </div>
             <span :class="DeliveryPaymentCalculator.getPaymentStatusClass(delivery.payment_status)">
               {{ t(DeliveryPaymentCalculator.getPaymentStatusTextKey(delivery.payment_status)) }}
             </span>
           </div>
           <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-600 dark:text-gray-400">{{ delivery.delivery_reference || t('vendors.noReference') }}</span>
+            <span class="text-stone-600 dark:text-stone-400">{{ delivery.delivery_reference || t('vendors.noReference') }}</span>
             <div class="text-right">
-              <p class="font-medium text-gray-900 dark:text-white">₹{{ delivery.total_amount.toFixed(2) }}</p>
-              <p v-if="delivery.outstanding > 0" class="text-xs text-orange-600 dark:text-orange-400">
+              <p class="font-mono sw-tabular font-medium text-ink dark:text-cream">₹{{ delivery.total_amount.toFixed(2) }}</p>
+              <p v-if="delivery.outstanding > 0" class="text-xs font-mono sw-tabular text-clay-600 dark:text-clay-400">
                 Outstanding: ₹{{ delivery.outstanding.toFixed(2) }}
               </p>
-              <p v-else-if="delivery.paid_amount > 0" class="text-xs text-green-600 dark:text-green-400">
+              <p v-else-if="delivery.paid_amount > 0" class="text-xs text-forest-600 dark:text-forest-400">
                 Fully Paid
               </p>
             </div>
           </div>
         </div>
 
-        <div v-if="vendorDeliveries.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+        <div v-if="vendorDeliveries.length === 0" class="text-center py-8 text-stone-500 dark:text-stone-400">
           {{ t('vendors.noDeliveriesRecorded') }}
         </div>
       </div>
@@ -199,24 +199,24 @@
     <!-- Payments Summary -->
     <div class="card">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('vendors.paymentHistory') }}</h2>
-        <span class="text-sm text-gray-500 dark:text-gray-400">{{ vendorPayments.length }} {{ t('vendors.payments') }}</span>
+        <h2 class="font-display text-lg font-semibold text-ink dark:text-cream">{{ t('vendors.paymentHistory') }}</h2>
+        <span class="text-sm text-stone-500 dark:text-stone-400">{{ vendorPayments.length }} {{ t('vendors.payments') }}</span>
       </div>
       <div class="space-y-3 max-h-96 overflow-y-auto">
         <div v-for="payment in vendorPayments.slice(0, 5)" :key="payment.id"
-          class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          class="p-3 bg-cream-2 dark:bg-ink-2 rounded-lg">
           <div class="flex justify-between items-start mb-2">
             <div>
-              <h4 class="font-medium text-gray-900 dark:text-white">₹{{ payment.amount.toFixed(2) }}</h4>
-              <p class="text-sm text-gray-600 dark:text-gray-400">{{ formatDate(payment.payment_date) }}</p>
+              <h4 class="font-mono sw-tabular font-medium text-forest-700 dark:text-forest-400">₹{{ payment.amount.toFixed(2) }}</h4>
+              <p class="text-sm text-stone-600 dark:text-stone-400">{{ formatDate(payment.payment_date) }}</p>
             </div>
             <div class="text-right text-sm">
-              <p v-if="payment.reference" class="text-gray-600 dark:text-gray-400">{{ payment.reference }}</p>
+              <p v-if="payment.reference" class="text-stone-600 dark:text-stone-400">{{ payment.reference }}</p>
             </div>
           </div>
         </div>
 
-        <div v-if="vendorPayments.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+        <div v-if="vendorPayments.length === 0" class="text-center py-8 text-stone-500 dark:text-stone-400">
           {{ t('vendors.noPaymentsRecorded') }}
         </div>
       </div>
@@ -225,32 +225,32 @@
     <!-- Returns Summary -->
     <div class="card">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('vendors.recentReturns') }}</h2>
-        <span class="text-sm text-gray-500 dark:text-gray-400">{{ vendorReturns.length }} {{ t('vendors.returns') }}</span>
+        <h2 class="font-display text-lg font-semibold text-ink dark:text-cream">{{ t('vendors.recentReturns') }}</h2>
+        <span class="text-sm text-stone-500 dark:text-stone-400">{{ vendorReturns.length }} {{ t('vendors.returns') }}</span>
       </div>
       <div class="space-y-3 max-h-96 overflow-y-auto">
         <div v-for="returnItem in vendorReturns.slice(0, 5)" :key="returnItem.id"
-          class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          class="p-3 bg-cream-2 dark:bg-ink-2 rounded-lg">
           <div class="flex justify-between items-start mb-2">
             <div>
-              <h4 class="font-medium text-gray-900 dark:text-white">
-                Return #{{ returnItem.id?.slice(-6) }}
+              <h4 class="font-medium text-ink dark:text-cream">
+                Return #<span class="font-mono sw-tabular">{{ returnItem.id?.slice(-6) }}</span>
               </h4>
-              <p class="text-sm text-gray-600 dark:text-gray-400">{{ formatDate(returnItem.return_date) }}</p>
+              <p class="text-sm text-stone-600 dark:text-stone-400">{{ formatDate(returnItem.return_date) }}</p>
             </div>
             <span :class="getReturnStatusClass(returnItem.status)">
               {{ t(`vendors.returnStatuses.${returnItem.status}`) }}
             </span>
           </div>
           <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-600 dark:text-gray-400">{{ t('vendors.returnAmount') }}</span>
+            <span class="text-stone-600 dark:text-stone-400">{{ t('vendors.returnAmount') }}</span>
             <div class="text-right">
-              <p class="font-medium text-gray-900 dark:text-white">₹{{ returnItem.total_return_amount.toFixed(2) }}</p>
+              <p class="font-mono sw-tabular font-medium text-ink dark:text-cream">₹{{ returnItem.total_return_amount.toFixed(2) }}</p>
             </div>
           </div>
         </div>
 
-        <div v-if="vendorReturns.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+        <div v-if="vendorReturns.length === 0" class="text-center py-8 text-stone-500 dark:text-stone-400">
           {{ t('vendors.noReturnsRecorded') }}
         </div>
       </div>
@@ -279,17 +279,17 @@
     <div v-if="showLedgerModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-full items-center justify-center p-4">
         <!-- Backdrop -->
-        <div class="fixed inset-0 bg-black/50 transition-opacity" @click="closeLedgerModal"></div>
+        <div class="fixed inset-0 bg-ink/60 transition-opacity" @click="closeLedgerModal"></div>
 
         <!-- Modal Panel -->
-        <div class="relative w-full max-w-5xl transform rounded-lg bg-white dark:bg-gray-800 shadow-xl transition-all max-h-[90vh] flex flex-col">
+        <div class="relative w-full max-w-5xl transform rounded-xl bg-white dark:bg-ink-3 shadow-modal transition-all max-h-[90vh] flex flex-col">
           <!-- Header -->
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-6 border-b border-gray-200 dark:border-gray-700 gap-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-6 border-b border-stone-200 dark:border-ink-4 gap-4">
             <div class="flex-shrink-0">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+              <h3 class="font-display text-lg font-semibold text-ink dark:text-cream">
                 {{ t('vendors.vendorLedger') }}
               </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <p class="text-sm text-stone-500 dark:text-stone-400 mt-1">
                 {{ vendor?.name || vendor?.contact_person }}
               </p>
             </div>
@@ -297,7 +297,7 @@
             <!-- Date Filter Section -->
             <div class="flex flex-wrap items-center gap-2 sm:gap-3">
               <div class="flex items-center gap-2">
-                <label class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ t('vendors.from') }}:</label>
+                <label class="text-sm text-stone-600 dark:text-stone-400 whitespace-nowrap">{{ t('vendors.from') }}:</label>
                 <input
                   v-model="ledgerFromDate"
                   type="date"
@@ -306,7 +306,7 @@
                 />
               </div>
               <div class="flex items-center gap-2">
-                <label class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ t('vendors.to') }}:</label>
+                <label class="text-sm text-stone-600 dark:text-stone-400 whitespace-nowrap">{{ t('vendors.to') }}:</label>
                 <input
                   v-model="ledgerToDate"
                   type="date"
@@ -316,7 +316,7 @@
               <button
                 v-if="isDateFilterActive"
                 @click="resetDateFilter"
-                class="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
+                class="text-sm text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 flex items-center gap-1"
                 :title="t('vendors.resetDateFilter')"
               >
                 <RotateCcw class="h-4 w-4" />
@@ -334,25 +334,25 @@
                 </button>
 
                 <!-- Export Dropdown Menu -->
-                <div v-if="showExportDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+                <div v-if="showExportDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-ink-3 rounded-md shadow-modal z-10 border border-stone-200 dark:border-ink-4">
                   <div class="py-1">
-                    <button @click="exportLedger(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                      <FileSpreadsheet class="mr-3 h-4 w-4 text-green-600" />
+                    <button @click="exportLedger(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4">
+                      <FileSpreadsheet class="mr-3 h-4 w-4 text-forest-600 dark:text-forest-400" />
                       {{ t('vendors.exportCsv') }}
                     </button>
-                    <button @click="exportLedgerPDF(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                      <FileText class="mr-3 h-4 w-4 text-red-600" />
+                    <button @click="exportLedgerPDF(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4">
+                      <FileText class="mr-3 h-4 w-4 text-clay-600 dark:text-clay-400" />
                       {{ t('vendors.exportPdf') }}
                     </button>
-                    <button @click="exportTallyXml(); showExportDropdown = false" class="relative flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                      <FileText class="mr-3 h-4 w-4 text-blue-600" />
+                    <button @click="exportTallyXml(); showExportDropdown = false" class="relative flex items-center w-full px-4 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4">
+                      <FileText class="mr-3 h-4 w-4 text-amber-700 dark:text-amber-400" />
                       {{ t('vendors.exportTallyXml') }}
                       <StatusBadge type="beta" position="absolute" />
                     </button>
                   </div>
                 </div>
               </div>
-              <button @click="closeLedgerModal" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+              <button @click="closeLedgerModal" class="text-stone-400 hover:text-stone-500 dark:hover:text-stone-300">
                 <X class="h-5 w-5" />
               </button>
             </div>
@@ -361,15 +361,15 @@
           <!-- Mobile Rotate Hint (only shows on small screens in portrait) -->
           <div
             v-if="!rotateHintDismissed"
-            class="sm:hidden flex items-center justify-between px-4 py-2 bg-blue-50 dark:bg-blue-900/30 border-b border-blue-100 dark:border-blue-800"
+            class="sm:hidden flex items-center justify-between px-4 py-2 bg-amber-50 dark:bg-amber-900/30 border-b border-amber-100 dark:border-amber-800"
           >
-            <div class="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
+            <div class="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-300">
               <Smartphone class="h-4 w-4 rotate-90" />
               <span>{{ t('vendors.rotateForBetterView') }}</span>
             </div>
             <button
               @click="dismissRotateHint"
-              class="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200"
+              class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200"
             >
               <X class="h-4 w-4" />
             </button>
@@ -379,41 +379,41 @@
           <div class="flex-1 overflow-auto p-6">
             <div class="overflow-x-auto">
               <table class="w-full text-sm table-fixed min-w-[600px]">
-                <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                <thead class="bg-cream-2 dark:bg-ink-2 sticky top-0">
                   <tr>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                    <th class="px-3 py-2 text-left sw-eyebrow text-stone-500 dark:text-stone-400 w-24">
                       {{ t('vendors.date') }}
                     </th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-auto">
+                    <th class="px-3 py-2 text-left sw-eyebrow text-stone-500 dark:text-stone-400 w-auto">
                       {{ t('vendors.particulars') }}
                     </th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">
+                    <th class="px-3 py-2 text-left sw-eyebrow text-stone-500 dark:text-stone-400 w-28">
                       {{ t('vendors.reference') }}
                     </th>
-                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                    <th class="px-3 py-2 text-right sw-eyebrow text-stone-500 dark:text-stone-400 w-24">
                       {{ t('vendors.debit') }}
                     </th>
-                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                    <th class="px-3 py-2 text-right sw-eyebrow text-stone-500 dark:text-stone-400 w-24">
                       {{ t('vendors.credit') }}
                     </th>
-                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">
+                    <th class="px-3 py-2 text-right sw-eyebrow text-stone-500 dark:text-stone-400 w-28">
                       {{ t('vendors.balance') }}
                     </th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                <tbody class="divide-y divide-stone-200 dark:divide-ink-4">
                   <!-- Opening Balance Row (shown when date filter is active) -->
-                  <tr v-if="hasLedgerOpeningBalance" class="bg-blue-50 dark:bg-blue-900/20">
-                    <td class="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap">
+                  <tr v-if="hasLedgerOpeningBalance" class="bg-amber-50 dark:bg-amber-900/20">
+                    <td class="px-3 py-2 text-ink dark:text-cream whitespace-nowrap font-mono sw-tabular">
                       {{ ledgerFromDate }}
                     </td>
-                    <td class="px-3 py-2 text-gray-900 dark:text-white font-medium">
+                    <td class="px-3 py-2 text-ink dark:text-cream font-medium">
                       {{ t('vendors.openingBalance') }}
                     </td>
-                    <td class="px-3 py-2 text-gray-500 dark:text-gray-400">-</td>
-                    <td class="px-3 py-2 text-right text-gray-400">-</td>
-                    <td class="px-3 py-2 text-right text-gray-400">-</td>
-                    <td class="px-3 py-2 text-right font-medium whitespace-nowrap" :class="ledgerOpeningBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+                    <td class="px-3 py-2 text-stone-500 dark:text-stone-400">-</td>
+                    <td class="px-3 py-2 text-right text-stone-400">-</td>
+                    <td class="px-3 py-2 text-right text-stone-400">-</td>
+                    <td class="px-3 py-2 text-right font-mono sw-tabular font-medium whitespace-nowrap" :class="ledgerOpeningBalance >= 0 ? 'text-clay-600 dark:text-clay-400' : 'text-forest-600 dark:text-forest-400'">
                       ₹{{ Math.abs(ledgerOpeningBalance).toFixed(2) }}
                       <span class="text-xs ml-1">{{ ledgerOpeningBalance >= 0 ? 'Cr' : 'Dr' }}</span>
                     </td>
@@ -424,39 +424,39 @@
                     v-for="entry in displayedLedgerEntries"
                     :key="entry.id"
                     :class="[
-                      'hover:bg-gray-50 dark:hover:bg-gray-700/50',
+                      'rounded-none hover:bg-cream-2 dark:hover:bg-ink-2',
                       isEntryClickable(entry) ? 'cursor-pointer' : ''
                     ]"
                     @click="isEntryClickable(entry) && openEntryDetail(entry)"
                   >
-                    <td class="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap">
+                    <td class="px-3 py-2 text-ink dark:text-cream whitespace-nowrap font-mono sw-tabular">
                       {{ formatDate(entry.date) }}
                     </td>
-                    <td class="px-3 py-2 text-gray-900 dark:text-white">
+                    <td class="px-3 py-2 text-ink dark:text-cream">
                       <div class="flex items-center justify-between gap-2">
                         <span class="truncate" :title="entry.particulars">{{ entry.particulars }}</span>
-                        <ExternalLink v-if="isEntryClickable(entry)" class="h-3 w-3 text-gray-400 flex-shrink-0" />
+                        <ExternalLink v-if="isEntryClickable(entry)" class="h-3 w-3 text-stone-400 flex-shrink-0" />
                       </div>
-                      <div v-if="entry.details" class="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate" :title="entry.details">
+                      <div v-if="entry.details" class="text-xs text-stone-500 dark:text-stone-400 mt-1 truncate" :title="entry.details">
                         {{ entry.details }}
                       </div>
                     </td>
-                    <td class="px-3 py-2 text-gray-500 dark:text-gray-400 truncate" :title="entry.reference">
+                    <td class="px-3 py-2 text-stone-500 dark:text-stone-400 truncate" :title="entry.reference">
                       {{ entry.reference || '-' }}
                     </td>
                     <td class="px-3 py-2 text-right whitespace-nowrap">
-                      <span v-if="entry.debit > 0" class="text-green-600 dark:text-green-400 font-medium">
+                      <span v-if="entry.debit > 0" class="text-forest-600 dark:text-forest-400 font-mono sw-tabular font-medium">
                         ₹{{ entry.debit.toFixed(2) }}
                       </span>
-                      <span v-else class="text-gray-400">-</span>
+                      <span v-else class="text-stone-400">-</span>
                     </td>
                     <td class="px-3 py-2 text-right whitespace-nowrap">
-                      <span v-if="entry.credit > 0" class="text-red-600 dark:text-red-400 font-medium">
+                      <span v-if="entry.credit > 0" class="text-clay-600 dark:text-clay-400 font-mono sw-tabular font-medium">
                         ₹{{ entry.credit.toFixed(2) }}
                       </span>
-                      <span v-else class="text-gray-400">-</span>
+                      <span v-else class="text-stone-400">-</span>
                     </td>
-                    <td class="px-3 py-2 text-right font-medium whitespace-nowrap" :class="entry.runningBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+                    <td class="px-3 py-2 text-right font-mono sw-tabular font-medium whitespace-nowrap" :class="entry.runningBalance >= 0 ? 'text-clay-600 dark:text-clay-400' : 'text-forest-600 dark:text-forest-400'">
                       ₹{{ Math.abs(entry.runningBalance).toFixed(2) }}
                       <span class="text-xs ml-1">{{ entry.runningBalance >= 0 ? 'Cr' : 'Dr' }}</span>
                     </td>
@@ -464,23 +464,23 @@
 
                   <!-- Empty State -->
                   <tr v-if="displayedLedgerEntries.length === 0 && !hasLedgerOpeningBalance">
-                    <td colspan="6" class="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
+                    <td colspan="6" class="px-3 py-8 text-center text-stone-500 dark:text-stone-400">
                       {{ t('vendors.noLedgerEntries') }}
                     </td>
                   </tr>
 
                   <!-- Totals Row -->
-                  <tr v-if="displayedLedgerEntries.length > 0 || hasLedgerOpeningBalance" class="bg-gray-100 dark:bg-gray-700 font-medium">
-                    <td class="px-3 py-2 text-gray-900 dark:text-white" colspan="3">
+                  <tr v-if="displayedLedgerEntries.length > 0 || hasLedgerOpeningBalance" class="bg-stone-100 dark:bg-ink-2 font-medium">
+                    <td class="px-3 py-2 text-ink dark:text-cream" colspan="3">
                       {{ t('vendors.totals') }}
                     </td>
-                    <td class="px-3 py-2 text-right text-green-600 dark:text-green-400 whitespace-nowrap">
+                    <td class="px-3 py-2 text-right text-forest-600 dark:text-forest-400 whitespace-nowrap font-mono sw-tabular">
                       ₹{{ totalDebits.toFixed(2) }}
                     </td>
-                    <td class="px-3 py-2 text-right text-red-600 dark:text-red-400 whitespace-nowrap">
+                    <td class="px-3 py-2 text-right text-clay-600 dark:text-clay-400 whitespace-nowrap font-mono sw-tabular">
                       ₹{{ totalCredits.toFixed(2) }}
                     </td>
-                    <td class="px-3 py-2 text-right whitespace-nowrap" :class="finalBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+                    <td class="px-3 py-2 text-right whitespace-nowrap font-mono sw-tabular" :class="finalBalance >= 0 ? 'text-clay-600 dark:text-clay-400' : 'text-forest-600 dark:text-forest-400'">
                       ₹{{ Math.abs(finalBalance).toFixed(2) }}
                       <span class="text-xs ml-1">{{ finalBalance >= 0 ? 'Cr' : 'Dr' }}</span>
                     </td>
@@ -491,9 +491,9 @@
           </div>
 
           <!-- Footer Summary -->
-          <div v-if="displayedLedgerEntries.length > 0 || hasLedgerOpeningBalance" class="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+          <div v-if="displayedLedgerEntries.length > 0 || hasLedgerOpeningBalance" class="p-6 border-t border-stone-200 dark:border-ink-4 bg-cream-2 dark:bg-ink-2/50">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div class="text-sm text-gray-600 dark:text-gray-400">
+              <div class="text-sm text-stone-600 dark:text-stone-400">
                 <span v-if="isDateFilterActive">
                   {{ t('vendors.showingFilteredEntries', { count: displayedLedgerEntries.length, total: ledgerEntries.length }) }}
                 </span>
@@ -501,7 +501,7 @@
                   {{ t('vendors.showingAllEntries') }} ({{ displayedLedgerEntries.length }} {{ t('vendors.entries') }})
                 </span>
               </div>
-              <div class="text-lg font-semibold" :class="finalBalance >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+              <div class="text-lg font-mono sw-tabular font-semibold" :class="finalBalance >= 0 ? 'text-clay-600 dark:text-clay-400' : 'text-forest-600 dark:text-forest-400'">
                 {{ finalBalance >= 0 ? t('vendors.totalOutstanding') : t('vendors.creditBalance') }}: ₹{{ Math.abs(finalBalance).toFixed(2) }}
               </div>
             </div>
@@ -514,21 +514,21 @@
     <div v-if="showEntryDetailModal && selectedEntry" class="fixed inset-0 z-[70] overflow-y-auto">
       <div class="flex min-h-full items-center justify-center p-4">
         <!-- Backdrop -->
-        <div class="fixed inset-0 bg-black/50 transition-opacity" @click="closeEntryDetail"></div>
+        <div class="fixed inset-0 bg-ink/60 transition-opacity" @click="closeEntryDetail"></div>
 
         <!-- Modal Panel -->
-        <div class="relative w-full max-w-lg transform rounded-lg bg-white dark:bg-gray-800 shadow-xl transition-all">
+        <div class="relative w-full max-w-lg transform rounded-xl bg-white dark:bg-ink-3 shadow-modal transition-all">
           <!-- Header -->
-          <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <div class="flex items-center justify-between p-6 border-b border-stone-200 dark:border-ink-4">
             <div>
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+              <h3 class="font-display text-lg font-semibold text-ink dark:text-cream">
                 {{ selectedEntry.type === 'delivery' ? t('vendors.deliveryDetails') : t('vendors.paymentDetails') }}
               </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <p class="text-sm text-stone-500 dark:text-stone-400 mt-1">
                 {{ formatDate(selectedEntry.date) }}
               </p>
             </div>
-            <button @click="closeEntryDetail" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+            <button @click="closeEntryDetail" class="text-stone-400 hover:text-stone-500 dark:hover:text-stone-300">
               <X class="h-5 w-5" />
             </button>
           </div>
@@ -539,11 +539,11 @@
             <template v-if="selectedEntry.type === 'delivery' && selectedDelivery">
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.reference') }}</label>
-                  <p class="mt-1 text-gray-900 dark:text-white">{{ selectedDelivery.delivery_reference || '-' }}</p>
+                  <label class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('vendors.reference') }}</label>
+                  <p class="mt-1 text-ink dark:text-cream">{{ selectedDelivery.delivery_reference || '-' }}</p>
                 </div>
                 <div>
-                  <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.status') }}</label>
+                  <label class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('vendors.status') }}</label>
                   <p class="mt-1">
                     <span :class="DeliveryPaymentCalculator.getPaymentStatusClass(selectedDelivery.payment_status)">
                       {{ t(DeliveryPaymentCalculator.getPaymentStatusTextKey(selectedDelivery.payment_status)) }}
@@ -553,35 +553,35 @@
               </div>
 
               <div>
-                <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.amount') }}</label>
-                <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">₹{{ selectedDelivery.total_amount.toFixed(2) }}</p>
+                <label class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('vendors.amount') }}</label>
+                <p class="mt-1 sw-stat text-ink dark:text-cream">₹{{ selectedDelivery.total_amount.toFixed(2) }}</p>
               </div>
 
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.paid') }}</label>
-                  <p class="mt-1 text-green-600 dark:text-green-400 font-medium">₹{{ (selectedDelivery.paid_amount || 0).toFixed(2) }}</p>
+                  <label class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('vendors.paid') }}</label>
+                  <p class="mt-1 text-forest-600 dark:text-forest-400 font-mono sw-tabular font-medium">₹{{ (selectedDelivery.paid_amount || 0).toFixed(2) }}</p>
                 </div>
                 <div>
-                  <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.outstanding') }}</label>
-                  <p class="mt-1 text-red-600 dark:text-red-400 font-medium">₹{{ (selectedDelivery.outstanding || 0).toFixed(2) }}</p>
+                  <label class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('vendors.outstanding') }}</label>
+                  <p class="mt-1 text-clay-600 dark:text-clay-400 font-mono sw-tabular font-medium">₹{{ (selectedDelivery.outstanding || 0).toFixed(2) }}</p>
                 </div>
               </div>
 
               <!-- Delivery Items -->
               <div v-if="selectedDelivery.expand?.delivery_items && selectedDelivery.expand.delivery_items.length > 0">
-                <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.items') }}</label>
+                <label class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('vendors.items') }}</label>
                 <div class="mt-2 space-y-2">
                   <div
                     v-for="item in selectedDelivery.expand.delivery_items"
                     :key="item.id"
-                    class="flex justify-between items-center py-2 px-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                    class="flex justify-between items-center py-2 px-3 bg-cream-2 dark:bg-ink-2 rounded-lg"
                   >
                     <div>
-                      <p class="text-sm font-medium text-gray-900 dark:text-white">{{ item.expand?.item?.name || t('vendors.unknownItem') }}</p>
-                      <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.quantity }} {{ item.expand?.item?.unit || t('vendors.units') }} × ₹{{ item.unit_price?.toFixed(2) || '0.00' }}</p>
+                      <p class="text-sm font-medium text-ink dark:text-cream">{{ item.expand?.item?.name || t('vendors.unknownItem') }}</p>
+                      <p class="text-xs text-stone-500 dark:text-stone-400"><span class="font-mono sw-tabular">{{ item.quantity }}</span> {{ item.expand?.item?.unit || t('vendors.units') }} × ₹<span class="font-mono sw-tabular">{{ item.unit_price?.toFixed(2) || '0.00' }}</span></p>
                     </div>
-                    <p class="text-sm font-medium text-gray-900 dark:text-white">₹{{ (item.quantity * (item.unit_price || 0)).toFixed(2) }}</p>
+                    <p class="text-sm font-mono sw-tabular font-medium text-ink dark:text-cream">₹{{ (item.quantity * (item.unit_price || 0)).toFixed(2) }}</p>
                   </div>
                 </div>
               </div>
@@ -590,36 +590,36 @@
             <!-- Payment Details -->
             <template v-else-if="selectedEntry.type === 'payment' && selectedPayment">
               <div>
-                <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.amount') }}</label>
-                <p class="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">₹{{ selectedPayment.amount.toFixed(2) }}</p>
+                <label class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('vendors.amount') }}</label>
+                <p class="mt-1 sw-stat text-forest-600 dark:text-forest-400">₹{{ selectedPayment.amount.toFixed(2) }}</p>
               </div>
 
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.reference') }}</label>
-                  <p class="mt-1 text-gray-900 dark:text-white">{{ selectedPayment.reference || '-' }}</p>
+                  <label class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('vendors.reference') }}</label>
+                  <p class="mt-1 text-ink dark:text-cream">{{ selectedPayment.reference || '-' }}</p>
                 </div>
                 <div>
-                  <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.date') }}</label>
-                  <p class="mt-1 text-gray-900 dark:text-white">{{ formatDate(selectedPayment.payment_date) }}</p>
+                  <label class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('vendors.date') }}</label>
+                  <p class="mt-1 text-ink dark:text-cream">{{ formatDate(selectedPayment.payment_date) }}</p>
                 </div>
               </div>
 
               <div v-if="selectedPayment.notes">
-                <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.notes') }}</label>
-                <p class="mt-1 text-gray-900 dark:text-white">{{ selectedPayment.notes }}</p>
+                <label class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('vendors.notes') }}</label>
+                <p class="mt-1 text-ink dark:text-cream">{{ selectedPayment.notes }}</p>
               </div>
 
               <!-- Payment Account -->
               <div v-if="selectedPayment.expand?.account">
-                <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('vendors.paymentAccount') }}</label>
-                <p class="mt-1 text-gray-900 dark:text-white">{{ selectedPayment.expand.account.name }}</p>
+                <label class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('vendors.paymentAccount') }}</label>
+                <p class="mt-1 text-ink dark:text-cream">{{ selectedPayment.expand.account.name }}</p>
               </div>
             </template>
           </div>
 
           <!-- Footer -->
-          <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+          <div class="px-6 py-4 border-t border-stone-200 dark:border-ink-4 bg-cream-2 dark:bg-ink-2/50">
             <button @click="closeEntryDetail" class="w-full btn-outline">
               {{ t('common.close') }}
             </button>
@@ -630,7 +630,7 @@
   </div>
 
   <div v-else class="flex items-center justify-center min-h-96">
-    <Loader2 class="h-8 w-8 animate-spin text-gray-400" />
+    <Loader2 class="h-8 w-8 animate-spin rounded-full text-amber-500" />
   </div>
 </template>
 
@@ -1450,15 +1450,15 @@ onMounted(() => {
 
 <style scoped>
 .status-pending {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300;
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300;
 }
 
 .status-partial {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300;
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 dark:bg-ink-4 dark:text-stone-300;
 }
 
 .status-paid {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300;
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-forest-100 text-forest-800 dark:bg-forest-900/40 dark:text-forest-300;
 }
 
 /* Ledger table text wrapping */

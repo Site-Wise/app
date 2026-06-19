@@ -1,81 +1,254 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+/* ==========================================================================
+   Sitewise Design System — tokens
+   Construction expense management. Fintech-precise, dark + amber.
+   ========================================================================== */
+:root {
+  /* --- Core palette --- */
+  --sw-ink:          #0A0E0D;
+  --sw-ink-2:        #13191A;
+  --sw-ink-3:        #1F2625;
+  --sw-ink-4:        #2A3231;
+
+  --sw-cream:        #FAFAF7;
+  --sw-cream-2:      #F4F1EC;
+  --sw-cream-3:      #EDE9E1;
+
+  --sw-amber:        #FFB800;
+  --sw-amber-deep:   #E69F00;
+  --sw-amber-soft:   #FFF4D1;
+
+  --sw-forest:       #22C55E;
+  --sw-forest-deep:  #15803D;
+  --sw-forest-soft:  #DCFCE7;
+
+  --sw-clay:         #E8743C;
+  --sw-clay-deep:    #C2410C;
+  --sw-clay-soft:    #FFE4D6;
+
+  --sw-stone:        #A8A29E;
+  --sw-stone-2:      #78716C;
+  --sw-stone-3:      #57534E;
+
+  --sw-border-light: #E5E5E0;
+  --sw-border-strong-light: #1A1A1A;
+  --sw-border-dark:  #1F2625;
+  --sw-border-strong-dark: #FAFAF7;
+
+  /* --- Semantic — light mode (default) --- */
+  --sw-bg:           var(--sw-cream);
+  --sw-bg-elevated:  #FFFFFF;
+  --sw-bg-hover:     var(--sw-cream-2);
+
+  --sw-fg:           var(--sw-ink);
+  --sw-fg-2:         var(--sw-stone-3);
+  --sw-fg-3:         var(--sw-stone-2);
+  --sw-fg-muted:     var(--sw-stone);
+
+  --sw-accent:       var(--sw-amber);
+  --sw-accent-fg:    var(--sw-ink);
+  --sw-success:      var(--sw-forest);
+  --sw-danger:       var(--sw-clay);
+
+  --sw-border:       var(--sw-border-light);
+  --sw-border-strong: var(--sw-border-strong-light);
+
+  --sw-shadow-card:  0 1px 2px rgb(10 14 13 / 0.04), 0 4px 12px rgb(10 14 13 / 0.04);
+  --sw-shadow-modal: 0 24px 48px -12px rgb(10 14 13 / 0.18);
+
+  /* --- Type families --- */
+  --sw-font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --sw-font-body:    'Inter', ui-sans-serif, system-ui, sans-serif;
+  --sw-font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* --- Motion --- */
+  --sw-ease-snap: cubic-bezier(0.32, 0.72, 0, 1);
+  --sw-ease-cross: cubic-bezier(0.4, 0, 0.2, 1);
+  --sw-dur-micro: 150ms;
+  --sw-dur-base: 240ms;
+  --sw-dur-page: 400ms;
+  --sw-dur-count: 800ms;
+}
+
+/* Dark mode keys off Tailwind's `.dark` class on <html> (see useTheme.ts).
+   [data-theme="dark"] kept as an alias for the source design system. */
+.dark,
+[data-theme="dark"] {
+  --sw-bg:           var(--sw-ink);
+  --sw-bg-elevated:  var(--sw-ink-3);
+  --sw-bg-hover:     var(--sw-ink-2);
+
+  --sw-fg:           var(--sw-cream);
+  --sw-fg-2:         #C9C5BE;
+  --sw-fg-3:         var(--sw-stone);
+  --sw-fg-muted:     var(--sw-stone-2);
+
+  --sw-border:       var(--sw-border-dark);
+  --sw-border-strong: var(--sw-border-strong-dark);
+
+  --sw-shadow-card:  inset 0 1px 0 rgb(255 255 255 / 0.04);
+  --sw-shadow-modal: 0 24px 48px -12px rgb(0 0 0 / 0.6);
+}
+
 @layer base {
   html {
-    font-family: Inter, system-ui, sans-serif;
+    font-family: var(--sw-font-body);
   }
-  
+
   body {
-    @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
+    @apply bg-cream dark:bg-ink text-ink dark:text-cream;
+  }
+
+  /* Brand display face for primary headings — Space Grotesk, tight tracking. */
+  h1, h2, h3 {
+    font-family: var(--sw-font-display);
+    letter-spacing: -0.02em;
   }
 }
 
 @layer components {
+  /* ---- Buttons --------------------------------------------------------- */
   .btn {
-    @apply inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-xl shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 min-h-[44px] touch-feedback;
+    @apply inline-flex items-center justify-center gap-2 px-5 h-11 border border-transparent text-base font-semibold rounded-md transition-all duration-150 ease-snap focus:outline-none active:scale-[0.98] min-h-touch whitespace-nowrap;
   }
 
+  /* Primary = amber. The one accent. Ink text on amber. */
   .btn-primary {
-    @apply btn bg-primary-600 dark:bg-primary-500 text-white hover:bg-primary-700 dark:hover:bg-primary-600 active:bg-primary-800 dark:active:bg-primary-700 focus:ring-primary-500 dark:focus:ring-primary-400;
+    @apply btn bg-amber-500 text-ink hover:bg-amber-600 active:bg-amber-600 focus-visible:ring-2 focus-visible:ring-amber-500/40;
   }
 
+  /* Secondary = ink (dark solid). Cream text. */
   .btn-secondary {
-    @apply btn bg-secondary-600 dark:bg-secondary-500 text-white hover:bg-secondary-700 dark:hover:bg-secondary-600 active:bg-secondary-800 dark:active:bg-secondary-700 focus:ring-secondary-500 dark:focus:ring-secondary-400;
+    @apply btn bg-ink text-cream hover:bg-ink-2 active:bg-ink-2 dark:bg-cream dark:text-ink dark:hover:bg-cream-2;
   }
 
   .btn-disabled {
-    @apply btn bg-gray-400 dark:bg-gray-600 text-white cursor-not-allowed opacity-60;
+    @apply btn bg-stone-200 dark:bg-ink-4 text-stone-400 dark:text-stone-500 cursor-not-allowed;
   }
 
   .btn-outline {
-    @apply btn bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 focus:ring-primary-500 dark:focus:ring-primary-400;
+    @apply btn bg-transparent text-ink dark:text-cream border-stone-200 dark:border-ink-4 hover:border-ink dark:hover:border-cream active:bg-cream-2 dark:active:bg-ink-2;
   }
 
   .btn-ghost {
-    @apply btn bg-transparent text-gray-700 dark:text-gray-300 border-transparent shadow-none hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600;
+    @apply btn bg-transparent text-ink dark:text-cream border-transparent hover:bg-cream-2 dark:hover:bg-ink-2 active:bg-cream-3 dark:active:bg-ink-3;
   }
 
   .btn-danger {
-    @apply btn bg-red-600 dark:bg-red-500 text-white hover:bg-red-700 dark:hover:bg-red-600 active:bg-red-800 dark:active:bg-red-700 focus:ring-red-500 dark:focus:ring-red-400;
+    @apply btn bg-clay-500 text-white hover:bg-clay-600 active:bg-clay-700 focus-visible:ring-2 focus-visible:ring-clay-500/40;
   }
 
+  /* ---- Inputs ---------------------------------------------------------- */
   .input {
-    @apply block w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-primary-500 dark:focus:border-primary-400 transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 min-h-[44px] text-base sm:text-sm;
+    @apply block w-full px-4 h-11 border border-stone-200 dark:border-ink-4 rounded-md placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:border-ink dark:focus:border-cream transition-colors duration-150 ease-snap bg-white dark:bg-ink-3 text-ink dark:text-cream min-h-touch text-base sm:text-sm;
   }
 
+  /* ---- Cards ----------------------------------------------------------- */
   .card {
-    @apply bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 transition-all duration-200;
+    @apply bg-white dark:bg-ink-3 rounded-lg shadow-card dark:shadow-inset-hi border border-stone-200 dark:border-ink-4 p-5 transition-all duration-150 ease-snap;
   }
 
   .card-interactive {
-    @apply card cursor-pointer hover:shadow-md active:scale-[0.99] touch-feedback;
+    @apply card cursor-pointer hover:border-ink/30 dark:hover:border-cream/30 hover:shadow-card-hover dark:hover:shadow-inset-hi touch-feedback;
   }
-  
+
+  /* ---- Status badges --------------------------------------------------- */
   .status-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply inline-flex items-center gap-1 px-2 h-6 rounded-md text-xs font-semibold tracking-wide;
   }
-  
+
   .status-pending {
-    @apply status-badge bg-warning-100 dark:bg-warning-900/30 text-warning-800 dark:text-warning-300;
+    @apply status-badge bg-amber-100 dark:bg-amber-500/15 text-amber-900 dark:text-amber-300;
   }
-  
+
   .status-paid {
-    @apply status-badge bg-success-100 dark:bg-success-900/30 text-success-800 dark:text-success-300;
+    @apply status-badge bg-forest-100 dark:bg-forest-500/15 text-forest-700 dark:text-forest-400;
   }
-  
+
   .status-partial {
-    @apply status-badge bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300;
+    @apply status-badge bg-stone-100 dark:bg-ink-4 text-stone-600 dark:text-stone-300;
   }
-  
-  
+
   .status-overdue {
-    @apply status-badge bg-error-100 dark:bg-error-900/30 text-error-800 dark:text-error-300;
+    @apply status-badge bg-clay-100 dark:bg-clay-500/15 text-clay-700 dark:text-clay-400;
   }
 }
 
-/* Custom scrollbar for dark mode */
+/* ==========================================================================
+   sw-* utility classes — copy-from-design-system typography & components
+   ========================================================================== */
+@layer components {
+  .sw-eyebrow {
+    font-family: var(--sw-font-body);
+    @apply text-xs font-semibold uppercase tracking-eyebrow text-stone-500 dark:text-stone-400;
+  }
+
+  .sw-h1 { font-family: var(--sw-font-display); @apply text-4xl font-bold tracking-tight leading-[1.02] text-ink dark:text-cream; }
+  .sw-h2 { font-family: var(--sw-font-display); @apply text-3xl font-bold tracking-tight leading-[1.05] text-ink dark:text-cream; }
+  .sw-h3 { font-family: var(--sw-font-display); @apply text-2xl font-semibold tracking-tight leading-[1.1] text-ink dark:text-cream; }
+  .sw-h4 { font-family: var(--sw-font-display); @apply text-xl font-semibold leading-snug text-ink dark:text-cream; }
+
+  .sw-stat {
+    font-family: var(--sw-font-display);
+    font-variant-numeric: tabular-nums;
+    @apply text-2xl font-semibold tracking-tight leading-none text-ink dark:text-cream;
+  }
+
+  .sw-mega {
+    font-family: var(--sw-font-display);
+    font-variant-numeric: tabular-nums;
+    @apply text-5xl font-bold tracking-tighter leading-none text-ink dark:text-cream;
+  }
+
+  .sw-mono {
+    font-family: var(--sw-font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  .sw-tabular { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+  .sw-card {
+    @apply bg-white dark:bg-ink-3 border border-stone-200 dark:border-ink-4 rounded-lg shadow-card dark:shadow-inset-hi p-6;
+  }
+
+  .sw-badge { @apply inline-flex items-center gap-1 h-6 px-2 rounded-md text-xs font-semibold; }
+  .sw-badge--success { @apply bg-forest-100 text-forest-700 dark:bg-forest-500/15 dark:text-forest-400; }
+  .sw-badge--danger  { @apply bg-clay-100 text-clay-700 dark:bg-clay-500/15 dark:text-clay-400; }
+  .sw-badge--accent  { @apply bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-300; }
+  .sw-badge--neutral { @apply bg-stone-100 text-stone-600 dark:bg-ink-4 dark:text-stone-300; }
+}
+
+@layer utilities {
+  /* Dot grid background — graph-paper / blueprint reference, hero only.
+     Painted via a ::before overlay so it can wrap content without washing it
+     out (opacity applies only to the dot layer, never the children). */
+  .sw-dotgrid {
+    position: relative;
+    isolation: isolate;
+  }
+  .sw-dotgrid > * {
+    position: relative;
+    z-index: 1;
+  }
+  .sw-dotgrid::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+    background-size: 24px 24px;
+    opacity: 0.05;
+  }
+}
+
+/* Custom scrollbar */
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
@@ -87,15 +260,15 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-track {
-    @apply bg-gray-100 dark:bg-gray-800;
+    @apply bg-cream-2 dark:bg-ink-2;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+    @apply bg-stone-300 dark:bg-ink-4 rounded-full;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400 dark:bg-gray-500;
+    @apply bg-stone-400 dark:bg-stone-500;
   }
 }
 

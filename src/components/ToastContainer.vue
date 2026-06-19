@@ -14,7 +14,7 @@
       <div v-if="showClearAll" class="mb-2">
         <button
           @click="clearAll"
-          class="w-full px-4 py-2 text-sm font-medium text-red-800 dark:text-red-100 bg-red-50/95 dark:bg-red-900/95 hover:bg-red-100 dark:hover:bg-red-800 border border-red-200 dark:border-red-700 rounded-lg transition-colors duration-200 backdrop-blur-sm"
+          class="w-full px-4 py-2 text-sm font-medium text-clay-800 dark:text-clay-200 bg-clay-50 dark:bg-clay-900/40 hover:bg-clay-100 dark:hover:bg-clay-900/60 border border-clay-200 dark:border-clay-700 rounded-lg shadow-modal transition-colors duration-200"
         >
           {{ t('common.closeAll') }}
         </button>
@@ -29,7 +29,7 @@
           v-for="toast in toasts"
           :key="toast.id"
           :class="[
-            'px-4 py-3 rounded-lg shadow-lg backdrop-blur-sm border',
+            'px-4 py-3 rounded-lg shadow-modal border',
             'transform transition-all duration-300 ease-out',
             'flex items-start justify-between gap-3',
             getToastStyles(toast.type)
@@ -46,7 +46,7 @@
           </div>
           <button
             @click="removeToast(toast.id)"
-            class="flex-shrink-0 p-1 rounded-md transition-colors duration-200 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20"
+            class="flex-shrink-0 p-1 rounded-md transition-colors duration-200 hover:bg-black/10 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/30"
             :aria-label="`Close ${toast.type} notification`"
           >
             <X class="h-4 w-4" />
@@ -89,10 +89,10 @@ const getToastIcon = (type: Toast['type']) => {
 
 const getToastStyles = (type: Toast['type']) => {
   const styles = {
-    success: 'bg-green-50/95 dark:bg-green-900/95 border-green-200 dark:border-green-700 text-green-800 dark:text-green-100',
-    error: 'bg-red-50/95 dark:bg-red-900/95 border-red-200 dark:border-red-700 text-red-800 dark:text-red-100',
-    warning: 'bg-yellow-50/95 dark:bg-yellow-900/95 border-yellow-200 dark:border-yellow-700 text-yellow-800 dark:text-yellow-100',
-    info: 'bg-blue-50/95 dark:bg-blue-900/95 border-blue-200 dark:border-blue-700 text-blue-800 dark:text-blue-100'
+    success: 'bg-forest-50 dark:bg-forest-900/40 border-forest-200 dark:border-forest-700 text-forest-800 dark:text-forest-200',
+    error: 'bg-clay-50 dark:bg-clay-900/40 border-clay-200 dark:border-clay-700 text-clay-800 dark:text-clay-200',
+    warning: 'bg-amber-50 dark:bg-amber-500/15 border-amber-200 dark:border-amber-700 text-amber-900 dark:text-amber-200',
+    info: 'bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 text-ink dark:text-cream'
   }
   return styles[type]
 }

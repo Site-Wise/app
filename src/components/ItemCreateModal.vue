@@ -1,24 +1,24 @@
 <template>
-  <div v-if="show" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="$emit('close')" @keydown.esc="$emit('close')" tabindex="-1">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4 mb-20 lg:mb-4" @click.stop>
+  <div v-if="show" class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-[60]" @click="$emit('close')" @keydown.esc="$emit('close')" tabindex="-1">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 m-4 mb-20 lg:mb-4" @click.stop>
       <div class="mt-3">
-        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+        <h3 class="text-lg font-medium text-ink dark:text-cream mb-4">
           {{ t('items.addItem') }}
         </h3>
 
         <form @submit.prevent="saveItem" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.name') }}</label>
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.name') }}</label>
             <input ref="nameInputRef" v-model="form.name" type="text" required class="input mt-1" :placeholder="t('forms.enterItemName')" autofocus />
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.description') }}</label>
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.description') }}</label>
             <textarea v-model="form.description" class="input mt-1" rows="3" :placeholder="t('forms.enterDescription')"></textarea>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.unit') }}</label>
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('items.unit') }}</label>
             <select v-model="form.unit" required class="input mt-1">
               <option value="">{{ t('forms.selectUnit') }}</option>
               <option value="pcs">{{ t('units.pcs') }} (pcs)</option>

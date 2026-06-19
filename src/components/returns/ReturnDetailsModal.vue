@@ -1,17 +1,17 @@
 <template>
-  <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-20 lg:mb-4">
+  <div class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-[60]">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-4xl shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 mb-20 lg:mb-4">
       <div class="mt-3">
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+            <h3 class="sw-h4 font-display text-ink dark:text-cream">
               {{ t('vendors.returnDetails') }}
             </h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
+            <p class="text-sm text-stone-500 dark:text-stone-400 font-mono sw-tabular">
               Return #{{ returnData?.id?.slice(-6) }}
             </p>
           </div>
-          <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <button @click="$emit('close')" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-300">
             <X class="h-5 w-5" />
           </button>
         </div>
@@ -21,49 +21,49 @@
           <div class="lg:col-span-2 space-y-6">
             <!-- Basic Info -->
             <div class="card">
-              <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Return Information</h4>
+              <h4 class="sw-h4 font-display text-ink dark:text-cream mb-4">Return Information</h4>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Vendor</label>
-                  <div class="text-sm text-gray-900 dark:text-white">
+                  <label class="sw-eyebrow block">Vendor</label>
+                  <div class="text-sm text-ink dark:text-cream">
                     {{ returnData?.expand?.vendor?.contact_person || returnData?.expand?.vendor?.name || 'Unknown Vendor' }}
                   </div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Return Date</label>
-                  <div class="text-sm text-gray-900 dark:text-white">
+                  <label class="sw-eyebrow block">Return Date</label>
+                  <div class="text-sm text-ink dark:text-cream">
                     {{ formatDate(returnData?.return_date || '') }}
                   </div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reason</label>
-                  <div class="text-sm text-gray-900 dark:text-white">
+                  <label class="sw-eyebrow block">Reason</label>
+                  <div class="text-sm text-ink dark:text-cream">
                     {{ t(`vendors.returnReasons.${returnData?.reason}`) }}
                   </div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                  <label class="sw-eyebrow block">Status</label>
                   <span :class="getStatusClass(returnData?.status || '')">
                     {{ t(`vendors.returnStatuses.${returnData?.status}`) }}
                   </span>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Total Return Amount</label>
-                  <div class="text-lg font-semibold text-gray-900 dark:text-white">
+                  <label class="sw-eyebrow block">Total Return Amount</label>
+                  <div class="sw-stat font-display text-ink dark:text-cream font-mono sw-tabular">
                     ₹{{ returnData?.total_return_amount?.toFixed(2) }}
                   </div>
                 </div>
                 <div v-if="returnData?.actual_refund_amount">
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Refunded Amount</label>
-                  <div class="text-lg font-semibold text-green-600 dark:text-green-400">
+                  <label class="sw-eyebrow block">Refunded Amount</label>
+                  <div class="sw-stat font-display text-forest-600 dark:text-forest-400 font-mono sw-tabular">
                     ₹{{ returnData.actual_refund_amount.toFixed(2) }}
                   </div>
                 </div>
               </div>
 
               <div v-if="returnData?.notes" class="mt-4">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
-                <div class="text-sm text-gray-900 dark:text-white mt-1 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <label class="sw-eyebrow block">Notes</label>
+                <div class="text-sm text-ink dark:text-cream mt-1 p-3 bg-cream-2 dark:bg-ink-2 rounded-lg">
                   {{ returnData.notes }}
                 </div>
               </div>
@@ -71,19 +71,19 @@
 
             <!-- Return Items -->
             <div class="card">
-              <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Return Items</h4>
+              <h4 class="sw-h4 font-display text-ink dark:text-cream mb-4">Return Items</h4>
               <div class="space-y-4">
-                <div 
-                  v-for="item in returnItems" 
+                <div
+                  v-for="item in returnItems"
                   :key="item.id"
-                  class="border border-gray-200 dark:border-gray-600 rounded-lg p-4"
+                  class="border border-stone-200 dark:border-ink-4 rounded-xl p-4"
                 >
                   <div class="flex justify-between items-start mb-2">
                     <div>
-                      <h5 class="font-medium text-gray-900 dark:text-white">
+                      <h5 class="font-medium text-ink dark:text-cream">
                         {{ item.expand?.delivery_item?.expand?.item?.name || 'Unknown Item' }}
                       </h5>
-                      <div class="text-sm text-gray-500 dark:text-gray-400">
+                      <div class="text-sm text-stone-500 dark:text-stone-400">
                         Original delivery: {{ formatDate(item.expand?.delivery_item?.expand?.delivery?.delivery_date || '') }}
                       </div>
                     </div>
@@ -94,39 +94,39 @@
 
                   <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <span class="text-gray-500 dark:text-gray-400">Quantity Returned:</span>
-                      <div class="font-medium text-gray-900 dark:text-white">
+                      <span class="text-stone-500 dark:text-stone-400">Quantity Returned:</span>
+                      <div class="font-medium text-ink dark:text-cream font-mono sw-tabular">
                         {{ item.quantity_returned }} {{ item.expand?.delivery_item?.expand?.item?.unit || 'units' }}
                       </div>
                     </div>
                     <div>
-                      <span class="text-gray-500 dark:text-gray-400">Return Rate:</span>
-                      <div class="font-medium text-gray-900 dark:text-white">
+                      <span class="text-stone-500 dark:text-stone-400">Return Rate:</span>
+                      <div class="font-medium text-ink dark:text-cream font-mono sw-tabular">
                         ₹{{ item.return_rate.toFixed(2) }}
                       </div>
                     </div>
                     <div>
-                      <span class="text-gray-500 dark:text-gray-400">Return Amount:</span>
-                      <div class="font-medium text-gray-900 dark:text-white">
+                      <span class="text-stone-500 dark:text-stone-400">Return Amount:</span>
+                      <div class="font-medium text-ink dark:text-cream font-mono sw-tabular">
                         ₹{{ item.return_amount.toFixed(2) }}
                       </div>
                     </div>
                     <div>
-                      <span class="text-gray-500 dark:text-gray-400">Original Price:</span>
-                      <div class="font-medium text-gray-500 dark:text-gray-400">
+                      <span class="text-stone-500 dark:text-stone-400">Original Price:</span>
+                      <div class="font-medium text-stone-500 dark:text-stone-400 font-mono sw-tabular">
                         ₹{{ item.expand?.delivery_item?.unit_price?.toFixed(2) }}
                       </div>
                     </div>
                   </div>
 
-                  <div v-if="item.item_notes" class="mt-3 p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm">
-                    <span class="text-gray-500 dark:text-gray-400">Notes:</span>
+                  <div v-if="item.item_notes" class="mt-3 p-2 bg-cream-2 dark:bg-ink-2 rounded text-sm">
+                    <span class="text-stone-500 dark:text-stone-400">Notes:</span>
                     {{ item.item_notes }}
                   </div>
                 </div>
 
-                <div v-if="returnItems.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <Package class="mx-auto h-12 w-12 text-gray-400 mb-2" />
+                <div v-if="returnItems.length === 0" class="text-center py-8 text-stone-500 dark:text-stone-400">
+                  <Package class="mx-auto h-12 w-12 text-stone-400 mb-2" />
                   No return items found.
                 </div>
               </div>
@@ -134,12 +134,12 @@
 
             <!-- Photos -->
             <div v-if="returnData?.photos && returnData.photos.length > 0" class="card">
-              <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Photos</h4>
+              <h4 class="sw-h4 font-display text-ink dark:text-cream mb-4">Photos</h4>
               <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div 
-                  v-for="(photo, index) in returnData.photos" 
+                <div
+                  v-for="(photo, index) in returnData.photos"
                   :key="index"
-                  class="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700"
+                  class="aspect-square rounded-lg overflow-hidden bg-stone-100 dark:bg-ink-2"
                 >
                   <img 
                     :src="getPhotoUrl(photo)" 
@@ -156,39 +156,39 @@
           <div class="space-y-6">
             <!-- Quick Actions -->
             <div class="card">
-              <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Actions</h4>
+              <h4 class="sw-h4 font-display text-ink dark:text-cream mb-4">Actions</h4>
               <div class="space-y-3">
-                <button 
-                  v-if="returnData?.status === 'initiated'" 
+                <button
+                  v-if="returnData?.status === 'initiated'"
                   @click="showApprovalModal = true"
-                  class="w-full btn-primary bg-green-600 hover:bg-green-700"
+                  class="w-full btn-primary bg-forest-600 hover:bg-forest-700"
                 >
                   <Check class="mr-2 h-4 w-4" />
                   {{ t('vendors.approveReturn') }}
                 </button>
 
-                <button 
-                  v-if="returnData?.status === 'initiated'" 
+                <button
+                  v-if="returnData?.status === 'initiated'"
                   @click="showRejectionModal = true"
-                  class="w-full btn-outline border-red-200 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
+                  class="w-full btn-outline border-clay-200 text-clay-600 hover:bg-clay-50 dark:border-clay-700 dark:text-clay-400 dark:hover:bg-clay-900/20"
                 >
                   <X class="mr-2 h-4 w-4" />
                   {{ t('vendors.rejectReturn') }}
                 </button>
 
-                <button 
-                  v-if="returnData?.status === 'approved'" 
+                <button
+                  v-if="returnData?.status === 'approved'"
                   @click="handleComplete"
-                  class="w-full btn-primary bg-blue-600 hover:bg-blue-700"
+                  class="w-full btn-primary"
                 >
                   <CheckCircle class="mr-2 h-4 w-4" />
                   {{ t('vendors.completeReturn') }}
                 </button>
 
-                <button 
-                  v-if="returnData?.status === 'approved' || returnData?.status === 'completed'" 
+                <button
+                  v-if="returnData?.status === 'approved' || returnData?.status === 'completed'"
                   @click="$emit('refund')"
-                  class="w-full btn-primary bg-purple-600 hover:bg-purple-700"
+                  class="w-full btn-primary"
                 >
                   <DollarSign class="mr-2 h-4 w-4" />
                   {{ t('vendors.processRefund') }}
@@ -198,48 +198,48 @@
 
             <!-- Status History -->
             <div class="card">
-              <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Status History</h4>
+              <h4 class="sw-h4 font-display text-ink dark:text-cream mb-4">Status History</h4>
               <div class="space-y-3">
                 <div class="flex items-center">
-                  <div class="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
+                  <div class="w-2 h-2 bg-amber-500 rounded-full mr-3"></div>
                   <div class="text-sm">
-                    <div class="font-medium text-gray-900 dark:text-white">Return Initiated</div>
-                    <div class="text-gray-500 dark:text-gray-400">
+                    <div class="font-medium text-ink dark:text-cream">Return Initiated</div>
+                    <div class="text-stone-500 dark:text-stone-400">
                       {{ formatDate(returnData?.created || '') }}
                     </div>
                   </div>
                 </div>
 
                 <div v-if="returnData?.approved_at" class="flex items-center">
-                  <div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+                  <div class="w-2 h-2 rounded-full mr-3" :class="returnData.status === 'rejected' ? 'bg-clay-500' : 'bg-forest-500'"></div>
                   <div class="text-sm">
-                    <div class="font-medium text-gray-900 dark:text-white">
+                    <div class="font-medium text-ink dark:text-cream">
                       {{ returnData.status === 'rejected' ? 'Rejected' : 'Approved' }}
                     </div>
-                    <div class="text-gray-500 dark:text-gray-400">
+                    <div class="text-stone-500 dark:text-stone-400">
                       {{ formatDate(returnData.approved_at) }}
                     </div>
-                    <div v-if="returnData.expand?.approved_by" class="text-xs text-gray-400">
+                    <div v-if="returnData.expand?.approved_by" class="text-xs text-stone-500 dark:text-stone-400">
                       by {{ returnData.expand.approved_by.name }}
                     </div>
                   </div>
                 </div>
 
                 <div v-if="returnData?.completion_date" class="flex items-center">
-                  <div class="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
+                  <div class="w-2 h-2 bg-forest-500 rounded-full mr-3"></div>
                   <div class="text-sm">
-                    <div class="font-medium text-gray-900 dark:text-white">Completed</div>
-                    <div class="text-gray-500 dark:text-gray-400">
+                    <div class="font-medium text-ink dark:text-cream">Completed</div>
+                    <div class="text-stone-500 dark:text-stone-400">
                       {{ formatDate(returnData.completion_date) }}
                     </div>
                   </div>
                 </div>
 
                 <div v-if="returnData?.status === 'refunded'" class="flex items-center">
-                  <div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+                  <div class="w-2 h-2 bg-forest-500 rounded-full mr-3"></div>
                   <div class="text-sm">
-                    <div class="font-medium text-gray-900 dark:text-white">Refunded</div>
-                    <div class="text-gray-500 dark:text-gray-400">
+                    <div class="font-medium text-ink dark:text-cream">Refunded</div>
+                    <div class="text-stone-500 dark:text-stone-400 font-mono sw-tabular">
                       ₹{{ returnData.actual_refund_amount?.toFixed(2) }}
                     </div>
                   </div>
@@ -249,73 +249,73 @@
 
             <!-- Credit Note Usage (only if processing_option is credit_note) -->
             <div v-if="returnData?.processing_option === 'credit_note'" class="card">
-              <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Credit Note Usage</h4>
-              
+              <h4 class="sw-h4 font-display text-ink dark:text-cream mb-4">Credit Note Usage</h4>
+
               <!-- Credit Note Details -->
               <div v-if="creditNotes.length > 0" class="space-y-4">
-                <div v-for="creditNote in creditNotes" :key="creditNote.id" class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                <div v-for="creditNote in creditNotes" :key="creditNote.id" class="border border-stone-200 dark:border-ink-4 rounded-xl p-4">
                   <div class="flex justify-between items-start mb-3">
                     <div>
-                      <div class="font-medium text-gray-900 dark:text-white">
+                      <div class="font-medium text-ink dark:text-cream font-mono sw-tabular">
                         {{ creditNote.reference || `CN-${creditNote.id?.slice(-6)}` }}
                       </div>
-                      <div class="text-sm text-gray-500 dark:text-gray-400">
+                      <div class="text-sm text-stone-500 dark:text-stone-400">
                         Created: {{ formatDate(creditNote.issue_date) }}
                       </div>
                     </div>
                     <div class="text-right">
-                      <div class="text-sm font-medium text-blue-600 dark:text-blue-400">
+                      <div class="text-sm font-medium text-ink dark:text-cream font-mono sw-tabular">
                         ₹{{ creditNote.credit_amount.toFixed(2) }}
                       </div>
-                      <div class="text-xs text-gray-500 dark:text-gray-400">
+                      <div class="text-xs text-stone-500 dark:text-stone-400 font-mono sw-tabular">
                         Balance: ₹{{ creditNote.balance.toFixed(2) }}
                       </div>
                     </div>
                   </div>
-                  
+
                   <!-- Usage History -->
                   <div v-if="creditNoteUsage.length > 0" class="mt-3">
-                    <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Used In Payments:</h5>
+                    <h5 class="sw-eyebrow text-stone-600 dark:text-stone-300 mb-2">Used In Payments:</h5>
                     <div class="space-y-2">
-                      <div 
-                        v-for="usage in creditNoteUsage.filter(u => u.payment.credit_notes?.includes(creditNote.id!))" 
+                      <div
+                        v-for="usage in creditNoteUsage.filter(u => u.payment.credit_notes?.includes(creditNote.id!))"
                         :key="usage.payment.id"
-                        class="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm"
+                        class="flex justify-between items-center p-2 bg-cream-2 dark:bg-ink-2 rounded text-sm"
                       >
                         <div>
-                          <div class="font-medium text-gray-900 dark:text-white">
+                          <div class="font-medium text-ink dark:text-cream">
                             Payment to {{ usage.payment.expand?.vendor?.contact_person }}
                           </div>
-                          <div class="text-xs text-gray-500 dark:text-gray-400">
+                          <div class="text-xs text-stone-500 dark:text-stone-400">
                             {{ formatDate(usage.payment.payment_date) }} • {{ usage.payment.reference || 'No reference' }}
                           </div>
                         </div>
-                        <div class="text-green-600 dark:text-green-400 font-medium">
+                        <div class="text-forest-600 dark:text-forest-400 font-medium font-mono sw-tabular">
                           -₹{{ usage.usedAmount.toFixed(2) }}
                         </div>
                       </div>
                     </div>
                   </div>
-                  
+
                   <!-- No usage message -->
-                  <div v-else class="mt-3 p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm text-gray-500 dark:text-gray-400 text-center">
+                  <div v-else class="mt-3 p-2 bg-cream-2 dark:bg-ink-2 rounded text-sm text-stone-500 dark:text-stone-400 text-center">
                     Credit note not yet used in any payments
                   </div>
                 </div>
               </div>
-              
+
               <!-- No credit notes message -->
-              <div v-else class="text-center py-8 text-gray-500 dark:text-gray-400">
+              <div v-else class="text-center py-8 text-stone-500 dark:text-stone-400">
                 <div class="text-sm">No credit notes found for this return</div>
               </div>
             </div>
 
             <!-- Approval Notes -->
             <div v-if="returnData?.approval_notes" class="card">
-              <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              <h4 class="sw-h4 font-display text-ink dark:text-cream mb-4">
                 {{ returnData.status === 'rejected' ? 'Rejection Notes' : 'Approval Notes' }}
               </h4>
-              <div class="text-sm text-gray-900 dark:text-white p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div class="text-sm text-ink dark:text-cream p-3 bg-cream-2 dark:bg-ink-2 rounded-lg">
                 {{ returnData.approval_notes }}
               </div>
             </div>
@@ -325,24 +325,24 @@
     </div>
 
     <!-- Approval Modal -->
-    <div v-if="showApprovalModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-60">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <div v-if="showApprovalModal" class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-60">
+      <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4">
         <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Approve Return</h3>
+          <h3 class="sw-h4 font-display text-ink dark:text-cream mb-4">Approve Return</h3>
           <form @submit.prevent="handleApprove">
             <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="sw-eyebrow block">
                 {{ t('vendors.approvalNotes') }} (Optional)
               </label>
-              <textarea 
-                v-model="approvalNotes" 
-                class="input mt-1" 
-                rows="3" 
+              <textarea
+                v-model="approvalNotes"
+                class="input mt-1"
+                rows="3"
                 placeholder="Add approval notes..."
               ></textarea>
             </div>
             <div class="flex space-x-3">
-              <button type="submit" :disabled="loading" class="flex-1 btn-primary bg-green-600 hover:bg-green-700">
+              <button type="submit" :disabled="loading" class="flex-1 btn-primary bg-forest-600 hover:bg-forest-700">
                 <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
                 Approve
               </button>
@@ -356,25 +356,25 @@
     </div>
 
     <!-- Rejection Modal -->
-    <div v-if="showRejectionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-60">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <div v-if="showRejectionModal" class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-60">
+      <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4">
         <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Reject Return</h3>
+          <h3 class="sw-h4 font-display text-ink dark:text-cream mb-4">Reject Return</h3>
           <form @submit.prevent="handleReject">
             <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="sw-eyebrow block">
                 {{ t('vendors.rejectionNotes') }} *
               </label>
-              <textarea 
-                v-model="rejectionNotes" 
-                class="input mt-1" 
-                rows="3" 
+              <textarea
+                v-model="rejectionNotes"
+                class="input mt-1"
+                rows="3"
                 placeholder="Please provide reason for rejection..."
                 required
               ></textarea>
             </div>
             <div class="flex space-x-3">
-              <button type="submit" :disabled="loading || !rejectionNotes.trim()" class="flex-1 btn-primary bg-red-600 hover:bg-red-700">
+              <button type="submit" :disabled="loading || !rejectionNotes.trim()" class="flex-1 btn-primary bg-clay-600 hover:bg-clay-700">
                 <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
                 Reject
               </button>
@@ -388,7 +388,7 @@
     </div>
 
     <!-- Photo Modal -->
-    <div v-if="showPhotoModal" class="fixed inset-0 bg-black bg-opacity-75 overflow-y-auto h-full w-full z-60" @click="showPhotoModal = false">
+    <div v-if="showPhotoModal" class="fixed inset-0 bg-ink/80 overflow-y-auto h-full w-full z-60" @click="showPhotoModal = false">
       <div class="relative top-20 mx-auto max-w-4xl">
         <img 
           :src="getPhotoUrl(selectedPhoto)" 

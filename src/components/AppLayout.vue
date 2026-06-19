@@ -1,20 +1,20 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  <div class="min-h-screen bg-cream dark:bg-ink">
     <!-- PWA Prompts are now in App.vue for all users -->
 
     <!-- Sidebar -->
     <div
-      class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0"
+      class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-ink-3 shadow-card transform transition-transform duration-300 ease-in-out lg:translate-x-0"
       :class="{ '-translate-x-full': !sidebarOpen, 'translate-x-0': sidebarOpen }">
-      <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between h-16 px-4 border-b border-stone-200 dark:border-ink-4">
         <router-link class="flex items-center" to="/">
           <img src="/logo.webp" alt="SiteWise Logo" class="h-12 rounded-lg" />
-          <span class="ml-2 text-xl font-bold leading-tight text-gray-900 dark:text-white">Site</span>
-          <span class="text-xl font-bold leading-tight text-blue-600">Wise</span>
+          <span class="ml-2 font-display text-xl font-bold leading-tight text-ink dark:text-cream">Site</span>
+          <span class="font-display text-xl font-bold leading-tight text-amber-700 dark:text-amber-400">Wise</span>
         </router-link>
         <!-- Close button for mobile -->
         <button @click="sidebarOpen = false"
-          class="lg:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+          class="lg:hidden p-2 rounded-md text-stone-600 dark:text-stone-300 hover:text-ink dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4"
           :aria-label="t('nav.closeSidebar')">
           <X class="h-5 w-5" />
         </button>
@@ -23,8 +23,8 @@
       <nav class="mt-4 px-4" role="navigation" :aria-label="t('nav.mainNavigation')">
         <div class="space-y-2">
           <router-link v-for="item in navigation" :key="item.name" :to="item.to"
-            class="flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200"
-            :class="item.current ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'"
+            class="flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors duration-200"
+            :class="item.current ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300' : 'text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 hover:text-ink dark:hover:text-cream'"
             @click="sidebarOpen = false" :aria-current="item.current ? 'page' : undefined"
             :data-keyboard-shortcut="item.shortcut">
             <component :is="item.icon" class="mr-3 h-5 w-5" :aria-hidden="true" />
@@ -35,13 +35,13 @@
     </div>
 
     <!-- Overlay for mobile -->
-    <div v-if="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-gray-600 bg-opacity-50 z-40 lg:hidden">
+    <div v-if="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black/60 z-40 lg:hidden">
     </div>
 
     <!-- Main content -->
     <div class="lg:pl-64">
       <!-- Top bar -->
-      <div class="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <div class="sticky top-0 z-40 bg-cream dark:bg-ink border-b border-stone-200 dark:border-ink-4">
         <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
           <div class="flex items-center space-x-4">
             <!-- Site Selector for mobile (hamburger menu removed - using bottom nav) -->
@@ -52,7 +52,7 @@
             <!-- Quick action buttons in header for desktop -->
             <div class="hidden md:flex items-center space-x-2">
               <button v-for="action in baseFabActions" :key="action.type" @click="quickAction(action.type)"
-                class="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
+                class="flex items-center px-3 py-2 text-sm text-stone-700 dark:text-stone-300 bg-stone-100 dark:bg-ink-4 rounded-md hover:bg-stone-200 dark:hover:bg-ink-2 transition-colors duration-200 ease-snap active:scale-[0.98]"
                 :aria-label="t(action.labelKey)">
                 <component :is="action.icon" class="mr-1 h-4 w-4" :aria-hidden="true" />
                 <span class="text-sm font-medium">{{ t(action.labelKey) }}</span>
@@ -74,23 +74,23 @@
 
             <div class="relative inline-block" ref="userMenuRef">
               <button @click="userMenuOpen = !userMenuOpen"
-                class="flex items-center justify-between p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation w-full md:w-auto"
-                :class="{ 'bg-gray-100 dark:bg-gray-700': userMenuOpen }" :aria-expanded="userMenuOpen"
+                class="flex items-center justify-between p-2 rounded-md text-stone-600 hover:text-ink hover:bg-stone-100 dark:text-stone-300 dark:hover:text-cream dark:hover:bg-ink-4 transition-colors duration-200 ease-snap active:scale-[0.98] touch-manipulation w-full md:w-auto"
+                :class="{ 'bg-stone-100 dark:bg-ink-4': userMenuOpen }" :aria-expanded="userMenuOpen"
                 aria-haspopup="menu" :aria-label="t('nav.userMenu')">
                 <div class="flex items-center">
                   <div class="relative">
                     <div
-                      class="h-8 w-8 rounded-full bg-primary-600 dark:bg-primary-500 flex items-center justify-center">
-                      <span class="text-white font-medium">{{ userInitials }}</span>
+                      class="h-8 w-8 rounded-full bg-amber-500 flex items-center justify-center">
+                      <span class="font-display text-ink font-bold text-sm">{{ userInitials }}</span>
                     </div>
                     <!-- Invitation Badge -->
                     <div v-if="receivedInvitationsCount > 0"
-                      class="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full flex items-center justify-center">
-                      <span class="text-xs font-bold text-white">{{ receivedInvitationsCount > 9 ? '9+' :
+                      class="absolute -top-1 -right-1 h-5 w-5 bg-clay-500 rounded-full flex items-center justify-center">
+                      <span class="font-mono text-xs font-bold text-white">{{ receivedInvitationsCount > 9 ? '9+' :
                         receivedInvitationsCount }}</span>
                     </div>
                   </div>
-                  <span class="hidden md:block ml-2 text-gray-700 dark:text-gray-300 font-medium text-sm">{{ user?.name }}</span>
+                  <span class="hidden md:block ml-2 text-stone-700 dark:text-stone-300 font-medium text-sm">{{ user?.name }}</span>
                 </div>
                 <ChevronDown class="h-3 w-3 ml-1 md:ml-2 transition-transform duration-200"
                   :class="{ 'rotate-180': userMenuOpen }" />
@@ -98,27 +98,27 @@
 
               <div v-if="userMenuOpen"
                 ref="userMenuRef"
-                class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50"
+                class="absolute right-0 mt-2 w-48 bg-white dark:bg-ink-3 rounded-lg shadow-modal border border-stone-200 dark:border-ink-4 z-50"
                 role="menu"
                 tabindex="-1"
                 @keydown="handleUserMenuKeydown"
                 @click="handleUserMenuClick">
                 <!-- Invitations Section -->
                 <div v-if="receivedInvitationsCount > 0"
-                  class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                  class="px-4 py-3 border-b border-stone-200 dark:border-ink-4">
                   <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
-                      <div class="p-1 bg-blue-100 dark:bg-blue-900/30 rounded">
-                        <Mail class="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                      <div class="p-1 bg-amber-100 dark:bg-amber-900/30 rounded-md">
+                        <Mail class="h-3 w-3 text-amber-700 dark:text-amber-400" />
                       </div>
-                      <span class="text-xs font-medium text-gray-900 dark:text-white">Invitations</span>
+                      <span class="text-xs font-medium text-ink dark:text-cream">Invitations</span>
                     </div>
                     <span
-                      class="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-xs px-2 py-0.5 rounded-full">{{
+                      class="bg-clay-100 dark:bg-clay-900/30 text-clay-800 dark:text-clay-300 font-mono text-xs px-2 py-0.5 rounded-full">{{
                       receivedInvitationsCount }}</span>
                   </div>
                   <button @click="goToInvites"
-                    class="w-full text-left text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors">
+                    class="w-full text-left text-xs font-medium text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors">
                     {{ t('users.viewAllInvitations') }}
                   </button>
                 </div>
@@ -126,7 +126,7 @@
                 <!-- User Menu Items -->
                 <div class="py-2 max-h-60 overflow-y-auto">
                   <button @click="goToProfile"
-                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300 focus:bg-gray-50 dark:focus:bg-gray-700 focus:outline-none"
+                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-stone-50 dark:hover:bg-ink-4 transition-colors duration-200 touch-manipulation group text-stone-700 dark:text-stone-300 focus:bg-stone-50 dark:focus:bg-ink-4 focus:outline-none"
                     role="menuitem"
                     tabindex="-1">
                     <User class="mr-3 h-4 w-4 md:h-5 md:w-5" />
@@ -135,7 +135,7 @@
                     </div>
                   </button>
                   <button v-if="canManageUsers" @click="goToUserManagement"
-                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300 focus:bg-gray-50 dark:focus:bg-gray-700 focus:outline-none"
+                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-stone-50 dark:hover:bg-ink-4 transition-colors duration-200 touch-manipulation group text-stone-700 dark:text-stone-300 focus:bg-stone-50 dark:focus:bg-ink-4 focus:outline-none"
                     role="menuitem"
                     tabindex="-1">
                     <Users class="mr-3 h-4 w-4 md:h-5 md:w-5" />
@@ -155,7 +155,7 @@
                   </button>
                   -->
                   <button @click="restartTour"
-                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300 focus:bg-gray-50 dark:focus:bg-gray-700 focus:outline-none"
+                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-stone-50 dark:hover:bg-ink-4 transition-colors duration-200 touch-manipulation group text-stone-700 dark:text-stone-300 focus:bg-stone-50 dark:focus:bg-ink-4 focus:outline-none"
                     role="menuitem"
                     tabindex="-1">
                     <HelpCircle class="mr-3 h-4 w-4 md:h-5 md:w-5" />
@@ -164,7 +164,7 @@
                     </div>
                   </button>
                   <button @click="handleLogout"
-                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation group text-gray-700 dark:text-gray-300 focus:bg-gray-50 dark:focus:bg-gray-700 focus:outline-none"
+                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-stone-50 dark:hover:bg-ink-4 transition-colors duration-200 touch-manipulation group text-stone-700 dark:text-stone-300 focus:bg-stone-50 dark:focus:bg-ink-4 focus:outline-none"
                     role="menuitem"
                     tabindex="-1">
                     <LogOut class="mr-3 h-4 w-4 md:h-5 md:w-5" />
@@ -175,14 +175,14 @@
                 </div>
 
                 <!-- App Version -->
-                <div class="px-4 py-2 border-t border-gray-200 dark:border-gray-700">
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ t('common.version') }}: {{ appVersion }}
+                <div class="px-4 py-2 border-t border-stone-200 dark:border-ink-4">
+                  <p class="text-xs text-stone-500 dark:text-stone-400">
+                    {{ t('common.version') }}: <span class="font-mono sw-tabular">{{ appVersion }}</span>
                   </p>
                 </div>
 
                 <!-- Mobile Controls Section -->
-                <div class="block md:hidden border-t border-gray-200 dark:border-gray-700 mt-1">
+                <div class="block md:hidden border-t border-stone-200 dark:border-ink-4 mt-1">
                   <!-- Language and Theme side by side -->
                   <div class="flex justify-center items-center space-x-2">
                     <LanguageSelector />
@@ -217,14 +217,14 @@
       >
         <div v-if="fabMenuOpen" class="absolute bottom-16 right-0 mb-2 space-y-2 min-w-max">
           <button v-for="(action, index) in fabActions" :key="action.type" @click="quickAction(action.type)" :class="[
-            'flex items-center w-full px-4 py-3 rounded-xl shadow-lg border transition-all duration-200 touch-feedback',
+            'flex items-center w-full px-4 py-3 rounded-lg shadow-card border transition-all duration-200 ease-snap active:scale-[0.98] touch-feedback',
             index === 0 && action.type === currentRouteFabAction?.type
-              ? 'bg-primary-600 dark:bg-primary-500 text-white border-primary-700 dark:border-primary-400'
-              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700'
+              ? 'bg-amber-500 text-ink border-amber-600'
+              : 'bg-white dark:bg-ink-3 text-stone-700 dark:text-stone-300 border-stone-200 dark:border-ink-4'
           ]">
             <component :is="action.icon" :class="[
               'mr-3 h-5 w-5',
-              index === 0 && action.type === currentRouteFabAction?.type ? 'text-white' : ''
+              index === 0 && action.type === currentRouteFabAction?.type ? 'text-ink' : ''
             ]" />
             <span class="text-sm font-medium">{{ t(action.labelKey) }}</span>
           </button>
@@ -233,9 +233,9 @@
 
       <!-- FAB Button -->
       <button @click="fabMenuOpen = !fabMenuOpen" :class="[
-        'w-14 h-14 text-white rounded-full shadow-lg transition-all duration-200 touch-feedback flex items-center justify-center',
+        'w-14 h-14 text-ink rounded-xl shadow-card transition-all duration-200 ease-snap active:scale-[0.98] touch-feedback flex items-center justify-center',
         { 'rotate-45': fabMenuOpen },
-        'bg-primary-600 dark:bg-primary-500'
+        'bg-amber-500 hover:bg-amber-600'
       ]" :aria-label="t('nav.quickActions')" :aria-expanded="fabMenuOpen" aria-haspopup="menu">
         <Plus class="h-6 w-6" />
       </button>
@@ -250,7 +250,7 @@
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
-      <div v-if="fabMenuOpen && !isAnyModalOpen" @click="fabMenuOpen = false" class="lg:hidden fixed inset-0 bg-black/20 z-30"></div>
+      <div v-if="fabMenuOpen && !isAnyModalOpen" @click="fabMenuOpen = false" class="lg:hidden fixed inset-0 bg-black/40 z-30"></div>
     </Transition>
     
     <!-- Keyboard Shortcut Tooltip System -->
@@ -260,7 +260,7 @@
     <button 
       v-if="isDev"
       @click="showUpdateDuringDev"
-      class="fixed bottom-20 right-4 bg-red-500 text-white p-2 rounded-full shadow-lg"
+      class="fixed bottom-20 right-4 bg-clay-500 text-white p-2 rounded-full shadow-card"
     >
       Test Update
     </button>

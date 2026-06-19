@@ -3,12 +3,12 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-8">
       <div class="flex items-center space-x-4">
-        <button @click="goBack" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-          <ArrowLeft class="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        <button @click="goBack" class="p-2 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors">
+          <ArrowLeft class="h-5 w-5 text-stone-600 dark:text-stone-400" />
         </button>
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ service.name }}</h1>
-          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Service Details & Booking History</p>
+          <h1 class="sw-h2 font-display text-ink dark:text-cream">{{ service.name }}</h1>
+          <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">Service Details & Booking History</p>
         </div>
       </div>
       <div class="flex items-center space-x-3">
@@ -27,27 +27,27 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
       <!-- Service Information -->
       <div class="card">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Service Information</h2>
+        <h2 class="sw-h4 font-display text-ink dark:text-cream mb-4">Service Information</h2>
         <div class="space-y-3">
           <div>
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Name:</span>
-            <p class="text-gray-900 dark:text-white">{{ service.name }}</p>
+            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">Name:</span>
+            <p class="text-ink dark:text-cream">{{ service.name }}</p>
           </div>
           <div v-if="service.description">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Description:</span>
-            <p class="text-gray-900 dark:text-white">{{ service.description }}</p>
+            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">Description:</span>
+            <p class="text-ink dark:text-cream">{{ service.description }}</p>
           </div>
           <div>
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Type:</span>
-            <span class="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300 text-xs rounded-full capitalize">{{ service.service_type.replace('_', ' ') }}</span>
+            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">Type:</span>
+            <span class="sw-badge sw-badge--accent capitalize">{{ service.service_type.replace('_', ' ') }}</span>
           </div>
           <div>
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Unit:</span>
-            <p class="text-gray-900 dark:text-white">{{ service.unit }}</p>
+            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">Unit:</span>
+            <p class="text-ink dark:text-cream">{{ service.unit }}</p>
           </div>
           <div v-if="service.category">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Category:</span>
-            <span class="px-2 py-1 bg-secondary-100 dark:bg-secondary-900/30 text-secondary-800 dark:text-secondary-300 text-xs rounded-full">{{ service.category }}</span>
+            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">Category:</span>
+            <span class="sw-badge sw-badge--neutral">{{ service.category }}</span>
           </div>
         </div>
       </div>
@@ -55,38 +55,38 @@
       <!-- Booking Summary -->
       <div class="lg:col-span-2">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="card bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700">
+          <div class="card">
             <div class="flex items-center">
-              <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Calendar class="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <div class="p-2 bg-stone-100 dark:bg-ink-4 rounded-md">
+                <Calendar class="h-6 w-6 text-ink dark:text-cream" />
               </div>
               <div class="ml-4">
-                <p class="text-sm font-medium text-blue-700 dark:text-blue-300">Total Bookings</p>
-                <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ serviceBookings.length }}</p>
+                <p class="sw-eyebrow text-stone-500 dark:text-stone-400">Total Bookings</p>
+                <p class="sw-stat font-display text-ink dark:text-cream sw-tabular">{{ serviceBookings.length }}</p>
               </div>
             </div>
           </div>
 
-          <div class="card bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700">
+          <div class="card">
             <div class="flex items-center">
-              <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <Clock class="h-6 w-6 text-green-600 dark:text-green-400" />
+              <div class="p-2 bg-forest-100 dark:bg-forest-900/30 rounded-md">
+                <Clock class="h-6 w-6 text-forest-600 dark:text-forest-400" />
               </div>
               <div class="ml-4">
-                <p class="text-sm font-medium text-green-700 dark:text-green-300">Total Hours</p>
-                <p class="text-2xl font-bold text-green-900 dark:text-green-100">{{ totalHours }}</p>
+                <p class="sw-eyebrow text-stone-500 dark:text-stone-400">Total Hours</p>
+                <p class="sw-stat font-display text-ink dark:text-cream sw-tabular">{{ totalHours }}</p>
               </div>
             </div>
           </div>
 
-          <div class="card bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700">
+          <div class="card">
             <div class="flex items-center">
-              <div class="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                <DollarSign class="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+              <div class="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-md">
+                <DollarSign class="h-6 w-6 text-amber-700 dark:text-amber-400" />
               </div>
               <div class="ml-4">
-                <p class="text-sm font-medium text-yellow-700 dark:text-yellow-300">Avg. Rate</p>
-                <p class="text-2xl font-bold text-yellow-900 dark:text-yellow-100">₹{{ averageRate.toFixed(2) }}</p>
+                <p class="sw-eyebrow text-stone-500 dark:text-stone-400">Avg. Rate</p>
+                <p class="sw-stat font-display text-ink dark:text-cream sw-tabular">₹{{ averageRate.toFixed(2) }}</p>
               </div>
             </div>
           </div>
@@ -94,19 +94,19 @@
 
         <!-- Rate Range -->
         <div class="mt-6 card">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Rate Range</h3>
+          <h3 class="sw-h4 font-display text-ink dark:text-cream mb-4">Rate Range</h3>
           <div class="grid grid-cols-3 gap-4">
             <div class="text-center">
-              <p class="text-2xl font-bold text-green-600 dark:text-green-400">₹{{ minRate.toFixed(2) }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Lowest</p>
+              <p class="text-2xl font-bold font-mono sw-tabular text-forest-600 dark:text-forest-400">₹{{ minRate.toFixed(2) }}</p>
+              <p class="text-sm text-stone-600 dark:text-stone-400">Lowest</p>
             </div>
             <div class="text-center">
-              <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">₹{{ averageRate.toFixed(2) }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Average</p>
+              <p class="text-2xl font-bold font-mono sw-tabular text-ink dark:text-cream">₹{{ averageRate.toFixed(2) }}</p>
+              <p class="text-sm text-stone-600 dark:text-stone-400">Average</p>
             </div>
             <div class="text-center">
-              <p class="text-2xl font-bold text-red-600 dark:text-red-400">₹{{ maxRate.toFixed(2) }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Highest</p>
+              <p class="text-2xl font-bold font-mono sw-tabular text-clay-600 dark:text-clay-400">₹{{ maxRate.toFixed(2) }}</p>
+              <p class="text-sm text-stone-600 dark:text-stone-400">Highest</p>
             </div>
           </div>
         </div>
@@ -116,48 +116,48 @@
     <!-- Booking History -->
     <div class="card">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Booking History</h2>
-        <span class="text-sm text-gray-500 dark:text-gray-400">{{ serviceBookings.length }} bookings</span>
+        <h2 class="sw-h4 font-display text-ink dark:text-cream">Booking History</h2>
+        <span class="text-sm text-stone-500 dark:text-stone-400">{{ serviceBookings.length }} bookings</span>
       </div>
-      
+
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead class="bg-gray-50 dark:bg-gray-700">
+        <table class="min-w-full divide-y divide-stone-200 dark:divide-ink-4">
+          <thead class="bg-cream-2 dark:bg-ink-2">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Vendor</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Duration</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Rate</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Amount</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Progress</th>
+              <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">Date</th>
+              <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">Vendor</th>
+              <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">Duration</th>
+              <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">Rate</th>
+              <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">Total Amount</th>
+              <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">Progress</th>
             </tr>
           </thead>
-          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody class="bg-white dark:bg-ink-3 divide-y divide-stone-200 dark:divide-ink-4">
             <tr v-for="booking in serviceBookings" :key="booking.id">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-ink dark:text-cream">
                 {{ formatDate(booking.start_date) }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-ink dark:text-cream">
                 {{ booking.expand?.vendor?.name || 'Unknown Vendor' }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-mono sw-tabular text-ink dark:text-cream">
                 {{ booking.duration }} {{ service.unit }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-mono sw-tabular text-ink dark:text-cream">
                 ₹{{ booking.unit_rate.toFixed(2) }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-mono sw-tabular text-ink dark:text-cream">
                 ₹{{ booking.total_amount.toFixed(2) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center space-x-2">
-                  <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2 max-w-[100px]">
-                    <div 
-                      class="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300"
+                  <div class="flex-1 bg-stone-200 dark:bg-ink-4 rounded-full h-2 max-w-[100px]">
+                    <div
+                      class="bg-amber h-2 rounded-full transition-all duration-300"
                       :style="{ width: `${booking.percent_completed || 0}%` }"
                     ></div>
                   </div>
-                  <span class="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                  <span class="text-sm font-mono sw-tabular text-stone-600 dark:text-stone-400 font-medium">
                     {{ booking.percent_completed || 0 }}%
                   </span>
                 </div>
@@ -165,18 +165,18 @@
             </tr>
           </tbody>
         </table>
-        
+
         <div v-if="serviceBookings.length === 0" class="text-center py-12">
-          <Calendar class="mx-auto h-12 w-12 text-gray-400" />
-          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No bookings recorded</h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Start tracking by booking this service.</p>
+          <Calendar class="mx-auto h-12 w-12 text-stone-400" />
+          <h3 class="mt-2 text-sm font-medium text-ink dark:text-cream">No bookings recorded</h3>
+          <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">Start tracking by booking this service.</p>
         </div>
       </div>
     </div>
   </div>
   
   <div v-else class="flex items-center justify-center min-h-96">
-    <Loader2 class="h-8 w-8 animate-spin text-gray-400" />
+    <Loader2 class="h-8 w-8 animate-spin text-stone-400" />
   </div>
 </template>
 

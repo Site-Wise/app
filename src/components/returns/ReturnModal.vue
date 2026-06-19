@@ -1,12 +1,12 @@
 <template>
-  <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="$emit('close')" @keydown.esc="$emit('close')" tabindex="-1">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-20 lg:mb-4" @click.stop>
+  <div class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-[60]" @click="$emit('close')" @keydown.esc="$emit('close')" tabindex="-1">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 mb-20 lg:mb-4" @click.stop>
       <div class="mt-3">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+          <h3 class="sw-h4 font-display text-ink dark:text-cream">
             {{ isEdit ? t('vendors.editReturn') : t('vendors.createReturn') }}
           </h3>
-          <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <button @click="$emit('close')" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-300">
             <X class="h-5 w-5" />
           </button>
         </div>
@@ -14,7 +14,7 @@
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <!-- Vendor Selection -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="sw-eyebrow block">
               {{ t('common.vendor') }} *
             </label>
             <VendorSearchBox
@@ -33,7 +33,7 @@
 
           <!-- Return Date -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="sw-eyebrow block">
               {{ t('vendors.returnDate') }} *
             </label>
             <input v-model="form.return_date" type="date" required class="input mt-1" />
@@ -41,7 +41,7 @@
 
           <!-- Return Reason -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="sw-eyebrow block">
               {{ t('vendors.returnReason') }} *
             </label>
             <select v-model="form.reason" required class="input mt-1">
@@ -58,12 +58,12 @@
           <!-- Return Items -->
           <div>
             <div class="flex items-center justify-between mb-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="sw-eyebrow block">
                 {{ t('vendors.returnItems') }} *
               </label>
-              <button 
-                type="button" 
-                @click="addReturnItem" 
+              <button
+                type="button"
+                @click="addReturnItem"
                 class="btn-outline text-sm py-1 px-2"
                 :disabled="!form.vendor || loadingDeliveryItems"
               >
@@ -73,24 +73,24 @@
               </button>
             </div>
 
-            <div v-if="returnItems.length === 0" class="text-sm text-gray-500 dark:text-gray-400 py-4 text-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+            <div v-if="returnItems.length === 0" class="text-sm text-stone-500 dark:text-stone-400 py-4 text-center border-2 border-dashed border-stone-300 dark:border-ink-4 rounded-xl">
               No items selected. Click "Add Item" to select items to return.
             </div>
 
             <div v-else class="space-y-3">
-              <div 
-                v-for="(item, index) in returnItems" 
+              <div
+                v-for="(item, index) in returnItems"
                 :key="index"
-                class="border border-gray-200 dark:border-gray-600 rounded-lg p-3"
+                class="border border-stone-200 dark:border-ink-4 rounded-xl p-3"
               >
                 <div class="flex items-center justify-between mb-2">
-                  <h4 class="text-sm font-medium text-gray-900 dark:text-white">
+                  <h4 class="text-sm font-medium text-ink dark:text-cream">
                     {{ item.delivery_item_data?.expand?.item?.name || 'Unknown Item' }}
                   </h4>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     @click="removeReturnItem(index)"
-                    class="text-red-600 hover:text-red-500"
+                    class="text-clay-600 dark:text-clay-400 hover:text-clay-700 dark:hover:text-clay-300"
                   >
                     <Trash2 class="h-4 w-4" />
                   </button>
@@ -98,19 +98,19 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <label class="sw-eyebrow block">
                       Available Quantity
                     </label>
-                    <div class="text-sm text-gray-900 dark:text-white">
+                    <div class="text-sm text-ink dark:text-cream font-mono sw-tabular">
                       {{ getAvailableQuantity(item.delivery_item, item.delivery_item_data?.quantity || 0) }} {{ item.delivery_item_data?.expand?.item?.unit || 'units' }}
                     </div>
-                    <div v-if="deliveryItemsReturnInfo[item.delivery_item]?.totalReturned > 0" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <div v-if="deliveryItemsReturnInfo[item.delivery_item]?.totalReturned > 0" class="text-xs text-stone-500 dark:text-stone-400 mt-1">
                       ({{ deliveryItemsReturnInfo[item.delivery_item].totalReturned }} already returned)
                     </div>
                   </div>
 
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <label class="sw-eyebrow block">
                       {{ t('vendors.quantityReturned') }} *
                     </label>
                     <input
@@ -119,21 +119,21 @@
                       step="0.01"
                       :max="getAvailableQuantity(item.delivery_item, item.delivery_item_data?.quantity || 0)"
                       required
-                      class="input text-sm"
+                      class="input text-sm font-mono sw-tabular"
                       @input="updateReturnAmount(index)"
                     />
                   </div>
 
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <label class="sw-eyebrow block">
                       Return Rate (per unit)
                     </label>
-                    <input 
-                      v-model.number="item.return_rate" 
-                      type="number" 
-                      step="0.01" 
-                      required 
-                      class="input text-sm"
+                    <input
+                      v-model.number="item.return_rate"
+                      type="number"
+                      step="0.01"
+                      required
+                      class="input text-sm font-mono sw-tabular"
                       @input="updateReturnAmount(index)"
                     />
                   </div>
@@ -141,7 +141,7 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <label class="sw-eyebrow block">
                       {{ t('vendors.itemCondition') }} *
                     </label>
                     <select v-model="item.condition" required class="input text-sm">
@@ -154,17 +154,17 @@
                   </div>
 
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <label class="sw-eyebrow block">
                       Return Amount
                     </label>
-                    <div class="text-sm font-medium text-gray-900 dark:text-white py-2">
+                    <div class="text-sm font-medium text-ink dark:text-cream font-mono sw-tabular py-2">
                       ₹{{ item.return_amount.toFixed(2) }}
                     </div>
                   </div>
                 </div>
 
                 <div class="mt-3">
-                  <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <label class="sw-eyebrow block">
                     Item Notes
                   </label>
                   <textarea 
@@ -179,12 +179,12 @@
           </div>
 
           <!-- Total Return Amount -->
-          <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+          <div class="bg-cream-2 dark:bg-ink-2 rounded-xl p-3">
             <div class="flex justify-between items-center">
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span class="sw-eyebrow text-stone-600 dark:text-stone-300">
                 {{ t('vendors.totalReturnAmount') }}
               </span>
-              <span class="text-lg font-bold text-gray-900 dark:text-white">
+              <span class="sw-stat font-display text-ink dark:text-cream font-mono sw-tabular">
                 ₹{{ totalReturnAmount.toFixed(2) }}
               </span>
             </div>
@@ -192,7 +192,7 @@
 
           <!-- Notes -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="sw-eyebrow block">
               {{ t('common.notes') }}
             </label>
             <textarea 
@@ -205,7 +205,7 @@
 
           <!-- Photo Upload -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="sw-eyebrow block">
               Photos (Optional)
             </label>
             <div class="mt-1">
@@ -234,49 +234,49 @@
     </div>
 
     <!-- Delivery Items Selection Modal -->
-    <div v-if="showItemSelection" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="showItemSelection = false" @keydown.esc="showItemSelection = false">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700" @click.stop>
+    <div v-if="showItemSelection" class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-[60]" @click="showItemSelection = false" @keydown.esc="showItemSelection = false">
+      <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4" @click.stop>
         <div class="mt-3">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Select Items to Return</h3>
-            <button @click="showItemSelection = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <h3 class="sw-h4 font-display text-ink dark:text-cream">Select Items to Return</h3>
+            <button @click="showItemSelection = false" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-300">
               <X class="h-5 w-5" />
             </button>
           </div>
 
           <div class="space-y-2 max-h-96 overflow-y-auto">
-            <div 
-              v-for="item in availableDeliveryItems" 
+            <div
+              v-for="item in availableDeliveryItems"
               :key="item.id"
-              class="p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+              class="p-3 border border-stone-200 dark:border-ink-4 rounded-xl hover:bg-cream-2 dark:hover:bg-ink-2 cursor-pointer"
               @click="selectDeliveryItem(item)"
             >
               <div class="flex justify-between items-center">
                 <div>
-                  <div class="text-sm font-medium text-gray-900 dark:text-white">
+                  <div class="text-sm font-medium text-ink dark:text-cream">
                     {{ item.expand?.item?.name || 'Unknown Item' }}
                   </div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">
+                  <div class="text-xs text-stone-500 dark:text-stone-400">
                     Delivered: {{ formatDate(item.expand?.delivery?.delivery_date || '') }}
                   </div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">
-                    Available: {{ getAvailableQuantity(item.id!, item.quantity) }} {{ item.expand?.item?.unit || 'units' }} @ ₹{{ item.unit_price }}
+                  <div class="text-xs text-stone-500 dark:text-stone-400">
+                    Available: <span class="font-mono sw-tabular">{{ getAvailableQuantity(item.id!, item.quantity) }}</span> {{ item.expand?.item?.unit || 'units' }} @ <span class="font-mono sw-tabular">₹{{ item.unit_price }}</span>
                   </div>
-                  <div v-if="deliveryItemsReturnInfo[item.id!]?.totalReturned > 0" class="text-xs text-orange-600 dark:text-orange-400">
+                  <div v-if="deliveryItemsReturnInfo[item.id!]?.totalReturned > 0" class="text-xs text-clay-600 dark:text-clay-400">
                     ({{ deliveryItemsReturnInfo[item.id!].totalReturned }} of {{ item.quantity }} already returned)
                   </div>
                 </div>
-                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                <div class="text-sm font-medium text-ink dark:text-cream font-mono sw-tabular">
                   ₹{{ item.total_amount.toFixed(2) }}
                 </div>
               </div>
             </div>
 
-            <div v-if="loadingDeliveryItems" class="text-center py-8 text-gray-500 dark:text-gray-400">
+            <div v-if="loadingDeliveryItems" class="text-center py-8 text-stone-500 dark:text-stone-400">
               <Loader2 class="h-6 w-6 animate-spin mx-auto mb-2" />
               Loading delivery items...
             </div>
-            <div v-else-if="availableDeliveryItems.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+            <div v-else-if="availableDeliveryItems.length === 0" class="text-center py-8 text-stone-500 dark:text-stone-400">
               No delivered items found for this vendor.
             </div>
           </div>

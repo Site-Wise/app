@@ -2,8 +2,8 @@
   <div>
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('services.title') }}</h1>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <h1 class="sw-h2 font-display text-ink dark:text-cream">{{ t('services.title') }}</h1>
+        <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">
           {{ t('services.subtitle') }}
         </p>
       </div>
@@ -25,7 +25,7 @@
 
     <!-- Loading State -->
     <div v-if="loading" class="flex justify-center py-8">
-      <Loader2 class="h-8 w-8 animate-spin text-primary-600" />
+      <Loader2 class="h-8 w-8 animate-spin text-amber-500" />
     </div>
 
     <!-- Services Grid -->
@@ -36,42 +36,42 @@
         <div class="flex items-start justify-between">
           <div class="flex-1">
             <div class="flex items-center space-x-2 mb-2">
-              <component :is="getServiceIcon(service.category)" class="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ service.name }}</h3>
+              <component :is="getServiceIcon(service.category)" class="h-5 w-5 text-stone-500 dark:text-stone-400" />
+              <h3 class="sw-h4 font-display text-ink dark:text-cream">{{ service.name }}</h3>
               <span v-if="!service.is_active"
-                class="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-xs rounded-full">
+                class="sw-badge sw-badge--danger">
                 {{ t('common.inactive') }}
               </span>
             </div>
 
             <div class="space-y-2">
               <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('services.serviceType') }}:</span>
-                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ service.service_type }}</span>
+                <span class="text-sm text-stone-600 dark:text-stone-400">{{ t('services.serviceType') }}:</span>
+                <span class="text-sm font-medium text-ink dark:text-cream">{{ service.service_type }}</span>
               </div>
 
               <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('services.category') }}:</span>
-                <span class="text-sm font-medium text-gray-900 dark:text-white capitalize">{{
+                <span class="text-sm text-stone-600 dark:text-stone-400">{{ t('services.category') }}:</span>
+                <span class="text-sm font-medium text-ink dark:text-cream capitalize">{{
                   t(`services.categories.${service.category}`) }}</span>
               </div>
 
               <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('services.unit') }}:</span>
-                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ service.unit }}</span>
+                <span class="text-sm text-stone-600 dark:text-stone-400">{{ t('services.unit') }}:</span>
+                <span class="text-sm font-medium text-ink dark:text-cream">{{ service.unit }}</span>
               </div>
 
               <div v-if="service.standard_rate"
-                class="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.standardRate')
+                class="flex items-center justify-between pt-2 border-t border-stone-200 dark:border-ink-4">
+                <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('services.standardRate')
                 }}:</span>
-                <span class="text-lg font-bold text-primary-600 dark:text-primary-400">
+                <span class="text-lg font-bold font-mono sw-tabular text-amber-700 dark:text-amber-400">
                   ₹{{ service.standard_rate.toFixed(2) }}/{{ service.unit }}
                 </span>
               </div>
             </div>
 
-            <div v-if="service.description" class="mt-3 text-sm text-gray-600 dark:text-gray-400">
+            <div v-if="service.description" class="mt-3 text-sm text-stone-600 dark:text-stone-400">
               {{ service.description }}
             </div>
 
@@ -79,24 +79,24 @@
             <div v-if="serviceTags.get(service.id!)?.length" class="mt-4">
               <div class="flex flex-wrap gap-1">
                 <span v-for="tag in serviceTags.get(service.id!)" :key="tag.id"
-                  class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium text-white"
-                  :style="{ backgroundColor: tag.color }">
+                  class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-stone-100 dark:bg-ink-4 text-ink dark:text-cream">
+                  <span class="h-2 w-2 rounded-[2px]" :style="{ backgroundColor: tag.color }"></span>
                   {{ tag.name }}
                 </span>
               </div>
             </div>
 
             <!-- Service Summary -->
-            <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <div class="mt-4 p-3 bg-cream-2 dark:bg-ink-2 rounded-md">
               <div class="flex justify-between items-center mb-2">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.totalBookings')
+                <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('services.totalBookings')
                 }}</span>
-                <span class="text-sm font-semibold text-blue-600 dark:text-blue-400">{{
+                <span class="text-sm font-semibold font-mono sw-tabular text-ink dark:text-cream">{{
                   getServiceBookingsCount(service.id!) }}</span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.avgRate') }}</span>
-                <span class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{
+                <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('services.avgRate') }}</span>
+                <span class="text-sm font-semibold font-mono sw-tabular text-forest-600 dark:text-forest-400">₹{{
                   getServiceAverageRate(service.id!).toFixed(2) }}</span>
               </div>
             </div>
@@ -106,25 +106,25 @@
           <div class="hidden lg:flex items-center space-x-2" @click.stop>
             <button @click="editService(service)" :disabled="!canUpdate" :class="[
               canUpdate
-                ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
-                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
-              'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+                ? 'text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream'
+                : 'text-stone-300 dark:text-stone-600 cursor-not-allowed',
+              'p-2 rounded-full hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200'
             ]" :title="t('common.edit')">
               <Edit2 class="h-4 w-4" />
             </button>
             <button @click="toggleServiceStatus(service)" :disabled="!canUpdate" :class="[
               canUpdate
-                ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
-                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
-              'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+                ? 'text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream'
+                : 'text-stone-300 dark:text-stone-600 cursor-not-allowed',
+              'p-2 rounded-full hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200'
             ]" :title="service.is_active ? t('services.deactivate') : t('services.activate')">
               <component :is="service.is_active ? EyeOff : Eye" class="h-4 w-4" />
             </button>
             <button @click="deleteService(service.id!)" :disabled="!canDelete" :class="[
               canDelete
-                ? 'text-red-400 hover:text-red-600 dark:hover:text-red-300'
-                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
-              'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+                ? 'text-clay-500 hover:text-clay-600 dark:hover:text-clay-400'
+                : 'text-stone-300 dark:text-stone-600 cursor-not-allowed',
+              'p-2 rounded-full hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200'
             ]" :title="t('common.deleteAction')">
               <Trash2 class="h-4 w-4" />
             </button>
@@ -141,9 +141,9 @@
 
     <!-- Empty State -->
     <div v-else class="text-center py-12">
-      <Wrench class="mx-auto h-12 w-12 text-gray-400" />
-      <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('services.noServices') }}</h3>
-      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('services.getStarted') }}</p>
+      <Wrench class="mx-auto h-12 w-12 text-stone-400" />
+      <h3 class="mt-2 text-sm font-medium text-ink dark:text-cream">{{ t('services.noServices') }}</h3>
+      <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">{{ t('services.getStarted') }}</p>
       <button v-if="canCreateService" @click="handleAddService" class="mt-4 btn-primary">
         <Plus class="mr-2 h-4 w-4" />
         {{ t('services.addService') }}
@@ -152,31 +152,31 @@
 
     <!-- Add/Edit Modal -->
     <div v-if="showAddModal || editingService"
-      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="closeModal"
+      class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-[60]" @click="closeModal"
       @keydown.esc="closeModal" tabindex="-1">
       <div
-        class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-20 lg:mb-4"
+        class="relative top-20 mx-auto p-5 border w-96 shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 mb-20 lg:mb-4"
         @click.stop>
         <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+          <h3 class="sw-h4 font-display text-ink dark:text-cream mb-4">
             {{ editingService ? t('services.editService') : t('services.addService') }}
           </h3>
 
           <form @submit.prevent="saveService" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.serviceName')
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('services.serviceName')
               }}</label>
               <input ref="nameInputRef" v-model="form.name" type="text" required class="input mt-1"
                 :placeholder="t('forms.enterServiceName')" autofocus />
             </div>
 
             <!-- <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.serviceType') }}</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('services.serviceType') }}</label>
               <input v-model="form.service_type" type="text" required class="input mt-1" :placeholder="t('forms.enterServiceType')" />
             </div> -->
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.category')
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('services.category')
               }}</label>
               <select v-model="form.category" required class="input mt-1">
                 <option value="">{{ t('forms.selectCategory') }}</option>
@@ -190,7 +190,7 @@
 
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.unit')
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('services.unit')
                 }}</label>
                 <select v-model="form.unit" required class="input mt-1">
                   <option value="">{{ t('forms.selectUnit') }}</option>
@@ -204,7 +204,7 @@
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('services.standardRate')
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('services.standardRate')
                 }}</label>
                 <input v-model.number="form.standard_rate" type="number" step="0.01" class="input mt-1"
                   :placeholder="t('forms.enterRate')" />
@@ -212,7 +212,7 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.description')
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.description')
               }}</label>
               <textarea v-model="form.description" class="input mt-1" rows="3"
                 :placeholder="t('forms.enterServiceDescription')"></textarea>
@@ -224,8 +224,8 @@
 
             <div class="flex items-center">
               <input v-model="form.is_active" type="checkbox" id="is_active"
-                class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500" />
-              <label for="is_active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ t('services.isActive')
+                class="rounded-md border-stone-300 dark:border-ink-4 text-amber-600 focus:ring-amber-500" />
+              <label for="is_active" class="ml-2 text-sm text-stone-700 dark:text-stone-300">{{ t('services.isActive')
               }}</label>
             </div>
 
