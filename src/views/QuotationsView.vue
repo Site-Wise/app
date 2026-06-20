@@ -8,8 +8,8 @@
           {{ t('quotations.subtitle') }}
         </p>
       </div>
-      <button 
-        @click="handleAddQuotation" 
+      <button
+        @click="handleAddQuotation"
         class="btn-primary"
         :title="t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
         data-keyboard-shortcut="n"
@@ -47,77 +47,137 @@
       </div>
     </div>
 
-    <!-- Quotations Table -->
-    <div class="card overflow-x-auto">
-      <table class="min-w-full divide-y divide-stone-200 dark:divide-ink-4">
-        <thead class="bg-stone-50 dark:bg-ink-4">
+    <!-- Quotations List -->
+    <div class="overflow-x-auto">
+
+      <!-- xl+: real <table> — only visible at xl breakpoint -->
+      <table class="hidden xl:table min-w-full border border-stone-200 dark:border-ink-4 rounded-none bg-white dark:bg-ink-3 shadow-card dark:shadow-inset-hi">
+        <thead class="hidden xl:table-header-group bg-cream-2 dark:bg-ink-2 border-b border-stone-200 dark:border-ink-4">
           <tr>
-            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('common.item') }}</th>
-            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('common.vendor') }}</th>
-            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('quotations.unitPrice') }}</th>
-            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('quotations.minimumQuantity') }}</th>
-            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('quotations.validUntil') }}</th>
-            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('common.status') }}</th>
-            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('common.actions') }}</th>
+            <th class="py-3 px-4 text-left sw-eyebrow">{{ t('common.item') }}</th>
+            <th class="py-3 px-4 text-left sw-eyebrow">{{ t('common.vendor') }}</th>
+            <th class="py-3 px-4 text-right sw-eyebrow">{{ t('quotations.unitPrice') }}</th>
+            <th class="py-3 px-4 text-right sw-eyebrow">{{ t('quotations.minimumQuantity') }}</th>
+            <th class="py-3 px-4 text-right sw-eyebrow">{{ t('quotations.validUntil') }}</th>
+            <th class="py-3 px-4 text-left sw-eyebrow">{{ t('common.status') }}</th>
+            <th class="py-3 px-4 text-left sw-eyebrow">{{ t('common.actions') }}</th>
           </tr>
         </thead>
-        <tbody class="bg-white dark:bg-ink-3 divide-y divide-stone-200 dark:divide-ink-4">
-          <tr v-for="quotation in quotations" :key="quotation.id">
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-medium text-ink dark:text-cream">{{ quotation.expand?.item?.name }}</div>
-              <div class="text-sm text-stone-500 dark:text-stone-400">{{ getUnitDisplay(quotation.expand?.item?.unit || 'units') }}</div>
+        <tbody class="divide-y divide-stone-200 dark:divide-ink-4">
+          <tr
+            v-for="quotation in quotations"
+            :key="quotation.id"
+            class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap"
+          >
+            <!-- Item + unit -->
+            <td class="hidden xl:table-cell py-3.5 px-4">
+              <div class="font-medium text-ink dark:text-cream text-sm">{{ quotation.expand?.item?.name }}</div>
+              <div class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{{ getUnitDisplay(quotation.expand?.item?.unit || 'units') }}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-ink dark:text-cream">{{ quotation.expand?.vendor?.contact_person }}</div>
+            <!-- Vendor -->
+            <td class="hidden xl:table-cell py-3.5 px-4 text-sm text-stone-600 dark:text-stone-400">
+              {{ quotation.expand?.vendor?.contact_person }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono tabular-nums text-ink dark:text-cream">
-              ₹{{ quotation.unit_price.toFixed(2) }}
+            <!-- Unit Price -->
+            <td class="hidden xl:table-cell py-3.5 px-4 text-right font-mono sw-tabular text-sm text-forest-700 dark:text-forest-400">
+              ₹{{ quotation.unit_price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono tabular-nums text-ink dark:text-cream">
+            <!-- Min Quantity -->
+            <td class="hidden xl:table-cell py-3.5 px-4 text-right font-mono sw-tabular text-sm text-stone-600 dark:text-stone-400">
               {{ quotation.minimum_quantity || '-' }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono tabular-nums text-ink dark:text-cream">
+            <!-- Valid Until -->
+            <td class="hidden xl:table-cell py-3.5 px-4 text-right font-mono sw-tabular text-sm text-stone-600 dark:text-stone-400">
               {{ quotation.valid_until ? formatDate(quotation.valid_until) : '-' }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span :class="`status-${quotation.status}`">
-                {{ quotation.status }}
+            <!-- Status -->
+            <td class="hidden xl:table-cell py-3.5 px-4">
+              <span :class="getStatusBadgeClass(quotation.status)">
+                {{ t(`common.${quotation.status}`) }}
               </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-              <!-- Desktop Action Buttons -->
-              <div class="hidden lg:flex items-center space-x-2" @click.stop>
+            <!-- Actions -->
+            <td class="hidden xl:table-cell py-3.5 px-4">
+              <div class="flex items-center space-x-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150" @click.stop>
                 <button
                   @click="editQuotation(quotation)"
-                  class="p-2 text-stone-400 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200"
+                  class="h-8 w-8 flex items-center justify-center text-stone-400 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap active:scale-[0.98]"
                   :title="t('common.edit')"
                 >
                   <Edit2 class="h-4 w-4" />
                 </button>
                 <button
                   @click="deleteQuotation(quotation.id!)"
-                  class="p-2 text-clay hover:text-clay rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200"
+                  class="h-8 w-8 flex items-center justify-center text-stone-400 hover:text-clay dark:hover:text-clay-400 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap active:scale-[0.98]"
                   :title="t('common.deleteAction')"
                 >
                   <Trash2 class="h-4 w-4" />
                 </button>
               </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-              <!-- Mobile Dropdown Menu -->
-              <div class="lg:hidden">
+      <!-- < xl: stacked card per row -->
+      <div class="xl:hidden space-y-3">
+        <div
+          v-for="quotation in quotations"
+          :key="quotation.id"
+          class="card group"
+        >
+          <!-- Card header: item name + status + dropdown -->
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <div class="font-display text-base font-semibold text-ink dark:text-cream truncate">
+                {{ quotation.expand?.item?.name }}
+              </div>
+              <div class="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
+                {{ quotation.expand?.vendor?.contact_person }}
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <span :class="getStatusBadgeClass(quotation.status)">
+                {{ t(`common.${quotation.status}`) }}
+              </span>
+              <div @click.stop>
                 <CardDropdownMenu
                   :actions="getQuotationActions(quotation)"
                   @action="handleQuotationAction(quotation, $event)"
                 />
               </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      
-      <div v-if="quotations.length === 0" class="text-center py-12">
-        <FileText class="mx-auto h-12 w-12 text-stone-400" />
-        <h3 class="mt-2 text-sm font-medium text-ink dark:text-cream">{{ t('quotations.noQuotations') }}</h3>
+            </div>
+          </div>
+
+          <!-- Card body: key metrics mini-grid -->
+          <div class="mt-auto border-t border-stone-200 dark:border-ink-4 pt-3 mt-3 grid grid-cols-3 gap-3">
+            <div>
+              <div class="sw-eyebrow mb-0.5">{{ t('quotations.unitPrice') }}</div>
+              <div class="font-mono sw-tabular text-base font-semibold text-forest-700 dark:text-forest-400">
+                ₹{{ quotation.unit_price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+              </div>
+            </div>
+            <div>
+              <div class="sw-eyebrow mb-0.5">{{ t('quotations.minimumQuantity') }}</div>
+              <div class="font-mono sw-tabular text-sm text-stone-600 dark:text-stone-400">
+                {{ quotation.minimum_quantity || '-' }}
+                <span v-if="quotation.minimum_quantity" class="text-xs ml-0.5">{{ getUnitDisplay(quotation.expand?.item?.unit || 'units') }}</span>
+              </div>
+            </div>
+            <div>
+              <div class="sw-eyebrow mb-0.5">{{ t('quotations.validUntil') }}</div>
+              <div class="font-mono sw-tabular text-sm text-stone-600 dark:text-stone-400">
+                {{ quotation.valid_until ? formatDate(quotation.valid_until) : '-' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div v-if="quotations.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
+        <FileText class="h-12 w-12 text-stone-300 dark:text-stone-600 mb-4" />
+        <h3 class="font-display text-lg font-semibold text-ink dark:text-cream">{{ t('quotations.noQuotations') }}</h3>
         <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">{{ t('quotations.getStarted') }}</p>
       </div>
     </div>
@@ -140,7 +200,7 @@
                 </option>
               </select>
             </div>
-            
+
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.vendor') }}</label>
               <select v-model="form.vendor" required class="input mt-1">
@@ -150,7 +210,7 @@
                 </option>
               </select>
             </div>
-            
+
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('forms.unitPrice') }}</label>
@@ -161,12 +221,12 @@
                 <input v-model.number="form.minimum_quantity" type="number" class="input mt-1" :placeholder="t('forms.optional')" />
               </div>
             </div>
-            
+
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('quotations.validUntil') }}</label>
               <input v-model="form.valid_until" type="date" class="input mt-1" />
             </div>
-            
+
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.status') }}</label>
               <select v-model="form.status" required class="input mt-1">
@@ -176,12 +236,12 @@
                 <option value="expired">{{ t('common.expired') }}</option>
               </select>
             </div>
-            
+
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.notes') }}</label>
               <textarea v-model="form.notes" class="input mt-1" rows="3" :placeholder="t('quotations.additionalNotes')"></textarea>
             </div>
-            
+
             <div class="flex space-x-3 pt-4">
               <button type="submit" :disabled="loading" class="flex-1 btn-primary">
                 <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
@@ -202,11 +262,11 @@
 import { ref, reactive, computed, nextTick } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { FileText, Plus, Edit2, Trash2, Loader2 } from 'lucide-vue-next';
-import { 
-  quotationService, 
-  itemService, 
+import {
+  quotationService,
+  itemService,
   vendorService,
-  type Quotation 
+  type Quotation
 } from '../services/pocketbase';
 import { useI18n } from '../composables/useI18n';
 import { usePermissions } from '../composables/usePermissions';
@@ -262,7 +322,7 @@ const form = reactive({
 const reloadAllData = async () => {
   await reloadQuotations();
   // Other data will be reloaded automatically by useSiteData
-  
+
   // Load all items for search functionality
   loadAll();
 };
@@ -271,7 +331,7 @@ const saveQuotation = async () => {
   loading.value = true;
   try {
     const data = { ...form };
-    
+
     // Create a clean data object without optional empty fields
     const cleanData: Partial<Quotation> = {
       vendor: data.vendor,
@@ -279,19 +339,19 @@ const saveQuotation = async () => {
       unit_price: data.unit_price,
       status: data.status
     };
-    
+
     if (data.minimum_quantity) {
       cleanData.minimum_quantity = data.minimum_quantity;
     }
-    
+
     if (data.valid_until) {
       cleanData.valid_until = data.valid_until;
     }
-    
+
     if (data.notes) {
       cleanData.notes = data.notes;
     }
-    
+
     if (editingQuotation.value) {
       await quotationService.update(editingQuotation.value.id!, cleanData);
     } else {
@@ -336,17 +396,27 @@ const getUnitDisplay = (unitKey: string) => {
   // If translation exists, show "Translation (key)", otherwise just show the key
   const translationKey = `units.${unitKey}`;
   const translation = t(translationKey);
-  
+
   // If translation is the same as the key, it means translation doesn't exist
   if (translation === translationKey) {
     return unitKey;
   }
-  
+
   return `${translation} (${unitKey})`;
 };
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
+};
+
+const getStatusBadgeClass = (status: string) => {
+  const map: Record<string, string> = {
+    pending:  'sw-badge sw-badge--accent',
+    approved: 'sw-badge sw-badge--success',
+    rejected: 'sw-badge sw-badge--danger',
+    expired:  'sw-badge sw-badge--neutral',
+  };
+  return map[status] ?? 'sw-badge sw-badge--neutral';
 };
 
 const closeModal = () => {

@@ -45,6 +45,19 @@ if (url.includes('/login')) {
   process.exit(2);
 }
 
+// If no site is auto-selected, pick the first existing site so the saved
+// session lands on a data-filled dashboard.
+if (page.url().includes('/select-site')) {
+  const firstSite = page.locator('[class*="cursor-pointer"] h3').first();
+  if (await firstSite.count()) {
+    console.log('   Selecting first site ...');
+    await firstSite.click();
+    await page.waitForFunction(() => !location.pathname.startsWith('/select-site'), { timeout: 15000 })
+      .catch(() => {});
+    await page.waitForTimeout(1500);
+  }
+}
+
 await ctx.storageState({ path: AUTH_STATE });
 console.log(`✅ Session saved to ${AUTH_STATE}`);
 console.log(`   Landed on: ${url}`);

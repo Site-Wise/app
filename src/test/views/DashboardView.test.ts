@@ -36,7 +36,12 @@ vi.mock('../../composables/useI18n', () => ({
         'dashboard.subtitle': 'Overview of {siteName} management',
         'dashboard.totalExpenses': 'Total Expenses',
         'dashboard.currentMonthExpenses': 'Current Month Expenses',
+        'dashboard.pendingRecovery': 'Pending Recovery',
+        'dashboard.payments': 'Payments',
+        'dashboard.last7Days': 'Last 7 days',
+        'dashboard.last30Days': 'Last 30 days',
         'dashboard.expensePerSqft': 'Expense / Sqft',
+        'dashboard.advances': 'Advances',
         'dashboard.outstandingAmount': 'Outstanding Amount',
         'dashboard.paymentsLastSevenDays': 'Payments Last 7 Days',
         'dashboard.totalPaid': 'Total Paid',
@@ -245,8 +250,8 @@ describe('DashboardView', () => {
     await new Promise(resolve => setTimeout(resolve, 100))
     
     expect(wrapper.text()).toContain('Total Expenses')
-    expect(wrapper.text()).toContain('Current Month Expenses')
-    expect(wrapper.text()).toContain('Expense / Sqft')
+    expect(wrapper.text()).toContain('Pending Recovery')
+    expect(wrapper.text()).toContain('Advances')
     expect(wrapper.text()).toContain('Outstanding Amount')
   })
 
@@ -264,7 +269,8 @@ describe('DashboardView', () => {
   })
 
   it('should render payments chart section', () => {
-    expect(wrapper.text()).toContain('Payments Last 7 Days')
+    expect(wrapper.text()).toContain('Payments')
+    expect(wrapper.text()).toContain('Last 7 days')
     expect(wrapper.text()).toContain('Total Paid')
   })
 

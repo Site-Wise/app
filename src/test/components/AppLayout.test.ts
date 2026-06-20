@@ -434,7 +434,8 @@ describe('AppLayout.vue', () => {
     })
 
     it('should show base FAB actions', async () => {
-      wrapper.vm.fabMenuOpen = true
+      // Desktop quick actions now live in a "+ Record" dropdown menu.
+      wrapper.vm.quickMenuOpen = true
       await nextTick()
 
       expect(wrapper.text()).toContain('Record Service Booking')
@@ -536,7 +537,8 @@ describe('AppLayout.vue', () => {
     })
 
     it('should hide desktop elements on mobile', () => {
-      expect(wrapper.find('.hidden.md\\:flex').exists()).toBe(true)
+      // Quick-actions "+ Record" menu is hidden md:block; site selector is hidden lg:block.
+      expect(wrapper.find('.hidden.md\\:block').exists()).toBe(true)
       expect(wrapper.find('.hidden.lg\\:block').exists()).toBe(true)
     })
   })

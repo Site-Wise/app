@@ -25,69 +25,44 @@
     </div>
 
     <!-- Items Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6" data-tour="items-table">
-      <div v-for="item in items" :key="item.id" class="card-interactive" @click="viewItemDetail(item.id!)">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6" data-tour="items-table">
+      <div v-for="item in items" :key="item.id"
+        class="card-interactive group flex flex-col"
+        @click="viewItemDetail(item.id!)">
+
+        <!-- Card header: title + actions -->
         <div class="flex items-start justify-between">
-          <div class="flex-1">
-            <h3 class="font-display text-lg font-semibold text-ink dark:text-cream">{{ item.name }}</h3>
-            <p v-if="item.description" class="text-sm text-stone-600 dark:text-stone-400 mt-1">{{ item.description }}</p>
-            <div class="mt-3 flex items-center space-x-4">
-              <div class="flex items-center text-sm text-stone-500 dark:text-stone-400">
-                <Package class="mr-1 h-4 w-4" />
-                {{ getUnitDisplay(item.unit) }}
-              </div>
-            </div>
-
-            <!-- Tags -->
-            <div v-if="itemTags.get(item.id!)?.length" class="mt-3">
-              <div class="flex flex-wrap gap-1">
-                <span v-for="tag in itemTags.get(item.id!)" :key="tag.id"
-                  class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-stone-100 dark:bg-ink-4 text-ink dark:text-cream">
-                  <span class="h-2 w-2 rounded-[2px]" :style="{ backgroundColor: tag.color }"></span>
-                  {{ tag.name }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Delivery Summary -->
-            <div class="mt-4 p-3 bg-cream-2 dark:bg-ink-2 rounded-md border border-stone-200 dark:border-ink-4">
-              <div class="flex justify-between items-center mb-2">
-                <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('items.totalDelivered')
-                  }}</span>
-                <span class="sw-mono text-sm font-semibold text-ink dark:text-cream">{{
-                  getItemDeliveredQuantity(item.id!).toFixed(1) }} {{ getUnitDisplay(item.unit) }}</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('items.avgPrice') }}</span>
-                <span class="sw-mono text-sm font-semibold text-forest-700 dark:text-forest-400">₹{{
-                  getItemAveragePrice(item.id!).toFixed(1) }}</span>
-              </div>
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display text-lg font-semibold text-ink dark:text-cream truncate">{{ item.name }}</h3>
+            <div class="mt-1 flex items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400">
+              <Package class="h-3.5 w-3.5 shrink-0" />
+              <span>{{ getUnitDisplay(item.unit) }}</span>
             </div>
           </div>
 
-          <!-- Desktop Action Buttons -->
-          <div class="hidden lg:flex items-center space-x-2" @click.stop>
+          <!-- Desktop Action Buttons — hover-reveal ghost cluster -->
+          <div class="hidden lg:flex items-center gap-0.5 ml-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150" @click.stop>
             <button @click="editItem(item)" :disabled="!canEditDelete" :class="[
               canEditDelete
-                ? 'text-stone-500 hover:text-ink dark:text-stone-400 dark:hover:text-cream'
+                ? 'text-stone-400 hover:text-ink dark:text-stone-500 dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4'
                 : 'text-stone-300 dark:text-stone-600 cursor-not-allowed',
-              'p-2 rounded-full hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200'
+              'h-8 w-8 inline-flex items-center justify-center rounded-md transition-colors duration-150'
             ]" :title="t('items.editItem')">
               <Edit2 class="h-4 w-4" />
             </button>
             <button @click="cloneItem(item)" :disabled="!canCreateItem" :class="[
               canCreateItem
-                ? 'text-stone-500 hover:text-ink dark:text-stone-400 dark:hover:text-cream'
+                ? 'text-stone-400 hover:text-ink dark:text-stone-500 dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4'
                 : 'text-stone-300 dark:text-stone-600 cursor-not-allowed',
-              'p-2 rounded-full hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200'
+              'h-8 w-8 inline-flex items-center justify-center rounded-md transition-colors duration-150'
             ]" :title="t('items.cloneItem')" data-tour="clone-item-btn">
               <Copy class="h-4 w-4" />
             </button>
             <button @click="deleteItem(item.id!)" :disabled="!canEditDelete" :class="[
               canEditDelete
-                ? 'text-clay-500 hover:text-clay-600 dark:text-clay-400 dark:hover:text-clay-300'
+                ? 'text-stone-400 hover:text-clay-600 dark:text-stone-500 dark:hover:text-clay-400 hover:bg-stone-100 dark:hover:bg-ink-4'
                 : 'text-stone-300 dark:text-stone-600 cursor-not-allowed',
-              'p-2 rounded-full hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200'
+              'h-8 w-8 inline-flex items-center justify-center rounded-md transition-colors duration-150'
             ]" :title="t('items.deleteItem')">
               <Trash2 class="h-4 w-4" />
             </button>
@@ -96,6 +71,40 @@
           <!-- Mobile Dropdown Menu -->
           <div class="lg:hidden" data-tour="mobile-actions-menu">
             <CardDropdownMenu :actions="getItemActions(item)" @action="handleItemAction(item, $event)" />
+          </div>
+        </div>
+
+        <!-- Description -->
+        <p v-if="item.description" class="text-sm text-stone-500 dark:text-stone-400 mt-2 line-clamp-2">{{ item.description }}</p>
+
+        <!-- Tags -->
+        <div v-if="itemTags.get(item.id!)?.length" class="mt-3">
+          <div class="flex flex-wrap gap-1.5">
+            <span v-for="tag in itemTags.get(item.id!)" :key="tag.id"
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-stone-100 dark:bg-ink-4 text-stone-700 dark:text-stone-300">
+              <span class="h-2 w-2 rounded-[2px] shrink-0" :style="{ backgroundColor: tag.color }"></span>
+              {{ tag.name }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Stat strip — bottom-pinned, separated by 1px border -->
+        <div class="mt-auto pt-4 border-t border-stone-200 dark:border-ink-4">
+          <div class="flex items-end justify-between gap-4">
+            <!-- HERO: total delivered -->
+            <div class="flex flex-col gap-0.5">
+              <span class="sw-eyebrow text-stone-400 dark:text-stone-500">{{ t('items.totalDelivered') }}</span>
+              <span class="sw-stat font-mono tabular-nums text-ink dark:text-cream leading-none">
+                {{ getItemDeliveredQuantity(item.id!).toFixed(1) }}
+              </span>
+            </div>
+            <!-- SECONDARY: avg price -->
+            <div class="flex flex-col gap-0.5 text-right">
+              <span class="sw-eyebrow text-stone-400 dark:text-stone-500">{{ t('items.avgPrice') }}</span>
+              <span class="font-mono tabular-nums text-base font-semibold text-forest-700 dark:text-forest-400 leading-none">
+                ₹{{ getItemAveragePrice(item.id!).toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -114,13 +123,20 @@
       class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-[60]" @click="closeModal"
       @keydown.esc="closeModal" tabindex="-1">
       <div
-        class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 m-4 mb-20 lg:mb-4"
+        class="relative top-20 mx-auto w-full max-w-md shadow-modal rounded-xl bg-white dark:bg-ink-3 border border-stone-200 dark:border-ink-4 m-4 mb-20 lg:mb-4"
         @click.stop>
-        <div class="mt-3">
-          <h3 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">
-            {{ editingItem ? t('items.editItem') : t('items.addItem') }}
-          </h3>
-
+        <div class="flex items-center gap-3 px-6 py-4 border-b border-stone-200 dark:border-ink-4">
+          <span class="flex h-9 w-9 flex-none items-center justify-center rounded-md bg-amber-500/15">
+            <Package class="h-5 w-5 text-amber-700 dark:text-amber-400" />
+          </span>
+          <div>
+            <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ editingItem ? t('common.edit') : t('common.create') }}</p>
+            <h3 class="font-display text-lg font-semibold text-ink dark:text-cream leading-tight">
+              {{ editingItem ? t('items.editItem') : t('items.addItem') }}
+            </h3>
+          </div>
+        </div>
+        <div class="p-6">
           <form @submit.prevent="saveItem" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.name') }}</label>
@@ -137,7 +153,8 @@
 
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('items.unit') }}</label>
-              <select v-model="form.unit" required class="input mt-1">
+              <select v-model="form.unit" required :disabled="editingItemHasDeliveries"
+                class="input mt-1 disabled:opacity-60 disabled:cursor-not-allowed">
                 <option value="">{{ t('forms.selectUnit') }}</option>
                 <option value="pcs">{{ t('units.pcs') }} (pcs)</option>
                 <option value="pkt">{{ t('units.pkt') }} (pkt)</option>
@@ -154,6 +171,11 @@
                 <option value="bag">{{ t('units.bag') }} (bag)</option>
                 <option value="box">{{ t('units.box') }} (box)</option>
               </select>
+              <p v-if="editingItemHasDeliveries"
+                class="mt-1.5 flex items-start gap-1.5 text-xs text-stone-500 dark:text-stone-400">
+                <Lock class="h-3.5 w-3.5 mt-0.5 flex-none" />
+                <span>{{ t('items.unitLockedHint') }}</span>
+              </p>
             </div>
 
             <!-- Tags -->
@@ -178,10 +200,10 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, nextTick } from 'vue';
-import { useEventListener } from '@vueuse/core';
+import { useQuickActionModal } from '../composables/useQuickActionModal';
 import { useKeyboardShortcutSingle } from '../composables/useKeyboardShortcut';
 import { useRouter } from 'vue-router';
-import { Package, Plus, Edit2, Trash2, Loader2, Copy } from 'lucide-vue-next';
+import { Package, Plus, Edit2, Trash2, Loader2, Copy, Lock } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
@@ -269,6 +291,12 @@ const getItemDeliveredQuantity = (itemId: string) => {
   });
   return totalQuantity;
 };
+
+// Units must not change once deliveries exist for the item — changing the unit
+// would silently corrupt delivered-quantity and average-price calculations.
+const editingItemHasDeliveries = computed(() =>
+  !!editingItem.value && getItemDeliveredQuantity(editingItem.value.id!) > 0
+);
 
 const getItemAveragePrice = (itemId: string) => {
   let totalValue = 0;
@@ -461,5 +489,5 @@ const handleQuickAction = async () => {
 useKeyboardShortcutSingle('n', handleAddItem, { shiftKey: true, altKey: true });
 
 // Handle custom event for modal
-useEventListener(window, 'show-add-modal', handleQuickAction);
+useQuickActionModal(handleQuickAction);
 </script>

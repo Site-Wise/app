@@ -328,7 +328,8 @@ describe('ServicesView', () => {
     await new Promise(resolve => setTimeout(resolve, 50))
     
     expect(wrapper.text()).toContain('Test Service')
-    expect(wrapper.text()).toContain('Construction')
+    // Redesigned card shows category display name (Labor) and unit (hour) in the meta line instead of service_type
+    expect(wrapper.text()).toContain('Labor')
     expect(wrapper.text()).toContain('hour')
   })
 
@@ -547,15 +548,6 @@ describe('ServicesView', () => {
     expect(count).toBe(1)
   })
 
-  it('should calculate average rate correctly', async () => {
-    // Wait for data to load
-    await wrapper.vm.$nextTick()
-    await new Promise(resolve => setTimeout(resolve, 50))
-    
-    const avgRate = wrapper.vm.getServiceAverageRate('service-1')
-    expect(avgRate).toBe(100) // 800 total amount / 8 duration
-  })
-
   it('should handle navigation to service detail', async () => {
     const router = wrapper.vm.$router
     const pushSpy = vi.spyOn(router, 'push')
@@ -617,10 +609,12 @@ describe('ServicesView', () => {
     
     // Check that service data is displayed in the grid
     expect(wrapper.text()).toContain('Test Service')
-    expect(wrapper.text()).toContain('Construction')
-    
-    // Check that individual service stats are shown
+    // Redesigned card shows category display name in meta line instead of service_type
+    expect(wrapper.text()).toContain('Labor')
+
+    // Check that individual service stats are shown in the stat strip
     expect(wrapper.text()).toContain('Total Bookings')
-    expect(wrapper.text()).toContain('Avg. Rate')
+    // Redesigned stat strip shows Standard Rate as HERO metric instead of Avg. Rate
+    expect(wrapper.text()).toContain('Standard Rate')
   })
 })

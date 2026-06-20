@@ -28,133 +28,116 @@
       </div>
     </div>
 
+    <!-- Summary Stat Strip -->
+    <div class="mb-6 grid grid-cols-3 gap-3 lg:gap-4">
+      <div class="card py-3 px-4">
+        <p class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-1">{{ t('accounts.totalBalance') }}</p>
+        <p class="sw-stat font-mono sw-tabular"
+          :class="totalBalance >= 0 ? 'text-forest-700 dark:text-forest-400' : 'text-clay-600 dark:text-clay-400'">
+          ₹{{ totalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+        </p>
+      </div>
+      <div class="card py-3 px-4">
+        <p class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-1">{{ t('accounts.activeAccounts') }}</p>
+        <p class="sw-stat font-mono sw-tabular text-ink dark:text-cream">{{ activeAccountsCount }}</p>
+      </div>
+      <div class="card py-3 px-4">
+        <p class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-1">{{ t('accounts.lowBalance') }}</p>
+        <p class="sw-stat font-mono sw-tabular"
+          :class="lowBalanceCount > 0 ? 'text-clay-600 dark:text-clay-400' : 'text-ink dark:text-cream'">
+          {{ lowBalanceCount }}
+        </p>
+      </div>
+    </div>
+
     <!-- Search Box -->
     <div class="w-full md:w-96 mb-6" data-tour="search-bar">
       <SearchBox v-model="searchQuery" :placeholder="t('search.accounts')" :search-loading="searchLoading" />
     </div>
 
     <!-- Accounts Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
       <div v-for="account in accounts" :key="account.id"
-        class="card hover:shadow-md transition-shadow duration-200 cursor-pointer"
+        class="card flex flex-col group card-interactive cursor-pointer transition-colors duration-150 ease-snap"
         @click="viewAccountDetail(account.id!)">
-        <div class="flex items-start justify-between">
-          <div class="flex-1">
-            <div class="flex items-center space-x-2 mb-2">
-              <component :is="getAccountIcon(account.type)" class="h-5 w-5 text-stone-500 dark:text-stone-400" />
-              <h3 class="font-display text-lg font-semibold text-ink dark:text-cream">{{ account.name }}</h3>
-              <span v-if="!account.is_active"
-                class="sw-badge sw-badge--danger">
-                {{ t('common.inactive') }}
-              </span>
+
+        <!-- Card Header -->
+        <div class="flex items-start justify-between mb-1">
+          <div class="flex-1 min-w-0 pr-2">
+            <div class="flex items-center gap-2 mb-0.5">
+              <component :is="getAccountIcon(account.type)" class="h-4 w-4 shrink-0 text-stone-400 dark:text-stone-500" />
+              <h3 class="font-display text-lg font-semibold tracking-tight text-ink dark:text-cream truncate">{{ account.name }}</h3>
             </div>
-
-            <div class="space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-stone-600 dark:text-stone-400">{{ t('common.type') }}:</span>
-                <span class="text-sm font-medium text-ink dark:text-cream capitalize">{{ account.type.replace('_',
-                  ' ') }}</span>
-              </div>
-
-              <div v-if="account.account_number" class="flex items-center justify-between">
-                <span class="text-sm text-stone-600 dark:text-stone-400">{{ t('common.account') }}:</span>
-                <span class="text-sm font-medium font-mono tabular-nums text-ink dark:text-cream">{{
-                  maskAccountNumber(account.account_number) }}</span>
-              </div>
-
-              <div v-if="account.bank_name" class="flex items-center justify-between">
-                <span class="text-sm text-stone-600 dark:text-stone-400">{{ t('accounts.bankName') }}:</span>
-                <span class="text-sm font-medium text-ink dark:text-cream">{{ account.bank_name }}</span>
-              </div>
-
-              <div class="flex items-center justify-between pt-2 border-t border-stone-200 dark:border-ink-4">
-                <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.currentBalance')
-                }}:</span>
-                <span class="text-lg font-bold font-mono tabular-nums"
-                  :class="account.current_balance >= 0 ? 'text-forest' : 'text-clay'">
-                  ₹{{ account.current_balance.toFixed(2) }}
-                </span>
-              </div>
-            </div>
-
-            <div v-if="account.description" class="mt-3 text-sm text-stone-600 dark:text-stone-400">
-              {{ account.description }}
-            </div>
+            <!-- Secondary meta line: type + optional bank -->
+            <p class="text-sm text-stone-500 dark:text-stone-400 truncate capitalize">
+              {{ account.type.replace('_', ' ') }}<span v-if="account.bank_name"> · {{ account.bank_name }}</span>
+            </p>
           </div>
 
-          <!-- Desktop Action Buttons -->
-          <div class="hidden lg:flex items-center space-x-2" @click.stop>
-            <button @click="editAccount(account)"
-              class="p-2 text-stone-400 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200"
-              :title="t('common.edit')">
-              <Edit2 class="h-4 w-4" />
-            </button>
-            <button @click="toggleAccountStatus(account)"
-              class="p-2 text-stone-400 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200"
-              :title="account.is_active ? t('users.deactivate') : t('users.activate')">
-              <component :is="account.is_active ? EyeOff : Eye" class="h-4 w-4" />
-            </button>
-            <button @click="deleteAccount(account.id!)" :disabled="!canDelete" :class="[
-              canDelete
-                ? 'text-clay hover:text-clay'
-                : 'text-stone-300 dark:text-stone-600 cursor-not-allowed',
-              'p-2 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200'
-            ]" :title="t('common.deleteAction')">
-              <Trash2 class="h-4 w-4" />
-            </button>
-          </div>
+          <!-- Action cluster: ghost icons on desktop (hover-reveal), dropdown on mobile -->
+          <div class="flex items-center gap-0.5 shrink-0">
+            <!-- Desktop ghost actions (hover-reveal) -->
+            <div class="hidden lg:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150" @click.stop>
+              <button @click="editAccount(account)"
+                class="h-8 w-8 flex items-center justify-center rounded-md text-stone-400 hover:text-ink dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150"
+                :title="t('common.edit')">
+                <Edit2 class="h-3.5 w-3.5" />
+              </button>
+              <button @click="toggleAccountStatus(account)"
+                class="h-8 w-8 flex items-center justify-center rounded-md text-stone-400 hover:text-ink dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150"
+                :title="account.is_active ? t('users.deactivate') : t('users.activate')">
+                <component :is="account.is_active ? EyeOff : Eye" class="h-3.5 w-3.5" />
+              </button>
+              <button @click="deleteAccount(account.id!)" :disabled="!canDelete" :class="[
+                canDelete
+                  ? 'text-clay-600 dark:text-clay-400 hover:bg-stone-100 dark:hover:bg-ink-4'
+                  : 'text-stone-300 dark:text-stone-600 cursor-not-allowed',
+                'h-8 w-8 flex items-center justify-center rounded-md transition-colors duration-150'
+              ]" :title="t('common.deleteAction')">
+                <Trash2 class="h-3.5 w-3.5" />
+              </button>
+            </div>
 
-          <!-- Mobile Dropdown Menu -->
-          <div class="lg:hidden">
-            <CardDropdownMenu :actions="getAccountActions(account)" @action="handleAccountAction(account, $event)" />
+            <!-- Mobile Dropdown Menu -->
+            <div class="lg:hidden" @click.stop>
+              <CardDropdownMenu :actions="getAccountActions(account)" @action="handleAccountAction(account, $event)" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Optional: masked account number -->
+        <div v-if="account.account_number" class="mb-2">
+          <span class="text-xs font-mono sw-tabular text-stone-400 dark:text-stone-500">{{ maskAccountNumber(account.account_number) }}</span>
+        </div>
+
+        <!-- Inactive badge -->
+        <div v-if="!account.is_active" class="mb-2">
+          <span class="sw-badge sw-badge--danger">{{ t('common.inactive') }}</span>
+        </div>
+
+        <!-- Optional description -->
+        <div v-if="account.description" class="mb-2 text-xs text-stone-500 dark:text-stone-400 line-clamp-1">
+          {{ account.description }}
+        </div>
+
+        <!-- Stat strip footer — pinned to bottom -->
+        <div class="mt-auto border-t border-stone-200 dark:border-ink-4 pt-3">
+          <div class="flex items-baseline justify-between">
+            <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('accounts.currentBalance') }}</p>
+            <p class="text-xl font-mono sw-tabular font-semibold"
+              :class="account.current_balance >= 0 ? 'text-forest-700 dark:text-forest-400' : 'text-clay-600 dark:text-clay-400'">
+              ₹{{ account.current_balance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+            </p>
           </div>
         </div>
       </div>
 
+      <!-- Empty State -->
       <div v-if="accounts.length === 0" class="col-span-full">
-        <div class="text-center py-12">
-          <CreditCard class="mx-auto h-12 w-12 text-stone-400" />
-          <h3 class="mt-2 text-sm font-medium text-ink dark:text-cream">{{ t('accounts.noAccounts') }}</h3>
+        <div class="text-center py-16">
+          <CreditCard class="mx-auto h-12 w-12 text-stone-300 dark:text-stone-600" />
+          <h3 class="mt-4 font-display text-base font-semibold text-ink dark:text-cream">{{ t('accounts.noAccounts') }}</h3>
           <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">{{ t('accounts.getStarted') }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Summary Cards -->
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="card bg-forest/5 dark:bg-forest/10 border-forest/30 dark:border-forest/40">
-        <div class="flex items-center">
-          <div class="p-2 bg-forest/10 dark:bg-forest/20 rounded-lg">
-            <TrendingUp class="h-6 w-6 text-forest" />
-          </div>
-          <div class="ml-4">
-            <p class="sw-eyebrow text-stone-600 dark:text-stone-400">{{ t('accounts.totalBalance') }}</p>
-            <p class="sw-stat font-mono tabular-nums text-forest">₹{{ totalBalance.toFixed(2) }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="flex items-center">
-          <div class="p-2 bg-amber/15 dark:bg-amber/20 rounded-lg">
-            <CreditCard class="h-6 w-6 text-amber-700 dark:text-amber" />
-          </div>
-          <div class="ml-4">
-            <p class="sw-eyebrow text-stone-600 dark:text-stone-400">{{ t('accounts.activeAccounts') }}</p>
-            <p class="sw-stat font-mono tabular-nums text-ink dark:text-cream">{{ activeAccountsCount }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="card bg-amber/5 dark:bg-amber/10 border-amber/30 dark:border-amber/40">
-        <div class="flex items-center">
-          <div class="p-2 bg-amber/15 dark:bg-amber/20 rounded-lg">
-            <AlertTriangle class="h-6 w-6 text-amber-700 dark:text-amber" />
-          </div>
-          <div class="ml-4">
-            <p class="sw-eyebrow text-stone-600 dark:text-stone-400">{{ t('accounts.lowBalance') }}</p>
-            <p class="sw-stat font-mono tabular-nums text-ink dark:text-cream">{{ lowBalanceCount }}</p>
-          </div>
         </div>
       </div>
     </div>
@@ -254,8 +237,6 @@ import {
   Loader2,
   Eye,
   EyeOff,
-  TrendingUp,
-  AlertTriangle,
   Banknote,
   Wallet,
   Smartphone,

@@ -20,20 +20,20 @@ vi.mock('../../components/CardDropdownMenu.vue', () => ({
     name: 'CardDropdownMenu',
     template: `
       <div class="relative" @click.stop>
-        <button 
-          @click="isOpen = !isOpen" 
+        <button
+          @click="isOpen = !isOpen"
           class="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
           <svg viewBox="0 0 24 24" class="h-5 w-5"><path fill="currentColor" d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
         </button>
-        <div 
+        <div
           v-if="isOpen"
           class="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50"
           @click.stop
         >
           <div class="py-1">
             <button
-              v-for="action in actions" 
+              v-for="action in actions"
               :key="action.key"
               @click="handleAction(action)"
               :disabled="action.disabled"
@@ -199,10 +199,10 @@ vi.mock('../../composables/useSearch', () => ({
 vi.mock('../../composables/useSiteData', () => ({
   useSiteData: vi.fn((loadFunction) => {
     const { ref } = require('vue')
-    
+
     // Check what type of data is being requested based on the function
     const funcString = loadFunction.toString()
-    
+
     if (funcString.includes('serviceBookingService.getAll')) {
       return {
         data: ref([
@@ -278,7 +278,7 @@ vi.mock('../../composables/useSiteData', () => ({
         reload: vi.fn()
       }
     }
-    
+
     // Default return for any other useSiteData calls
     return {
       data: ref([]),
@@ -310,7 +310,7 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
     wrapper?.unmount()
   })
 
-  describe('Mobile Table Structure', () => {
+  describe('Layout Structure', () => {
     beforeEach(async () => {
       wrapper = mount(ServiceBookingsView, {
         global: { plugins: [pinia] }
@@ -319,31 +319,37 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
       await nextTick() // Wait for data loading
     })
 
-    it('should show mobile table headers on small screens', () => {
-      const mobileHeaders = wrapper.find('thead.lg\\:hidden')
-      expect(mobileHeaders.exists()).toBe(true)
-      
-      const headerCells = mobileHeaders.findAll('th')
-      expect(headerCells).toHaveLength(3) // Service, Details, Actions
+    it('should render table wrapper hidden on mobile (md:block)', () => {
+      // The md+ table wrapper has classes hidden and md:block
+      const tableWrapper = wrapper.find('.hidden.md\\:block')
+      expect(tableWrapper.exists()).toBe(true)
+      expect(tableWrapper.classes()).toContain('hidden')
+      expect(tableWrapper.classes()).toContain('md:block')
     })
 
-    it('should hide desktop table headers on mobile', () => {
-      const desktopHeaders = wrapper.find('thead.hidden.lg\\:table-header-group')
-      expect(desktopHeaders.exists()).toBe(true)
-      expect(desktopHeaders.classes()).toContain('hidden')
-      expect(desktopHeaders.classes()).toContain('lg:table-header-group')
+    it('should render card wrapper visible on mobile (md:hidden)', () => {
+      // The mobile card container has md:hidden
+      const cardWrapper = wrapper.find('.md\\:hidden.space-y-3')
+      expect(cardWrapper.exists()).toBe(true)
+      expect(cardWrapper.classes()).toContain('md:hidden')
     })
 
-    it('should display mobile table cells with lg:hidden class', () => {
-      const mobileTableCells = wrapper.findAll('td.lg\\:hidden')
-      expect(mobileTableCells.length).toBeGreaterThan(0)
-      
-      // Each booking should have 3 mobile cells (service info, amount/status, actions)
-      expect(mobileTableCells.length).toBe(6) // 2 bookings × 3 cells each
+    it('should render one card per booking in the mobile container', () => {
+      const cardWrapper = wrapper.find('.md\\:hidden.space-y-3')
+      // Each booking card has a relative class + overflow-hidden
+      const cards = cardWrapper.findAll('.relative.overflow-hidden')
+      expect(cards).toHaveLength(2) // 2 bookings
+    })
+
+    it('should render the progressive table inside the hidden md:block wrapper', () => {
+      // The table is inside a div with hidden and md:block; find by looking for the table
+      // within the overall wrapper (it exists in the DOM even if visually hidden on mobile)
+      const table = wrapper.find('.hidden.md\\:block table')
+      expect(table.exists()).toBe(true)
     })
   })
 
-  describe('Mobile Layout Content', () => {
+  describe('Mobile Card Content', () => {
     beforeEach(async () => {
       wrapper = mount(ServiceBookingsView, {
         global: { plugins: [pinia] }
@@ -352,44 +358,108 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
       await nextTick()
     })
 
-    it('should display service name, vendor and date in first mobile column', () => {
-      const firstMobileCells = wrapper.findAll('td.lg\\:hidden').filter((cell: any, index: number) => index % 3 === 0)
-      expect(firstMobileCells).toHaveLength(2)
+    it('should display service name and vendor in each card', () => {
+      const cardWrapper = wrapper.find('.md\\:hidden.space-y-3')
+      const cards = cardWrapper.findAll('.relative.overflow-hidden')
 
-      const firstCell = firstMobileCells[0]
-      expect(firstCell.text()).toContain('Test Service')
-      expect(firstCell.text()).toContain('Test Vendor')
-      expect(firstCell.text()).toContain('1/15/2024') // Or similar locale format
+      const firstCard = cards[0]
+      expect(firstCard.text()).toContain('Test Service')
+      expect(firstCard.text()).toContain('Test Vendor')
     })
 
-    it('should display amount and status in second mobile column', () => {
-      const secondMobileCells = wrapper.findAll('td.lg\\:hidden').filter((cell: any, index: number) => index % 3 === 1)
-      expect(secondMobileCells).toHaveLength(2)
+    it('should display start date in each card', () => {
+      const cardWrapper = wrapper.find('.md\\:hidden.space-y-3')
+      const cards = cardWrapper.findAll('.relative.overflow-hidden')
 
-      const firstCell = secondMobileCells[0]
-      expect(firstCell.text()).toContain('₹500.00')
-      expect(firstCell.text()).toContain('Pending') // Payment status should be displayed (capitalized)
+      // The date is rendered via formatDate which calls toLocaleDateString
+      // Just check that some date-like text appears
+      const firstCard = cards[0]
+      // formatDate('2024-01-15') → locale string like '1/15/2024'
+      expect(firstCard.text()).toMatch(/\d{1,2}\/\d{1,2}\/\d{4}/)
     })
 
-    it('should display amount in color based on payment status', () => {
-      const amountCells = wrapper.findAll('td.lg\\:hidden .text-sm.font-semibold')
-      expect(amountCells.length).toBeGreaterThan(0)
+    it('should display total amount formatted with ₹ in each card', () => {
+      const cardWrapper = wrapper.find('.md\\:hidden.space-y-3')
+      const cards = cardWrapper.findAll('.relative.overflow-hidden')
 
-      // Check for payment status color classes
-      const pendingAmount = amountCells.find((cell: any) => cell.text().includes('500.00'))
-      expect(pendingAmount?.classes()).toContain('text-clay-600') // pending = clay
-
-      const paidAmount = amountCells.find((cell: any) => cell.text().includes('450.00'))
-      expect(paidAmount?.classes()).toContain('text-forest-600') // paid = forest
+      const firstCard = cards[0]
+      expect(firstCard.text()).toContain('₹500.00')
     })
 
-    it('should only show booking status without payment status text', () => {
-      const statusElements = wrapper.findAll('.status-pending, .status-paid, .status-partial')
-      expect(statusElements.length).toBeGreaterThan(0)
-      
-      // Mobile view should show booking status, not payment status in mobile cells
-      const mobileStatusCells = wrapper.findAll('td.lg\\:hidden .text-xs')
-      expect(mobileStatusCells.length).toBeGreaterThan(0)
+    it('should display payment status badge in each card', () => {
+      const cardWrapper = wrapper.find('.md\\:hidden.space-y-3')
+
+      // Status badges use status-* class pattern
+      const pendingBadge = cardWrapper.find('.status-pending')
+      const paidBadge = cardWrapper.find('.status-paid')
+
+      // booking-1 is pending, booking-2 is paid
+      expect(pendingBadge.exists()).toBe(true)
+      expect(paidBadge.exists()).toBe(true)
+    })
+
+    it('should display translated Pending status text', () => {
+      const cardWrapper = wrapper.find('.md\\:hidden.space-y-3')
+      const cards = cardWrapper.findAll('.relative.overflow-hidden')
+
+      // booking-1 has payment_status: 'pending'
+      const firstCard = cards[0]
+      expect(firstCard.text()).toContain('Pending')
+    })
+  })
+
+  describe('Mobile Card Color Semantics', () => {
+    beforeEach(async () => {
+      wrapper = mount(ServiceBookingsView, {
+        global: { plugins: [pinia] }
+      })
+      await nextTick()
+      await nextTick()
+    })
+
+    it('should apply pending color stripe to pending booking card', () => {
+      const cardWrapper = wrapper.find('.md\\:hidden.space-y-3')
+      const cards = cardWrapper.findAll('.relative.overflow-hidden')
+
+      // booking-1 is pending → left stripe should have bg-clay-500
+      const firstCard = cards[0]
+      const stripe = firstCard.find('.absolute.left-0.inset-y-0.w-1')
+      expect(stripe.exists()).toBe(true)
+      expect(stripe.classes()).toContain('bg-clay-500')
+    })
+
+    it('should apply paid color stripe to paid booking card', () => {
+      const cardWrapper = wrapper.find('.md\\:hidden.space-y-3')
+      const cards = cardWrapper.findAll('.relative.overflow-hidden')
+
+      // booking-2 is paid → left stripe should have bg-forest-500
+      const secondCard = cards[1]
+      const stripe = secondCard.find('.absolute.left-0.inset-y-0.w-1')
+      expect(stripe.exists()).toBe(true)
+      expect(stripe.classes()).toContain('bg-forest-500')
+    })
+
+    it('should show paid sub-line in forest color when paid_amount > 0', () => {
+      const cardWrapper = wrapper.find('.md\\:hidden.space-y-3')
+      const cards = cardWrapper.findAll('.relative.overflow-hidden')
+
+      // booking-2 has paid_amount: 450 → should show forest-colored paid sub-line
+      const secondCard = cards[1]
+      const paidSubLine = secondCard.find('.text-forest-600')
+      expect(paidSubLine.exists()).toBe(true)
+      expect(paidSubLine.text()).toContain('₹450.00')
+    })
+
+    it('should display status badges that are visually distinct (pending vs paid)', () => {
+      const cardWrapper = wrapper.find('.md\\:hidden.space-y-3')
+      const cards = cardWrapper.findAll('.relative.overflow-hidden')
+
+      const firstCardBadge = cards[0].find('[class*="status-"]')
+      const secondCardBadge = cards[1].find('[class*="status-"]')
+
+      // They should have different status classes
+      expect(firstCardBadge.classes().join(' ')).toContain('status-pending')
+      expect(secondCardBadge.classes().join(' ')).toContain('status-paid')
     })
   })
 
@@ -402,34 +472,36 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
       await nextTick()
     })
 
-    it('should display dropdown menu button in mobile actions column', () => {
-      const dropdownMenus = wrapper.findAll('td.lg\\:hidden').filter((td: any) => 
-        td.findComponent({ name: 'CardDropdownMenu' }).exists()
-      )
+    it('should display one CardDropdownMenu per booking card in mobile container', () => {
+      const cardWrapper = wrapper.find('.md\\:hidden.space-y-3')
+      const dropdownMenus = cardWrapper.findAllComponents({ name: 'CardDropdownMenu' })
       expect(dropdownMenus.length).toBe(2) // One for each booking
     })
 
     it('should open dropdown menu when button is clicked', async () => {
       const firstDropdown = wrapper.findComponent({ name: 'CardDropdownMenu' })
       const dropdownButton = firstDropdown.find('button')
-      
+
       // Initially menu should be closed
       expect(firstDropdown.find('.absolute.right-0.top-full').exists()).toBe(false)
-      
+
       // Click the dropdown button
       await dropdownButton.trigger('click')
       await nextTick()
-      
+
       // Menu should now be open
       expect(firstDropdown.find('.absolute.right-0.top-full').exists()).toBe(true)
     })
 
     it('should display all action options in dropdown menu', async () => {
-      const firstThreeDotButton = wrapper.findAll('td.lg\\:hidden button')[0]
-      await firstThreeDotButton.trigger('click')
+      const cardWrapper = wrapper.find('.md\\:hidden.space-y-3')
+      const firstDropdown = cardWrapper.findComponent({ name: 'CardDropdownMenu' })
+      const dropdownButton = firstDropdown.find('button')
+
+      await dropdownButton.trigger('click')
       await nextTick()
 
-      const dropdownMenu = wrapper.find('.absolute.right-0.top-full')
+      const dropdownMenu = firstDropdown.find('.absolute.right-0.top-full')
       expect(dropdownMenu.exists()).toBe(true)
 
       const menuItems = dropdownMenu.findAll('button')
@@ -443,7 +515,7 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
     it('should close menu when clicking outside', async () => {
       const firstDropdown = wrapper.findComponent({ name: 'CardDropdownMenu' })
       const dropdownButton = firstDropdown.find('button')
-      
+
       await dropdownButton.trigger('click')
       await nextTick()
 
@@ -462,7 +534,7 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
     it('should have action menu items available', async () => {
       const firstDropdown = wrapper.findComponent({ name: 'CardDropdownMenu' })
       const dropdownButton = firstDropdown.find('button')
-      
+
       await dropdownButton.trigger('click')
       await nextTick()
 
@@ -471,7 +543,7 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
 
       // Should have action items
       expect(menuItems.length).toBeGreaterThan(0)
-      
+
       // Should have view action at minimum
       expect(menuItems[0].text()).toContain('View')
     })
@@ -510,10 +582,10 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
       const secondDropdownButton = cardDropdownMenus[1].find('button')
       await secondDropdownButton.trigger('click')
       await nextTick()
-      
+
       // First menu should close automatically when second is opened (due to click-outside)
       expect(cardDropdownMenus[1].vm.isOpen).toBe(true)
-      
+
       // Close the open menu by clicking outside
       const clickOutside = cardDropdownMenus[1].find('.fixed.inset-0')
       await clickOutside.trigger('click')
@@ -531,23 +603,26 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
       await nextTick()
     })
 
-    it('should display translated mobile headers', () => {
-      const mobileHeaders = wrapper.find('thead.lg\\:hidden')
-      const headerCells = mobileHeaders.findAll('th')
-      
-      // Headers should contain translated text (even if keys are missing, should show keys)
-      expect(headerCells[0].text()).toBeTruthy()
-      expect(headerCells[1].text()).toBeTruthy()
-      expect(headerCells[2].text()).toBeTruthy()
-    })
-
-    it('should display translated booking statuses', () => {
+    it('should display translated booking statuses in mobile cards', () => {
       const statusElements = wrapper.findAll('.status-pending, .status-paid, .status-partial')
       expect(statusElements.length).toBeGreaterThan(0)
-      
+
       // Should show status text (even if translation missing, should show key)
       statusElements.forEach((element: any) => {
         expect(element.text()).toBeTruthy()
+      })
+    })
+
+    it('should display progress label in mobile card', () => {
+      const cardWrapper = wrapper.find('.md\\:hidden.space-y-3')
+      // The progress section renders the sw-eyebrow label
+      expect(cardWrapper.exists()).toBe(true)
+      // Cards render with content — verify we have card content
+      const cards = cardWrapper.findAll('.relative.overflow-hidden')
+      expect(cards.length).toBeGreaterThan(0)
+      cards.forEach((card: any) => {
+        // Each card has a progress bar
+        expect(card.find('.bg-amber-500').exists()).toBe(true)
       })
     })
   })
@@ -561,13 +636,20 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
       await nextTick()
     })
 
+    afterEach(async () => {
+      // Restore the useSiteData mock implementation to the original factory so
+      // subsequent describe blocks are not affected by mockImplementation overrides.
+      const { useSiteData } = await import('../../composables/useSiteData')
+      vi.mocked(useSiteData).mockRestore()
+    })
+
     it('should handle missing expand data gracefully', async () => {
       // Override useSiteData for this test to return booking without expand data
       const { useSiteData } = await import('../../composables/useSiteData')
       vi.mocked(useSiteData).mockImplementation((loadFunction) => {
         const { ref } = require('vue')
         const funcString = loadFunction.toString()
-        
+
         if (funcString.includes('serviceBookingService.getAll')) {
           return {
             data: ref([{
@@ -587,7 +669,7 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
             reload: vi.fn()
           }
         }
-        
+
         // Return empty data for other services
         return {
           data: ref([]),
@@ -639,20 +721,27 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
       await nextTick()
     })
 
-    it('should not display duration, rate, or reference in mobile view', () => {
-      // Mobile cells should not show detailed info that's shown in desktop
-      const mobileCells = wrapper.findAll('td.lg\\:hidden')
-      
-      mobileCells.forEach((cell: any) => {
+    it('should not display duration, rate, or unit info in mobile cards', () => {
+      const cardWrapper = wrapper.find('.md\\:hidden.space-y-3')
+      const cards = cardWrapper.findAll('.relative.overflow-hidden')
+
+      expect(cards.length).toBeGreaterThan(0)
+      cards.forEach((card: any) => {
         // Should not contain detailed duration info like "5 hours"
-        expect(cell.text()).not.toMatch(/\d+\s+(hours|days|units)/)
-        // Should not contain rate info like "₹100.00" (except total amount)
-        const text = cell.text()
-        if (text.includes('₹')) {
-          // If it contains currency, it should be the total amount, not unit rate
-          expect(text).toMatch(/₹[45]\d{2}\.00/) // 450.00 or 500.00
-        }
+        expect(card.text()).not.toMatch(/\d+\s+(hours|days|units)/)
       })
+    })
+
+    it('should display total amount (not unit rate) in mobile cards', () => {
+      const cardWrapper = wrapper.find('.md\\:hidden.space-y-3')
+      const cards = cardWrapper.findAll('.relative.overflow-hidden')
+
+      expect(cards.length).toBeGreaterThan(0)
+      // booking-1 total is ₹500.00, booking-2 total is ₹450.00
+      const firstCard = cards[0]
+      expect(firstCard.text()).toContain('₹500.00')
+      // Should show a total in the expected range
+      expect(firstCard.text()).toMatch(/₹[45]\d{2}\.00/)
     })
   })
 

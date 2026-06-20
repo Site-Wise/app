@@ -37,75 +37,76 @@
     <template v-else>
       <!-- Stats Cards - 2x2 grid on mobile for better space usage -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8" data-tour="quick-stats">
-        <div class="card p-3 sm:p-5">
+        <div class="card p-3 sm:p-5 flex flex-col">
           <div class="flex flex-col sm:flex-row sm:items-center">
             <div class="p-2 bg-amber/15 rounded-md w-fit mb-2 sm:mb-0">
               <TrendingUp class="h-5 w-5 sm:h-8 sm:w-8 text-amber-700 dark:text-amber" />
             </div>
             <div class="sm:ml-4">
-              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('dashboard.totalExpenses') }}</p>
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400 min-h-[2rem]">{{ t('dashboard.totalExpenses') }}</p>
               <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">₹{{
                 formatCompactAmount(animTotalExpenses) }}
               </p>
             </div>
           </div>
-          <div class="mt-3 pt-2 border-t border-stone-200 dark:border-ink-4 flex items-center gap-1.5 text-xs">
+          <div class="mt-auto pt-3 border-t border-stone-200 dark:border-ink-4 flex items-center gap-1.5 text-xs">
             <span class="text-stone-500 dark:text-stone-400">{{ t('dashboard.perSqftNote') }}</span>
             <span class="font-mono sw-tabular text-stone-600 dark:text-stone-300">₹{{ displayPerSqft }}</span>
           </div>
         </div>
 
-        <div class="card p-3 sm:p-5">
-          <div class="flex flex-col sm:flex-row sm:items-center">
-            <div class="p-2 bg-stone-200/60 dark:bg-ink-2 rounded-md w-fit mb-2 sm:mb-0">
-              <Calendar class="h-5 w-5 sm:h-8 sm:w-8 text-stone-600 dark:text-stone-300" />
-            </div>
-            <div class="sm:ml-4">
-              <p class="sw-eyebrow text-stone-500 dark:text-stone-400 line-clamp-1">{{ t('dashboard.currentMonthExpenses') }}</p>
-              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">₹{{
-                formatCompactAmount(animCurrentMonthExpenses) }}</p>
-            </div>
-          </div>
-          <div class="mt-3 pt-2 border-t border-stone-200 dark:border-ink-4 flex items-center gap-1.5 text-xs">
-            <template v-if="monthOverMonthDelta">
-              <span
-                class="font-mono sw-tabular font-semibold"
-                :class="monthOverMonthDelta.isUp ? 'text-clay-600 dark:text-clay-400' : 'text-forest-600 dark:text-forest-400'"
-              >{{ monthOverMonthDelta.label }}</span>
-              <span class="text-stone-500 dark:text-stone-400">{{ t('dashboard.vsLastMonth') }}</span>
-            </template>
-            <span v-else class="text-stone-500 dark:text-stone-400">{{ t('dashboard.thisMonthNote') }}</span>
-          </div>
-        </div>
-
-        <div class="card p-3 sm:p-5">
+        <div class="card p-3 sm:p-5 flex flex-col">
           <div class="flex flex-col sm:flex-row sm:items-center">
             <div class="p-2 bg-amber/15 rounded-md w-fit mb-2 sm:mb-0">
-              <Calculator class="h-5 w-5 sm:h-8 sm:w-8 text-amber-700 dark:text-amber" />
+              <Undo2 class="h-5 w-5 sm:h-8 sm:w-8 text-amber-700 dark:text-amber" />
             </div>
             <div class="sm:ml-4">
-              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('dashboard.expensePerSqft') }}</p>
-              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">₹{{ displayPerSqft }}</p>
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400 min-h-[2rem]">{{ t('dashboard.pendingRecovery') }}</p>
+              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">₹{{
+                formatCompactAmount(animPendingRecovery) }}</p>
             </div>
           </div>
-          <div class="mt-3 pt-2 border-t border-stone-200 dark:border-ink-4 flex items-center gap-1.5 text-xs">
-            <span class="text-stone-500 dark:text-stone-400">{{ currentSite?.total_planned_area?.toLocaleString('en-IN') }}</span>
-            <span class="text-stone-500 dark:text-stone-400">{{ t('dashboard.sqft') }}</span>
+          <div class="mt-auto pt-3 border-t border-stone-200 dark:border-ink-4 flex items-center gap-1.5 text-xs">
+            <span
+              v-if="stats.pendingRecoveryCount > 0"
+              class="font-mono sw-tabular font-semibold text-amber-700 dark:text-amber-400"
+            >{{ t('dashboard.pendingRecoveryNote', { count: stats.pendingRecoveryCount }) }}</span>
+            <span v-else class="text-stone-500 dark:text-stone-400">{{ t('dashboard.pendingRecoveryNoneNote') }}</span>
           </div>
         </div>
 
-        <div class="card p-3 sm:p-5">
+        <div class="card p-3 sm:p-5 flex flex-col">
+          <div class="flex flex-col sm:flex-row sm:items-center">
+            <div class="p-2 bg-forest/15 rounded-md w-fit mb-2 sm:mb-0">
+              <Wallet class="h-5 w-5 sm:h-8 sm:w-8 text-forest-700 dark:text-forest-400" />
+            </div>
+            <div class="sm:ml-4">
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400 min-h-[2rem]">{{ t('dashboard.advances') }}</p>
+              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">₹{{
+                formatCompactAmount(animAdvances) }}</p>
+            </div>
+          </div>
+          <div class="mt-auto pt-3 border-t border-stone-200 dark:border-ink-4 flex items-center gap-1.5 text-xs">
+            <span
+              v-if="stats.advanceCount > 0"
+              class="font-mono sw-tabular font-semibold text-forest-700 dark:text-forest-400"
+            >{{ t('dashboard.advancesNote', { count: stats.advanceCount }) }}</span>
+            <span v-else class="text-stone-500 dark:text-stone-400">{{ t('dashboard.advancesNoneNote') }}</span>
+          </div>
+        </div>
+
+        <div class="card p-3 sm:p-5 flex flex-col">
           <div class="flex flex-col sm:flex-row sm:items-center">
             <div class="p-2 bg-clay/15 rounded-md w-fit mb-2 sm:mb-0">
               <DollarSign class="h-5 w-5 sm:h-8 sm:w-8 text-clay" />
             </div>
             <div class="sm:ml-4">
-              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('dashboard.outstandingAmount') }}</p>
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400 min-h-[2rem]">{{ t('dashboard.outstandingAmount') }}</p>
               <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">₹{{
                 formatCompactAmount(animOutstandingAmount) }}</p>
             </div>
           </div>
-          <div class="mt-3 pt-2 border-t border-stone-200 dark:border-ink-4 flex items-center gap-1.5 text-xs">
+          <div class="mt-auto pt-3 border-t border-stone-200 dark:border-ink-4 flex items-center gap-1.5 text-xs">
             <span
               v-if="stats.unpaidCount > 0"
               class="font-mono sw-tabular font-semibold text-clay-600 dark:text-clay-400"
@@ -117,11 +118,27 @@
 
       <!-- Payments Chart -->
       <div class="card p-4 sm:p-6" data-tour="recent-activities">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-          <h2 class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('dashboard.paymentsLastSevenDays') }}</h2>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+          <div class="flex items-center gap-3">
+            <h2 class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('dashboard.payments') }}</h2>
+            <!-- Period toggle -->
+            <div class="inline-flex rounded-md border border-stone-200 dark:border-ink-4 p-0.5 bg-cream-2 dark:bg-ink-2">
+              <button
+                v-for="opt in chartPeriodOptions"
+                :key="opt.value"
+                @click="chartPeriod = opt.value"
+                :class="[
+                  'px-2.5 py-1 text-xs font-medium rounded-[4px] transition-colors duration-150 ease-snap',
+                  chartPeriod === opt.value
+                    ? 'bg-amber-500 text-ink'
+                    : 'text-stone-600 dark:text-stone-300 hover:text-ink dark:hover:text-cream'
+                ]"
+              >{{ t(opt.labelKey) }}</button>
+            </div>
+          </div>
           <div class="flex items-center text-xs sm:text-sm text-stone-600 dark:text-stone-300 bg-cream-2 dark:bg-ink-2 border border-stone-200 dark:border-ink-4 rounded-md px-3 py-1.5">
             <BarChart3 class="h-4 w-4 mr-2 text-amber-700 dark:text-amber" />
-            {{ t('dashboard.totalPaid') }}: <span class="ml-1 font-mono sw-tabular text-ink dark:text-cream">₹{{ formatCompactAmount(animWeeklyTotal) }}</span>
+            {{ t('dashboard.totalPaid') }}: <span class="ml-1 font-mono sw-tabular text-ink dark:text-cream">₹{{ formatCompactAmount(animPeriodTotal) }}</span>
           </div>
         </div>
         <div class="w-full">
@@ -211,7 +228,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue';
-import { TrendingUp, Calendar, Calculator, DollarSign, Loader2, BarChart3 } from 'lucide-vue-next';
+import { TrendingUp, Undo2, Wallet, DollarSign, Loader2, BarChart3 } from 'lucide-vue-next';
 import { Line } from 'vue-chartjs';
 import {
   Chart as ChartJS,
@@ -246,6 +263,8 @@ import {
   serviceBookingService,
   ServiceBookingService,
   vendorRefundService,
+  vendorReturnService,
+  vendorCreditNoteService,
   vendorService
 } from '../services/pocketbase';
 import { useSiteStore } from '../stores/site';
@@ -296,29 +315,29 @@ const shouldShowOnboarding = computed(() => {
 
 // Use site-aware data loading
 const { data: dashboardData, loading } = useSiteData(async () => {
-  const [payments, deliveries, serviceBookings, vendorRefunds, vendors] = await Promise.all([
+  const [payments, deliveries, serviceBookings, vendorRefunds, vendorReturns, creditNotes, vendors] = await Promise.all([
     paymentService.getAll(),
     deliveryService.getAll(),
     serviceBookingService.getAll(),
     vendorRefundService.getAll(),
+    vendorReturnService.getAll(),
+    vendorCreditNoteService.getAll(),
     vendorService.getAll(),
   ]);
 
-  return { payments, deliveries, serviceBookings, vendorRefunds, vendors };
+  return { payments, deliveries, serviceBookings, vendorRefunds, vendorReturns, creditNotes, vendors };
 });
 
 const payments = computed(() => dashboardData.value?.payments || []);
 const deliveries = computed(() => dashboardData.value?.deliveries || []);
 const serviceBookings = computed(() => dashboardData.value?.serviceBookings || []);
 const vendorRefunds = computed(() => dashboardData.value?.vendorRefunds || []);
+const vendorReturns = computed(() => dashboardData.value?.vendorReturns || []);
+const creditNotes = computed(() => dashboardData.value?.creditNotes || []);
 const vendors = computed(() => dashboardData.value?.vendors || []);
 
 
 const stats = computed(() => {
-  const currentDate = new Date();
-  const currentMonth = currentDate.getMonth();
-  const currentYear = currentDate.getFullYear();
-
   // Calculate gross expenses from deliveries and service bookings
   const grossExpenses = deliveries.value.reduce((sum, delivery) => {
     return sum + delivery.total_amount;
@@ -333,58 +352,6 @@ const stats = computed(() => {
 
   // Net expenses = Gross expenses - Refunds
   const totalExpenses = grossExpenses - totalRefunds;
-
-  // Calculate current month gross expenses
-  const currentMonthGrossExpenses = deliveries.value
-    .filter(delivery => {
-      const deliveryDate = new Date(delivery.delivery_date);
-      return deliveryDate.getMonth() === currentMonth && deliveryDate.getFullYear() === currentYear;
-    })
-    .reduce((sum, delivery) => sum + delivery.total_amount, 0) +
-    serviceBookings.value
-      .filter(booking => {
-        const bookingDate = new Date(booking.start_date);
-        return bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
-      })
-      .reduce((sum, booking) => sum + booking.total_amount, 0);
-
-  // Calculate current month refunds
-  const currentMonthRefunds = vendorRefunds.value
-    .filter(refund => {
-      const refundDate = new Date(refund.refund_date);
-      return refundDate.getMonth() === currentMonth && refundDate.getFullYear() === currentYear;
-    })
-    .reduce((sum, refund) => sum + refund.refund_amount, 0);
-
-  // Net current month expenses = Gross expenses - Refunds
-  const currentMonthExpenses = currentMonthGrossExpenses - currentMonthRefunds;
-
-  // Previous calendar month net expenses (for month-over-month delta on the spend tile)
-  const prevDate = new Date(currentYear, currentMonth - 1, 1);
-  const prevMonth = prevDate.getMonth();
-  const prevYear = prevDate.getFullYear();
-
-  const prevMonthGrossExpenses = deliveries.value
-    .filter(delivery => {
-      const d = new Date(delivery.delivery_date);
-      return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
-    })
-    .reduce((sum, delivery) => sum + delivery.total_amount, 0) +
-    serviceBookings.value
-      .filter(booking => {
-        const d = new Date(booking.start_date);
-        return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
-      })
-      .reduce((sum, booking) => sum + booking.total_amount, 0);
-
-  const prevMonthRefunds = vendorRefunds.value
-    .filter(refund => {
-      const d = new Date(refund.refund_date);
-      return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
-    })
-    .reduce((sum, refund) => sum + refund.refund_amount, 0);
-
-  const prevMonthExpenses = prevMonthGrossExpenses - prevMonthRefunds;
 
   const totalSqft = currentSite.value?.total_planned_area || 1;
   const expensePerSqft = Math.round(totalExpenses / totalSqft);
@@ -409,36 +376,65 @@ const stats = computed(() => {
     d => (d.paid_amount || 0) < d.total_amount
   ).length;
 
+  // Advances = money paid to vendors that isn't (fully) attributed to a delivery or
+  // service booking yet. Per payment: max(0, amount - sum(allocated_amount)).
+  let advances = 0;
+  let advanceCount = 0;
+  for (const payment of payments.value) {
+    const allocations = payment.expand?.payment_allocations || [];
+    const allocated = allocations.reduce((sum, a) => sum + (a.allocated_amount || 0), 0);
+    const unattributed = payment.amount - allocated;
+    if (unattributed > 0) {
+      advances += unattributed;
+      advanceCount += 1;
+    }
+  }
+
+  // Pending recovery = money owed back on vendor returns that haven't been settled
+  // yet — i.e. returns (not rejected) with neither a linked refund/adjustment nor a
+  // credit note. The moment a credit note or refund is recorded, the return drops off.
+  const refundedReturnIds = new Set(
+    vendorRefunds.value.map(r => r.vendor_return).filter(Boolean)
+  );
+  const creditedReturnIds = new Set(
+    creditNotes.value.map(cn => cn.return_id).filter(Boolean)
+  );
+  let pendingRecovery = 0;
+  let pendingRecoveryCount = 0;
+  for (const ret of vendorReturns.value) {
+    if (ret.status === 'rejected') continue;
+    const settled = refundedReturnIds.has(ret.id!) || creditedReturnIds.has(ret.id!);
+    if (!settled) {
+      pendingRecovery += ret.total_return_amount || 0;
+      pendingRecoveryCount += 1;
+    }
+  }
+
   return {
     totalExpenses,
-    currentMonthExpenses,
-    prevMonthExpenses,
     expensePerSqft,
     outstandingAmount,
-    unpaidCount
+    unpaidCount,
+    advances,
+    advanceCount,
+    pendingRecovery,
+    pendingRecoveryCount
   };
 });
 
-// Real month-over-month delta % for the current-month spend tile.
-// Spend going UP is a warning (clay); going DOWN is good (forest green).
-const monthOverMonthDelta = computed(() => {
-  const current = stats.value.currentMonthExpenses;
-  const prev = stats.value.prevMonthExpenses;
-  if (prev <= 0) return null; // no honest baseline -> hide delta, show neutral note instead
-  const pct = ((current - prev) / prev) * 100;
-  return {
-    pct,
-    label: `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`,
-    isUp: pct > 0
-  };
-});
+// Payments chart period — toggle between last 7 and last 30 days.
+const chartPeriod = ref<'week' | 'month'>('week');
+const chartPeriodOptions = [
+  { value: 'week' as const, labelKey: 'dashboard.last7Days' },
+  { value: 'month' as const, labelKey: 'dashboard.last30Days' },
+];
 
 const paymentChartData = computed(() => {
   const days = [];
   const today = new Date();
+  const span = chartPeriod.value === 'month' ? 30 : 7;
 
-  // Get last 7 days of payment data
-  for (let i = 6; i >= 0; i--) {
+  for (let i = span - 1; i >= 0; i--) {
     const date = new Date();
     date.setDate(today.getDate() - i);
     const dayStart = new Date(date);
@@ -454,10 +450,12 @@ const paymentChartData = computed(() => {
 
     const amount = dayPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
 
-    days.push({
-      label: date.toLocaleDateString('en-US', { weekday: 'short' }),
-      amount
-    });
+    // Weekday labels for the week view; compact day/month for the month view.
+    const label = span === 7
+      ? date.toLocaleDateString('en-US', { weekday: 'short' })
+      : date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+
+    days.push({ label, amount });
   }
 
   return days;
@@ -549,7 +547,7 @@ const chartOptions = computed(() => {
   };
 });
 
-const weeklyPaymentTotal = computed(() => {
+const periodPaymentTotal = computed(() => {
   return paymentChartData.value.reduce((sum, day) => sum + day.amount, 0);
 });
 
@@ -666,10 +664,11 @@ const overviewLabel = computed(() => {
 
 // Signature count-up animations on the KPI stats (Sitewise design system).
 const animTotalExpenses = useCountUp(() => stats.value.totalExpenses);
-const animCurrentMonthExpenses = useCountUp(() => stats.value.currentMonthExpenses);
 const animExpensePerSqft = useCountUp(() => stats.value.expensePerSqft);
 const animOutstandingAmount = useCountUp(() => stats.value.outstandingAmount);
-const animWeeklyTotal = useCountUp(() => weeklyPaymentTotal.value);
+const animAdvances = useCountUp(() => stats.value.advances);
+const animPendingRecovery = useCountUp(() => stats.value.pendingRecovery);
+const animPeriodTotal = useCountUp(() => periodPaymentTotal.value);
 const displayPerSqft = computed(() => Math.round(animExpensePerSqft.value).toLocaleString());
 
 const formatAmount = (amount: number) => {

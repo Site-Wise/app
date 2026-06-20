@@ -159,7 +159,7 @@
 
   /* ---- Status badges --------------------------------------------------- */
   .status-badge {
-    @apply inline-flex items-center gap-1 px-2 h-6 rounded-md text-xs font-semibold tracking-wide;
+    @apply inline-flex items-center gap-1 px-2 py-1 min-h-[1.5rem] rounded-md text-xs font-semibold tracking-wide leading-tight;
   }
 
   .status-pending {
@@ -217,7 +217,7 @@
     @apply bg-white dark:bg-ink-3 border border-stone-200 dark:border-ink-4 rounded-lg shadow-card dark:shadow-inset-hi p-6;
   }
 
-  .sw-badge { @apply inline-flex items-center gap-1 h-6 px-2 rounded-md text-xs font-semibold; }
+  .sw-badge { @apply inline-flex items-center gap-1 px-2 py-1 min-h-[1.5rem] rounded-md text-xs font-semibold leading-tight; }
   .sw-badge--success { @apply bg-forest-100 text-forest-700 dark:bg-forest-500/15 dark:text-forest-400; }
   .sw-badge--danger  { @apply bg-clay-100 text-clay-700 dark:bg-clay-500/15 dark:text-clay-400; }
   .sw-badge--accent  { @apply bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-300; }

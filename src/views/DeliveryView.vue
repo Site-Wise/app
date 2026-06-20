@@ -144,78 +144,82 @@
       </div>
     </div>
 
-    <!-- Table Desktop View -->
-    <div class="card overflow-x-auto hidden lg:block">
+    <!-- xl+ Table View -->
+    <div class="hidden xl:block overflow-x-auto rounded-lg border border-stone-200 dark:border-ink-4 shadow-card dark:shadow-inset-hi">
       <table class="min-w-full divide-y divide-stone-200 dark:divide-ink-4">
           <thead class="bg-cream-2 dark:bg-ink-2">
             <tr>
-              <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('common.vendor') }}</th>
-              <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('delivery.reference') }}</th>
-              <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('delivery.itemCount') }}</th>
-              <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('common.total') }}</th>
-              <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('delivery.paymentStatus') }}</th>
-              <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('delivery.deliveryDate') }}</th>
-              <th class="relative px-6 py-3"><span class="sr-only">{{ t('common.actions') }}</span></th>
+              <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">{{ t('common.vendor') }}</th>
+              <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">{{ t('delivery.deliveryDate') }}</th>
+              <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">{{ t('delivery.itemCount') }}</th>
+              <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">{{ t('common.total') }}</th>
+              <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">{{ t('delivery.paymentStatus') }}</th>
+              <th class="relative px-4 py-3 border-b border-stone-200 dark:border-ink-4"><span class="sr-only">{{ t('common.actions') }}</span></th>
             </tr>
           </thead>
           <tbody class="bg-white dark:bg-ink-3 divide-y divide-stone-200 dark:divide-ink-4">
-            <tr v-if="loading" class="border-b border-stone-200 dark:border-ink-4">
-              <td colspan="7" class="px-6 py-4 text-center text-stone-500 dark:text-stone-400">
-                <Loader2 class="w-6 h-6 animate-spin mx-auto" />
+            <tr v-if="loading">
+              <td colspan="6" class="px-4 py-12 text-center">
+                <Loader2 class="w-6 h-6 animate-spin mx-auto text-stone-400" />
               </td>
             </tr>
-            <tr v-else-if="deliveries.length === 0" class="border-b border-stone-200 dark:border-ink-4">
-              <td colspan="7" class="px-6 py-4 text-center text-stone-500 dark:text-stone-400">
-                {{ searchQuery.trim() ? t('delivery.noSearchResults') : t('delivery.noDeliveries') }}
+            <tr v-else-if="deliveries.length === 0">
+              <td colspan="6" class="px-4 py-16 text-center">
+                <div class="flex flex-col items-center gap-3">
+                  <div class="w-12 h-12 rounded-lg bg-cream-2 dark:bg-ink-2 flex items-center justify-center">
+                    <Loader2 class="w-6 h-6 text-stone-300 dark:text-stone-600" />
+                  </div>
+                  <p class="font-display text-sm font-semibold text-ink dark:text-cream">
+                    {{ searchQuery.trim() ? t('delivery.noSearchResults') : t('delivery.noDeliveries') }}
+                  </p>
+                  <p v-if="!searchQuery.trim()" class="text-xs text-stone-500 dark:text-stone-400">
+                    {{ t('delivery.startTracking') }}
+                  </p>
+                </div>
               </td>
             </tr>
             <tr v-else v-for="delivery in deliveries" :key="delivery.id"
-                class="rounded-none hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div>
-                  <div class="text-sm font-medium text-ink dark:text-cream">
-                    {{ delivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}
-                  </div>
-                  <div v-if="delivery.expand?.vendor?.name" class="text-xs text-stone-500 dark:text-stone-400">
-                    {{ delivery.expand.vendor.name }}
-                  </div>
+                class="cursor-pointer hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap">
+              <td class="px-4 py-3.5 whitespace-nowrap">
+                <div class="font-medium text-sm text-ink dark:text-cream">
+                  {{ delivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}
+                </div>
+                <div v-if="delivery.expand?.vendor?.name" class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                  {{ delivery.expand.vendor.name }}
+                </div>
+                <div v-if="delivery.delivery_reference" class="text-xs font-mono sw-tabular text-stone-400 dark:text-stone-500 mt-0.5">
+                  {{ delivery.delivery_reference }}
                 </div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-mono sw-tabular text-ink dark:text-cream">
-                  {{ delivery.delivery_reference || '-' }}
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-ink dark:text-cream">
-                  <span class="font-mono sw-tabular">{{ delivery.expand?.delivery_items?.length || 0 }}</span> {{ t('delivery.items') }}
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-mono sw-tabular font-medium text-ink dark:text-cream">
-                  ₹{{ delivery.total_amount.toFixed(2) }}
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span :class="`status-${delivery.payment_status}`">
-                  {{ t(`common.${delivery.payment_status}`) }}
-                </span>
-                <!-- Show outstanding amount for partial payments -->
-                <div v-if="delivery.payment_status === 'partial'" class="text-xs font-mono sw-tabular text-amber-700 dark:text-amber-400">
-                  ₹{{ delivery.outstanding.toFixed(2) }} pending
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-mono sw-tabular text-ink dark:text-cream">
+              <td class="px-4 py-3.5 whitespace-nowrap text-right">
+                <div class="text-sm font-mono sw-tabular text-stone-500 dark:text-stone-400">
                   {{ formatDate(delivery.delivery_date) }}
                 </div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <td class="px-4 py-3.5 whitespace-nowrap text-right">
+                <div class="text-sm font-mono sw-tabular text-stone-500 dark:text-stone-400">
+                  {{ delivery.expand?.delivery_items?.length || 0 }}
+                </div>
+              </td>
+              <td class="px-4 py-3.5 whitespace-nowrap text-right">
+                <div class="text-sm font-mono sw-tabular font-medium text-ink dark:text-cream">
+                  ₹{{ delivery.total_amount.toFixed(2) }}
+                </div>
+                <div v-if="delivery.payment_status === 'partial'" class="text-xs font-mono sw-tabular text-amber-700 dark:text-amber-400">
+                  ₹{{ delivery.outstanding.toFixed(2) }}
+                </div>
+              </td>
+              <td class="px-4 py-3.5 whitespace-nowrap">
+                <span :class="`status-${delivery.payment_status}`">
+                  {{ t(`common.${delivery.payment_status}`) }}
+                </span>
+              </td>
+              <td class="px-4 py-3.5 whitespace-nowrap text-right">
                 <!-- Desktop Action Buttons -->
-                <div class="hidden lg:flex items-center space-x-2" @click.stop>
+                <div class="flex items-center justify-end space-x-1" @click.stop>
                   <button
                     @click="viewDelivery(delivery)"
-                    class="p-2 text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream rounded-full hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-200"
+                    class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
                     :title="t('common.view')"
                   >
                     <Eye class="h-4 w-4" />
@@ -223,7 +227,7 @@
                   <button
                     v-if="canEditDelete && delivery.payment_status === 'pending'"
                     @click="editDelivery(delivery)"
-                    class="p-2 text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream rounded-full hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-200"
+                    class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
                     :title="t('common.edit')"
                   >
                     <Edit2 class="h-4 w-4" />
@@ -231,19 +235,11 @@
                   <button
                     v-if="canEditDelete && delivery.payment_status === 'pending'"
                     @click="deleteDelivery(delivery)"
-                    class="p-2 text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 rounded-full hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-200"
+                    class="h-8 w-8 flex items-center justify-center text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
                     :title="t('common.deleteAction')"
                   >
                     <Trash2 class="h-4 w-4" />
                   </button>
-                </div>
-
-                <!-- Mobile Dropdown Menu -->
-                <div class="lg:hidden">
-                  <CardDropdownMenu
-                    :actions="getDeliveryActions(delivery)"
-                    @action="handleDeliveryAction(delivery, $event)"
-                  />
                 </div>
               </td>
             </tr>
@@ -251,39 +247,51 @@
         </table>
     </div>
 
-    <!-- Mobile/Tablet List View -->
-    <div class="lg:hidden">
-      <div class="space-y-4">
-        <div v-if="loading" class="text-center py-8">
+    <!-- Mobile/Tablet Card View (< xl) -->
+    <div class="xl:hidden">
+      <div class="space-y-3">
+        <!-- Loading state -->
+        <div v-if="loading" class="text-center py-12">
           <Loader2 class="w-8 h-8 animate-spin mx-auto text-stone-400" />
         </div>
-        <div v-else-if="deliveries.length === 0" class="text-center py-8 text-stone-500 dark:text-stone-400">
-          {{ searchQuery.trim() ? t('delivery.noSearchResults') : t('delivery.noDeliveries') }}
-        </div>
-        <div v-else v-for="delivery in deliveries" :key="delivery.id"
-             class="bg-white dark:bg-ink-3 p-4 rounded-xl shadow-card border border-stone-200 dark:border-ink-4">
 
-          <!-- Mobile Card Header -->
-          <div class="flex items-start justify-between mb-3">
-            <div class="flex-1">
-              <div class="flex items-center gap-2">
-                <h3 class="font-display text-sm font-semibold text-ink dark:text-cream">
+        <!-- Empty state -->
+        <div v-else-if="deliveries.length === 0" class="flex flex-col items-center gap-3 py-16 text-center">
+          <div class="w-12 h-12 rounded-lg bg-stone-100 dark:bg-ink-2 flex items-center justify-center">
+            <Loader2 class="w-6 h-6 text-stone-300 dark:text-stone-600" />
+          </div>
+          <p class="font-display text-sm font-semibold text-ink dark:text-cream">
+            {{ searchQuery.trim() ? t('delivery.noSearchResults') : t('delivery.noDeliveries') }}
+          </p>
+          <p v-if="!searchQuery.trim()" class="text-xs text-stone-500 dark:text-stone-400">
+            {{ t('delivery.startTracking') }}
+          </p>
+        </div>
+
+        <!-- Delivery cards -->
+        <div v-else v-for="delivery in deliveries" :key="delivery.id"
+             class="bg-white dark:bg-ink-3 rounded-lg shadow-card dark:shadow-inset-hi border border-stone-200 dark:border-ink-4 overflow-hidden">
+
+          <!-- Card Header: vendor + status + actions -->
+          <div class="flex items-start justify-between px-4 pt-4 pb-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="font-display text-sm font-semibold text-ink dark:text-cream truncate">
                   {{ delivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}
                 </h3>
-                <span v-if="delivery.expand?.vendor?.name" class="text-xs text-stone-500 dark:text-stone-400 truncate">
-                  {{ delivery.expand.vendor.name }}
+                <span :class="`status-${delivery.payment_status}`">
+                  {{ t(`common.${delivery.payment_status}`) }}
                 </span>
               </div>
-              <p class="text-xs text-stone-500 dark:text-stone-400 mt-1">
-                <span class="font-mono sw-tabular">{{ formatDate(delivery.delivery_date) }}</span>
-                <span v-if="delivery.delivery_reference" class="ml-2 font-mono sw-tabular">
-                  • Ref: {{ delivery.delivery_reference }}
-                </span>
-              </p>
+              <div class="flex items-center gap-2 mt-1 text-xs text-stone-500 dark:text-stone-400">
+                <span v-if="delivery.expand?.vendor?.name" class="truncate">{{ delivery.expand.vendor.name }}</span>
+                <span v-if="delivery.expand?.vendor?.name && delivery.delivery_reference" class="text-stone-300 dark:text-stone-600">·</span>
+                <span v-if="delivery.delivery_reference" class="font-mono sw-tabular">{{ delivery.delivery_reference }}</span>
+              </div>
             </div>
-            
-            <!-- Mobile Actions Menu -->
-            <div class="relative">
+
+            <!-- Card Actions Dropdown -->
+            <div class="relative ml-2 flex-shrink-0">
               <CardDropdownMenu
                 :actions="getDeliveryActions(delivery)"
                 @action="handleDeliveryAction(delivery, $event)"
@@ -291,28 +299,21 @@
             </div>
           </div>
 
-          <!-- Mobile Card Content -->
-          <div class="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <span class="text-stone-500 dark:text-stone-400">{{ t('delivery.itemCount') }}:</span>
-              <span class="ml-1 font-mono sw-tabular text-ink dark:text-cream font-medium">
-                {{ delivery.expand?.delivery_items?.length || 0 }}
-              </span>
+          <!-- Card metric strip -->
+          <div class="grid grid-cols-3 gap-0 border-t border-stone-200 dark:border-ink-4 bg-cream-2 dark:bg-ink-2">
+            <div class="px-4 py-2.5 border-r border-stone-200 dark:border-ink-4">
+              <div class="text-[10px] uppercase tracking-wide font-semibold text-stone-400 dark:text-stone-500 mb-0.5">{{ t('delivery.deliveryDate') }}</div>
+              <div class="text-xs font-mono sw-tabular text-ink dark:text-cream">{{ formatDate(delivery.delivery_date) }}</div>
             </div>
-            <div>
-              <span class="text-stone-500 dark:text-stone-400">{{ t('common.total') }}:</span>
-              <span class="ml-1 font-mono sw-tabular text-ink dark:text-cream font-medium">
-                ₹{{ delivery.total_amount.toFixed(2) }}
-              </span>
+            <div class="px-4 py-2.5 border-r border-stone-200 dark:border-ink-4">
+              <div class="text-[10px] uppercase tracking-wide font-semibold text-stone-400 dark:text-stone-500 mb-0.5">{{ t('delivery.itemCount') }}</div>
+              <div class="text-xs font-mono sw-tabular text-ink dark:text-cream">{{ delivery.expand?.delivery_items?.length || 0 }}</div>
             </div>
-            <div class="col-span-2">
-              <span class="text-stone-500 dark:text-stone-400">{{ t('delivery.paymentStatus') }}:</span>
-              <span :class="`ml-1 status-${delivery.payment_status}`">
-                {{ t(`common.${delivery.payment_status}`) }}
-              </span>
-              <!-- Show outstanding amount for partial payments -->
-              <div v-if="delivery.payment_status === 'partial'" class="text-xs font-mono sw-tabular text-amber-700 dark:text-amber-400">
-                ₹{{ delivery.outstanding.toFixed(2) }} pending
+            <div class="px-4 py-2.5">
+              <div class="text-[10px] uppercase tracking-wide font-semibold text-stone-400 dark:text-stone-500 mb-0.5">{{ t('common.total') }}</div>
+              <div class="text-xs font-mono sw-tabular font-semibold text-ink dark:text-cream">₹{{ delivery.total_amount.toFixed(2) }}</div>
+              <div v-if="delivery.payment_status === 'partial'" class="text-[10px] font-mono sw-tabular text-amber-700 dark:text-amber-400 mt-0.5">
+                ₹{{ delivery.outstanding.toFixed(2) }}
               </div>
             </div>
           </div>
@@ -542,6 +543,7 @@ import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
+import { useQuickActionModal } from '../composables/useQuickActionModal';
 import { useDeliverySearch } from '../composables/useSearch';
 import ImageSlider from '../components/ImageSlider.vue';
 import MultiItemDeliveryModal from '../components/delivery/MultiItemDeliveryModal.vue';
@@ -1016,7 +1018,7 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
 };
 
 // Event listeners using @vueuse/core
-useEventListener(window, 'show-add-modal', handleShowAddModal);
+useQuickActionModal(handleShowAddModal);
 useEventListener(window, 'keydown', handleKeyboardShortcut);
 </script>
 

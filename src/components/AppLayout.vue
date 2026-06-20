@@ -48,15 +48,28 @@
               <SiteSelector />
             </div>
 
-            <!-- Quick action buttons in header for desktop -->
-            <div class="hidden md:flex items-center space-x-2">
-              <button v-for="action in baseFabActions" :key="action.type" @click="quickAction(action.type)"
-                class="flex items-center justify-center h-9 w-9 lg:w-auto lg:px-3 text-sm text-stone-700 dark:text-stone-300 bg-stone-100 dark:bg-ink-4 rounded-md hover:bg-stone-200 dark:hover:bg-ink-2 transition-colors duration-200 ease-snap active:scale-[0.98]"
-                :title="t(action.labelKey)"
-                :aria-label="t(action.labelKey)">
-                <component :is="action.icon" class="h-4 w-4 lg:mr-1" :aria-hidden="true" />
-                <span class="hidden lg:inline text-sm font-medium">{{ t(action.labelKey) }}</span>
+            <!-- Quick actions: single "+ Record" menu (desktop) -->
+            <div class="hidden md:block relative" ref="quickMenuRef">
+              <button @click="quickMenuOpen = !quickMenuOpen"
+                class="flex items-center gap-2 h-9 px-3 rounded-md text-sm font-semibold bg-amber-500 text-ink hover:bg-amber-600 transition-colors duration-150 ease-snap active:scale-[0.98]"
+                :class="{ 'bg-amber-600': quickMenuOpen }"
+                :aria-expanded="quickMenuOpen" aria-haspopup="menu" :aria-label="t('quickActions.title')">
+                <Plus class="h-4 w-4" :aria-hidden="true" />
+                <span>{{ t('quickActions.record') }}</span>
+                <ChevronDown class="h-3 w-3 transition-transform duration-200" :class="{ 'rotate-180': quickMenuOpen }" />
               </button>
+
+              <div v-if="quickMenuOpen"
+                class="absolute left-0 mt-2 w-56 bg-white dark:bg-ink-3 rounded-lg shadow-modal border border-stone-200 dark:border-ink-4 z-50 p-1"
+                role="menu">
+                <button v-for="action in baseFabActions" :key="action.type"
+                  @click="quickAction(action.type); quickMenuOpen = false"
+                  class="flex items-center gap-3 w-full px-3 py-2.5 text-left rounded-md text-sm font-medium text-stone-700 dark:text-stone-300 hover:bg-cream-2 dark:hover:bg-ink-4 hover:text-ink dark:hover:text-cream transition-colors duration-150 ease-snap"
+                  role="menuitem">
+                  <component :is="action.icon" class="h-4 w-4 text-stone-500 dark:text-stone-400" :aria-hidden="true" />
+                  <span>{{ t(action.labelKey) }}</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -307,6 +320,7 @@ import {
 
 import { usePWAUpdate } from '../composables/usePWAUpdate';
 import { useModalState } from '../composables/useModalState';
+import { requestQuickActionModal } from '../composables/useQuickActionModal';
 
 const pwaUpdate = usePWAUpdate();
 
@@ -332,7 +346,9 @@ const { isAnyModalOpen } = useModalState();
 const sidebarOpen = ref(false);
 const userMenuOpen = ref(false);
 const fabMenuOpen = ref(false);
+const quickMenuOpen = ref(false);
 const userMenuRef = ref<HTMLElement | null>(null);
+const quickMenuRef = ref<HTMLElement | null>(null);
 const appVersion = ref(__APP_VERSION__);
 
 const navigation = computed(() => [
@@ -441,12 +457,10 @@ const quickAction = (type: string) => {
 
   const targetRoute = routes[type as keyof typeof routes];
   if (targetRoute) {
+    // Persist the intent BEFORE navigating; the destination view consumes it
+    // once it's mounted and ready (survives lazy route-chunk + site-data loads).
+    requestQuickActionModal();
     router.push(targetRoute);
-    // Add a small delay to ensure navigation completes before triggering modal
-    setTimeout(() => {
-      // Emit event to trigger add modal on the target page
-      window.dispatchEvent(new CustomEvent('show-add-modal'));
-    }, 100);
   }
 };
 
@@ -458,6 +472,9 @@ const handleLogout = () => {
 const handleClickOutside = (event: Event) => {
   if (userMenuRef.value && !userMenuRef.value.contains(event.target as Node)) {
     userMenuOpen.value = false;
+  }
+  if (quickMenuRef.value && !quickMenuRef.value.contains(event.target as Node)) {
+    quickMenuOpen.value = false;
   }
 };
 

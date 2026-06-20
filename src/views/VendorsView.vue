@@ -65,73 +65,40 @@
     </div>
 
     <!-- Vendors Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
       <div v-for="vendor in vendors" :key="vendor.id"
-        class="sw-card hover:shadow-card transition-shadow duration-200 cursor-pointer"
+        class="card-interactive group flex flex-col"
         @click="viewVendorDetail(vendor.id!)">
+
+        <!-- Card header: title + actions -->
         <div class="flex items-start justify-between">
-          <div class="flex-1">
-            <h3 class="font-display text-lg font-semibold text-ink dark:text-cream">{{ vendor.contact_person || vendor.name ||
-              'Unnamed Vendor' }}</h3>
-            <div v-if="vendor.name && vendor.contact_person" class="text-sm text-stone-600 dark:text-stone-400 mt-1">
-              {{ vendor.name }}
-            </div>
-            <div class="mt-2 space-y-1">
-              <div v-if="vendor.email" class="flex items-center text-sm text-stone-600 dark:text-stone-400">
-                <Mail class="mr-2 h-4 w-4" />
-                {{ vendor.email }}
-              </div>
-              <div v-if="vendor.phone" class="flex items-center text-sm text-stone-600 dark:text-stone-400">
-                <Phone class="mr-2 h-4 w-4" />
-                {{ vendor.phone }}
-              </div>
-              <div v-if="vendor.address" class="flex items-center text-sm text-stone-600 dark:text-stone-400">
-                <MapPin class="mr-2 h-4 w-4" />
-                {{ vendor.address }}
-              </div>
-            </div>
-
-            <!-- Financial Summary -->
-            <div class="mt-4 p-3 bg-cream-2 dark:bg-ink-2 rounded-lg">
-              <div class="flex justify-between items-center mb-2">
-                <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('vendors.outstanding') }}</span>
-                <span class="sw-mono text-sm font-semibold text-clay-600 dark:text-clay-400">₹{{
-                  getVendorOutstanding(vendor.id!).toFixed(0) }}</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('vendors.totalPaid') }}</span>
-                <span class="sw-mono text-sm font-semibold text-forest-600 dark:text-forest-400">₹{{
-                  getVendorPaid(vendor.id!).toFixed(0) }}</span>
-              </div>
-            </div>
-
-            <!-- Tags -->
-            <div v-if="vendorTags.get(vendor.id!)?.length" class="mt-4">
-              <div class="flex flex-wrap gap-1">
-                <span v-for="tag in vendorTags.get(vendor.id!)" :key="tag.id"
-                  class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-stone-100 dark:bg-ink-4 text-ink dark:text-cream">
-                  <span class="h-2 w-2 rounded-[2px]" :style="{ backgroundColor: tag.color }"></span>
-                  {{ tag.name }}
-                </span>
-              </div>
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display text-lg font-semibold text-ink dark:text-cream truncate">{{ vendor.contact_person || vendor.name || t('vendors.unnamedVendor') }}</h3>
+            <!-- Secondary meta: company name / phone -->
+            <div class="mt-1 flex items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400 min-w-0">
+              <span v-if="vendor.name && vendor.contact_person" class="truncate">{{ vendor.name }}</span>
+              <span v-else-if="vendor.phone" class="flex items-center gap-1 truncate">
+                <Phone class="h-3.5 w-3.5 shrink-0" />{{ vendor.phone }}
+              </span>
+              <span v-else-if="vendor.email" class="truncate">{{ vendor.email }}</span>
             </div>
           </div>
 
-          <!-- Desktop Action Buttons -->
-          <div class="hidden lg:flex items-center space-x-2" @click.stop>
+          <!-- Desktop Action Buttons — hover-reveal ghost cluster -->
+          <div class="hidden lg:flex items-center gap-0.5 ml-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150" @click.stop>
             <button @click="editVendor(vendor)" :disabled="!canEditDelete" :class="[
               canEditDelete
-                ? 'text-stone-400 hover:text-stone-600 dark:hover:text-stone-200'
+                ? 'text-stone-400 hover:text-ink dark:text-stone-500 dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4'
                 : 'text-stone-300 dark:text-stone-600 cursor-not-allowed',
-              'p-2 rounded-full hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200'
+              'h-8 w-8 inline-flex items-center justify-center rounded-md transition-colors duration-150'
             ]" :title="t('common.edit')">
               <Edit2 class="h-4 w-4" />
             </button>
             <button @click="deleteVendor(vendor.id!)" :disabled="!canEditDelete" :class="[
               canEditDelete
-                ? 'text-clay-400 hover:text-clay-600 dark:hover:text-clay-300'
+                ? 'text-stone-400 hover:text-clay-600 dark:text-stone-500 dark:hover:text-clay-400 hover:bg-stone-100 dark:hover:bg-ink-4'
                 : 'text-stone-300 dark:text-stone-600 cursor-not-allowed',
-              'p-2 rounded-full hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200'
+              'h-8 w-8 inline-flex items-center justify-center rounded-md transition-colors duration-150'
             ]" :title="t('common.deleteAction')">
               <Trash2 class="h-4 w-4" />
             </button>
@@ -142,12 +109,46 @@
             <CardDropdownMenu :actions="getVendorActions(vendor)" @action="handleVendorAction(vendor, $event)" />
           </div>
         </div>
+
+        <!-- Tags -->
+        <div v-if="vendorTags.get(vendor.id!)?.length" class="mt-3">
+          <div class="flex flex-wrap gap-1.5">
+            <span v-for="tag in vendorTags.get(vendor.id!)" :key="tag.id"
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-stone-100 dark:bg-ink-4 text-stone-700 dark:text-stone-300">
+              <span class="h-2 w-2 rounded-[2px] shrink-0" :style="{ backgroundColor: tag.color }"></span>
+              {{ tag.name }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Stat strip — bottom-pinned, separated by 1px border -->
+        <div class="mt-auto pt-4 border-t border-stone-200 dark:border-ink-4">
+          <div class="flex items-end justify-between gap-4">
+            <!-- HERO: outstanding (clay when >0, ink when settled) -->
+            <div class="flex flex-col gap-0.5">
+              <span class="sw-eyebrow text-stone-400 dark:text-stone-500">{{ t('vendors.outstanding') }}</span>
+              <span :class="[
+                'sw-stat font-mono tabular-nums leading-none',
+                getVendorOutstanding(vendor.id!) > 0
+                  ? 'text-clay-600 dark:text-clay-400'
+                  : 'text-ink dark:text-cream'
+              ]">₹{{ getVendorOutstanding(vendor.id!).toLocaleString('en-IN') }}</span>
+            </div>
+            <!-- SECONDARY: total paid (forest) -->
+            <div class="flex flex-col gap-0.5 text-right">
+              <span class="sw-eyebrow text-stone-400 dark:text-stone-500">{{ t('vendors.totalPaid') }}</span>
+              <span class="font-mono tabular-nums text-base font-semibold text-forest-700 dark:text-forest-400 leading-none">
+                ₹{{ getVendorPaid(vendor.id!).toLocaleString('en-IN') }}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-if="vendors.length === 0" class="col-span-full">
-        <div class="text-center py-12">
+        <div class="text-center py-16">
           <Users class="mx-auto h-12 w-12 text-stone-400" />
-          <h3 class="mt-2 text-sm font-medium text-ink dark:text-cream">{{ t('vendors.noVendors') }}</h3>
+          <h3 class="font-display mt-4 text-base font-semibold text-ink dark:text-cream">{{ t('vendors.noVendors') }}</h3>
           <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">{{ t('vendors.getStarted') }}</p>
         </div>
       </div>
@@ -228,11 +229,12 @@ import { ref, reactive, onMounted, computed, nextTick } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { useKeyboardShortcutSingle } from '../composables/useKeyboardShortcut';
 import { useRouter } from 'vue-router';
-import { Users, Plus, Edit2, Trash2, Loader2, Mail, Phone, MapPin, Download, ChevronDown, FileSpreadsheet, FileText } from 'lucide-vue-next';
+import { Users, Plus, Edit2, Trash2, Loader2, Phone, Download, ChevronDown, FileSpreadsheet, FileText } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
+import { useQuickActionModal } from '../composables/useQuickActionModal';
 import TagSelector from '../components/TagSelector.vue';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
@@ -886,7 +888,7 @@ const handleQuickAction = async () => {
 useKeyboardShortcutSingle('n', handleAddVendor, { shiftKey: true, altKey: true });
 
 // Event listeners using @vueuse/core
-useEventListener(window, 'show-add-modal', handleQuickAction);
+useQuickActionModal(handleQuickAction);
 
 // Handle click outside to close export dropdown
 const handleClickOutside = (event: MouseEvent) => {

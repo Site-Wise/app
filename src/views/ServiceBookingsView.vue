@@ -78,200 +78,113 @@
       </div>
     </div>
 
-    <!-- Service Bookings Table -->
-    <div class="card overflow-x-auto">
-      <table class="min-w-full divide-y divide-stone-200 dark:divide-ink-4">
-        <!-- Desktop Headers -->
-        <thead class="bg-cream-2 dark:bg-ink-2 hidden lg:table-header-group">
-          <tr>
-            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('services.service') }}</th>
-            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('services.vendor') }}</th>
-            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('serviceBookings.startDate') }}</th>
-            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('common.notes') }}</th>
-            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('common.total') }}</th>
-            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('serviceBookings.progress') }}</th>
-            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('serviceBookings.paymentStatus') }}</th>
-            <th class="px-6 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('common.actions') }}</th>
-          </tr>
-        </thead>
-
-        <!-- Mobile Headers -->
-        <thead class="bg-cream-2 dark:bg-ink-2 lg:hidden">
-          <tr>
-            <th class="px-4 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('services.service') }}</th>
-            <th class="px-4 py-3 text-right sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('services.details') }}</th>
-            <th class="px-4 py-3 text-right sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('common.actions') }}</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white dark:bg-ink-3 divide-y divide-stone-200 dark:divide-ink-4">
-          <tr v-for="booking in serviceBookings" :key="booking.id" class="rounded-none">
-            <!-- Desktop Row -->
-            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-              <div class="text-sm font-medium text-ink dark:text-cream">{{ booking.expand?.service?.name || 'Unknown Service' }}</div>
-              <div class="text-sm text-stone-500 dark:text-stone-400">{{ booking.expand?.service?.category || 'Unknown Type' }}</div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-              <div>
-                <div class="text-sm font-medium text-ink dark:text-cream">
-                  {{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}
-                </div>
-                <div v-if="booking.expand?.vendor?.name" class="text-xs text-stone-500 dark:text-stone-400">
-                  {{ booking.expand.vendor.name }}
-                </div>
-              </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono sw-tabular text-ink dark:text-cream hidden lg:table-cell">
-              {{ formatDate(booking.start_date) }}
-            </td>
-            <td class="px-6 py-4 hidden lg:table-cell max-w-xs">
-              <div
-                v-if="booking.notes"
-                class="text-sm text-stone-500 dark:text-stone-400 line-clamp-2"
-                :title="booking.notes"
-              >
-                {{ booking.notes }}
-              </div>
-              <span v-else class="text-sm text-stone-400 dark:text-stone-500 italic">—</span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-              <div class="text-sm font-mono sw-tabular font-medium text-ink dark:text-cream">₹{{ booking.total_amount.toFixed(2) }}</div>
-              <div v-if="(booking.paid_amount || 0) > 0" class="text-xs font-mono sw-tabular text-forest-600 dark:text-forest-400">
-                {{ t('serviceBookings.paid') }}: ₹{{ (booking.paid_amount || 0).toFixed(2) }}
-              </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-              <div class="flex items-center space-x-2">
-                <div class="flex-1 bg-stone-200 dark:bg-ink-2 rounded-full h-2">
-                  <div
-                    class="bg-amber-500 h-2 rounded-full transition-all duration-300"
-                    :style="{ width: `${booking.percent_completed || 0}%` }"
-                  ></div>
-                </div>
-                <span class="text-sm font-mono sw-tabular text-stone-500 dark:text-stone-400 font-medium min-w-[3rem]">
-                  {{ booking.percent_completed || 0 }}%
-                </span>
-              </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-              <span :class="`status-${booking.payment_status === 'currently_paid_up' ? 'paid' : booking.payment_status}`">
-                {{ booking.payment_status === 'currently_paid_up' ? t('serviceBookings.currentlyPaidUp') : t(`common.${booking.payment_status}`) }}
-              </span>
-              <!-- Show outstanding amount for partial payments -->
-              <div v-if="booking.payment_status === 'partial'" class="text-xs font-mono sw-tabular text-amber-700 dark:text-amber-400">
-                ₹{{ booking.outstanding.toFixed(2) }} pending
-              </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium hidden lg:table-cell">
-              <!-- Desktop Action Buttons -->
-              <div class="hidden lg:flex items-center space-x-2" @click.stop>
-                <button
-                  @click="viewBooking(booking)"
-                  class="p-2 text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream rounded-full hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-200"
-                  :title="t('common.view')"
-                >
-                  <Eye class="h-4 w-4" />
-                </button>
-                <button
-                  v-if="canEditBooking(booking)"
-                  @click="editBooking(booking)"
-                  class="p-2 text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream rounded-full hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-200"
-                  :title="t('common.edit')"
-                >
-                  <Edit2 class="h-4 w-4" />
-                </button>
-                <button
-                  @click="deleteBooking(booking.id!)"
-                  :disabled="!canDeleteBooking(booking)"
-                  :class="[
-                    canDeleteBooking(booking)
-                      ? 'text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300'
-                      : 'text-stone-300 dark:text-stone-600 cursor-not-allowed',
-                    'p-2 rounded-full hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-200'
-                  ]"
-                  :title="hasPayments(booking) ? t('serviceBookings.cannotDeleteWithPayments') : t('common.deleteAction')"
-                >
-                  <Trash2 class="h-4 w-4" />
-                </button>
-              </div>
-
-              <!-- Mobile Dropdown Menu -->
-              <div class="lg:hidden">
-                <CardDropdownMenu
-                  :actions="getBookingActions(booking)"
-                  @action="handleBookingAction(booking, $event)"
-                />
-              </div>
-            </td>
-
-            <!-- Mobile Row -->
-            <td class="px-4 py-4 lg:hidden">
-              <div class="flex items-center gap-2 mb-1">
-                <div class="text-sm font-medium text-ink dark:text-cream">
-                  {{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}
-                </div>
-                <span v-if="booking.expand?.vendor?.name" class="text-xs text-stone-500 dark:text-stone-400 truncate">
-                  {{ booking.expand.vendor.name }}
-                </span>
-              </div>
-              <div class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{{ booking.expand?.service?.name || 'Unknown Service' }}</div>
-              <div class="text-xs font-mono sw-tabular font-medium text-ink dark:text-cream mt-1">
-                {{ formatDate(booking.start_date) }}
-              </div>
-            </td>
-            <td class="px-4 py-4 lg:hidden">
-              <div class="text-right">
-                <div :class="[
-                  'text-sm font-mono sw-tabular font-semibold',
-                  booking.payment_status === 'paid'
-                    ? 'text-forest-600 dark:text-forest-400'
-                    : booking.payment_status === 'pending'
-                    ? 'text-clay-600 dark:text-clay-400'
-                    : 'text-ink dark:text-cream'
-                ]">
-                  ₹{{ booking.total_amount.toFixed(2) }}
-                </div>
-                <!-- Progress for Mobile -->
-                <div class="mt-2">
-                  <div class="flex items-center space-x-2">
-                    <div class="flex-1 bg-stone-200 dark:bg-ink-2 rounded-full h-1.5">
-                      <div
-                        class="bg-amber-500 h-1.5 rounded-full transition-all duration-300"
-                        :style="{ width: `${booking.percent_completed || 0}%` }"
-                      ></div>
-                    </div>
-                    <span class="text-xs font-mono sw-tabular text-stone-500 dark:text-stone-400 font-medium">
-                      {{ booking.percent_completed || 0 }}%
-                    </span>
-                  </div>
-                </div>
-                <!-- Payment Status for Mobile -->
-                <div class="mt-1">
-                  <span :class="`status-${booking.payment_status === 'currently_paid_up' ? 'paid' : booking.payment_status}`">
-                    {{ booking.payment_status === 'currently_paid_up' ? t('serviceBookings.currentlyPaidUp') : t(`common.${booking.payment_status}`) }}
-                  </span>
-                  <span v-if="booking.payment_status === 'partial'" class="text-xs font-mono sw-tabular text-amber-700 dark:text-amber-400 ml-1">
-                    (₹{{ booking.outstanding.toFixed(2) }} pending)
-                  </span>
-                </div>
-              </div>
-            </td>
-            <td class="px-4 py-4 lg:hidden">
-              <div class="flex items-center justify-end">
-                <CardDropdownMenu
-                  :actions="getBookingActions(booking)"
-                  @action="handleBookingAction(booking, $event)"
-                />
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      
-      <div v-if="serviceBookings.length === 0" class="text-center py-12">
-        <Calendar class="mx-auto h-12 w-12 text-stone-400" />
-        <h3 class="mt-2 font-display text-sm font-medium text-ink dark:text-cream">{{ t('serviceBookings.noBookings') }}</h3>
-        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">{{ t('serviceBookings.startBooking') }}</p>
+    <!-- Service Bookings -->
+    <div>
+      <!-- Empty state (shared) -->
+      <div v-if="serviceBookings.length === 0" class="card flex flex-col items-center justify-center py-16 text-center">
+        <div class="h-14 w-14 rounded-lg bg-stone-100 dark:bg-ink-2 flex items-center justify-center mb-4">
+          <Calendar class="h-7 w-7 text-stone-400 dark:text-stone-500" />
+        </div>
+        <h3 class="font-display text-base font-semibold text-ink dark:text-cream">{{ t('serviceBookings.noBookings') }}</h3>
+        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400 max-w-xs">{{ t('serviceBookings.startBooking') }}</p>
       </div>
+
+      <template v-else>
+        <!-- md+ : progressive-column table -->
+        <div class="hidden md:block card p-0 overflow-hidden">
+          <table class="min-w-full">
+            <thead class="bg-cream-2 dark:bg-ink-2 border-b border-stone-200 dark:border-ink-4">
+              <tr>
+                <th class="py-3 px-4 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('services.service') }}</th>
+                <th class="py-3 px-4 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 hidden lg:table-cell">{{ t('services.vendor') }}</th>
+                <th class="py-3 px-4 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 hidden xl:table-cell">{{ t('serviceBookings.startDate') }}</th>
+                <th class="py-3 px-4 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('serviceBookings.progress') }}</th>
+                <th class="py-3 px-4 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('common.total') }}</th>
+                <th class="py-3 px-4 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('serviceBookings.paymentStatus') }}</th>
+                <th class="py-3 px-4 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('common.actions') }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-stone-200 dark:divide-ink-4">
+              <tr v-for="booking in serviceBookings" :key="booking.id" @click="viewBooking(booking)"
+                  class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap cursor-pointer">
+                <td class="py-3.5 px-4 align-middle">
+                  <div class="font-medium text-sm text-ink dark:text-cream leading-snug">{{ booking.expand?.service?.name || 'Unknown Service' }}</div>
+                  <div v-if="booking.expand?.service?.category" class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{{ booking.expand.service.category }}</div>
+                  <div class="lg:hidden text-xs text-stone-500 dark:text-stone-400 mt-0.5 truncate">{{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}</div>
+                </td>
+                <td class="py-3.5 px-4 align-middle hidden lg:table-cell">
+                  <div class="font-medium text-sm text-ink dark:text-cream leading-snug">{{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}</div>
+                  <div v-if="booking.expand?.vendor?.name" class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{{ booking.expand.vendor.name }}</div>
+                </td>
+                <td class="py-3.5 px-4 align-middle text-right hidden xl:table-cell">
+                  <span class="text-sm font-mono sw-tabular text-stone-600 dark:text-stone-300">{{ formatDate(booking.start_date) }}</span>
+                </td>
+                <td class="py-3.5 px-4 align-middle" style="min-width:8rem">
+                  <div class="flex items-center gap-2">
+                    <div class="flex-1 bg-stone-200 dark:bg-ink-2 rounded-[2px] h-1.5 overflow-hidden">
+                      <div class="bg-amber-500 h-1.5 transition-all duration-300" :style="{ width: `${booking.percent_completed || 0}%` }"></div>
+                    </div>
+                    <span class="text-xs font-mono sw-tabular text-stone-500 dark:text-stone-400 w-9 text-right flex-none">{{ booking.percent_completed || 0 }}%</span>
+                  </div>
+                </td>
+                <td class="py-3.5 px-4 align-middle text-right">
+                  <div class="text-sm font-mono sw-tabular font-medium text-ink dark:text-cream">₹{{ booking.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
+                  <div v-if="(booking.paid_amount || 0) > 0" class="text-xs font-mono sw-tabular text-forest-600 dark:text-forest-400 mt-0.5">{{ t('serviceBookings.paid') }}: ₹{{ (booking.paid_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
+                </td>
+                <td class="py-3.5 px-4 align-middle">
+                  <span :class="`status-${booking.payment_status === 'currently_paid_up' ? 'paid' : booking.payment_status}`">{{ booking.payment_status === 'currently_paid_up' ? t('serviceBookings.currentlyPaidUp') : t(`common.${booking.payment_status}`) }}</span>
+                  <div v-if="booking.payment_status === 'partial'" class="text-xs font-mono sw-tabular text-amber-700 dark:text-amber-400 mt-0.5">₹{{ booking.outstanding.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} {{ t('serviceBookings.pendingLabel') }}</div>
+                </td>
+                <td class="py-3.5 px-4 align-middle" @click.stop>
+                  <div class="flex items-center justify-end gap-1">
+                    <button @click="viewBooking(booking)" class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150" :title="t('common.view')"><Eye class="h-4 w-4" /></button>
+                    <button v-if="canEditBooking(booking)" @click="editBooking(booking)" class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150" :title="t('common.edit')"><Edit2 class="h-4 w-4" /></button>
+                    <button @click="deleteBooking(booking.id!)" :disabled="!canDeleteBooking(booking)" :class="[canDeleteBooking(booking) ? 'text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 hover:bg-stone-100 dark:hover:bg-ink-2' : 'text-stone-300 dark:text-stone-600 cursor-not-allowed','h-8 w-8 flex items-center justify-center rounded-md transition-colors duration-150']" :title="hasPayments(booking) ? t('serviceBookings.cannotDeleteWithPayments') : t('common.deleteAction')"><Trash2 class="h-4 w-4" /></button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- < md : epic cards -->
+        <div class="md:hidden space-y-3">
+          <div v-for="booking in serviceBookings" :key="booking.id" @click="viewBooking(booking)"
+               class="relative overflow-hidden rounded-lg border border-stone-200 dark:border-ink-4 bg-white dark:bg-ink-3 shadow-card dark:shadow-inset-hi active:scale-[0.99] transition-transform duration-150 ease-snap cursor-pointer">
+            <span class="absolute left-0 inset-y-0 w-1" :class="booking.payment_status === 'partial' ? 'bg-amber-500' : (booking.payment_status === 'pending' ? 'bg-clay-500' : 'bg-forest-500')"></span>
+            <div class="pl-5 pr-3 py-4">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <h3 class="font-display font-semibold text-base text-ink dark:text-cream truncate">{{ booking.expand?.service?.name || 'Unknown Service' }}</h3>
+                  <p class="text-sm text-stone-500 dark:text-stone-400 truncate mt-0.5">{{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}<span v-if="booking.expand?.vendor?.name"> · {{ booking.expand.vendor.name }}</span></p>
+                </div>
+                <div @click.stop class="flex-none -mr-1"><CardDropdownMenu :actions="getBookingActions(booking)" @action="handleBookingAction(booking, $event)" /></div>
+              </div>
+              <div class="mt-4">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="sw-eyebrow text-stone-400 dark:text-stone-500">{{ t('serviceBookings.progress') }}</span>
+                  <span class="text-xs font-mono sw-tabular font-semibold text-ink dark:text-cream">{{ booking.percent_completed || 0 }}%</span>
+                </div>
+                <div class="bg-stone-200 dark:bg-ink-2 rounded-[2px] h-1.5 overflow-hidden">
+                  <div class="bg-amber-500 h-1.5 transition-all duration-500 ease-snap" :style="{ width: `${booking.percent_completed || 0}%` }"></div>
+                </div>
+              </div>
+              <div class="mt-4 pt-3 border-t border-stone-200 dark:border-ink-4 flex items-end justify-between gap-3">
+                <div class="min-w-0">
+                  <span class="sw-eyebrow text-stone-400 dark:text-stone-500">{{ t('common.total') }}</span>
+                  <div class="font-mono sw-tabular text-lg font-semibold text-ink dark:text-cream leading-none mt-0.5">₹{{ booking.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
+                  <div v-if="(booking.paid_amount || 0) > 0" class="text-xs font-mono sw-tabular text-forest-600 dark:text-forest-400 mt-1">{{ t('serviceBookings.paid') }}: ₹{{ (booking.paid_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
+                  <div v-else-if="booking.payment_status === 'partial'" class="text-xs font-mono sw-tabular text-amber-700 dark:text-amber-400 mt-1">₹{{ booking.outstanding.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} {{ t('serviceBookings.pendingLabel') }}</div>
+                </div>
+                <div class="flex flex-col items-end gap-1.5 flex-none">
+                  <span :class="`status-${booking.payment_status === 'currently_paid_up' ? 'paid' : booking.payment_status}`">{{ booking.payment_status === 'currently_paid_up' ? t('serviceBookings.currentlyPaidUp') : t(`common.${booking.payment_status}`) }}</span>
+                  <span class="text-xs font-mono sw-tabular text-stone-500 dark:text-stone-400">{{ formatDate(booking.start_date) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- Add/Edit Modal -->
@@ -543,6 +456,7 @@ import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useModalState } from '../composables/useModalState';
 import { useSiteData } from '../composables/useSiteData';
+import { useQuickActionModal } from '../composables/useQuickActionModal';
 import { useServiceBookingSearch } from '../composables/useSearch';
 import PhotoGallery from '../components/PhotoGallery.vue';
 import SearchBox from '../components/SearchBox.vue';
@@ -963,6 +877,6 @@ const handleKeyboardShortcut = async (event: KeyboardEvent) => {
 };
 
 // Event listeners using @vueuse/core
-useEventListener(window, 'show-add-modal', handleQuickAction);
+useQuickActionModal(handleQuickAction);
 useEventListener(window, 'keydown', handleKeyboardShortcut);
 </script>

@@ -29,122 +29,106 @@
     </div>
 
     <!-- Services Grid -->
-    <div v-else-if="services && services.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div v-else-if="services && services.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
       <div v-for="service in services" :key="service.id"
-        class="card hover:shadow-md transition-shadow duration-200 cursor-pointer"
+        class="card card-interactive group flex flex-col cursor-pointer"
         @click="viewServiceDetail(service.id!)">
+
+        <!-- Card Header -->
         <div class="flex items-start justify-between">
-          <div class="flex-1">
-            <div class="flex items-center space-x-2 mb-2">
-              <component :is="getServiceIcon(service.category)" class="h-5 w-5 text-stone-500 dark:text-stone-400" />
-              <h3 class="sw-h4 font-display text-ink dark:text-cream">{{ service.name }}</h3>
-              <span v-if="!service.is_active"
-                class="sw-badge sw-badge--danger">
+          <div class="flex-1 min-w-0">
+            <!-- Title row: icon + name + inactive badge -->
+            <div class="flex items-center gap-2 mb-1">
+              <component :is="getServiceIcon(service.category)" class="h-4 w-4 shrink-0 text-stone-400 dark:text-stone-500" />
+              <h3 class="font-display text-lg font-semibold tracking-tight text-ink dark:text-cream truncate leading-snug">{{ service.name }}</h3>
+              <span v-if="!service.is_active" class="sw-badge sw-badge--danger shrink-0">
                 {{ t('common.inactive') }}
               </span>
             </div>
-
-            <div class="space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-stone-600 dark:text-stone-400">{{ t('services.serviceType') }}:</span>
-                <span class="text-sm font-medium text-ink dark:text-cream">{{ service.service_type }}</span>
-              </div>
-
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-stone-600 dark:text-stone-400">{{ t('services.category') }}:</span>
-                <span class="text-sm font-medium text-ink dark:text-cream capitalize">{{
-                  t(`services.categories.${service.category}`) }}</span>
-              </div>
-
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-stone-600 dark:text-stone-400">{{ t('services.unit') }}:</span>
-                <span class="text-sm font-medium text-ink dark:text-cream">{{ service.unit }}</span>
-              </div>
-
-              <div v-if="service.standard_rate"
-                class="flex items-center justify-between pt-2 border-t border-stone-200 dark:border-ink-4">
-                <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('services.standardRate')
-                }}:</span>
-                <span class="text-lg font-bold font-mono sw-tabular text-amber-700 dark:text-amber-400">
-                  ₹{{ service.standard_rate.toFixed(2) }}/{{ service.unit }}
-                </span>
-              </div>
-            </div>
-
-            <div v-if="service.description" class="mt-3 text-sm text-stone-600 dark:text-stone-400">
-              {{ service.description }}
-            </div>
-
-            <!-- Tags -->
-            <div v-if="serviceTags.get(service.id!)?.length" class="mt-4">
-              <div class="flex flex-wrap gap-1">
-                <span v-for="tag in serviceTags.get(service.id!)" :key="tag.id"
-                  class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-stone-100 dark:bg-ink-4 text-ink dark:text-cream">
-                  <span class="h-2 w-2 rounded-[2px]" :style="{ backgroundColor: tag.color }"></span>
-                  {{ tag.name }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Service Summary -->
-            <div class="mt-4 p-3 bg-cream-2 dark:bg-ink-2 rounded-md">
-              <div class="flex justify-between items-center mb-2">
-                <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('services.totalBookings')
-                }}</span>
-                <span class="text-sm font-semibold font-mono sw-tabular text-ink dark:text-cream">{{
-                  getServiceBookingsCount(service.id!) }}</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('services.avgRate') }}</span>
-                <span class="text-sm font-semibold font-mono sw-tabular text-forest-600 dark:text-forest-400">₹{{
-                  getServiceAverageRate(service.id!).toFixed(2) }}</span>
-              </div>
-            </div>
+            <!-- Secondary meta line: category · unit -->
+            <p class="text-sm text-stone-500 dark:text-stone-400 truncate">
+              {{ t(`services.categories.${service.category}`) }}
+              <span v-if="service.unit" class="mx-1 text-stone-300 dark:text-stone-600">&middot;</span>
+              <span v-if="service.unit">{{ service.unit }}</span>
+            </p>
           </div>
 
-          <!-- Desktop Action Buttons -->
-          <div class="hidden lg:flex items-center space-x-2" @click.stop>
+          <!-- Desktop Action Buttons (ghost, reveal on group-hover) -->
+          <div class="hidden lg:flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150 ease-snap" @click.stop>
             <button @click="editService(service)" :disabled="!canUpdate" :class="[
               canUpdate
-                ? 'text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream'
+                ? 'text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4'
                 : 'text-stone-300 dark:text-stone-600 cursor-not-allowed',
-              'p-2 rounded-full hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200'
+              'h-8 w-8 inline-flex items-center justify-center rounded-md transition-colors duration-150 ease-snap'
             ]" :title="t('common.edit')">
               <Edit2 class="h-4 w-4" />
             </button>
             <button @click="toggleServiceStatus(service)" :disabled="!canUpdate" :class="[
               canUpdate
-                ? 'text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream'
+                ? 'text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4'
                 : 'text-stone-300 dark:text-stone-600 cursor-not-allowed',
-              'p-2 rounded-full hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200'
+              'h-8 w-8 inline-flex items-center justify-center rounded-md transition-colors duration-150 ease-snap'
             ]" :title="service.is_active ? t('services.deactivate') : t('services.activate')">
               <component :is="service.is_active ? EyeOff : Eye" class="h-4 w-4" />
             </button>
             <button @click="deleteService(service.id!)" :disabled="!canDelete" :class="[
               canDelete
-                ? 'text-clay-500 hover:text-clay-600 dark:hover:text-clay-400'
+                ? 'text-clay-500 hover:text-clay-600 dark:hover:text-clay-400 hover:bg-stone-100 dark:hover:bg-ink-4'
                 : 'text-stone-300 dark:text-stone-600 cursor-not-allowed',
-              'p-2 rounded-full hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200'
+              'h-8 w-8 inline-flex items-center justify-center rounded-md transition-colors duration-150 ease-snap'
             ]" :title="t('common.deleteAction')">
               <Trash2 class="h-4 w-4" />
             </button>
           </div>
 
           <!-- Mobile Dropdown Menu -->
-          <div class="lg:hidden">
+          <div class="lg:hidden ml-2 shrink-0" @click.stop>
             <CardDropdownMenu :actions="getServiceActions(service)" @action="handleServiceAction(service, $event)" />
           </div>
         </div>
-      </div>
 
+        <!-- Description -->
+        <p v-if="service.description" class="mt-2 text-sm text-stone-500 dark:text-stone-400 line-clamp-2">
+          {{ service.description }}
+        </p>
+
+        <!-- Tags -->
+        <div v-if="serviceTags.get(service.id!)?.length" class="mt-3 flex flex-wrap gap-1.5">
+          <span v-for="tag in serviceTags.get(service.id!)" :key="tag.id"
+            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-stone-100 dark:bg-ink-4 text-stone-700 dark:text-stone-300">
+            <span class="h-2 w-2 rounded-[2px] shrink-0" :style="{ backgroundColor: tag.color }"></span>
+            {{ tag.name }}
+          </span>
+        </div>
+
+        <!-- Stat Strip Footer (pinned to bottom) -->
+        <div class="mt-auto pt-4 border-t border-stone-200 dark:border-ink-4 flex items-end justify-between gap-4">
+          <!-- HERO: Standard Rate -->
+          <div>
+            <p class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-0.5">{{ t('services.standardRate') }}</p>
+            <p v-if="service.standard_rate" class="sw-stat font-mono sw-tabular text-amber-700 dark:text-amber-400 leading-none">
+              ₹{{ service.standard_rate.toLocaleString('en-IN') }}<span class="text-xs font-normal text-stone-400 dark:text-stone-500 ml-0.5">/{{ service.unit }}</span>
+            </p>
+            <p v-else class="text-base font-mono sw-tabular text-stone-400 dark:text-stone-500 leading-none">—</p>
+          </div>
+          <!-- SECONDARY: Bookings count + Avg Rate -->
+          <div class="text-right">
+            <p class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-0.5">{{ t('services.totalBookings') }}</p>
+            <p class="text-base font-mono sw-tabular font-semibold text-ink dark:text-cream leading-none">
+              {{ getServiceBookingsCount(service.id!) }}
+            </p>
+          </div>
+        </div>
+
+      </div>
     </div>
 
     <!-- Empty State -->
-    <div v-else class="text-center py-12">
-      <Wrench class="mx-auto h-12 w-12 text-stone-400" />
-      <h3 class="mt-2 text-sm font-medium text-ink dark:text-cream">{{ t('services.noServices') }}</h3>
-      <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">{{ t('services.getStarted') }}</p>
-      <button v-if="canCreateService" @click="handleAddService" class="mt-4 btn-primary">
+    <div v-else class="flex flex-col items-center justify-center py-16 text-center">
+      <Wrench class="h-12 w-12 text-stone-300 dark:text-stone-600 mb-4" />
+      <h3 class="font-display text-lg font-semibold tracking-tight text-ink dark:text-cream mb-1">{{ t('services.noServices') }}</h3>
+      <p class="text-sm text-stone-500 dark:text-stone-400 max-w-xs">{{ t('services.getStarted') }}</p>
+      <button v-if="canCreateService" @click="handleAddService" class="mt-6 btn-primary">
         <Plus class="mr-2 h-4 w-4" />
         {{ t('services.addService') }}
       </button>
@@ -268,6 +252,7 @@ import { usePermissions } from '../composables/usePermissions';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
+import { useQuickActionModal } from '../composables/useQuickActionModal';
 import { useModalState } from '../composables/useModalState';
 import TagSelector from '../components/TagSelector.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
@@ -343,17 +328,6 @@ const getServiceBookingsCount = (serviceId: string) => {
   return serviceBookings.value?.filter(booking => booking.service === serviceId).length || 0;
 };
 
-const getServiceAverageRate = (serviceId: string) => {
-  if (!serviceBookings.value) return 0;
-
-  const serviceBookingsForService = serviceBookings.value.filter(booking => booking.service === serviceId);
-  if (serviceBookingsForService.length === 0) return 0;
-
-  const totalAmount = serviceBookingsForService.reduce((sum, booking) => sum + booking.total_amount, 0);
-  const totalDuration = serviceBookingsForService.reduce((sum, booking) => sum + booking.duration, 0);
-
-  return totalDuration > 0 ? totalAmount / totalDuration : 0;
-};
 
 const viewServiceDetail = (serviceId: string) => {
   router.push(`/services/${serviceId}`);
@@ -523,6 +497,6 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
 };
 
 // Event listeners using @vueuse/core
-useEventListener(window, 'show-add-modal', handleQuickAction);
+useQuickActionModal(handleQuickAction);
 useEventListener(window, 'keydown', handleKeyboardShortcut);
 </script>
