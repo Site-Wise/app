@@ -118,7 +118,40 @@
           </thead>
 
           <tbody class="bg-white dark:bg-ink-3 divide-y divide-stone-200 dark:divide-ink-4">
-            <tr v-for="returnItem in filteredReturns" :key="returnItem.id" class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap">
+            <!-- Skeleton loading state: xl+ table rows + < xl cards -->
+            <template v-if="returnsLoading">
+              <tr v-for="i in 6" :key="'skel-' + i" class="border-b border-stone-200 dark:border-ink-4">
+                <!-- xl+ skeleton cells -->
+                <td class="hidden xl:table-cell px-4 py-3.5"><Skeleton height="1rem" width="65%" /></td>
+                <td class="hidden xl:table-cell px-4 py-3.5 text-right"><Skeleton height="1rem" width="5rem" /></td>
+                <td class="hidden xl:table-cell px-4 py-3.5 text-right"><Skeleton height="1rem" width="6rem" /></td>
+                <td class="hidden xl:table-cell px-4 py-3.5"><Skeleton height="1.25rem" width="5rem" rounded="rounded-full" /></td>
+                <td class="hidden xl:table-cell px-4 py-3.5"><Skeleton height="1rem" width="4rem" /></td>
+                <!-- < xl skeleton card -->
+                <td class="xl:hidden px-0 py-0" colspan="5">
+                  <div class="p-4 space-y-3">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="flex items-center gap-3 min-w-0">
+                        <div class="h-9 w-9 rounded-lg bg-stone-100 dark:bg-ink-2 flex-shrink-0"></div>
+                        <div class="space-y-1.5 min-w-0">
+                          <Skeleton height="1rem" width="10rem" />
+                          <Skeleton height="0.75rem" width="7rem" />
+                        </div>
+                      </div>
+                      <Skeleton height="1.25rem" width="5rem" rounded="rounded-full" />
+                    </div>
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                      <div class="space-y-1"><Skeleton height="0.625rem" width="70%" /><Skeleton height="0.875rem" width="55%" /></div>
+                      <div class="space-y-1"><Skeleton height="0.625rem" width="70%" /><Skeleton height="0.875rem" width="65%" /></div>
+                    </div>
+                    <div class="pt-3 border-t border-stone-100 dark:border-ink-4 flex gap-2">
+                      <Skeleton height="1.5rem" width="4rem" rounded="rounded-md" />
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </template>
+            <tr v-else v-for="returnItem in filteredReturns" :key="returnItem.id" class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap">
               <!-- xl table cells -->
               <td class="hidden xl:table-cell px-4 py-3.5">
                 <div class="font-medium text-ink dark:text-cream">
@@ -302,6 +335,7 @@ import {
   DollarSign,
   RotateCcw
 } from 'lucide-vue-next';
+import Skeleton from '../components/Skeleton.vue';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useSiteData } from '../composables/useSiteData';
@@ -333,7 +367,7 @@ const isEditMode = ref(false);
 const selectedReturn = ref<VendorReturn | null>(null);
 
 // Use site data management
-const { data: returnsData, reload: reloadReturns } = useSiteData(
+const { data: returnsData, loading: returnsLoading, reload: reloadReturns } = useSiteData(
   async () => await vendorReturnService.getAll()
 );
 

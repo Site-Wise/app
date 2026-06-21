@@ -158,11 +158,16 @@
             </tr>
           </thead>
           <tbody class="bg-white dark:bg-ink-3 divide-y divide-stone-200 dark:divide-ink-4">
-            <tr v-if="loading">
-              <td colspan="6" class="px-4 py-12 text-center">
-                <Loader2 class="w-6 h-6 animate-spin mx-auto text-stone-400" />
-              </td>
-            </tr>
+            <template v-if="loading">
+              <tr v-for="i in 6" :key="'skel-xl-' + i" class="border-b border-stone-200 dark:border-ink-4">
+                <td class="px-4 py-3.5"><Skeleton height="1rem" width="70%" /></td>
+                <td class="px-4 py-3.5 text-right"><Skeleton height="1rem" width="5rem" /></td>
+                <td class="px-4 py-3.5 text-right"><Skeleton height="1rem" width="3rem" /></td>
+                <td class="px-4 py-3.5 text-right"><Skeleton height="1rem" width="5rem" /></td>
+                <td class="px-4 py-3.5"><Skeleton height="1.25rem" width="4rem" rounded="rounded-full" /></td>
+                <td class="px-4 py-3.5"><Skeleton height="1rem" width="3.5rem" /></td>
+              </tr>
+            </template>
             <tr v-else-if="deliveries.length === 0">
               <td colspan="6" class="px-4 py-16 text-center">
                 <div class="flex flex-col items-center gap-3">
@@ -251,9 +256,32 @@
     <div class="xl:hidden">
       <div class="space-y-3">
         <!-- Loading state -->
-        <div v-if="loading" class="text-center py-12">
-          <Loader2 class="w-8 h-8 animate-spin mx-auto text-stone-400" />
-        </div>
+        <template v-if="loading">
+          <div v-for="i in 6" :key="'skel-mob-' + i"
+               class="bg-white dark:bg-ink-3 rounded-lg shadow-card dark:shadow-inset-hi border border-stone-200 dark:border-ink-4 overflow-hidden">
+            <div class="flex items-start justify-between px-4 pt-4 pb-3">
+              <div class="flex-1 min-w-0 space-y-2">
+                <Skeleton height="1rem" width="60%" />
+                <Skeleton height="0.75rem" width="40%" />
+              </div>
+              <Skeleton height="1.25rem" width="3.5rem" rounded="rounded-full" />
+            </div>
+            <div class="grid grid-cols-3 gap-0 border-t border-stone-200 dark:border-ink-4 bg-cream-2 dark:bg-ink-2">
+              <div class="px-4 py-2.5 border-r border-stone-200 dark:border-ink-4 space-y-1">
+                <Skeleton height="0.625rem" width="80%" />
+                <Skeleton height="0.75rem" width="60%" />
+              </div>
+              <div class="px-4 py-2.5 border-r border-stone-200 dark:border-ink-4 space-y-1">
+                <Skeleton height="0.625rem" width="70%" />
+                <Skeleton height="0.75rem" width="40%" />
+              </div>
+              <div class="px-4 py-2.5 space-y-1">
+                <Skeleton height="0.625rem" width="60%" />
+                <Skeleton height="0.75rem" width="70%" />
+              </div>
+            </div>
+          </div>
+        </template>
 
         <!-- Empty state -->
         <div v-else-if="deliveries.length === 0" class="flex flex-col items-center gap-3 py-16 text-center">
@@ -563,6 +591,7 @@
 import { ref, computed } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { Plus, Edit2, Trash2, Loader2, Eye, X, Images, MoreVertical, AlertCircle, Link2 } from 'lucide-vue-next';
+import Skeleton from '../components/Skeleton.vue';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';

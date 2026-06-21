@@ -29,10 +29,10 @@
     </div>
 
     <!-- Summary Stat Strip -->
-    <div class="mb-6 grid grid-cols-3 gap-3 lg:gap-4">
-      <div class="card py-3 px-4">
+    <div class="mb-6 grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+      <div class="card py-3 px-4 col-span-2 lg:col-span-1">
         <p class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-1">{{ t('accounts.totalBalance') }}</p>
-        <p class="sw-stat font-mono sw-tabular"
+        <p class="sw-stat font-mono sw-tabular text-xl sm:text-2xl"
           :class="totalBalance >= 0 ? 'text-forest-700 dark:text-forest-400' : 'text-clay-600 dark:text-clay-400'">
           ₹{{ totalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
         </p>
@@ -235,7 +235,7 @@
           <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex gap-3">
             <button type="submit" :disabled="loading" class="flex-1 btn-primary">
               <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-              {{ editingAccount ? t('common.update') : t('common.create') }}
+              {{ loading ? (editingAccount ? t('common.updating') : t('common.creating')) : (editingAccount ? t('common.update') : t('common.create')) }}
             </button>
             <button type="button" @click="closeModal" class="flex-1 btn-outline">
               {{ t('common.cancel') }}

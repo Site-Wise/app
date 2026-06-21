@@ -23,9 +23,20 @@
       <SearchBox v-model="searchQuery" :placeholder="t('search.services')" :search-loading="searchLoading" />
     </div>
 
-    <!-- Loading State -->
-    <div v-if="loading" class="flex justify-center py-8">
-      <Loader2 class="h-8 w-8 animate-spin text-amber-500" />
+    <!-- Loading State: skeleton card grid -->
+    <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6" aria-hidden="true">
+      <div v-for="i in 6" :key="i" class="card flex flex-col gap-3">
+        <div class="flex items-start justify-between">
+          <div class="flex-1 min-w-0 space-y-2">
+            <Skeleton height="1.25rem" width="60%" />
+            <Skeleton height="0.875rem" width="40%" />
+          </div>
+        </div>
+        <div class="mt-auto pt-4 border-t border-stone-200 dark:border-ink-4 flex items-end justify-between gap-4">
+          <Skeleton height="1.5rem" width="45%" />
+          <Skeleton height="1.5rem" width="30%" />
+        </div>
+      </div>
     </div>
 
     <!-- Services Grid -->
@@ -235,7 +246,7 @@
           <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex gap-3">
             <button type="submit" :disabled="saveLoading" class="flex-1 btn-primary">
               <Loader2 v-if="saveLoading" class="mr-2 h-4 w-4 animate-spin" />
-              {{ editingService ? t('common.update') : t('common.create') }}
+              {{ saveLoading ? (editingService ? t('common.updating') : t('common.creating')) : (editingService ? t('common.update') : t('common.create')) }}
             </button>
             <button type="button" @click="closeModal" class="flex-1 btn-outline">
               {{ t('common.cancel') }}
@@ -273,6 +284,7 @@ import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
 import { useQuickActionModal } from '../composables/useQuickActionModal';
 import { useModalState } from '../composables/useModalState';
+import Skeleton from '../components/Skeleton.vue';
 import TagSelector from '../components/TagSelector.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import SearchBox from '../components/SearchBox.vue';

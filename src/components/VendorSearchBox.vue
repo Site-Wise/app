@@ -24,6 +24,10 @@
         :required="required"
         :name="name"
         :disabled="disabled"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
       />
       <!-- Outstanding amount display in input -->
       <div v-if="selectedVendor && !searchQuery && getVendorBalance(selectedVendor).amount > 0" class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">

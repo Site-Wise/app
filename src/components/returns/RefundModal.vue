@@ -260,7 +260,7 @@
         >
           <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
           <DollarSign v-else class="mr-2 h-4 w-4" />
-          {{ form.processing_option === 'credit_note' ? t('vendors.createCreditNote') : t('vendors.processRefund') }}
+          {{ loading ? t('common.saving') : (form.processing_option === 'credit_note' ? t('vendors.createCreditNote') : t('vendors.processRefund')) }}
         </button>
       </div>
     </div>

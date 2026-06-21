@@ -185,7 +185,7 @@
             <div class="flex space-x-3 pt-4">
               <button type="submit" :disabled="formLoading" class="flex-1 btn-primary">
                 <Loader2 v-if="formLoading" class="mr-2 h-4 w-4 animate-spin" />
-                {{ editingItem ? t('common.update') : t('common.create') }}
+                {{ formLoading ? (editingItem ? t('common.updating') : t('common.creating')) : (editingItem ? t('common.update') : t('common.create')) }}
               </button>
               <button type="button" @click="closeModal" class="flex-1 btn-outline">
                 {{ t('common.cancel') }}

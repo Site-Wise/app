@@ -228,7 +228,7 @@
           <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex gap-3">
             <button type="submit" :disabled="loading" class="flex-1 btn-primary">
               <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-              {{ editingVendor ? t('common.update') : t('common.create') }}
+              {{ loading ? (editingVendor ? t('common.updating') : t('common.creating')) : (editingVendor ? t('common.update') : t('common.create')) }}
             </button>
             <button type="button" @click="closeModal" class="flex-1 btn-outline">
               {{ t('common.cancel') }}

@@ -429,7 +429,7 @@
           ]"
         >
           <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-          {{ submitButtonText }}
+          {{ loading ? (mode === 'EDIT' ? t('common.updating') : t('common.creating')) : submitButtonText }}
         </button>
       </div>
     </div>

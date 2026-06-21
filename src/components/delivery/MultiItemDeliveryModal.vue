@@ -340,7 +340,7 @@
           >
             <Loader2 v-if="loading" class="mr-1.5 h-4 w-4 animate-spin" />
             <CheckCircle v-else class="mr-1.5 h-4 w-4" />
-            {{ editingDelivery ? t('common.update') : t('common.create') }}
+            {{ loading ? (editingDelivery ? t('common.updating') : t('common.creating')) : (editingDelivery ? t('common.update') : t('common.create')) }}
           </button>
         </div>
       </div>

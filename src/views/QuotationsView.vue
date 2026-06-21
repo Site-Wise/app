@@ -64,6 +64,18 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-stone-200 dark:divide-ink-4">
+          <template v-if="quotationsLoading">
+            <tr v-for="i in 6" :key="'skel-xl-' + i" class="border-b border-stone-200 dark:border-ink-4">
+              <td class="hidden xl:table-cell py-3.5 px-4"><Skeleton height="1rem" width="65%" /></td>
+              <td class="hidden xl:table-cell py-3.5 px-4"><Skeleton height="1rem" width="55%" /></td>
+              <td class="hidden xl:table-cell py-3.5 px-4 text-right"><Skeleton height="1rem" width="5rem" /></td>
+              <td class="hidden xl:table-cell py-3.5 px-4 text-right"><Skeleton height="1rem" width="3rem" /></td>
+              <td class="hidden xl:table-cell py-3.5 px-4 text-right"><Skeleton height="1rem" width="5rem" /></td>
+              <td class="hidden xl:table-cell py-3.5 px-4"><Skeleton height="1.25rem" width="4.5rem" rounded="rounded-full" /></td>
+              <td class="hidden xl:table-cell py-3.5 px-4"><Skeleton height="1rem" width="3.5rem" /></td>
+            </tr>
+          </template>
+          <template v-else>
           <tr
             v-for="quotation in quotations"
             :key="quotation.id"
@@ -116,12 +128,30 @@
               </div>
             </td>
           </tr>
+          </template>
         </tbody>
       </table>
 
       <!-- < xl: stacked card per row -->
       <div class="xl:hidden space-y-3">
-        <div
+        <!-- Skeleton loading state: mobile cards -->
+        <template v-if="quotationsLoading">
+          <div v-for="i in 6" :key="'skel-mob-' + i" class="card group space-y-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0 flex-1 space-y-1.5">
+                <Skeleton height="1rem" width="65%" />
+                <Skeleton height="0.75rem" width="45%" />
+              </div>
+              <Skeleton height="1.25rem" width="4.5rem" rounded="rounded-full" />
+            </div>
+            <div class="border-t border-stone-200 dark:border-ink-4 pt-3 grid grid-cols-3 gap-3">
+              <div class="space-y-1"><Skeleton height="0.625rem" width="80%" /><Skeleton height="1rem" width="60%" /></div>
+              <div class="space-y-1"><Skeleton height="0.625rem" width="80%" /><Skeleton height="1rem" width="40%" /></div>
+              <div class="space-y-1"><Skeleton height="0.625rem" width="80%" /><Skeleton height="1rem" width="55%" /></div>
+            </div>
+          </div>
+        </template>
+        <div v-else
           v-for="quotation in quotations"
           :key="quotation.id"
           class="card group"
@@ -265,7 +295,7 @@
           <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex gap-3">
             <button type="submit" :disabled="loading" class="flex-1 btn-primary">
               <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-              {{ editingQuotation ? t('common.update') : t('common.create') }}
+              {{ loading ? (editingQuotation ? t('common.updating') : t('common.creating')) : (editingQuotation ? t('common.update') : t('common.create')) }}
             </button>
             <button type="button" @click="closeModal" class="flex-1 btn-outline">
               {{ t('common.cancel') }}
@@ -281,6 +311,7 @@
 import { ref, reactive, computed, nextTick } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { FileText, Plus, Edit2, Trash2, Loader2, X } from 'lucide-vue-next';
+import Skeleton from '../components/Skeleton.vue';
 import {
   quotationService,
   itemService,
@@ -306,7 +337,7 @@ const quotations = computed(() => {
 });
 
 // Use site data management
-const { data: allQuotationsData, reload: reloadQuotations } = useSiteData(
+const { data: allQuotationsData, loading: quotationsLoading, reload: reloadQuotations } = useSiteData(
   async () => await quotationService.getAll()
 );
 

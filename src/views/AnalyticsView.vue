@@ -106,8 +106,29 @@
 
       <!-- Results Panel - Main Content -->
       <div class="lg:col-span-3">
+        <!-- Loading skeleton while calculating -->
+        <div v-if="loading" class="space-y-6">
+          <!-- Skeleton KPI tiles: 2 cols on mobile, 3 on desktop -->
+          <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <div v-for="n in 6" :key="n" class="card p-3 sm:p-5 flex flex-col gap-2">
+              <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                <Skeleton width="2rem" height="2rem" rounded="rounded-md" />
+                <div class="flex flex-col gap-1.5 flex-1">
+                  <Skeleton height="0.65rem" width="60%" />
+                  <Skeleton height="1.5rem" width="45%" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Skeleton chart panel -->
+          <div class="card p-4 sm:p-6">
+            <Skeleton height="0.65rem" width="8rem" class="mb-4" />
+            <div class="sw-skeleton rounded-lg" style="height: 18rem;"></div>
+          </div>
+        </div>
+
         <!-- Empty State -->
-        <div v-if="!analyticsData" class="card p-10 text-center">
+        <div v-else-if="!analyticsData" class="card p-10 text-center">
           <div class="p-4 bg-stone-200/60 dark:bg-ink-2 rounded-full w-fit mx-auto mb-4">
             <BarChart3 class="h-10 w-10 text-stone-400 dark:text-stone-500" />
           </div>
@@ -318,6 +339,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import Skeleton from '../components/Skeleton.vue';
 import { useI18n } from '../composables/useI18n';
 import { useTheme } from '../composables/useTheme';
 import { useAnalytics } from '../composables/useAnalytics';

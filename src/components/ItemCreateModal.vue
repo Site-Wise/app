@@ -79,7 +79,7 @@
         <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 flex-shrink-0 pb-safe">
           <button type="submit" :disabled="formLoading" class="flex-1 btn-primary active:scale-[0.98]">
             <Loader2 v-if="formLoading" class="mr-2 h-4 w-4 animate-spin" />
-            {{ t('common.create') }}
+            {{ formLoading ? t('common.creating') : t('common.create') }}
           </button>
           <button type="button" @click="$emit('close')" class="flex-1 btn-outline active:scale-[0.98]">
             {{ t('common.cancel') }}

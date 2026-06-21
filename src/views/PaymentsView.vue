@@ -132,7 +132,16 @@
           </tr>
         </thead>
         <tbody class="bg-white dark:bg-ink-3 divide-y divide-stone-200 dark:divide-ink-4">
-          <tr v-if="payments.length === 0">
+          <template v-if="paymentsLoading">
+            <tr v-for="i in 6" :key="'skel-xl-' + i" class="border-b border-stone-200 dark:border-ink-4">
+              <td class="px-4 py-3.5"><Skeleton height="1rem" width="65%" /></td>
+              <td class="px-4 py-3.5 text-right"><Skeleton height="1rem" width="5rem" /></td>
+              <td class="px-4 py-3.5 text-right"><Skeleton height="1rem" width="6rem" /></td>
+              <td class="px-4 py-3.5"><Skeleton height="1rem" width="50%" /></td>
+              <td class="px-4 py-3.5"><Skeleton height="1rem" width="3.5rem" /></td>
+            </tr>
+          </template>
+          <tr v-else-if="payments.length === 0">
             <td colspan="5" class="px-4 py-16 text-center">
               <div class="flex flex-col items-center gap-3">
                 <div class="w-12 h-12 rounded-lg bg-cream-2 dark:bg-ink-2 flex items-center justify-center">
@@ -258,8 +267,36 @@
     <div class="xl:hidden">
       <!-- Stacked cards per row (sm and up get clean cards) -->
       <div class="space-y-3">
+        <!-- Skeleton loading state: mobile cards -->
+        <template v-if="paymentsLoading">
+          <div v-for="i in 6" :key="'skel-mob-' + i"
+               class="bg-white dark:bg-ink-3 rounded-lg shadow-card dark:shadow-inset-hi border border-stone-200 dark:border-ink-4 overflow-hidden">
+            <div class="flex items-start justify-between px-4 pt-4 pb-3">
+              <div class="flex-1 min-w-0 space-y-2">
+                <Skeleton height="1rem" width="60%" />
+                <Skeleton height="0.75rem" width="40%" />
+              </div>
+              <Skeleton height="1.25rem" width="4.5rem" rounded="rounded-full" />
+            </div>
+            <div class="grid grid-cols-3 gap-0 border-t border-stone-200 dark:border-ink-4 bg-cream-2 dark:bg-ink-2">
+              <div class="px-4 py-2.5 border-r border-stone-200 dark:border-ink-4 space-y-1">
+                <Skeleton height="0.625rem" width="70%" />
+                <Skeleton height="0.75rem" width="55%" />
+              </div>
+              <div class="px-4 py-2.5 border-r border-stone-200 dark:border-ink-4 space-y-1">
+                <Skeleton height="0.625rem" width="70%" />
+                <Skeleton height="0.75rem" width="60%" />
+              </div>
+              <div class="px-4 py-2.5 space-y-1">
+                <Skeleton height="0.625rem" width="60%" />
+                <Skeleton height="0.75rem" width="65%" />
+              </div>
+            </div>
+          </div>
+        </template>
+
         <!-- Empty state -->
-        <div v-if="payments.length === 0" class="flex flex-col items-center gap-3 py-16 text-center">
+        <div v-else-if="payments.length === 0" class="flex flex-col items-center gap-3 py-16 text-center">
           <div class="w-12 h-12 rounded-lg bg-stone-100 dark:bg-ink-2 flex items-center justify-center">
             <CreditCard class="w-6 h-6 text-stone-300 dark:text-stone-600" />
           </div>
@@ -765,6 +802,7 @@ import {
   MoreVertical,
   X
 } from 'lucide-vue-next';
+import Skeleton from '../components/Skeleton.vue';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
@@ -814,7 +852,7 @@ const sortField = ref<SortField>('date'); // Default sort by date
 const sortOrder = ref<SortOrder>('desc'); // Default descending (newest first)
 
 // Use site data management - consolidated to prevent auto-cancellation issues
-const { data: paymentsData, reload: reloadPayments } = useSiteData(async () => {
+const { data: paymentsData, loading: paymentsLoading, reload: reloadPayments } = useSiteData(async () => {
   // Build sort parameter for backend
   let sortParam = '-payment_date'; // Default
   if (sortField.value === 'date') {

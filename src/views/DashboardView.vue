@@ -19,9 +19,32 @@
       </div>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="loading" class="flex items-center justify-center py-12">
-      <Loader2 class="h-8 w-8 animate-spin text-amber" />
+    <!-- Loading State: skeleton KPI tiles + chart panel -->
+    <div v-if="loading">
+      <!-- Skeleton KPI tiles: 2x2 on mobile, 4 cols on desktop -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8">
+        <div v-for="n in 4" :key="n" class="card p-3 sm:p-5 flex flex-col gap-3">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+            <Skeleton width="2rem" height="2rem" rounded="rounded-md" />
+            <div class="flex flex-col gap-1.5 flex-1">
+              <Skeleton height="0.75rem" width="60%" />
+              <Skeleton height="1.5rem" width="40%" />
+            </div>
+          </div>
+          <div class="mt-auto pt-3 border-t border-stone-200 dark:border-ink-4 flex gap-2">
+            <Skeleton height="0.75rem" width="50%" />
+            <Skeleton height="0.75rem" width="25%" />
+          </div>
+        </div>
+      </div>
+      <!-- Skeleton chart panel -->
+      <div class="card p-4 sm:p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <Skeleton height="0.75rem" width="5rem" />
+          <Skeleton height="1.5rem" width="8rem" rounded="rounded-md" />
+        </div>
+        <div class="sw-skeleton rounded-lg" style="height: 14rem;"></div>
+      </div>
     </div>
 
     <!-- New User Onboarding -->
@@ -228,7 +251,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue';
-import { TrendingUp, Undo2, Wallet, DollarSign, Loader2, BarChart3 } from 'lucide-vue-next';
+import { TrendingUp, Undo2, Wallet, DollarSign, BarChart3 } from 'lucide-vue-next';
 import { Line } from 'vue-chartjs';
 import {
   Chart as ChartJS,
@@ -252,6 +275,7 @@ ChartJS.register(
   Legend,
   Filler
 );
+import Skeleton from '../components/Skeleton.vue';
 import { useSite } from '../composables/useSite';
 import { useSiteData } from '../composables/useSiteData';
 import { useI18n } from '../composables/useI18n';

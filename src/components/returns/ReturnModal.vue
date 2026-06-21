@@ -259,7 +259,7 @@
           @click.prevent="handleSubmit"
         >
           <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-          {{ isEdit ? t('common.update') : t('common.create') }}
+          {{ loading ? (isEdit ? t('common.updating') : t('common.creating')) : (isEdit ? t('common.update') : t('common.create')) }}
         </button>
       </div>
     </div>

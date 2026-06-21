@@ -80,8 +80,57 @@
 
     <!-- Service Bookings -->
     <div>
+      <!-- Skeleton loading state: md+ table -->
+      <div v-if="bookingsLoading" class="hidden md:block card p-0 overflow-hidden">
+        <table class="min-w-full">
+          <thead class="bg-cream-2 dark:bg-ink-2 border-b border-stone-200 dark:border-ink-4">
+            <tr>
+              <th class="py-3 px-4 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('services.service') }}</th>
+              <th class="py-3 px-4 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 hidden lg:table-cell">{{ t('services.vendor') }}</th>
+              <th class="py-3 px-4 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 hidden xl:table-cell">{{ t('serviceBookings.startDate') }}</th>
+              <th class="py-3 px-4 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('serviceBookings.progress') }}</th>
+              <th class="py-3 px-4 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('common.total') }}</th>
+              <th class="py-3 px-4 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('serviceBookings.paymentStatus') }}</th>
+              <th class="py-3 px-4 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('common.actions') }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-stone-200 dark:divide-ink-4 bg-white dark:bg-ink-3">
+            <tr v-for="i in 6" :key="'skel-md-' + i" class="border-b border-stone-200 dark:border-ink-4">
+              <td class="py-3.5 px-4"><Skeleton height="1rem" width="65%" /></td>
+              <td class="py-3.5 px-4 hidden lg:table-cell"><Skeleton height="1rem" width="55%" /></td>
+              <td class="py-3.5 px-4 hidden xl:table-cell text-right"><Skeleton height="1rem" width="5rem" /></td>
+              <td class="py-3.5 px-4" style="min-width:8rem"><Skeleton height="0.375rem" width="100%" /></td>
+              <td class="py-3.5 px-4 text-right"><Skeleton height="1rem" width="5rem" /></td>
+              <td class="py-3.5 px-4"><Skeleton height="1.25rem" width="4.5rem" rounded="rounded-full" /></td>
+              <td class="py-3.5 px-4"><Skeleton height="1rem" width="3.5rem" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Skeleton loading state: mobile cards -->
+      <div v-if="bookingsLoading" class="md:hidden space-y-3">
+        <div v-for="i in 6" :key="'skel-mob-' + i"
+             class="relative overflow-hidden rounded-lg border border-stone-200 dark:border-ink-4 bg-white dark:bg-ink-3 shadow-card dark:shadow-inset-hi">
+          <div class="pl-5 pr-3 py-4 space-y-3">
+            <div class="space-y-1.5">
+              <Skeleton height="1rem" width="60%" />
+              <Skeleton height="0.75rem" width="45%" />
+            </div>
+            <Skeleton height="0.375rem" width="100%" />
+            <div class="pt-3 border-t border-stone-200 dark:border-ink-4 flex items-end justify-between gap-3">
+              <div class="space-y-1">
+                <Skeleton height="0.625rem" width="3rem" />
+                <Skeleton height="1.25rem" width="6rem" />
+              </div>
+              <Skeleton height="1.25rem" width="4.5rem" rounded="rounded-full" />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Empty state (shared) -->
-      <div v-if="serviceBookings.length === 0" class="card flex flex-col items-center justify-center py-16 text-center">
+      <div v-else-if="serviceBookings.length === 0" class="card flex flex-col items-center justify-center py-16 text-center">
         <div class="h-14 w-14 rounded-lg bg-stone-100 dark:bg-ink-2 flex items-center justify-center mb-4">
           <Calendar class="h-7 w-7 text-stone-400 dark:text-stone-500" />
         </div>
@@ -353,7 +402,7 @@
           <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex gap-3">
             <button type="submit" :disabled="loading" class="flex-1 btn-primary">
               <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-              {{ editingBooking ? t('common.update') : t('common.create') }}
+              {{ loading ? (editingBooking ? t('common.updating') : t('common.creating')) : (editingBooking ? t('common.update') : t('common.create')) }}
             </button>
             <button type="button" @click="closeModal" class="flex-1 btn-outline">
               {{ t('common.cancel') }}
@@ -482,6 +531,7 @@ import {
   X,
   Clock
 } from 'lucide-vue-next';
+import Skeleton from '../components/Skeleton.vue';
 import { useI18n } from '../composables/useI18n';
 import { usePermissions } from '../composables/usePermissions';
 import { useSubscription } from '../composables/useSubscription';
@@ -560,7 +610,7 @@ const serviceBookings = computed((): ServiceBookingWithPaymentStatus[] => {
 });
 
 // Use site data management - Load service bookings
-const { data: allServiceBookingsData, reload: reloadBookings } = useSiteData(
+const { data: allServiceBookingsData, loading: bookingsLoading, reload: reloadBookings } = useSiteData(
   async () => await serviceBookingService.getAll()
 );
 
