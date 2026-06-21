@@ -1,464 +1,341 @@
 <div align="center">
   <img src="public/logo.webp" alt="SiteWise Logo" width="120" height="120">
-  
+
   # SiteWise 🏗️
-  
-  **The Complete Construction Site Management Solution**
-  
-  *Streamline your construction projects with intelligent site management, real-time collaboration, and comprehensive financial tracking.*
-  
+
+  ### Run your construction sites like software.
+
+  **Open-source, mobile-first, self-hostable site management — for the people who actually run the job.**
+
+  *Track every delivery, vendor, payment, and rupee across one site or fifty. Installs on your phone as an app. Ships as a native desktop app. Your data, your server.*
+
   [![O'Saasy License](https://img.shields.io/badge/License-O'Saasy-green.svg)](https://osaasy.dev/)
   [![CI](https://github.com/site-wise/app/workflows/CI/badge.svg)](https://github.com/site-wise/app/actions/workflows/ci.yml)
   [![Security](https://github.com/site-wise/app/workflows/Security/badge.svg)](https://github.com/site-wise/app/actions/workflows/security.yml)
   [![codecov](https://codecov.io/gh/site-wise/app/graph/badge.svg?token=4H3X8FWNTV)](https://codecov.io/gh/site-wise/app)
   [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
-  [![Join Discord](https://img.shields.io/discord/YOUR_DISCORD_SERVER_ID?color=7289da&label=Discord&logo=discord)](https://discord.gg/YOUR_INVITE_LINK)
 
-  [🚀 **Live Demo**](https://demo.sitewise.in) | [📖 **Documentation**](DOCUMENTATION.md) | [👥 **User Guide**](USER_GUIDE.md) | [💬 **Community**](https://github.com/site-wise/app/discussions)
+  [🚀 **Sign Up Free**](https://sitewise.in) • [👥 **User Guide**](USER_GUIDE.md) • [🤝 **Contributing**](CONTRIBUTING.md) • [💬 **Discussions**](https://github.com/site-wise/app/discussions)
 
 </div>
 
 ---
 
-## ✨ **What is SiteWise?**
+## ✨ What is SiteWise?
 
-SiteWise is a modern, open-source construction site management application that helps construction professionals manage their projects efficiently. Built with Vue 3, TypeScript, and PocketBase, it provides a comprehensive solution for managing items, vendors, services, payments, and team collaboration across multiple construction sites.
+Construction runs on a thousand small facts: *which vendor delivered what, on which date, for how much — and have we paid them yet?* Most of that lives in notebooks, WhatsApp, and someone's head.
 
-### 🎯 **Perfect For:**
-- **Site Owners** - Complete project oversight and financial control
-- **Supervisors** - Day-to-day operations and quality management  
-- **Accountants** - Financial tracking and reporting
-- **Teams** - Collaborative project management
+**SiteWise puts it in one place.** It's a modern, open-source construction site management app that handles both the **operations** (items, deliveries, vendors, services) and the **finances** (payments, accounts, outstanding balances, quotations) of real construction sites — built mobile-first so it works from the site, not just the back office.
+
+It's a Progressive Web App you can install on any phone, it works offline, and it also ships as a **native desktop app via Tauri**. The backend is [PocketBase](https://pocketbase.io/) — a single binary you can run anywhere — so self-hosting is genuinely easy and your data stays yours.
+
+### 🎯 Built for the whole site team
+
+| Role | What they get |
+|------|---------------|
+| 👷 **Owners** | Full oversight across every site, finance-grade tracking, team control |
+| 🧰 **Supervisors** | Fast on-site delivery logging, photo proof, day-to-day operations |
+| 🧮 **Accountants** | Payment allocation, account balances, outstanding monitoring, exports |
 
 ---
 
-## 🌟 **Key Features**
+## 🌟 Features
+
+Everything below is in the app today.
 
 <table>
 <tr>
 <td width="50%" valign="top">
 
-### 🏢 **Multi-Site Management**
-- Manage multiple construction sites from one dashboard
-- Site-based data isolation for security
-- Role-based access control (Owner/Supervisor/Accountant)
-- Team invitation and collaboration tools
+### 🏢 Multi-Site Management
+Run multiple construction sites from one account with **strict per-site data isolation**. Switch sites and every view re-scopes its data reactively — no leaks, no mixups.
 
-### 📦 **Smart Inventory**
-- Real-time item tracking with quantities
-- Delivery history and price trend analysis
-- Photo documentation for deliveries
-- Vendor comparison and cost optimization
+### 👥 Roles & Team
+Three calculated permission roles — **Owner**, **Supervisor**, **Accountant**. Invite teammates and manage who can see and do what, per site.
 
-### 🛠️ **Service Management**
-- Comprehensive service booking system
-- Labor, equipment, and professional services
-- Rate management and scheduling
-- Completion tracking with photo proof
+### 📦 Items & Inventory
+A catalog with units and tags, plus rich **item detail pages**: full delivery history, **unit-price trend charts**, price range (low / average / high), and total quantity delivered — so you always know if you're overpaying.
+
+### 🚚 Deliveries
+Log **multi-item deliveries** with vendor, date, reference, and **photo documentation** straight from the camera. Browse proof in a full-screen, swipeable gallery, and track payment status per delivery.
+
+### 🏪 Vendors & Returns
+A vendor directory backed by detailed vendor pages with **running balances** (amount due / advance held) and a complete **returns & refunds** workflow for what goes back.
 
 </td>
 <td width="50%" valign="top">
 
-### 💰 **Financial Intelligence**
-- Multi-account payment tracking
-- Automatic payment allocation
-- Outstanding amount monitoring
-- Real-time balance calculations
+### 💰 Payments & Accounts
+SiteWise's most powerful surface. Track payments across **multiple accounts**, **automatically allocate** a single payment across deliveries, monitor outstanding amounts, and watch balances recalculate in real time. Drill into any account's detail page.
 
-### 📊 **Analytics & Reporting**
-- Cost per square foot analysis
-- Payment trend visualization
-- Vendor performance metrics
-- Export capabilities for accounting
+### 🧾 Quotations
+Create and manage vendor **quotations** to compare and lock in pricing before you commit.
 
-### 📱 **Mobile-First Design**
-- Progressive Web App (PWA)
-- Offline functionality
-- Touch-optimized interface
-- Camera integration for photos
+### 🛠️ Services & Bookings
+Book labor, equipment, and professional **services** — manage rates, schedule work, and track completion with photo proof. Service detail pages keep the history.
+
+### 📊 Analytics Dashboard
+Real-time metrics with **Chart.js** visualizations: cost analysis, payment-trend charts, and vendor performance — turning raw entries into decisions.
+
+### 🧰 Tools, Docs & Export
+Built-in utilities including a **time calculator**, plus document tooling: **PDF generation** (jsPDF), in-app **PDF viewing** (pdf.js), and **bulk export / zip** (JSZip) for handing data to your accountant.
 
 </td>
 </tr>
 </table>
 
+<details>
+<summary><strong>📱 …and the polish layer that makes it pleasant to actually use</strong></summary>
+
+<br>
+
+- **Installable PWA** — add to home screen, works offline, camera capture for delivery photos
+- **Native desktop app** — packaged with Tauri for Windows / macOS / Linux
+- **Subscription system** — tiered plans with usage limits (items, vendors, deliveries, and more), unlimited (`-1`) plan support, and usage-aware gating on create actions
+- **Onboarding & guided tours** — a new-user onboarding flow plus interactive product tours (driver.js)
+- **Light & dark theme**
+- **Keyboard shortcuts** — `Shift+Alt+N` to create, `Esc` to close modals, and more
+- **Mobile-native feel** — bottom navigation, pull-to-refresh, skeleton loaders, toast notifications
+- **Internationalization** — full **English** and **Hindi** translations
+
+</details>
+
 ---
 
-## 🚀 **Quick Start**
+## 🚀 Quick Start
 
-### 🔧 **Prerequisites**
+### Prerequisites
 
-- **Node.js** 20+ 
-- **PocketBase** for backend
-- Modern web browser
+- **Node.js 20+**
+- A running **[PocketBase](https://pocketbase.io/)** instance (the backend — a single downloadable binary)
+- A modern web browser
 
-### ⚡ **Installation**
+### Get it running
 
 ```bash
-# Clone the repository
+# 1. Clone the repository
 git clone https://github.com/site-wise/app.git
 cd app
 
-# Install dependencies
+# 2. Install dependencies
 npm install
 
-# Set up environment
+# 3. Set up your environment
 cp .env.example .env
-# Edit .env with your PocketBase URL
+# Edit .env and point VITE_POCKETBASE_URL at your PocketBase instance
 
-# Start development server
+# 4. Start the dev server
 npm run dev
 ```
 
-🎉 **That's it!** Visit `http://localhost:5173` to see SiteWise in action.
+🎉 Visit **http://localhost:5173** and you're in.
 
-### 🐳 **Docker Deployment (TODO)**
+### Run as a desktop app
 
 ```bash
-# Quick start with Docker
-docker pull sitewise/app:latest
-docker run -p 8080:8080 sitewise/app:latest
-
-# Or build from source
-docker build -t sitewise .
-docker run -p 8080:8080 sitewise
+npm run dev:tauri      # native desktop app in dev mode
+npm run build:tauri    # produce a distributable desktop build
 ```
 
----
+### Useful scripts
 
-## 📸 **Screenshots**
+| Script | What it does |
+|--------|--------------|
+| `npm run dev` | Vite dev server (web / PWA) |
+| `npm run dev:tauri` | Native desktop app (dev) |
+| `npm run build` | Type-check + production web build |
+| `npm run build:tauri` | Build the native desktop app |
+| `npm test` | Run the test suite (Vitest) |
+| `npm run test:ui` | Vitest interactive UI |
+| `npm run test:coverage` | Tests with coverage report |
+| `npm run lint` | Lint the codebase |
+| `npm run preview` | Preview the production build |
 
-<div align="center">
-
-### 📊 **Dashboard Overview**
-*Real-time project metrics and financial insights*
-
-![Dashboard](https://via.placeholder.com/800x400/4F46E5/FFFFFF?text=Dashboard+Screenshot)
-
-### 📦 **Item Management**
-*Track inventory with delivery history and price trends*
-
-![Items](https://via.placeholder.com/800x400/059669/FFFFFF?text=Items+Management+Screenshot)
-
-### 💳 **Payment Tracking**
-*Comprehensive financial management and vendor payments*
-
-![Payments](https://via.placeholder.com/800x400/DC2626/FFFFFF?text=Payment+Management+Screenshot)
-
-</div>
+> **Don't want to self-host?** [Sign up free at sitewise.in](https://sitewise.in) — no install required, start managing your sites in minutes.
 
 ---
 
-## 🏗️ **Architecture**
+## 🏗️ Architecture
 
-<div align="center">
+SiteWise is a Vue 3 single-page app talking to a PocketBase backend over REST + realtime. The same frontend ships three ways: in the browser, as an installable PWA, and as a Tauri desktop app.
 
 ```mermaid
 graph TB
-    A[Vue 3 Frontend] --> B[PocketBase API]
-    B --> C[SQLite Database]
-    A --> D[PWA Service Worker]
-    D --> E[Offline Storage]
-    B --> F[File Storage]
-    A --> G[Chart.js Analytics]
-    A --> H[TailwindCSS UI]
+    subgraph Clients
+      W[Browser / PWA]
+      D[Tauri Desktop App]
+    end
+
+    subgraph "Vue 3 Frontend"
+      R[Vue Router]
+      P[Pinia State]
+      C[Chart.js Analytics]
+      T[TailwindCSS UI]
+      SW[PWA Service Worker]
+    end
+
+    subgraph "PocketBase Backend"
+      API[REST + Realtime API]
+      DB[(SQLite)]
+      FS[File Storage / Photos]
+    end
+
+    W --> R
+    D --> R
+    R --> P
+    P --> API
+    SW --> P
+    API --> DB
+    API --> FS
 ```
 
-</div>
-
-### 🛠️ **Tech Stack**
+### 🛠️ Tech Stack
 
 | Category | Technologies |
 |----------|-------------|
 | **Frontend** | Vue 3, TypeScript, Vite, TailwindCSS |
-| **Backend** | PocketBase, SQLite, Real-time APIs |
-| **UI/UX** | Lucide Icons, Chart.js, Responsive Design |
+| **State & Routing** | Pinia, Vue Router |
+| **Backend** | PocketBase (single binary, SQLite-backed) with realtime |
+| **Charts & Icons** | Chart.js + vue-chartjs, Lucide |
+| **Documents** | jsPDF (generation), pdf.js (viewing), JSZip (bulk export) |
+| **UX** | driver.js (tours), vue-toastification, vite-plugin-pwa |
+| **Desktop** | Tauri |
 | **Testing** | Vitest, Vue Test Utils, Happy DOM |
-| **DevOps** | Docker, GitHub Actions, Automated Deployment |
-| **Mobile** | PWA, Service Workers, Offline Support |
+| **CI / Quality** | GitHub Actions, Codecov |
 
 ---
 
-<!-- ## 🎮 **Try the Demo**
-
-Experience SiteWise with our interactive demo:
-
-🔗 **[Live Demo](https://demo.sitewise.in)** - Full-featured demo environment
-
-**Demo Credentials:**
-- **Email:** demo@sitewise.in
-- **Password:** demo123
-
-**Sample Data Included:**
-- 3 construction sites with different project types
-- 50+ items, vendors, and transactions
-- Multiple user roles to explore
-
----
- -->
-## 📚 **Documentation**
+## 📚 Documentation
 
 | Document | Description |
 |----------|-------------|
-| [📖 **Documentation**](DOCUMENTATION.md) | Complete technical documentation |
-| [👥 **User Guide**](USER_GUIDE.md) | End-user manual with screenshots |
+| [👥 **User Guide**](USER_GUIDE.md) | End-user manual |
 | [🤝 **Contributing**](CONTRIBUTING.md) | How to contribute to the project |
-| [🔒 **Security**](SECURITY.md) | Security policy and reporting |
+| [🔒 **Security**](SECURITY.md) | Security policy and responsible disclosure |
+| [📋 **Code of Conduct**](CODE_OF_CONDUCT.md) | Community guidelines |
 | [📋 **Code of Conduct**](CODE_OF_CONDUCT.md) | Community guidelines |
 
 ---
 
-## 🚀 **Deployment Options**
+## 🌍 Internationalization
 
-### ☁️ **Cloud Platforms (TODO)**
-<!-- 
-<table>
-<tr>
-<td align="center">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg" width="60" height="36"><br>
-  <strong>AWS</strong><br>
-  <a href="#aws-deployment">Deploy Guide</a>
-</td>
-<td align="center">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/f/ff/DigitalOcean_logo.svg" width="60" height="36"><br>
-  <strong>DigitalOcean</strong><br>
-  <a href="#digitalocean-deployment">Deploy Guide</a>
-</td>
-<td align="center">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/e/e6/Vercel_logo_black.svg" width="60" height="36"><br>
-  <strong>Vercel</strong><br>
-  <a href="#vercel-deployment">Deploy Guide</a>
-</td>
-<td align="center">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/b/bc/Railway_logo.svg" width="60" height="36"><br>
-  <strong>Railway</strong><br>
-  <a href="#railway-deployment">Deploy Guide</a>
-</td>
-</tr>
-</table> -->
+SiteWise ships with two complete, first-class languages. More are welcome — translations live in `src/locales`, and every visible string must exist as a key in **both** `en.json` and `hi.json`.
 
-### 🏠 **Self-Hosted (TODO)**
-
-Perfect for organizations requiring complete data control:
-
-- **Docker Compose** - Single-command deployment
-- **Kubernetes** - Enterprise-scale orchestration  
-- **VPS/Dedicated** - Traditional server deployment
+| Language | Status |
+|----------|--------|
+| 🇬🇧 English | ✅ Complete |
+| 🇮🇳 Hindi | ✅ Complete |
+| 🌐 Your language | 📝 Help wanted — [contribute a locale](CONTRIBUTING.md) |
 
 ---
 
-## 🌍 **Internationalization**
+## 🔒 Security
 
-SiteWise speaks your language:
+Security and tenant isolation are core to SiteWise:
 
-| Language | Status | Contributor |
-|----------|--------|------------|
-| 🇺🇸 English | ✅ Complete | Core Team |
-| 🇮🇳 Hindi | ✅ Complete | Core Team |
-| 🇪🇸 Spanish | 📝 Planned | [Contribute](CONTRIBUTING.md) |
-| 🇫🇷 French | 📝 Planned | [Contribute](CONTRIBUTING.md) |
-| 🇩🇪 German | 📝 Planned | [Contribute](CONTRIBUTING.md) |
+- 🔐 **Authentication** via PocketBase's auth system with secure token handling
+- 🛡️ **Role-based access control** — Owner / Supervisor / Accountant, with permissions calculated per role
+- 🏢 **Strict per-site data isolation** — every service filters by the current site, and `getById` lookups validate site ownership to prevent cross-site access
+- 🚨 **Automated security scanning** in CI
 
-**Want to help translate?** Check our [Internationalization Guide](CONTRIBUTING.md#internationalization).
+**Found a vulnerability?** Please report it responsibly to [security@sitewise.in](mailto:security@sitewise.in). See our [Security Policy](SECURITY.md) for details.
 
 ---
 
-## 🤝 **Contributing**
+## 🤝 Contributing
 
-We love contributions! SiteWise is built by the community, for the community.
+SiteWise is built in the open, and contributions of every size are welcome.
 
-### 🌟 **Ways to Contribute**
+- 🐛 **Report bugs** — open an [issue](https://github.com/site-wise/app/issues)
+- ✨ **Suggest features** — start a [discussion](https://github.com/site-wise/app/discussions)
+- 📝 **Improve docs** — clearer docs help everyone
+- 🔧 **Write code** — features, fixes, refactors
+- 🌍 **Translate** — bring SiteWise to a new language
+- 🎨 **Design** — sharpen the UI/UX
 
-- 🐛 **Report Bugs** - Help us improve by reporting issues
-- ✨ **Suggest Features** - Share your ideas for new functionality  
-- 📝 **Improve Docs** - Help others learn and use SiteWise
-- 🔧 **Write Code** - Contribute features, fixes, and improvements
-- 🌍 **Translate** - Make SiteWise accessible in your language
-- 🎨 **Design** - Improve UI/UX and create assets
+### Quick contribution flow
 
-### 🚀 **Quick Contribution Guide**
+1. **Fork** the repo and **clone** your fork
+2. **Branch** off `main`
+3. **Make** your change (add new strings to *both* `en.json` and `hi.json`)
+4. **Test** with `npm test`
+5. **Open** a pull request
 
-1. **Fork** the repository
-2. **Clone** your fork locally
-3. **Create** a feature branch
-4. **Make** your changes
-5. **Test** your changes
-6. **Submit** a pull request
+👀 New here? Look for issues labeled [`good first issue`](https://github.com/site-wise/app/labels/good%20first%20issue). Read [CONTRIBUTING.md](CONTRIBUTING.md) before you start.
 
-👀 **First time contributing?** Look for issues labeled [`good first issue`](https://github.com/site-wise/app/labels/good%20first%20issue).
-
-### 🏆 **Contributors**
-
-Thanks to these amazing people who have contributed to SiteWise:
+### Contributors
 
 <a href="https://github.com/site-wise/app/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=site-wise/app" />
+  <img src="https://contrib.rocks/image?repo=site-wise/app" alt="SiteWise contributors" />
 </a>
 
 ---
 
-## 📊 **Project Stats**
+## 📈 Roadmap
 
-<div align="center">
+Forward-looking and shaped by the community — these are directions, not promises with dates.
 
-![GitHub stars](https://img.shields.io/github/stars/site-wise/app?style=social)
-![GitHub forks](https://img.shields.io/github/forks/site-wise/app?style=social)
-![GitHub issues](https://img.shields.io/github/issues/site-wise/app)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/site-wise/app)
+**🔜 Now**
+- [ ] Expand automated test coverage across views
+- [ ] Documented self-host / deployment guide
+- [ ] Deeper analytics on the dashboard
 
-</div>
+**🛠️ Next**
+- [ ] More export formats and accounting-friendly reports
+- [ ] Additional language translations
+- [ ] Richer photo management
 
-<table>
-<tr>
-<td align="center"><strong>⭐ Stars</strong><br>Give us a star if you like SiteWise!</td>
-<td align="center"><strong>🐛 Issues</strong><br>Found a bug? Report it!</td>
-<td align="center"><strong>💡 Ideas</strong><br>Have a feature idea? Share it!</td>
-<td align="center"><strong>🔀 PRs</strong><br>Contributions are welcome!</td>
-</tr>
-</table>
-
----
-
-## 🔒 **Security**
-
-Security is our top priority. SiteWise implements:
-
-- 🔐 **JWT Authentication** with secure token management
-- 🛡️ **Role-based Access Control** with site isolation
-- 🔒 **Data Encryption** in transit and at rest
-- 🚨 **Security Scanning** with automated vulnerability detection
-- 📋 **Regular Audits** of dependencies and code
-
-**Found a security issue?** Please report it responsibly via [security@sitewise.in](mailto:security@sitewise.in).
-
-See our [Security Policy](SECURITY.md) for more details.
-
----
-
-## 📈 **Roadmap**
-
-### 🎯 **Current Focus (Q3 2025)**
-- [ ] Advanced reporting and analytics dashboard
-- [ ] Mobile app for iOS and Android
-- [ ] API for third-party integrations
-- [ ] Enhanced photo management with AI tagging
-
-### 🚀 **Upcoming Features (Q4 2025)**
-- [ ] Real-time collaboration tools
-- [ ] Advanced workflow automation
-- [ ] Integration with accounting software (Tally)
-- [ ] Project timeline and Gantt charts
+**🔮 Later**
+- [ ] Integrations with popular accounting tools
+- [ ] Project timeline / scheduling views
 - [ ] Budget forecasting and variance analysis
 
-### 🔮 **Future Vision (2026+)**
-- [ ] AI-powered cost estimation
-- [ ] IoT device integration for equipment tracking
-- [ ] Blockchain-based contract management
-- [ ] Advanced machine learning insights
-
-**Want to influence our roadmap?** Join our [discussions](https://github.com/site-wise/app/discussions) and share your ideas!
+**Want to influence the roadmap?** Join the [discussions](https://github.com/site-wise/app/discussions).
 
 ---
 
-## 💬 **Community**
+## 📞 Support
 
-Join our vibrant community of construction professionals and developers:
-
-### 🌐 **Connect With Us**
-
-<table>
-<tr>
-<td align="center">
-  <a href="https://github.com/site-wise/app/discussions">
-    <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="32" height="32"><br>
-    <strong>GitHub Discussions</strong>
-  </a>
-</td>
-<td align="center">
-  <a href="https://discord.gg/YOUR_INVITE_LINK">
-    <img src="https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png" width="32" height="32"><br>
-    <strong>Discord Server (TODO)</strong>
-  </a>
-</td>
-<td align="center">
-  <a href="https://twitter.com/sitewise_app">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6f/Logo_of_Twitter.svg" width="32" height="32"><br>
-    <strong>Twitter</strong>
-  </a>
-</td>
-<!-- <td align="center">
-  <a href="https://linkedin.com/company/sitewise">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" width="32" height="32"><br>
-    <strong>LinkedIn</strong>
-  </a>
-</td> -->
-</tr>
-</table>
-
-### 📊 **Community Stats**
-
-- 👥 **500+** Active users across 50+ countries
-- 🏗️ **1000+** Construction sites managed
-- 💰 **$10M+** In project value tracked
-- 🌍 **15** Languages and growing
+| Need | Where to go |
+|------|-------------|
+| 🐛 **Bug reports** | [GitHub Issues](https://github.com/site-wise/app/issues) |
+| ❓ **Questions & ideas** | [GitHub Discussions](https://github.com/site-wise/app/discussions) |
+| 🔒 **Security** | [security@sitewise.in](mailto:security@sitewise.in) |
+| 💼 **Business inquiries** | [hello@sitewise.in](mailto:hello@sitewise.in) |
 
 ---
 
-## 🏆 **Recognition (TO HAPPEN!)**
+## 📄 License
 
-SiteWise has been recognized by:
-
-<!-- - 🥇 **Open Source Construction Software of the Year 2024** - BuildTech Awards
-- 🌟 **Top 10 Construction Management Tools** - ConstructionDive
-- 🚀 **Most Promising Startup** - TechCrunch Construction Summit -->
-
----
-
-## 📞 **Support**
-
-Need help? We're here for you:
-
-| Support Type | Contact | Response Time |
-|-------------|---------|---------------|
-| 🐛 **Bug Reports** | [GitHub Issues](https://github.com/site-wise/app/issues) | 24-48 hours |
-| ❓ **Questions** | [GitHub Discussions](https://github.com/site-wise/app/discussions) | 12-24 hours |
-| 🔒 **Security** | security@sitewise.in | 4-8 hours |
-| 💼 **Business** | hello@sitewise.in | 1-2 business days |
-
-See our [Support Guide](SUPPORT.md) for more detailed information.
-
----
-
-## 📄 **License**
-
-SiteWise is proudly open source and available under the [O'Saasy License](LICENSE).
+SiteWise is open source under the [O'Saasy License](LICENSE).
 
 ```
-O'Saasy License - see the LICENSE file for details.
+O'Saasy License — see the LICENSE file for details.
 Copyright (c) 2025 SiteWise
 ```
 
 ---
 
-## 🙏 **Acknowledgments**
+## 🙏 Acknowledgments
 
-SiteWise wouldn't be possible without these amazing open-source projects:
+SiteWise stands on the shoulders of excellent open-source projects:
 
-- [Vue.js](https://vuejs.org/) - The Progressive JavaScript Framework
-- [PocketBase](https://pocketbase.io/) - Open Source backend in 1 file
-- [TailwindCSS](https://tailwindcss.com/) - A utility-first CSS framework
-- [Vite](https://vitejs.dev/) - Next generation frontend tooling
-- [TypeScript](https://www.typescriptlang.org/) - JavaScript with syntax for types
+- [Vue.js](https://vuejs.org/) — the progressive JavaScript framework
+- [PocketBase](https://pocketbase.io/) — open-source backend in a single file
+- [Tauri](https://tauri.app/) — tiny, secure native desktop apps
+- [TailwindCSS](https://tailwindcss.com/) — utility-first CSS
+- [Vite](https://vitejs.dev/) — next-generation frontend tooling
+- [TypeScript](https://www.typescriptlang.org/) — JavaScript with types
+- [Chart.js](https://www.chartjs.org/) — flexible charting
 
-And a special thanks to all our [contributors](https://github.com/site-wise/app/graphs/contributors) who make SiteWise better every day! 🎉
+…and everyone who [contributes](https://github.com/site-wise/app/graphs/contributors) to making SiteWise better. 🎉
 
 ---
 
 <div align="center">
 
-**⭐ If SiteWise helps you manage your construction projects better, please give us a star! ⭐**
+**⭐ If SiteWise helps you run your sites better, give it a star — it genuinely helps. ⭐**
 
-**Made with ❤️ by the SiteWise community**
-
-[🏠 Website](https://sitewise.in) • [📖 Docs](DOCUMENTATION.md) • [💬 Community](https://github.com/site-wise/app/discussions) • [🐛 Issues](https://github.com/site-wise/app/issues) • [🚀 Contribute](CONTRIBUTING.md)
+[🏠 Website](https://sitewise.in) • [🚀 Sign Up Free](https://sitewise.in) • [👥 User Guide](USER_GUIDE.md) • [💬 Discussions](https://github.com/site-wise/app/discussions) • [🐛 Issues](https://github.com/site-wise/app/issues) • [🤝 Contribute](CONTRIBUTING.md)
 
 </div>
