@@ -2,8 +2,8 @@
   <div>
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('vendors.title') }}</h1>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <h1 class="font-display text-2xl font-bold text-ink dark:text-cream">{{ t('vendors.title') }}</h1>
+        <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">
           {{ t('vendors.subtitle') }}
         </p>
       </div>
@@ -29,18 +29,18 @@
           </button>
 
           <!-- Export Dropdown Menu -->
-          <div v-if="showExportDropdown && !exporting" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+          <div v-if="showExportDropdown && !exporting" class="absolute right-0 mt-2 w-48 bg-white dark:bg-ink-3 rounded-md shadow-modal z-10 border border-stone-200 dark:border-ink-4">
             <div class="py-1">
-              <button @click="exportAllLedgersCSV(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <FileSpreadsheet class="mr-3 h-4 w-4 text-green-600" />
+              <button @click="exportAllLedgersCSV(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4">
+                <FileSpreadsheet class="mr-3 h-4 w-4 text-forest-600 dark:text-forest-400" />
                 {{ t('vendors.exportCsv') }}
               </button>
-              <button @click="exportAllLedgersPDF(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <FileText class="mr-3 h-4 w-4 text-red-600" />
+              <button @click="exportAllLedgersPDF(); showExportDropdown = false" class="flex items-center w-full px-4 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4">
+                <FileText class="mr-3 h-4 w-4 text-clay-600 dark:text-clay-400" />
                 {{ t('vendors.exportPdf') }}
               </button>
-              <button @click="exportAllLedgersTally(); showExportDropdown = false" class="relative flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <FileText class="mr-3 h-4 w-4 text-blue-600" />
+              <button @click="exportAllLedgersTally(); showExportDropdown = false" class="relative flex items-center w-full px-4 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4">
+                <FileText class="mr-3 h-4 w-4 text-amber-600 dark:text-amber-400" />
                 {{ t('vendors.exportTallyXml') }}
                 <StatusBadge type="beta" position="absolute" />
               </button>
@@ -65,73 +65,40 @@
     </div>
 
     <!-- Vendors Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
       <div v-for="vendor in vendors" :key="vendor.id"
-        class="card hover:shadow-md transition-shadow duration-200 cursor-pointer"
+        class="card-interactive group flex flex-col"
         @click="viewVendorDetail(vendor.id!)">
+
+        <!-- Card header: title + actions -->
         <div class="flex items-start justify-between">
-          <div class="flex-1">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ vendor.contact_person || vendor.name ||
-              'Unnamed Vendor' }}</h3>
-            <div v-if="vendor.name && vendor.contact_person" class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {{ vendor.name }}
-            </div>
-            <div class="mt-2 space-y-1">
-              <div v-if="vendor.email" class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <Mail class="mr-2 h-4 w-4" />
-                {{ vendor.email }}
-              </div>
-              <div v-if="vendor.phone" class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <Phone class="mr-2 h-4 w-4" />
-                {{ vendor.phone }}
-              </div>
-              <div v-if="vendor.address" class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <MapPin class="mr-2 h-4 w-4" />
-                {{ vendor.address }}
-              </div>
-            </div>
-
-            <!-- Financial Summary -->
-            <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div class="flex justify-between items-center mb-2">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.outstanding') }}</span>
-                <span class="text-sm font-semibold text-red-600 dark:text-red-400">₹{{
-                  getVendorOutstanding(vendor.id!).toFixed(0) }}</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.totalPaid') }}</span>
-                <span class="text-sm font-semibold text-green-600 dark:text-green-400">₹{{
-                  getVendorPaid(vendor.id!).toFixed(0) }}</span>
-              </div>
-            </div>
-
-            <!-- Tags -->
-            <div v-if="vendorTags.get(vendor.id!)?.length" class="mt-4">
-              <div class="flex flex-wrap gap-1">
-                <span v-for="tag in vendorTags.get(vendor.id!)" :key="tag.id"
-                  class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium text-white"
-                  :style="{ backgroundColor: tag.color }">
-                  {{ tag.name }}
-                </span>
-              </div>
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display text-lg font-semibold text-ink dark:text-cream truncate">{{ vendor.contact_person || vendor.name || t('vendors.unnamedVendor') }}</h3>
+            <!-- Secondary meta: company name / phone -->
+            <div class="mt-1 flex items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400 min-w-0">
+              <span v-if="vendor.name && vendor.contact_person" class="truncate">{{ vendor.name }}</span>
+              <span v-else-if="vendor.phone" class="flex items-center gap-1 truncate">
+                <Phone class="h-3.5 w-3.5 shrink-0" />{{ vendor.phone }}
+              </span>
+              <span v-else-if="vendor.email" class="truncate">{{ vendor.email }}</span>
             </div>
           </div>
 
-          <!-- Desktop Action Buttons -->
-          <div class="hidden lg:flex items-center space-x-2" @click.stop>
+          <!-- Desktop Action Buttons — hover-reveal ghost cluster -->
+          <div class="hidden lg:flex items-center gap-0.5 ml-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150" @click.stop>
             <button @click="editVendor(vendor)" :disabled="!canEditDelete" :class="[
               canEditDelete
-                ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
-                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
-              'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+                ? 'text-stone-400 hover:text-ink dark:text-stone-500 dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4'
+                : 'text-stone-300 dark:text-stone-600 cursor-not-allowed',
+              'h-8 w-8 inline-flex items-center justify-center rounded-md transition-colors duration-150'
             ]" :title="t('common.edit')">
               <Edit2 class="h-4 w-4" />
             </button>
             <button @click="deleteVendor(vendor.id!)" :disabled="!canEditDelete" :class="[
               canEditDelete
-                ? 'text-red-400 hover:text-red-600 dark:hover:text-red-300'
-                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
-              'p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+                ? 'text-stone-400 hover:text-clay-600 dark:text-stone-500 dark:hover:text-clay-400 hover:bg-stone-100 dark:hover:bg-ink-4'
+                : 'text-stone-300 dark:text-stone-600 cursor-not-allowed',
+              'h-8 w-8 inline-flex items-center justify-center rounded-md transition-colors duration-150'
             ]" :title="t('common.deleteAction')">
               <Trash2 class="h-4 w-4" />
             </button>
@@ -142,82 +109,132 @@
             <CardDropdownMenu :actions="getVendorActions(vendor)" @action="handleVendorAction(vendor, $event)" />
           </div>
         </div>
+
+        <!-- Tags -->
+        <div v-if="vendorTags.get(vendor.id!)?.length" class="mt-3">
+          <div class="flex flex-wrap gap-1.5">
+            <span v-for="tag in vendorTags.get(vendor.id!)" :key="tag.id"
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-stone-100 dark:bg-ink-4 text-stone-700 dark:text-stone-300">
+              <span class="h-2 w-2 rounded-[2px] shrink-0" :style="{ backgroundColor: tag.color }"></span>
+              {{ tag.name }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Stat strip — bottom-pinned, separated by 1px border -->
+        <div class="mt-auto pt-4 border-t border-stone-200 dark:border-ink-4">
+          <div class="flex items-end justify-between gap-4">
+            <!-- HERO: outstanding (clay when >0, ink when settled) -->
+            <div class="flex flex-col gap-0.5">
+              <span class="sw-eyebrow text-stone-400 dark:text-stone-500">{{ t('vendors.outstanding') }}</span>
+              <span :class="[
+                'sw-stat font-mono tabular-nums leading-none',
+                getVendorOutstanding(vendor.id!) > 0
+                  ? 'text-clay-600 dark:text-clay-400'
+                  : 'text-ink dark:text-cream'
+              ]">₹{{ getVendorOutstanding(vendor.id!).toLocaleString('en-IN') }}</span>
+            </div>
+            <!-- SECONDARY: total paid (forest) -->
+            <div class="flex flex-col gap-0.5 text-right">
+              <span class="sw-eyebrow text-stone-400 dark:text-stone-500">{{ t('vendors.totalPaid') }}</span>
+              <span class="font-mono tabular-nums text-base font-semibold text-forest-700 dark:text-forest-400 leading-none">
+                ₹{{ getVendorPaid(vendor.id!).toLocaleString('en-IN') }}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-if="vendors.length === 0" class="col-span-full">
-        <div class="text-center py-12">
-          <Users class="mx-auto h-12 w-12 text-gray-400" />
-          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('vendors.noVendors') }}</h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('vendors.getStarted') }}</p>
+        <div class="text-center py-16">
+          <Users class="mx-auto h-12 w-12 text-stone-400" />
+          <h3 class="font-display mt-4 text-base font-semibold text-ink dark:text-cream">{{ t('vendors.noVendors') }}</h3>
+          <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">{{ t('vendors.getStarted') }}</p>
         </div>
       </div>
     </div>
 
     <!-- Add/Edit Modal -->
     <div v-if="showAddModal || editingVendor"
-      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="closeModal"
-      @keydown.esc="closeModal" tabindex="-1">
+      class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60"
+      @click="closeModal"
+      @keydown.esc="closeModal"
+      tabindex="-1">
       <div
-        class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4 mb-20 lg:mb-4"
+        class="w-full sm:max-w-lg bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden"
         @click.stop>
-        <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
-            {{ editingVendor ? t('vendors.editVendor') : t('vendors.addVendor') }}
-          </h3>
+        <!-- Grab handle (mobile only) -->
+        <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden"></div>
 
-          <form @submit.prevent="saveVendor" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.contactPerson')
-                }}</label>
-              <input ref="firstInputRef" v-model="form.contact_person" type="text" class="input mt-1"
-                :placeholder="t('forms.enterContactPerson')" autofocus />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.companyName')
-                }}</label>
-              <input v-model="form.name" type="text" class="input mt-1" :placeholder="t('forms.enterCompanyName')" />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('vendors.paymentDetails')
-                }}</label>
-              <textarea v-model="form.payment_details" class="input mt-1" rows="2"
-                :placeholder="t('forms.enterPaymentDetails')"></textarea>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.email') }}</label>
-              <input v-model="form.email" type="email" class="input mt-1" :placeholder="t('forms.enterEmail')" />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.phone') }}</label>
-              <input v-model="form.phone" type="tel" class="input mt-1" :placeholder="t('forms.enterPhone')" />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.address')
-                }}</label>
-              <textarea v-model="form.address" class="input mt-1" rows="2"
-                :placeholder="t('forms.enterAddress')"></textarea>
-            </div>
-
-            <!-- Tags -->
-            <TagSelector v-model="form.tags" :label="t('tags.vendorTags')" tag-type="specialty"
-              :placeholder="t('tags.searchVendorTags')" />
-
-            <div class="flex space-x-3 pt-4">
-              <button type="submit" :disabled="loading" class="flex-1 btn-primary">
-                <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-                {{ editingVendor ? t('common.update') : t('common.create') }}
-              </button>
-              <button type="button" @click="closeModal" class="flex-1 btn-outline">
-                {{ t('common.cancel') }}
-              </button>
-            </div>
-          </form>
+        <!-- Sticky header -->
+        <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3">
+          <span class="flex h-9 w-9 flex-none items-center justify-center rounded-md bg-amber-500/15">
+            <Users class="h-5 w-5 text-amber-700 dark:text-amber-400" />
+          </span>
+          <div>
+            <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ editingVendor ? t('common.edit') : t('common.create') }}</p>
+            <h3 class="font-display text-lg font-semibold text-ink dark:text-cream leading-tight">{{ editingVendor ? t('vendors.editVendor') : t('vendors.addVendor') }}</h3>
+          </div>
+          <button type="button" @click="closeModal" class="ml-auto h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-ink dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors" aria-label="Close">
+            <X class="h-5 w-5" />
+          </button>
         </div>
+
+        <!-- Form wrapping scrollable body + sticky footer -->
+        <form @submit.prevent="saveVendor" class="flex flex-col flex-1 overflow-hidden">
+          <!-- Scrollable body -->
+          <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('vendors.contactPerson') }}</label>
+                <input ref="firstInputRef" v-model="form.contact_person" type="text" class="input mt-1"
+                  :placeholder="t('forms.enterContactPerson')" autofocus />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('vendors.companyName') }}</label>
+                <input v-model="form.name" type="text" class="input mt-1" :placeholder="t('forms.enterCompanyName')" />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('vendors.paymentDetails') }}</label>
+                <textarea v-model="form.payment_details" class="input mt-1" rows="2"
+                  :placeholder="t('forms.enterPaymentDetails')"></textarea>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.email') }}</label>
+                <input v-model="form.email" type="email" class="input mt-1" :placeholder="t('forms.enterEmail')" />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.phone') }}</label>
+                <input v-model="form.phone" type="tel" class="input mt-1" :placeholder="t('forms.enterPhone')" />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.address') }}</label>
+                <textarea v-model="form.address" class="input mt-1" rows="2"
+                  :placeholder="t('forms.enterAddress')"></textarea>
+              </div>
+
+              <!-- Tags -->
+              <TagSelector v-model="form.tags" :label="t('tags.vendorTags')" tag-type="specialty"
+                :placeholder="t('tags.searchVendorTags')" />
+            </div>
+          </div>
+
+          <!-- Sticky footer -->
+          <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex gap-3">
+            <button type="submit" :disabled="loading" class="flex-1 btn-primary">
+              <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
+              {{ loading ? (editingVendor ? t('common.updating') : t('common.creating')) : (editingVendor ? t('common.update') : t('common.create')) }}
+            </button>
+            <button type="button" @click="closeModal" class="flex-1 btn-outline">
+              {{ t('common.cancel') }}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -228,11 +245,12 @@ import { ref, reactive, onMounted, computed, nextTick } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { useKeyboardShortcutSingle } from '../composables/useKeyboardShortcut';
 import { useRouter } from 'vue-router';
-import { Users, Plus, Edit2, Trash2, Loader2, Mail, Phone, MapPin, Download, ChevronDown, FileSpreadsheet, FileText } from 'lucide-vue-next';
+import { Users, Plus, Edit2, Trash2, Loader2, Phone, Download, ChevronDown, FileSpreadsheet, FileText, X } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
+import { useQuickActionModal } from '../composables/useQuickActionModal';
 import TagSelector from '../components/TagSelector.vue';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
@@ -886,7 +904,7 @@ const handleQuickAction = async () => {
 useKeyboardShortcutSingle('n', handleAddVendor, { shiftKey: true, altKey: true });
 
 // Event listeners using @vueuse/core
-useEventListener(window, 'show-add-modal', handleQuickAction);
+useQuickActionModal(handleQuickAction);
 
 // Handle click outside to close export dropdown
 const handleClickOutside = (event: MouseEvent) => {

@@ -91,11 +91,11 @@ describe('LanguageSelector', () => {
       wrapper = mount(LanguageSelector)
       
       const button = wrapper.find('button')
-      expect(button.classes()).not.toContain('bg-gray-100')
-      
+      expect(button.classes()).not.toContain('bg-stone-100')
+
       await button.trigger('click')
-      
-      expect(button.classes()).toContain('bg-gray-100')
+
+      expect(button.classes()).toContain('bg-stone-100')
     })
   })
 
@@ -134,10 +134,10 @@ describe('LanguageSelector', () => {
       await wrapper.find('button').trigger('click')
       
       const englishOption = wrapper.find('[role="menuitem"]:first-child')
-      expect(englishOption.classes()).toContain('bg-primary-50')
+      expect(englishOption.classes()).toContain('bg-amber-50')
       expect(englishOption.classes()).toContain('border-l-4')
-      expect(englishOption.classes()).toContain('border-primary-500')
-      expect(englishOption.classes()).toContain('text-primary-700')
+      expect(englishOption.classes()).toContain('border-amber-500')
+      expect(englishOption.classes()).toContain('text-amber-900')
     })
 
     it('should show language names and native names', async () => {
@@ -298,7 +298,7 @@ describe('LanguageSelector', () => {
       
       await wrapper.find('button').trigger('click')
       
-      const englishSubtitle = wrapper.find('.text-xs.text-gray-500')
+      const englishSubtitle = wrapper.find('.text-xs.text-stone-600')
       expect(englishSubtitle.classes()).toContain('md:block')
       expect(englishSubtitle.classes()).toContain('hidden')
     })
@@ -347,17 +347,17 @@ describe('LanguageSelector', () => {
       wrapper = mount(LanguageSelector)
       
       const button = wrapper.find('button')
-      expect(button.classes()).toContain('dark:text-gray-300')
-      expect(button.classes()).toContain('dark:hover:text-white')
-      expect(button.classes()).toContain('dark:hover:bg-gray-700')
+      expect(button.classes()).toContain('dark:text-stone-300')
+      expect(button.classes()).toContain('dark:hover:text-cream')
+      expect(button.classes()).toContain('dark:hover:bg-ink-4')
     })
 
     it('should have hover effects', () => {
       wrapper = mount(LanguageSelector)
       
       const button = wrapper.find('button')
-      expect(button.classes()).toContain('hover:text-gray-900')
-      expect(button.classes()).toContain('hover:bg-gray-100')
+      expect(button.classes()).toContain('hover:text-ink')
+      expect(button.classes()).toContain('hover:bg-stone-100')
       expect(button.classes()).toContain('transition-colors')
     })
 
@@ -367,9 +367,9 @@ describe('LanguageSelector', () => {
       await wrapper.find('button').trigger('click')
       
       const selectedOption = wrapper.find('[role="menuitem"]:first-child')
-      expect(selectedOption.classes()).toContain('bg-primary-50')
-      expect(selectedOption.classes()).toContain('text-primary-700')
-      expect(selectedOption.classes()).toContain('border-primary-500')
+      expect(selectedOption.classes()).toContain('bg-amber-50')
+      expect(selectedOption.classes()).toContain('text-amber-900')
+      expect(selectedOption.classes()).toContain('border-amber-500')
     })
   })
 

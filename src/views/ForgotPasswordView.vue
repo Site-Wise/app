@@ -1,16 +1,16 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen flex items-center justify-center bg-cream dark:bg-ink py-12 px-4 sm:px-6 lg:px-8 sw-dotgrid">
     <div class="max-w-md w-full space-y-8">
       <div>
         <div class="flex items-center justify-center">
           <img src="/logo.webp" class="h-16" alt="SiteWise">
-          <span class="ml-2 text-xl font-bold leading-tight text-gray-900 dark:text-white">Site</span>
-          <span class="text-xl font-bold leading-tight text-blue-600">Wise</span>
+          <span class="ml-2 text-2xl font-display font-bold leading-tight text-ink dark:text-cream">Site</span>
+          <span class="text-2xl font-display font-bold leading-tight text-amber-700 dark:text-amber-400">Wise</span>
         </div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+        <h2 class="mt-6 text-center sw-h2 font-display text-ink dark:text-cream">
           {{ t('auth.forgotPasswordTitle') }}
         </h2>
-        <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+        <p class="mt-2 text-center text-sm text-stone-600 dark:text-stone-400">
           {{ t('auth.forgotPasswordSubtitle') }}
         </p>
       </div>
@@ -19,7 +19,7 @@
         <!-- Success Message -->
         <div v-if="emailSent" class="rounded-md bg-green-50 dark:bg-green-900/30 p-4">
           <div class="flex">
-            <CheckCircle class="h-5 w-5 text-green-400 dark:text-green-300" />
+            <CheckCircle class="h-5 w-5 text-green-600 dark:text-green-300" />
             <div class="ml-3">
               <h3 class="text-sm font-medium text-green-800 dark:text-green-300">
                 {{ t('auth.resetLinkSent') }}
@@ -34,7 +34,7 @@
         <!-- Error Message -->
         <div v-if="error" class="rounded-md bg-error-50 dark:bg-error-900/30 p-4">
           <div class="flex">
-            <AlertCircle class="h-5 w-5 text-error-400 dark:text-error-300" />
+            <AlertCircle class="h-5 w-5 text-error-600 dark:text-error-300" />
             <div class="ml-3">
               <h3 class="text-sm font-medium text-error-800 dark:text-error-300">
                 {{ error }}
@@ -46,7 +46,7 @@
         <!-- Form -->
         <form v-if="!emailSent" @submit.prevent="handleResetPassword" class="mt-6 space-y-6">
           <div>
-            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label for="email" class="block text-sm font-medium text-stone-700 dark:text-stone-300">
               {{ t('auth.email') }}
             </label>
             <div class="mt-1">
@@ -78,7 +78,7 @@
           <div class="text-center">
             <router-link
               to="/login"
-              class="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200"
+              class="text-sm font-medium text-ink dark:text-cream hover:text-amber-700 dark:hover:text-amber-400"
             >
               {{ t('auth.backToLogin') }}
             </router-link>

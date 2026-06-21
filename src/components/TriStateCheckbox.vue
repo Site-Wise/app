@@ -6,7 +6,7 @@
       :disabled="disabled"
       :class="[
         'relative w-5 h-5 rounded border-2 transition-all duration-200',
-        'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500',
+        'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 dark:focus:ring-offset-ink-3',
         disabled ? 'opacity-50 cursor-not-allowed' : clickableRow ? 'cursor-default' : 'cursor-pointer',
         checkboxClasses
       ]"
@@ -49,7 +49,7 @@
         
         <div class="flex items-center space-x-2">
           <!-- Amount Display -->
-          <div class="text-sm">
+          <div class="text-sm font-mono sw-tabular">
             <span
               v-if="state === 'checked'"
               class="font-medium text-green-600 dark:text-green-400"

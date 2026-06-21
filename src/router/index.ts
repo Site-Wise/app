@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { authService, getCurrentSiteId, getCurrentUserRole, calculatePermissions } from '../services/pocketbase';
+import { startRouteProgress, endRouteProgress } from '../composables/useRouteProgress';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -7,6 +8,12 @@ const router = createRouter({
     {
       path: '/login',
       name: 'Login',
+      component: () => import('../views/LoginView.vue'),
+      meta: { requiresGuest: true }
+    },
+    {
+      path: '/register',
+      name: 'Register',
       component: () => import('../views/LoginView.vue'),
       meta: { requiresGuest: true }
     },
@@ -151,6 +158,7 @@ const router = createRouter({
 });
 
 router.beforeEach((to, _from, next) => {
+  startRouteProgress();
   try {
     const isAuthenticated = authService.isAuthenticated;
     const currentSiteId = getCurrentSiteId();
@@ -204,6 +212,14 @@ router.beforeEach((to, _from, next) => {
     // This prevents the app from being completely blocked
     next();
   }
+});
+
+// End the top progress bar once navigation settles (success or failure).
+router.afterEach(() => {
+  endRouteProgress();
+});
+router.onError(() => {
+  endRouteProgress();
 });
 
 export default router;

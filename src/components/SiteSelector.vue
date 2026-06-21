@@ -2,81 +2,87 @@
   <div class="relative" ref="selectorRef">
     <button
       @click="dropdownOpen = !dropdownOpen"
-      class="flex items-center space-x-2 px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-      :class="{ 'ring-2 ring-primary-500': dropdownOpen }"
+      class="flex items-center space-x-2 pl-2 pr-3 py-1.5 text-sm bg-white dark:bg-ink-3 border border-stone-300 dark:border-ink-4 rounded-md hover:bg-stone-50 dark:hover:bg-ink-4 transition-colors duration-200 ease-snap active:scale-[0.98]"
+      :class="{ 'ring-2 ring-amber-500': dropdownOpen }"
       :aria-expanded="dropdownOpen"
       aria-haspopup="menu"
       :aria-label="t('sites.selectSite')"
     >
-      <Building class="h-4 w-4 text-gray-500 dark:text-gray-400" />
-      <span class="text-gray-900 dark:text-gray-100 font-medium">
+      <span
+        v-if="currentSite"
+        class="flex h-7 w-7 items-center justify-center rounded-md bg-amber-500 font-display text-xs font-bold text-ink"
+      >
+        {{ siteInitials }}
+      </span>
+      <Building v-else class="h-4 w-4 text-stone-500 dark:text-stone-400" />
+      <span class="font-display font-semibold text-ink dark:text-cream">
         {{ currentSite?.name || 'Select Site' }}
       </span>
-      <ChevronDown class="h-4 w-4 text-gray-500 dark:text-gray-400" :class="{ 'rotate-180': dropdownOpen }" />
+      <ChevronDown class="h-4 w-4 text-stone-500 dark:text-stone-400" :class="{ 'rotate-180': dropdownOpen }" />
     </button>
     
     <div
       v-if="dropdownOpen"
-      class="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 max-h-80 overflow-y-auto"
+      class="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-ink-3 rounded-lg shadow-modal border border-stone-200 dark:border-ink-4 z-50 max-h-80 overflow-y-auto"
     >
       <!-- Current Site -->
-      <div v-if="currentSite" class="p-3 border-b border-gray-200 dark:border-gray-700">
+      <div v-if="currentSite" class="p-3 border-b border-stone-200 dark:border-ink-4">
         <div class="flex items-center justify-between">
           <div class="flex-1">
-            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ currentSite.name }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Current Site</p>
+            <p class="font-display text-sm font-semibold text-ink dark:text-cream">{{ currentSite.name }}</p>
+            <p class="sw-eyebrow text-stone-500 dark:text-stone-400">Current Site</p>
           </div>
           <div class="flex items-center gap-2">
             <button
               v-if="isCurrentUserAdmin"
               @click="openManageModal(); dropdownOpen = false"
-              class="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+              class="p-1.5 text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4 rounded-md transition-colors"
               title="Manage Site"
             >
               <Settings class="h-4 w-4" />
             </button>
-            <Check class="h-4 w-4 text-primary-600 dark:text-primary-400" />
+            <Check class="h-4 w-4 text-amber-600 dark:text-amber-400" />
           </div>
         </div>
-        <div class="mt-2 text-xs text-gray-600 dark:text-gray-400">
-          <p>{{ currentSite.total_units }} units • {{ currentSite.total_planned_area?.toLocaleString() || 0 }} sqft</p>
+        <div class="mt-2 text-xs text-stone-600 dark:text-stone-400">
+          <p><span class="font-mono sw-tabular">{{ currentSite.total_units }}</span> units • <span class="font-mono sw-tabular">{{ currentSite.total_planned_area?.toLocaleString() || 0 }}</span> sqft</p>
         </div>
       </div>
       
       <!-- Other Sites -->
       <div class="py-2">
-        <div v-for="site in otherSites" :key="site.id" class="group px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer" @click="selectSite(site.id!)">
+        <div v-for="site in otherSites" :key="site.id" class="group px-3 py-2 hover:bg-stone-50 dark:hover:bg-ink-4 cursor-pointer" @click="selectSite(site.id!)">
           <div class="flex items-center justify-between">
             <div class="flex-1">
-              <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ site.name }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">{{ site.total_units }} units • {{ site.total_planned_area?.toLocaleString() || 0 }} sqft</p>
+              <p class="font-display text-sm font-semibold text-ink dark:text-cream">{{ site.name }}</p>
+              <p class="text-xs text-stone-500 dark:text-stone-400"><span class="font-mono sw-tabular">{{ site.total_units }}</span> units • <span class="font-mono sw-tabular">{{ site.total_planned_area?.toLocaleString() || 0 }}</span> sqft</p>
             </div>
             <button
               v-if="site.isOwner"
               @click.stop="openManageModalForSite(site); dropdownOpen = false"
-              class="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+              class="p-1.5 text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4 rounded-md transition-colors opacity-0 group-hover:opacity-100"
               title="Manage Site"
             >
               <Settings class="h-4 w-4" />
             </button>
           </div>
         </div>
-        
-        <div v-if="otherSites.length === 0 && currentSite" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 text-center">
+
+        <div v-if="otherSites.length === 0 && currentSite" class="px-3 py-2 text-sm text-stone-500 dark:text-stone-400 text-center">
           No other sites available
         </div>
       </div>
-      
+
       <!-- Actions -->
-      <div class="border-t border-gray-200 dark:border-gray-700 p-2">
+      <div class="border-t border-stone-200 dark:border-ink-4 p-2">
         <button
           @click="canCreateSite ? (showCreateModal = true, dropdownOpen = false) : null"
           :disabled="!canCreateSite"
           :class="[
             'w-full flex items-center px-3 py-2 text-sm rounded-md transition-colors duration-200',
-            canCreateSite 
-              ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' 
-              : 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
+            canCreateSite
+              ? 'text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-ink-4'
+              : 'text-stone-400 dark:text-stone-500 cursor-not-allowed'
           ]"
           :title="!canCreateSite ? t('subscription.banner.freeTierLimitReached') : ''"
         >
@@ -87,29 +93,29 @@
     </div>
 
     <!-- Create Site Modal -->
-    <div v-if="showCreateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="closeCreateModal">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4 mb-20 lg:mb-4" @click.stop>
+    <div v-if="showCreateModal" class="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-[60]" @click="closeCreateModal">
+      <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 m-4 mb-20 lg:mb-4" @click.stop>
         <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Create New Site</h3>
-          
+          <h3 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">Create New Site</h3>
+
           <form @submit.prevent="handleCreateSite" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Site Name</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Site Name</label>
               <input v-model="createForm.name" type="text" required class="input mt-1" placeholder="Enter site name" />
             </div>
-            
+
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Description</label>
               <textarea v-model="createForm.description" class="input mt-1" rows="2" placeholder="Site description (optional)"></textarea>
             </div>
-            
+
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Total Units</label>
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Total Units</label>
                 <input v-model.number="createForm.total_units" type="number" required class="input mt-1" placeholder="0" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Planned Area (sqft)</label>
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Planned Area (sqft)</label>
                 <input v-model.number="createForm.total_planned_area" type="number" required class="input mt-1" placeholder="0" />
               </div>
             </div>
@@ -129,81 +135,81 @@
     </div>
 
     <!-- Enhanced Manage Site Modal -->
-    <div v-if="showManageModal && managingSite" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]" @click="closeManageModal">
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-lg" @click.stop>
+    <div v-if="showManageModal && managingSite" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[60]" @click="closeManageModal">
+      <div class="bg-white dark:bg-ink-3 rounded-xl shadow-modal border border-stone-200 dark:border-ink-4 w-full max-w-lg" @click.stop>
         <div class="p-6">
           <div class="flex items-center gap-3 mb-6">
-            <div class="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl">
-              <Settings class="h-6 w-6 text-white" />
+            <div class="p-3 bg-amber-500 rounded-md">
+              <Settings class="h-6 w-6 text-ink" />
             </div>
             <div>
-              <h3 class="text-xl font-bold text-gray-900 dark:text-white">Manage Site</h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Update site information and settings</p>
+              <h3 class="font-display text-xl font-bold text-ink dark:text-cream">Manage Site</h3>
+              <p class="text-sm text-stone-600 dark:text-stone-400">Update site information and settings</p>
             </div>
           </div>
           
           <form @submit.prevent="handleUpdateSite" class="space-y-6">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Site Name</label>
-              <input 
-                v-model="editForm.name" 
-                type="text" 
-                required 
-                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
-                placeholder="Enter site name" 
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">Site Name</label>
+              <input
+                v-model="editForm.name"
+                type="text"
+                required
+                class="w-full px-4 py-3 border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream placeholder-stone-500 dark:placeholder-stone-400 focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200"
+                placeholder="Enter site name"
               />
             </div>
-            
+
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
-              <textarea 
-                v-model="editForm.description" 
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">Description</label>
+              <textarea
+                v-model="editForm.description"
                 rows="3"
-                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
+                class="w-full px-4 py-3 border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream placeholder-stone-500 dark:placeholder-stone-400 focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200"
                 placeholder="Site description (optional)"
               ></textarea>
             </div>
             
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Total Units</label>
-                <input 
-                  v-model.number="editForm.total_units" 
-                  type="number" 
-                  required 
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">Total Units</label>
+                <input
+                  v-model.number="editForm.total_units"
+                  type="number"
+                  required
                   min="1"
-                  class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
-                  placeholder="0" 
+                  class="w-full px-4 py-3 border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream font-mono sw-tabular placeholder-stone-500 dark:placeholder-stone-400 focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200"
+                  placeholder="0"
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Planned Area (sqft)</label>
-                <input 
-                  v-model.number="editForm.total_planned_area" 
-                  type="number" 
-                  required 
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">Planned Area (sqft)</label>
+                <input
+                  v-model.number="editForm.total_planned_area"
+                  type="number"
+                  required
                   min="1"
-                  class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
-                  placeholder="0" 
+                  class="w-full px-4 py-3 border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream font-mono sw-tabular placeholder-stone-500 dark:placeholder-stone-400 focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200"
+                  placeholder="0"
                 />
               </div>
             </div>
 
             <!-- Site Stats -->
-            <div class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-600/50 rounded-xl p-4">
-              <h4 class="font-medium text-gray-900 dark:text-white mb-3">Current Site Stats</h4>
+            <div class="bg-stone-50 dark:bg-ink-2 border border-stone-200 dark:border-ink-4 rounded-lg p-4">
+              <h4 class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-3">Current Site Stats</h4>
               <div class="grid grid-cols-3 gap-4 text-center">
                 <!-- <div>
                   <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ managingSite.users?.length || 0 }}</p>
                   <p class="text-xs text-gray-600 dark:text-gray-400">Team Members</p>
                 </div> -->
                 <div>
-                  <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ formatDate(managingSite.created) }}</p>
-                  <p class="text-xs text-gray-600 dark:text-gray-400">Created</p>
+                  <p class="font-mono sw-tabular text-lg font-bold text-ink dark:text-cream">{{ formatDate(managingSite.created) }}</p>
+                  <p class="text-xs text-stone-600 dark:text-stone-400">Created</p>
                 </div>
                 <div>
-                  <p class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ managingSite.total_units }}</p>
-                  <p class="text-xs text-gray-600 dark:text-gray-400">Units</p>
+                  <p class="font-mono sw-tabular text-2xl font-bold text-amber-600 dark:text-amber-400">{{ managingSite.total_units }}</p>
+                  <p class="text-xs text-stone-600 dark:text-stone-400">Units</p>
                 </div>
               </div>
             </div>
@@ -231,11 +237,11 @@
             </div>
 
             <!-- Delete Site Button - Only for Owners -->
-            <div v-if="isOwnerOfManagingSite" class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div v-if="isOwnerOfManagingSite" class="mt-6 pt-6 border-t border-stone-200 dark:border-ink-4">
               <button
                 type="button"
                 @click="openDeleteModal"
-                class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-medium rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-clay-50 dark:bg-clay-900/20 text-clay-600 dark:text-clay-400 font-medium rounded-md hover:bg-clay-100 dark:hover:bg-clay-900/30 transition-colors"
               >
                 <Trash2 class="h-4 w-4" />
                 {{ t('sites.delete.title') }}
@@ -320,6 +326,16 @@ const otherSites = computed(() => {
 
 const canCreateSite = computed(() => {
   return checkCreateLimit('sites');
+});
+
+const siteInitials = computed(() => {
+  if (!currentSite.value?.name) return '';
+  return currentSite.value.name
+    .split(' ')
+    .map(word => word[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 });
 
 const selectSite = async (siteId: string) => {

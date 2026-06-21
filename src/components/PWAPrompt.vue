@@ -10,7 +10,7 @@
   >
     <div
       v-if="isInstallable && !dismissed"
-      class="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-5 z-50 backdrop-blur-sm"
+      class="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-white dark:bg-ink-3 border border-stone-200 dark:border-ink-4 rounded-xl shadow-modal p-5 z-50"
     >
       <div class="flex items-start space-x-4">
         <div class="flex-shrink-0">
@@ -19,17 +19,17 @@
           </div>
         </div>
         <div class="flex-1">
-          <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 class="text-base font-semibold text-ink dark:text-cream mb-2">
             {{ t('pwa.installTitle') }}
           </h3>
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
+          <p class="text-sm text-stone-600 dark:text-stone-400 mb-4 leading-relaxed">
             {{ t('pwa.installMessage') }}
           </p>
           <div class="flex space-x-3">
             <button
               @click="handleInstall"
               :disabled="installing"
-              class="flex-1 inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
+              class="flex-1 inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-md text-ink bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-card"
             >
               <Download v-if="!installing" class="mr-2 h-4 w-4" />
               <Loader2 v-else class="mr-2 h-4 w-4 animate-spin" />
@@ -37,7 +37,7 @@
             </button>
             <button
               @click="dismiss"
-              class="px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200"
+              class="px-4 py-2.5 border border-stone-300 dark:border-ink-4 text-sm font-medium rounded-md text-stone-700 dark:text-stone-300 bg-white dark:bg-ink-3 hover:bg-stone-50 dark:hover:bg-ink-4 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all duration-200"
             >
               {{ t('pwa.later') }}
             </button>
@@ -45,7 +45,7 @@
         </div>
         <button
           @click="dismiss"
-          class="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+          class="flex-shrink-0 text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream p-1 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200"
         >
           <X class="h-5 w-5" />
         </button>
@@ -66,13 +66,13 @@
   >
     <div
       v-if="!isOnline"
-      class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/40 dark:to-orange-900/40 border border-yellow-200 dark:border-yellow-700 rounded-xl shadow-xl px-4 py-3 z-50 backdrop-blur-sm"
+      class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-700 rounded-lg shadow-modal px-4 py-3 z-50"
     >
       <div class="flex items-center space-x-3">
-        <div class="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center">
-          <WifiOff class="h-4 w-4 text-white" />
+        <div class="w-8 h-8 bg-amber-500 rounded-md flex items-center justify-center">
+          <WifiOff class="h-4 w-4 text-ink" />
         </div>
-        <span class="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+        <span class="text-sm font-medium text-amber-900 dark:text-amber-200">
           {{ t('pwa.youreOffline') }}
         </span>
       </div>

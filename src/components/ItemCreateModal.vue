@@ -1,24 +1,52 @@
 <template>
-  <div v-if="show" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="$emit('close')" @keydown.esc="$emit('close')" tabindex="-1">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 m-4 mb-20 lg:mb-4" @click.stop>
-      <div class="mt-3">
-        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
-          {{ t('items.addItem') }}
-        </h3>
+  <!-- Overlay -->
+  <div
+    v-if="show"
+    class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-sm"
+    @click="$emit('close')"
+    @keydown.esc="$emit('close')"
+    tabindex="-1"
+  >
+    <!-- Panel -->
+    <div
+      class="w-full sm:max-w-lg bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden"
+      @click.stop
+    >
+      <!-- Grab handle (mobile only) -->
+      <div class="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
+        <div class="mx-auto h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4" />
+      </div>
 
-        <form @submit.prevent="saveItem" class="space-y-4">
+      <!-- Sticky header -->
+      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0">
+        <h2 class="font-display text-lg font-semibold text-ink dark:text-cream flex-1">
+          {{ t('items.addItem') }}
+        </h2>
+        <button
+          type="button"
+          @click="$emit('close')"
+          class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors active:scale-[0.98]"
+          :aria-label="t('common.close')"
+        >
+          <X class="h-5 w-5" />
+        </button>
+      </div>
+
+      <!-- Scrollable body -->
+      <form @submit.prevent="saveItem" class="flex-1 flex flex-col overflow-hidden">
+        <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5 space-y-4 scroll-smooth-touch">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.name') }}</label>
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.name') }}</label>
             <input ref="nameInputRef" v-model="form.name" type="text" required class="input mt-1" :placeholder="t('forms.enterItemName')" autofocus />
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('common.description') }}</label>
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.description') }}</label>
             <textarea v-model="form.description" class="input mt-1" rows="3" :placeholder="t('forms.enterDescription')"></textarea>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('items.unit') }}</label>
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('items.unit') }}</label>
             <select v-model="form.unit" required class="input mt-1">
               <option value="">{{ t('forms.selectUnit') }}</option>
               <option value="pcs">{{ t('units.pcs') }} (pcs)</option>
@@ -45,25 +73,26 @@
             tag-type="item_category"
             :placeholder="t('tags.searchItemTags')"
           />
+        </div>
 
-          <div class="flex space-x-3 pt-4">
-            <button type="submit" :disabled="formLoading" class="flex-1 btn-primary">
-              <Loader2 v-if="formLoading" class="mr-2 h-4 w-4 animate-spin" />
-              {{ t('common.create') }}
-            </button>
-            <button type="button" @click="$emit('close')" class="flex-1 btn-outline">
-              {{ t('common.cancel') }}
-            </button>
-          </div>
-        </form>
-      </div>
+        <!-- Sticky footer -->
+        <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 flex-shrink-0 pb-safe">
+          <button type="submit" :disabled="formLoading" class="flex-1 btn-primary active:scale-[0.98]">
+            <Loader2 v-if="formLoading" class="mr-2 h-4 w-4 animate-spin" />
+            {{ formLoading ? t('common.creating') : t('common.create') }}
+          </button>
+          <button type="button" @click="$emit('close')" class="flex-1 btn-outline active:scale-[0.98]">
+            {{ t('common.cancel') }}
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, watch, nextTick } from 'vue';
-import { Loader2 } from 'lucide-vue-next';
+import { Loader2, X } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';

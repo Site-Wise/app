@@ -4,12 +4,12 @@
     <div class="flex items-center justify-between mb-8">
       <div class="flex items-center space-x-4">
         <button @click="$router.back()"
-          class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-          <ArrowLeft class="h-5 w-5 text-gray-600 dark:text-gray-400" />
+          class="p-2 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors">
+          <ArrowLeft class="h-5 w-5 text-stone-600 dark:text-stone-400" />
         </button>
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ item.name }}</h1>
-          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Item Details & Delivery History</p>
+          <h1 class="sw-h2 font-display text-ink dark:text-cream">{{ item.name }}</h1>
+          <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">Item Details & Delivery History</p>
         </div>
       </div>
       <div class="flex items-center space-x-3">
@@ -28,19 +28,19 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
       <!-- Item Information -->
       <div class="card">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Item Information</h2>
+        <h2 class="sw-h4 font-display text-ink dark:text-cream mb-4">Item Information</h2>
         <div class="space-y-3">
           <div>
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Name:</span>
-            <p class="text-gray-900 dark:text-white">{{ item.name }}</p>
+            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">Name:</span>
+            <p class="text-ink dark:text-cream">{{ item.name }}</p>
           </div>
           <div v-if="item.description">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Description:</span>
-            <p class="text-gray-900 dark:text-white">{{ item.description }}</p>
+            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">Description:</span>
+            <p class="text-ink dark:text-cream">{{ item.description }}</p>
           </div>
           <div>
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Unit:</span>
-            <p class="text-gray-900 dark:text-white">{{ t(`units.${item.unit}`) !== `units.${item.unit}` ? `${t(`units.${item.unit}`)} (${item.unit})` : item.unit }}</p>
+            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">Unit:</span>
+            <p class="text-ink dark:text-cream">{{ t(`units.${item.unit}`) !== `units.${item.unit}` ? `${t(`units.${item.unit}`)} (${item.unit})` : item.unit }}</p>
           </div>
         </div>
       </div>
@@ -48,38 +48,39 @@
       <!-- Delivery Summary -->
       <div class="lg:col-span-2">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="card bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700">
+          <div class="card">
             <div class="flex items-center">
-              <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <TruckIcon class="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <div class="p-2 bg-stone-100 dark:bg-ink-4 rounded-md">
+                <TruckIcon class="h-6 w-6 text-ink dark:text-cream" />
               </div>
               <div class="ml-4">
-                <p class="text-sm font-medium text-blue-700 dark:text-blue-300">Total Deliveries</p>
-                <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ itemDeliveries.length }}</p>
+                <p class="sw-eyebrow text-stone-500 dark:text-stone-400">Total Deliveries</p>
+                <p class="sw-stat font-display text-ink dark:text-cream sw-tabular">{{ itemDeliveries.length }}</p>
               </div>
             </div>
           </div>
 
-          <div class="card bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700">
-            <div class="flex items-center">
-              <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <Package class="h-6 w-6 text-green-600 dark:text-green-400" />
+          <div class="card">
+            <div class="flex items-start">
+              <div class="p-2 bg-forest-100 dark:bg-forest-900/30 rounded-md">
+                <Package class="h-6 w-6 text-forest-600 dark:text-forest-400" />
               </div>
-              <div class="ml-4">
-                <p class="text-sm font-medium text-green-700 dark:text-green-300">Total Delivered</p>
-                <p class="text-2xl font-bold text-green-900 dark:text-green-100">{{ totalDeliveredQuantity }} {{ t(`units.${item.unit}`) !== `units.${item.unit}` ? `${t(`units.${item.unit}`)} (${item.unit})` : item.unit }}</p>
+              <div class="ml-4 min-w-0">
+                <p class="sw-eyebrow text-stone-500 dark:text-stone-400">Total Delivered</p>
+                <p class="sw-stat font-display text-ink dark:text-cream sw-tabular">{{ totalDeliveredQuantity }}</p>
+                <p class="text-xs text-stone-500 dark:text-stone-400 leading-tight">{{ t(`units.${item.unit}`) !== `units.${item.unit}` ? `${t(`units.${item.unit}`)} (${item.unit})` : item.unit }}</p>
               </div>
             </div>
           </div>
 
-          <div class="card bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700">
+          <div class="card">
             <div class="flex items-center">
-              <div class="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                <DollarSign class="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+              <div class="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-md">
+                <DollarSign class="h-6 w-6 text-amber-700 dark:text-amber-400" />
               </div>
               <div class="ml-4">
-                <p class="text-sm font-medium text-yellow-700 dark:text-yellow-300">Avg. Unit Price</p>
-                <p class="text-2xl font-bold text-yellow-900 dark:text-yellow-100">₹{{ averageUnitPrice.toFixed(2) }}
+                <p class="sw-eyebrow text-stone-500 dark:text-stone-400">Avg. Unit Price</p>
+                <p class="sw-stat font-display text-ink dark:text-cream sw-tabular">₹{{ averageUnitPrice.toFixed(2) }}
                 </p>
               </div>
             </div>
@@ -88,19 +89,19 @@
 
         <!-- Price Range -->
         <div class="mt-6 card">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Price Range</h3>
+          <h3 class="sw-h4 font-display text-ink dark:text-cream mb-4">Price Range</h3>
           <div class="grid grid-cols-3 gap-4">
             <div class="text-center">
-              <p class="text-2xl font-bold text-green-600 dark:text-green-400">₹{{ minPrice.toFixed(2) }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Lowest</p>
+              <p class="text-2xl font-bold font-mono sw-tabular text-forest-600 dark:text-forest-400">₹{{ minPrice.toFixed(2) }}</p>
+              <p class="text-sm text-stone-600 dark:text-stone-400">Lowest</p>
             </div>
             <div class="text-center">
-              <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">₹{{ averageUnitPrice.toFixed(2) }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Average</p>
+              <p class="text-2xl font-bold font-mono sw-tabular text-ink dark:text-cream">₹{{ averageUnitPrice.toFixed(2) }}</p>
+              <p class="text-sm text-stone-600 dark:text-stone-400">Average</p>
             </div>
             <div class="text-center">
-              <p class="text-2xl font-bold text-red-600 dark:text-red-400">₹{{ maxPrice.toFixed(2) }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Highest</p>
+              <p class="text-2xl font-bold font-mono sw-tabular text-clay-600 dark:text-clay-400">₹{{ maxPrice.toFixed(2) }}</p>
+              <p class="text-sm text-stone-600 dark:text-stone-400">Highest</p>
             </div>
           </div>
         </div>
@@ -109,13 +110,13 @@
 
     <!-- Price Chart -->
     <div class="card mb-8">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Unit Price Trend</h2>
+      <h2 class="sw-h4 font-display text-ink dark:text-cream mb-4">Unit Price Trend</h2>
       <div class="h-64 relative">
         <canvas ref="chartCanvas" class="w-full h-full"></canvas>
         <div v-if="itemDeliveries.length === 0" class="absolute inset-0 flex items-center justify-center">
           <div class="text-center">
-            <BarChart3 class="mx-auto h-12 w-12 text-gray-400" />
-            <p class="mt-2 text-gray-500 dark:text-gray-400">No delivery data to display</p>
+            <BarChart3 class="mx-auto h-12 w-12 text-stone-400" />
+            <p class="mt-2 text-stone-500 dark:text-stone-400">No delivery data to display</p>
           </div>
         </div>
       </div>
@@ -124,80 +125,111 @@
     <!-- Delivery History -->
     <div class="card">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Delivery History</h2>
-        <span class="text-sm text-gray-500 dark:text-gray-400">{{ itemDeliveries.length }} deliveries</span>
+        <h2 class="sw-h4 font-display text-ink dark:text-cream">Delivery History</h2>
+        <span class="text-sm text-stone-500 dark:text-stone-400">{{ itemDeliveries.length }} deliveries</span>
       </div>
 
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead class="bg-gray-50 dark:bg-gray-700">
-            <tr>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Date</th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Vendor</th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Quantity</th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Unit Price</th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Total Amount</th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Payment Status</th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Actions</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            <tr v-for="deliveryItem in itemDeliveries" :key="deliveryItem.id">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                {{ formatDate(deliveryItem.delivery_date || '') }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                {{ deliveryItem.expand?.delivery?.expand?.vendor?.name || 'Unknown Vendor' }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                {{ deliveryItem.quantity }} {{ t(`units.${item.unit}`) !== `units.${item.unit}` ? `${t(`units.${item.unit}`)} (${item.unit})` : item.unit }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                ₹{{ deliveryItem.unit_price.toFixed(2) }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                ₹{{ deliveryItem.total_amount.toFixed(2) }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span :class="`status-${deliveryItem.expand?.delivery?.payment_status || 'pending'}`">
-                  {{ deliveryItem.expand?.delivery?.payment_status || 'pending' }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button @click="viewDelivery(deliveryItem)"
-                  class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300">
-                  <Eye class="h-4 w-4" />
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Desktop table (lg+) -->
+      <table v-if="itemDeliveries.length > 0" class="hidden lg:table min-w-full">
+        <thead class="hidden lg:table-header-group">
+          <tr class="border-b border-stone-200 dark:border-ink-4">
+            <th class="px-4 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">Date</th>
+            <th class="px-4 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">Vendor</th>
+            <th class="px-4 py-3 text-right sw-eyebrow text-stone-500 dark:text-stone-400">Quantity</th>
+            <th class="px-4 py-3 text-right sw-eyebrow text-stone-500 dark:text-stone-400">Unit Price</th>
+            <th class="px-4 py-3 text-right sw-eyebrow text-stone-500 dark:text-stone-400">Total</th>
+            <th class="px-4 py-3 text-left sw-eyebrow text-stone-500 dark:text-stone-400">Payment</th>
+            <th class="px-4 py-3 text-right sw-eyebrow text-stone-500 dark:text-stone-400">View</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stone-200 dark:divide-ink-4">
+          <tr v-for="deliveryItem in itemDeliveries" :key="deliveryItem.id"
+            class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors">
+            <td class="hidden lg:table-cell px-4 py-3.5 whitespace-nowrap text-sm text-ink dark:text-cream">
+              {{ formatDate(deliveryItem.delivery_date || '') }}
+            </td>
+            <td class="hidden lg:table-cell px-4 py-3.5 text-sm text-ink dark:text-cream">
+              {{ deliveryItem.expand?.delivery?.expand?.vendor?.name || 'Unknown Vendor' }}
+            </td>
+            <td class="hidden lg:table-cell px-4 py-3.5 whitespace-nowrap text-right text-sm font-mono sw-tabular text-ink dark:text-cream">
+              {{ deliveryItem.quantity }} <span class="text-xs text-stone-500 dark:text-stone-400">{{ item.unit }}</span>
+            </td>
+            <td class="hidden lg:table-cell px-4 py-3.5 whitespace-nowrap text-right text-sm font-mono sw-tabular text-ink dark:text-cream">
+              ₹{{ deliveryItem.unit_price.toFixed(2) }}
+            </td>
+            <td class="hidden lg:table-cell px-4 py-3.5 whitespace-nowrap text-right text-sm font-mono sw-tabular font-semibold text-ink dark:text-cream">
+              ₹{{ deliveryItem.total_amount.toFixed(2) }}
+            </td>
+            <td class="hidden lg:table-cell px-4 py-3.5 whitespace-nowrap">
+              <span :class="`status-${deliveryItem.expand?.delivery?.payment_status || 'pending'}`">
+                {{ deliveryItem.expand?.delivery?.payment_status || 'pending' }}
+              </span>
+            </td>
+            <td class="hidden lg:table-cell px-4 py-3.5 whitespace-nowrap text-right">
+              <button @click="viewDelivery(deliveryItem)" aria-label="View delivery"
+                class="inline-flex items-center justify-center h-9 w-9 rounded-md text-stone-500 dark:text-stone-400 hover:text-amber-700 dark:hover:text-amber-400 hover:bg-cream-3 dark:hover:bg-ink-4 transition-colors">
+                <Eye class="h-4 w-4" />
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-        <div v-if="itemDeliveries.length === 0" class="text-center py-12">
-          <TruckIcon class="mx-auto h-12 w-12 text-gray-400" />
-          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No deliveries recorded</h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Start tracking by recording a delivery.</p>
+      <!-- Mobile / tablet cards (<lg) -->
+      <div v-if="itemDeliveries.length > 0" class="lg:hidden space-y-3">
+        <div v-for="deliveryItem in itemDeliveries" :key="deliveryItem.id"
+          class="rounded-lg border border-stone-200 dark:border-ink-4 bg-cream-2/50 dark:bg-ink-2 p-4">
+          <!-- Header: date + vendor / status -->
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-ink dark:text-cream">{{ deliveryItem.expand?.delivery?.expand?.vendor?.name || 'Unknown Vendor' }}</p>
+              <p class="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{{ formatDate(deliveryItem.delivery_date || '') }}</p>
+            </div>
+            <span :class="`status-${deliveryItem.expand?.delivery?.payment_status || 'pending'} shrink-0`">
+              {{ deliveryItem.expand?.delivery?.payment_status || 'pending' }}
+            </span>
+          </div>
+
+          <!-- Mini-grid: quantity / unit price / total -->
+          <div class="mt-3 grid grid-cols-3 gap-2 border-t border-stone-200 dark:border-ink-4 pt-3">
+            <div>
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">Quantity</p>
+              <p class="mt-0.5 text-sm font-mono sw-tabular text-ink dark:text-cream">
+                {{ deliveryItem.quantity }} <span class="text-xs text-stone-500 dark:text-stone-400">{{ item.unit }}</span>
+              </p>
+            </div>
+            <div>
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">Unit Price</p>
+              <p class="mt-0.5 text-sm font-mono sw-tabular text-ink dark:text-cream">₹{{ deliveryItem.unit_price.toFixed(2) }}</p>
+            </div>
+            <div>
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">Total</p>
+              <p class="mt-0.5 text-sm font-mono sw-tabular font-semibold text-ink dark:text-cream">₹{{ deliveryItem.total_amount.toFixed(2) }}</p>
+            </div>
+          </div>
+
+          <!-- Action -->
+          <div class="mt-3 flex justify-end border-t border-stone-200 dark:border-ink-4 pt-3">
+            <button @click="viewDelivery(deliveryItem)"
+              class="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-md text-sm font-medium text-stone-600 dark:text-stone-300 hover:text-amber-700 dark:hover:text-amber-400 hover:bg-cream-3 dark:hover:bg-ink-4 transition-colors">
+              <Eye class="h-4 w-4" />
+              View Delivery
+            </button>
+          </div>
         </div>
+      </div>
+
+      <!-- Empty state -->
+      <div v-if="itemDeliveries.length === 0" class="text-center py-12">
+        <TruckIcon class="mx-auto h-12 w-12 text-stone-400" />
+        <h3 class="mt-2 text-sm font-medium text-ink dark:text-cream">No deliveries recorded</h3>
+        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">Start tracking by recording a delivery.</p>
       </div>
     </div>
   </div>
 
   <div v-else class="flex items-center justify-center min-h-96">
-    <Loader2 class="h-8 w-8 animate-spin text-gray-400" />
+    <Loader2 class="h-8 w-8 animate-spin text-stone-400" />
   </div>
 </template>
 
@@ -325,6 +357,14 @@ const drawPriceChart = () => {
   const height = rect.height;
   const padding = 60;
 
+  // Theme-aware chart colors (presentation only)
+  const isDark = document.documentElement.classList.contains('dark');
+  const axisColor = isDark ? '#3A4140' : '#e5e7eb';
+  const gridColor = isDark ? '#232827' : '#f3f4f6';
+  const labelColor = isDark ? '#A8B0AD' : '#6b7280';
+  const lineColor = '#FFB800';
+  const titleColor = isDark ? '#FAFAF7' : '#1f2937';
+
   // Clear canvas
   ctx.clearRect(0, 0, width, height);
 
@@ -348,7 +388,7 @@ const drawPriceChart = () => {
   const chartHeight = height - 2 * padding;
 
   // Draw axes
-  ctx.strokeStyle = '#e5e7eb';
+  ctx.strokeStyle = axisColor;
   ctx.lineWidth = 1;
 
   // Y-axis
@@ -364,7 +404,7 @@ const drawPriceChart = () => {
   ctx.stroke();
 
   // Draw grid lines and labels
-  ctx.fillStyle = '#6b7280';
+  ctx.fillStyle = labelColor;
   ctx.font = '12px Inter, sans-serif';
   ctx.textAlign = 'right';
 
@@ -375,7 +415,7 @@ const drawPriceChart = () => {
     const y = height - padding - (i / priceSteps) * chartHeight;
 
     // Grid line
-    ctx.strokeStyle = '#f3f4f6';
+    ctx.strokeStyle = gridColor;
     ctx.beginPath();
     ctx.moveTo(padding, y);
     ctx.lineTo(width - padding, y);
@@ -405,7 +445,7 @@ const drawPriceChart = () => {
 
   // Draw line chart
   if (data.length > 1) {
-    ctx.strokeStyle = '#3b82f6';
+    ctx.strokeStyle = lineColor;
     ctx.lineWidth = 2;
     ctx.beginPath();
 
@@ -429,7 +469,7 @@ const drawPriceChart = () => {
     const y = height - padding - ((point.price - adjustedMinPrice) / Math.max(adjustedMaxPrice - adjustedMinPrice, 1)) * chartHeight;
 
     // Point
-    ctx.fillStyle = '#3b82f6';
+    ctx.fillStyle = lineColor;
     ctx.beginPath();
     ctx.arc(x, y, 4, 0, 2 * Math.PI);
     ctx.fill();
@@ -438,7 +478,7 @@ const drawPriceChart = () => {
   });
 
   // Chart title
-  ctx.fillStyle = '#1f2937';
+  ctx.fillStyle = titleColor;
   ctx.font = 'bold 14px Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('Unit Price Over Time', width / 2, 30);

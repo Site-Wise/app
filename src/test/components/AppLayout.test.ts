@@ -216,12 +216,12 @@ describe('AppLayout.vue', () => {
     })
 
     it('should display app logo and name', () => {
-      const logo = wrapper.find('img[alt="SiteWise Logo"]')
+      const logo = wrapper.find('img[alt="Sitewise"]')
       expect(logo.exists()).toBe(true)
-      expect(logo.attributes('src')).toBe('/logo.webp')
-      
-      expect(wrapper.text()).toContain('Site')
-      expect(wrapper.text()).toContain('Wise')
+      // src may be the public path or an inlined data-URI (vite asset handling).
+      expect(logo.attributes('src')).toMatch(/sitewise-mark\.svg|data:image\/svg/)
+
+      expect(wrapper.text()).toContain('Sitewise')
     })
 
     it('should display app version in user menu', async () => {
@@ -265,7 +265,7 @@ describe('AppLayout.vue', () => {
       wrapper.vm.sidebarOpen = true
       await nextTick()
 
-      const overlay = wrapper.find('.fixed.inset-0.bg-gray-600')
+      const overlay = wrapper.find('.fixed.inset-0.bg-black\\/60')
       await overlay.trigger('click')
       await nextTick()
 
@@ -298,7 +298,7 @@ describe('AppLayout.vue', () => {
 
     it('should highlight current route in navigation', () => {
       // Dashboard should be current based on mock route
-      const activeItem = wrapper.find('.bg-primary-100')
+      const activeItem = wrapper.find('.bg-amber-100')
       expect(activeItem.exists()).toBe(true)
     })
 
@@ -434,7 +434,8 @@ describe('AppLayout.vue', () => {
     })
 
     it('should show base FAB actions', async () => {
-      wrapper.vm.fabMenuOpen = true
+      // Desktop quick actions now live in a "+ Record" dropdown menu.
+      wrapper.vm.quickMenuOpen = true
       await nextTick()
 
       expect(wrapper.text()).toContain('Record Service Booking')
@@ -536,7 +537,8 @@ describe('AppLayout.vue', () => {
     })
 
     it('should hide desktop elements on mobile', () => {
-      expect(wrapper.find('.hidden.md\\:flex').exists()).toBe(true)
+      // Quick-actions "+ Record" menu is hidden md:block; site selector is hidden lg:block.
+      expect(wrapper.find('.hidden.md\\:block').exists()).toBe(true)
       expect(wrapper.find('.hidden.lg\\:block').exists()).toBe(true)
     })
   })

@@ -1,6 +1,6 @@
 <template>
   <nav
-    class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 h-nav-safe will-change-transform"
+    class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/[0.92] dark:bg-ink-3/[0.92] backdrop-blur-xl backdrop-saturate-150 border-t border-stone-200 dark:border-ink-4 h-nav-safe will-change-transform"
     role="navigation"
     :aria-label="t('nav.mainNavigation')"
   >
@@ -9,11 +9,11 @@
         v-for="item in primaryNavItems"
         :key="item.name"
         :to="item.to"
-        class="flex flex-col items-center justify-center flex-1 h-full touch-feedback touch-none-select"
+        class="flex flex-col items-center justify-center flex-1 h-full touch-feedback touch-none-select transition-transform duration-150 ease-snap active:scale-[0.98]"
         :class="[
           item.current
-            ? 'text-primary-600 dark:text-primary-400'
-            : 'text-gray-500 dark:text-gray-400'
+            ? 'text-amber-700 dark:text-amber-400'
+            : 'text-stone-500 dark:text-stone-400'
         ]"
         :aria-current="item.current ? 'page' : undefined"
       >
@@ -23,7 +23,7 @@
           :class="{ 'scale-110': item.current }"
           :aria-hidden="true"
         />
-        <span class="text-xs font-medium truncate max-w-[4rem]">
+        <span class="text-[10px] font-medium truncate max-w-[4rem]">
           {{ t(item.nameKey) }}
         </span>
       </router-link>
@@ -31,11 +31,11 @@
       <!-- More menu button -->
       <button
         @click="showMoreMenu = !showMoreMenu"
-        class="flex flex-col items-center justify-center flex-1 h-full touch-feedback touch-none-select"
+        class="flex flex-col items-center justify-center flex-1 h-full touch-feedback touch-none-select transition-transform duration-150 ease-snap active:scale-[0.98]"
         :class="[
           isMoreActive
-            ? 'text-primary-600 dark:text-primary-400'
-            : 'text-gray-500 dark:text-gray-400'
+            ? 'text-amber-700 dark:text-amber-400'
+            : 'text-stone-500 dark:text-stone-400'
         ]"
         :aria-expanded="showMoreMenu"
         aria-haspopup="menu"
@@ -45,7 +45,7 @@
           :class="{ 'scale-110': isMoreActive }"
           :aria-hidden="true"
         />
-        <span class="text-xs font-medium">{{ t('nav.more') }}</span>
+        <span class="text-[10px] font-medium">{{ t('nav.more') }}</span>
       </button>
     </div>
 
@@ -53,7 +53,7 @@
     <Transition name="bottom-sheet-overlay">
       <div
         v-if="showMoreMenu"
-        class="fixed inset-0 bg-black/50 z-40"
+        class="fixed inset-0 bg-black/60 z-40"
         @click="showMoreMenu = false"
       />
     </Transition>
@@ -62,12 +62,12 @@
     <Transition name="bottom-sheet">
       <div
         v-if="showMoreMenu"
-        class="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 rounded-t-2xl shadow-xl pb-safe"
+        class="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-ink-3 rounded-t-2xl shadow-modal pb-safe"
         @click.stop
       >
         <!-- Handle bar -->
         <div class="flex justify-center pt-3 pb-2">
-          <div class="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
+          <div class="w-10 h-1 bg-stone-300 dark:bg-stone-600 rounded-full" />
         </div>
 
         <!-- Menu items -->
@@ -77,11 +77,11 @@
               v-for="item in secondaryNavItems"
               :key="item.name"
               :to="item.to"
-              class="flex flex-col items-center justify-center p-3 rounded-xl touch-feedback"
+              class="flex flex-col items-center justify-center p-3 rounded-lg touch-feedback transition-transform duration-150 ease-snap active:scale-[0.98]"
               :class="[
                 item.current
-                  ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
-                  : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300'
+                  ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                  : 'bg-stone-50 dark:bg-ink-4 text-stone-700 dark:text-stone-300'
               ]"
               @click="showMoreMenu = false"
             >
@@ -101,7 +101,7 @@
         <div class="px-4 pb-4">
           <button
             @click="showMoreMenu = false"
-            class="w-full py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-700 dark:text-gray-300 font-medium touch-feedback"
+            class="w-full py-3 bg-stone-100 dark:bg-ink-4 rounded-md text-stone-700 dark:text-stone-300 font-medium touch-feedback transition-transform duration-150 ease-snap active:scale-[0.98]"
           >
             {{ t('common.cancel') }}
           </button>

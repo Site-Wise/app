@@ -1,14 +1,14 @@
 <template>
   <div class="max-w-4xl mx-auto">
-    <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+    <div class="bg-white dark:bg-ink-3 border border-stone-200 dark:border-ink-4 shadow-card rounded-2xl">
       <div class="px-4 py-5 sm:p-6">
         <div class="flex items-center justify-between mb-6">
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('nav.profile') }}</h1>
+          <h1 class="text-2xl font-display font-bold text-ink dark:text-cream">{{ t('nav.profile') }}</h1>
         </div>
 
         <div v-if="error" class="mb-6 rounded-md bg-error-50 dark:bg-error-900/30 p-4">
           <div class="flex">
-            <AlertCircle class="h-5 w-5 text-error-400 dark:text-error-300" />
+            <AlertCircle class="h-5 w-5 text-error-600 dark:text-error-300" />
             <div class="ml-3">
               <h3 class="text-sm font-medium text-error-800 dark:text-error-300">
                 {{ error }}
@@ -21,13 +21,13 @@
           <!-- Profile Picture Section -->
           <div class="sm:col-span-2">
             <div class="flex items-center space-x-6">
-              <div class="h-20 w-20 rounded-full bg-primary-600 dark:bg-primary-500 flex items-center justify-center">
-                <span class="text-2xl font-medium text-white">{{ userInitials }}</span>
+              <div class="h-20 w-20 rounded-full bg-amber-500 flex items-center justify-center">
+                <span class="text-2xl font-display font-semibold text-ink">{{ userInitials }}</span>
               </div>
               <div>
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ user?.name }}</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400">{{ user?.email }}</p>
-                <p v-if="user?.phone" class="text-sm text-gray-600 dark:text-gray-400">{{ user.phone }}</p>
+                <h3 class="text-lg font-display font-medium text-ink dark:text-cream">{{ user?.name }}</h3>
+                <p class="text-sm text-stone-600 dark:text-stone-400">{{ user?.email }}</p>
+                <p v-if="user?.phone" class="text-sm font-mono text-stone-600 dark:text-stone-400">{{ user.phone }}</p>
               </div>
             </div>
           </div>
@@ -36,7 +36,7 @@
           <div class="sm:col-span-2">
             <form @submit.prevent="handleUpdateProfile" class="space-y-6">
               <div>
-                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label for="name" class="block text-sm font-medium text-stone-700 dark:text-stone-300">
                   {{ t('auth.fullName') }}
                 </label>
                 <div class="mt-1">
@@ -54,7 +54,7 @@
               </div>
 
               <div>
-                <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label for="email" class="block text-sm font-medium text-stone-700 dark:text-stone-300">
                   {{ t('auth.email') }}
                 </label>
                 <div class="mt-1">
@@ -72,7 +72,7 @@
               </div>
 
               <div>
-                <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label for="phone" class="block text-sm font-medium text-stone-700 dark:text-stone-300">
                   {{ t('auth.phoneNumber') }}
                 </label>
                 <div class="mt-1 flex">
@@ -80,7 +80,7 @@
                     id="country-code"
                     v-model="profileForm.countryCode"
                     disabled
-                    class="input rounded-r-none w-20 bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
+                    class="input rounded-r-none w-20 bg-stone-100 dark:bg-ink-2 cursor-not-allowed"
                   >
                     <option value="+91">+91</option>
                   </select>
@@ -97,12 +97,12 @@
               </div>
 
               <!-- Password Change Section -->
-              <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">{{ t('auth.changePassword') }}</h3>
+              <div class="border-t border-stone-200 dark:border-ink-4 pt-6">
+                <h3 class="text-lg font-display font-medium text-ink dark:text-cream mb-4">{{ t('auth.changePassword') }}</h3>
                 
                 <div class="space-y-4">
                   <div>
-                    <label for="current-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label for="current-password" class="block text-sm font-medium text-stone-700 dark:text-stone-300">
                       {{ t('auth.currentPassword') }}
                     </label>
                     <div class="mt-1">
@@ -119,7 +119,7 @@
                   </div>
 
                   <div>
-                    <label for="new-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label for="new-password" class="block text-sm font-medium text-stone-700 dark:text-stone-300">
                       {{ t('auth.newPassword') }}
                     </label>
                     <div class="mt-1">
@@ -136,7 +136,7 @@
                   </div>
 
                   <div>
-                    <label for="confirm-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label for="confirm-password" class="block text-sm font-medium text-stone-700 dark:text-stone-300">
                       {{ t('auth.confirmPassword') }}
                     </label>
                     <div class="mt-1">

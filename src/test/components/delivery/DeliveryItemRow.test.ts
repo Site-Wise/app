@@ -193,7 +193,7 @@ describe('DeliveryItemRow', () => {
       wrapper = createWrapper()
 
       // The validation summary should not be shown initially
-      expect(wrapper.find('.bg-red-50').exists()).toBe(false)
+      expect(wrapper.find('.bg-clay-50').exists()).toBe(false)
       expect(wrapper.text()).not.toContain('Please fix the following errors:')
     })
 
@@ -204,7 +204,7 @@ describe('DeliveryItemRow', () => {
       wrapper.vm.errors.item = 'Select Item'
       await nextTick()
 
-      expect(wrapper.find('.text-red-600').exists()).toBe(true)
+      expect(wrapper.find('.text-clay-600').exists()).toBe(true)
       expect(wrapper.text()).toContain('Select Item')
     })
 
@@ -217,7 +217,7 @@ describe('DeliveryItemRow', () => {
       await quantityInput.trigger('blur')
       await nextTick()
 
-      expect(wrapper.find('.text-red-600').exists()).toBe(true)
+      expect(wrapper.find('.text-clay-600').exists()).toBe(true)
       expect(wrapper.text()).toContain('Quantity is required')
     })
 
@@ -230,7 +230,7 @@ describe('DeliveryItemRow', () => {
       await unitPriceInput.trigger('blur')
       await nextTick()
 
-      expect(wrapper.find('.text-red-600').exists()).toBe(true)
+      expect(wrapper.find('.text-clay-600').exists()).toBe(true)
       expect(wrapper.text()).toContain('Unit price is required')
     })
 
@@ -242,7 +242,7 @@ describe('DeliveryItemRow', () => {
       await nextTick()
       
       // Check that item validation error appears
-      expect(wrapper.find('.text-red-600').exists()).toBe(true)
+      expect(wrapper.find('.text-clay-600').exists()).toBe(true)
       expect(wrapper.text()).toContain('Select Item')
 
       // Then simulate item selection by calling the handler directly
@@ -265,7 +265,7 @@ describe('DeliveryItemRow', () => {
       wrapper.vm.errors.unit_price = 'Unit price is required'
       await nextTick()
 
-      expect(wrapper.find('.bg-red-50').exists()).toBe(true)
+      expect(wrapper.find('.bg-clay-50').exists()).toBe(true)
       expect(wrapper.text()).toContain('Please fix the following errors:')
     })
   })
@@ -324,7 +324,7 @@ describe('DeliveryItemRow', () => {
       wrapper = createWrapper()
 
       // Find the remove button specifically (contains Trash2 icon)
-      const removeButton = wrapper.find('button[class*="text-red-600"]')
+      const removeButton = wrapper.find('button[class*="text-clay-600"]')
       await removeButton.trigger('click')
 
       expect(wrapper.emitted('remove')).toBeTruthy()
@@ -358,12 +358,12 @@ describe('DeliveryItemRow', () => {
       wrapper = createWrapper()
 
       const labels = wrapper.findAll('label')
-      // Note: ItemSelector component has its own label, and Actions has invisible label
+      // Note: ItemSelector component has its own label; the remove action is now an
+      // icon-only button (no label) at the top-right of the item row.
       expect(labels[0].text()).toBe('Quantity *')
-      expect(labels[1].text()).toBe('Unit Price *')  
+      expect(labels[1].text()).toBe('Unit Price *')
       expect(labels[2].text()).toBe('Total *')
-      expect(labels[3].text()).toBe('common.actions') // Invisible Actions label
-      expect(labels[4].text()).toBe('Item Notes')
+      expect(labels[3].text()).toBe('Item Notes')
     })
 
     it('should have required attributes on mandatory fields', () => {
@@ -443,7 +443,7 @@ describe('DeliveryItemRow', () => {
       await totalInput.trigger('blur')
       await nextTick()
 
-      expect(wrapper.find('.text-red-600').exists()).toBe(true)
+      expect(wrapper.find('.text-clay-600').exists()).toBe(true)
       expect(wrapper.text()).toContain('Total amount is required')
     })
 

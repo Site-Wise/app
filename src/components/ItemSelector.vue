@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-2">
-    <label v-if="label" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+    <label v-if="label" class="block text-sm font-medium text-stone-700 dark:text-stone-300">
       {{ label }}
     </label>
     
@@ -27,19 +27,19 @@
             v-if="selectedItem && !readonly"
             type="button"
             @click.stop="clearSelection"
-            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            class="text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream p-1 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors"
             :title="t('common.clear')"
           >
             <X class="h-4 w-4" />
           </button>
-          <Search class="h-4 w-4 text-gray-400" />
+          <Search class="h-4 w-4 text-stone-500 dark:text-stone-400" />
         </div>
       </div>
 
       <!-- Dropdown -->
       <div
         v-if="showDropdown && (filteredItems.length > 0 || searchQuery.trim())"
-        class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-800 shadow-xl rounded-lg border border-gray-200 dark:border-gray-700 max-h-60 overflow-auto"
+        class="absolute z-50 mt-1 w-full bg-white dark:bg-ink-3 shadow-modal rounded-lg border border-stone-200 dark:border-ink-4 max-h-60 overflow-auto"
       >
         <!-- Available Items -->
         <div
@@ -48,26 +48,26 @@
           :class="[
             'flex items-center px-3 py-2 cursor-pointer touch-manipulation',
             index === highlightedIndex
-              ? 'bg-primary-50 dark:bg-primary-900/20'
-              : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+              ? 'bg-amber-50 dark:bg-amber-500/15'
+              : 'hover:bg-stone-50 dark:hover:bg-ink-4'
           ]"
           @click="selectItem(item)"
         >
-          <Package class="h-4 w-4 text-gray-500 dark:text-gray-400 mr-3 flex-shrink-0" />
+          <Package class="h-4 w-4 text-stone-500 dark:text-stone-400 mr-3 flex-shrink-0" />
           <div class="flex-1">
-            <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ item.name }}</div>
-            <div v-if="item.description" class="text-xs text-gray-500 dark:text-gray-400">{{ item.description }}</div>
+            <div class="text-sm font-medium text-ink dark:text-cream">{{ item.name }}</div>
+            <div v-if="item.description" class="text-xs text-stone-500 dark:text-stone-400">{{ item.description }}</div>
           </div>
-          <span class="text-xs text-gray-500 dark:text-gray-400 ml-2">({{ item.unit }})</span>
+          <span class="text-xs font-mono text-stone-500 dark:text-stone-400 ml-2">({{ item.unit }})</span>
         </div>
 
         <!-- No Results / Create New Item -->
         <div v-if="filteredItems.length === 0 && searchQuery.trim()">
-          <div class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-600">
+          <div class="px-3 py-2 text-sm text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">
             {{ t('items.noItemsFound') }}
           </div>
           <div
-            class="flex items-center px-3 py-2 hover:bg-primary-50 dark:hover:bg-primary-900/20 cursor-pointer touch-manipulation text-primary-600 dark:text-primary-400"
+            class="flex items-center px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-500/10 cursor-pointer touch-manipulation text-amber-700 dark:text-amber-300"
             @click="handleCreateNewItem"
           >
             <Plus class="h-4 w-4 mr-3 flex-shrink-0" />

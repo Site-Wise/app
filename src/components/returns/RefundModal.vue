@@ -1,41 +1,59 @@
 <template>
-  <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-20 lg:mb-4">
-      <div class="mt-3">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+  <!-- Overlay: bottom-sheet on mobile, centered dialog on desktop -->
+  <div class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-sm">
+    <!-- Panel -->
+    <div
+      class="w-full sm:max-w-lg bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden"
+      @click.stop
+    >
+      <!-- Grab handle (mobile only) -->
+      <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden flex-shrink-0" />
+
+      <!-- Sticky header -->
+      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0">
+        <div class="flex-1 min-w-0">
+          <h3 class="font-display text-lg font-semibold text-ink dark:text-cream truncate">
             {{ t('vendors.processRefund') }}
           </h3>
-          <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-            <X class="h-5 w-5" />
-          </button>
         </div>
+        <button
+          @click="$emit('close')"
+          class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors flex-shrink-0 active:scale-[0.98]"
+          :aria-label="t('common.close')"
+        >
+          <X class="h-5 w-5" />
+        </button>
+      </div>
 
-        <form @submit.prevent="handleSubmit" class="space-y-4">
+      <!-- Scrollable body -->
+      <form @submit.prevent="handleSubmit" class="flex-1 overflow-y-auto overscroll-contain scroll-smooth-touch">
+        <div class="px-5 sm:px-6 py-5 space-y-5">
           <!-- Return Summary -->
-          <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-            <h4 class="font-medium text-gray-900 dark:text-white mb-2">Return Summary</h4>
-            <div class="space-y-1 text-sm">
-              <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-gray-400">Return ID:</span>
-                <span class="text-gray-900 dark:text-white">#{{ returnData?.id?.slice(-6) }}</span>
+          <div class="bg-cream-2 dark:bg-ink-2 rounded-xl p-4">
+            <h4 class="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-3">
+              {{ t('vendors.returnSummary') }}
+            </h4>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between items-center">
+                <span class="text-stone-500 dark:text-stone-400">{{ t('vendors.returnId') }}</span>
+                <span class="text-ink dark:text-cream font-mono sw-tabular">#{{ returnData?.id?.slice(-6) }}</span>
               </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-gray-400">Vendor:</span>
-                <span class="text-gray-900 dark:text-white">
-                  {{ returnData?.expand?.vendor?.contact_person || returnData?.expand?.vendor?.name || 'Unknown Vendor' }}
+              <div class="flex justify-between items-center">
+                <span class="text-stone-500 dark:text-stone-400">{{ t('common.vendor') }}</span>
+                <span class="text-ink dark:text-cream font-medium">
+                  {{ returnData?.expand?.vendor?.contact_person || returnData?.expand?.vendor?.name || t('common.unknownVendor') }}
                 </span>
               </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-gray-400">Return Amount:</span>
-                <span class="text-gray-900 dark:text-white font-medium">
-                  ₹{{ returnData?.total_return_amount?.toFixed(2) }}
+              <div class="flex justify-between items-center">
+                <span class="text-stone-500 dark:text-stone-400">{{ t('vendors.returnAmount') }}</span>
+                <span class="text-ink dark:text-cream font-mono sw-tabular font-semibold">
+                  ₹{{ returnData?.total_return_amount?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                 </span>
               </div>
-              <div v-if="returnData?.actual_refund_amount" class="flex justify-between">
-                <span class="text-gray-500 dark:text-gray-400">Already Refunded:</span>
-                <span class="text-green-600 dark:text-green-400 font-medium">
-                  ₹{{ returnData.actual_refund_amount.toFixed(2) }}
+              <div v-if="returnData?.actual_refund_amount" class="flex justify-between items-center">
+                <span class="text-stone-500 dark:text-stone-400">{{ t('vendors.alreadyRefunded') }}</span>
+                <span class="text-forest-600 dark:text-forest-400 font-mono sw-tabular font-semibold">
+                  ₹{{ returnData.actual_refund_amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                 </span>
               </div>
             </div>
@@ -43,42 +61,42 @@
 
           <!-- Processing Option Choice -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-3">
               {{ t('vendors.processingOption') }} *
             </label>
             <div class="space-y-3">
               <div class="flex items-start space-x-3">
-                <input 
-                  id="credit_note" 
-                  v-model="form.processing_option" 
-                  type="radio" 
-                  value="credit_note" 
+                <input
+                  id="credit_note"
+                  v-model="form.processing_option"
+                  type="radio"
+                  value="credit_note"
                   required
-                  class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600"
+                  class="mt-1 h-4 w-4 text-amber-600 focus:ring-amber-500 border-stone-300 dark:border-ink-4"
                 />
-                <label for="credit_note" class="flex-1">
-                  <div class="text-sm font-medium text-gray-900 dark:text-white">
+                <label for="credit_note" class="flex-1 cursor-pointer">
+                  <div class="text-sm font-medium text-ink dark:text-cream">
                     {{ t('vendors.processingOptions.creditNote') }}
                   </div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">
+                  <div class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
                     {{ t('vendors.processingOptions.creditNoteDesc') }}
                   </div>
                 </label>
               </div>
               <div class="flex items-start space-x-3">
-                <input 
-                  id="refund" 
-                  v-model="form.processing_option" 
-                  type="radio" 
-                  value="refund" 
+                <input
+                  id="refund"
+                  v-model="form.processing_option"
+                  type="radio"
+                  value="refund"
                   required
-                  class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600"
+                  class="mt-1 h-4 w-4 text-amber-600 focus:ring-amber-500 border-stone-300 dark:border-ink-4"
                 />
-                <label for="refund" class="flex-1">
-                  <div class="text-sm font-medium text-gray-900 dark:text-white">
+                <label for="refund" class="flex-1 cursor-pointer">
+                  <div class="text-sm font-medium text-ink dark:text-cream">
                     {{ t('vendors.processingOptions.directRefund') }}
                   </div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">
+                  <div class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
                     {{ t('vendors.processingOptions.directRefundDesc') }}
                   </div>
                 </label>
@@ -88,20 +106,20 @@
 
           <!-- Refund Amount (always shown) -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
               {{ form.processing_option === 'credit_note' ? t('vendors.creditAmount') : t('vendors.refundAmount') }} *
             </label>
-            <input 
-              v-model.number="form.refund_amount" 
-              type="number" 
-              step="0.01" 
+            <input
+              v-model.number="form.refund_amount"
+              type="number"
+              step="0.01"
               :max="maxRefundAmount"
-              required 
-              class="input mt-1"
+              required
+              class="input mt-1 font-mono sw-tabular min-h-[44px]"
               placeholder="0.00"
             />
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Maximum {{ form.processing_option === 'credit_note' ? 'credit' : 'refundable' }}: ₹{{ maxRefundAmount.toFixed(2) }}
+            <p class="text-xs text-stone-500 dark:text-stone-400 mt-1">
+              {{ form.processing_option === 'credit_note' ? t('vendors.maximumCredit') : t('vendors.maximumRefundable') }}: <span class="font-mono sw-tabular">₹{{ maxRefundAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
             </p>
           </div>
 
@@ -109,28 +127,28 @@
           <div v-if="form.processing_option === 'credit_note'" class="space-y-4">
             <!-- Credit Note Expiry -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
                 {{ t('vendors.creditNoteExpiry') }}
               </label>
-              <input v-model="form.expiry_date" type="date" class="input mt-1" />
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Leave empty for no expiry date
+              <input v-model="form.expiry_date" type="date" class="input mt-1 min-h-[44px]" />
+              <p class="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                {{ t('vendors.leaveEmptyNoExpiry') }}
               </p>
             </div>
 
             <!-- Credit Note Reference -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
                 {{ t('vendors.creditNoteReference') }}
               </label>
-              <input 
-                v-model="form.credit_reference" 
-                type="text" 
-                class="input mt-1"
+              <input
+                v-model="form.credit_reference"
+                type="text"
+                class="input mt-1 min-h-[44px]"
                 placeholder="CN-2024-001"
               />
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Auto-generated if left empty
+              <p class="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                {{ t('vendors.autoGeneratedIfEmpty') }}
               </p>
             </div>
           </div>
@@ -139,35 +157,35 @@
           <div v-if="form.processing_option === 'refund'" class="space-y-4">
             <!-- Refund Date -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
                 {{ t('vendors.refundDate') }} *
               </label>
-              <input v-model="form.refund_date" type="date" :required="form.processing_option === 'refund'" class="input mt-1" />
+              <input v-model="form.refund_date" type="date" :required="form.processing_option === 'refund'" class="input mt-1 min-h-[44px]" />
             </div>
 
             <!-- Payment Account -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Refund Account *
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
+                {{ t('vendors.refundAccount') }} *
               </label>
-              <select v-model="form.account" :required="form.processing_option === 'refund'" class="input mt-1">
-                <option value="">Select an account</option>
+              <select v-model="form.account" :required="form.processing_option === 'refund'" class="input mt-1 min-h-[44px]">
+                <option value="">{{ t('common.select') }}</option>
                 <option v-for="account in activeAccounts" :key="account.id" :value="account.id">
-                  {{ account.name }} ({{ account.type.replace('_', ' ') }}) - ₹{{ account.current_balance.toFixed(2) }}
+                  {{ account.name }} ({{ account.type.replace('_', ' ') }}) - ₹{{ account.current_balance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                 </option>
               </select>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Account balance will be credited with the refund amount
+              <p class="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                {{ t('vendors.accountBalanceCredited') }}
               </p>
             </div>
 
             <!-- Refund Method -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
                 {{ t('vendors.refundMethod') }} *
               </label>
-              <select v-model="form.refund_method" :required="form.processing_option === 'refund'" class="input mt-1">
-                <option value="">Select method</option>
+              <select v-model="form.refund_method" :required="form.processing_option === 'refund'" class="input mt-1 min-h-[44px]">
+                <option value="">{{ t('common.select') }}</option>
                 <option value="cash">{{ t('vendors.refundMethods.cash') }}</option>
                 <option value="bank_transfer">{{ t('vendors.refundMethods.bank_transfer') }}</option>
                 <option value="cheque">{{ t('vendors.refundMethods.cheque') }}</option>
@@ -179,67 +197,71 @@
 
           <!-- Reference -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
               {{ t('common.reference') }}
             </label>
-            <input 
-              v-model="form.reference" 
-              type="text" 
-              class="input mt-1"
-              placeholder="Transaction reference, check number, etc."
+            <input
+              v-model="form.reference"
+              type="text"
+              class="input mt-1 min-h-[44px]"
+              :placeholder="t('vendors.refundTransactionPlaceholder')"
             />
           </div>
 
           <!-- Notes -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
               {{ t('common.notes') }}
             </label>
-            <textarea 
-              v-model="form.notes" 
-              class="input mt-1" 
-              rows="3" 
-              placeholder="Additional notes about this refund..."
+            <textarea
+              v-model="form.notes"
+              class="input mt-1"
+              rows="3"
+              :placeholder="t('vendors.additionalRefundNotes')"
             ></textarea>
           </div>
 
-          <!-- Confirmation -->
-          <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
-            <div class="flex">
-              <AlertTriangle class="h-5 w-5 text-yellow-400 mr-2 mt-0.5" />
-              <div class="text-sm">
-                <h4 class="font-medium text-yellow-800 dark:text-yellow-300">
-                  {{ form.processing_option === 'credit_note' ? 'Confirm Credit Note Creation' : 'Confirm Refund' }}
+          <!-- Confirmation banner -->
+          <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4">
+            <div class="flex gap-3">
+              <AlertTriangle class="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div class="text-sm min-w-0">
+                <h4 class="font-medium text-amber-800 dark:text-amber-300 mb-1">
+                  {{ form.processing_option === 'credit_note' ? t('vendors.confirmCreditNoteTitle') : t('vendors.confirmRefundTitle') }}
                 </h4>
-                <p class="text-yellow-700 dark:text-yellow-400 mt-1">
+                <p class="text-amber-700 dark:text-amber-400">
                   <span v-if="form.processing_option === 'credit_note'">
-                    This will create a credit note of ₹{{ form.refund_amount.toFixed(2) }} for future use with this vendor.
+                    {{ t('vendors.confirmCreditNoteBody', { amount: form.refund_amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }) }}
                   </span>
                   <span v-else>
-                    This will process a refund of ₹{{ form.refund_amount.toFixed(2) }} and update the account balance.
+                    {{ t('vendors.confirmRefundBody', { amount: form.refund_amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }) }}
                   </span>
-                  This action cannot be undone.
                 </p>
               </div>
             </div>
           </div>
+        </div>
+      </form>
 
-          <!-- Actions -->
-          <div class="flex space-x-3 pt-4">
-            <button 
-              type="submit" 
-              :disabled="loading || form.refund_amount <= 0 || form.refund_amount > maxRefundAmount" 
-              class="flex-1 btn-primary bg-purple-600 hover:bg-purple-700"
-            >
-              <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-              <DollarSign v-else class="mr-2 h-4 w-4" />
-              {{ form.processing_option === 'credit_note' ? 'Create Credit Note' : 'Process Refund' }}
-            </button>
-            <button type="button" @click="$emit('close')" class="flex-1 btn-outline">
-              {{ t('common.cancel') }}
-            </button>
-          </div>
-        </form>
+      <!-- Sticky footer -->
+      <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 pb-[max(1rem,env(safe-area-inset-bottom))] flex-shrink-0">
+        <button
+          type="button"
+          @click="$emit('close')"
+          class="btn-outline min-h-[44px] active:scale-[0.98]"
+        >
+          {{ t('common.cancel') }}
+        </button>
+        <button
+          type="button"
+          :disabled="loading || form.refund_amount <= 0 || form.refund_amount > maxRefundAmount"
+          class="flex-1 btn-primary min-h-[44px] active:scale-[0.98]"
+          @click.prevent="handleSubmit"
+        >
+          <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
+          <DollarSign v-else class="mr-2 h-4 w-4" />
+          {{ loading ? t('common.saving') : (form.processing_option === 'credit_note' ? t('vendors.createCreditNote') : t('vendors.processRefund')) }}
+        </button>
       </div>
     </div>
   </div>
@@ -343,7 +365,7 @@ const handleSubmit = async () => {
           // Continue with refund processing even if credit note deletion fails
         }
       }
-      
+
       // Create refund record
       await vendorRefundService.create({
         vendor_return: props.returnData.id,

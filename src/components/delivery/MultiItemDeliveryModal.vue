@@ -1,404 +1,353 @@
 <template>
-  <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="$emit('close')"
-    @keydown.esc="$emit('close')" tabindex="-1">
+  <!-- Overlay: click-scrim-to-close, Esc closes -->
+  <div
+    class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-sm"
+    @click="$emit('close')"
+    @keydown.esc="$emit('close')"
+    tabindex="-1"
+  >
+    <!-- Panel: bottom-sheet on mobile, centered dialog on desktop -->
     <div
-      class="relative top-4 mx-auto p-5 border w-full max-w-5xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-20 lg:mb-4"
-      @click.stop>
-      <div class="mt-3">
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-6">
-          <div>
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+      class="w-full sm:max-w-2xl bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden translate-y-0"
+      @click.stop
+    >
+      <!-- Mobile grab handle -->
+      <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden flex-shrink-0"></div>
+
+      <!-- Sticky Header -->
+      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex-shrink-0">
+        <div class="flex items-start gap-3">
+          <div class="flex-1 min-w-0">
+            <!-- Single step indicator: "STEP 1 OF 3 · Delivery Info" -->
+            <div class="flex items-center gap-2 mb-1">
+              <span class="sw-eyebrow text-amber-600 dark:text-amber-400">
+                {{ t('delivery.stepOf', { current: currentStep + 1, total: steps.length }) }}
+              </span>
+              <span class="text-stone-300 dark:text-ink-4" aria-hidden="true">·</span>
+              <span class="sw-eyebrow text-stone-500 dark:text-stone-400 truncate">{{ steps[currentStep] }}</span>
+            </div>
+            <h3 class="font-display text-lg font-semibold text-ink dark:text-cream truncate">
               {{ editingDelivery ? t('delivery.editDelivery') : t('delivery.recordDelivery') }}
             </h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {{ t('delivery.multiItemSubtitle') }}
-            </p>
           </div>
-          <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <!-- Close button with ≥44px hit area -->
+          <button
+            @click="$emit('close')"
+            class="h-9 w-9 rounded-md flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors active:scale-95 flex-shrink-0 -mt-1"
+            aria-label="Close"
+          >
             <X class="h-5 w-5" />
           </button>
         </div>
 
-        <!-- Progress Steps -->
-        <div class="mb-8">
-          <div class="flex items-center justify-center space-x-2 sm:space-x-4">
-            <div v-for="(step, index) in steps" :key="index" class="flex items-center">
-              <!-- Step indicator with text below on mobile, beside on larger screens -->
-              <div class="flex flex-col items-center sm:flex-row sm:items-center">
-                <div :class="[
-                  'flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium',
-                  currentStep > index
-                    ? 'bg-green-500 text-white'
-                    : currentStep === index
-                      ? 'bg-primary-500 text-white'
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
-                ]">
-                  {{ index + 1 }}
+        <!-- Slim amber progress bar (single progress indicator) -->
+        <div class="mt-3 h-1 rounded-full bg-stone-200 dark:bg-ink-2 overflow-hidden">
+          <div
+            class="h-full rounded-full bg-amber-500 transition-all duration-300 ease-out"
+            :style="{ width: `${((currentStep + 1) / steps.length) * 100}%` }"
+          ></div>
+        </div>
+      </div>
+
+      <!-- Scrollable Body -->
+      <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5 space-y-5 scroll-smooth-touch">
+
+        <!-- Step 1: Delivery Info -->
+        <div v-if="currentStep === 0" class="space-y-5">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">{{ t('common.vendor') }} *</label>
+              <VendorSearchBox ref="vendorInputRef" v-model="deliveryForm.vendor" :vendors="vendors"
+                :deliveries="deliveries" :service-bookings="serviceBookings" :payments="payments"
+                :placeholder="t('forms.selectVendor')" :autofocus="true" :required="true"
+                @vendor-selected="handleVendorSelected" />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">{{ t('delivery.deliveryDate') }} *</label>
+              <input v-model="deliveryForm.delivery_date" type="date" required class="input min-h-[44px]" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">{{ t('delivery.deliveryReference') }}</label>
+            <input v-model="deliveryForm.delivery_reference" type="text" class="input min-h-[44px]"
+              :placeholder="t('delivery.deliveryReferencePlaceholder')" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">{{ t('common.notes') }}</label>
+            <textarea v-model="deliveryForm.notes" class="input" rows="3"
+              :placeholder="t('forms.deliveryNotes')"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">{{ t('delivery.photos') }}</label>
+
+            <!-- Existing Photos Display -->
+            <div v-if="existingPhotos.length > 0" class="mb-4">
+              <p class="text-sm text-stone-600 dark:text-stone-400 mb-2">{{ t('delivery.existingPhotos') }}</p>
+              <div
+                class="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-ink-4 scrollbar-track-stone-100 dark:scrollbar-track-ink-2">
+                <div v-for="(photo, index) in existingPhotos" :key="photo" class="relative group flex-shrink-0">
+                  <img :src="getPhotoUrl(props.editingDelivery!.id!, photo)" :alt="`Existing photo ${index + 1}`"
+                    class="w-16 h-16 object-cover rounded-lg border border-stone-200 dark:border-ink-4 cursor-pointer hover:opacity-75 transition-opacity hover:scale-105"
+                    @click="openPhotoGallery(index)" />
+                  <div class="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button type="button" @click.stop="removeExistingPhoto(index)"
+                      class="bg-clay-500 text-white rounded-full p-1 hover:bg-clay-600 transition-colors shadow-lg"
+                      :title="t('common.deleteAction')">
+                      <X class="h-3 w-3" />
+                    </button>
+                  </div>
                 </div>
-                <span :class="[
-                  'mt-1 sm:mt-0 sm:ml-2 text-xs sm:text-sm font-medium text-center sm:text-left',
-                  currentStep >= index
-                    ? 'text-gray-900 dark:text-white'
-                    : 'text-gray-500 dark:text-gray-400'
-                ]">
-                  {{ step }}
-                </span>
               </div>
-              <!-- Connector line -->
-              <div v-if="index < steps.length - 1" class="ml-2 sm:ml-4 h-px w-4 sm:w-8 bg-gray-200 dark:bg-gray-600"></div>
+            </div>
+
+            <!-- Add New Photos -->
+            <FileUploadComponent v-model="selectedFilesForUpload" accept-types="image/*,application/pdf" :multiple="true"
+              :allow-camera="true" @files-selected="handleFilesSelected" />
+          </div>
+        </div>
+
+        <!-- Step 2: Items -->
+        <div v-if="currentStep === 1" class="space-y-5">
+          <div class="flex items-center justify-between gap-2 flex-wrap rounded-lg bg-cream-2 dark:bg-ink-2 px-4 py-2.5">
+            <span class="text-sm font-medium text-stone-600 dark:text-stone-300">
+              {{ completedDeliveryItems.length }} {{ completedDeliveryItems.length === 1 ? t('common.item') : t('common.items') }}
+            </span>
+            <span v-if="itemsTotal > 0" class="text-sm font-semibold text-amber-700 dark:text-amber-400 font-mono sw-tabular">
+              {{ t('common.total') }}: ₹{{ itemsTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+            </span>
+          </div>
+
+          <!-- New Item Form (Always at top) -->
+          <div v-if="newItemForm"
+            class="border-2 border-dashed border-amber-300 dark:border-amber-600 rounded-xl p-1">
+            <!-- Mobile: Add Item button at top -->
+            <div class="flex sm:hidden items-center justify-between px-3 pt-3 pb-2">
+              <div class="text-sm font-medium text-ink dark:text-cream">
+                {{ t('deliveryForm.newItem') }}
+              </div>
+              <button @click="saveNewItem" :disabled="!isNewItemValid" class="btn-primary btn-sm min-h-[44px] px-4 active:scale-[0.98]"
+                :class="{ 'opacity-50 cursor-not-allowed': !isNewItemValid }">
+                <Plus class="h-4 w-4" />
+              </button>
+            </div>
+            <!-- Desktop: Title only -->
+            <div class="hidden sm:block text-sm font-medium text-ink dark:text-cream mb-3 px-3 pt-3">
+              {{ t('deliveryForm.newItem') }}
+            </div>
+            <DeliveryItemRow :key="newItemForm.tempId" :item="newItemForm" :index="-1" :items="items"
+              :used-items="usedItemIds" :hide-remove-button="true" @update="updateNewItem" @remove="cancelNewItem"
+              @create-new-item="handleCreateNewItem" ref="newItemRowRef" />
+            <!-- Desktop: Buttons at bottom -->
+            <div class="hidden sm:flex justify-end p-3">
+              <button @click="saveNewItem" :disabled="!isNewItemValid" class="btn-primary text-sm active:scale-[0.98]"
+                :class="{ 'opacity-50 cursor-not-allowed': !isNewItemValid }">
+                <Plus class="mr-2 h-4 w-4" />
+                {{ t('deliveryForm.addItem') }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Completed Items List -->
+          <div v-if="completedDeliveryItems.length > 0" class="space-y-2 sm:space-y-4">
+            <div
+              class="sw-eyebrow text-stone-600 dark:text-stone-300 border-b border-stone-200 dark:border-ink-4 pb-2 flex items-center justify-between">
+              <span>{{ t('deliveryForm.addedItems') }}</span>
+              <!-- Collapse/Expand all on mobile -->
+              <button
+                @click="toggleAllItemsExpanded"
+                class="sm:hidden text-xs text-ink dark:text-cream hover:underline min-h-[44px] px-2"
+              >
+                {{ allItemsExpanded ? t('common.collapseAll') : t('common.expandAll') }}
+              </button>
+            </div>
+
+            <!-- Mobile: Compact collapsible cards -->
+            <div class="sm:hidden space-y-2">
+              <div
+                v-for="item in completedDeliveryItems"
+                :key="item.tempId"
+                class="border border-stone-200 dark:border-ink-4 rounded-xl bg-white dark:bg-ink-3 overflow-hidden"
+              >
+                <!-- Compact summary header -->
+                <div
+                  class="flex items-center justify-between p-3 cursor-pointer min-h-[52px]"
+                  @click="toggleItemExpanded(item.tempId)"
+                >
+                  <div class="flex-1 min-w-0">
+                    <div class="font-medium text-ink dark:text-cream truncate">
+                      {{ getItemName(item.item) }}
+                    </div>
+                    <div class="text-sm text-stone-500 dark:text-stone-400 font-mono sw-tabular">
+                      {{ item.quantity }} {{ getItemUnit(item.item) }} × ₹{{ item.unit_price }} =
+                      <span class="font-medium text-ink dark:text-cream">₹{{ item.total_amount.toFixed(2) }}</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center space-x-2 ml-2">
+                    <button
+                      @click.stop="removeDeliveryItem(deliveryItems.indexOf(item))"
+                      class="min-h-[44px] min-w-[44px] flex items-center justify-center text-clay-500 hover:text-clay-700 dark:text-clay-400 dark:hover:text-clay-300 active:scale-95 rounded-md"
+                      :title="t('delivery.removeItem')"
+                    >
+                      <Trash2 class="h-4 w-4" />
+                    </button>
+                    <ChevronDown
+                      :class="[
+                        'h-5 w-5 text-stone-500 dark:text-stone-400 transition-transform',
+                        expandedItems.has(item.tempId) ? 'rotate-180' : ''
+                      ]"
+                    />
+                  </div>
+                </div>
+                <!-- Expanded content -->
+                <div v-if="expandedItems.has(item.tempId)" class="border-t border-stone-200 dark:border-ink-4">
+                  <DeliveryItemRow
+                    :item="item"
+                    :index="deliveryItems.indexOf(item)"
+                    :items="items"
+                    :used-items="usedItemIds"
+                    :hide-remove-button="true"
+                    @update="updateDeliveryItem"
+                    @remove="removeDeliveryItem"
+                    @create-new-item="handleCreateNewItem"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Desktop: Full item rows -->
+            <div class="hidden sm:block space-y-4">
+              <DeliveryItemRow
+                v-for="item in completedDeliveryItems"
+                :key="item.tempId"
+                :item="item"
+                :index="deliveryItems.indexOf(item)"
+                :items="items"
+                :used-items="usedItemIds"
+                @update="updateDeliveryItem"
+                @remove="removeDeliveryItem"
+                @create-new-item="handleCreateNewItem"
+              />
             </div>
           </div>
         </div>
 
-        <!-- Mobile Top Navigation -->
-        <div class="flex justify-between items-center mb-4 sm:hidden">
-          <button
-            v-if="currentStep > 0"
-            @click="previousStep"
-            class="btn-outline btn-sm flex items-center"
-            :disabled="loading"
-          >
-            <ArrowLeft class="h-4 w-4 mr-1" />
-            {{ t('common.back') }}
-          </button>
-          <div v-else></div>
+        <!-- Step 3: Review -->
+        <div v-if="currentStep === 2" class="space-y-5">
+          <!-- Delivery Information -->
+          <div class="bg-cream-2 dark:bg-ink-2 rounded-xl p-4">
+            <h5 class="sw-eyebrow text-ink dark:text-cream mb-3">{{ t('delivery.deliveryInfo') }}</h5>
+            <div class="space-y-2 text-sm text-ink dark:text-cream">
+              <div><strong>{{ t('common.vendor') }}:</strong> {{ getVendorName(deliveryForm.vendor) }}</div>
+              <div><strong>{{ t('delivery.deliveryDate') }}:</strong> {{ formatDate(deliveryForm.delivery_date) }}</div>
+              <div v-if="deliveryForm.delivery_reference">
+                <strong>{{ t('delivery.deliveryReference') }}:</strong> {{ deliveryForm.delivery_reference }}
+              </div>
+              <div v-if="deliveryForm.notes">
+                <strong>{{ t('common.notes') }}:</strong> {{ deliveryForm.notes }}
+              </div>
+            </div>
+          </div>
 
+          <!-- Items Summary -->
+          <div class="bg-cream-2 dark:bg-ink-2 rounded-xl p-4">
+            <h5 class="sw-eyebrow text-ink dark:text-cream mb-3">{{ t('delivery.itemsSummary') }}</h5>
+            <div class="space-y-2 text-sm">
+              <div v-for="item in activeDeliveryItems" :key="item.tempId" class="flex justify-between text-ink dark:text-cream">
+                <span>{{ getItemName(item.item) }} ({{ item.quantity }} {{ getItemUnit(item.item) }} @ ₹{{
+                  item.unit_price }}/{{ getItemUnit(item.item) }})</span>
+                <span class="font-medium font-mono sw-tabular ml-2 shrink-0">₹{{ item.total_amount.toFixed(2) }}</span>
+              </div>
+              <div class="border-t border-stone-200 dark:border-ink-4 pt-2 mt-2 space-y-2">
+                <div class="flex justify-between text-sm">
+                  <span class="text-stone-600 dark:text-stone-300">{{ t('delivery.itemsTotal') }}:</span>
+                  <span class="text-stone-600 dark:text-stone-300 font-mono sw-tabular">₹{{ itemsTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+                </div>
+
+                <!-- Round-off Section -->
+                <div class="flex items-center justify-between text-sm">
+                  <label class="text-stone-600 dark:text-stone-300">{{ t('delivery.roundOff') }}:</label>
+                  <div class="flex items-center space-x-2">
+                    <span class="text-stone-500 dark:text-stone-400">₹</span>
+                    <input v-model.number="deliveryForm.rounded_off_with" type="number" step="0.01"
+                      class="w-24 px-2 py-2 text-center text-sm font-mono sw-tabular border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream focus:ring-2 focus:ring-amber-500 focus:border-transparent min-h-[44px]"
+                      :placeholder="t('delivery.enterRoundOff')" />
+                  </div>
+                </div>
+
+                <div class="flex justify-between items-baseline border-t border-stone-300 dark:border-ink-4 pt-2">
+                  <span class="text-ink dark:text-cream font-medium">{{ t('delivery.finalTotal') }}:</span>
+                  <span class="sw-stat font-display text-xl font-bold text-ink dark:text-cream font-mono sw-tabular">
+                    ₹{{ totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <!-- End Scrollable Body -->
+
+      <!-- Sticky Footer -->
+      <div class="sticky bottom-0 flex-shrink-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+
+        <!-- Keyboard shortcut hints (desktop) -->
+        <div class="hidden md:flex items-center justify-between mb-3 text-xs text-stone-400 dark:text-stone-500">
+          <div class="flex items-center gap-2">
+            <span v-if="currentStep > 0">Shift + ← {{ t('common.back') }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span v-if="currentStep === 1 && newItemForm">Ctrl + Enter {{ t('deliveryForm.addItem') }}</span>
+            <span v-if="currentStep === 2 && canSubmit && !loading">Ctrl + Enter {{ editingDelivery ? t('common.update') : t('common.create') }}</span>
+            <span v-if="currentStep < steps.length - 1">Shift + → {{ t('common.next') }}</span>
+          </div>
+        </div>
+
+        <div class="flex gap-3">
+          <!-- Back / Cancel -->
+          <div class="flex gap-2">
+            <button v-if="currentStep > 0" @click="previousStep" class="btn-outline min-h-[44px] active:scale-[0.98]" :disabled="loading">
+              <ArrowLeft class="mr-1.5 h-4 w-4" />
+              {{ t('common.back') }}
+            </button>
+            <button v-else @click="$emit('close')" class="btn-outline min-h-[44px] active:scale-[0.98]" :disabled="loading">
+              {{ t('common.cancel') }}
+            </button>
+          </div>
+
+          <!-- Continue / Submit (full-width flex-1 on mobile) -->
           <button
             v-if="currentStep < steps.length - 1"
             @click="nextStep"
             :disabled="!canProceedToNextStep || loading"
-            class="btn-primary btn-sm flex items-center"
+            class="btn-primary flex-1 min-h-[44px] active:scale-[0.98]"
             :class="{ 'opacity-50 cursor-not-allowed': !canProceedToNextStep || loading }"
           >
             {{ t('common.next') }}
-            <ArrowRight class="h-4 w-4 ml-1" />
+            <ArrowRight class="ml-1.5 h-4 w-4" />
           </button>
+
           <button
             v-else
             @click="saveDelivery"
             :disabled="loading || !canSubmit"
-            class="btn-primary btn-sm bg-green-600 hover:bg-green-700 flex items-center"
+            class="btn-primary flex-1 min-h-[44px] active:scale-[0.98]"
             :class="{ 'opacity-50 cursor-not-allowed': loading || !canSubmit }"
           >
-            <Loader2 v-if="loading" class="h-4 w-4 mr-1 animate-spin" />
-            <CheckCircle v-else class="h-4 w-4 mr-1" />
-            {{ editingDelivery ? t('common.update') : t('common.create') }}
+            <Loader2 v-if="loading" class="mr-1.5 h-4 w-4 animate-spin" />
+            <CheckCircle v-else class="mr-1.5 h-4 w-4" />
+            {{ loading ? (editingDelivery ? t('common.updating') : t('common.creating')) : (editingDelivery ? t('common.update') : t('common.create')) }}
           </button>
         </div>
-
-        <!-- Step Content -->
-        <div class="min-h-96">
-          <!-- Step 1: Delivery Info -->
-          <div v-if="currentStep === 0" class="space-y-6">
-            <h4 class="font-medium text-gray-900 dark:text-white mb-4">{{ t('delivery.deliveryInfo') }}</h4>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('common.vendor') }}
-                  *</label>
-                <VendorSearchBox ref="vendorInputRef" v-model="deliveryForm.vendor" :vendors="vendors"
-                  :deliveries="deliveries" :service-bookings="serviceBookings" :payments="payments"
-                  :placeholder="t('forms.selectVendor')" :autofocus="true" :required="true"
-                  @vendor-selected="handleVendorSelected" />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{
-                  t('delivery.deliveryDate') }} *</label>
-                <input v-model="deliveryForm.delivery_date" type="date" required class="input" />
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{
-                t('delivery.deliveryReference') }}</label>
-              <input v-model="deliveryForm.delivery_reference" type="text" class="input"
-                :placeholder="t('delivery.deliveryReferencePlaceholder')" />
-            </div>
-
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('common.notes')
-              }}</label>
-              <textarea v-model="deliveryForm.notes" class="input" rows="3"
-                :placeholder="t('forms.deliveryNotes')"></textarea>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t('delivery.photos')
-              }}</label>
-
-              <!-- Existing Photos Display -->
-              <div v-if="existingPhotos.length > 0" class="mb-4">
-                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">{{ t('delivery.existingPhotos') }}</p>
-                <div
-                  class="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
-                  <div v-for="(photo, index) in existingPhotos" :key="photo" class="relative group flex-shrink-0">
-                    <img :src="getPhotoUrl(props.editingDelivery!.id!, photo)" :alt="`Existing photo ${index + 1}`"
-                      class="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-75 transition-opacity hover:scale-105"
-                      @click="openPhotoGallery(index)" />
-                    <div class="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button type="button" @click.stop="removeExistingPhoto(index)"
-                        class="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
-                        :title="t('common.deleteAction')">
-                        <X class="h-3 w-3" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Add New Photos -->
-              <FileUploadComponent v-model="selectedFilesForUpload" accept-types="image/*,application/pdf" :multiple="true"
-                :allow-camera="true" @files-selected="handleFilesSelected" />
-            </div>
-          </div>
-
-          <!-- Step 2: Items -->
-          <div v-if="currentStep === 1" class="space-y-6">
-            <div class="flex items-center justify-between">
-              <h4 class="font-medium text-gray-900 dark:text-white">
-                {{ t('delivery.addItems') }}
-                <span v-if="completedDeliveryItems.length > 0"
-                  class="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
-                  ({{ completedDeliveryItems.length }} {{ completedDeliveryItems.length === 1 ? t('common.item') :
-                    t('common.items') }})
-                </span>
-                <span v-if="itemsTotal > 0" class="ml-3 text-sm font-semibold text-green-600 dark:text-green-400">
-                  • {{ t('common.total') }}: ₹{{ itemsTotal.toFixed(2) }}
-                </span>
-              </h4>
-            </div>
-
-            <!-- New Item Form (Always at top) -->
-            <div v-if="newItemForm"
-              class="border-2 border-dashed border-primary-300 dark:border-primary-600 rounded-lg p-1">
-              <!-- Mobile: Add Item button at top -->
-              <div class="flex sm:hidden items-center justify-between px-3 pt-3 pb-2">
-                <div class="text-sm font-medium text-primary-600 dark:text-primary-400">
-                  {{ t('deliveryForm.newItem') }}
-                </div>
-                <button @click="saveNewItem" :disabled="!isNewItemValid" class="btn-primary btn-sm"
-                  :class="{ 'opacity-50 cursor-not-allowed': !isNewItemValid }">
-                  <Plus class="h-4 w-4" />
-                </button>
-              </div>
-              <!-- Desktop: Title only -->
-              <div class="hidden sm:block text-sm font-medium text-primary-600 dark:text-primary-400 mb-3 px-3 pt-3">
-                {{ t('deliveryForm.newItem') }}
-              </div>
-              <DeliveryItemRow :key="newItemForm.tempId" :item="newItemForm" :index="-1" :items="items"
-                :used-items="usedItemIds" :hide-remove-button="true" @update="updateNewItem" @remove="cancelNewItem"
-                @create-new-item="handleCreateNewItem" ref="newItemRowRef" />
-              <!-- Desktop: Buttons at bottom -->
-              <div class="hidden sm:flex justify-end p-3">
-                <button @click="saveNewItem" :disabled="!isNewItemValid" class="btn-primary text-sm"
-                  :class="{ 'opacity-50 cursor-not-allowed': !isNewItemValid }">
-                  <Plus class="mr-2 h-4 w-4" />
-                  {{ t('deliveryForm.addItem') }}
-                </button>
-              </div>
-            </div>
-
-            <!-- This section is no longer needed as we always show a new item form -->
-
-            <!-- Completed Items List -->
-            <div v-if="completedDeliveryItems.length > 0" class="space-y-2 sm:space-y-4">
-              <div
-                class="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600 pb-2 flex items-center justify-between">
-                <span>{{ t('deliveryForm.addedItems') }}</span>
-                <!-- Collapse/Expand all on mobile -->
-                <button
-                  @click="toggleAllItemsExpanded"
-                  class="sm:hidden text-xs text-primary-600 dark:text-primary-400 hover:underline"
-                >
-                  {{ allItemsExpanded ? t('common.collapseAll') : t('common.expandAll') }}
-                </button>
-              </div>
-
-              <!-- Mobile: Compact collapsible cards -->
-              <div class="sm:hidden space-y-2">
-                <div
-                  v-for="item in completedDeliveryItems"
-                  :key="item.tempId"
-                  class="border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 overflow-hidden"
-                >
-                  <!-- Compact summary header -->
-                  <div
-                    class="flex items-center justify-between p-3 cursor-pointer"
-                    @click="toggleItemExpanded(item.tempId)"
-                  >
-                    <div class="flex-1 min-w-0">
-                      <div class="font-medium text-gray-900 dark:text-white truncate">
-                        {{ getItemName(item.item) }}
-                      </div>
-                      <div class="text-sm text-gray-500 dark:text-gray-400">
-                        {{ item.quantity }} {{ getItemUnit(item.item) }} × ₹{{ item.unit_price }} =
-                        <span class="font-medium text-gray-900 dark:text-white">₹{{ item.total_amount.toFixed(2) }}</span>
-                      </div>
-                    </div>
-                    <div class="flex items-center space-x-2 ml-2">
-                      <button
-                        @click.stop="removeDeliveryItem(deliveryItems.indexOf(item))"
-                        class="p-1.5 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                        :title="t('delivery.removeItem')"
-                      >
-                        <Trash2 class="h-4 w-4" />
-                      </button>
-                      <ChevronDown
-                        :class="[
-                          'h-5 w-5 text-gray-400 transition-transform',
-                          expandedItems.has(item.tempId) ? 'rotate-180' : ''
-                        ]"
-                      />
-                    </div>
-                  </div>
-                  <!-- Expanded content -->
-                  <div v-if="expandedItems.has(item.tempId)" class="border-t border-gray-200 dark:border-gray-600">
-                    <DeliveryItemRow
-                      :item="item"
-                      :index="deliveryItems.indexOf(item)"
-                      :items="items"
-                      :used-items="usedItemIds"
-                      :hide-remove-button="true"
-                      @update="updateDeliveryItem"
-                      @remove="removeDeliveryItem"
-                      @create-new-item="handleCreateNewItem"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Desktop: Full item rows -->
-              <div class="hidden sm:block space-y-4">
-                <DeliveryItemRow
-                  v-for="item in completedDeliveryItems"
-                  :key="item.tempId"
-                  :item="item"
-                  :index="deliveryItems.indexOf(item)"
-                  :items="items"
-                  :used-items="usedItemIds"
-                  @update="updateDeliveryItem"
-                  @remove="removeDeliveryItem"
-                  @create-new-item="handleCreateNewItem"
-                />
-              </div>
-            </div>
-
-            <!-- Removed detailed delivery totals - now shown in header -->
-          </div>
-
-          <!-- Step 3: Review -->
-          <div v-if="currentStep === 2" class="space-y-6">
-            <h4 class="font-medium text-gray-900 dark:text-white mb-4">{{ t('delivery.reviewDelivery') }}</h4>
-
-            <!-- Delivery Information -->
-            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <h5 class="font-medium text-gray-900 dark:text-white mb-3">{{ t('delivery.deliveryInfo') }}</h5>
-              <div class="space-y-2 text-sm">
-                <div><strong>{{ t('common.vendor') }}:</strong> {{ getVendorName(deliveryForm.vendor) }}</div>
-                <div><strong>{{ t('delivery.deliveryDate') }}:</strong> {{ formatDate(deliveryForm.delivery_date) }}
-                </div>
-                <div v-if="deliveryForm.delivery_reference">
-                  <strong>{{ t('delivery.deliveryReference') }}:</strong> {{ deliveryForm.delivery_reference }}
-                </div>
-                <div v-if="deliveryForm.notes">
-                  <strong>{{ t('common.notes') }}:</strong> {{ deliveryForm.notes }}
-                </div>
-              </div>
-            </div>
-
-            <!-- Items Summary -->
-            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <h5 class="font-medium text-gray-900 dark:text-white mb-3">{{ t('delivery.itemsSummary') }}</h5>
-              <div class="space-y-2 text-sm">
-                <div v-for="item in activeDeliveryItems" :key="item.tempId" class="flex justify-between">
-                  <span>{{ getItemName(item.item) }} ({{ item.quantity }} {{ getItemUnit(item.item) }} @ ₹{{
-                    item.unit_price }}/{{ getItemUnit(item.item) }})</span>
-                  <span class="font-medium">₹{{ item.total_amount.toFixed(2) }}</span>
-                </div>
-                <div class="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2 space-y-2">
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-700 dark:text-gray-300">{{ t('delivery.itemsTotal') }}:</span>
-                    <span class="text-gray-700 dark:text-gray-300">₹{{ itemsTotal.toFixed(2) }}</span>
-                  </div>
-
-                  <!-- Round-off Section -->
-                  <div class="flex items-center justify-between text-sm">
-                    <label class="text-gray-700 dark:text-gray-300">{{ t('delivery.roundOff') }}:</label>
-                    <div class="flex items-center space-x-2">
-                      <span class="text-gray-500 dark:text-gray-400">₹</span>
-                      <input v-model.number="deliveryForm.rounded_off_with" type="number" step="0.01"
-                        class="w-20 px-2 py-1 text-center text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        :placeholder="t('delivery.enterRoundOff')" />
-                    </div>
-                  </div>
-
-                  <div
-                    class="flex justify-between font-medium text-base border-t border-gray-300 dark:border-gray-500 pt-2">
-                    <span class="text-gray-900 dark:text-white">{{ t('delivery.finalTotal') }}:</span>
-                    <span class="text-gray-900 dark:text-white">₹{{ totalAmount.toFixed(2) }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="flex justify-between pt-6 border-t border-gray-200 dark:border-gray-600">
-          <div class="flex items-center space-x-3">
-            <button v-if="currentStep > 0" @click="previousStep" class="btn-outline" :disabled="loading">
-              <ArrowLeft class="mr-2 h-4 w-4" />
-              {{ t('common.back') }}
-            </button>
-            <div v-if="currentStep > 0" class="hidden md:block text-xs text-gray-500 dark:text-gray-400">
-              Shift + ←
-            </div>
-          </div>
-
-          <div class="flex items-center space-x-4">
-            <!-- Keyboard shortcut hint for item creation -->
-            <div v-if="currentStep === 1 && newItemForm"
-              class="hidden md:block text-xs text-gray-500 dark:text-gray-400">
-              Ctrl + Enter to add item
-            </div>
-
-            <!-- Keyboard shortcut hint for delivery creation -->
-            <div v-if="currentStep === 2 && canSubmit && !loading"
-              class="hidden md:block text-xs text-gray-500 dark:text-gray-400">
-              Ctrl + Enter to create delivery
-            </div>
-
-            <div class="flex space-x-3">
-              <button @click="$emit('close')" class="btn-outline" :disabled="loading">
-                {{ t('common.cancel') }}
-              </button>
-
-              <button v-if="currentStep < steps.length - 1" @click="nextStep"
-                :disabled="!canProceedToNextStep || loading" class="btn-primary"
-                :class="{ 'opacity-50 cursor-not-allowed': !canProceedToNextStep || loading }">
-                {{ t('common.next') }}
-                <ArrowRight class="ml-2 h-4 w-4" />
-              </button>
-
-              <button v-else @click="saveDelivery" :disabled="loading || !canSubmit"
-                class="btn-primary bg-green-600 hover:bg-green-700"
-                :class="{ 'opacity-50 cursor-not-allowed': loading || !canSubmit }">
-                <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-                <CheckCircle v-else class="mr-2 h-4 w-4" />
-                {{ editingDelivery ? t('common.update') : t('common.create') }}
-              </button>
-            </div>
-
-            <div v-if="currentStep < steps.length - 1" class="hidden md:block text-xs text-gray-500 dark:text-gray-400">
-              Shift + →
-            </div>
-          </div>
-        </div>
       </div>
+      <!-- End Sticky Footer -->
+
     </div>
+    <!-- End Panel -->
 
     <!-- Image Slider -->
     <ImageSlider v-model:show="showPhotoGallery"

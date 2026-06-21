@@ -636,11 +636,11 @@ describe('VendorReturnsView', () => {
 
   describe('Utility Functions', () => {
     it('should get correct status classes', () => {
-      expect(wrapper.vm.getStatusClass('initiated')).toContain('bg-yellow-100')
-      expect(wrapper.vm.getStatusClass('approved')).toContain('bg-blue-100')
-      expect(wrapper.vm.getStatusClass('rejected')).toContain('bg-red-100')
-      expect(wrapper.vm.getStatusClass('completed')).toContain('bg-green-100')
-      expect(wrapper.vm.getStatusClass('refunded')).toContain('bg-purple-100')
+      expect(wrapper.vm.getStatusClass('initiated')).toContain('bg-amber-100')
+      expect(wrapper.vm.getStatusClass('approved')).toContain('bg-stone-100')
+      expect(wrapper.vm.getStatusClass('rejected')).toContain('bg-clay-100')
+      expect(wrapper.vm.getStatusClass('completed')).toContain('bg-forest-100')
+      expect(wrapper.vm.getStatusClass('refunded')).toContain('bg-forest-100')
     })
 
     it('should handle export functionality', () => {

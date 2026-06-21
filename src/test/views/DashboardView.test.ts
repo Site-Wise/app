@@ -36,7 +36,12 @@ vi.mock('../../composables/useI18n', () => ({
         'dashboard.subtitle': 'Overview of {siteName} management',
         'dashboard.totalExpenses': 'Total Expenses',
         'dashboard.currentMonthExpenses': 'Current Month Expenses',
+        'dashboard.pendingRecovery': 'Pending Recovery',
+        'dashboard.payments': 'Payments',
+        'dashboard.last7Days': 'Last 7 days',
+        'dashboard.last30Days': 'Last 30 days',
         'dashboard.expensePerSqft': 'Expense / Sqft',
+        'dashboard.advances': 'Advances',
         'dashboard.outstandingAmount': 'Outstanding Amount',
         'dashboard.paymentsLastSevenDays': 'Payments Last 7 Days',
         'dashboard.totalPaid': 'Total Paid',
@@ -223,13 +228,20 @@ describe('DashboardView', () => {
   })
 
   it('should render dashboard title', () => {
-    expect(wrapper.find('h1').text()).toBe('Dashboard')
+    // "Dashboard" moved into the eyebrow label ("Dashboard · <Month Year>");
+    // the h1 now shows the site subtitle.
+    expect(wrapper.find('.sw-eyebrow').text()).toContain('Dashboard')
+    expect(wrapper.find('h1').text()).toContain('Overview of Test Construction Site management')
   })
 
   it('should display current site information', () => {
-    expect(wrapper.text()).toContain('Test Construction Site')
-    expect(wrapper.text()).toContain('100 units')
-    expect(wrapper.text()).toContain('50,000 sqft')
+    const text = wrapper.text()
+    expect(text).toContain('Test Construction Site')
+    // Site stats render as separate spans (value + label)
+    expect(text).toContain('100')
+    expect(text).toContain('units')
+    expect(text).toContain('50,000')
+    expect(text).toContain('sqft')
   })
 
   it('should render expense stats cards', async () => {
@@ -238,8 +250,8 @@ describe('DashboardView', () => {
     await new Promise(resolve => setTimeout(resolve, 100))
     
     expect(wrapper.text()).toContain('Total Expenses')
-    expect(wrapper.text()).toContain('Current Month Expenses')
-    expect(wrapper.text()).toContain('Expense / Sqft')
+    expect(wrapper.text()).toContain('Pending Recovery')
+    expect(wrapper.text()).toContain('Advances')
     expect(wrapper.text()).toContain('Outstanding Amount')
   })
 
@@ -257,7 +269,8 @@ describe('DashboardView', () => {
   })
 
   it('should render payments chart section', () => {
-    expect(wrapper.text()).toContain('Payments Last 7 Days')
+    expect(wrapper.text()).toContain('Payments')
+    expect(wrapper.text()).toContain('Last 7 days')
     expect(wrapper.text()).toContain('Total Paid')
   })
 

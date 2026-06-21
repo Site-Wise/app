@@ -2,7 +2,8 @@ import { ref, computed, watch } from 'vue';
 
 type Theme = 'light' | 'dark' | 'system';
 
-const theme = ref<Theme>('system');
+// Dark is the brand default for app/dashboard surfaces (Sitewise Design System).
+const theme = ref<Theme>('dark');
 const systemPrefersDark = ref(false);
 
 export function useTheme() {

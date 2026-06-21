@@ -1,41 +1,41 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen flex items-center justify-center bg-cream dark:bg-ink py-12 px-4 sm:px-6 lg:px-8 sw-dotgrid">
     <div class="max-w-md w-full space-y-8">
       <div>
         <div class="flex items-center justify-center">
-          <HardHat class="h-12 w-12 text-primary-600 dark:text-primary-400" />
+          <HardHat class="h-12 w-12 text-amber-700 dark:text-amber-400" />
         </div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+        <h2 class="mt-6 text-center sw-h2 font-display text-ink dark:text-cream">
           Select a Site
         </h2>
-        <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+        <p class="mt-2 text-center text-sm text-stone-600 dark:text-stone-400">
           Choose a construction site to manage
         </p>
       </div>
       
       <div class="card">
         <div v-if="isLoading" class="flex items-center justify-center py-8">
-          <Loader2 class="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 class="h-8 w-8 animate-spin text-amber-600 dark:text-amber-400" />
         </div>
         
         <!-- Pending Invitations Section -->
         <div v-else-if="receivedInvitations.length > 0" class="space-y-4">
           <div class="text-center mb-6">
-            <Mail class="mx-auto h-12 w-12 text-blue-500" />
-            <h3 class="mt-2 text-lg font-medium text-gray-900 dark:text-white">You have site invitations</h3>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Accept or reject invitations to join construction sites</p>
+            <Mail class="mx-auto h-12 w-12 text-amber-700 dark:text-amber-400" />
+            <h3 class="mt-2 text-lg font-medium text-ink dark:text-cream">You have site invitations</h3>
+            <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">Accept or reject invitations to join construction sites</p>
           </div>
           
           <div class="space-y-3">
             <div v-for="invitation in receivedInvitations" :key="invitation.id" 
-                 class="p-4 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                 class="p-4 border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 rounded-lg">
               <div class="flex items-start justify-between">
                 <div class="flex-1">
-                  <h4 class="text-base font-medium text-gray-900 dark:text-white">{{ invitation.expand?.site?.name || 'Unknown Site' }}</h4>
-                  <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <h4 class="text-base font-medium text-ink dark:text-cream">{{ invitation.expand?.site?.name || 'Unknown Site' }}</h4>
+                  <p class="text-sm text-stone-600 dark:text-stone-400 mt-1">
                     Role: <span class="font-medium capitalize">{{ invitation.role }}</span>
                   </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p class="text-xs text-stone-500 dark:text-stone-400 mt-1">
                     Invited by {{ invitation.expand?.invited_by?.name || 'Unknown' }}
                   </p>
                 </div>
@@ -43,15 +43,15 @@
                   <button 
                     @click="handleAcceptInvitation(invitation.id!)"
                     :disabled="processingInvitation === invitation.id"
-                    class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-ink text-sm rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <Loader2 v-if="processingInvitation === invitation.id" class="h-4 w-4 animate-spin" />
                     <Check v-else class="h-4 w-4" />
                   </button>
-                  <button 
+                  <button
                     @click="handleRejectInvitation(invitation.id!)"
                     :disabled="processingInvitation === invitation.id"
-                    class="px-3 py-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    class="px-3 py-1 bg-stone-200 hover:bg-stone-300 dark:bg-ink-3 dark:hover:bg-ink-4 text-stone-700 dark:text-stone-300 text-sm rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <Loader2 v-if="processingInvitation === invitation.id" class="h-4 w-4 animate-spin" />
                     <X v-else class="h-4 w-4" />
@@ -62,28 +62,28 @@
           </div>
           
           <!-- Show existing sites if any -->
-          <div v-if="userSites.length > 0" class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">
-            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Your existing sites</h3>
+          <div v-if="userSites.length > 0" class="mt-6 pt-6 border-t border-stone-200 dark:border-ink-4">
+            <h3 class="text-sm font-medium text-stone-700 dark:text-stone-300 mb-3">Your existing sites</h3>
             <div class="space-y-3">
               <template v-for="userSite in userSites" :key="userSite.id">
                 <div v-if="userSite.expand?.site"
                      @click="selectSite(userSite.site)"
                      :class="[
-                       'p-4 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors duration-200',
+                       'p-4 border border-stone-200 dark:border-ink-4 rounded-lg transition-colors duration-200',
                        isLoading 
                          ? 'opacity-50 cursor-not-allowed' 
-                         : 'hover:border-primary-500 dark:hover:border-primary-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700'
+                         : 'hover:border-amber-500 dark:hover:border-amber-500 cursor-pointer hover:bg-stone-50 dark:hover:bg-ink-2'
                      ]">
                 <div class="flex items-center justify-between">
                   <div class="flex-1">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ userSite.expand?.site?.name }}</h3>
-                    <p v-if="userSite.expand?.site?.description" class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ userSite.expand?.site?.description }}</p>
-                    <div class="mt-2 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                    <h3 class="text-lg font-medium text-ink dark:text-cream">{{ userSite.expand?.site?.name }}</h3>
+                    <p v-if="userSite.expand?.site?.description" class="text-sm text-stone-600 dark:text-stone-400 mt-1">{{ userSite.expand?.site?.description }}</p>
+                    <div class="mt-2 flex items-center space-x-4 text-sm text-stone-500 dark:text-stone-400">
                       <span>{{ userSite.expand?.site?.total_units }} units</span>
                       <span>{{ userSite.expand?.site?.total_planned_area?.toLocaleString() || 0 }} sqft</span>
                     </div>
                   </div>
-                  <ChevronRight class="h-5 w-5 text-gray-400" />
+                  <ChevronRight class="h-5 w-5 text-stone-400 dark:text-stone-500" />
                 </div>
                 </div>
               </template>
@@ -92,9 +92,9 @@
         </div>
         
         <div v-else-if="userSites.length === 0 && receivedInvitations.length === 0" class="text-center py-8">
-          <Building class="mx-auto h-12 w-12 text-gray-400" />
-          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No sites available</h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Create your first construction site to get started.</p>
+          <Building class="mx-auto h-12 w-12 text-stone-400 dark:text-stone-500" />
+          <h3 class="mt-2 text-sm font-medium text-ink dark:text-cream">No sites available</h3>
+          <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">Create your first construction site to get started.</p>
           <button @click="showCreateModal = true" class="mt-4 btn-primary">
             <Plus class="mr-2 h-4 w-4" />
             Create Site
@@ -106,26 +106,26 @@
             <div v-if="userSite.expand?.site"
                  @click="selectSite(userSite.site)"
                  :class="[
-                   'p-4 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors duration-200',
+                   'p-4 border border-stone-200 dark:border-ink-4 rounded-lg transition-colors duration-200',
                    isLoading 
                      ? 'opacity-50 cursor-not-allowed' 
-                     : 'hover:border-primary-500 dark:hover:border-primary-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700'
+                     : 'hover:border-amber-500 dark:hover:border-amber-500 cursor-pointer hover:bg-stone-50 dark:hover:bg-ink-2'
                  ]">
             <div class="flex items-center justify-between">
               <div class="flex-1">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ userSite.expand?.site?.name }}</h3>
-                <p v-if="userSite.expand?.site?.description" class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ userSite.expand?.site?.description }}</p>
-                <div class="mt-2 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                <h3 class="text-lg font-medium text-ink dark:text-cream">{{ userSite.expand?.site?.name }}</h3>
+                <p v-if="userSite.expand?.site?.description" class="text-sm text-stone-600 dark:text-stone-400 mt-1">{{ userSite.expand?.site?.description }}</p>
+                <div class="mt-2 flex items-center space-x-4 text-sm text-stone-500 dark:text-stone-400">
                   <span>{{ userSite.expand?.site?.total_units }} units</span>
                   <span>{{ userSite.expand?.site?.total_planned_area?.toLocaleString() || 0 }} sqft</span>
                 </div>
               </div>
-              <ChevronRight class="h-5 w-5 text-gray-400" />
+              <ChevronRight class="h-5 w-5 text-stone-400 dark:text-stone-500" />
             </div>
             </div>
           </template>
           
-          <div class="pt-4 border-t border-gray-200 dark:border-gray-600">
+          <div class="pt-4 border-t border-stone-200 dark:border-ink-4">
             <button @click="showCreateModal = true" class="w-full btn-outline">
               <Plus class="mr-2 h-4 w-4" />
               Create New Site
@@ -136,29 +136,29 @@
     </div>
 
     <!-- Create Site Modal -->
-    <div v-if="showCreateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="showCreateModal = false" @keydown.esc="showCreateModal = false" tabindex="-1">
-      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-20 lg:mb-4" @click.stop>
+    <div v-if="showCreateModal" class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-[60]" @click="showCreateModal = false" @keydown.esc="showCreateModal = false" tabindex="-1">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 mb-20 lg:mb-4" @click.stop>
         <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Create New Site</h3>
+          <h3 class="text-lg font-display font-medium text-ink dark:text-cream mb-4">Create New Site</h3>
           
           <form @submit.prevent="handleCreateSite" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Site Name</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Site Name</label>
               <input v-model="createForm.name" type="text" required class="input mt-1" placeholder="Enter site name" />
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Description</label>
               <textarea v-model="createForm.description" class="input mt-1" rows="2" placeholder="Site description (optional)"></textarea>
             </div>
             
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Total Units</label>
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Total Units</label>
                 <input v-model.number="createForm.total_units" type="number" required class="input mt-1" placeholder="0" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Planned Area (sqft)</label>
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Planned Area (sqft)</label>
                 <input v-model.number="createForm.total_planned_area" type="number" required class="input mt-1" placeholder="0" />
               </div>
             </div>

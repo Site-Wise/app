@@ -1,18 +1,18 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
+  <div class="min-h-screen bg-cream dark:bg-ink p-6">
     <!-- Header Section -->
     <div class="max-w-7xl mx-auto mb-8">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <div class="flex-1">
           <div class="flex items-center gap-3 mb-2">
-            <div class="p-2 bg-gradient-to-r from-orange-500 to-pink-600 rounded-xl">
-              <CreditCard class="h-6 w-6 text-white" />
+            <div class="p-2 bg-amber-100 dark:bg-amber-500/15 rounded-xl">
+              <CreditCard class="h-6 w-6 text-amber-700 dark:text-amber-400" />
             </div>
-            <h1 class="text-3xl font-bold bg-gray-900 dark:bg-gray-300 bg-clip-text text-transparent">
+            <h1 class="sw-h1 font-display text-ink dark:text-cream">
               {{ t('subscription.title') }}
             </h1>
           </div>
-          <p class="text-gray-600 dark:text-gray-400 max-w-2xl">
+          <p class="text-stone-600 dark:text-stone-400 max-w-2xl">
             {{ t('subscription.subtitle') }}
           </p>
         </div>
@@ -21,16 +21,16 @@
 
     <div class="max-w-7xl mx-auto space-y-8">
       <!-- Current Subscription Card -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
-        <div class="bg-gradient-to-r from-orange-50 to-pink-50 dark:from-orange-900/20 dark:to-pink-900/20 p-6 border-b border-gray-200 dark:border-gray-700">
+      <div class="bg-white dark:bg-ink-3 rounded-xl border border-stone-200 dark:border-ink-4 shadow-card overflow-hidden">
+        <div class="bg-amber-50 dark:bg-amber-500/10 p-6 border-b border-stone-200 dark:border-ink-4">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                <Package class="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              <div class="p-2 bg-amber-100 dark:bg-amber-500/15 rounded-md">
+                <Package class="h-5 w-5 text-amber-700 dark:text-amber-400" />
               </div>
               <div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('subscription.currentPlan') }}</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('subscription.activePlan') }}</p>
+                <h3 class="text-lg font-semibold font-display text-ink dark:text-cream">{{ t('subscription.currentPlan') }}</h3>
+                <p class="text-sm text-stone-600 dark:text-stone-400">{{ t('subscription.activePlan') }}</p>
               </div>
             </div>
             <div v-if="currentSubscription" class="text-right">
@@ -42,13 +42,13 @@
         </div>
         
         <div v-if="isLoading" class="p-8 text-center">
-          <Loader2 class="h-8 w-8 animate-spin mx-auto text-gray-400" />
-          <p class="mt-2 text-gray-600 dark:text-gray-400">{{ t('subscription.loading') }}</p>
+          <Loader2 class="h-8 w-8 animate-spin mx-auto text-stone-400" />
+          <p class="mt-2 text-stone-600 dark:text-stone-400">{{ t('subscription.loading') }}</p>
         </div>
 
         <div v-else-if="error" class="p-8 text-center">
-          <AlertCircle class="h-12 w-12 text-red-500 mx-auto mb-2" />
-          <p class="text-red-600 dark:text-red-400">{{ error }}</p>
+          <AlertCircle class="h-12 w-12 text-clay-500 mx-auto mb-2" />
+          <p class="text-clay-600 dark:text-clay-400">{{ error }}</p>
         </div>
 
         <div v-else-if="currentSubscription && currentPlan" class="p-6">
@@ -56,15 +56,15 @@
             <!-- Plan Details -->
             <div>
               <div class="flex items-center justify-between mb-4">
-                <h4 class="text-xl font-bold text-gray-900 dark:text-white">{{ currentPlan.name }}</h4>
+                <h4 class="text-xl font-bold font-display text-ink dark:text-cream">{{ currentPlan.name }}</h4>
                 <div v-if="!isCurrentPlanFree()" class="text-right">
-                  <span class="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                  <span class="sw-stat font-mono sw-tabular text-amber-700 dark:text-amber-400">
                     {{ formatCurrency(currentPlan.price, currentPlan.currency) }}
                   </span>
-                  <span class="text-sm text-gray-500 dark:text-gray-400">/{{ t('subscription.month') }}</span>
+                  <span class="text-sm text-stone-500 dark:text-stone-400">/{{ t('subscription.month') }}</span>
                 </div>
                 <div v-else class="text-right">
-                  <span class="text-2xl font-bold text-green-600 dark:text-green-400">
+                  <span class="sw-stat font-display text-forest-600 dark:text-forest-400">
                     {{ t('subscription.free') }}
                   </span>
                 </div>
@@ -72,57 +72,57 @@
               
               <div class="space-y-3">
                 <!-- Show billing info only for paid plans -->
-                <div v-if="!isCurrentPlanFree()" class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('subscription.nextBilling') }}</span>
-                  <span class="font-medium text-gray-900 dark:text-white">
+                <div v-if="!isCurrentPlanFree()" class="flex items-center justify-between p-3 bg-stone-50 dark:bg-ink-2 rounded-md">
+                  <span class="text-sm text-stone-600 dark:text-stone-400">{{ t('subscription.nextBilling') }}</span>
+                  <span class="font-medium text-ink dark:text-cream">
                     {{ formatDate(currentSubscription?.current_period_end || '') }}
                   </span>
                 </div>
-                <div v-if="!isCurrentPlanFree()" class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('subscription.billingCycle') }}</span>
-                  <span class="font-medium text-gray-900 dark:text-white">{{ t('subscription.monthly') }}</span>
+                <div v-if="!isCurrentPlanFree()" class="flex items-center justify-between p-3 bg-stone-50 dark:bg-ink-2 rounded-md">
+                  <span class="text-sm text-stone-600 dark:text-stone-400">{{ t('subscription.billingCycle') }}</span>
+                  <span class="font-medium text-ink dark:text-cream">{{ t('subscription.monthly') }}</span>
                 </div>
-                
+
                 <!-- Free plan info -->
-                <div v-if="isCurrentPlanFree()" class="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <span class="text-sm text-green-600 dark:text-green-400">{{ t('subscription.planType') }}</span>
-                  <span class="font-medium text-green-700 dark:text-green-300">{{ t('subscription.freeForever') }}</span>
+                <div v-if="isCurrentPlanFree()" class="flex items-center justify-between p-3 bg-forest-500/10 dark:bg-forest-500/15 rounded-md">
+                  <span class="text-sm text-forest-700 dark:text-forest-400">{{ t('subscription.planType') }}</span>
+                  <span class="font-medium text-forest-700 dark:text-forest-400">{{ t('subscription.freeForever') }}</span>
                 </div>
-                
-                <div v-if="currentSubscription?.cancel_at_period_end" class="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                  <span class="text-sm text-red-600 dark:text-red-400">{{ t('subscription.cancelledOn') }}</span>
-                  <span class="font-medium text-red-700 dark:text-red-300">
+
+                <div v-if="currentSubscription?.cancel_at_period_end" class="flex items-center justify-between p-3 bg-clay-500/10 dark:bg-clay-500/15 rounded-md">
+                  <span class="text-sm text-clay-700 dark:text-clay-400">{{ t('subscription.cancelledOn') }}</span>
+                  <span class="font-medium text-clay-700 dark:text-clay-400">
                     {{ formatDate(currentSubscription?.cancelled_at || '') }}
                   </span>
                 </div>
               </div>
 
               <!-- Subscription Status Messages -->
-              <div v-if="subscriptionStatus === 'cancelled'" class="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <div v-if="subscriptionStatus === 'cancelled'" class="mt-4 p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-md">
                 <div class="flex items-center gap-2">
-                  <AlertTriangle class="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                  <span class="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  <AlertTriangle class="h-4 w-4 text-amber-700 dark:text-amber-400" />
+                  <span class="text-sm font-medium text-amber-800 dark:text-amber-400">
                     {{ t('subscription.cancellationScheduled', { date: formatDate(currentSubscription?.current_period_end || '') }) }}
                   </span>
                 </div>
-                <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                <p class="text-xs text-amber-700 dark:text-amber-400 mt-1">
                   {{ t('subscription.cancellationNote') }}
                 </p>
               </div>
 
               <!-- Plan Actions -->
               <div class="mt-6 flex gap-3">
-                <button 
+                <button
                   v-if="canReactivateSubscription"
                   @click="confirmReactivate"
-                  class="flex-1 px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors"
+                  class="flex-1 px-4 py-2 bg-forest-500 text-white hover:bg-forest-500/90 rounded-md transition-colors"
                 >
                   {{ t('subscription.reactivate') }}
                 </button>
-                <button 
+                <button
                   v-else-if="!isSubscriptionCancelled && !isCurrentPlanFree()"
                   @click="showCancelModal = true"
-                  class="flex-1 px-4 py-2 border border-red-300 text-red-700 hover:bg-red-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                  class="flex-1 px-4 py-2 border border-clay-500/50 text-clay-700 hover:bg-clay-500/10 dark:border-clay-500/50 dark:text-clay-400 dark:hover:bg-clay-500/15 rounded-md transition-colors"
                 >
                   {{ t('subscription.cancelPlan') }}
                 </button>
@@ -137,14 +137,14 @@
 
             <!-- Usage Overview -->
             <div>
-              <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">{{ t('subscription.currentUsage') }}</h4>
+              <h4 class="text-lg font-semibold font-display text-ink dark:text-cream mb-4">{{ t('subscription.currentUsage') }}</h4>
               <div class="space-y-4">
                 <div v-for="(limit, key) in usageLimits" :key="key" class="space-y-2">
                   <div class="flex items-center justify-between">
-                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <span class="text-sm font-medium text-stone-700 dark:text-stone-300">
                       {{ t(`subscription.limits.${key}`) }}
                     </span>
-                    <span class="text-sm text-gray-600 dark:text-gray-400">
+                    <span class="text-sm font-mono sw-tabular text-stone-600 dark:text-stone-400">
                       <template v-if="limit.disabled">
                         {{ t('subscription.featureDisabled') }}
                       </template>
@@ -156,20 +156,20 @@
                       </template>
                     </span>
                   </div>
-                  <div v-if="!limit.disabled" class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div 
+                  <div v-if="!limit.disabled" class="w-full bg-stone-200 dark:bg-ink-2 rounded-full h-2">
+                    <div
                       :class="[
                         'h-2 rounded-full transition-all duration-300',
-                        limit.exceeded ? 'bg-red-500' : limit.unlimited ? 'bg-green-500' : 'bg-orange-500'
+                        limit.exceeded ? 'bg-clay-500' : limit.unlimited ? 'bg-forest-500' : 'bg-amber-500'
                       ]"
                       :style="{ width: getUsagePercentage(limit) + '%' }"
                     ></div>
                   </div>
-                  <div v-if="limit.disabled" class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                  <div v-if="limit.disabled" class="flex items-center gap-1 text-xs text-stone-500 dark:text-stone-400">
                     <X class="h-3 w-3" />
                     {{ t('subscription.featureNotAvailable') }}
                   </div>
-                  <div v-else-if="limit.exceeded" class="flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
+                  <div v-else-if="limit.exceeded" class="flex items-center gap-1 text-xs text-clay-600 dark:text-clay-400">
                     <AlertTriangle class="h-3 w-3" />
                     {{ t('subscription.limitExceeded') }}
                   </div>
@@ -180,8 +180,8 @@
         </div>
 
         <div v-else class="p-8 text-center">
-          <Package class="h-12 w-12 text-gray-400 mx-auto mb-2" />
-          <p class="text-gray-600 dark:text-gray-400">{{ t('subscription.noSubscription') }}</p>
+          <Package class="h-12 w-12 text-stone-400 mx-auto mb-2" />
+          <p class="text-stone-600 dark:text-stone-400">{{ t('subscription.noSubscription') }}</p>
           <button 
             @click="showUpgradeModal = true"
             class="btn-primary"
@@ -192,89 +192,89 @@
       </div>
 
       <!-- Available Plans (shown when upgrading) -->
-      <div v-if="showUpgradeModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-          <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+      <div v-if="showUpgradeModal" class="fixed inset-0 bg-ink/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
+        <div class="bg-white dark:bg-ink-3 rounded-xl shadow-modal border border-stone-200 dark:border-ink-4 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div class="p-6 border-b border-stone-200 dark:border-ink-4">
             <div class="flex items-center justify-between">
               <div>
-                <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ t('subscription.choosePlan') }}</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('subscription.selectPlanDescription') }}</p>
+                <h3 class="text-xl font-bold font-display text-ink dark:text-cream">{{ t('subscription.choosePlan') }}</h3>
+                <p class="text-sm text-stone-600 dark:text-stone-400">{{ t('subscription.selectPlanDescription') }}</p>
               </div>
-              <button @click="showUpgradeModal = false" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                <X class="h-5 w-5 text-gray-500" />
+              <button @click="showUpgradeModal = false" class="p-2 hover:bg-stone-100 dark:hover:bg-ink-2 rounded-md">
+                <X class="h-5 w-5 text-stone-500" />
               </button>
             </div>
           </div>
-          
+
           <div class="p-6">
             <div v-if="plansLoading" class="text-center py-8">
-              <Loader2 class="h-8 w-8 animate-spin mx-auto text-gray-400" />
-              <p class="mt-2 text-gray-600 dark:text-gray-400">{{ t('subscription.loadingPlans') }}</p>
+              <Loader2 class="h-8 w-8 animate-spin mx-auto text-stone-400" />
+              <p class="mt-2 text-stone-600 dark:text-stone-400">{{ t('subscription.loadingPlans') }}</p>
             </div>
             
             <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div v-for="plan in availablePlans" :key="plan.id" class="relative">
                 <div :class="[
                   'p-6 border-2 rounded-xl transition-all duration-200 cursor-pointer',
-                  plan.id === currentPlan?.id 
-                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' 
-                    : 'border-gray-200 dark:border-gray-600 hover:border-orange-300 dark:hover:border-orange-500'
+                  plan.id === currentPlan?.id
+                    ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10'
+                    : 'border-stone-200 dark:border-ink-4 hover:border-amber-300 dark:hover:border-amber-500'
                 ]" @click="selectPlan(plan)">
                   <div v-if="plan.id === currentPlan?.id" class="absolute top-4 right-4">
-                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">
+                    <span class="sw-eyebrow inline-flex items-center px-2 py-1 rounded-md bg-amber-500 text-ink">
                       {{ t('subscription.current') }}
                     </span>
                   </div>
-                  
+
                   <div class="text-center">
-                    <h4 class="text-lg font-bold text-gray-900 dark:text-white">{{ plan.name }}</h4>
+                    <h4 class="text-lg font-bold font-display text-ink dark:text-cream">{{ plan.name }}</h4>
                     <div class="mt-2">
-                      <span v-if="plan.price === 0 || plan.is_default" class="text-3xl font-bold text-green-600 dark:text-green-400">
+                      <span v-if="plan.price === 0 || plan.is_default" class="sw-stat font-display text-forest-600 dark:text-forest-400">
                         {{ t('subscription.free') }}
                       </span>
                       <div v-else>
-                        <span class="text-3xl font-bold text-orange-600 dark:text-orange-400">
+                        <span class="sw-stat font-mono sw-tabular text-amber-700 dark:text-amber-400">
                           {{ formatCurrency(plan.price, plan.currency) }}
                         </span>
-                        <span class="text-gray-500 dark:text-gray-400">/{{ t('subscription.month') }}</span>
+                        <span class="text-stone-500 dark:text-stone-400">/{{ t('subscription.month') }}</span>
                       </div>
                     </div>
                   </div>
                   
                   <div class="mt-6 space-y-3">
                     <div class="flex items-center justify-between text-sm">
-                      <span class="text-gray-600 dark:text-gray-400">{{ t('subscription.limits.items') }}</span>
-                      <span class="font-medium text-gray-900 dark:text-white">
+                      <span class="text-stone-700 dark:text-stone-300">{{ t('subscription.limits.items') }}</span>
+                      <span class="font-medium font-mono sw-tabular text-ink dark:text-cream">
                         {{ formatPlanLimit(plan.features.max_items) }}
                       </span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                      <span class="text-gray-600 dark:text-gray-400">{{ t('subscription.limits.vendors') }}</span>
-                      <span class="font-medium text-gray-900 dark:text-white">
+                      <span class="text-stone-700 dark:text-stone-300">{{ t('subscription.limits.vendors') }}</span>
+                      <span class="font-medium font-mono sw-tabular text-ink dark:text-cream">
                         {{ formatPlanLimit(plan.features.max_vendors) }}
                       </span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                      <span class="text-gray-600 dark:text-gray-400">{{ t('subscription.limits.deliveries') }}</span>
-                      <span class="font-medium text-gray-900 dark:text-white">
+                      <span class="text-stone-700 dark:text-stone-300">{{ t('subscription.limits.deliveries') }}</span>
+                      <span class="font-medium font-mono sw-tabular text-ink dark:text-cream">
                         {{ formatPlanLimit(plan.features.max_deliveries) }}
                       </span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                      <span class="text-gray-600 dark:text-gray-400">{{ t('subscription.limits.services') }}</span>
-                      <span class="font-medium text-gray-900 dark:text-white">
+                      <span class="text-stone-700 dark:text-stone-300">{{ t('subscription.limits.services') }}</span>
+                      <span class="font-medium font-mono sw-tabular text-ink dark:text-cream">
                         {{ formatPlanLimit(plan.features.max_services) }}
                       </span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                      <span class="text-gray-600 dark:text-gray-400">{{ t('subscription.limits.service_bookings') }}</span>
-                      <span class="font-medium text-gray-900 dark:text-white">
+                      <span class="text-stone-700 dark:text-stone-300">{{ t('subscription.limits.service_bookings') }}</span>
+                      <span class="font-medium font-mono sw-tabular text-ink dark:text-cream">
                         {{ formatPlanLimit(plan.features.max_service_bookings) }}
                       </span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                      <span class="text-gray-600 dark:text-gray-400">{{ t('subscription.limits.payments') }}</span>
-                      <span class="font-medium text-gray-900 dark:text-white">
+                      <span class="text-stone-700 dark:text-stone-300">{{ t('subscription.limits.payments') }}</span>
+                      <span class="font-medium font-mono sw-tabular text-ink dark:text-cream">
                         {{ formatPlanLimit(plan.features.max_payments) }}
                       </span>
                     </div>
@@ -296,37 +296,37 @@
       </div>
 
       <!-- Cancel Subscription Modal -->
-      <div v-if="showCancelModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md">
+      <div v-if="showCancelModal" class="fixed inset-0 bg-ink/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
+        <div class="bg-white dark:bg-ink-3 rounded-xl shadow-modal border border-stone-200 dark:border-ink-4 w-full max-w-md">
           <div class="p-6">
             <div class="flex items-center gap-3 mb-4">
-              <div class="p-3 bg-red-100 dark:bg-red-900/30 rounded-xl">
-                <AlertTriangle class="h-6 w-6 text-red-600 dark:text-red-400" />
+              <div class="p-3 bg-clay-500/10 dark:bg-clay-500/15 rounded-xl">
+                <AlertTriangle class="h-6 w-6 text-clay-500" />
               </div>
               <div>
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ t('subscription.cancelSubscription') }}</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('subscription.confirmCancel') }}</p>
+                <h3 class="text-lg font-bold font-display text-ink dark:text-cream">{{ t('subscription.cancelSubscription') }}</h3>
+                <p class="text-sm text-stone-600 dark:text-stone-400">{{ t('subscription.confirmCancel') }}</p>
               </div>
             </div>
-            
-            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-6">
-              <p class="text-sm text-amber-800 dark:text-amber-200">
+
+            <div class="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-md p-4 mb-6">
+              <p class="text-sm text-amber-800 dark:text-amber-400">
                 {{ t('subscription.cancelNote', { date: formatDate(currentSubscription?.current_period_end || '') }) }}
               </p>
             </div>
-            
+
             <div class="flex gap-3">
-              <button 
+              <button
                 @click="confirmCancel"
                 :disabled="cancelling"
-                class="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white hover:bg-red-700 disabled:bg-gray-400 rounded-lg transition-colors"
+                class="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-clay-500 text-white hover:bg-clay-500/90 disabled:bg-stone-400 rounded-md transition-colors"
               >
                 <Loader2 v-if="cancelling" class="h-4 w-4 animate-spin" />
                 {{ cancelling ? t('subscription.cancelling') : t('subscription.confirmCancelButton') }}
               </button>
-              <button 
+              <button
                 @click="showCancelModal = false"
-                class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                class="flex-1 px-4 py-2 border border-stone-300 dark:border-ink-4 text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-ink-2 rounded-md transition-colors"
               >
                 {{ t('common.cancel') }}
               </button>
@@ -378,15 +378,15 @@ const upgrading = ref(false);
 const cancelling = ref(false);
 
 const getStatusBadgeClass = (status: string | undefined) => {
-  if (!status) return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300';
-  
+  if (!status) return 'sw-badge sw-badge--neutral';
+
   const classes = {
-    active: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300',
-    cancelled: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300',
-    expired: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300',
-    past_due: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+    active: 'sw-badge sw-badge--success',
+    cancelled: 'sw-badge sw-badge--danger',
+    expired: 'sw-badge sw-badge--neutral',
+    past_due: 'sw-badge sw-badge--neutral'
   };
-  return classes[status as keyof typeof classes] || 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300';
+  return classes[status as keyof typeof classes] || 'sw-badge sw-badge--neutral';
 };
 
 const formatCurrency = (amount: number, currency: string) => {

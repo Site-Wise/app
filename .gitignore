@@ -51,3 +51,9 @@ PWA_TESTING_GUIDE.md
 src/assets/legal/privacy*.js
 src/assets/legal/terms*.js
 src/assets/legal/index.js
+
+.claude
+# e2e / docs tooling secrets & artifacts
+.env.e2e
+e2e/.auth/
+e2e/.media/

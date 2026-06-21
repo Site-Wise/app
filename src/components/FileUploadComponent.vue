@@ -15,13 +15,13 @@
          @keydown.space.prevent="openFileSelector">
 
       <div class="upload-content">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mx-auto h-12 w-12 text-gray-400">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mx-auto h-12 w-12 text-stone-400 dark:text-stone-500">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
         </svg>
-        <p class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+        <p class="mt-2 text-sm font-medium text-ink dark:text-cream">
           {{ t('fileUpload.clickOrDrag') }}
         </p>
-        <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('fileUpload.maxSize', { size: maxSizeFormatted }) }}</p>
+        <p class="text-xs text-stone-600 dark:text-stone-400">{{ t('fileUpload.maxSize', { size: maxSizeFormatted }) }}</p>
       </div>
     </div>
 
@@ -57,7 +57,7 @@
         </button>
       </div>
 
-      <p class="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
+      <p class="text-xs text-stone-600 dark:text-stone-400 text-center mt-2">
         {{ t('fileUpload.maxSize', { size: maxSizeFormatted }) }}
       </p>
     </div>
@@ -111,19 +111,19 @@
     </div>
 
     <!-- PDF Conversion Modal -->
-    <div v-if="showPdfModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 z-[60] flex items-center justify-center p-4">
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+    <div v-if="showPdfModal" class="fixed inset-0 bg-ink/60 z-[60] flex items-center justify-center p-4">
+      <div class="bg-white dark:bg-ink-3 rounded-xl shadow-modal border border-stone-200 dark:border-ink-4 p-6 max-w-md w-full mx-4">
+        <h3 class="text-lg font-medium text-ink dark:text-cream mb-4">
           {{ t('fileUpload.pdfConversion') }}
         </h3>
         <div class="mb-4">
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+          <p class="text-sm text-stone-600 dark:text-stone-400 mb-2">
             {{ t('fileUpload.pdfConversionMessage') }}
           </p>
-          <div v-if="pdfToConvert" class="text-xs text-gray-500 dark:text-gray-500">
+          <div v-if="pdfToConvert" class="text-xs text-stone-500 dark:text-stone-500">
             <div class="flex items-center justify-between">
               <span>{{ pdfToConvert.name }}</span>
-              <span v-if="pdfPageCount > 0">{{ t('fileUpload.pdfPageCount', { count: pdfPageCount }) }}</span>
+              <span v-if="pdfPageCount > 0" class="font-mono">{{ t('fileUpload.pdfPageCount', { count: pdfPageCount }) }}</span>
             </div>
             <div v-if="estimatedSizeText" class="mt-1">
               {{ t('fileUpload.estimatedSize', { size: estimatedSizeText }) }}
@@ -142,13 +142,13 @@
     </div>
 
     <!-- PDF Conversion Progress -->
-    <div v-if="convertingPdf" class="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+    <div v-if="convertingPdf" class="mt-4 p-4 bg-amber-50 dark:bg-amber-500/10 rounded-lg border border-amber-200 dark:border-amber-700">
       <div class="flex items-center">
-        <svg class="animate-spin h-5 w-5 text-blue-600 dark:text-blue-400 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <svg class="animate-spin h-5 w-5 text-amber-600 dark:text-amber-400 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
-        <span class="text-sm text-blue-600 dark:text-blue-400">
+        <span class="text-sm text-ink dark:text-cream">
           {{ t('fileUpload.convertingPdf', {
             current: conversionProgress.current,
             total: conversionProgress.total
@@ -476,11 +476,11 @@ watch(() => props.modelValue, (newFiles) => {
 
 <style scoped>
 .file-upload-component {
-  @apply border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center transition-colors cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 block;
+  @apply border-2 border-dashed border-stone-300 dark:border-ink-4 rounded-lg p-8 text-center transition-colors cursor-pointer hover:border-stone-400 dark:hover:border-stone-500 block;
 }
 
 .file-upload-component.drag-over {
-  @apply border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20;
+  @apply border-amber-500 dark:border-amber-400 bg-amber-50 dark:bg-amber-500/10;
 }
 
 .upload-content {
@@ -488,19 +488,19 @@ watch(() => props.modelValue, (newFiles) => {
 }
 
 .mobile-upload-options {
-  @apply p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg;
+  @apply p-4 border-2 border-dashed border-stone-300 dark:border-ink-4 rounded-lg;
 }
 
 .mobile-upload-button {
-  @apply flex items-center justify-center space-x-3 p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors touch-manipulation;
+  @apply flex items-center justify-center space-x-3 p-4 border border-stone-300 dark:border-ink-4 rounded-lg bg-white dark:bg-ink-3 text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-ink-4 transition-colors touch-manipulation;
 }
 
 .camera-button {
-  @apply text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20;
+  @apply text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-500/10;
 }
 
 .file-button {
-  @apply text-green-600 dark:text-green-400 border-green-300 dark:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20;
+  @apply text-forest-700 dark:text-forest-400 border-forest-300 dark:border-forest-700 hover:bg-forest-50 dark:hover:bg-forest-500/10;
 }
 
 .preview-grid {
@@ -512,23 +512,23 @@ watch(() => props.modelValue, (newFiles) => {
 }
 
 .preview-image {
-  @apply w-full h-32 object-cover rounded-lg;
+  @apply w-full h-32 object-cover rounded-lg border border-stone-200 dark:border-ink-4;
 }
 
 .file-preview {
-  @apply w-full h-32 bg-gray-100 dark:bg-gray-800 rounded-lg flex flex-col items-center justify-center p-2;
+  @apply w-full h-32 bg-stone-100 dark:bg-ink-4 border border-stone-200 dark:border-ink-4 rounded-lg flex flex-col items-center justify-center p-2 text-stone-500 dark:text-stone-400;
 }
 
 .file-name {
-  @apply text-xs text-gray-700 dark:text-gray-300 mt-2 truncate w-full text-center;
+  @apply text-xs text-stone-700 dark:text-stone-300 mt-2 truncate w-full text-center;
 }
 
 .remove-button {
-  @apply absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg;
+  @apply absolute -top-2 -right-2 bg-clay-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg;
 }
 
 .error-message {
-  @apply text-red-600 dark:text-red-400 text-sm mt-2;
+  @apply text-clay-700 dark:text-clay-400 text-sm mt-2;
 }
 
 .hidden {

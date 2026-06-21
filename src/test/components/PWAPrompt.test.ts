@@ -94,7 +94,7 @@ describe('PWAPrompt', () => {
       expect(wrapper.find('.fixed.bottom-4').exists()).toBe(true)
       
       // Dismiss the prompt by clicking the close button
-      const closeButton = wrapper.find('.text-gray-400')
+      const closeButton = wrapper.find('button.text-stone-500')
       await closeButton.trigger('click')
       await nextTick()
       
@@ -207,7 +207,7 @@ describe('PWAPrompt', () => {
       wrapper = mount(PWAPrompt)
       await nextTick()
       
-      expect(wrapper.find('.from-yellow-50').exists()).toBe(true)
+      expect(wrapper.find('.bg-amber-50').exists()).toBe(true)
       expect(wrapper.text()).toContain('pwa.youreOffline')
     })
 
@@ -217,7 +217,7 @@ describe('PWAPrompt', () => {
       wrapper = mount(PWAPrompt)
       await nextTick()
       
-      expect(wrapper.find('.from-yellow-50').exists()).toBe(false)
+      expect(wrapper.find('.bg-amber-50').exists()).toBe(false)
     })
 
     it('should have correct positioning for offline indicator', async () => {
@@ -226,7 +226,7 @@ describe('PWAPrompt', () => {
       wrapper = mount(PWAPrompt)
       await nextTick()
       
-      const offlineIndicator = wrapper.find('.from-yellow-50')
+      const offlineIndicator = wrapper.find('.bg-amber-50')
       expect(offlineIndicator.classes()).toContain('fixed')
       expect(offlineIndicator.classes()).toContain('top-4')
       expect(offlineIndicator.classes()).toContain('left-1/2')

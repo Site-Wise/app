@@ -19,7 +19,7 @@
     </button>
 
     <!-- Image Counter -->
-    <div v-if="images.length > 1" class="absolute top-4 left-4 z-60 bg-black bg-opacity-50 text-white px-4 py-2 rounded-full text-sm font-medium">
+    <div v-if="images.length > 1" class="absolute top-4 left-4 z-60 bg-black bg-opacity-50 text-white px-4 py-2 rounded-md text-sm font-mono sw-tabular font-medium">
       {{ currentIndex + 1 }} / {{ images.length }}
     </div>
 
@@ -66,10 +66,10 @@
       />
       
       <!-- Error State -->
-      <div v-if="imageError" class="bg-gray-800 rounded-lg p-8 text-center">
-        <AlertCircle class="h-12 w-12 text-red-400 mx-auto mb-4" />
+      <div v-if="imageError" class="bg-ink-3 rounded-lg p-8 text-center">
+        <AlertCircle class="h-12 w-12 text-clay-400 mx-auto mb-4" />
         <p class="text-white text-lg mb-2">{{ t('messages.imageLoadError') }}</p>
-        <p class="text-gray-400 text-sm">{{ t('messages.checkImageAccess') }}</p>
+        <p class="text-stone-400 text-sm">{{ t('messages.checkImageAccess') }}</p>
       </div>
 
       <!-- Overlay Information -->
@@ -79,26 +79,26 @@
       >
         <div class="space-y-2 text-sm">
           <div v-if="currentOverlayInfo.vendorName" class="font-semibold">
-            <span class="text-gray-300">{{ t('delivery.vendor') }}:</span>
+            <span class="text-stone-300">{{ t('delivery.vendor') }}:</span>
             <span class="ml-1">{{ currentOverlayInfo.vendorName }}</span>
           </div>
-          
-          <div v-if="currentOverlayInfo.deliveryDate" class="text-gray-300">
+
+          <div v-if="currentOverlayInfo.deliveryDate" class="text-stone-300">
             <span>{{ t('delivery.date') }}:</span>
             <span class="ml-1">{{ new Date(currentOverlayInfo.deliveryDate).toLocaleDateString() }}</span>
           </div>
-          
-          <div v-if="currentOverlayInfo.items && currentOverlayInfo.items.length > 0" class="border-t border-gray-600 pt-2">
-            <div class="text-gray-300 mb-1">{{ t('delivery.items') }}:</div>
+
+          <div v-if="currentOverlayInfo.items && currentOverlayInfo.items.length > 0" class="border-t border-stone-600 pt-2">
+            <div class="text-stone-300 mb-1">{{ t('delivery.items') }}:</div>
             <div class="space-y-1 max-h-24 overflow-y-auto">
-              <div 
-                v-for="item in currentOverlayInfo.items.slice(0, 3)" 
+              <div
+                v-for="item in currentOverlayInfo.items.slice(0, 3)"
                 :key="item"
-                class="text-xs bg-gray-800 bg-opacity-50 rounded px-2 py-1"
+                class="text-xs bg-ink-4 bg-opacity-50 rounded px-2 py-1"
               >
                 {{ item }}
               </div>
-              <div v-if="currentOverlayInfo.items.length > 3" class="text-xs text-gray-400">
+              <div v-if="currentOverlayInfo.items.length > 3" class="text-xs text-stone-400">
                 +{{ currentOverlayInfo.items.length - 3 }} {{ t('delivery.moreItems') }}
               </div>
             </div>
@@ -119,7 +119,7 @@
         class="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden cursor-pointer border-2 transition-all duration-200 hover:scale-105"
         :class="{ 
           'border-white shadow-lg': index === currentIndex, 
-          'border-transparent hover:border-gray-300': index !== currentIndex 
+          'border-transparent hover:border-stone-300': index !== currentIndex
         }"
       >
         <img 

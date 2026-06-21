@@ -3,19 +3,19 @@
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('vendors.returns') }}</h1>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ t('vendors.returnsSubtitle') }}</p>
+        <h1 class="font-display text-2xl font-bold text-ink dark:text-cream">{{ t('vendors.returns') }}</h1>
+        <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">{{ t('vendors.returnsSubtitle') }}</p>
       </div>
       <div class="mt-4 md:mt-0 flex space-x-3">
-        <button 
-          @click="exportReturns" 
+        <button
+          @click="exportReturns"
           class="btn-outline"
         >
           <Download class="mr-2 h-4 w-4" />
           {{ t('common.export') }}
         </button>
-        <button 
-          @click="openCreateModal" 
+        <button
+          @click="openCreateModal"
           :disabled="!canCreateReturn"
           :class="[
             canCreateReturn ? 'btn-primary' : 'btn-disabled'
@@ -49,7 +49,7 @@
           />
         </div>
       </div>
-      
+
       <div class="flex space-x-2">
         <select v-model="statusFilter" class="input min-w-0">
           <option value="">{{ t('filters.allStatuses') }}</option>
@@ -59,7 +59,7 @@
           <option value="completed">{{ t('vendors.returnStatuses.completed') }}</option>
           <option value="refunded">{{ t('vendors.returnStatuses.refunded') }}</option>
         </select>
-        
+
         <select v-model="vendorFilter" class="input min-w-0">
           <option value="">{{ t('filters.allVendors') }}</option>
           <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
@@ -70,149 +70,212 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div class="card bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700">
-        <div class="flex items-center">
-          <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-            <RotateCcw class="h-6 w-6 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-blue-700 dark:text-blue-300">{{ t('vendors.totalReturns') }}</p>
-            <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ returns.length }}</p>
-          </div>
-        </div>
+    <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      <div class="card p-4">
+        <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('vendors.totalReturns') }}</p>
+        <p class="sw-stat font-mono sw-tabular text-ink dark:text-cream mt-1">{{ returns.length.toLocaleString('en-IN') }}</p>
       </div>
 
-      <div class="card bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700">
-        <div class="flex items-center">
-          <div class="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-            <Clock class="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-yellow-700 dark:text-yellow-300">{{ t('vendors.pendingApproval') }}</p>
-            <p class="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{{ pendingReturns }}</p>
-          </div>
-        </div>
+      <div class="card p-4">
+        <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('vendors.pendingApproval') }}</p>
+        <p class="sw-stat font-mono sw-tabular text-amber-700 dark:text-amber-400 mt-1">{{ pendingReturns.toLocaleString('en-IN') }}</p>
       </div>
 
-      <div class="card bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700">
-        <div class="flex items-center">
-          <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-            <CheckCircle class="h-6 w-6 text-green-600 dark:text-green-400" />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-green-700 dark:text-green-300">{{ t('common.completed') }}</p>
-            <p class="text-2xl font-bold text-green-900 dark:text-green-100">{{ completedReturns }}</p>
-          </div>
-        </div>
+      <div class="card p-4">
+        <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('common.completed') }}</p>
+        <p class="sw-stat font-mono sw-tabular text-forest-700 dark:text-forest-400 mt-1">{{ completedReturns.toLocaleString('en-IN') }}</p>
       </div>
 
-      <div class="card bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700">
-        <div class="flex items-center">
-          <div class="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-            <DollarSign class="h-6 w-6 text-purple-600 dark:text-purple-400" />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-purple-700 dark:text-purple-300">{{ t('vendors.totalRefunded') }}</p>
-            <p class="text-2xl font-bold text-purple-900 dark:text-purple-100">₹{{ totalRefunded.toFixed(2) }}</p>
-          </div>
-        </div>
+      <div class="card p-4">
+        <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('vendors.totalRefunded') }}</p>
+        <p class="sw-stat font-mono sw-tabular text-forest-700 dark:text-forest-400 mt-1">₹{{ totalRefunded.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
       </div>
     </div>
 
     <!-- Returns Table -->
     <div class="card p-0 overflow-hidden">
-      <!-- Desktop Table -->
-      <div class="hidden lg:block overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead class="bg-gray-50 dark:bg-gray-700">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-stone-200 dark:divide-ink-4">
+          <!-- xl Desktop Headers -->
+          <thead class="bg-cream-2 dark:bg-ink-2 hidden xl:table-header-group">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                {{ t('vendors.returnDetails') }}
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
                 {{ t('common.vendor') }}
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                {{ t('common.amount') }}
+              <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
+                {{ t('vendors.returnDate') }}
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
+                {{ t('vendors.returnAmount') }}
+              </th>
+              <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
                 {{ t('common.status') }}
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
                 {{ t('common.actions') }}
               </th>
             </tr>
           </thead>
-          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            <tr v-for="returnItem in filteredReturns" :key="returnItem.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
-              <td class="px-6 py-4">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0 h-10 w-10">
-                    <div class="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                      <RotateCcw class="h-5 w-5 text-blue-600 dark:text-blue-400" />
+
+          <tbody class="bg-white dark:bg-ink-3 divide-y divide-stone-200 dark:divide-ink-4">
+            <!-- Skeleton loading state: xl+ table rows + < xl cards -->
+            <template v-if="returnsLoading">
+              <tr v-for="i in 6" :key="'skel-' + i" class="border-b border-stone-200 dark:border-ink-4">
+                <!-- xl+ skeleton cells -->
+                <td class="hidden xl:table-cell px-4 py-3.5"><Skeleton height="1rem" width="65%" /></td>
+                <td class="hidden xl:table-cell px-4 py-3.5 text-right"><Skeleton height="1rem" width="5rem" /></td>
+                <td class="hidden xl:table-cell px-4 py-3.5 text-right"><Skeleton height="1rem" width="6rem" /></td>
+                <td class="hidden xl:table-cell px-4 py-3.5"><Skeleton height="1.25rem" width="5rem" rounded="rounded-full" /></td>
+                <td class="hidden xl:table-cell px-4 py-3.5"><Skeleton height="1rem" width="4rem" /></td>
+                <!-- < xl skeleton card -->
+                <td class="xl:hidden px-0 py-0" colspan="5">
+                  <div class="p-4 space-y-3">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="flex items-center gap-3 min-w-0">
+                        <div class="h-9 w-9 rounded-lg bg-stone-100 dark:bg-ink-2 flex-shrink-0"></div>
+                        <div class="space-y-1.5 min-w-0">
+                          <Skeleton height="1rem" width="10rem" />
+                          <Skeleton height="0.75rem" width="7rem" />
+                        </div>
+                      </div>
+                      <Skeleton height="1.25rem" width="5rem" rounded="rounded-full" />
+                    </div>
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                      <div class="space-y-1"><Skeleton height="0.625rem" width="70%" /><Skeleton height="0.875rem" width="55%" /></div>
+                      <div class="space-y-1"><Skeleton height="0.625rem" width="70%" /><Skeleton height="0.875rem" width="65%" /></div>
+                    </div>
+                    <div class="pt-3 border-t border-stone-100 dark:border-ink-4 flex gap-2">
+                      <Skeleton height="1.5rem" width="4rem" rounded="rounded-md" />
                     </div>
                   </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900 dark:text-white">
-                      Return #{{ returnItem.id?.slice(-6) }}
-                    </div>
-                    <div class="text-sm text-gray-500 dark:text-gray-400">
-                      {{ formatDate(returnItem.return_date) }}
-                    </div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">
-                      {{ t(`vendors.returnReasons.${returnItem.reason}`) }}
-                    </div>
-                  </div>
+                </td>
+              </tr>
+            </template>
+            <tr v-else v-for="returnItem in filteredReturns" :key="returnItem.id" class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap">
+              <!-- xl table cells -->
+              <td class="hidden xl:table-cell px-4 py-3.5">
+                <div class="font-medium text-ink dark:text-cream">
+                  {{ returnItem.expand?.vendor?.contact_person || returnItem.expand?.vendor?.name || t('common.unknownVendor') }}
+                </div>
+                <div class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                  {{ t(`vendors.returnReasons.${returnItem.reason}`) }}
                 </div>
               </td>
-              <td class="px-6 py-4">
-                <div class="text-sm font-medium text-gray-900 dark:text-white">
-                  {{ returnItem.expand?.vendor?.contact_person || returnItem.expand?.vendor?.contact_person || t('common.unknownVendor') }}
-                </div>
-                <div v-if="returnItem.expand?.vendor?.contact_person && returnItem.expand?.vendor?.name" 
-                     class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ returnItem.expand.vendor.contact_person }}
-                </div>
+              <td class="hidden xl:table-cell px-4 py-3.5 text-right">
+                <span class="font-mono sw-tabular text-sm text-stone-600 dark:text-stone-400">
+                  {{ formatDate(returnItem.return_date) }}
+                </span>
               </td>
-              <td class="px-6 py-4">
-                <div class="text-sm font-medium text-gray-900 dark:text-white">
-                  ₹{{ returnItem.total_return_amount.toFixed(2) }}
+              <td class="hidden xl:table-cell px-4 py-3.5 text-right">
+                <div class="font-mono sw-tabular text-sm font-medium text-ink dark:text-cream">
+                  ₹{{ returnItem.total_return_amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                 </div>
-                <div v-if="returnItem.processing_option === 'credit_note'" class="text-sm text-blue-600 dark:text-blue-400">
+                <div v-if="returnItem.processing_option === 'credit_note'" class="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
                   {{ t('vendors.noteGenerated') }}
                 </div>
-                <div v-else-if="returnItem.actual_refund_amount" class="text-sm text-green-600 dark:text-green-400">
-                  {{ t('vendors.refunded') }}: ₹{{ returnItem.actual_refund_amount.toFixed(2) }}
+                <div v-else-if="returnItem.actual_refund_amount" class="font-mono sw-tabular text-xs text-forest-700 dark:text-forest-400 mt-0.5">
+                  {{ t('vendors.refunded') }}: ₹{{ returnItem.actual_refund_amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                 </div>
               </td>
-              <td class="px-6 py-4">
+              <td class="hidden xl:table-cell px-4 py-3.5">
                 <span :class="getStatusClass(returnItem.status)">
                   {{ t(`vendors.returnStatuses.${returnItem.status}`) }}
                 </span>
               </td>
-              <td class="px-6 py-4">
+              <td class="hidden xl:table-cell px-4 py-3.5">
                 <div class="flex items-center space-x-2">
-                  <button 
+                  <button
                     @click="viewReturn(returnItem)"
-                    class="text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300"
+                    class="h-8 w-8 flex items-center justify-center rounded-md text-stone-400 hover:text-ink dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap"
                   >
                     <Eye class="h-4 w-4" />
                   </button>
-                  <button 
-                    v-if="returnItem.status === 'initiated'" 
+                  <button
+                    v-if="returnItem.status === 'initiated'"
                     @click="approveReturn(returnItem)"
-                    class="text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300"
+                    class="h-8 w-8 flex items-center justify-center rounded-md text-forest-600 dark:text-forest-400 hover:text-forest-500 dark:hover:text-forest-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap"
                   >
                     <Check class="h-4 w-4" />
                   </button>
-                  <button 
-                    v-if="returnItem.status === 'approved' && returnItem.processing_option !== 'credit_note'" 
+                  <button
+                    v-if="returnItem.status === 'approved' && returnItem.processing_option !== 'credit_note'"
                     @click="processRefund(returnItem)"
-                    class="text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300"
+                    class="h-8 w-8 flex items-center justify-center rounded-md text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap"
                   >
                     <DollarSign class="h-4 w-4" />
                   </button>
+                </div>
+              </td>
+
+              <!-- < xl card row (hidden at xl) -->
+              <td class="xl:hidden px-0 py-0" colspan="5">
+                <div class="p-4">
+                  <!-- Top row: vendor + status -->
+                  <div class="flex items-start justify-between gap-3 mb-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                      <div class="h-9 w-9 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
+                        <RotateCcw class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <div class="min-w-0">
+                        <div class="font-medium text-ink dark:text-cream truncate">
+                          {{ returnItem.expand?.vendor?.contact_person || returnItem.expand?.vendor?.name || t('common.unknownVendor') }}
+                        </div>
+                        <div class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                          {{ t(`vendors.returnReasons.${returnItem.reason}`) }}
+                        </div>
+                      </div>
+                    </div>
+                    <span :class="getStatusClass(returnItem.status)" class="flex-shrink-0">
+                      {{ t(`vendors.returnStatuses.${returnItem.status}`) }}
+                    </span>
+                  </div>
+
+                  <!-- Mini-grid: date + amount + refund -->
+                  <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mb-3">
+                    <div>
+                      <p class="text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('vendors.returnDate') }}</p>
+                      <p class="font-mono sw-tabular text-stone-700 dark:text-stone-300 mt-0.5">{{ formatDate(returnItem.return_date) }}</p>
+                    </div>
+                    <div>
+                      <p class="text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('vendors.returnAmount') }}</p>
+                      <p class="font-mono sw-tabular font-medium text-ink dark:text-cream mt-0.5">₹{{ returnItem.total_return_amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
+                    </div>
+                    <div v-if="returnItem.processing_option === 'credit_note'">
+                      <p class="text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('vendors.status') }}</p>
+                      <p class="text-amber-700 dark:text-amber-400 mt-0.5">{{ t('vendors.noteGenerated') }}</p>
+                    </div>
+                    <div v-else-if="returnItem.actual_refund_amount">
+                      <p class="text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('vendors.refunded') }}</p>
+                      <p class="font-mono sw-tabular text-forest-700 dark:text-forest-400 mt-0.5">₹{{ returnItem.actual_refund_amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
+                    </div>
+                  </div>
+
+                  <!-- Actions row -->
+                  <div class="flex items-center gap-2 pt-3 border-t border-stone-100 dark:border-ink-4">
+                    <button
+                      @click="viewReturn(returnItem)"
+                      class="btn-outline text-xs py-1 px-2 flex items-center"
+                    >
+                      <Eye class="h-3 w-3 mr-1" />
+                      {{ t('common.view') }}
+                    </button>
+                    <button
+                      v-if="returnItem.status === 'initiated'"
+                      @click="approveReturn(returnItem)"
+                      class="btn-primary text-xs py-1 px-2 flex items-center bg-forest-600 hover:bg-forest-700"
+                    >
+                      <Check class="h-3 w-3 mr-1" />
+                      {{ t('common.approve') }}
+                    </button>
+                    <button
+                      v-if="returnItem.status === 'approved' && returnItem.processing_option !== 'credit_note'"
+                      @click="processRefund(returnItem)"
+                      class="btn-primary text-xs py-1 px-2 flex items-center"
+                    >
+                      <DollarSign class="h-3 w-3 mr-1" />
+                      {{ t('vendors.refund') }}
+                    </button>
+                  </div>
                 </div>
               </td>
             </tr>
@@ -220,94 +283,11 @@
         </table>
       </div>
 
-      <!-- Mobile Cards -->
-      <div class="lg:hidden divide-y divide-gray-200 dark:divide-gray-700">
-        <div v-for="returnItem in filteredReturns" :key="returnItem.id" class="p-4">
-          <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center">
-              <div class="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-3">
-                <RotateCcw class="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <div class="text-sm font-medium text-gray-900 dark:text-white">
-                  Return #{{ returnItem.id?.slice(-6) }}
-                </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ formatDate(returnItem.return_date) }}
-                </div>
-              </div>
-            </div>
-            <span :class="getStatusClass(returnItem.status)">
-              {{ t(`vendors.returnStatuses.${returnItem.status}`) }}
-            </span>
-          </div>
-          
-          <div class="space-y-2 text-sm">
-            <div class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('common.vendor') }}:</span>
-              <span class="text-gray-900 dark:text-white font-medium">
-                {{ returnItem.expand?.vendor?.contact_person || returnItem.expand?.vendor?.name || t('common.unknownVendor') }}
-              </span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('vendors.reason') }}:</span>
-              <span class="text-gray-900 dark:text-white">
-                {{ t(`vendors.returnReasons.${returnItem.reason}`) }}
-              </span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('common.amount') }}:</span>
-              <span class="text-gray-900 dark:text-white font-medium">
-                ₹{{ returnItem.total_return_amount.toFixed(2) }}
-              </span>
-            </div>
-            <div v-if="returnItem.processing_option === 'credit_note'" class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('vendors.status') }}:</span>
-              <span class="text-blue-600 dark:text-blue-400 font-medium">
-                {{ t('vendors.noteGenerated') }}
-              </span>
-            </div>
-            <div v-else-if="returnItem.actual_refund_amount" class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('vendors.refunded') }}:</span>
-              <span class="text-green-600 dark:text-green-400 font-medium">
-                ₹{{ returnItem.actual_refund_amount.toFixed(2) }}
-              </span>
-            </div>
-          </div>
-
-          <div class="flex justify-end space-x-2 mt-4">
-            <button 
-              @click="viewReturn(returnItem)"
-              class="btn-outline text-xs py-1 px-2"
-            >
-              <Eye class="h-3 w-3 mr-1" />
-              {{ t('common.view') }}
-            </button>
-            <button 
-              v-if="returnItem.status === 'initiated'" 
-              @click="approveReturn(returnItem)"
-              class="btn-primary text-xs py-1 px-2 bg-green-600 hover:bg-green-700"
-            >
-              <Check class="h-3 w-3 mr-1" />
-              {{ t('common.approve') }}
-            </button>
-            <button 
-              v-if="returnItem.status === 'approved' && returnItem.processing_option !== 'credit_note'" 
-              @click="processRefund(returnItem)"
-              class="btn-primary text-xs py-1 px-2 bg-purple-600 hover:bg-purple-700"
-            >
-              <DollarSign class="h-3 w-3 mr-1" />
-              {{ t('vendors.refund') }}
-            </button>
-          </div>
-        </div>
-      </div>
-
       <!-- Empty State -->
-      <div v-if="filteredReturns.length === 0" class="text-center py-12">
-        <RotateCcw class="mx-auto h-12 w-12 text-gray-400" />
-        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('vendors.noReturnsFound') }}</h3>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+      <div v-if="filteredReturns.length === 0" class="flex flex-col items-center justify-center py-16 px-4 text-center">
+        <RotateCcw class="h-12 w-12 text-stone-300 dark:text-stone-600 mb-4" />
+        <h3 class="font-display text-base font-semibold text-ink dark:text-cream">{{ t('vendors.noReturnsFound') }}</h3>
+        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400 max-w-sm">
           {{ searchQuery || statusFilter || vendorFilter ? t('vendors.tryAdjustingFilters') : t('vendors.getStartedReturn') }}
         </p>
       </div>
@@ -353,10 +333,9 @@ import {
   Eye,
   Check,
   DollarSign,
-  RotateCcw,
-  Clock,
-  CheckCircle
+  RotateCcw
 } from 'lucide-vue-next';
+import Skeleton from '../components/Skeleton.vue';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useSiteData } from '../composables/useSiteData';
@@ -388,7 +367,7 @@ const isEditMode = ref(false);
 const selectedReturn = ref<VendorReturn | null>(null);
 
 // Use site data management
-const { data: returnsData, reload: reloadReturns } = useSiteData(
+const { data: returnsData, loading: returnsLoading, reload: reloadReturns } = useSiteData(
   async () => await vendorReturnService.getAll()
 );
 
@@ -407,37 +386,37 @@ const accounts = computed(() => accountsData.value || []);
 
 const filteredReturns = computed(() => {
   let filtered = returns.value;
-  
+
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(r => 
+    filtered = filtered.filter(r =>
       r.id?.toLowerCase().includes(query) ||
       r.expand?.vendor?.contact_person?.toLowerCase().includes(query) ||
       r.expand?.vendor?.name?.toLowerCase().includes(query) ||
       r.reason?.toLowerCase().includes(query)
     );
   }
-  
+
   if (statusFilter.value) {
     filtered = filtered.filter(r => r.status === statusFilter.value);
   }
-  
+
   if (vendorFilter.value) {
     filtered = filtered.filter(r => r.vendor === vendorFilter.value);
   }
-  
+
   return filtered;
 });
 
-const pendingReturns = computed(() => 
+const pendingReturns = computed(() =>
   returns.value.filter(r => r.status === 'initiated').length
 );
 
-const completedReturns = computed(() => 
+const completedReturns = computed(() =>
   returns.value.filter(r => r.status === 'completed').length
 );
 
-const totalRefunded = computed(() => 
+const totalRefunded = computed(() =>
   returns.value.reduce((sum, r) => sum + (r.actual_refund_amount || 0), 0)
 );
 
@@ -452,11 +431,11 @@ const formatDate = (dateString: string) => {
 
 const getStatusClass = (status: string) => {
   const classes = {
-    'initiated': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-    'approved': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-    'rejected': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-    'completed': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-    'refunded': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
+    'initiated': 'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',
+    'approved': 'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-stone-100 text-stone-800 dark:bg-ink-4 dark:text-stone-300',
+    'rejected': 'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-clay-100 text-clay-800 dark:bg-clay-900 dark:text-clay-300',
+    'completed': 'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-forest-100 text-forest-800 dark:bg-forest-900 dark:text-forest-300',
+    'refunded': 'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-forest-100 text-forest-800 dark:bg-forest-900 dark:text-forest-300'
   };
   return classes[status as keyof typeof classes] || classes.initiated;
 };

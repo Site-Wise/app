@@ -1,20 +1,41 @@
 <template>
-  <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="$emit('close')" @keydown.esc="$emit('close')" tabindex="-1">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-20 lg:mb-4" @click.stop>
-      <div class="mt-3">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+  <!-- Overlay: bottom-sheet on mobile, centered dialog on desktop -->
+  <div
+    class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-sm"
+    @click="$emit('close')"
+    @keydown.esc="$emit('close')"
+    tabindex="-1"
+  >
+    <!-- Panel -->
+    <div
+      class="w-full sm:max-w-2xl bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden"
+      @click.stop
+    >
+      <!-- Grab handle (mobile only) -->
+      <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden flex-shrink-0" />
+
+      <!-- Sticky header -->
+      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0">
+        <div class="flex-1 min-w-0">
+          <h3 class="font-display text-lg font-semibold text-ink dark:text-cream truncate">
             {{ isEdit ? t('vendors.editReturn') : t('vendors.createReturn') }}
           </h3>
-          <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-            <X class="h-5 w-5" />
-          </button>
         </div>
+        <button
+          @click="$emit('close')"
+          class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors flex-shrink-0 active:scale-[0.98]"
+          :aria-label="t('common.close')"
+        >
+          <X class="h-5 w-5" />
+        </button>
+      </div>
 
-        <form @submit.prevent="handleSubmit" class="space-y-4">
+      <!-- Scrollable body -->
+      <form @submit.prevent="handleSubmit" class="flex-1 overflow-y-auto overscroll-contain scroll-smooth-touch">
+        <div class="px-5 sm:px-6 py-5 space-y-5">
           <!-- Vendor Selection -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
               {{ t('common.vendor') }} *
             </label>
             <VendorSearchBox
@@ -33,19 +54,19 @@
 
           <!-- Return Date -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
               {{ t('vendors.returnDate') }} *
             </label>
-            <input v-model="form.return_date" type="date" required class="input mt-1" />
+            <input v-model="form.return_date" type="date" required class="input mt-1 min-h-[44px]" />
           </div>
 
           <!-- Return Reason -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
               {{ t('vendors.returnReason') }} *
             </label>
-            <select v-model="form.reason" required class="input mt-1">
-              <option value="">Select a reason</option>
+            <select v-model="form.reason" required class="input mt-1 min-h-[44px]">
+              <option value="">{{ t('vendors.selectReason') }}</option>
               <option value="damaged">{{ t('vendors.returnReasons.damaged') }}</option>
               <option value="wrong_item">{{ t('vendors.returnReasons.wrong_item') }}</option>
               <option value="excess_delivery">{{ t('vendors.returnReasons.excess_delivery') }}</option>
@@ -57,40 +78,40 @@
 
           <!-- Return Items -->
           <div>
-            <div class="flex items-center justify-between mb-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div class="flex items-center justify-between mb-3">
+              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">
                 {{ t('vendors.returnItems') }} *
               </label>
-              <button 
-                type="button" 
-                @click="addReturnItem" 
-                class="btn-outline text-sm py-1 px-2"
+              <button
+                type="button"
+                @click="addReturnItem"
+                class="btn-outline text-sm py-1.5 px-3 flex items-center min-h-[36px] active:scale-[0.98]"
                 :disabled="!form.vendor || loadingDeliveryItems"
               >
-                <Loader2 v-if="loadingDeliveryItems" class="h-3 w-3 mr-1 animate-spin" />
-                <Plus v-else class="h-3 w-3 mr-1" />
-                {{ loadingDeliveryItems ? 'Loading...' : 'Add Item' }}
+                <Loader2 v-if="loadingDeliveryItems" class="h-3 w-3 mr-1.5 animate-spin" />
+                <Plus v-else class="h-3 w-3 mr-1.5" />
+                {{ loadingDeliveryItems ? t('common.loading') : t('vendors.addItem') }}
               </button>
             </div>
 
-            <div v-if="returnItems.length === 0" class="text-sm text-gray-500 dark:text-gray-400 py-4 text-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
-              No items selected. Click "Add Item" to select items to return.
+            <div v-if="returnItems.length === 0" class="text-sm text-stone-500 dark:text-stone-400 py-6 text-center border-2 border-dashed border-stone-300 dark:border-ink-4 rounded-xl">
+              {{ t('vendors.noItemsSelected') }}
             </div>
 
             <div v-else class="space-y-3">
-              <div 
-                v-for="(item, index) in returnItems" 
+              <div
+                v-for="(item, index) in returnItems"
                 :key="index"
-                class="border border-gray-200 dark:border-gray-600 rounded-lg p-3"
+                class="border border-stone-200 dark:border-ink-4 rounded-xl p-4"
               >
-                <div class="flex items-center justify-between mb-2">
-                  <h4 class="text-sm font-medium text-gray-900 dark:text-white">
-                    {{ item.delivery_item_data?.expand?.item?.name || 'Unknown Item' }}
+                <div class="flex items-center justify-between mb-3">
+                  <h4 class="text-sm font-medium text-ink dark:text-cream">
+                    {{ item.delivery_item_data?.expand?.item?.name || t('common.unknown') }}
                   </h4>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     @click="removeReturnItem(index)"
-                    class="text-red-600 hover:text-red-500"
+                    class="text-clay-600 dark:text-clay-400 hover:text-clay-700 dark:hover:text-clay-300 p-1 rounded active:scale-[0.98]"
                   >
                     <Trash2 class="h-4 w-4" />
                   </button>
@@ -98,19 +119,19 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
-                      Available Quantity
+                    <label class="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1">
+                      {{ t('vendors.availableQuantity') }}
                     </label>
-                    <div class="text-sm text-gray-900 dark:text-white">
-                      {{ getAvailableQuantity(item.delivery_item, item.delivery_item_data?.quantity || 0) }} {{ item.delivery_item_data?.expand?.item?.unit || 'units' }}
+                    <div class="text-sm text-ink dark:text-cream font-mono sw-tabular">
+                      {{ getAvailableQuantity(item.delivery_item, item.delivery_item_data?.quantity || 0) }} {{ item.delivery_item_data?.expand?.item?.unit || t('vendors.units') }}
                     </div>
-                    <div v-if="deliveryItemsReturnInfo[item.delivery_item]?.totalReturned > 0" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      ({{ deliveryItemsReturnInfo[item.delivery_item].totalReturned }} already returned)
+                    <div v-if="deliveryItemsReturnInfo[item.delivery_item]?.totalReturned > 0" class="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                      ({{ deliveryItemsReturnInfo[item.delivery_item].totalReturned }} {{ t('vendors.alreadyReturned') }})
                     </div>
                   </div>
 
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <label class="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1">
                       {{ t('vendors.quantityReturned') }} *
                     </label>
                     <input
@@ -119,21 +140,21 @@
                       step="0.01"
                       :max="getAvailableQuantity(item.delivery_item, item.delivery_item_data?.quantity || 0)"
                       required
-                      class="input text-sm"
+                      class="input text-sm font-mono sw-tabular min-h-[44px]"
                       @input="updateReturnAmount(index)"
                     />
                   </div>
 
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
-                      Return Rate (per unit)
+                    <label class="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1">
+                      {{ t('vendors.returnRatePerUnit') }}
                     </label>
-                    <input 
-                      v-model.number="item.return_rate" 
-                      type="number" 
-                      step="0.01" 
-                      required 
-                      class="input text-sm"
+                    <input
+                      v-model.number="item.return_rate"
+                      type="number"
+                      step="0.01"
+                      required
+                      class="input text-sm font-mono sw-tabular min-h-[44px]"
                       @input="updateReturnAmount(index)"
                     />
                   </div>
@@ -141,11 +162,11 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <label class="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1">
                       {{ t('vendors.itemCondition') }} *
                     </label>
-                    <select v-model="item.condition" required class="input text-sm">
-                      <option value="">Select condition</option>
+                    <select v-model="item.condition" required class="input text-sm min-h-[44px]">
+                      <option value="">{{ t('common.select') }}</option>
                       <option value="unopened">{{ t('vendors.itemConditions.unopened') }}</option>
                       <option value="opened">{{ t('vendors.itemConditions.opened') }}</option>
                       <option value="damaged">{{ t('vendors.itemConditions.damaged') }}</option>
@@ -154,24 +175,24 @@
                   </div>
 
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
-                      Return Amount
+                    <label class="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1">
+                      {{ t('vendors.returnAmount') }}
                     </label>
-                    <div class="text-sm font-medium text-gray-900 dark:text-white py-2">
-                      ₹{{ item.return_amount.toFixed(2) }}
+                    <div class="text-sm font-medium text-ink dark:text-cream font-mono sw-tabular min-h-[44px] flex items-center">
+                      ₹{{ item.return_amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                     </div>
                   </div>
                 </div>
 
                 <div class="mt-3">
-                  <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
-                    Item Notes
+                  <label class="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1">
+                    {{ t('vendors.itemNotes') }}
                   </label>
-                  <textarea 
-                    v-model="item.item_notes" 
-                    class="input text-sm" 
-                    rows="2" 
-                    placeholder="Additional notes about this item..."
+                  <textarea
+                    v-model="item.item_notes"
+                    class="input text-sm"
+                    rows="2"
+                    :placeholder="t('vendors.additionalItemNotes')"
                   ></textarea>
                 </div>
               </div>
@@ -179,34 +200,34 @@
           </div>
 
           <!-- Total Return Amount -->
-          <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+          <div class="bg-cream-2 dark:bg-ink-2 rounded-xl p-4">
             <div class="flex justify-between items-center">
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span class="text-sm font-medium text-stone-600 dark:text-stone-300">
                 {{ t('vendors.totalReturnAmount') }}
               </span>
-              <span class="text-lg font-bold text-gray-900 dark:text-white">
-                ₹{{ totalReturnAmount.toFixed(2) }}
+              <span class="text-lg font-semibold font-display text-ink dark:text-cream font-mono sw-tabular">
+                ₹{{ totalReturnAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
               </span>
             </div>
           </div>
 
           <!-- Notes -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
               {{ t('common.notes') }}
             </label>
-            <textarea 
-              v-model="form.notes" 
-              class="input mt-1" 
-              rows="3" 
-              placeholder="Additional notes about this return..."
+            <textarea
+              v-model="form.notes"
+              class="input mt-1"
+              rows="3"
+              :placeholder="t('vendors.additionalReturnNotes')"
             ></textarea>
           </div>
 
           <!-- Photo Upload -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Photos (Optional)
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
+              {{ t('vendors.photosOptional') }}
             </label>
             <div class="mt-1">
               <FileUploadComponent
@@ -218,67 +239,96 @@
               />
             </div>
           </div>
+        </div>
+      </form>
 
-          <!-- Actions -->
-          <div class="flex space-x-3 pt-4">
-            <button type="submit" :disabled="loading || returnItems.length === 0" class="flex-1 btn-primary">
-              <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-              {{ isEdit ? t('common.update') : t('common.create') }}
-            </button>
-            <button type="button" @click="$emit('close')" class="flex-1 btn-outline">
-              {{ t('common.cancel') }}
-            </button>
-          </div>
-        </form>
+      <!-- Sticky footer -->
+      <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 pb-[max(1rem,env(safe-area-inset-bottom))] flex-shrink-0">
+        <button
+          type="button"
+          @click="$emit('close')"
+          class="btn-outline min-h-[44px] active:scale-[0.98]"
+        >
+          {{ t('common.cancel') }}
+        </button>
+        <button
+          type="submit"
+          form=""
+          :disabled="loading || returnItems.length === 0"
+          class="flex-1 btn-primary min-h-[44px] active:scale-[0.98]"
+          @click.prevent="handleSubmit"
+        >
+          <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
+          {{ loading ? (isEdit ? t('common.updating') : t('common.creating')) : (isEdit ? t('common.update') : t('common.create')) }}
+        </button>
       </div>
     </div>
 
-    <!-- Delivery Items Selection Modal -->
-    <div v-if="showItemSelection" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60]" @click="showItemSelection = false" @keydown.esc="showItemSelection = false">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700" @click.stop>
-        <div class="mt-3">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Select Items to Return</h3>
-            <button @click="showItemSelection = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-              <X class="h-5 w-5" />
-            </button>
-          </div>
+    <!-- Delivery Items Selection Modal (nested bottom-sheet) -->
+    <div
+      v-if="showItemSelection"
+      class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-ink/60"
+      @click="showItemSelection = false"
+      @keydown.esc="showItemSelection = false"
+    >
+      <div
+        class="w-full sm:max-w-md bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[85vh] sm:max-h-[75vh] flex flex-col overflow-hidden"
+        @click.stop
+      >
+        <!-- Grab handle (mobile only) -->
+        <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden flex-shrink-0" />
 
-          <div class="space-y-2 max-h-96 overflow-y-auto">
-            <div 
-              v-for="item in availableDeliveryItems" 
-              :key="item.id"
-              class="p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-              @click="selectDeliveryItem(item)"
-            >
-              <div class="flex justify-between items-center">
-                <div>
-                  <div class="text-sm font-medium text-gray-900 dark:text-white">
-                    {{ item.expand?.item?.name || 'Unknown Item' }}
-                  </div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">
-                    Delivered: {{ formatDate(item.expand?.delivery?.delivery_date || '') }}
-                  </div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">
-                    Available: {{ getAvailableQuantity(item.id!, item.quantity) }} {{ item.expand?.item?.unit || 'units' }} @ ₹{{ item.unit_price }}
-                  </div>
-                  <div v-if="deliveryItemsReturnInfo[item.id!]?.totalReturned > 0" class="text-xs text-orange-600 dark:text-orange-400">
-                    ({{ deliveryItemsReturnInfo[item.id!].totalReturned }} of {{ item.quantity }} already returned)
-                  </div>
+        <!-- Header -->
+        <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display text-lg font-semibold text-ink dark:text-cream truncate">
+              {{ t('vendors.selectItemsToReturn') }}
+            </h3>
+          </div>
+          <button
+            @click="showItemSelection = false"
+            class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors flex-shrink-0 active:scale-[0.98]"
+            :aria-label="t('common.close')"
+          >
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+
+        <!-- Item list body -->
+        <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-4 space-y-2">
+          <div
+            v-for="item in availableDeliveryItems"
+            :key="item.id"
+            class="p-4 border border-stone-200 dark:border-ink-4 rounded-xl hover:bg-cream-2 dark:hover:bg-ink-2 cursor-pointer transition-colors active:scale-[0.99] min-h-[44px]"
+            @click="selectDeliveryItem(item)"
+          >
+            <div class="flex justify-between items-start gap-3">
+              <div class="min-w-0">
+                <div class="text-sm font-medium text-ink dark:text-cream truncate">
+                  {{ item.expand?.item?.name || t('common.unknown') }}
                 </div>
-                <div class="text-sm font-medium text-gray-900 dark:text-white">
-                  ₹{{ item.total_amount.toFixed(2) }}
+                <div class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                  {{ t('vendors.deliveredOn') }} {{ formatDate(item.expand?.delivery?.delivery_date || '') }}
+                </div>
+                <div class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                  {{ t('vendors.available') }} <span class="font-mono sw-tabular">{{ getAvailableQuantity(item.id!, item.quantity) }}</span> {{ item.expand?.item?.unit || t('vendors.units') }} @ <span class="font-mono sw-tabular">₹{{ item.unit_price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+                </div>
+                <div v-if="deliveryItemsReturnInfo[item.id!]?.totalReturned > 0" class="text-xs text-clay-600 dark:text-clay-400 mt-0.5">
+                  ({{ deliveryItemsReturnInfo[item.id!].totalReturned }} {{ t('common.of') }} {{ item.quantity }} {{ t('vendors.alreadyReturned') }})
                 </div>
               </div>
+              <div class="text-sm font-medium text-ink dark:text-cream font-mono sw-tabular flex-shrink-0">
+                ₹{{ item.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+              </div>
             </div>
+          </div>
 
-            <div v-if="loadingDeliveryItems" class="text-center py-8 text-gray-500 dark:text-gray-400">
-              <Loader2 class="h-6 w-6 animate-spin mx-auto mb-2" />
-              Loading delivery items...
-            </div>
-            <div v-else-if="availableDeliveryItems.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
-              No delivered items found for this vendor.
-            </div>
+          <div v-if="loadingDeliveryItems" class="text-center py-10 text-stone-500 dark:text-stone-400">
+            <Loader2 class="h-6 w-6 animate-spin mx-auto mb-2" />
+            <p class="text-sm">{{ t('vendors.loadingDeliveryItems') }}</p>
+          </div>
+          <div v-else-if="availableDeliveryItems.length === 0" class="text-center py-10 text-stone-500 dark:text-stone-400">
+            <p class="text-sm">{{ t('vendors.noDeliveredItemsFound') }}</p>
           </div>
         </div>
       </div>
@@ -469,7 +519,7 @@ const selectDeliveryItem = (deliveryItem: DeliveryItem) => {
     condition: '',
     item_notes: ''
   };
-  
+
   returnItems.value.push(returnItem);
   showItemSelection.value = false;
 };

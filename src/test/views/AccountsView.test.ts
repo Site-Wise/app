@@ -189,7 +189,7 @@ describe('AccountsView', () => {
       await wrapper.vm.$nextTick()
       
       expect(wrapper.text()).toContain('Test Bank Account')
-      expect(wrapper.text()).toContain('5000.00')
+      expect(wrapper.text()).toContain('5,000.00')
       expect(wrapper.text()).toContain('Test Bank')
     })
 
