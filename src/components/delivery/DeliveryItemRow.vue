@@ -1,8 +1,8 @@
 <template>
   <div class="border border-stone-200 dark:border-ink-4 rounded-xl p-4 bg-white dark:bg-ink-3">
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
-      <!-- Item Selection -->
-      <div class="md:col-span-4">
+    <!-- Item selector (full width) + remove -->
+    <div class="flex items-start gap-3">
+      <div class="flex-1 min-w-0">
         <ItemSelector
           ref="itemSelectorRef"
           :model-value="item.item"
@@ -18,10 +18,21 @@
           {{ errors.item }}
         </div>
       </div>
+      <button
+        v-if="!hideRemoveButton"
+        @click="$emit('remove', index)"
+        class="mt-7 h-9 w-9 flex-shrink-0 inline-flex items-center justify-center rounded-md text-clay-600 hover:text-clay-700 dark:text-clay-400 dark:hover:text-clay-300 hover:bg-clay-50 dark:hover:bg-clay-500/10 transition-colors active:scale-95"
+        :title="t('delivery.removeItem')"
+      >
+        <Trash2 class="h-4 w-4" />
+      </button>
+    </div>
 
+    <!-- Quantity · Unit Price · Total -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
       <!-- Quantity -->
-      <div class="md:col-span-2">
-        <label class="sw-eyebrow block mb-2">
+      <div>
+        <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
           {{ t('common.quantity') }} *
         </label>
         <input
@@ -33,7 +44,7 @@
           min="0.01"
           step="0.01"
           required
-          class="input font-mono sw-tabular"
+          class="input font-mono sw-tabular min-h-[44px]"
           :class="{ 'border-clay-400 dark:border-clay-500': errors.quantity }"
           placeholder="0"
         />
@@ -46,8 +57,8 @@
       </div>
 
       <!-- Unit Price -->
-      <div class="md:col-span-2 relative">
-        <label class="sw-eyebrow block mb-2">
+      <div class="relative">
+        <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
           {{ t('forms.unitPrice') }} *
         </label>
         <div class="relative">
@@ -60,14 +71,14 @@
             min="0.01"
             step="0.01"
             required
-            class="input pr-10 font-mono sw-tabular"
+            class="input pr-10 font-mono sw-tabular min-h-[44px]"
             :class="{ 'border-clay-400 dark:border-clay-500': errors.unit_price }"
             :placeholder="lastPrice !== null ? `Last: ₹${lastPrice.toFixed(2)}` : '0.00'"
           />
           <button
             type="button"
             @click="toggleTaxInput('unit_price')"
-            class="tax-trigger absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 rounded transition-colors"
+            class="tax-trigger absolute right-2 top-1/2 transform -translate-y-1/2 min-h-[36px] min-w-[36px] flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 rounded transition-colors"
             :title="t('delivery.addTax')"
           >
             <Percent class="h-4 w-4" />
@@ -86,7 +97,7 @@
               min="0"
               max="100"
               step="0.1"
-              class="w-16 px-2 py-1 text-center text-sm font-mono sw-tabular border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              class="w-16 px-2 py-2 text-center text-sm font-mono sw-tabular border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream focus:ring-2 focus:ring-amber-500 focus:border-transparent min-h-[44px]"
               placeholder="0"
               autofocus
               @keydown.enter.prevent="applyTax('unit_price')"
@@ -96,14 +107,14 @@
             <button
               type="button"
               @click="applyTax('unit_price')"
-              class="px-2 py-1 text-xs btn-primary"
+              class="px-3 py-2 text-xs btn-primary min-h-[44px] active:scale-95"
             >
               {{ t('common.apply') }}
             </button>
             <button
               type="button"
               @click="showTaxInput = null"
-              class="px-2 py-1 text-xs btn-outline"
+              class="px-3 py-2 text-xs btn-outline min-h-[44px] active:scale-95"
             >
               {{ t('common.cancel') }}
             </button>
@@ -112,8 +123,8 @@
       </div>
 
       <!-- Total Amount -->
-      <div class="md:col-span-2 relative">
-        <label class="sw-eyebrow block mb-2">
+      <div class="relative">
+        <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
           {{ t('common.total') }} *
         </label>
         <div class="relative">
@@ -126,14 +137,14 @@
             min="0.01"
             step="0.01"
             required
-            class="input pr-10 font-mono sw-tabular"
+            class="input pr-10 font-mono sw-tabular min-h-[44px]"
             :class="{ 'border-clay-400 dark:border-clay-500': errors.total_amount }"
             placeholder="0.00"
           />
           <button
             type="button"
             @click="toggleTaxInput('total_amount')"
-            class="tax-trigger absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 rounded transition-colors"
+            class="tax-trigger absolute right-2 top-1/2 transform -translate-y-1/2 min-h-[36px] min-w-[36px] flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 rounded transition-colors"
             :title="t('delivery.addTax')"
           >
             <Percent class="h-4 w-4" />
@@ -152,7 +163,7 @@
               min="0"
               max="100"
               step="0.1"
-              class="w-16 px-2 py-1 text-center text-sm font-mono sw-tabular border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              class="w-16 px-2 py-2 text-center text-sm font-mono sw-tabular border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream focus:ring-2 focus:ring-amber-500 focus:border-transparent min-h-[44px]"
               placeholder="0"
               autofocus
               @keydown.enter.prevent="applyTax('total_amount')"
@@ -162,14 +173,14 @@
             <button
               type="button"
               @click="applyTax('total_amount')"
-              class="px-2 py-1 text-xs btn-primary"
+              class="px-3 py-2 text-xs btn-primary min-h-[44px] active:scale-95"
             >
               {{ t('common.apply') }}
             </button>
             <button
               type="button"
               @click="showTaxInput = null"
-              class="px-2 py-1 text-xs btn-outline"
+              class="px-3 py-2 text-xs btn-outline min-h-[44px] active:scale-95"
             >
               {{ t('common.cancel') }}
             </button>
@@ -177,32 +188,18 @@
         </div>
       </div>
 
-      <!-- Actions -->
-      <div v-if="!hideRemoveButton" class="md:col-span-2">
-        <label class="sw-eyebrow block mb-2 invisible">
-          {{ t('common.actions') }}
-        </label>
-        <button
-          @click="$emit('remove', index)"
-          class="btn-outline text-clay-600 hover:text-clay-700 dark:text-clay-400 dark:hover:text-clay-300 border-clay-300 hover:border-clay-400 dark:border-clay-600 dark:hover:border-clay-500 w-full md:w-auto"
-          :title="t('delivery.removeItem')"
-        >
-          <Trash2 class="h-4 w-4" />
-          <span class="ml-2 md:hidden">{{ t('delivery.removeItem') }}</span>
-        </button>
-      </div>
     </div>
 
     <!-- Item Notes -->
     <div class="mt-4">
-      <label class="sw-eyebrow block mb-2">
+      <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
         {{ t('delivery.itemNotes') }}
       </label>
-      <textarea 
+      <textarea
         :value="item.notes"
         @input="handleNotesChange"
-        class="input" 
-        rows="2" 
+        class="input"
+        rows="2"
         :placeholder="t('delivery.itemNotesPlaceholder')"
       ></textarea>
     </div>

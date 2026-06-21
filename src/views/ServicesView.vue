@@ -136,17 +136,34 @@
 
     <!-- Add/Edit Modal -->
     <div v-if="showAddModal || editingService"
-      class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-[60]" @click="closeModal"
-      @keydown.esc="closeModal" tabindex="-1">
+      class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60"
+      @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
       <div
-        class="relative top-20 mx-auto p-5 border w-96 shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 mb-20 lg:mb-4"
+        class="w-full sm:max-w-lg bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden"
         @click.stop>
-        <div class="mt-3">
-          <h3 class="sw-h4 font-display text-ink dark:text-cream mb-4">
-            {{ editingService ? t('services.editService') : t('services.addService') }}
-          </h3>
 
-          <form @submit.prevent="saveService" class="space-y-4">
+        <!-- Grab handle (mobile only) -->
+        <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden"></div>
+
+        <!-- Sticky header -->
+        <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3">
+          <span class="flex h-9 w-9 flex-none items-center justify-center rounded-md bg-amber-500/15">
+            <Wrench class="h-5 w-5 text-amber-700 dark:text-amber-400" />
+          </span>
+          <div>
+            <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ editingService ? t('common.edit') : t('common.create') }}</p>
+            <h3 class="font-display text-lg font-semibold text-ink dark:text-cream leading-tight">{{ editingService ? t('services.editService') : t('services.addService') }}</h3>
+          </div>
+          <button type="button" @click="closeModal"
+            class="ml-auto h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-ink dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors"
+            aria-label="Close">
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+
+        <form @submit.prevent="saveService" class="flex flex-col flex-1 overflow-hidden">
+          <!-- Scrollable body -->
+          <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5 space-y-4">
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('services.serviceName')
               }}</label>
@@ -212,18 +229,19 @@
               <label for="is_active" class="ml-2 text-sm text-stone-700 dark:text-stone-300">{{ t('services.isActive')
               }}</label>
             </div>
+          </div>
 
-            <div class="flex space-x-3 pt-4">
-              <button type="submit" :disabled="saveLoading" class="flex-1 btn-primary">
-                <Loader2 v-if="saveLoading" class="mr-2 h-4 w-4 animate-spin" />
-                {{ editingService ? t('common.update') : t('common.create') }}
-              </button>
-              <button type="button" @click="closeModal" class="flex-1 btn-outline">
-                {{ t('common.cancel') }}
-              </button>
-            </div>
-          </form>
-        </div>
+          <!-- Sticky footer -->
+          <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex gap-3">
+            <button type="submit" :disabled="saveLoading" class="flex-1 btn-primary">
+              <Loader2 v-if="saveLoading" class="mr-2 h-4 w-4 animate-spin" />
+              {{ editingService ? t('common.update') : t('common.create') }}
+            </button>
+            <button type="button" @click="closeModal" class="flex-1 btn-outline">
+              {{ t('common.cancel') }}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -245,7 +263,8 @@ import {
   Truck,
   Briefcase,
   Car,
-  Settings
+  Settings,
+  X
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { usePermissions } from '../composables/usePermissions';

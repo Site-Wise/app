@@ -386,3 +386,67 @@
     to { transform: rotate(360deg); }
   }
 }
+
+/* ==========================================================================
+   Motion & feedback — page transitions + skeleton loaders
+   ========================================================================== */
+
+/* Route/page transition (fade + slight rise), paired with <transition name="page" mode="out-in"> */
+@layer components {
+  .page-enter-active {
+    transition: opacity var(--sw-dur-base) var(--sw-ease-snap),
+                transform var(--sw-dur-base) var(--sw-ease-snap);
+  }
+  .page-leave-active {
+    transition: opacity var(--sw-dur-micro) var(--sw-ease-cross);
+  }
+  .page-enter-from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  .page-leave-to {
+    opacity: 0;
+  }
+}
+
+/* Skeleton loader — branded shimmer. Used by Skeleton.vue and ad-hoc placeholders. */
+@layer utilities {
+  .sw-skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--sw-cream-2);
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(0 0 0 / 0.045) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: sw-shimmer 1.4s ease-in-out infinite;
+  }
+}
+
+.dark .sw-skeleton {
+  background-color: var(--sw-ink-2);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.05) 50%,
+    transparent 100%
+  );
+}
+
+@keyframes sw-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* Respect reduced-motion: kill page slide, shimmer, and progress easing flourish. */
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-active,
+  .page-leave-active {
+    transition: opacity 1ms linear !important;
+  }
+  .page-enter-from { transform: none; }
+  .sw-skeleton { animation: none; }
+}

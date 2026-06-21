@@ -124,7 +124,7 @@ describe('PaymentModal - Editing Functionality', () => {
     expect(wrapper.html()).toContain('₹300.00');
     
     // Check if reference input has the correct value
-    const referenceInput = wrapper.find('input[placeholder="Check number, transfer ID, etc."]');
+    const referenceInput = wrapper.find('input[placeholder="forms.checkNumber"]');
     expect(referenceInput.exists()).toBe(true);
     expect(referenceInput.element.value).toBe('REF123');
     

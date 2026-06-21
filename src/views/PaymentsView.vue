@@ -581,15 +581,36 @@
       @close="handlePaymentModalClose" />
 
     <!-- View Payment Modal -->
-    <div v-if="viewingPayment" class="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-[60]"
+    <div v-if="viewingPayment" class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60"
       @click="viewingPayment = null; closeModalState('payments-view-modal')"
       @keydown.esc="viewingPayment = null; closeModalState('payments-view-modal')" tabindex="-1">
       <div
-        class="relative top-20 mx-auto p-5 border w-96 shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 mb-20 lg:mb-4"
+        class="w-full sm:max-w-lg bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden"
         @click.stop>
-        <div class="mt-3">
-          <h3 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">Payment Details</h3>
 
+        <!-- Grab handle (mobile) -->
+        <div class="flex justify-center pt-3 pb-1 sm:hidden">
+          <div class="w-10 h-1 rounded-full bg-stone-300 dark:bg-ink-5"></div>
+        </div>
+
+        <!-- Sticky header -->
+        <div class="flex items-center gap-3 px-5 sm:px-6 pt-4 sm:pt-5 pb-4 border-b border-stone-200 dark:border-ink-4 flex-shrink-0">
+          <div class="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg bg-amber/10 dark:bg-amber/15">
+            <CreditCard class="h-5 w-5 text-amber" />
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('common.view') }}</p>
+            <h3 class="font-display text-lg font-semibold text-ink dark:text-cream leading-tight truncate">{{ t('payments.paymentDetails') }}</h3>
+          </div>
+          <button
+            @click="viewingPayment = null; closeModalState('payments-view-modal')"
+            class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-ink-4 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
+            <X class="h-4 w-4" />
+          </button>
+        </div>
+
+        <!-- Scrollable body -->
+        <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5">
           <div class="space-y-4">
             <div>
               <span class="font-medium text-stone-700 dark:text-stone-300">Vendor:</span>
@@ -647,7 +668,6 @@
                 </div>
               </div>
             </div>
-
           </div>
 
           <!-- Payment Allocations -->
@@ -699,23 +719,24 @@
               </table>
             </div>
           </div>
+        </div>
 
-          <div class="mt-6 flex space-x-3">
-            <button v-if="viewingPayment && canPaymentBeEdited(viewingPayment, viewingPaymentAllocations)"
-              @click="startEditPayment(viewingPayment)" class="flex-1 btn-primary">
-              {{ t('common.edit') }}
-            </button>
-            <button v-if="viewingPayment && canPaymentBeDeleted(viewingPayment, viewingPaymentAllocations)"
-              @click="deletePayment(viewingPayment)" class="flex-1 btn-danger">
-              {{ t('common.deleteAction') }}
-            </button>
-            <button @click="viewingPayment = null; closeModalState('payments-view-modal')" :class="[
-              viewingPayment && (canPaymentBeEdited(viewingPayment, viewingPaymentAllocations) || canPaymentBeDeleted(viewingPayment, viewingPaymentAllocations)) ? 'flex-1' : 'w-full',
-              'btn-outline'
-            ]">
-              {{ t('common.close') }}
-            </button>
-          </div>
+        <!-- Sticky footer -->
+        <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex gap-3 flex-shrink-0">
+          <button v-if="viewingPayment && canPaymentBeEdited(viewingPayment, viewingPaymentAllocations)"
+            @click="startEditPayment(viewingPayment)" class="flex-1 btn-primary">
+            {{ t('common.edit') }}
+          </button>
+          <button v-if="viewingPayment && canPaymentBeDeleted(viewingPayment, viewingPaymentAllocations)"
+            @click="deletePayment(viewingPayment)" class="flex-1 btn-danger">
+            {{ t('common.deleteAction') }}
+          </button>
+          <button @click="viewingPayment = null; closeModalState('payments-view-modal')" :class="[
+            viewingPayment && (canPaymentBeEdited(viewingPayment, viewingPaymentAllocations) || canPaymentBeDeleted(viewingPayment, viewingPaymentAllocations)) ? 'flex-1' : 'w-full',
+            'btn-outline'
+          ]">
+            {{ t('common.close') }}
+          </button>
         </div>
       </div>
     </div>
@@ -741,7 +762,8 @@ import {
   ArrowUp,
   ArrowDown,
   AlertCircle,
-  MoreVertical
+  MoreVertical,
+  X
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';

@@ -331,17 +331,34 @@
     />
 
     <!-- View Modal -->
-    <div v-if="viewingDelivery" class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-[60]" @keydown.esc="closeViewModal" tabindex="-1">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-6xl shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 max-h-[90vh] overflow-y-auto mb-20 lg:mb-4">
-        <div class="mt-3">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="font-display text-lg font-semibold text-ink dark:text-cream">{{ t('delivery.deliveryDetails') }}</h3>
-            <button @click="closeViewModal" class="text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream">
-              <X class="h-6 w-6" />
-            </button>
+    <div v-if="viewingDelivery" class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60" @keydown.esc="closeViewModal" tabindex="-1">
+      <div @click.stop class="w-full sm:max-w-2xl bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden">
+
+        <!-- Grab handle (mobile) -->
+        <div class="flex justify-center pt-3 pb-1 sm:hidden">
+          <div class="w-10 h-1 rounded-full bg-stone-300 dark:bg-ink-5"></div>
+        </div>
+
+        <!-- Sticky header -->
+        <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-stone-200 dark:border-ink-4 flex-shrink-0">
+          <div class="flex items-center gap-3">
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+              <Eye class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            </span>
+            <div>
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('common.view') }}</p>
+              <h3 class="font-display text-base font-semibold text-ink dark:text-cream leading-tight">{{ t('delivery.deliveryDetails') }}</h3>
+            </div>
           </div>
-          
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <button @click="closeViewModal" class="text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream p-1 rounded-lg hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors">
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+
+        <!-- Scrollable body -->
+        <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5">
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <!-- Delivery Information -->
             <div class="space-y-4">
               <div>
@@ -520,7 +537,14 @@
               </table>
             </div>
           </div>
+
         </div>
+
+        <!-- Sticky footer -->
+        <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex justify-end flex-shrink-0">
+          <button @click="closeViewModal" class="btn-outline">{{ t('common.close') }}</button>
+        </div>
+
       </div>
     </div>
 

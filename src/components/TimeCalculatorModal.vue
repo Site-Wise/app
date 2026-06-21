@@ -1,36 +1,52 @@
 <template>
-  <div class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-[60]" @click="$emit('close')"
-    @keydown.esc="$emit('close')" tabindex="-1">
+  <!-- Overlay -->
+  <div
+    class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-sm"
+    @click="$emit('close')"
+    @keydown.esc="$emit('close')"
+    tabindex="-1"
+  >
+    <!-- Panel -->
     <div
-      class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4"
-      @click.stop>
-      <div class="mt-3">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-medium text-ink dark:text-cream">{{ t('serviceBookings.timeCalculator') }}</h3>
-          <button @click="$emit('close')" class="text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream">
-            <X class="h-6 w-6" />
-          </button>
-        </div>
+      class="w-full sm:max-w-md bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden"
+      @click.stop
+    >
+      <!-- Grab handle (mobile only) -->
+      <div class="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
+        <div class="mx-auto h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4" />
+      </div>
 
-        <form @submit.prevent="calculateAndApply" class="space-y-4">
+      <!-- Sticky header -->
+      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0">
+        <h3 class="font-display text-lg font-semibold text-ink dark:text-cream flex-1">{{ t('serviceBookings.timeCalculator') }}</h3>
+        <button
+          @click="$emit('close')"
+          class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors active:scale-[0.98]"
+          :aria-label="t('common.close')"
+        >
+          <X class="h-6 w-6" />
+        </button>
+      </div>
+
+      <!-- Scrollable body -->
+      <form @submit.prevent="calculateAndApply" class="flex-1 flex flex-col overflow-hidden">
+        <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5 space-y-4 scroll-smooth-touch">
           <!-- Date Selection -->
           <div>
             <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.date') }}</label>
-            <input v-model="selectedDate" type="date" required class="input mt-1"  />
+            <input v-model="selectedDate" type="date" required class="input mt-1" />
           </div>
 
           <!-- Start Time -->
           <div>
-            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('serviceBookings.startTime')
-            }}</label>
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('serviceBookings.startTime') }}</label>
             <input v-model="startTime" type="time" required class="input mt-1" @input="calculateDuration"
               ref="startTimeInputRef" />
           </div>
 
           <!-- End Time -->
           <div>
-            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('serviceBookings.endTime')
-            }}</label>
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('serviceBookings.endTime') }}</label>
             <input v-model="endTime" type="time" required class="input mt-1" @input="calculateDuration" />
           </div>
 
@@ -48,8 +64,7 @@
                 </p>
                 <p class="text-xs font-mono text-stone-600 dark:text-stone-300">
                   {{ formatTime(startTime) }} - {{ formatTime(endTime) }}
-                  <span v-if="isNextDay" class="ml-1 text-amber-700 dark:text-amber-400">({{ t('serviceBookings.nextDay')
-                  }})</span>
+                  <span v-if="isNextDay" class="ml-1 text-amber-700 dark:text-amber-400">({{ t('serviceBookings.nextDay') }})</span>
                 </p>
               </div>
             </div>
@@ -60,20 +75,21 @@
             class="p-3 bg-clay-50 dark:bg-clay-900/20 rounded-md border border-clay-200 dark:border-clay-800">
             <p class="text-sm text-clay-600 dark:text-clay-400">{{ errorMessage }}</p>
           </div>
+        </div>
 
-          <!-- Buttons -->
-          <div class="flex space-x-3 pt-4">
-            <button type="submit" :disabled="calculatedHours <= 0" :class="[
-              calculatedHours > 0 ? 'btn-primary' : 'btn-disabled'
-            ]">
-              {{ t('serviceBookings.applyDuration') }}
-            </button>
-            <button type="button" @click="$emit('close')" class="flex-1 btn-outline">
-              {{ t('common.cancel') }}
-            </button>
-          </div>
-        </form>
-      </div>
+        <!-- Sticky footer -->
+        <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 flex-shrink-0 pb-safe">
+          <button type="submit" :disabled="calculatedHours <= 0" :class="[
+            calculatedHours > 0 ? 'btn-primary' : 'btn-disabled',
+            'flex-1 active:scale-[0.98]'
+          ]">
+            {{ t('serviceBookings.applyDuration') }}
+          </button>
+          <button type="button" @click="$emit('close')" class="flex-1 btn-outline active:scale-[0.98]">
+            {{ t('common.cancel') }}
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </template>

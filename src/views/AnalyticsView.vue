@@ -1,12 +1,13 @@
 <template>
   <div>
-    <!-- Header -->
-    <div class="mb-6">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <!-- Header - matches Dashboard "Overview · Month" treatment -->
+    <div class="mb-6 lg:mb-8">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('analytics.title') }}</p>
-          <h1 class="font-display text-xl sm:text-2xl font-bold text-ink dark:text-cream">{{ t('analytics.title') }}</h1>
-          <p class="mt-0.5 text-sm text-stone-600 dark:text-stone-300">{{ t('analytics.subtitle') }}</p>
+          <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('analytics.title') }} · {{ currentMonthLabel }}</p>
+          <h1 class="font-display text-xl sm:text-2xl font-bold text-ink dark:text-cream">
+            {{ t('analytics.subtitle') }}
+          </h1>
         </div>
         <button @click="showSaveModal = true" :disabled="!hasActiveFilters" :class="[
           hasActiveFilters ? 'btn-primary' : 'btn-disabled',
@@ -22,7 +23,7 @@
       <!-- Filters Panel - Left Sidebar on Desktop, Top on Mobile -->
       <div class="lg:col-span-1">
         <div class="card p-4 lg:sticky lg:top-4">
-          <h2 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">{{ t('analytics.filters') }}</h2>
+          <p class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-4">{{ t('analytics.filters') }}</p>
 
           <!-- Tags Filter -->
           <div class="mb-4">
@@ -38,9 +39,10 @@
           <div class="mb-4">
             <label class="label">{{ t('analytics.dateRange') }}</label>
             <div class="space-y-2">
-              <input v-model="filters.dateFrom" type="date" class="input text-sm"
+              <input v-model="filters.dateFrom" type="date" class="input text-sm focus:border-ink dark:focus:border-cream rounded-md"
                 :placeholder="t('analytics.dateFrom')" />
-              <input v-model="filters.dateTo" type="date" class="input text-sm" :placeholder="t('analytics.dateTo')" />
+              <input v-model="filters.dateTo" type="date" class="input text-sm focus:border-ink dark:focus:border-cream rounded-md"
+                :placeholder="t('analytics.dateTo')" />
             </div>
           </div>
 
@@ -48,9 +50,9 @@
           <div class="mb-4">
             <label class="label">{{ t('analytics.amountRange') }}</label>
             <div class="space-y-2">
-              <input v-model="amountMinInput" type="number" min="0" class="input text-sm"
+              <input v-model="amountMinInput" type="number" min="0" class="input text-sm focus:border-ink dark:focus:border-cream rounded-md"
                 :placeholder="t('analytics.amountMin')" />
-              <input v-model="amountMaxInput" type="number" min="0" class="input text-sm"
+              <input v-model="amountMaxInput" type="number" min="0" class="input text-sm focus:border-ink dark:focus:border-cream rounded-md"
                 :placeholder="t('analytics.amountMax')" />
             </div>
           </div>
@@ -70,7 +72,7 @@
           </div>
 
           <!-- Saved Settings -->
-          <div class="mt-6 pt-6 border-t border-stone-200 dark:border-ink-4">
+          <div class="mt-6 pt-5 border-t border-stone-200 dark:border-ink-4">
             <p class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-3">
               {{ t('analytics.savedSettings') }}
             </p>
@@ -84,17 +86,17 @@
               {{ t('analytics.noSettingsSaved') }}
             </div>
 
-            <div v-else class="space-y-2">
+            <div v-else class="space-y-1.5">
               <div v-for="setting in savedSettings" :key="setting.id"
-                class="flex items-center justify-between p-2 rounded-md bg-cream-2 dark:bg-ink-2 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors">
+                class="flex items-center justify-between px-2.5 py-2 rounded-md bg-cream-2 dark:bg-ink-2 border border-stone-200 dark:border-ink-4 hover:border-stone-300 dark:hover:border-ink-3 transition-colors">
                 <button @click="loadSetting(setting.id!)"
                   class="flex-1 text-left text-sm text-ink dark:text-cream truncate" :title="setting.name">
                   {{ setting.name }}
                 </button>
                 <button @click="confirmDeleteSetting(setting.id!)"
-                  class="ml-2 p-1 text-clay hover:bg-clay/10 rounded-md"
+                  class="ml-2 p-1 text-clay hover:bg-clay/10 rounded-md transition-colors"
                   :title="t('analytics.deleteSetting')">
-                  <Trash2 class="h-4 w-4" />
+                  <Trash2 class="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
@@ -105,147 +107,163 @@
       <!-- Results Panel - Main Content -->
       <div class="lg:col-span-3">
         <!-- Empty State -->
-        <div v-if="!analyticsData" class="card p-8 text-center">
-          <BarChart3 class="h-16 w-16 mx-auto text-stone-300 dark:text-stone-600 mb-4" />
-          <h3 class="font-display text-lg font-semibold text-ink dark:text-cream mb-2">
+        <div v-if="!analyticsData" class="card p-10 text-center">
+          <div class="p-4 bg-stone-200/60 dark:bg-ink-2 rounded-full w-fit mx-auto mb-4">
+            <BarChart3 class="h-10 w-10 text-stone-400 dark:text-stone-500" />
+          </div>
+          <h3 class="font-display text-lg font-semibold text-ink dark:text-cream mb-1.5">
             {{ t('analytics.results') }}
           </h3>
-          <p class="text-stone-600 dark:text-stone-300">
+          <p class="text-sm text-stone-500 dark:text-stone-400 max-w-xs mx-auto">
             {{ hasActiveFilters ? t('analytics.messages.calculateFirst') : t('analytics.messages.noFiltersApplied') }}
           </p>
         </div>
 
         <!-- Results Display -->
         <div v-else class="space-y-6">
-          <!-- Summary Cards -->
-          <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+          <!-- Summary KPI Cards - 2 cols mobile, 3 cols desktop -->
+          <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <!-- Total Cost -->
-            <div class="card p-3 sm:p-4">
-              <div class="flex items-center mb-2">
-                <div class="p-2 bg-amber/15 rounded-md">
+            <div class="card p-3 sm:p-5 flex flex-col">
+              <div class="flex flex-col sm:flex-row sm:items-center">
+                <div class="p-2 bg-amber/15 rounded-md w-fit mb-2 sm:mb-0">
                   <DollarSign class="h-4 w-4 sm:h-5 sm:w-5 text-amber-700 dark:text-amber" />
                 </div>
+                <div class="sm:ml-3">
+                  <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('analytics.summary.totalCost') }}</p>
+                  <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
+                    ₹{{ analyticsData.totalCost.toLocaleString('en-IN', { maximumFractionDigits: 0 }) }}
+                  </p>
+                </div>
               </div>
-              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('analytics.summary.totalCost') }}</p>
-              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
-                ₹{{ formatCompactAmount(analyticsData.totalCost) }}
-              </p>
             </div>
 
             <!-- Average Cost Per Item -->
-            <div class="card p-3 sm:p-4">
-              <div class="flex items-center mb-2">
-                <div class="p-2 bg-stone-200/60 dark:bg-ink-2 rounded-md">
+            <div class="card p-3 sm:p-5 flex flex-col">
+              <div class="flex flex-col sm:flex-row sm:items-center">
+                <div class="p-2 bg-stone-200/60 dark:bg-ink-2 rounded-md w-fit mb-2 sm:mb-0">
                   <Package class="h-4 w-4 sm:h-5 sm:w-5 text-stone-600 dark:text-stone-300" />
                 </div>
+                <div class="sm:ml-3">
+                  <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('analytics.summary.averageCostPerItem') }}</p>
+                  <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
+                    ₹{{ formatCompactAmount(analyticsData.averageCostPerItem) }}
+                  </p>
+                </div>
               </div>
-              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{
-                t('analytics.summary.averageCostPerItem') }}</p>
-              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
-                ₹{{ formatCompactAmount(analyticsData.averageCostPerItem) }}
-              </p>
             </div>
 
             <!-- Average Cost Per Delivery -->
-            <div class="card p-3 sm:p-4">
-              <div class="flex items-center mb-2">
-                <div class="p-2 bg-stone-200/60 dark:bg-ink-2 rounded-md">
+            <div class="card p-3 sm:p-5 flex flex-col">
+              <div class="flex flex-col sm:flex-row sm:items-center">
+                <div class="p-2 bg-stone-200/60 dark:bg-ink-2 rounded-md w-fit mb-2 sm:mb-0">
                   <TruckIcon class="h-4 w-4 sm:h-5 sm:w-5 text-stone-600 dark:text-stone-300" />
                 </div>
+                <div class="sm:ml-3">
+                  <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('analytics.summary.averageCostPerDelivery') }}</p>
+                  <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
+                    ₹{{ formatCompactAmount(analyticsData.averageCostPerDelivery) }}
+                  </p>
+                </div>
               </div>
-              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{
-                t('analytics.summary.averageCostPerDelivery') }}</p>
-              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
-                ₹{{ formatCompactAmount(analyticsData.averageCostPerDelivery) }}
-              </p>
             </div>
 
             <!-- Item Count -->
-            <div class="card p-3 sm:p-4">
-              <div class="flex items-center mb-2">
-                <div class="p-2 bg-forest/15 rounded-md">
-                  <Hash class="h-4 w-4 sm:h-5 sm:w-5 text-forest" />
+            <div class="card p-3 sm:p-5 flex flex-col">
+              <div class="flex flex-col sm:flex-row sm:items-center">
+                <div class="p-2 bg-forest/15 rounded-md w-fit mb-2 sm:mb-0">
+                  <Hash class="h-4 w-4 sm:h-5 sm:w-5 text-forest-700 dark:text-forest-400" />
+                </div>
+                <div class="sm:ml-3">
+                  <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('analytics.summary.itemCount') }}</p>
+                  <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
+                    {{ analyticsData.itemCount.toLocaleString('en-IN') }}
+                  </p>
                 </div>
               </div>
-              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('analytics.summary.itemCount') }}</p>
-              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
-                {{ analyticsData.itemCount }}
-              </p>
             </div>
 
             <!-- Delivery Count -->
-            <div class="card p-3 sm:p-4">
-              <div class="flex items-center mb-2">
-                <div class="p-2 bg-stone-200/60 dark:bg-ink-2 rounded-md">
+            <div class="card p-3 sm:p-5 flex flex-col">
+              <div class="flex flex-col sm:flex-row sm:items-center">
+                <div class="p-2 bg-stone-200/60 dark:bg-ink-2 rounded-md w-fit mb-2 sm:mb-0">
                   <FileText class="h-4 w-4 sm:h-5 sm:w-5 text-stone-600 dark:text-stone-300" />
                 </div>
+                <div class="sm:ml-3">
+                  <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('analytics.summary.deliveryCount') }}</p>
+                  <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
+                    {{ analyticsData.deliveryCount.toLocaleString('en-IN') }}
+                  </p>
+                </div>
               </div>
-              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('analytics.summary.deliveryCount') }}
-              </p>
-              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
-                {{ analyticsData.deliveryCount }}
-              </p>
             </div>
 
             <!-- Total Quantity -->
-            <div class="card p-3 sm:p-4">
-              <div class="flex items-center mb-2">
-                <div class="p-2 bg-stone-200/60 dark:bg-ink-2 rounded-md">
+            <div class="card p-3 sm:p-5 flex flex-col">
+              <div class="flex flex-col sm:flex-row sm:items-center">
+                <div class="p-2 bg-stone-200/60 dark:bg-ink-2 rounded-md w-fit mb-2 sm:mb-0">
                   <Boxes class="h-4 w-4 sm:h-5 sm:w-5 text-stone-600 dark:text-stone-300" />
                 </div>
+                <div class="sm:ml-3">
+                  <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('analytics.summary.totalQuantity') }}</p>
+                  <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
+                    {{ analyticsData.totalQuantity.toLocaleString('en-IN') }}
+                  </p>
+                </div>
               </div>
-              <p class="sw-eyebrow text-stone-500 dark:text-stone-400">{{ t('analytics.summary.totalQuantity') }}
-              </p>
-              <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">
-                {{ analyticsData.totalQuantity.toLocaleString() }}
-              </p>
             </div>
           </div>
 
           <!-- Cost by Tag Chart -->
-          <div v-if="analyticsData.costByTag.length > 0" class="card p-6">
-            <h3 class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-4">
+          <div v-if="analyticsData.costByTag.length > 0" class="card p-4 sm:p-6">
+            <p class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-4">
               {{ t('analytics.charts.costByTag') }}
-            </h3>
-            <div class="h-64 sm:h-80">
-              <Pie :data="costByTagChartData" :options="pieChartOptions" />
+            </p>
+            <div class="relative bg-cream-2 dark:bg-ink-2 border border-stone-200 dark:border-ink-4 rounded-lg p-3 sm:p-6">
+              <div class="h-64 sm:h-80">
+                <Pie :data="costByTagChartData" :options="pieChartOptions" />
+              </div>
             </div>
           </div>
 
           <!-- Cost Over Time Chart -->
-          <div v-if="analyticsData.costOverTime.length > 0" class="card p-6">
-            <h3 class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-4">
+          <div v-if="analyticsData.costOverTime.length > 0" class="card p-4 sm:p-6">
+            <p class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-4">
               {{ t('analytics.charts.costOverTime') }}
-            </h3>
-            <div class="h-64 sm:h-80">
-              <Bar :data="costOverTimeChartData" :options="barChartOptions" />
+            </p>
+            <div class="relative bg-cream-2 dark:bg-ink-2 border border-stone-200 dark:border-ink-4 rounded-lg p-3 sm:p-6">
+              <div class="h-64 sm:h-80">
+                <Bar :data="costOverTimeChartData" :options="barChartOptions" />
+              </div>
             </div>
           </div>
 
           <!-- Quantity by Unit Breakdown -->
-          <div v-if="analyticsData.quantityByUnit.length > 0" class="card p-6">
-            <h3 class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-4">
+          <div v-if="analyticsData.quantityByUnit.length > 0" class="card p-4 sm:p-6">
+            <p class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-4">
               {{ t('analytics.quantityByUnit.title') }}
-            </h3>
-            <div class="space-y-3">
-              <div v-for="unitData in analyticsData.quantityByUnit" :key="unitData.unit"
-                class="flex items-center justify-between p-3 bg-cream-2 dark:bg-ink-2 border border-stone-200 dark:border-ink-4 rounded-md">
-                <div class="flex-1">
-                  <div class="flex items-center gap-2">
-                    <span class="text-sm font-medium text-ink dark:text-cream">
-                      {{ unitData.unit }}
-                    </span>
-                    <span class="text-xs text-stone-500 dark:text-stone-400">
-                      ({{ unitData.itemCount }} {{ unitData.itemCount === 1 ? t('analytics.quantityByUnit.item') :
-                        t('analytics.quantityByUnit.items') }})
-                    </span>
-                  </div>
+            </p>
+            <div class="overflow-hidden rounded-md border border-stone-200 dark:border-ink-4">
+              <div
+                v-for="(unitData, idx) in analyticsData.quantityByUnit"
+                :key="unitData.unit"
+                :class="[
+                  'flex items-center justify-between px-4 py-3',
+                  idx < analyticsData.quantityByUnit.length - 1 ? 'border-b border-stone-200 dark:border-ink-4' : '',
+                  'hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors'
+                ]"
+              >
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="h-2 w-2 rounded-[2px] shrink-0 bg-amber"></span>
+                  <span class="text-sm font-medium text-ink dark:text-cream">{{ unitData.unit }}</span>
+                  <span class="text-xs text-stone-500 dark:text-stone-400">
+                    {{ unitData.itemCount }}
+                    {{ unitData.itemCount === 1 ? t('analytics.quantityByUnit.item') : t('analytics.quantityByUnit.items') }}
+                  </span>
                 </div>
-                <div class="text-right">
-                  <div class="font-mono sw-tabular text-lg font-semibold text-ink dark:text-cream">
-                    {{ unitData.quantity.toLocaleString() }}
-                  </div>
-                </div>
+                <span class="font-mono sw-tabular text-base font-semibold text-ink dark:text-cream shrink-0">
+                  {{ unitData.quantity.toLocaleString('en-IN') }}
+                </span>
               </div>
             </div>
           </div>
@@ -254,14 +272,15 @@
     </div>
 
     <!-- Save Setting Modal -->
-    <div v-if="showSaveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+    <div v-if="showSaveModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
       @click.self="showSaveModal = false">
       <div class="card shadow-modal p-6 max-w-md w-full">
         <h2 class="font-display text-xl font-semibold text-ink dark:text-cream mb-4">
           {{ t('analytics.saveFilters') }}
         </h2>
         <label class="label">{{ t('analytics.settingName') }}</label>
-        <input v-model="settingName" type="text" class="input mb-4" :placeholder="t('analytics.enterSettingName')"
+        <input v-model="settingName" type="text" class="input mb-4 focus:border-ink dark:focus:border-cream rounded-md"
+          :placeholder="t('analytics.enterSettingName')"
           @keyup.enter="handleSaveSetting" @keyup.esc="showSaveModal = false" autofocus />
         <div class="flex gap-2 justify-end">
           <button @click="showSaveModal = false" class="btn-secondary">
@@ -275,13 +294,13 @@
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+    <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
       @click.self="showDeleteConfirm = false">
       <div class="card shadow-modal p-6 max-w-md w-full">
-        <h2 class="font-display text-xl font-semibold text-ink dark:text-cream mb-4">
+        <h2 class="font-display text-xl font-semibold text-ink dark:text-cream mb-2">
           {{ t('analytics.deleteSetting') }}
         </h2>
-        <p class="text-stone-600 dark:text-stone-300 mb-6">
+        <p class="text-sm text-stone-600 dark:text-stone-300 mb-6">
           {{ t('analytics.confirmDelete') }}
         </p>
         <div class="flex gap-2 justify-end">
@@ -597,6 +616,11 @@ const barChartOptions = computed(() => ({
     }
   }
 }));
+
+// "June 2026" eyebrow period label matching Dashboard's design pattern
+const currentMonthLabel = computed(() =>
+  new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+);
 
 // Handlers
 const handleSaveSetting = async () => {

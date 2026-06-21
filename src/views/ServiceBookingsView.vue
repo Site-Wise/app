@@ -188,14 +188,30 @@
     </div>
 
     <!-- Add/Edit Modal -->
-    <div v-if="showAddModal || editingBooking" class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-[60]" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-md m-4 shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 max-h-[90vh] overflow-y-auto mb-20 lg:mb-4" @click.stop>
-        <div class="mt-3">
-          <h3 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">
-            {{ editingBooking ? t('serviceBookings.editBooking') : t('serviceBookings.bookService') }}
-          </h3>
-          
-          <form @submit.prevent="() => saveBooking()" @keydown="handleKeydown" class="space-y-4">
+    <div v-if="showAddModal || editingBooking" class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
+      <div class="w-full sm:max-w-lg bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden" @click.stop>
+        <!-- Grab handle (mobile only) -->
+        <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden"></div>
+
+        <!-- Sticky header -->
+        <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3">
+          <div class="h-9 w-9 rounded-md bg-amber-500/15 flex items-center justify-center shrink-0">
+            <Calendar class="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="sw-eyebrow text-stone-500">{{ editingBooking ? t('common.edit') : t('common.create') }}</p>
+            <h3 class="font-display text-lg font-semibold text-ink dark:text-cream leading-tight">
+              {{ editingBooking ? t('serviceBookings.editBooking') : t('serviceBookings.bookService') }}
+            </h3>
+          </div>
+          <button type="button" @click="closeModal" class="h-9 w-9 rounded-md flex items-center justify-center text-stone-400 hover:text-ink dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4 shrink-0" aria-label="Close">
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+
+        <!-- Scrollable body -->
+        <form @submit.prevent="() => saveBooking()" @keydown="handleKeydown" class="flex flex-col flex-1 overflow-hidden">
+          <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5 space-y-4">
             <div>
               <label class="block text-sm font-medium text-stone-600 dark:text-stone-300">{{ t('services.service') }}</label>
               <ServiceSearchBox
@@ -213,11 +229,11 @@
                 {{ t('serviceBookings.cannotChangeServiceWithPayments') }}
               </p>
             </div>
-            
+
             <div>
               <label class="block text-sm font-medium text-stone-600 dark:text-stone-300">{{ t('services.vendor') }}</label>
               <VendorSearchBox
-                                v-model="form.vendor"
+                v-model="form.vendor"
                 :vendors="vendors"
                 :deliveries="[]"
                 :service-bookings="[]"
@@ -235,7 +251,7 @@
                 {{ t('serviceBookings.cannotChangeVendorWithPayments') }}
               </p>
             </div>
-            
+
             <div>
               <label class="block text-sm font-medium text-stone-600 dark:text-stone-300">{{ t('serviceBookings.startDate') }}</label>
               <input
@@ -254,7 +270,7 @@
                 {{ t('serviceBookings.cannotChangeDateWithPayments') }}
               </p>
             </div>
-            
+
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-stone-600 dark:text-stone-300">{{ t('serviceBookings.duration') }}</label>
@@ -274,14 +290,14 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-stone-600 dark:text-stone-300">{{ t('serviceBookings.unitRate') }}</label>
-                <input 
-                  v-model.number="form.unit_rate" 
-                  type="number" 
-                  step="0.01" 
-                  required 
-                  class="input mt-1" 
-                  placeholder="0.00" 
-                  @input="handleUnitRateChange" 
+                <input
+                  v-model.number="form.unit_rate"
+                  type="number"
+                  step="0.01"
+                  required
+                  class="input mt-1"
+                  placeholder="0.00"
+                  @input="handleUnitRateChange"
                 />
                 <div v-if="showUnitRateWarning && editingBooking && hasPayments(editingBooking)" class="mt-1 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
                   <p class="text-xs text-amber-800 dark:text-amber-300">
@@ -290,29 +306,29 @@
                 </div>
               </div>
             </div>
-            
+
             <div>
               <label class="block text-sm font-medium text-stone-600 dark:text-stone-300">{{ t('common.total') }}</label>
               <input v-model.number="form.total_amount" type="number" step="0.01" required class="input mt-1" readonly />
             </div>
-            
+
             <div>
               <label class="block text-sm font-medium text-stone-600 dark:text-stone-300">{{ t('serviceBookings.percentCompleted') }}</label>
               <div class="relative">
-                <input 
-                  v-model.number="form.percent_completed" 
-                  type="number" 
-                  min="0" 
-                  max="100" 
-                  step="1" 
-                  required 
-                  class="input mt-1 pr-8" 
+                <input
+                  v-model.number="form.percent_completed"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  required
+                  class="input mt-1 pr-8"
                   placeholder="0"
                 />
                 <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-stone-500 dark:text-stone-400 text-sm mt-0.5">%</span>
               </div>
             </div>
-            
+
             <!-- <div>
               <label class="block text-sm font-medium text-stone-600 dark:text-stone-300">{{ t('serviceBookings.paymentStatus') }}</label>
               <select v-model="form.payment_status" required class="input mt-1">
@@ -321,45 +337,54 @@
                 <option value="paid">{{ t('common.paid') }}</option>
               </select>
             </div> -->
-            
-            
+
             <div>
               <label class="block text-sm font-medium text-stone-600 dark:text-stone-300">{{ t('common.notes') }}</label>
               <textarea v-model="form.notes" class="input mt-1" rows="3" :placeholder="t('forms.serviceNotes')"></textarea>
             </div>
-            
-            <div class="space-y-3 pt-4">
-              <!-- Keyboard shortcut hint for new bookings (desktop only) -->
-              <div v-if="!editingBooking" class="hidden sm:block text-xs text-stone-500 dark:text-stone-400 text-center">
-                {{ t('common.tip') }}: {{ t('common.keyboardShortcut', { keys: 'Ctrl+Enter' }) }} {{ t('serviceBookings.addAndContinue') }}
-              </div>
 
-              <div class="flex space-x-3">
-                <button type="submit" :disabled="loading" class="flex-1 btn-primary">
-                  <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-                  {{ editingBooking ? t('common.update') : t('common.create') }}
-                </button>
-                <button type="button" @click="closeModal" class="flex-1 btn-outline">
-                  {{ t('common.cancel') }}
-                </button>
-              </div>
+            <!-- Keyboard shortcut hint for new bookings (desktop only) -->
+            <div v-if="!editingBooking" class="hidden sm:block text-xs text-stone-500 dark:text-stone-400 text-center">
+              {{ t('common.tip') }}: {{ t('common.keyboardShortcut', { keys: 'Ctrl+Enter' }) }} {{ t('serviceBookings.addAndContinue') }}
             </div>
-          </form>
-        </div>
+          </div>
+
+          <!-- Sticky footer -->
+          <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex gap-3">
+            <button type="submit" :disabled="loading" class="flex-1 btn-primary">
+              <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
+              {{ editingBooking ? t('common.update') : t('common.create') }}
+            </button>
+            <button type="button" @click="closeModal" class="flex-1 btn-outline">
+              {{ t('common.cancel') }}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
 
     <!-- View Modal -->
-    <div v-if="viewingBooking" class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-[60]" @click="viewingBooking = null" @keydown.esc="viewingBooking = null" tabindex="-1">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-4xl m-4 shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 max-h-[90vh] overflow-y-auto mb-20 lg:mb-4" @click.stop>
-        <div class="mt-3">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="font-display text-lg font-semibold text-ink dark:text-cream">{{ t('serviceBookings.bookingDetails') }}</h3>
-            <button @click="viewingBooking = null" class="text-stone-400 hover:text-ink dark:hover:text-cream">
-              <X class="h-6 w-6" />
-            </button>
+    <div v-if="viewingBooking" class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60" @click="viewingBooking = null" @keydown.esc="viewingBooking = null" tabindex="-1">
+      <div class="w-full sm:max-w-2xl bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden" @click.stop>
+        <!-- Grab handle (mobile only) -->
+        <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden"></div>
+
+        <!-- Sticky header -->
+        <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3">
+          <div class="h-9 w-9 rounded-md bg-amber-500/15 flex items-center justify-center shrink-0">
+            <Calendar class="h-5 w-5 text-amber-600 dark:text-amber-400" />
           </div>
-          
+          <div class="flex-1 min-w-0">
+            <p class="sw-eyebrow text-stone-500">{{ t('common.view') }}</p>
+            <h3 class="font-display text-lg font-semibold text-ink dark:text-cream leading-tight">{{ t('serviceBookings.bookingDetails') }}</h3>
+          </div>
+          <button type="button" @click="viewingBooking = null" class="h-9 w-9 rounded-md flex items-center justify-center text-stone-400 hover:text-ink dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4 shrink-0" aria-label="Close">
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+
+        <!-- Scrollable body -->
+        <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- Booking Information -->
             <div class="space-y-4">
@@ -411,9 +436,9 @@
             <!-- Completion Photos -->
             <div>
               <h4 class="font-display font-medium text-stone-600 dark:text-stone-300 mb-3">{{ t('serviceBookings.completionPhotos') }}</h4>
-              <PhotoGallery 
+              <PhotoGallery
                 v-if="viewingBooking.completion_photos && viewingBooking.completion_photos.length > 0"
-                :photos="viewingBooking.completion_photos" 
+                :photos="viewingBooking.completion_photos"
                 :item-id="viewingBooking.id"
                 collection="service_bookings"
               />
@@ -422,6 +447,13 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Sticky footer -->
+        <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex gap-3">
+          <button type="button" @click="viewingBooking = null" class="flex-1 btn-outline">
+            {{ t('common.close') }}
+          </button>
         </div>
       </div>
     </div>

@@ -209,7 +209,7 @@ describe('MultiItemDeliveryModal', () => {
       await nextTick()
 
       expect(wrapper.find('h3').text()).toBe('Record Delivery')
-      expect(wrapper.text()).toContain('Delivery Information')
+      // Step name now appears once, in the header eyebrow (no duplicate body heading).
       expect(wrapper.text()).toContain('Delivery Info')
     })
 
@@ -258,7 +258,7 @@ describe('MultiItemDeliveryModal', () => {
       await new Promise(resolve => setTimeout(resolve, 50))
       await nextTick()
 
-      expect(wrapper.text()).toContain('Delivery Information')
+      expect(wrapper.text()).toContain('Delivery Info')
       
       const buttons = wrapper.findAll('button')
       const nextButton = buttons.find((btn: any) => btn.text().includes('Next'))
@@ -287,7 +287,7 @@ describe('MultiItemDeliveryModal', () => {
       await nextButton.trigger('click')
       await nextTick()
 
-      expect(wrapper.text()).toContain('Add Items')
+      expect(wrapper.text()).toContain('Items')
     })
   })
 

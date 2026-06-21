@@ -1,26 +1,46 @@
 <template>
-  <div v-if="isVisible" class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-[60]" @click="handleBackdropClick" @keydown.esc="handleEscape" tabindex="-1">
-    <div class="relative top-10 mx-auto p-6 border w-full max-w-5xl shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 m-4 mb-20 lg:mb-4" @click.stop>
-      <div class="mt-3">
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-medium text-ink dark:text-cream">{{ title }}</h3>
-          <button @click="handleClose" class="text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream">
-            <X class="h-6 w-6" />
-          </button>
-        </div>
+  <div
+    v-if="isVisible"
+    class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-sm"
+    @click="handleBackdropClick"
+    @keydown.esc="handleEscape"
+    tabindex="-1"
+  >
+    <!-- Panel — legal uses max-w-2xl on desktop for comfortable reading -->
+    <div
+      class="w-full sm:max-w-2xl bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden"
+      @click.stop
+    >
+      <!-- Grab handle (mobile only) -->
+      <div class="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
+        <div class="mx-auto h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4" />
+      </div>
 
-        <!-- Content -->
-        <div class="max-h-[70vh] overflow-y-auto border border-stone-200 dark:border-ink-4 rounded-lg bg-stone-50 dark:bg-ink-2 p-4">
-          <div class="text-sm text-stone-700 dark:text-stone-300 [&_h1]:text-ink dark:[&_h1]:text-cream [&_h2]:text-ink dark:[&_h2]:text-cream [&_h3]:text-ink dark:[&_h3]:text-cream [&_strong]:text-ink dark:[&_strong]:text-cream" v-html="content"></div>
-        </div>
+      <!-- Sticky header -->
+      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0">
+        <h3 class="font-display text-lg font-semibold text-ink dark:text-cream flex-1">{{ title }}</h3>
+        <button
+          @click="handleClose"
+          class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors active:scale-[0.98]"
+          :aria-label="t('common.close')"
+        >
+          <X class="h-5 w-5" />
+        </button>
+      </div>
 
-        <!-- Footer -->
-        <div class="flex justify-end mt-6 pt-4 border-t border-stone-200 dark:border-ink-4">
-          <button @click="handleClose" class="btn-outline">
-            Close
-          </button>
-        </div>
+      <!-- Scrollable body -->
+      <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5 scroll-smooth-touch">
+        <div
+          class="text-sm text-stone-700 dark:text-stone-300 [&_h1]:text-ink dark:[&_h1]:text-cream [&_h2]:text-ink dark:[&_h2]:text-cream [&_h3]:text-ink dark:[&_h3]:text-cream [&_strong]:text-ink dark:[&_strong]:text-cream"
+          v-html="content"
+        ></div>
+      </div>
+
+      <!-- Sticky footer -->
+      <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 flex-shrink-0 pb-safe">
+        <button @click="handleClose" class="flex-1 btn-outline active:scale-[0.98]">
+          {{ t('common.close') }}
+        </button>
       </div>
     </div>
   </div>
@@ -29,6 +49,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { X } from 'lucide-vue-next';
+import { useI18n } from '../composables/useI18n';
 import { termsAndConditionsHtml, privacyPolicyHtml } from '../assets/legal';
 
 // Props
@@ -46,13 +67,16 @@ interface Emits {
 
 const emit = defineEmits<Emits>();
 
+// Composables
+const { t } = useI18n();
+
 // Computed properties
 const title = computed(() => {
   switch (props.type) {
     case 'terms':
-      return 'Terms and Conditions';
+      return t('legal.termsAndConditions');
     case 'privacy':
-      return 'Privacy Policy';
+      return t('legal.privacyPolicy');
     default:
       return '';
   }

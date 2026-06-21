@@ -144,82 +144,105 @@
 
     <!-- Add/Edit Modal -->
     <div v-if="showAddModal || editingAccount"
-      class="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-[60]" @click="closeModal"
-      @keydown.esc="closeModal" tabindex="-1">
+      class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60"
+      @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
       <div
-        class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 m-4 mb-20 lg:mb-4"
+        class="w-full sm:max-w-lg bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden"
         @click.stop>
-        <div class="mt-3">
-          <h3 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">
-            {{ editingAccount ? t('accounts.editAccount') : t('accounts.addAccount') }}
-          </h3>
 
-          <form @submit.prevent="saveAccount" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.accountName')
-              }}</label>
-              <input ref="firstInputRef" v-model="form.name" type="text" required class="input mt-1"
-                :placeholder="t('forms.enterAccountName')" autofocus />
-            </div>
+        <!-- Grab handle (mobile only) -->
+        <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden"></div>
 
-            <div>
-              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.accountType')
-              }}</label>
-              <select v-model="form.type" required class="input mt-1">
-                <option value="">{{ t('forms.selectAccountType') }}</option>
-                <option value="bank">{{ t('accounts.accountTypes.bank') }}</option>
-                <option value="credit_card">{{ t('accounts.accountTypes.creditCard') }}</option>
-                <option value="cash">{{ t('accounts.accountTypes.cash') }}</option>
-                <option value="digital_wallet">{{ t('accounts.accountTypes.digitalWallet') }}</option>
-                <option value="other">{{ t('accounts.accountTypes.other') }}</option>
-              </select>
-            </div>
-
-            <div v-if="form.type === 'bank' || form.type === 'credit_card'">
-              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.accountNumber')
-              }}</label>
-              <input v-model="form.account_number" type="text" class="input mt-1"
-                :placeholder="t('forms.enterAccountNumber')" />
-            </div>
-
-            <div v-if="form.type === 'bank' || form.type === 'credit_card'">
-              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.bankName')
-              }}</label>
-              <input v-model="form.bank_name" type="text" class="input mt-1" :placeholder="t('forms.enterBankName')" />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.openingBalance')
-              }}</label>
-              <input v-model.number="form.opening_balance" type="number" step="0.01" required class="input mt-1 font-mono tabular-nums"
-                :placeholder="t('forms.enterOpeningBalance')" />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.description')
-              }}</label>
-              <textarea v-model="form.description" class="input mt-1" rows="2"
-                :placeholder="t('forms.enterDescription')"></textarea>
-            </div>
-
-            <div class="flex items-center">
-              <input v-model="form.is_active" type="checkbox" id="is_active"
-                class="rounded border-stone-300 dark:border-ink-4 text-amber focus:ring-amber" />
-              <label for="is_active" class="ml-2 text-sm text-stone-700 dark:text-stone-300">{{ t('accounts.isActive')
-              }}</label>
-            </div>
-
-            <div class="flex space-x-3 pt-4">
-              <button type="submit" :disabled="loading" class="flex-1 btn-primary">
-                <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-                {{ editingAccount ? t('common.update') : t('common.create') }}
-              </button>
-              <button type="button" @click="closeModal" class="flex-1 btn-outline">
-                {{ t('common.cancel') }}
-              </button>
-            </div>
-          </form>
+        <!-- Sticky header -->
+        <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3">
+          <span class="flex h-9 w-9 flex-none items-center justify-center rounded-md bg-amber-500/15">
+            <CreditCard class="h-5 w-5 text-amber-700 dark:text-amber-400" />
+          </span>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide leading-none mb-0.5">
+              {{ editingAccount ? t('common.edit') : t('common.create') }}
+            </p>
+            <h3 class="font-display text-base font-semibold text-ink dark:text-cream leading-tight truncate">
+              {{ editingAccount ? t('accounts.editAccount') : t('accounts.addAccount') }}
+            </h3>
+          </div>
+          <button type="button" @click="closeModal" class="ml-auto flex h-8 w-8 items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors">
+            <X class="h-4 w-4" />
+          </button>
         </div>
+
+        <!-- Scrollable body -->
+        <form @submit.prevent="saveAccount" class="flex flex-col flex-1 overflow-hidden">
+          <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.accountName')
+                }}</label>
+                <input ref="firstInputRef" v-model="form.name" type="text" required class="input mt-1"
+                  :placeholder="t('forms.enterAccountName')" autofocus />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.accountType')
+                }}</label>
+                <select v-model="form.type" required class="input mt-1">
+                  <option value="">{{ t('forms.selectAccountType') }}</option>
+                  <option value="bank">{{ t('accounts.accountTypes.bank') }}</option>
+                  <option value="credit_card">{{ t('accounts.accountTypes.creditCard') }}</option>
+                  <option value="cash">{{ t('accounts.accountTypes.cash') }}</option>
+                  <option value="digital_wallet">{{ t('accounts.accountTypes.digitalWallet') }}</option>
+                  <option value="other">{{ t('accounts.accountTypes.other') }}</option>
+                </select>
+              </div>
+
+              <div v-if="form.type === 'bank' || form.type === 'credit_card'">
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.accountNumber')
+                }}</label>
+                <input v-model="form.account_number" type="text" class="input mt-1"
+                  :placeholder="t('forms.enterAccountNumber')" />
+              </div>
+
+              <div v-if="form.type === 'bank' || form.type === 'credit_card'">
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.bankName')
+                }}</label>
+                <input v-model="form.bank_name" type="text" class="input mt-1" :placeholder="t('forms.enterBankName')" />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.openingBalance')
+                }}</label>
+                <input v-model.number="form.opening_balance" type="number" step="0.01" required class="input mt-1 font-mono tabular-nums"
+                  :placeholder="t('forms.enterOpeningBalance')" />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.description')
+                }}</label>
+                <textarea v-model="form.description" class="input mt-1" rows="2"
+                  :placeholder="t('forms.enterDescription')"></textarea>
+              </div>
+
+              <div class="flex items-center">
+                <input v-model="form.is_active" type="checkbox" id="is_active"
+                  class="rounded border-stone-300 dark:border-ink-4 text-amber focus:ring-amber" />
+                <label for="is_active" class="ml-2 text-sm text-stone-700 dark:text-stone-300">{{ t('accounts.isActive')
+                }}</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sticky footer -->
+          <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex gap-3">
+            <button type="submit" :disabled="loading" class="flex-1 btn-primary">
+              <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
+              {{ editingAccount ? t('common.update') : t('common.create') }}
+            </button>
+            <button type="button" @click="closeModal" class="flex-1 btn-outline">
+              {{ t('common.cancel') }}
+            </button>
+          </div>
+        </form>
+
       </div>
     </div>
   </div>
@@ -240,7 +263,8 @@ import {
   Banknote,
   Wallet,
   Smartphone,
-  Building2
+  Building2,
+  X
 } from 'lucide-vue-next';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';

@@ -1,13 +1,15 @@
 <template>
   <Teleport to="body">
+    <!-- Scrim -->
     <Transition name="bottom-sheet-overlay">
       <div
         v-if="modelValue"
-        class="fixed inset-0 bg-black/60 z-[60]"
+        class="fixed inset-0 z-[60] bg-ink/60 backdrop-blur-sm"
         @click="handleOverlayClick"
       />
     </Transition>
 
+    <!-- Panel -->
     <Transition :name="isMobile ? 'bottom-sheet' : 'modal-fade'">
       <div
         v-if="modelValue"
@@ -18,70 +20,50 @@
         :aria-labelledby="titleId"
         @click.stop
       >
-        <!-- Mobile Bottom Sheet -->
         <div
-          v-if="isMobile"
           ref="sheetRef"
-          class="bg-white dark:bg-ink-3 rounded-t-2xl shadow-modal w-full max-h-[90vh] flex flex-col"
+          class="bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 w-full flex flex-col overflow-hidden"
+          :class="[panelShapeClasses, sizeClasses]"
           @touchstart="handleTouchStart"
           @touchmove="handleTouchMove"
           @touchend="handleTouchEnd"
         >
-          <!-- Handle bar for swipe to dismiss -->
-          <div class="flex justify-center pt-3 pb-2 flex-shrink-0 cursor-grab active:cursor-grabbing">
-            <div class="w-10 h-1 bg-stone-300 dark:bg-stone-600 rounded-full" />
+          <!-- Grab handle (mobile only) -->
+          <div class="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0 cursor-grab active:cursor-grabbing">
+            <div class="mx-auto h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4" />
           </div>
 
           <!-- Header -->
-          <div v-if="title || $slots.header" class="px-4 pb-3 border-b border-stone-200 dark:border-ink-4 flex-shrink-0">
+          <div
+            v-if="title || $slots.header"
+            :id="titleId"
+            class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0"
+          >
             <slot name="header">
-              <h2 :id="titleId" class="font-display text-lg font-semibold text-ink dark:text-cream">
-                {{ title }}
-              </h2>
-            </slot>
-          </div>
-
-          <!-- Content -->
-          <div class="flex-1 overflow-y-auto overscroll-contain px-4 py-4 scroll-smooth-touch">
-            <slot />
-          </div>
-
-          <!-- Footer -->
-          <div v-if="$slots.footer" class="px-4 py-4 border-t border-stone-200 dark:border-ink-4 flex-shrink-0 pb-safe">
-            <slot name="footer" />
-          </div>
-        </div>
-
-        <!-- Desktop Modal -->
-        <div
-          v-else
-          class="bg-white dark:bg-ink-3 rounded-xl shadow-modal w-full flex flex-col"
-          :class="sizeClasses"
-        >
-          <!-- Header -->
-          <div v-if="title || $slots.header" class="px-6 py-4 border-b border-stone-200 dark:border-ink-4 flex items-center justify-between flex-shrink-0">
-            <slot name="header">
-              <h2 :id="titleId" class="font-display text-lg font-semibold text-ink dark:text-cream">
+              <h2 class="font-display text-lg font-semibold text-ink dark:text-cream flex-1">
                 {{ title }}
               </h2>
             </slot>
             <button
               v-if="showCloseButton"
               @click="close"
-              class="p-2 rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors"
+              class="ml-auto h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors active:scale-[0.98]"
               :aria-label="t('common.close')"
             >
               <X class="h-5 w-5" />
             </button>
           </div>
 
-          <!-- Content -->
-          <div class="flex-1 overflow-y-auto px-6 py-4">
+          <!-- Body -->
+          <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5 space-y-4 scroll-smooth-touch">
             <slot />
           </div>
 
           <!-- Footer -->
-          <div v-if="$slots.footer" class="px-6 py-4 border-t border-stone-200 dark:border-ink-4 flex-shrink-0">
+          <div
+            v-if="$slots.footer"
+            class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 flex-shrink-0 pb-safe"
+          >
             <slot name="footer" />
           </div>
         </div>
@@ -128,7 +110,7 @@ const isDragging = ref(false);
 const isMobile = ref(false);
 
 const updateMobileState = () => {
-  isMobile.value = window.matchMedia('(max-width: 1023px)').matches;
+  isMobile.value = window.matchMedia('(max-width: 639px)').matches;
 };
 
 const containerClasses = computed(() => {
@@ -138,7 +120,15 @@ const containerClasses = computed(() => {
   return 'inset-0 flex items-center justify-center p-4';
 });
 
+const panelShapeClasses = computed(() => {
+  if (isMobile.value) {
+    return 'rounded-t-2xl max-h-[92vh]';
+  }
+  return 'rounded-xl max-h-[88vh]';
+});
+
 const sizeClasses = computed(() => {
+  if (isMobile.value) return '';
   const sizes = {
     sm: 'max-w-sm',
     md: 'max-w-lg',
@@ -146,7 +136,7 @@ const sizeClasses = computed(() => {
     xl: 'max-w-4xl',
     full: 'max-w-full mx-4',
   };
-  return `${sizes[props.size]} max-h-[90vh]`;
+  return sizes[props.size];
 });
 
 const close = () => {
@@ -228,20 +218,22 @@ onUnmounted(() => {
 <style scoped>
 /* Modal fade animation for desktop */
 .modal-fade-enter-active {
-  transition: opacity 0.2s ease-out;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
 }
 
 .modal-fade-leave-active {
-  transition: opacity 0.15s ease-in;
+  transition: opacity 0.15s ease-in, transform 0.15s ease-in;
 }
 
 .modal-fade-enter-from,
 .modal-fade-leave-to {
   opacity: 0;
+  transform: translateY(8px);
 }
 
 .modal-fade-enter-to,
 .modal-fade-leave-from {
   opacity: 1;
+  transform: translateY(0);
 }
 </style>

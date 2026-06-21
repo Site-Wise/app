@@ -1,5 +1,8 @@
 <template>
   <div class="min-h-screen bg-cream dark:bg-ink">
+    <!-- Top navigation progress bar -->
+    <TopProgressBar />
+
     <!-- PWA Prompts are now in App.vue for all users -->
 
     <!-- Sidebar -->
@@ -49,7 +52,7 @@
             </div>
 
             <!-- Quick actions: single "+ Record" menu (desktop) -->
-            <div class="hidden md:block relative" ref="quickMenuRef">
+            <div v-if="isDashboard" class="hidden md:block relative" ref="quickMenuRef">
               <button @click="quickMenuOpen = !quickMenuOpen"
                 class="flex items-center gap-2 h-9 px-3 rounded-md text-sm font-semibold bg-amber-500 text-ink hover:bg-amber-600 transition-colors duration-150 ease-snap active:scale-[0.98]"
                 :class="{ 'bg-amber-600': quickMenuOpen }"
@@ -210,7 +213,11 @@
 
       <!-- Page content -->
       <main class="p-4 sm:p-6 lg:p-8 pb-safe-nav lg:pb-8 scroll-smooth-touch">
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <transition name="page" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
       </main>
     </div>
 
@@ -295,6 +302,7 @@ import SiteSelector from './SiteSelector.vue';
 import LanguageSelector from './LanguageSelector.vue';
 import KeyboardShortcutTooltip from './KeyboardShortcutTooltip.vue';
 import BottomNavBar from './BottomNavBar.vue';
+import TopProgressBar from './TopProgressBar.vue';
 import {
   BarChart3,
   Package,
@@ -334,6 +342,9 @@ const showUpdateDuringDev = () => {
 
 const route = useRoute();
 const router = useRouter();
+// The global "+ Record" quick-action lives only on the dashboard. Every list page
+// has its own contextual add button, so it's redundant (and was race-prone) elsewhere.
+const isDashboard = computed(() => route.name === 'Dashboard');
 const { user, logout } = useAuth();
 const { hasSiteAccess, canManageUsers } = useSite();
 const { t } = useI18n();
