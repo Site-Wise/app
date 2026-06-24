@@ -2468,6 +2468,26 @@ export class PaymentAllocationService {
     return records.map(record => this.mapRecordToPaymentAllocation(record));
   }
 
+  /**
+   * Lightweight allocations fetch for delivery payment-status calculation.
+   * Same rows as getAll() (site-scoped) but with NO expand — the calc only needs
+   * each allocation's `delivery` id + `allocated_amount`, so we skip the heavy
+   * delivery/service_booking/service expand that getAll() carries (the main cost
+   * of that request). Allocations not tied to a delivery simply never match a
+   * delivery in the calc, so they're harmless. Much smaller payload, same result.
+   */
+  async getDeliveryAllocations(): Promise<PaymentAllocation[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('payment_allocations')
+      .getFullList({
+        filter: `site="${siteId}"`,
+        requestKey: 'delivery-status-allocations'
+      });
+    return records.map(record => this.mapRecordToPaymentAllocation(record));
+  }
+
   async getById(id: string): Promise<PaymentAllocation | null> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');

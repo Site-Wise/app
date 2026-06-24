@@ -668,7 +668,7 @@ const {
 const { data: paymentAllocationsData } = useSiteData(
   async () => {
     try {
-      return await paymentAllocationService.getAll();
+      return await paymentAllocationService.getDeliveryAllocations();
     } catch (error) {
       console.error('Error loading payment allocations:', error);
       return [];
