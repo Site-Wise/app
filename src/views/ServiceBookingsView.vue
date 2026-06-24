@@ -613,6 +613,7 @@ import Skeleton from '../components/Skeleton.vue';
 import RecordLink from '../components/RecordLink.vue';
 import { useI18n } from '../composables/useI18n';
 import { useUrlFilters } from '../composables/useUrlFilters';
+import { useModalEscape } from '../composables/useModalEscape';
 import { usePermissions } from '../composables/usePermissions';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
@@ -937,6 +938,9 @@ const editBooking = async (booking: ServiceBooking) => {
 const viewBooking = (booking: ServiceBooking) => {
   viewingBooking.value = booking;
 };
+
+// Document-level ESC so the view modal closes without first clicking inside it.
+useModalEscape(() => { viewingBooking.value = null; }, () => !!viewingBooking.value);
 
 const deleteBooking = async (id: string) => {
   if (confirm(t('messages.confirmDelete', { item: t('serviceBookings.booking') }))) {

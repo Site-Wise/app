@@ -654,6 +654,7 @@ import Skeleton from '../components/Skeleton.vue';
 import RecordLink from '../components/RecordLink.vue';
 import { useI18n } from '../composables/useI18n';
 import { useUrlFilters } from '../composables/useUrlFilters';
+import { useModalEscape } from '../composables/useModalEscape';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
@@ -1212,6 +1213,10 @@ const closeViewModal = () => {
   viewingDelivery.value = null;
   closeModal('delivery-view-modal');
 };
+
+// Document-level ESC so the view modal closes without the user first clicking
+// inside it (the focus-dependent @keydown.esc only worked once focused).
+useModalEscape(() => closeViewModal(), () => !!viewingDelivery.value);
 
 
 // Handle 'show-add-modal' event from FAB

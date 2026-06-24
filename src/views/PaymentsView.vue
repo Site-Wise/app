@@ -836,6 +836,7 @@ import Skeleton from '../components/Skeleton.vue';
 import RecordLink from '../components/RecordLink.vue';
 import { useI18n } from '../composables/useI18n';
 import { useUrlFilters } from '../composables/useUrlFilters';
+import { useModalEscape } from '../composables/useModalEscape';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
@@ -1157,6 +1158,9 @@ const closePaymentViewModal = () => {
   viewingPayment.value = null;
   closeModalState('payments-view-modal');
 };
+
+// Document-level ESC so the view modal closes without first clicking inside it.
+useModalEscape(() => closePaymentViewModal(), () => !!viewingPayment.value);
 
 const viewPayment = async (payment: Payment) => {
   viewingPayment.value = payment;
