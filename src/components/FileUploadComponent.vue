@@ -22,6 +22,12 @@
           {{ t('fileUpload.clickOrDrag') }}
         </p>
         <p class="text-xs text-stone-600 dark:text-stone-400">{{ t('fileUpload.maxSize', { size: maxSizeFormatted }) }}</p>
+        <p v-if="acceptsPdf" class="mt-1 text-xs text-stone-500 dark:text-stone-500">
+          {{ t('fileUpload.supportedFilesHint') }}
+        </p>
+        <p v-if="acceptsPdf" class="text-xs text-stone-500 dark:text-stone-500">
+          {{ t('fileUpload.pdfLimitsHint', { max: MAX_PDF_PAGES }) }}
+        </p>
       </div>
     </div>
 
@@ -59,6 +65,12 @@
 
       <p class="text-xs text-stone-600 dark:text-stone-400 text-center mt-2">
         {{ t('fileUpload.maxSize', { size: maxSizeFormatted }) }}
+      </p>
+      <p v-if="acceptsPdf" class="text-xs text-stone-500 dark:text-stone-500 text-center mt-1">
+        {{ t('fileUpload.supportedFilesHint') }}
+      </p>
+      <p v-if="acceptsPdf" class="text-xs text-stone-500 dark:text-stone-500 text-center">
+        {{ t('fileUpload.pdfLimitsHint', { max: MAX_PDF_PAGES }) }}
       </p>
     </div>
 
@@ -114,9 +126,37 @@
     <div v-if="showPdfModal" class="fixed inset-0 bg-ink/60 z-[60] flex items-center justify-center p-4">
       <div class="bg-white dark:bg-ink-3 rounded-xl shadow-modal border border-stone-200 dark:border-ink-4 p-6 max-w-md w-full mx-4">
         <h3 class="text-lg font-medium text-ink dark:text-cream mb-4">
-          {{ t('fileUpload.pdfConversion') }}
+          {{ pdfNeedsPassword ? t('fileUpload.pdfPasswordTitle') : t('fileUpload.pdfConversion') }}
         </h3>
-        <div class="mb-4">
+
+        <!-- Password prompt for encrypted PDFs -->
+        <div v-if="pdfNeedsPassword" class="mb-4">
+          <p class="text-sm text-stone-600 dark:text-stone-400 mb-3">
+            {{ t('fileUpload.pdfPasswordPrompt') }}
+          </p>
+          <div v-if="pdfToConvert" class="text-xs text-stone-500 dark:text-stone-500 mb-3 truncate">
+            {{ pdfToConvert.name }}
+          </div>
+          <label class="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1" for="pdf-password-input">
+            {{ t('fileUpload.pdfPasswordLabel') }}
+          </label>
+          <input
+            id="pdf-password-input"
+            ref="pdfPasswordInput"
+            v-model="pdfPassword"
+            type="password"
+            autocomplete="off"
+            class="input w-full"
+            :placeholder="t('fileUpload.pdfPasswordLabel')"
+            @keydown.enter.prevent="handlePdfConversion"
+          />
+          <p v-if="passwordError" class="mt-2 text-xs text-clay-700 dark:text-clay-400">
+            {{ passwordError }}
+          </p>
+        </div>
+
+        <!-- Standard conversion confirmation -->
+        <div v-else class="mb-4">
           <p class="text-sm text-stone-600 dark:text-stone-400 mb-2">
             {{ t('fileUpload.pdfConversionMessage') }}
           </p>
@@ -130,12 +170,17 @@
             </div>
           </div>
         </div>
+
         <div class="flex justify-end space-x-3">
           <button @click="cancelPdfConversion" class="btn-outline">
             {{ t('common.cancel') }}
           </button>
-          <button @click="handlePdfConversion" class="btn-primary">
-            {{ t('common.continue') }}
+          <button
+            @click="handlePdfConversion"
+            class="btn-primary"
+            :disabled="pdfNeedsPassword && !pdfPassword"
+          >
+            {{ pdfNeedsPassword ? t('fileUpload.pdfUnlock') : t('common.continue') }}
           </button>
         </div>
       </div>
@@ -160,9 +205,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useI18n } from '../composables/useI18n'
-import { isPdfFile, getEstimatedImageSize } from '../utils/pdfToImage'
+import {
+  isPdfFile,
+  getEstimatedImageSize,
+  classifyPdfError,
+  MAX_PDF_PAGES,
+  type PdfErrorKind,
+} from '../utils/pdfToImage'
 
 interface FilePreview {
   id: string
@@ -207,6 +258,12 @@ const convertingPdf = ref(false)
 const conversionProgress = ref({ current: 0, total: 0 })
 const pdfPageCount = ref(0)
 
+// PDF password (encrypted PDF) state
+const pdfNeedsPassword = ref(false)
+const pdfPassword = ref('')
+const passwordError = ref('')
+const pdfPasswordInput = ref<HTMLInputElement>()
+
 onMounted(() => {
   isMobile.value = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768
 })
@@ -215,6 +272,29 @@ const maxSizeFormatted = computed(() => {
   const mb = props.maxSize / (1024 * 1024)
   return `${mb}MB`
 })
+
+// PDFs are only meaningfully supported when this uploader expects images
+// (PDFs get converted into image pages). Mirrors the logic in processFiles.
+const acceptsPdf = computed(() =>
+  props.acceptTypes === 'image/*' ||
+  props.acceptTypes.includes('image') ||
+  props.acceptTypes.includes('pdf') ||
+  props.acceptTypes === '*'
+)
+
+// Map a classified PDF error to a localized, user-facing message.
+const pdfErrorMessage = (kind: PdfErrorKind, pageCount = 0): string => {
+  switch (kind) {
+    case 'too-many-pages':
+      return t('fileUpload.pdfTooManyPages', { count: pageCount, max: MAX_PDF_PAGES })
+    case 'incorrect-password':
+      return t('fileUpload.pdfIncorrectPassword')
+    case 'password-required':
+      return t('fileUpload.pdfPasswordProtected')
+    default:
+      return t('fileUpload.pdfConversionError')
+  }
+}
 
 const estimatedSizeText = computed(() => {
   if (pdfPageCount.value > 0) {
@@ -360,9 +440,13 @@ const removeFile = (index: number) => {
 const showPdfConversionModal = async (pdfFile: File) => {
   pdfToConvert.value = pdfFile
   pdfPageCount.value = 0
+  pdfNeedsPassword.value = false
+  pdfPassword.value = ''
+  passwordError.value = ''
 
   try {
-    // Get page count for display in modal
+    // Probe the document up-front to (a) detect encryption and (b) get the
+    // page count for display / the max-page guard.
     const pdfjsLib = await import('pdfjs-dist')
 
     // Import worker using Vite's ?url suffix for proper module resolution
@@ -376,9 +460,27 @@ const showPdfConversionModal = async (pdfFile: File) => {
 
     const arrayBuffer = await pdfFile.arrayBuffer()
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+
+    if (pdf.numPages > MAX_PDF_PAGES) {
+      // Surface the specific page-limit message without opening the modal.
+      error.value = pdfErrorMessage('too-many-pages', pdf.numPages)
+      pdfToConvert.value = null
+      return
+    }
+
     pdfPageCount.value = pdf.numPages
   } catch (err) {
-    console.error('Failed to get PDF page count:', err)
+    const kind = classifyPdfError(err)
+    if (kind === 'password-required') {
+      // Encrypted PDF: open the modal in password-prompt mode and let the
+      // user unlock it. The conversion is retried with the password.
+      pdfNeedsPassword.value = true
+      showPdfModal.value = true
+      await nextTick()
+      pdfPasswordInput.value?.focus()
+      return
+    }
+    console.error('Failed to probe PDF:', err)
     pdfPageCount.value = 1 // Default to 1 page if we can't detect
   }
 
@@ -387,17 +489,23 @@ const showPdfConversionModal = async (pdfFile: File) => {
 
 const handlePdfConversion = async () => {
   if (!pdfToConvert.value) return
+  if (pdfNeedsPassword.value && !pdfPassword.value) return
+
+  const fileToConvert = pdfToConvert.value
+  const password = pdfNeedsPassword.value ? pdfPassword.value : undefined
 
   convertingPdf.value = true
   showPdfModal.value = false
+  passwordError.value = ''
 
   try {
     const { convertPdfToImages } = await import('../utils/pdfToImage')
 
-    const images = await convertPdfToImages(pdfToConvert.value, {
+    const images = await convertPdfToImages(fileToConvert, {
       dpi: 150,
       format: 'jpeg',
       quality: 0.85,
+      password,
       onProgress: (current, total) => {
         conversionProgress.value = { current, total }
       }
@@ -406,14 +514,41 @@ const handlePdfConversion = async () => {
     // Process converted images
     processNonPdfFiles(images)
 
-  } catch (err) {
-    error.value = t('fileUpload.pdfConversionError')
-    console.error('PDF conversion failed:', err)
-  } finally {
-    convertingPdf.value = false
+    // Success: reset password state.
+    pdfNeedsPassword.value = false
+    pdfPassword.value = ''
     pdfToConvert.value = null
-    conversionProgress.value = { current: 0, total: 0 }
     pdfPageCount.value = 0
+  } catch (err) {
+    const kind = classifyPdfError(err)
+    console.error('PDF conversion failed:', err)
+
+    if (kind === 'incorrect-password' || kind === 'password-required') {
+      // Re-open the password prompt so the user can try again. Keep the
+      // file around so the retry can reuse it.
+      pdfToConvert.value = fileToConvert
+      pdfNeedsPassword.value = true
+      passwordError.value = pdfErrorMessage(
+        kind === 'incorrect-password' ? 'incorrect-password' : 'password-required'
+      )
+      convertingPdf.value = false
+      conversionProgress.value = { current: 0, total: 0 }
+      showPdfModal.value = true
+      await nextTick()
+      pdfPasswordInput.value?.focus()
+      return
+    }
+
+    error.value = pdfErrorMessage(kind, pdfPageCount.value)
+    pdfNeedsPassword.value = false
+    pdfPassword.value = ''
+    pdfToConvert.value = null
+    pdfPageCount.value = 0
+  } finally {
+    if (!pdfNeedsPassword.value) {
+      convertingPdf.value = false
+      conversionProgress.value = { current: 0, total: 0 }
+    }
   }
 }
 
@@ -421,6 +556,9 @@ const cancelPdfConversion = () => {
   showPdfModal.value = false
   pdfToConvert.value = null
   pdfPageCount.value = 0
+  pdfNeedsPassword.value = false
+  pdfPassword.value = ''
+  passwordError.value = ''
 }
 
 const updateModelValue = () => {

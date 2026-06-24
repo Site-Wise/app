@@ -1310,7 +1310,16 @@
     "pdfConversionError": "Failed to convert PDF. Please try again.",
     "pdfNotAccepted": "PDF files are not accepted for this upload.",
     "pdfPageCount": "{count} page | {count} pages",
-    "estimatedSize": "Estimated size: {size}"
+    "estimatedSize": "Estimated size: {size}",
+    "supportedFilesHint": "Supported: images and PDF. Password-protected PDFs can be unlocked with a password.",
+    "pdfLimitsHint": "PDFs are limited to a maximum of {max} pages.",
+    "pdfTooManyPages": "This PDF has {count} pages; the maximum is {max}. Please upload a shorter PDF or split it.",
+    "pdfPasswordProtected": "This PDF is password-protected. Enter its password to unlock it, or upload an unlocked PDF.",
+    "pdfIncorrectPassword": "Incorrect password, try again.",
+    "pdfPasswordTitle": "Password-protected PDF",
+    "pdfPasswordPrompt": "This PDF is password-protected. Enter its password to unlock and convert it.",
+    "pdfPasswordLabel": "PDF password",
+    "pdfUnlock": "Unlock"
   },
   "badges": {
     "new": "New",

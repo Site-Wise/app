@@ -1310,7 +1310,16 @@
     "pdfConversionError": "PDF परिवर्तित करने में विफल। कृपया पुनः प्रयास करें।",
     "pdfNotAccepted": "इस अपलोड के लिए PDF फ़ाइलें स्वीकार नहीं की जाती हैं।",
     "pdfPageCount": "{count} पृष्ठ | {count} पृष्ठ",
-    "estimatedSize": "अनुमानित आकार: {size}"
+    "estimatedSize": "अनुमानित आकार: {size}",
+    "supportedFilesHint": "समर्थित: छवियां और PDF। पासवर्ड-संरक्षित PDF को पासवर्ड से अनलॉक किया जा सकता है।",
+    "pdfLimitsHint": "PDF अधिकतम {max} पृष्ठों तक सीमित हैं।",
+    "pdfTooManyPages": "इस PDF में {count} पृष्ठ हैं; अधिकतम {max} है। कृपया छोटा PDF अपलोड करें या उसे विभाजित करें।",
+    "pdfPasswordProtected": "यह PDF पासवर्ड-संरक्षित है। इसे अनलॉक करने के लिए पासवर्ड दर्ज करें, या अनलॉक की गई PDF अपलोड करें।",
+    "pdfIncorrectPassword": "गलत पासवर्ड, पुनः प्रयास करें।",
+    "pdfPasswordTitle": "पासवर्ड-संरक्षित PDF",
+    "pdfPasswordPrompt": "यह PDF पासवर्ड-संरक्षित है। इसे अनलॉक करके परिवर्तित करने के लिए पासवर्ड दर्ज करें।",
+    "pdfPasswordLabel": "PDF पासवर्ड",
+    "pdfUnlock": "अनलॉक करें"
   },
   "badges": {
     "new": "नया",

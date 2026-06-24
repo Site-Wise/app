@@ -13,7 +13,17 @@ vi.mock('../../composables/useI18n', () => ({
         'fileUpload.maxSize': 'Maximum file size: {size}',
         'fileUpload.fileTooLarge': '{name} is too large. Maximum size is {size}',
         'fileUpload.invalidFileType': '{name} has an invalid file type',
-        'fileUpload.removeFile': 'Remove file'
+        'fileUpload.removeFile': 'Remove file',
+        'fileUpload.supportedFilesHint': 'Supported: images and PDF. Password-protected PDFs can be unlocked with a password.',
+        'fileUpload.pdfLimitsHint': 'PDFs are limited to a maximum of {max} pages.',
+        'fileUpload.pdfTooManyPages': 'This PDF has {count} pages; the maximum is {max}. Please upload a shorter PDF or split it.',
+        'fileUpload.pdfPasswordProtected': 'This PDF is password-protected. Enter its password to unlock it, or upload an unlocked PDF.',
+        'fileUpload.pdfIncorrectPassword': 'Incorrect password, try again.',
+        'fileUpload.pdfConversionError': 'Failed to convert PDF. Please try again.',
+        'fileUpload.pdfPasswordTitle': 'Password-protected PDF',
+        'fileUpload.pdfPasswordPrompt': 'This PDF is password-protected. Enter its password to unlock and convert it.',
+        'fileUpload.pdfPasswordLabel': 'PDF password',
+        'fileUpload.pdfUnlock': 'Unlock'
       }
       let result = translations[key] || key
       if (params) {
@@ -616,6 +626,68 @@ describe('FileUploadComponent', () => {
       await nextTick()
       
       expect(wrapper.vm.isMobile).toBe(true)
+    })
+  })
+
+  describe('PDF Support Hints & Error Branches', () => {
+    it('shows supported-files and page-limit hints when PDFs are accepted (image uploader)', () => {
+      wrapper = createWrapper({ acceptTypes: 'image/*' })
+      expect(wrapper.vm.acceptsPdf).toBe(true)
+      expect(wrapper.text()).toContain('Supported: images and PDF')
+      expect(wrapper.text()).toContain('maximum of 10 pages')
+    })
+
+    it('hides PDF hints when the uploader does not accept images/PDFs', () => {
+      wrapper = createWrapper({ acceptTypes: 'application/vnd.ms-excel' })
+      expect(wrapper.vm.acceptsPdf).toBe(false)
+      expect(wrapper.text()).not.toContain('Supported: images and PDF')
+    })
+
+    it('maps too-many-pages to a specific message with page count and max', () => {
+      wrapper = createWrapper()
+      const msg = wrapper.vm.pdfErrorMessage('too-many-pages', 42)
+      expect(msg).toContain('42')
+      expect(msg).toContain('10')
+      expect(msg).toContain('maximum')
+    })
+
+    it('maps password-required to the encrypted-PDF message', () => {
+      wrapper = createWrapper()
+      const msg = wrapper.vm.pdfErrorMessage('password-required')
+      expect(msg).toContain('password-protected')
+    })
+
+    it('maps incorrect-password to a retry message', () => {
+      wrapper = createWrapper()
+      const msg = wrapper.vm.pdfErrorMessage('incorrect-password')
+      expect(msg).toContain('Incorrect password')
+    })
+
+    it('maps unknown errors to the generic conversion error', () => {
+      wrapper = createWrapper()
+      const msg = wrapper.vm.pdfErrorMessage('unknown')
+      expect(msg).toContain('Failed to convert PDF')
+    })
+
+    it('shows the page-limit error surfaced on the component error state', async () => {
+      wrapper = createWrapper()
+      wrapper.vm.error = wrapper.vm.pdfErrorMessage('too-many-pages', 15)
+      await nextTick()
+      const errorMessage = wrapper.find('.error-message')
+      expect(errorMessage.exists()).toBe(true)
+      expect(errorMessage.text()).toContain('15')
+    })
+
+    it('renders the inline password prompt when a PDF needs a password', async () => {
+      wrapper = createWrapper()
+      wrapper.vm.pdfToConvert = mockFiles[1]
+      wrapper.vm.pdfNeedsPassword = true
+      wrapper.vm.showPdfModal = true
+      await nextTick()
+
+      const passwordInput = wrapper.find('#pdf-password-input')
+      expect(passwordInput.exists()).toBe(true)
+      expect(wrapper.text()).toContain('Password-protected PDF')
     })
   })
 
