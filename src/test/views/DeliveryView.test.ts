@@ -410,23 +410,38 @@ describe('DeliveryView', () => {
     }
   })
 
-  it('should handle delivery actions', async () => {
+  it('should open the view modal when a desktop row is clicked', async () => {
+    // getById is hit by viewDelivery to fetch the fully-expanded record that the
+    // view modal renders, so it must resolve a complete delivery shape.
+    const { deliveryService } = await import('../../services/pocketbase')
+    deliveryService.getById.mockResolvedValue({
+      id: 'delivery-1',
+      vendor: 'vendor-1',
+      delivery_date: '2024-01-15',
+      delivery_reference: 'INV-001',
+      total_amount: 1500,
+      payment_status: 'paid',
+      photos: [],
+      expand: { vendor: { id: 'vendor-1', contact_person: 'Test Vendor' }, delivery_items: [] }
+    })
+
     // Wait for data loading
     await wrapper.vm.$nextTick()
     await new Promise(resolve => setTimeout(resolve, 50))
     await wrapper.vm.$nextTick()
 
-    // Test view action
-    const viewButtons = wrapper.findAll('button').filter((btn: any) => 
-      btn.text().includes('View') || btn.find('svg[data-testid="eye"]').exists()
-    )
-    
-    if (viewButtons.length > 0) {
-      await viewButtons[0].trigger('click')
-      await wrapper.vm.$nextTick()
-      // Should open view modal (check component state)
-      expect(wrapper.vm.viewingDelivery).toBeTruthy()
-    }
+    // The redundant eye/view button was removed; the whole row is now the
+    // "view details" affordance. Clicking a data row opens the view modal.
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows.length).toBeGreaterThan(0)
+
+    await rows[0].trigger('click')
+    await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 50))
+    await wrapper.vm.$nextTick()
+
+    // Should open view modal (check component state)
+    expect(wrapper.vm.viewingDelivery).toBeTruthy()
   })
 
   it('should display search functionality', async () => {

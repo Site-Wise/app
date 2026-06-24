@@ -209,6 +209,7 @@
               </td>
             </tr>
             <tr v-else v-for="delivery in deliveries" :key="delivery.id"
+                @click="viewDelivery(delivery)"
                 class="cursor-pointer hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap">
               <td class="px-4 py-3.5 whitespace-nowrap">
                 <div class="font-medium text-sm text-ink dark:text-cream">
@@ -250,27 +251,21 @@
                 </span>
               </td>
               <td class="px-4 py-3.5 whitespace-nowrap text-right">
-                <!-- Desktop Action Buttons -->
-                <div class="flex items-center justify-end space-x-1" @click.stop>
-                  <button
-                    @click="viewDelivery(delivery)"
-                    class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
-                    :title="t('common.view')"
-                  >
-                    <Eye class="h-4 w-4" />
-                  </button>
+                <!-- Desktop Action Buttons. Row click opens the view; these sit
+                     above it via @click.stop so edit/delete never trigger view. -->
+                <div class="relative flex items-center justify-end gap-1" @click.stop>
                   <button
                     v-if="canEditDelete && delivery.payment_status === 'pending'"
-                    @click="editDelivery(delivery)"
-                    class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
+                    @click.stop="editDelivery(delivery)"
+                    class="h-9 w-9 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
                     :title="t('common.edit')"
                   >
                     <Edit2 class="h-4 w-4" />
                   </button>
                   <button
                     v-if="canEditDelete && delivery.payment_status === 'pending'"
-                    @click="deleteDelivery(delivery)"
-                    class="h-8 w-8 flex items-center justify-center text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
+                    @click.stop="deleteDelivery(delivery)"
+                    class="h-9 w-9 flex items-center justify-center text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
                     :title="t('common.deleteAction')"
                   >
                     <Trash2 class="h-4 w-4" />
@@ -336,9 +331,11 @@
           </p>
         </div>
 
-        <!-- Delivery cards -->
+        <!-- Delivery cards. Tapping the card opens the view; the actions
+             dropdown stops propagation so it never triggers view. -->
         <div v-else v-for="delivery in deliveries" :key="delivery.id"
-             class="bg-white dark:bg-ink-3 rounded-lg shadow-card dark:shadow-inset-hi border border-stone-200 dark:border-ink-4 overflow-hidden">
+             @click="viewDelivery(delivery)"
+             class="bg-white dark:bg-ink-3 rounded-lg shadow-card dark:shadow-inset-hi border border-stone-200 dark:border-ink-4 overflow-hidden cursor-pointer hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap">
 
           <!-- Card Header: vendor + status + actions -->
           <div class="flex items-start justify-between px-4 pt-4 pb-3">
@@ -876,12 +873,6 @@ const searchResultsTotal = computed(() => {
 const getDeliveryActions = (delivery: Delivery) => {
   return [
     {
-      key: 'view',
-      label: t('common.view'),
-      icon: Eye,
-      variant: 'default' as const
-    },
-    {
       key: 'edit',
       label: t('common.edit'),
       icon: Edit2,
@@ -900,9 +891,6 @@ const getDeliveryActions = (delivery: Delivery) => {
 
 const handleDeliveryAction = (delivery: Delivery, action: string) => {
   switch (action) {
-    case 'view':
-      viewDelivery(delivery);
-      break;
     case 'edit':
       editDelivery(delivery);
       break;

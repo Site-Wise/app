@@ -674,6 +674,38 @@ describe('QuotationsView', () => {
     })
   })
 
+  describe('Row / Card View Affordance', () => {
+    it('opens the detail (edit) modal when a desktop row is clicked', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      const row = wrapper.find('tbody tr')
+      expect(row.exists()).toBe(true)
+      // Row signals it is a clickable view-details surface.
+      expect(row.classes()).toContain('cursor-pointer')
+
+      await row.trigger('click')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showAddModal).toBe(true)
+      expect(wrapper.vm.editingQuotation).toBeTruthy()
+      expect(wrapper.vm.editingQuotation.id).toBe('quotation-1')
+    })
+
+    it('does not open the modal when the actions cell is clicked (click.stop protection)', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // The actions <td> carries @click.stop so action buttons never trigger view.
+      const actionsCell = wrapper.findAll('tbody tr td').at(-1)
+      await actionsCell.trigger('click')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showAddModal).toBe(false)
+      expect(wrapper.vm.editingQuotation).toBeFalsy()
+    })
+  })
+
   describe('Search Integration', () => {
     it('should use search results when searching', async () => {
       // Test the search logic directly on the component

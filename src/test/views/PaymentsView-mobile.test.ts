@@ -558,26 +558,24 @@ describe('PaymentsView - Mobile Responsive Design', () => {
       expect(dropdown.exists()).toBe(true)
     })
 
-    it('should display view option in dropdown menu', async () => {
+    it('should display edit/delete options in dropdown menu (view is the row/card click)', async () => {
       wrapper = createWrapper()
-      
+
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
-      // Open menu for first item
-      const mobileActionCells = wrapper.findAll('td.lg\\:hidden')
-      const actionCell = mobileActionCells[2]
-      const menuButton = actionCell.find('button')
-      
-      await menuButton.trigger('click')
+      // Open menu for first item (set state directly to avoid toggle ordering leaks)
+      wrapper.vm.openMobileMenuId = 'payment-1'
       await wrapper.vm.$nextTick()
 
+      const mobileActionCells = wrapper.findAll('td.lg\\:hidden')
+      const actionCell = mobileActionCells[2]
       const dropdown = actionCell.find('.absolute')
       const menuButtons = dropdown.findAll('button')
-      
-      expect(menuButtons.length).toBeGreaterThanOrEqual(2)
-      expect(menuButtons.some((btn: any) => btn.text().includes('View'))).toBe(true)
+
+      // The redundant "View" action was removed; clicking the row/card opens the view.
+      expect(menuButtons.some((btn: any) => btn.text().includes('View'))).toBe(false)
       expect(menuButtons.some((btn: any) => btn.text().includes('Edit'))).toBe(true)
     })
 

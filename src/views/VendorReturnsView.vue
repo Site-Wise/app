@@ -172,7 +172,7 @@
                 </td>
               </tr>
             </template>
-            <tr v-else v-for="returnItem in filteredReturns" :key="returnItem.id" class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap">
+            <tr v-else v-for="returnItem in filteredReturns" :key="returnItem.id" @click="viewReturn(returnItem)" class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap cursor-pointer">
               <!-- xl table cells -->
               <td class="hidden xl:table-cell px-4 py-3.5">
                 <div class="font-medium text-ink dark:text-cream">
@@ -208,28 +208,26 @@
                   {{ t(`vendors.returnStatuses.${returnItem.status}`) }}
                 </span>
               </td>
-              <td class="hidden xl:table-cell px-4 py-3.5">
+              <td class="hidden xl:table-cell px-4 py-3.5" @click.stop>
                 <div class="flex items-center space-x-2">
                   <button
-                    @click="viewReturn(returnItem)"
-                    class="h-8 w-8 flex items-center justify-center rounded-md text-stone-400 hover:text-ink dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap"
-                  >
-                    <Eye class="h-4 w-4" />
-                  </button>
-                  <button
                     v-if="returnItem.status === 'initiated'"
-                    @click="approveReturn(returnItem)"
-                    class="h-8 w-8 flex items-center justify-center rounded-md text-forest-600 dark:text-forest-400 hover:text-forest-500 dark:hover:text-forest-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap"
+                    @click.stop="approveReturn(returnItem)"
+                    class="h-9 w-9 flex items-center justify-center rounded-md text-forest-600 dark:text-forest-400 hover:text-forest-500 dark:hover:text-forest-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap"
                   >
                     <Check class="h-4 w-4" />
                   </button>
                   <button
                     v-if="returnItem.status === 'approved' && returnItem.processing_option !== 'credit_note'"
-                    @click="processRefund(returnItem)"
-                    class="h-8 w-8 flex items-center justify-center rounded-md text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap"
+                    @click.stop="processRefund(returnItem)"
+                    class="h-9 w-9 flex items-center justify-center rounded-md text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap"
                   >
                     <DollarSign class="h-4 w-4" />
                   </button>
+                  <span
+                    v-if="returnItem.status !== 'initiated' && !(returnItem.status === 'approved' && returnItem.processing_option !== 'credit_note')"
+                    class="text-xs text-stone-400 dark:text-stone-500"
+                  >&mdash;</span>
                 </div>
               </td>
 
@@ -281,29 +279,27 @@
                     </div>
                   </div>
 
-                  <!-- Actions row -->
-                  <div class="flex items-center gap-2 pt-3 border-t border-stone-100 dark:border-ink-4">
-                    <button
-                      @click="viewReturn(returnItem)"
-                      class="btn-outline text-xs py-1 px-2 flex items-center"
-                    >
-                      <Eye class="h-3 w-3 mr-1" />
-                      {{ t('common.view') }}
-                    </button>
+                  <!-- Actions row: contextual actions only (the card itself opens details).
+                       @click.stop prevents the row's view handler from firing. -->
+                  <div
+                    v-if="returnItem.status === 'initiated' || (returnItem.status === 'approved' && returnItem.processing_option !== 'credit_note')"
+                    class="flex items-center gap-3 pt-3 border-t border-stone-100 dark:border-ink-4"
+                    @click.stop
+                  >
                     <button
                       v-if="returnItem.status === 'initiated'"
-                      @click="approveReturn(returnItem)"
-                      class="btn-primary text-xs py-1 px-2 flex items-center bg-forest-600 hover:bg-forest-700"
+                      @click.stop="approveReturn(returnItem)"
+                      class="btn-primary text-xs min-h-[44px] py-2 px-3 flex items-center bg-forest-600 hover:bg-forest-700"
                     >
-                      <Check class="h-3 w-3 mr-1" />
+                      <Check class="h-4 w-4 mr-1.5" />
                       {{ t('common.approve') }}
                     </button>
                     <button
                       v-if="returnItem.status === 'approved' && returnItem.processing_option !== 'credit_note'"
-                      @click="processRefund(returnItem)"
-                      class="btn-primary text-xs py-1 px-2 flex items-center"
+                      @click.stop="processRefund(returnItem)"
+                      class="btn-primary text-xs min-h-[44px] py-2 px-3 flex items-center"
                     >
-                      <DollarSign class="h-3 w-3 mr-1" />
+                      <DollarSign class="h-4 w-4 mr-1.5" />
                       {{ t('vendors.refund') }}
                     </button>
                   </div>
@@ -364,7 +360,6 @@ import { ref, computed, watch } from 'vue';
 import {
   Plus,
   Download,
-  Eye,
   Check,
   DollarSign,
   RotateCcw,

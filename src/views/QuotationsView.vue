@@ -100,7 +100,8 @@
           <tr
             v-for="quotation in quotations"
             :key="quotation.id"
-            class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap"
+            @click="editQuotation(quotation)"
+            class="group cursor-pointer hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap"
           >
             <!-- Item / Service + unit -->
             <td class="hidden xl:table-cell py-3.5 px-4">
@@ -152,19 +153,20 @@
                 {{ t(`common.${quotation.status}`) }}
               </span>
             </td>
-            <!-- Actions -->
-            <td class="hidden xl:table-cell py-3.5 px-4">
-              <div class="flex items-center space-x-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150" @click.stop>
+            <!-- Actions — @click.stop so editing/deleting never triggers the
+                 row's view-details click; revealed on row hover/focus. -->
+            <td class="hidden xl:table-cell py-3.5 px-4" @click.stop>
+              <div class="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150">
                 <button
-                  @click="editQuotation(quotation)"
-                  class="h-8 w-8 flex items-center justify-center text-stone-400 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap active:scale-[0.98]"
+                  @click.stop="editQuotation(quotation)"
+                  class="h-9 w-9 flex items-center justify-center text-stone-400 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap active:scale-[0.98]"
                   :title="t('common.edit')"
                 >
                   <Edit2 class="h-4 w-4" />
                 </button>
                 <button
-                  @click="deleteQuotation(quotation.id!)"
-                  class="h-8 w-8 flex items-center justify-center text-stone-400 hover:text-clay dark:hover:text-clay-400 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap active:scale-[0.98]"
+                  @click.stop="deleteQuotation(quotation.id!)"
+                  class="h-9 w-9 flex items-center justify-center text-stone-400 hover:text-clay dark:hover:text-clay-400 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap active:scale-[0.98]"
                   :title="t('common.deleteAction')"
                 >
                   <Trash2 class="h-4 w-4" />
@@ -198,7 +200,8 @@
         <div v-else
           v-for="quotation in quotations"
           :key="quotation.id"
-          class="card group"
+          @click="editQuotation(quotation)"
+          class="card group cursor-pointer active:scale-[0.99] transition-transform duration-150 ease-snap"
         >
           <!-- Card header: item name + status + dropdown -->
           <div class="flex items-start justify-between gap-3">

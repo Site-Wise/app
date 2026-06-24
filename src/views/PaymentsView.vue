@@ -178,6 +178,7 @@
             </td>
           </tr>
           <tr v-else v-for="payment in payments" :key="payment.id"
+              @click="viewPayment(payment)"
               class="cursor-pointer hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap">
             <!-- Vendor column (primary) -->
             <td class="px-4 py-3.5 whitespace-nowrap">
@@ -269,23 +270,18 @@
                 Credit Note Only
               </div>
             </td>
-            <!-- Actions column -->
+            <!-- Actions column (sits above the clickable row; @click.stop prevents row view) -->
             <td class="px-4 py-3.5 whitespace-nowrap text-right">
-              <div class="flex items-center justify-end gap-1" @click.stop>
-                <button @click="viewPayment(payment)"
-                  class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
-                  :title="t('common.view')">
-                  <Eye class="h-4 w-4" />
-                </button>
+              <div class="flex items-center justify-end gap-2" @click.stop>
                 <button v-if="canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])"
-                  @click="startEditPayment(payment)"
-                  class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
+                  @click.stop="startEditPayment(payment)"
+                  class="h-9 w-9 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
                   :title="t('common.edit')">
                   <Edit2 class="h-4 w-4" />
                 </button>
                 <button v-if="canPaymentBeDeleted(payment, payment.expand?.payment_allocations || [])"
-                  @click="deletePayment(payment)"
-                  class="h-8 w-8 flex items-center justify-center text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
+                  @click.stop="deletePayment(payment)"
+                  class="h-9 w-9 flex items-center justify-center text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
                   :title="t('common.deleteAction')">
                   <Trash2 class="h-4 w-4" />
                 </button>
@@ -341,9 +337,10 @@
           </p>
         </div>
 
-        <!-- Payment cards -->
+        <!-- Payment cards (whole card opens the view; actions stop propagation) -->
         <div v-else v-for="payment in payments" :key="payment.id + '-card'"
-             class="bg-white dark:bg-ink-3 rounded-lg shadow-card dark:shadow-inset-hi border border-stone-200 dark:border-ink-4 overflow-hidden">
+             @click="viewPayment(payment)"
+             class="bg-white dark:bg-ink-3 rounded-lg shadow-card dark:shadow-inset-hi border border-stone-200 dark:border-ink-4 overflow-hidden cursor-pointer hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap">
           <!-- Card header: vendor + allocation status + actions -->
           <div class="flex items-start justify-between px-4 pt-4 pb-3">
             <div class="flex-1 min-w-0">
@@ -383,8 +380,8 @@
                 {{ payment.expand.vendor.name }}
               </div>
             </div>
-            <!-- Card actions dropdown -->
-            <div class="relative ml-2 flex-shrink-0">
+            <!-- Card actions dropdown (sits above clickable card) -->
+            <div class="relative ml-2 flex-shrink-0" @click.stop>
               <CardDropdownMenu :actions="getPaymentActions(payment)"
                 @action="handlePaymentAction(payment, $event)" />
             </div>
@@ -512,21 +509,16 @@
               </div>
             </td>
             <td class="px-4 py-3.5 whitespace-nowrap hidden lg:table-cell">
-              <div class="flex items-center gap-1" @click.stop>
-                <button @click="viewPayment(payment)"
-                  class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
-                  :title="t('common.view')">
-                  <Eye class="h-4 w-4" />
-                </button>
+              <div class="flex items-center gap-2" @click.stop>
                 <button v-if="canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])"
-                  @click="startEditPayment(payment)"
-                  class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
+                  @click.stop="startEditPayment(payment)"
+                  class="h-9 w-9 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
                   :title="t('common.edit')">
                   <Edit2 class="h-4 w-4" />
                 </button>
                 <button v-if="canPaymentBeDeleted(payment, payment.expand?.payment_allocations || [])"
-                  @click="deletePayment(payment)"
-                  class="h-8 w-8 flex items-center justify-center text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
+                  @click.stop="deletePayment(payment)"
+                  class="h-9 w-9 flex items-center justify-center text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
                   :title="t('common.deleteAction')">
                   <Trash2 class="h-4 w-4" />
                 </button>
@@ -617,11 +609,6 @@
                   <div v-if="openMobileMenuId === payment.id"
                     class="absolute right-0 top-full mt-1 bg-white dark:bg-ink-3 rounded-lg shadow-modal border border-stone-200 dark:border-ink-4 py-1 z-20 min-w-[120px] origin-top-right"
                     @click.stop>
-                    <button @click="viewPayment(payment); closeMobileMenu()"
-                      class="w-full flex items-center px-3 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150">
-                      <Eye class="h-4 w-4 mr-2" />
-                      {{ t('common.view') }}
-                    </button>
                     <button v-if="canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])"
                       @click="startEditPayment(payment); closeMobileMenu()"
                       class="w-full flex items-center px-3 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150">
@@ -831,7 +818,6 @@ import { useRoute } from 'vue-router';
 import {
   CreditCard,
   Plus,
-  Eye,
   Edit2,
   Trash2,
   Loader2,
@@ -1441,12 +1427,6 @@ const handleQuickAction = () => {
 
 const getPaymentActions = (payment: Payment) => {
   return [
-    {
-      key: 'view',
-      label: t('common.view'),
-      icon: Eye,
-      variant: 'default' as const
-    },
     {
       key: 'edit',
       label: t('common.edit'),

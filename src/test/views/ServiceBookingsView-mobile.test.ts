@@ -509,11 +509,10 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
       expect(dropdownMenu.exists()).toBe(true)
 
       const menuItems = dropdownMenu.findAll('button')
-      expect(menuItems).toHaveLength(3) // View, Edit, Delete
+      expect(menuItems).toHaveLength(2) // Edit, Delete (row/card tap handles View)
 
-      expect(menuItems[0].text()).toContain('View')
-      expect(menuItems[1].text()).toContain('Edit')
-      expect(menuItems[2].text()).toContain('Delete')
+      expect(menuItems[0].text()).toContain('Edit')
+      expect(menuItems[1].text()).toContain('Delete')
     })
 
     it('should close menu when clicking outside', async () => {
@@ -548,8 +547,8 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
       // Should have action items
       expect(menuItems.length).toBeGreaterThan(0)
 
-      // Should have view action at minimum
-      expect(menuItems[0].text()).toContain('View')
+      // Should have edit action at minimum (row/card tap handles View)
+      expect(menuItems[0].text()).toContain('Edit')
     })
 
     it('should handle click-outside listener properly', async () => {

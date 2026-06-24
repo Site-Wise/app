@@ -237,10 +237,9 @@
                   <div v-if="booking.payment_status === 'partial'" class="text-xs font-mono sw-tabular text-amber-700 dark:text-amber-400 mt-0.5">₹{{ booking.outstanding.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} {{ t('serviceBookings.pendingLabel') }}</div>
                 </td>
                 <td class="py-3.5 px-4 align-middle" @click.stop>
-                  <div class="flex items-center justify-end gap-1">
-                    <button @click="viewBooking(booking)" class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150" :title="t('common.view')"><Eye class="h-4 w-4" /></button>
-                    <button v-if="canEditBooking(booking)" @click="editBooking(booking)" class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150" :title="t('common.edit')"><Edit2 class="h-4 w-4" /></button>
-                    <button @click="deleteBooking(booking.id!)" :disabled="!canDeleteBooking(booking)" :class="[canDeleteBooking(booking) ? 'text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 hover:bg-stone-100 dark:hover:bg-ink-2' : 'text-stone-300 dark:text-stone-600 cursor-not-allowed','h-8 w-8 flex items-center justify-center rounded-md transition-colors duration-150']" :title="hasPayments(booking) ? t('serviceBookings.cannotDeleteWithPayments') : t('common.deleteAction')"><Trash2 class="h-4 w-4" /></button>
+                  <div class="flex items-center justify-end gap-1.5 lg:gap-1">
+                    <button v-if="canEditBooking(booking)" @click="editBooking(booking)" class="min-h-touch min-w-[44px] lg:h-8 lg:w-8 lg:min-h-0 lg:min-w-0 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150" :title="t('common.edit')"><Edit2 class="h-4 w-4" /></button>
+                    <button @click="deleteBooking(booking.id!)" :disabled="!canDeleteBooking(booking)" :class="[canDeleteBooking(booking) ? 'text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 hover:bg-stone-100 dark:hover:bg-ink-2' : 'text-stone-300 dark:text-stone-600 cursor-not-allowed','min-h-touch min-w-[44px] lg:h-8 lg:w-8 lg:min-h-0 lg:min-w-0 flex items-center justify-center rounded-md transition-colors duration-150']" :title="hasPayments(booking) ? t('serviceBookings.cannotDeleteWithPayments') : t('common.deleteAction')"><Trash2 class="h-4 w-4" /></button>
                   </div>
                 </td>
               </tr>
@@ -606,7 +605,6 @@ import {
   Edit2,
   Trash2,
   Loader2,
-  Eye,
   X,
   Clock,
   StickyNote
@@ -997,12 +995,6 @@ const canDeleteBooking = (booking: ServiceBooking) => {
 const getBookingActions = (booking: ServiceBooking) => {
   return [
     {
-      key: 'view',
-      label: t('common.view'),
-      icon: Eye,
-      variant: 'default' as const
-    },
-    {
       key: 'edit',
       label: t('common.edit'),
       icon: Edit2,
@@ -1021,9 +1013,6 @@ const getBookingActions = (booking: ServiceBooking) => {
 
 const handleBookingAction = (booking: ServiceBooking, action: string) => {
   switch (action) {
-    case 'view':
-      viewBooking(booking);
-      break;
     case 'edit':
       editBooking(booking);
       break;

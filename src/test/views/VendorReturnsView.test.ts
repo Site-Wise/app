@@ -606,12 +606,45 @@ describe('VendorReturnsView', () => {
         vendor: 'vendor-1',
         status: 'initiated'
       }
-      
+
       wrapper.vm.viewReturn(mockReturn)
       await wrapper.vm.$nextTick()
-      
+
       expect(wrapper.vm.showDetailsModal).toBe(true)
       expect(wrapper.vm.selectedReturn).toEqual(mockReturn)
+    })
+
+    it('should open details modal when a return row is clicked (row is the view affordance)', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // The clickable row carries cursor-pointer; clicking it opens the details modal.
+      const row = wrapper.findAll('tr').find((tr: any) => tr.classes().includes('cursor-pointer'))
+      expect(row).toBeDefined()
+
+      await row.trigger('click')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showDetailsModal).toBe(true)
+      expect(wrapper.vm.selectedReturn?.id).toBe('return-1')
+    })
+
+    it('should not open details modal when an action button in the row is clicked (@click.stop)', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // The initiated return shows an approve button; clicking it must NOT bubble
+      // to the row's viewReturn handler.
+      const buttons = wrapper.findAll('button')
+      const approveButton = buttons.find((btn: any) =>
+        btn.find('svg').exists() && btn.classes().includes('text-forest-600')
+      )
+      expect(approveButton).toBeDefined()
+
+      await approveButton.trigger('click')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showDetailsModal).toBe(false)
     })
 
     it('should open refund modal when process refund is triggered', async () => {
