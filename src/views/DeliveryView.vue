@@ -584,7 +584,12 @@
                   </tr>
                   <tr v-else v-for="deliveryItem in viewingDelivery.expand.delivery_items" :key="deliveryItem.id">
                     <td class="px-4 py-3 text-sm text-ink dark:text-cream">
-                      <div>{{ deliveryItem.expand?.item?.name || 'Unknown Item' }}</div>
+                      <RecordLink
+                        type="item"
+                        mode="detail"
+                        :id="deliveryItem.item"
+                        :label="deliveryItem.expand?.item?.name || 'Unknown Item'"
+                      />
                       <div v-if="deliveryItem.notes" class="text-xs text-stone-500 dark:text-stone-400 mt-1">
                         {{ deliveryItem.notes }}
                       </div>
