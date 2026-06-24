@@ -144,6 +144,27 @@
       </div>
     </div>
 
+    <!-- Active vendor-filter chip: dismissible so the user is never stuck on a
+         filtered view. Shown on both mobile and desktop. -->
+    <div v-if="hasActiveFilter" class="mb-4 flex items-center gap-2">
+      <span
+        class="inline-flex items-center gap-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 pl-3 pr-1 py-1 text-sm font-medium"
+      >
+        <span class="truncate max-w-[60vw] sm:max-w-xs">
+          {{ filterVendorName ? t('delivery.filteredByVendor', { vendor: filterVendorName }) : t('delivery.filteredByVendorGeneric') }}
+        </span>
+        <button
+          type="button"
+          @click="clearFilter('vendor')"
+          class="flex items-center justify-center h-11 w-11 sm:h-7 sm:w-7 -my-2 sm:my-0 rounded-full text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800/40 transition-colors"
+          :title="t('common.clearFilter')"
+          :aria-label="t('common.clearFilter')"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </span>
+    </div>
+
     <!-- xl+ Table View: fixed-height internal scroller (page itself doesn't scroll
          on desktop); the table header stays pinned while rows scroll. -->
     <div
@@ -191,7 +212,12 @@
                 class="cursor-pointer hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap">
               <td class="px-4 py-3.5 whitespace-nowrap">
                 <div class="font-medium text-sm text-ink dark:text-cream">
-                  {{ delivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}
+                  <RecordLink
+                    type="vendor"
+                    mode="detail"
+                    :id="delivery.vendor"
+                    :label="delivery.expand?.vendor?.contact_person || t('common.unknownVendor') || 'Unknown Vendor'"
+                  />
                 </div>
                 <div v-if="delivery.expand?.vendor?.name" class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
                   {{ delivery.expand.vendor.name }}
@@ -319,7 +345,12 @@
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <h3 class="font-display text-sm font-semibold text-ink dark:text-cream truncate">
-                  {{ delivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}
+                  <RecordLink
+                    type="vendor"
+                    mode="detail"
+                    :id="delivery.vendor"
+                    :label="delivery.expand?.vendor?.contact_person || t('common.unknownVendor') || 'Unknown Vendor'"
+                  />
                 </h3>
                 <span :class="`status-${delivery.payment_status}`">
                   {{ t(`common.${delivery.payment_status}`) }}
@@ -618,7 +649,9 @@ import { ref, computed, watch } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { Plus, Edit2, Trash2, Loader2, Eye, X, Images, MoreVertical, AlertCircle, Link2 } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
+import RecordLink from '../components/RecordLink.vue';
 import { useI18n } from '../composables/useI18n';
+import { useUrlFilters } from '../composables/useUrlFilters';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
@@ -646,9 +679,15 @@ const { success, error, info: showInfoToast } = useToast();
 const { canDelete } = usePermissions();
 const { openModal, closeModal } = useModalState();
 
+// URL-driven relation filter (?vendor=<id>) for cross-linking from VendorDetailView.
+const { filters, hasActiveFilter, clearFilter } = useUrlFilters(['vendor']);
+
 // Use site data management
 // Browse deliveries with incremental (infinite-scroll) loading. The server
 // already sorts by -delivery_date, so accumulated pages stay newest-first.
+// The loader branches on the active vendor filter: getByVendor when filtering,
+// getList otherwise. Both are paginated with the same shape, so infinite scroll
+// composes transparently with the filtered set.
 const {
   items: infiniteDeliveries,
   loading: deliveriesLoading,
@@ -660,9 +699,24 @@ const {
   removeItem: removeDelivery,
   prependItem: prependDelivery
 } = useInfiniteSiteData<Delivery>(
-  (_siteId, page, perPage) => deliveryService.getList(page, perPage),
+  (_siteId, page, perPage) =>
+    filters.vendor
+      ? deliveryService.getByVendor(filters.vendor, page, perPage)
+      : deliveryService.getList(page, perPage),
   { perPage: 50 }
 );
+
+// When the vendor filter changes, reset + reload the infinite list from page 1.
+// reloadDeliveries() already resets pagination and the composable's currentLoadId
+// guard prevents the auto-cancel race — so NO onMounted loader is needed.
+watch(() => filters.vendor, () => reloadDeliveries());
+
+// Vendor name for the dismissible filter chip, derived reactively from the first
+// loaded filtered delivery. Falls back to a generic label until results arrive.
+const filterVendorName = computed(() => {
+  const list = infiniteDeliveries.value || [];
+  return list[0]?.expand?.vendor?.contact_person || '';
+});
 
 // Load payment allocations separately
 const { data: paymentAllocationsData } = useSiteData(

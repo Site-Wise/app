@@ -10,6 +10,10 @@ vi.mock('../../composables/useI18n', () => ({
         'delivery.title': 'Deliveries',
         'delivery.subtitle': 'Track multi-item deliveries and manage receipts',
         'delivery.recordDelivery': 'Record Delivery',
+        'delivery.filteredByVendor': 'Filtered by {vendor}',
+        'delivery.filteredByVendorGeneric': 'Filtered by vendor',
+        'common.clearFilter': 'Clear filter',
+        'common.unknownVendor': 'Unknown Vendor',
         'delivery.deliveryDetails': 'Delivery Details',
         'delivery.deliveryDate': 'Delivery Date',
         'delivery.paymentStatus': 'Payment Status',
@@ -62,6 +66,30 @@ vi.mock('../../composables/useInfiniteSiteData', () => ({
   useInfiniteSiteData: vi.fn()
 }))
 
+// Mock useUrlFilters composable (?vendor= deep-link filter). Default: no filter.
+const mockUrlFilters: { vendor?: string } = {}
+vi.mock('../../composables/useUrlFilters', () => {
+  const { computed } = require('vue')
+  return {
+    useUrlFilters: () => ({
+      filters: mockUrlFilters,
+      hasActiveFilter: computed(() => Object.keys(mockUrlFilters).length > 0),
+      activeFilterEntries: computed(() =>
+        Object.entries(mockUrlFilters).map(([key, value]) => ({ key, value }))
+      ),
+      setFilter: vi.fn(),
+      clearFilter: vi.fn((key?: string) => {
+        if (key === undefined) {
+          Object.keys(mockUrlFilters).forEach(k => delete (mockUrlFilters as any)[k])
+        } else {
+          delete (mockUrlFilters as any)[key]
+        }
+      }),
+      openRecord: vi.fn()
+    })
+  }
+})
+
 // Mock useSite composable
 vi.mock('../../composables/useSite', () => ({
   useSite: () => {
@@ -109,6 +137,7 @@ vi.mock('../../services/pocketbase', () => ({
     getAll: vi.fn().mockResolvedValue([]),
     getList: vi.fn().mockResolvedValue({ items: [], totalItems: 0, totalPages: 0 }),
     getAllWithPhotos: vi.fn().mockResolvedValue([]),
+    getByVendor: vi.fn().mockResolvedValue({ items: [], totalItems: 0, totalPages: 0 }),
     getById: vi.fn().mockResolvedValue({}),
     create: vi.fn().mockResolvedValue({}),
     update: vi.fn().mockResolvedValue({}),
@@ -187,9 +216,12 @@ describe('DeliveryView', () => {
   let wrapper: any
   let pinia: any
   let siteStore: any
+  let capturedLoader: any
 
   beforeEach(async () => {
     vi.clearAllMocks()
+    // Reset the URL filter between tests (default: no active filter).
+    Object.keys(mockUrlFilters).forEach(k => delete (mockUrlFilters as any)[k])
     const testSetup = setupTestPinia()
     pinia = testSetup.pinia
     siteStore = testSetup.siteStore
@@ -275,7 +307,9 @@ describe('DeliveryView', () => {
     const { useSiteData } = await import('../../composables/useSiteData')
     const { ref, computed } = await import('vue')
 
-    vi.mocked(useInfiniteSiteData).mockImplementation(() => {
+    vi.mocked(useInfiniteSiteData).mockImplementation((loader: any) => {
+      // Capture the loader so tests can assert it branches on the vendor filter.
+      capturedLoader = loader
       const items = ref(mockDeliveries) as any
       return {
         items,
@@ -309,7 +343,12 @@ describe('DeliveryView', () => {
         plugins: [router, pinia],
         stubs: {
           'router-link': true,
-          'router-view': true
+          'router-view': true,
+          RecordLink: {
+            name: 'RecordLink',
+            template: '<span class="mock-record-link">{{ label }}</span>',
+            props: ['type', 'id', 'label', 'mode', 'target', 'filterKey']
+          }
         }
       }
     })
@@ -505,6 +544,73 @@ describe('DeliveryView', () => {
     
     // Check that the component still exists after the site change
     expect(wrapper.exists()).toBe(true)
+  })
+
+  describe('Vendor URL filter (?vendor=)', () => {
+    it('loader calls getList when no vendor filter is active', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+      expect(typeof capturedLoader).toBe('function')
+
+      await capturedLoader('site-1', 1, 50)
+
+      expect(deliveryService.getList).toHaveBeenCalledWith(1, 50)
+      expect(deliveryService.getByVendor).not.toHaveBeenCalled()
+    })
+
+    it('loader calls getByVendor when a vendor filter is active', async () => {
+      // Activate the filter, then remount so the loader closes over it.
+      mockUrlFilters.vendor = 'vendor-1'
+
+      const router = createMockRouter()
+      const localWrapper = mount(DeliveryView, {
+        global: {
+          plugins: [router, pinia],
+          stubs: {
+            'router-link': true,
+            'router-view': true,
+            RecordLink: {
+              name: 'RecordLink',
+              template: '<span class="mock-record-link">{{ label }}</span>',
+              props: ['type', 'id', 'label', 'mode', 'target', 'filterKey']
+            }
+          }
+        }
+      })
+
+      const { deliveryService } = await import('../../services/pocketbase')
+      await capturedLoader('site-1', 1, 50)
+
+      expect(deliveryService.getByVendor).toHaveBeenCalledWith('vendor-1', 1, 50)
+
+      localWrapper.unmount()
+    })
+
+    it('renders the dismissible filter chip when a vendor filter is active', async () => {
+      mockUrlFilters.vendor = 'vendor-1'
+
+      const router = createMockRouter()
+      const localWrapper = mount(DeliveryView, {
+        global: {
+          plugins: [router, pinia],
+          stubs: {
+            'router-link': true,
+            'router-view': true,
+            RecordLink: {
+              name: 'RecordLink',
+              template: '<span class="mock-record-link">{{ label }}</span>',
+              props: ['type', 'id', 'label', 'mode', 'target', 'filterKey']
+            }
+          }
+        }
+      })
+
+      await localWrapper.vm.$nextTick()
+
+      // Chip shows the first loaded delivery's vendor name.
+      expect(localWrapper.text()).toContain('Filtered by Test Vendor')
+
+      localWrapper.unmount()
+    })
   })
 
   describe('Delivery Deletion', () => {

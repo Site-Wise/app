@@ -162,7 +162,17 @@
     <div class="card">
       <div class="flex items-center justify-between mb-4">
         <h2 class="font-display text-lg font-semibold text-ink dark:text-cream">{{ t('vendors.recentDeliveries') }}</h2>
-        <span class="text-sm text-stone-500 dark:text-stone-400">{{ vendorDeliveries.length }} {{ t('vendors.total') }}</span>
+        <div class="flex items-center gap-3">
+          <router-link
+            v-if="vendor"
+            :to="{ path: '/deliveries', query: { vendor: vendor.id } }"
+            class="inline-flex items-center gap-1 text-sm text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 underline-offset-2 hover:underline transition-colors ease-snap"
+          >
+            {{ t('vendors.viewDeliveries') }}
+            <ExternalLink class="h-3.5 w-3.5" />
+          </router-link>
+          <span class="text-sm text-stone-500 dark:text-stone-400">{{ vendorDeliveries.length }} {{ t('vendors.total') }}</span>
+        </div>
       </div>
       <div class="space-y-3 max-h-96 overflow-y-auto">
         <div v-for="delivery in vendorDeliveries.slice(0, 5)" :key="delivery.id"
