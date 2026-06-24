@@ -28,6 +28,8 @@
     "filter": "फिल्टर",
     "clearFilters": "हटाएं",
     "clearFilter": "फ़िल्टर हटाएं",
+    "filteredBy": "{label} द्वारा फ़िल्टर किया गया",
+    "filtered": "फ़िल्टर किया गया",
     "export": "निर्यात",
     "import": "आयात",
     "refresh": "रीफ्रेश",

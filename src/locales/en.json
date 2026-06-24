@@ -28,6 +28,8 @@
     "filter": "Filter",
     "clearFilters": "Clear",
     "clearFilter": "Clear filter",
+    "filteredBy": "Filtered by {label}",
+    "filtered": "Filtered",
     "export": "Export",
     "import": "Import",
     "refresh": "Refresh",
