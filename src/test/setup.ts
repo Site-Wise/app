@@ -46,6 +46,28 @@ Object.defineProperty(window, 'localStorage', {
   writable: true,
 })
 
+// Mock IntersectionObserver (happy-dom lacks it; used by InfiniteScrollSentinel)
+class MockIntersectionObserver {
+  observe = vi.fn()
+  unobserve = vi.fn()
+  disconnect = vi.fn()
+  takeRecords = vi.fn(() => [])
+  root = null
+  rootMargin = ''
+  thresholds = []
+  constructor() {}
+}
+Object.defineProperty(window, 'IntersectionObserver', {
+  writable: true,
+  configurable: true,
+  value: MockIntersectionObserver,
+})
+Object.defineProperty(globalThis, 'IntersectionObserver', {
+  writable: true,
+  configurable: true,
+  value: MockIntersectionObserver,
+})
+
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,

@@ -52,9 +52,14 @@ vi.mock('../../composables/useI18n', () => ({
   })
 }))
 
-// Mock useSiteData composable with multiple calls
+// Mock useSiteData composable with multiple calls (payment allocations + photos)
 vi.mock('../../composables/useSiteData', () => ({
   useSiteData: vi.fn()
+}))
+
+// Mock useInfiniteSiteData composable (browse list)
+vi.mock('../../composables/useInfiniteSiteData', () => ({
+  useInfiniteSiteData: vi.fn()
 }))
 
 // Mock useSite composable
@@ -102,9 +107,18 @@ vi.mock('../../composables/useSearch', () => ({
 vi.mock('../../services/pocketbase', () => ({
   deliveryService: {
     getAll: vi.fn().mockResolvedValue([]),
+    getList: vi.fn().mockResolvedValue({ items: [], totalItems: 0, totalPages: 0 }),
+    getAllWithPhotos: vi.fn().mockResolvedValue([]),
+    getById: vi.fn().mockResolvedValue({}),
     create: vi.fn().mockResolvedValue({}),
     update: vi.fn().mockResolvedValue({}),
     delete: vi.fn().mockResolvedValue(true)
+  },
+  paymentAllocationService: {
+    getAll: vi.fn().mockResolvedValue([])
+  },
+  vendorReturnService: {
+    getReturnInfoForDeliveryItems: vi.fn().mockResolvedValue({})
   },
   getCurrentSiteId: vi.fn().mockReturnValue('site-1'),
   setCurrentSiteId: vi.fn(),
@@ -256,29 +270,37 @@ describe('DeliveryView', () => {
       }
     ]
     
-    // Mock useSiteData to return different data based on calls
+    // Mock useInfiniteSiteData to return the browse deliveries
+    const { useInfiniteSiteData } = await import('../../composables/useInfiniteSiteData')
     const { useSiteData } = await import('../../composables/useSiteData')
-    const { ref } = await import('vue')
-    
-    let callCount = 0
-    vi.mocked(useSiteData).mockImplementation(() => {
-      callCount++
-      if (callCount === 1) {
-        // First call is for deliveries
-        return {
-          data: ref(mockDeliveries),
-          loading: ref(false),
-          reload: vi.fn()
-        }
-      } else {
-        // Second call is for payment allocations
-        return {
-          data: ref([]),
-          loading: ref(false),
-          reload: vi.fn()
-        }
-      }
+    const { ref, computed } = await import('vue')
+
+    vi.mocked(useInfiniteSiteData).mockImplementation(() => {
+      const items = ref(mockDeliveries) as any
+      return {
+        items,
+        loading: ref(false),
+        loadingMore: ref(false),
+        error: ref(null),
+        hasMore: computed(() => false) as any,
+        totalItems: ref(mockDeliveries.length),
+        currentPage: ref(1),
+        loadMore: vi.fn(),
+        reload: vi.fn(),
+        reset: vi.fn(),
+        patchItem: vi.fn(),
+        removeItem: vi.fn(),
+        prependItem: vi.fn()
+      } as any
     })
+
+    // Mock useSiteData for payment allocations and the photo query (both return [])
+    vi.mocked(useSiteData).mockImplementation(() => ({
+      data: ref([]) as any,
+      loading: ref(false),
+      error: ref(null),
+      reload: vi.fn()
+    }))
     
     const router = createMockRouter()
     

@@ -1,6 +1,9 @@
 {
   "common": {
     "loading": "लोड हो रहा है",
+    "loadMore": "और लोड करें",
+    "loadingMore": "और लोड हो रहा है",
+    "loadedMore": "{count} और लोड किए गए",
     "save": "सेव करें",
     "cancel": "रद्द करें",
     "continue": "जारी रखें",

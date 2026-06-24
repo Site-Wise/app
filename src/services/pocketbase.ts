@@ -4087,6 +4087,50 @@ export class DeliveryService {
     return records.map(record => this.mapRecordToDelivery(record));
   }
 
+  /**
+   * Paginated, site-isolated fetch mirroring getAll()'s filter/expand/sort.
+   * Used for infinite scrolling in the deliveries list.
+   */
+  async getList(
+    page: number,
+    perPage: number
+  ): Promise<{ items: Delivery[]; totalItems: number; totalPages: number }> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const result = await pb.collection('deliveries').getList(page, perPage, {
+      filter: `site="${siteId}"`,
+      expand: 'vendor,delivery_items,delivery_items.item',
+      sort: '-delivery_date'
+    });
+
+    return {
+      items: result.items.map(record => this.mapRecordToDelivery(record)),
+      totalItems: result.totalItems,
+      totalPages: result.totalPages
+    };
+  }
+
+  /**
+   * Lightweight, site-isolated query that returns only deliveries that have
+   * photos, with just enough expand to build the "view all images" gallery
+   * overlays. Independent of the paginated browse list so image coverage stays
+   * complete across all deliveries for the site.
+   */
+  async getAllWithPhotos(): Promise<Delivery[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    // Only deliveries that actually have photos. Keeps the payload small without
+    // a fragile field-projection (the mapper needs the full record shape).
+    const records = await pb.collection('deliveries').getFullList({
+      filter: `site="${siteId}" && photos:length>0`,
+      expand: 'vendor,delivery_items,delivery_items.item',
+      sort: '-delivery_date'
+    });
+    return records.map(record => this.mapRecordToDelivery(record));
+  }
+
   async getById(id: string): Promise<Delivery> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');

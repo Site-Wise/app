@@ -1,6 +1,9 @@
 {
   "common": {
     "loading": "Loading",
+    "loadMore": "Load more",
+    "loadingMore": "Loading more",
+    "loadedMore": "Loaded {count} more",
     "save": "Save",
     "cancel": "Cancel",
     "continue": "Continue",

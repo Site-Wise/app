@@ -349,6 +349,15 @@
       </div>
     </div>
 
+    <!-- Infinite-scroll sentinel (browse only; dormant during search) -->
+    <InfiniteScrollSentinel
+      v-if="!searchQuery.trim() && !loading && deliveriesHasMore"
+      :has-more="deliveriesHasMore"
+      :loading-more="deliveriesLoadingMore"
+      :loaded-count="lastLoadedCount"
+      @load-more="loadMoreDeliveries"
+    />
+
     <!-- Multi-Item Delivery Modal -->
     <MultiItemDeliveryModal
       v-if="showAddModal"
@@ -588,7 +597,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { Plus, Edit2, Trash2, Loader2, Eye, X, Images, MoreVertical, AlertCircle, Link2 } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
@@ -596,12 +605,14 @@ import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
+import { useInfiniteSiteData } from '../composables/useInfiniteSiteData';
 import { useQuickActionModal } from '../composables/useQuickActionModal';
 import { useDeliverySearch } from '../composables/useSearch';
 import ImageSlider from '../components/ImageSlider.vue';
 import MultiItemDeliveryModal from '../components/delivery/MultiItemDeliveryModal.vue';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
+import InfiniteScrollSentinel from '../components/InfiniteScrollSentinel.vue';
 import { 
   deliveryService,
   vendorReturnService,
@@ -619,15 +630,21 @@ const { canDelete } = usePermissions();
 const { openModal, closeModal } = useModalState();
 
 // Use site data management
-// Load deliveries data
-const { data: allDeliveriesData, loading: deliveriesLoading, reload: reloadDeliveries } = useSiteData(
-  async () => {
-    const deliveryData = await deliveryService.getAll();
-    // Sort deliveries by delivery date descending (newest first)
-    return deliveryData.sort((a, b) => 
-      new Date(b.delivery_date).getTime() - new Date(a.delivery_date).getTime()
-    );
-  }
+// Browse deliveries with incremental (infinite-scroll) loading. The server
+// already sorts by -delivery_date, so accumulated pages stay newest-first.
+const {
+  items: infiniteDeliveries,
+  loading: deliveriesLoading,
+  loadingMore: deliveriesLoadingMore,
+  hasMore: deliveriesHasMore,
+  loadMore: loadMoreDeliveries,
+  reload: reloadDeliveries,
+  patchItem: patchDelivery,
+  removeItem: removeDelivery,
+  prependItem: prependDelivery
+} = useInfiniteSiteData<Delivery>(
+  (_siteId, page, perPage) => deliveryService.getList(page, perPage),
+  { perPage: 50 }
 );
 
 // Load payment allocations separately
@@ -637,6 +654,19 @@ const { data: paymentAllocationsData } = useSiteData(
       return await paymentAllocationService.getAll();
     } catch (error) {
       console.error('Error loading payment allocations:', error);
+      return [];
+    }
+  }
+);
+
+// Lightweight, full-coverage photo source for "View all images". Independent of
+// the paginated browse list so image coverage spans ALL deliveries for the site.
+const { data: photoDeliveriesData, reload: reloadPhotoDeliveries } = useSiteData(
+  async () => {
+    try {
+      return await deliveryService.getAllWithPhotos();
+    } catch (error) {
+      console.error('Error loading delivery photos:', error);
       return [];
     }
   }
@@ -662,11 +692,12 @@ const viewingDeliveryAllocatedAmount = computed(() => {
     .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
 });
 
-// Display items: use search results if searching, otherwise all items with calculated payment status
+// Display items: use search results if searching, otherwise the accumulated
+// infinite-scroll browse pages — both enhanced with calculated payment status.
 const deliveries = computed((): DeliveryWithPaymentStatus[] => {
-  const baseDeliveries = searchQuery.value.trim() ? searchResults.value : (allDeliveriesData.value || []);
+  const baseDeliveries = searchQuery.value.trim() ? searchResults.value : (infiniteDeliveries.value || []);
   const allocations = paymentAllocations.value || [];
-  
+
   return DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus(baseDeliveries, allocations);
 });
 
@@ -706,6 +737,18 @@ const allImagesGalleryData = ref<{
 }>({ images: [], overlayInfo: [] });
 const loading = computed(() => deliveriesLoading.value);
 
+// Track how many rows the most recent "load more" appended, for the sentinel's
+// aria-live announcement.
+const lastLoadedCount = ref(0);
+let prevItemCount = 0;
+watch(infiniteDeliveries, (now) => {
+  const delta = (now?.length || 0) - prevItemCount;
+  if (delta > 0 && prevItemCount > 0) {
+    lastLoadedCount.value = delta;
+  }
+  prevItemCount = now?.length || 0;
+});
+
 const canCreateDelivery = computed(() => {
   return !isReadOnly.value && checkCreateLimit('deliveries');
 });
@@ -714,19 +757,21 @@ const canEditDelete = computed(() => {
   return !isReadOnly.value && canDelete.value;
 });
 
+// Sourced from a dedicated full-coverage photo query (not the paginated browse
+// list) so "View all images" keeps spanning every delivery for the site.
 const allImages = computed(() => {
-  if (!deliveries.value) return [];
-  
+  const photoDeliveries = photoDeliveriesData.value || [];
+
   const images: Array<{ delivery: Delivery; photo: string; index: number }> = [];
-  
-  deliveries.value.forEach(delivery => {
+
+  photoDeliveries.forEach(delivery => {
     if (delivery.photos && delivery.photos.length > 0) {
       delivery.photos.forEach((photo, index) => {
         images.push({ delivery, photo, index });
       });
     }
   });
-  
+
   return images;
 });
 
@@ -847,6 +892,17 @@ const reloadAllData = async () => {
   }
 };
 
+// Fetch the fully-expanded delivery (vendor + delivery_items.item) so an
+// in-place insert/update renders identically to a browse-loaded row.
+const fetchExpandedDelivery = async (id: string): Promise<Delivery | null> => {
+  try {
+    return await deliveryService.getById(id);
+  } catch (err) {
+    console.error('Error fetching expanded delivery:', err);
+    return null;
+  }
+};
+
 const handleAddDelivery = () => {
   editingDelivery.value = null;
   showAddModal.value = true;
@@ -918,10 +974,12 @@ const reconnectOrphanedItems = async () => {
     // Update the viewing delivery with the reconnected data
     viewingDelivery.value = updatedDelivery;
     orphanedItemsFound.value = false;
-    
-    // Also reload the main deliveries list to reflect the change
-    await reloadDeliveries();
-    
+
+    // Patch the single row in the browse list to reflect the change in place.
+    if (updatedDelivery.id) {
+      patchDelivery(updatedDelivery.id, updatedDelivery);
+    }
+
     success(t('delivery.itemsReconnected'));
   } catch (err) {
     console.error('Error reconnecting delivery items:', err);
@@ -965,7 +1023,11 @@ const deleteDelivery = async (delivery: Delivery) => {
   try {
     await deliveryService.delete(delivery.id!);
     success(t('delivery.deleteSuccess'));
-    await reloadAllData();
+    // Remove the single row in place (no scroll jump / full reload).
+    removeDelivery(delivery.id!);
+    // Keep search index + photo gallery coverage in sync.
+    loadAll();
+    await reloadPhotoDeliveries();
   } catch (err) {
     console.error('Error deleting delivery:', err);
     
@@ -991,15 +1053,32 @@ const closeAddModal = () => {
   closeModal('delivery-edit-modal');
 };
 
-const handleDeliverySaved = () => {
-  // For new deliveries, modal stays open but refreshes the list
-  reloadAllData();
+const handleDeliverySaved = async (delivery: Delivery) => {
+  // New delivery: insert in place at the top (server-sorted newest-first) so the
+  // list and scroll position stay put. Re-fetch for full expand (vendor/items).
+  const expanded = (delivery?.id ? await fetchExpandedDelivery(delivery.id) : null) || delivery;
+  if (expanded?.id) {
+    prependDelivery(expanded);
+  } else {
+    // Fallback to a full reload if we couldn't resolve the new record.
+    await reloadDeliveries();
+  }
+  // Keep search index + photo gallery coverage fresh.
+  loadAll();
+  await reloadPhotoDeliveries();
 };
 
-const handleDeliveryEditSuccess = () => {
-  // For edits, close the modal and refresh
+const handleDeliveryEditSuccess = async (delivery: Delivery) => {
+  // For edits, close the modal and patch the single row in place (no scroll jump).
   closeAddModal();
-  reloadAllData();
+  const expanded = (delivery?.id ? await fetchExpandedDelivery(delivery.id) : null) || delivery;
+  if (expanded?.id) {
+    patchDelivery(expanded.id, expanded);
+  } else {
+    await reloadDeliveries();
+  }
+  loadAll();
+  await reloadPhotoDeliveries();
 };
 
 
