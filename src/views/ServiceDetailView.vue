@@ -138,7 +138,8 @@
                 {{ formatDate(booking.start_date) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-ink dark:text-cream">
-                {{ booking.expand?.vendor?.name || 'Unknown Vendor' }}
+                {{ booking.expand?.vendor?.contact_person || booking.expand?.vendor?.name || 'Unknown Vendor' }}
+                <span v-if="booking.expand?.vendor?.name && booking.expand?.vendor?.contact_person" class="block text-xs text-stone-500 dark:text-stone-400">{{ booking.expand?.vendor?.name }}</span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-mono sw-tabular text-ink dark:text-cream">
                 {{ booking.duration }} {{ service.unit }}

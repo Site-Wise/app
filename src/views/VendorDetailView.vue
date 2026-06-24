@@ -177,9 +177,14 @@
       <div class="space-y-3 max-h-96 overflow-y-auto">
         <div v-for="delivery in vendorDeliveries.slice(0, 5)" :key="delivery.id"
           class="p-3 bg-cream-2 dark:bg-ink-2 rounded-lg">
-          <div class="flex justify-between items-start mb-2">
-            <div>
-              <h4 class="font-medium text-ink dark:text-cream">Delivery #<span class="font-mono sw-tabular">{{ delivery.id?.slice(-6) }}</span></h4>
+          <div class="flex justify-between items-start mb-2 gap-2">
+            <div class="min-w-0">
+              <h4
+                class="font-medium text-ink dark:text-cream truncate"
+                :title="getDeliveryItemNames(delivery) || delivery.delivery_reference || ''"
+              >
+                {{ getDeliveryItemNames(delivery) || delivery.delivery_reference || '—' }}
+              </h4>
               <p class="text-sm text-stone-600 dark:text-stone-400">{{ formatDate(delivery.delivery_date) }}</p>
             </div>
             <span :class="DeliveryPaymentCalculator.getPaymentStatusClass(delivery.payment_status)">
@@ -1373,6 +1378,13 @@ const exportTallyXml = () => {
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
+};
+
+const getDeliveryItemNames = (delivery: DeliveryWithPaymentStatus): string => {
+  return (delivery.expand?.delivery_items
+    ?.map((di) => di.expand?.item?.name)
+    .filter(Boolean)
+    .join(', ')) || '';
 };
 
 const getReturnStatusClass = (status: string) => {

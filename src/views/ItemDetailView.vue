@@ -149,7 +149,8 @@
               {{ formatDate(deliveryItem.delivery_date || '') }}
             </td>
             <td class="hidden lg:table-cell px-4 py-3.5 text-sm text-ink dark:text-cream">
-              {{ deliveryItem.expand?.delivery?.expand?.vendor?.name || 'Unknown Vendor' }}
+              {{ deliveryItem.expand?.delivery?.expand?.vendor?.contact_person || deliveryItem.expand?.delivery?.expand?.vendor?.name || 'Unknown Vendor' }}
+              <span v-if="deliveryItem.expand?.delivery?.expand?.vendor?.name && deliveryItem.expand?.delivery?.expand?.vendor?.contact_person" class="block text-xs text-stone-500 dark:text-stone-400">{{ deliveryItem.expand?.delivery?.expand?.vendor?.name }}</span>
             </td>
             <td class="hidden lg:table-cell px-4 py-3.5 whitespace-nowrap text-right text-sm font-mono sw-tabular text-ink dark:text-cream">
               {{ deliveryItem.quantity }} <span class="text-xs text-stone-500 dark:text-stone-400">{{ item.unit }}</span>
@@ -182,7 +183,8 @@
           <!-- Header: date + vendor / status -->
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
-              <p class="text-sm font-semibold text-ink dark:text-cream">{{ deliveryItem.expand?.delivery?.expand?.vendor?.name || 'Unknown Vendor' }}</p>
+              <p class="text-sm font-semibold text-ink dark:text-cream">{{ deliveryItem.expand?.delivery?.expand?.vendor?.contact_person || deliveryItem.expand?.delivery?.expand?.vendor?.name || 'Unknown Vendor' }}</p>
+              <p v-if="deliveryItem.expand?.delivery?.expand?.vendor?.name && deliveryItem.expand?.delivery?.expand?.vendor?.contact_person" class="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{{ deliveryItem.expand?.delivery?.expand?.vendor?.name }}</p>
               <p class="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{{ formatDate(deliveryItem.delivery_date || '') }}</p>
             </div>
             <span :class="`status-${deliveryItem.expand?.delivery?.payment_status || 'pending'} shrink-0`">
