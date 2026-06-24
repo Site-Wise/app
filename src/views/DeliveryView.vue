@@ -144,10 +144,14 @@
       </div>
     </div>
 
-    <!-- xl+ Table View -->
-    <div class="hidden xl:block overflow-x-auto rounded-lg border border-stone-200 dark:border-ink-4 shadow-card dark:shadow-inset-hi">
+    <!-- xl+ Table View: fixed-height internal scroller (page itself doesn't scroll
+         on desktop); the table header stays pinned while rows scroll. -->
+    <div
+      ref="tableScrollContainer"
+      class="hidden xl:block overflow-x-auto xl:overflow-y-auto xl:max-h-[calc(100vh-13rem)] rounded-lg border border-stone-200 dark:border-ink-4 shadow-card dark:shadow-inset-hi"
+    >
       <table class="min-w-full divide-y divide-stone-200 dark:divide-ink-4">
-          <thead class="bg-cream-2 dark:bg-ink-2">
+          <thead class="bg-cream-2 dark:bg-ink-2 sticky top-0 z-10">
             <tr>
               <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">{{ t('common.vendor') }}</th>
               <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">{{ t('delivery.deliveryDate') }}</th>
@@ -250,6 +254,16 @@
             </tr>
           </tbody>
         </table>
+        <!-- Desktop sentinel: lives INSIDE the scroll container so the
+             IntersectionObserver targets it against that container, not the viewport. -->
+        <InfiniteScrollSentinel
+          v-if="!searchQuery.trim() && !loading && deliveriesHasMore"
+          :has-more="deliveriesHasMore"
+          :loading-more="deliveriesLoadingMore"
+          :loaded-count="lastLoadedCount"
+          :root="tableScrollContainer"
+          @load-more="loadMoreDeliveries"
+        />
     </div>
 
     <!-- Mobile/Tablet Card View (< xl) -->
@@ -349,9 +363,12 @@
       </div>
     </div>
 
-    <!-- Infinite-scroll sentinel (browse only; dormant during search) -->
+    <!-- Mobile/tablet sentinel (< xl): the page scrolls here, so the observer
+         uses the viewport. Hidden on xl where the desktop sentinel (inside the
+         table scroller) takes over. Browse only; dormant during search. -->
     <InfiniteScrollSentinel
       v-if="!searchQuery.trim() && !loading && deliveriesHasMore"
+      class="xl:hidden"
       :has-more="deliveriesHasMore"
       :loading-more="deliveriesLoadingMore"
       :loaded-count="lastLoadedCount"
@@ -707,6 +724,9 @@ const editingDelivery = ref<Delivery | null>(null);
 const viewingDelivery = ref<Delivery | null>(null);
 const loadingDeliveryDetails = ref(false);
 const showMobileActionMenu = ref(false);
+// Scroll container for the desktop table (fixed-height internal scroller). The
+// infinite-scroll sentinel observes against this element on xl screens.
+const tableScrollContainer = ref<HTMLElement | null>(null);
 
 // Return information storage
 const returnInfo = ref<Record<string, {

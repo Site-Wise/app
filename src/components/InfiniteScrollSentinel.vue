@@ -42,6 +42,13 @@ const props = defineProps<{
   loadingMore: boolean;
   /** Optional: number of newly-loaded rows, used for the aria-live announcement. */
   loadedCount?: number;
+  /**
+   * Optional scroll container the sentinel lives in. When the list scrolls inside
+   * a fixed-height container (rather than the page), pass that element so the
+   * IntersectionObserver observes against it instead of the viewport. The sentinel
+   * MUST be a descendant of this element.
+   */
+  root?: HTMLElement | null;
 }>();
 
 const emit = defineEmits<{
@@ -65,7 +72,7 @@ useIntersectionObserver(
       emitLoadMore();
     }
   },
-  { rootMargin: '300px' }
+  { rootMargin: '300px', root: () => props.root ?? null }
 );
 
 // Announce newly-loaded rows once a "load more" cycle completes.
