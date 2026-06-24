@@ -1237,18 +1237,6 @@ useEventListener(window, 'keydown', handleKeyboardShortcut);
 </script>
 
 <style scoped>
-.status-pending {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300;
-}
-
-.status-partial {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300;
-}
-
-.status-paid {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-forest-100 text-forest-800 dark:bg-forest-900 dark:text-forest-300;
-}
-
 .btn-primary {
   @apply bg-amber-500 hover:bg-amber-600 text-ink font-medium py-2 px-4 rounded-md transition-colors duration-150 ease-in-out;
 }

@@ -1467,18 +1467,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.status-pending {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300;
-}
-
-.status-partial {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 dark:bg-ink-4 dark:text-stone-300;
-}
-
-.status-paid {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-forest-100 text-forest-800 dark:bg-forest-900/40 dark:text-forest-300;
-}
-
 /* Ledger table text wrapping */
 .ledger-particulars {
   @apply max-w-xs md:max-w-sm lg:max-w-md;
