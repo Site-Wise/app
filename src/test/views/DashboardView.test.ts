@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { setupTestPinia } from '../utils/test-setup'
 
@@ -309,7 +309,12 @@ describe('DashboardView', () => {
     expect(wrapper.exists()).toBe(true)
   })
 
-  it('should render chart component', () => {
+  it('should render chart component', async () => {
+    // The chart is now lazy-loaded via defineAsyncComponent; let the async
+    // component loader resolve before asserting it rendered.
+    await flushPromises()
+    await wrapper.vm.$nextTick()
+
     // Check that the chart component is rendered
     expect(wrapper.find('.mock-chart').exists()).toBe(true)
   })

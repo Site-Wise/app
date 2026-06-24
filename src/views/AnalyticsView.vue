@@ -242,7 +242,7 @@
             </p>
             <div class="relative bg-cream-2 dark:bg-ink-2 border border-stone-200 dark:border-ink-4 rounded-lg p-3 sm:p-6">
               <div class="h-64 sm:h-80">
-                <Pie :data="costByTagChartData" :options="pieChartOptions" />
+                <AnalyticsChart type="pie" :data="costByTagChartData" :options="pieChartOptions" />
               </div>
             </div>
           </div>
@@ -254,7 +254,7 @@
             </p>
             <div class="relative bg-cream-2 dark:bg-ink-2 border border-stone-200 dark:border-ink-4 rounded-lg p-3 sm:p-6">
               <div class="h-64 sm:h-80">
-                <Bar :data="costOverTimeChartData" :options="barChartOptions" />
+                <AnalyticsChart type="bar" :data="costOverTimeChartData" :options="barChartOptions" />
               </div>
             </div>
           </div>
@@ -339,8 +339,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue';
+import { ref, computed, onMounted, nextTick, watch, defineAsyncComponent } from 'vue';
 import Skeleton from '../components/Skeleton.vue';
+import ChartLoadingPlaceholder from '../components/charts/ChartLoadingPlaceholder.vue';
 import { useI18n } from '../composables/useI18n';
 import { useModalEscape } from '../composables/useModalEscape';
 import { useTheme } from '../composables/useTheme';
@@ -359,22 +360,13 @@ import {
   Trash2,
   Loader2
 } from 'lucide-vue-next';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  LineElement,
-  PointElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend
-} from 'chart.js';
-import { Pie, Bar } from 'vue-chartjs';
 
-// Register Chart.js components
-ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend);
+// Lazy-load chart.js (heavy) so the analytics summary cards paint without
+// waiting for the chart bundle on the critical/landing path.
+const AnalyticsChart = defineAsyncComponent({
+  loader: () => import('../components/charts/AnalyticsChart.vue'),
+  loadingComponent: ChartLoadingPlaceholder
+});
 
 const { t } = useI18n();
 const { isDark } = useTheme();

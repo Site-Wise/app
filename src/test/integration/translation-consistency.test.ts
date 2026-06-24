@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { translations } from '../../locales';
+// Locales are now loaded per-language via dynamic loaders in production; for this
+// consistency check we import both JSON sources directly.
+import en from '../../locales/en.json';
+import hi from '../../locales/hi.json';
+
+const translations = { en, hi };
 
 /**
  * Helper function to extract all keys from a nested object

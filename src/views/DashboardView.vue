@@ -168,9 +168,9 @@
           <!-- Chart Container -->
           <div
             class="relative bg-cream-2 dark:bg-ink-2 rounded-lg p-3 sm:p-6 border border-stone-200 dark:border-ink-4">
-            <!-- Chart.js Line Chart -->
+            <!-- Chart.js Line Chart (lazy-loaded, off the critical path) -->
             <div class="h-48 sm:h-64">
-              <Line :data="chartData" :options="chartOptions" />
+              <DashboardLineChart :data="chartData" :options="chartOptions" />
             </div>
           </div>
         </div>
@@ -250,31 +250,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, defineAsyncComponent } from 'vue';
 import { TrendingUp, Undo2, Wallet, DollarSign, BarChart3 } from 'lucide-vue-next';
-import { Line } from 'vue-chartjs';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-} from 'chart.js';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
+import ChartLoadingPlaceholder from '../components/charts/ChartLoadingPlaceholder.vue';
+
+// Lazy-load chart.js (heavy) so the dashboard stats/cards paint without waiting
+// for the chart bundle on the critical/landing path.
+const DashboardLineChart = defineAsyncComponent({
+  loader: () => import('../components/charts/DashboardLineChart.vue'),
+  loadingComponent: ChartLoadingPlaceholder
+});
 import Skeleton from '../components/Skeleton.vue';
 import { useSite } from '../composables/useSite';
 import { useSiteData } from '../composables/useSiteData';

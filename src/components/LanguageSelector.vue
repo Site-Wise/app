@@ -39,7 +39,8 @@
           v-for="language in availableLanguages"
           :key="language.code"
           @click="selectLanguage(language.code as 'en' | 'hi')"
-          class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200 touch-manipulation group"
+          :disabled="switchingLanguage"
+          class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200 touch-manipulation group disabled:opacity-60 disabled:cursor-wait"
           :class="{
             'bg-amber-50 dark:bg-amber-500/10 border-l-4 border-amber-500': currentLanguage === language.code,
             'text-amber-900 dark:text-amber-300': currentLanguage === language.code,
@@ -90,9 +91,18 @@ const getLanguageFlag = (code: string) => {
   return flags[code] || '🌐';
 };
 
-const selectLanguage = (code: 'en' | 'hi') => {
-  setLanguage(code);
-  dropdownOpen.value = false;
+const switchingLanguage = ref(false);
+
+const selectLanguage = async (code: 'en' | 'hi') => {
+  if (switchingLanguage.value) return;
+  switchingLanguage.value = true;
+  try {
+    // setLanguage is async now (it lazy-loads the target language dictionary)
+    await setLanguage(code);
+  } finally {
+    switchingLanguage.value = false;
+    dropdownOpen.value = false;
+  }
 };
 
 const handleClickOutside = (event: Event) => {
