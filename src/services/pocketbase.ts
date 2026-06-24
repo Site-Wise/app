@@ -4101,7 +4101,11 @@ export class DeliveryService {
     const result = await pb.collection('deliveries').getList(page, perPage, {
       filter: `site="${siteId}"`,
       expand: 'vendor,delivery_items,delivery_items.item',
-      sort: '-delivery_date'
+      sort: '-delivery_date',
+      // Distinct requestKey so the browse list isn't auto-cancelled by the
+      // concurrent getAllWithPhotos() request to the same collection. A stable
+      // key still lets a newer browse load supersede a stale one on site switch.
+      requestKey: 'deliveries-list'
     });
 
     return {
@@ -4126,7 +4130,10 @@ export class DeliveryService {
     const records = await pb.collection('deliveries').getFullList({
       filter: `site="${siteId}" && photos:length>0`,
       expand: 'vendor,delivery_items,delivery_items.item',
-      sort: '-delivery_date'
+      sort: '-delivery_date',
+      // Distinct requestKey so this doesn't auto-cancel (or get cancelled by) the
+      // browse getList() request to the same deliveries collection.
+      requestKey: 'deliveries-photos'
     });
     return records.map(record => this.mapRecordToDelivery(record));
   }
