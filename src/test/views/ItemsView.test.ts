@@ -135,7 +135,9 @@ vi.mock('../../components/TagSelector.vue', () => ({
 }))
 
 // Mock useSiteData composable
-vi.mock('../../composables/useSiteData', () => ({
+vi.mock('../../composables/useSiteData', () => {
+  const { ref } = require('vue')
+  return {
   useSiteData: () => ({
     data: {
       value: {
@@ -167,10 +169,11 @@ vi.mock('../../composables/useSiteData', () => ({
         ])
       }
     },
-    loading: { value: false },
+    loading: ref(false),
     reload: vi.fn()
   })
-}))
+  }
+})
 
 // Mock usePermissions
 vi.mock('../../composables/usePermissions', () => ({

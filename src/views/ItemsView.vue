@@ -24,8 +24,32 @@
       <SearchBox v-model="searchQuery" :placeholder="t('search.items')" :search-loading="searchLoading" />
     </div>
 
+    <!-- Loading State: skeleton card grid -->
+    <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6" aria-hidden="true">
+      <div v-for="i in 6" :key="'skel-' + i" class="card-interactive flex flex-col">
+        <!-- Card header: title + unit -->
+        <div class="flex items-start justify-between">
+          <div class="flex-1 min-w-0 space-y-2">
+            <Skeleton height="1.25rem" width="60%" />
+            <Skeleton height="0.875rem" width="35%" />
+          </div>
+        </div>
+        <!-- Stat strip -->
+        <div class="mt-auto pt-4 border-t border-stone-200 dark:border-ink-4 flex items-end justify-between gap-4">
+          <div class="space-y-1.5">
+            <Skeleton height="0.625rem" width="4rem" />
+            <Skeleton height="1.5rem" width="3rem" />
+          </div>
+          <div class="space-y-1.5 flex flex-col items-end">
+            <Skeleton height="0.625rem" width="3rem" />
+            <Skeleton height="1.5rem" width="4rem" />
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Items Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6" data-tour="items-table">
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6" data-tour="items-table">
       <div v-for="item in items" :key="item.id"
         class="card-interactive group flex flex-col"
         @click="viewItemDetail(item.id!)">
@@ -208,6 +232,7 @@ import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
+import Skeleton from '../components/Skeleton.vue';
 import TagSelector from '../components/TagSelector.vue';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
@@ -234,7 +259,7 @@ const router = useRouter();
 const { searchQuery, loading: searchLoading, results: searchResults } = useItemSearch();
 
 // Use site-aware data loading
-const { data: itemsData, reload: reloadItems } = useSiteData(async () => {
+const { data: itemsData, loading, reload: reloadItems } = useSiteData(async () => {
   const [items, deliveries, allTags] = await Promise.all([
     itemService.getAll(),
     deliveryService.getAll(),

@@ -25,16 +25,24 @@
 
     <!-- Loading State: skeleton card grid -->
     <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6" aria-hidden="true">
-      <div v-for="i in 6" :key="i" class="card flex flex-col gap-3">
+      <div v-for="i in 6" :key="'skel-' + i" class="card card-interactive flex flex-col">
+        <!-- Card header: title + category meta -->
         <div class="flex items-start justify-between">
           <div class="flex-1 min-w-0 space-y-2">
             <Skeleton height="1.25rem" width="60%" />
             <Skeleton height="0.875rem" width="40%" />
           </div>
         </div>
+        <!-- Stat strip -->
         <div class="mt-auto pt-4 border-t border-stone-200 dark:border-ink-4 flex items-end justify-between gap-4">
-          <Skeleton height="1.5rem" width="45%" />
-          <Skeleton height="1.5rem" width="30%" />
+          <div class="space-y-1.5">
+            <Skeleton height="0.625rem" width="4rem" />
+            <Skeleton height="1.5rem" width="4rem" />
+          </div>
+          <div class="space-y-1.5 flex flex-col items-end">
+            <Skeleton height="0.625rem" width="3rem" />
+            <Skeleton height="1.5rem" width="2.5rem" />
+          </div>
         </div>
       </div>
     </div>

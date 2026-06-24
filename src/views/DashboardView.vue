@@ -291,6 +291,7 @@ import {
   vendorCreditNoteService,
   vendorService
 } from '../services/pocketbase';
+import { DeliveryPaymentCalculator } from '../services/deliveryUtils';
 import { useSiteStore } from '../stores/site';
 import NewUserOnboarding from '../components/NewUserOnboarding.vue';
 
@@ -380,25 +381,45 @@ const stats = computed(() => {
   const totalSqft = currentSite.value?.total_planned_area || 1;
   const expensePerSqft = Math.round(totalExpenses / totalSqft);
 
-  // Calculate total amount due from deliveries
-  const deliveriesTotal = deliveries.value.reduce((sum, delivery) => sum + delivery.total_amount, 0);
+  // Outstanding is summed PER ITEM, never netted globally: an overpayment/advance on
+  // one delivery or booking must not cancel out a genuine balance owed on another.
+  //
+  // The `paid_amount`/`payment_status` fields on deliveries & bookings are deprecated
+  // (always 0 from the API) — the canonical "how much is paid against this item" lives
+  // in the payment_allocations pivot, carried on each payment's expand. Paid = sum of
+  // allocations referencing the item. This is the same source VendorService uses, so the
+  // site-wide total here equals the sum of every vendor's outstanding.
+  const allocations = payments.value.flatMap(p => p.expand?.payment_allocations || []);
 
-  // Calculate total amount due from service bookings based on progress percentage
-  const serviceBookingsTotal = serviceBookings.value.reduce((sum, booking) => {
-    return sum + ServiceBookingService.calculateProgressBasedAmount(booking);
+  // Deliveries: outstanding = total_amount - allocated (clamped at 0).
+  const deliveriesOutstanding = deliveries.value.reduce((sum, delivery) => {
+    return sum + DeliveryPaymentCalculator.calculateOutstandingAmount(delivery, allocations);
   }, 0);
 
-  // Calculate total payments made
-  const totalPaid = payments.value.reduce((sum, payment) => sum + payment.amount, 0);
+  // Service bookings: due is the progress-based amount (total scaled by percent
+  // completed), minus what's been allocated to the booking (clamped at 0).
+  const serviceBookingsOutstanding = serviceBookings.value.reduce((sum, booking) => {
+    const allocated = allocations
+      .filter(a => a.service_booking === booking.id)
+      .reduce((s, a) => s + a.allocated_amount, 0);
+    return sum + ServiceBookingService.calculateOutstandingAmountFromData(booking, allocated);
+  }, 0);
 
-  // Outstanding = Total Due - Total Paid
-  const totalDue = deliveriesTotal + serviceBookingsTotal;
-  const outstandingAmount = totalDue - totalPaid > 0 ? totalDue - totalPaid : 0;
+  const outstandingAmount = deliveriesOutstanding + serviceBookingsOutstanding;
 
-  // Count of deliveries that are not fully paid (honest "unpaid" note for the outstanding tile)
-  const unpaidCount = deliveries.value.filter(
-    d => (d.paid_amount || 0) < d.total_amount
-  ).length;
+  // Count of items with an outstanding balance (honest "unpaid" note for the outstanding
+  // tile) — deliveries not fully paid plus service bookings whose progress-based due
+  // exceeds what's been allocated.
+  const unpaidCount =
+    deliveries.value.filter(
+      d => DeliveryPaymentCalculator.calculateOutstandingAmount(d, allocations) > 0
+    ).length +
+    serviceBookings.value.filter(b => {
+      const allocated = allocations
+        .filter(a => a.service_booking === b.id)
+        .reduce((s, a) => s + a.allocated_amount, 0);
+      return ServiceBookingService.calculateOutstandingAmountFromData(b, allocated) > 0;
+    }).length;
 
   // Advances = money paid to vendors that isn't (fully) attributed to a delivery or
   // service booking yet. Per payment: max(0, amount - sum(allocated_amount)).

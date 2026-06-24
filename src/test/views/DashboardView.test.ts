@@ -104,6 +104,11 @@ vi.mock('../../services/pocketbase', async () => {
     ServiceBookingService: {
       calculateProgressBasedAmount: vi.fn().mockImplementation((booking) => {
         return (booking.total_amount * (booking.percent_completed || 0)) / 100;
+      }),
+      calculateOutstandingAmountFromData: vi.fn().mockImplementation((booking, paidAmount) => {
+        const progressAmount = (booking.total_amount * (booking.percent_completed || 0)) / 100;
+        const outstanding = progressAmount - paidAmount;
+        return outstanding > 0 ? outstanding : 0;
       })
     }
   }
@@ -185,7 +190,19 @@ vi.mock('../../composables/useSiteData', () => ({
           service_bookings: ['booking-1'],
           site: 'site-1',
           created: '2024-01-01T00:00:00Z',
-          updated: '2024-01-01T00:00:00Z'
+          updated: '2024-01-01T00:00:00Z',
+          // Outstanding is attributed via the payment_allocations pivot, not payment.amount.
+          // This 10000 is fully allocated to booking-1 (its progress-based due), leaving
+          // delivery-1's 22500 unpaid → outstanding 22500.
+          expand: {
+            payment_allocations: [{
+              id: 'alloc-1',
+              payment: 'payment-1',
+              service_booking: 'booking-1',
+              allocated_amount: 10000,
+              site: 'site-1'
+            }]
+          }
         }]
       }),
       loading: ref(false),

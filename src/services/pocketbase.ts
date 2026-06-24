@@ -1424,33 +1424,49 @@ export class VendorService {
       .reduce((sum, payment) => sum + payment.amount, 0);
   }
 
-  // Synchronous calculation methods for use with existing data
+  // Synchronous calculation methods for use with existing data.
+  //
+  // Outstanding is summed PER ITEM (each clamped at 0), never netted globally across a
+  // vendor: an advance/overpayment on one delivery or booking must not erase a genuine
+  // balance owed on another. The source of truth for "how much is paid against an item"
+  // is the payment_allocations pivot (the deprecated paid_amount/payment_status fields
+  // are always 0 from the API). Because every delivery/booking belongs to exactly one
+  // vendor, summing this across all vendors equals the site-wide outstanding the
+  // dashboard shows.
+  //
+  // `payments` must be loaded via paymentService.getAll() so each carries its
+  // expanded `payment_allocations`.
   static calculateOutstandingFromData(
     vendorId: string,
     deliveries: Delivery[],
     serviceBookings: ServiceBooking[],
     payments: Payment[]
   ): number {
-    // Calculate total amount due from deliveries
-    const deliveriesTotal = deliveries
+    const allocations = payments.flatMap(p => p.expand?.payment_allocations || []);
+
+    // Deliveries: outstanding = total_amount - allocated (clamped at 0).
+    const deliveriesOutstanding = deliveries
       .filter(delivery => delivery.vendor === vendorId)
-      .reduce((sum, delivery) => sum + delivery.total_amount, 0);
+      .reduce((sum, delivery) => {
+        const allocated = allocations
+          .filter(a => a.delivery === delivery.id)
+          .reduce((s, a) => s + a.allocated_amount, 0);
+        const outstanding = delivery.total_amount - allocated;
+        return sum + (outstanding > 0 ? outstanding : 0);
+      }, 0);
 
-    // Calculate total amount due from service bookings based on progress percentage
-    const serviceBookingsTotal = serviceBookings
+    // Service bookings: due is the progress-based amount (total scaled by percent
+    // completed), minus what's been allocated to the booking (clamped at 0).
+    const serviceBookingsOutstanding = serviceBookings
       .filter(booking => booking.vendor === vendorId)
-      .reduce((sum, booking) => sum + ServiceBookingService.calculateProgressBasedAmount(booking), 0);
+      .reduce((sum, booking) => {
+        const allocated = allocations
+          .filter(a => a.service_booking === booking.id)
+          .reduce((s, a) => s + a.allocated_amount, 0);
+        return sum + ServiceBookingService.calculateOutstandingAmountFromData(booking, allocated);
+      }, 0);
 
-    // Calculate total payments made to this vendor
-    const totalPaid = payments
-      .filter(payment => payment.vendor === vendorId)
-      .reduce((sum, payment) => sum + payment.amount, 0);
-
-    // Outstanding = Total Due - Total Paid
-    const totalDue = deliveriesTotal + serviceBookingsTotal;
-    const outstanding = totalDue - totalPaid;
-
-    return outstanding > 0 ? outstanding : 0;
+    return deliveriesOutstanding + serviceBookingsOutstanding;
   }
 
   static calculateTotalPaidFromData(vendorId: string, payments: Payment[]): number {
