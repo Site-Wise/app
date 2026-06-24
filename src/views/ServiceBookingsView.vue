@@ -157,8 +157,13 @@
               <tr v-for="booking in serviceBookings" :key="booking.id" @click="viewBooking(booking)"
                   class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap cursor-pointer">
                 <td class="py-3.5 px-4 align-middle max-w-xs">
-                  <div class="font-medium text-sm text-ink dark:text-cream leading-snug">{{ booking.expand?.service?.name || 'Unknown Service' }}</div>
-                  <div v-if="booking.expand?.service?.category" class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{{ booking.expand.service.category }}</div>
+                  <div class="text-sm leading-snug">
+                    <span class="font-medium text-ink dark:text-cream">{{ booking.expand?.service?.name || 'Unknown Service' }}</span>
+                    <template v-if="booking.expand?.service?.category">
+                      <span class="mx-1.5 text-stone-300 dark:text-stone-600">|</span>
+                      <span class="text-stone-500 dark:text-stone-400">{{ booking.expand.service.category }}</span>
+                    </template>
+                  </div>
                   <div class="lg:hidden text-xs text-stone-500 dark:text-stone-400 mt-0.5 truncate">{{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}</div>
                   <!-- Notes: what/where this booking is for (same service used across locations) -->
                   <div v-if="booking.notes" class="flex items-start gap-1 mt-1 text-xs text-stone-600 dark:text-stone-300" :title="booking.notes">
