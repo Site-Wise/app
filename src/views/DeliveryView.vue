@@ -760,11 +760,17 @@ const canEditDelete = computed(() => {
 // Sourced from a dedicated full-coverage photo query (not the paginated browse
 // list) so "View all images" keeps spanning every delivery for the site.
 const allImages = computed(() => {
-  const photoDeliveries = photoDeliveriesData.value || [];
+  // When searching/filtering, the gallery must track the FILTERED list so the
+  // image count shrinks with the results (the expected behavior). When browsing,
+  // use the dedicated full-coverage photo query so "view all images" spans every
+  // delivery for the site, not just the currently-loaded infinite-scroll pages.
+  const source = searchQuery.value.trim()
+    ? deliveries.value
+    : (photoDeliveriesData.value || []);
 
   const images: Array<{ delivery: Delivery; photo: string; index: number }> = [];
 
-  photoDeliveries.forEach(delivery => {
+  source.forEach(delivery => {
     if (delivery.photos && delivery.photos.length > 0) {
       delivery.photos.forEach((photo, index) => {
         images.push({ delivery, photo, index });
