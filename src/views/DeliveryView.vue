@@ -955,16 +955,6 @@ const viewAllImages = () => {
   showPhotoGallery.value = true;
 };
 
-const reloadAllData = async () => {
-  try {
-    await reloadDeliveries();
-    // Load all items for search functionality
-    loadAll();
-  } catch (err) {
-    console.error('Error loading deliveries:', err);
-    error(t('delivery.loadError'));
-  }
-};
 
 // Fetch the fully-expanded delivery (vendor + delivery_items.item) so an
 // in-place insert/update renders identically to a browse-loaded row.

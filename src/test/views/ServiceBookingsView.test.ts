@@ -21,7 +21,10 @@ vi.mock('../../composables/useUrlFilters', () => ({
 const serviceBookingMocks = vi.hoisted(() => ({
   getAll: vi.fn().mockResolvedValue([]),
   getByVendor: vi.fn().mockResolvedValue([]),
-  getByService: vi.fn().mockResolvedValue([])
+  getByService: vi.fn().mockResolvedValue([]),
+  create: vi.fn().mockResolvedValue({ id: 'booking-new' }),
+  update: vi.fn().mockResolvedValue({ id: 'booking-1' }),
+  uploadCompletionPhoto: vi.fn().mockResolvedValue('photo.jpg')
 }))
 
 /**
@@ -801,6 +804,7 @@ describe('ServiceBookingsView URL-filter loader branching', () => {
           SearchBox: true,
           CardDropdownMenu: true,
           PhotoGallery: true,
+          FileUploadComponent: true,
           VendorSearchBox: true,
           ServiceSearchBox: true,
           TimeCalculatorModal: true,

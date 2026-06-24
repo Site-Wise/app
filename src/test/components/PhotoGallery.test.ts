@@ -64,13 +64,14 @@ describe('PhotoGallery.vue', () => {
     });
 
     await wrapper.find('.grid > div').trigger('click');
-    expect(wrapper.find('.max-w-7xl img').attributes('src')).toContain('photo1.jpg');
+    // Main gallery image is the only <img> with the full-screen object-contain class.
+    expect(wrapper.find('img.max-h-screen').attributes('src')).toContain('photo1.jpg');
 
     await wrapper.find('[aria-label="photos.nextPhoto"]').trigger('click');
-    expect(wrapper.find('.max-w-7xl img').attributes('src')).toContain('photo2.jpg');
+    expect(wrapper.find('img.max-h-screen').attributes('src')).toContain('photo2.jpg');
 
     await wrapper.find('[aria-label="photos.previousPhoto"]').trigger('click');
-    expect(wrapper.find('.max-w-7xl img').attributes('src')).toContain('photo1.jpg');
+    expect(wrapper.find('img.max-h-screen').attributes('src')).toContain('photo1.jpg');
   });
 
   it('toggles zoom on the photo', async () => {
@@ -82,10 +83,10 @@ describe('PhotoGallery.vue', () => {
 
     await wrapper.find('.grid > div').trigger('click');
     await wrapper.find('[title="photos.zoomIn"]').trigger('click');
-    expect(wrapper.find('.max-w-7xl img').classes()).toContain('cursor-zoom-out');
+    expect(wrapper.find('img.max-h-screen').classes()).toContain('cursor-zoom-out');
 
     await wrapper.find('[title="photos.zoomOut"]').trigger('click');
-    expect(wrapper.find('.max-w-7xl img').classes()).toContain('cursor-zoom-in');
+    expect(wrapper.find('img.max-h-screen').classes()).toContain('cursor-zoom-in');
   });
 
   it('downloads the photo', async () => {
@@ -136,11 +137,11 @@ describe('PhotoGallery.vue', () => {
     await wrapper.find('.grid > div').trigger('click');
     (wrapper.vm as any).nextPhoto();
     await nextTick();
-    expect(wrapper.find('.max-w-7xl img').attributes('src')).toContain('photo2.jpg');
+    expect(wrapper.find('img.max-h-screen').attributes('src')).toContain('photo2.jpg');
 
     (wrapper.vm as any).previousPhoto();
     await nextTick();
-    expect(wrapper.find('.max-w-7xl img').attributes('src')).toContain('photo1.jpg');
+    expect(wrapper.find('img.max-h-screen').attributes('src')).toContain('photo1.jpg');
   });
 
   it('navigates with thumbnail clicks', async () => {
@@ -152,8 +153,9 @@ describe('PhotoGallery.vue', () => {
     });
 
     await wrapper.find('.grid > div').trigger('click');
-    await wrapper.findAll('.absolute.bottom-20 .flex-shrink-0')[2].trigger('click');
-    expect(wrapper.find('.max-w-7xl img').attributes('src')).toContain('photo3.jpg');
+    // Thumbnail strip lives in the bottom chrome; each thumb is a flex-shrink-0 button.
+    await wrapper.findAll('.bottom-0 .flex-shrink-0')[2].trigger('click');
+    expect(wrapper.find('img.max-h-screen').attributes('src')).toContain('photo3.jpg');
   });
 
   it('shows the photo count indicator', () => {
@@ -177,6 +179,7 @@ describe('PhotoGallery.vue', () => {
     await wrapper.find('.grid > div').trigger('click');
     (wrapper.vm as any).photoLoading = true;
     await nextTick();
-    expect(wrapper.find('.bg-black.bg-opacity-50.rounded-lg').exists()).toBe(true);
+    // Loading spinner container uses the rounded-2xl backdrop pill in the gallery.
+    expect(wrapper.find('.rounded-2xl.backdrop-blur-sm').exists()).toBe(true);
   });
 });

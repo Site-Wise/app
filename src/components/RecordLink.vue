@@ -7,7 +7,7 @@
   -->
   <router-link
     v-if="isLinkable"
-    :to="to"
+    :to="to ?? ''"
     class="text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 underline-offset-2 hover:underline transition-colors duration-150 ease-snap"
     @click.stop
   >

@@ -117,9 +117,10 @@ vi.mock('../../services/pocketbase', () => {
   return {
     serviceBookingService: {
       getAll: vi.fn().mockResolvedValue(mockServiceBookings),
-      create: vi.fn().mockResolvedValue({}),
-      update: vi.fn().mockResolvedValue({}),
-      delete: vi.fn().mockResolvedValue({})
+      create: vi.fn().mockResolvedValue({ id: 'booking-new' }),
+      update: vi.fn().mockResolvedValue({ id: 'booking-1' }),
+      delete: vi.fn().mockResolvedValue({}),
+      uploadCompletionPhoto: vi.fn().mockResolvedValue('photo.jpg')
     },
     serviceService: {
       getAll: vi.fn().mockResolvedValue(mockServices)
@@ -294,6 +295,10 @@ vi.mock('../../composables/useSiteData', () => ({
 
 vi.mock('../../components/PhotoGallery.vue', () => ({
   default: { name: 'PhotoGallery', template: '<div>PhotoGallery</div>' }
+}))
+
+vi.mock('../../components/FileUploadComponent.vue', () => ({
+  default: { name: 'FileUploadComponent', template: '<div>FileUploadComponent</div>' }
 }))
 
 // Mock window.confirm for delete operations

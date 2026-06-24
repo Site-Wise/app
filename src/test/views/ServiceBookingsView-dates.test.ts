@@ -50,9 +50,10 @@ vi.mock('../../services/pocketbase', () => {
   return {
     serviceBookingService: {
       getAll: vi.fn().mockResolvedValue(mockServiceBookings),
-      create: vi.fn().mockResolvedValue({}),
-      update: vi.fn().mockResolvedValue({}),
-      delete: vi.fn().mockResolvedValue({})
+      create: vi.fn().mockResolvedValue({ id: 'booking-new' }),
+      update: vi.fn().mockResolvedValue({ id: 'booking-1' }),
+      delete: vi.fn().mockResolvedValue({}),
+      uploadCompletionPhoto: vi.fn().mockResolvedValue('photo.jpg')
     },
     serviceService: {
       getAll: vi.fn().mockResolvedValue(mockServices)
@@ -125,6 +126,10 @@ vi.mock('../../composables/useSearch', () => ({
 
 vi.mock('../../components/PhotoGallery.vue', () => ({
   default: { name: 'PhotoGallery', template: '<div>PhotoGallery</div>' }
+}))
+
+vi.mock('../../components/FileUploadComponent.vue', () => ({
+  default: { name: 'FileUploadComponent', template: '<div>FileUploadComponent</div>' }
 }))
 
 describe('ServiceBookingsView - Date Handling', () => {
@@ -244,6 +249,64 @@ describe('ServiceBookingsView - Date Handling', () => {
         expect.objectContaining({
           start_date: '2024-02-20' // Should keep YYYY-MM-DD format
         })
+      )
+    })
+
+    it('uploads each selected photo after creating a booking', async () => {
+      const pocketbaseMocks = await import('../../services/pocketbase')
+      const uploadSpy = vi.mocked(pocketbaseMocks.serviceBookingService.uploadCompletionPhoto)
+
+      wrapper.vm.showAddModal = true
+      await nextTick()
+
+      wrapper.vm.form.service = 'service-1'
+      wrapper.vm.form.vendor = 'vendor-1'
+      wrapper.vm.form.start_date = '2024-02-20'
+      wrapper.vm.form.duration = 3
+
+      // Simulate the FileUploadComponent selecting two files
+      const fileA = new File(['a'], 'a.jpg', { type: 'image/jpeg' })
+      const fileB = new File(['b'], 'b.jpg', { type: 'image/jpeg' })
+      wrapper.vm.handleBookingFilesSelected([fileA, fileB])
+      await nextTick()
+
+      await wrapper.find('form').trigger('submit')
+      await nextTick()
+      await new Promise(r => setTimeout(r, 0))
+
+      expect(uploadSpy).toHaveBeenCalledTimes(2)
+      expect(uploadSpy).toHaveBeenCalledWith('booking-new', fileA)
+      expect(uploadSpy).toHaveBeenCalledWith('booking-new', fileB)
+    })
+
+    it('preserves existing photos in the update payload when editing', async () => {
+      const pocketbaseMocks = await import('../../services/pocketbase')
+      const updateSpy = vi.mocked(pocketbaseMocks.serviceBookingService.update)
+
+      await wrapper.vm.editBooking({
+        id: 'booking-1',
+        service: 'service-1',
+        vendor: 'vendor-1',
+        start_date: '2024-01-15',
+        duration: 5,
+        unit_rate: 100,
+        total_amount: 500,
+        percent_completed: 0,
+        completion_photos: ['old1.jpg', 'old2.jpg']
+      } as any)
+      await nextTick()
+
+      // Remove one existing photo, keep the other
+      wrapper.vm.removeExistingBookingPhoto(0)
+      await nextTick()
+
+      await wrapper.find('form').trigger('submit')
+      await nextTick()
+      await new Promise(r => setTimeout(r, 0))
+
+      expect(updateSpy).toHaveBeenCalledWith(
+        'booking-1',
+        expect.objectContaining({ completion_photos: ['old2.jpg'] })
       )
     })
 

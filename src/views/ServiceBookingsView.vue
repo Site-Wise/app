@@ -205,6 +205,17 @@
                     <StickyNote class="h-3 w-3 flex-none mt-0.5 text-stone-400 dark:text-stone-500" />
                     <span class="line-clamp-2 leading-snug">{{ booking.notes }}</span>
                   </div>
+                  <!-- Photo count: opens the gallery, mirrors Delivery's "View images (N)" -->
+                  <button
+                    v-if="(booking.completion_photos?.length || 0) > 0"
+                    type="button"
+                    @click.stop="viewBooking(booking)"
+                    class="inline-flex items-center gap-1 mt-1 text-xs text-amber-700 dark:text-amber-400 hover:underline"
+                    :title="t('delivery.viewAllImages')"
+                  >
+                    <Images class="h-3 w-3 flex-none" />
+                    <span>{{ t('delivery.viewAllImages') }} ({{ booking.completion_photos!.length }})</span>
+                  </button>
                 </td>
                 <td class="py-3.5 px-4 align-middle hidden lg:table-cell">
                   <div class="font-medium text-sm text-ink dark:text-cream leading-snug">
@@ -276,6 +287,16 @@
                     <StickyNote class="h-3 w-3 flex-none mt-0.5 text-stone-400 dark:text-stone-500" />
                     <span class="line-clamp-2 leading-snug">{{ booking.notes }}</span>
                   </p>
+                  <!-- Photo count: opens the gallery, mirrors Delivery's "View images (N)" -->
+                  <button
+                    v-if="(booking.completion_photos?.length || 0) > 0"
+                    type="button"
+                    @click.stop="viewBooking(booking)"
+                    class="inline-flex items-center gap-1 mt-1.5 text-xs text-amber-700 dark:text-amber-400"
+                  >
+                    <Images class="h-3 w-3 flex-none" />
+                    <span>{{ t('delivery.viewAllImages') }} ({{ booking.completion_photos!.length }})</span>
+                  </button>
                 </div>
                 <div @click.stop class="flex-none -mr-1"><CardDropdownMenu :actions="getBookingActions(booking)" @action="handleBookingAction(booking, $event)" /></div>
               </div>
@@ -470,6 +491,32 @@
               <textarea v-model="form.notes" class="input mt-1" rows="3" :placeholder="t('forms.serviceNotes')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
             </div>
 
+            <!-- Photos: mirrors the Delivery modal upload UX -->
+            <div>
+              <label class="block text-sm font-medium text-stone-600 dark:text-stone-300 mb-2">{{ t('serviceBookings.completionPhotos') }}</label>
+
+              <!-- Existing photos (edit mode): preserved unless explicitly removed -->
+              <div v-if="existingBookingPhotos.length > 0" class="mb-4">
+                <p class="text-sm text-stone-600 dark:text-stone-400 mb-2">{{ t('delivery.existingPhotos') }}</p>
+                <div class="flex gap-2 overflow-x-auto pb-2">
+                  <div v-for="(photo, index) in existingBookingPhotos" :key="photo" class="relative group flex-shrink-0">
+                    <img :src="getBookingPhotoUrl(editingBooking!.id!, photo)" :alt="`Photo ${index + 1}`"
+                      class="w-16 h-16 object-cover rounded-lg border border-stone-200 dark:border-ink-4" />
+                    <div class="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button type="button" @click.stop="removeExistingBookingPhoto(index)"
+                        class="bg-clay-500 text-white rounded-full min-h-touch min-w-[44px] inline-flex items-center justify-center hover:bg-clay-600 transition-colors shadow-lg"
+                        :title="t('common.deleteAction')">
+                        <X class="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <FileUploadComponent v-model="selectedBookingPhotos" accept-types="image/*,application/pdf"
+                :multiple="true" :allow-camera="true" @files-selected="handleBookingFilesSelected" />
+            </div>
+
             <!-- Keyboard shortcut hint for new bookings (desktop only) -->
             <div v-if="!editingBooking" class="hidden sm:block text-xs text-stone-500 dark:text-stone-400 text-center">
               {{ t('common.tip') }}: {{ t('common.keyboardShortcut', { keys: 'Ctrl+Enter' }) }} {{ t('serviceBookings.addAndContinue') }}
@@ -607,9 +654,11 @@ import {
   Loader2,
   X,
   Clock,
-  StickyNote
+  StickyNote,
+  Images
 } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
+import FileUploadComponent from '../components/FileUploadComponent.vue';
 import RecordLink from '../components/RecordLink.vue';
 import { useI18n } from '../composables/useI18n';
 import { useUrlFilters } from '../composables/useUrlFilters';
@@ -764,6 +813,11 @@ const loading = ref(false);
 const showUnitRateWarning = ref(false);
 const originalUnitRate = ref(0);
 
+// Photo upload state (mirrors the Delivery modal): files chosen for upload and,
+// in edit mode, the existing completion_photos we want to preserve.
+const selectedBookingPhotos = ref<File[]>([]);
+const existingBookingPhotos = ref<string[]>([]);
+
 const serviceInputRef = ref<InstanceType<typeof ServiceSearchBox>>();
 const startDateInputRef = ref<HTMLInputElement>();
 
@@ -845,6 +899,34 @@ const handleServiceSelected = (service: any) => {
   }
 };
 
+// Photo helpers (mirror the Delivery modal)
+const handleBookingFilesSelected = (files: File[]) => {
+  selectedBookingPhotos.value = files;
+};
+
+const getBookingPhotoUrl = (bookingId: string, filename: string) => {
+  return `${import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090'}/api/files/service_bookings/${bookingId}/${filename}`;
+};
+
+const removeExistingBookingPhoto = (index: number) => {
+  existingBookingPhotos.value.splice(index, 1);
+};
+
+// Upload any newly-selected photos after the booking has been created/updated.
+// Mirrors the Delivery modal's upload-on-save loop; uploadCompletionPhoto appends
+// each file to the record's completion_photos.
+const uploadSelectedBookingPhotos = async (bookingId: string) => {
+  if (selectedBookingPhotos.value.length === 0) return;
+  try {
+    for (const file of selectedBookingPhotos.value) {
+      await serviceBookingService.uploadCompletionPhoto(bookingId, file);
+    }
+  } catch (uploadError) {
+    console.error('Error uploading completion photos:', uploadError);
+    showErrorToast(t('delivery.photoUploadError'));
+  }
+};
+
 const handleKeydown = async (event: KeyboardEvent) => {
   // CTRL + ENTER to save and keep modal open (for multiple bookings)
   if (event.ctrlKey && event.key === 'Enter') {
@@ -859,20 +941,29 @@ const handleKeydown = async (event: KeyboardEvent) => {
 const saveBooking = async (keepModalOpen = false) => {
   loading.value = true;
   try {
-    const data = { ...form };
+    const data: Record<string, any> = { ...form };
 
     // Ensure dates are in proper format (keep as date strings)
     if (data.start_date) {
       data.start_date = data.start_date; // Keep YYYY-MM-DD format
     }
 
+    // On edit, persist the (possibly trimmed) set of existing photos so removals
+    // stick and kept photos are preserved before any new files are appended.
+    // Mirrors the Delivery modal's `deliveryData.photos = existingPhotos.value`.
     if (editingBooking.value) {
-      await serviceBookingService.update(editingBooking.value.id!, data);
+      data.completion_photos = [...existingBookingPhotos.value];
+    }
+
+    if (editingBooking.value) {
+      const updated = await serviceBookingService.update(editingBooking.value.id!, data);
+      await uploadSelectedBookingPhotos(updated.id!);
       await reloadAllData();
       showSuccessToast(t('messages.updateSuccess', { item: t('common.serviceBooking') }));
       closeModal();
     } else {
-      await serviceBookingService.create(data);
+      const created = await serviceBookingService.create(data as Omit<ServiceBooking, 'id' | 'site'>);
+      await uploadSelectedBookingPhotos(created.id!);
       await reloadAllData();
       showSuccessToast(t('messages.createSuccess', { item: t('common.serviceBooking') }));
 
@@ -893,6 +984,10 @@ const saveBooking = async (keepModalOpen = false) => {
           percent_completed: 0,
           notes: ''
         });
+
+        // Clear photo selection so the next booking starts fresh
+        selectedBookingPhotos.value = [];
+        existingBookingPhotos.value = [];
 
         // Focus on start date for next booking
         await nextTick();
@@ -931,6 +1026,9 @@ const editBooking = async (booking: ServiceBooking) => {
     percent_completed: booking.percent_completed || 0,
     notes: booking.notes || ''
   });
+  // Preserve existing photos on edit; new selections are added on top.
+  existingBookingPhotos.value = [...(booking.completion_photos || [])];
+  selectedBookingPhotos.value = [];
   await nextTick();
   if (typeof serviceInputRef.value?.focus === 'function') serviceInputRef.value.focus();
 };
@@ -1042,6 +1140,8 @@ const closeModal = () => {
   editingBooking.value = null;
   showUnitRateWarning.value = false;
   originalUnitRate.value = 0;
+  selectedBookingPhotos.value = [];
+  existingBookingPhotos.value = [];
   Object.assign(form, {
     service: '',
     vendor: '',
