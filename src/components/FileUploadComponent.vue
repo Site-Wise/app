@@ -429,6 +429,11 @@ const updateModelValue = () => {
   emit('files-selected', files)
 }
 
+// `immediate: true` rebuilds previews from `modelValue` as soon as the
+// component mounts. This is essential when the uploader lives inside a step
+// that is toggled with `v-if` (e.g. the delivery modal wizard): navigating
+// away unmounts this component and drops its local `previews`, so on remount
+// we must regenerate the thumbnails from the files still held in `modelValue`.
 watch(() => props.modelValue, (newFiles) => {
   if (!newFiles || newFiles.length === 0) {
     previews.value = []
@@ -471,7 +476,7 @@ watch(() => props.modelValue, (newFiles) => {
       })
     }
   }
-})
+}, { immediate: true })
 </script>
 
 <style scoped>

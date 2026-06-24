@@ -732,13 +732,18 @@ const handleKeyboardShortcuts = (event: KeyboardEvent) => {
       return;
     }
 
-    // On Review step (2) - Create delivery
-    if (currentStep.value === 2) {
+    // On the FINAL (Review) step only - Create delivery.
+    // Guard strictly on the last step so Ctrl+Enter on any earlier step can
+    // never trigger a create (which would otherwise show a phantom success toast).
+    if (currentStep.value === steps.length - 1) {
       if (canSubmit.value && !loading.value) {
         saveDelivery();
       }
       return;
     }
+
+    // Any other (intermediate) step: do nothing on Ctrl+Enter.
+    return;
   }
 };
 
@@ -810,6 +815,10 @@ const handleDeliveryItemChanges = async (deliveryId: string) => {
 };
 
 const saveDelivery = async () => {
+  // Defensive guard: only ever create/update from the final (Review) step.
+  // Prevents any off-step caller (keyboard shortcut, future code) from
+  // triggering a premature create and a phantom success toast.
+  if (currentStep.value !== steps.length - 1) return;
   if (!canSubmit.value) return;
 
   loading.value = true;

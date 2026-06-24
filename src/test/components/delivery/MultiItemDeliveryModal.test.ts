@@ -1022,4 +1022,85 @@ describe('MultiItemDeliveryModal', () => {
       expect(itemsCallOrder).toBeLessThan(photosCallOrder)
     })
   })
+
+  describe('Ctrl+Enter create guard', () => {
+    const addValidItem = async (wrapper: any) => {
+      wrapper.vm.deliveryForm.vendor = 'vendor-1'
+      wrapper.vm.deliveryForm.delivery_date = '2024-01-15'
+      wrapper.vm.deliveryItems = [
+        { tempId: 'temp-1', item: 'item-1', quantity: 5, unit_price: 100, total_amount: 500, notes: '' }
+      ]
+      await nextTick()
+    }
+
+    it('does NOT create the delivery on Ctrl+Enter from the Items step', async () => {
+      const { deliveryService } = await import('../../../services/pocketbase')
+      wrapper = createWrapper()
+      await nextTick()
+      await addValidItem(wrapper)
+
+      // On the Items step (currentStep === 1) even though canSubmit is true
+      wrapper.vm.currentStep = 1
+      await nextTick()
+      expect(wrapper.vm.canSubmit).toBe(true)
+
+      wrapper.vm.handleKeyboardShortcuts(
+        new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true })
+      )
+      await nextTick()
+
+      expect(deliveryService.create).not.toHaveBeenCalled()
+    })
+
+    it('does NOT create the delivery on Ctrl+Enter from the Delivery Info step', async () => {
+      const { deliveryService } = await import('../../../services/pocketbase')
+      wrapper = createWrapper()
+      await nextTick()
+      await addValidItem(wrapper)
+
+      wrapper.vm.currentStep = 0
+      await nextTick()
+
+      wrapper.vm.handleKeyboardShortcuts(
+        new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true })
+      )
+      await nextTick()
+
+      expect(deliveryService.create).not.toHaveBeenCalled()
+    })
+
+    it('DOES create the delivery on Ctrl+Enter from the final Review step', async () => {
+      const { deliveryService } = await import('../../../services/pocketbase')
+      wrapper = createWrapper()
+      await nextTick()
+      await addValidItem(wrapper)
+
+      wrapper.vm.currentStep = 2 // final (Review) step
+      await nextTick()
+      expect(wrapper.vm.canSubmit).toBe(true)
+
+      wrapper.vm.handleKeyboardShortcuts(
+        new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true })
+      )
+      await nextTick()
+      // allow the async saveDelivery to settle
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      expect(deliveryService.create).toHaveBeenCalled()
+    })
+
+    it('saveDelivery is a no-op when not on the final step', async () => {
+      const { deliveryService } = await import('../../../services/pocketbase')
+      wrapper = createWrapper()
+      await nextTick()
+      await addValidItem(wrapper)
+
+      wrapper.vm.currentStep = 1
+      await nextTick()
+
+      await wrapper.vm.saveDelivery()
+
+      expect(deliveryService.create).not.toHaveBeenCalled()
+    })
+  })
 })
