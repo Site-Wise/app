@@ -1518,6 +1518,39 @@ export class QuotationService {
     }
   }
 
+  async getByVendor(vendorId: string): Promise<Quotation[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('quotations').getFullList({
+      filter: `site="${siteId}" && vendor="${vendorId}"`,
+      expand: 'vendor,item,service'
+    });
+    return records.map(record => this.mapRecordToQuotation(record));
+  }
+
+  async getByItem(itemId: string): Promise<Quotation[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('quotations').getFullList({
+      filter: `site="${siteId}" && item="${itemId}"`,
+      expand: 'vendor,item,service'
+    });
+    return records.map(record => this.mapRecordToQuotation(record));
+  }
+
+  async getByService(serviceId: string): Promise<Quotation[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('quotations').getFullList({
+      filter: `site="${siteId}" && service="${serviceId}"`,
+      expand: 'vendor,item,service'
+    });
+    return records.map(record => this.mapRecordToQuotation(record));
+  }
+
   async create(data: Omit<Quotation, 'id' | 'site'>): Promise<Quotation> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
@@ -1663,6 +1696,17 @@ export class ServiceBookingService {
 
     const records = await pb.collection('service_bookings').getFullList({
       filter: `site="${siteId}" && service="${serviceId}"`,
+      expand: 'vendor,service'
+    });
+    return records.map(record => this.mapRecordToServiceBooking(record));
+  }
+
+  async getByVendor(vendorId: string): Promise<ServiceBooking[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('service_bookings').getFullList({
+      filter: `site="${siteId}" && vendor="${vendorId}"`,
       expand: 'vendor,service'
     });
     return records.map(record => this.mapRecordToServiceBooking(record));
@@ -1861,6 +1905,30 @@ export class PaymentService {
     } catch (error) {
       return null;
     }
+  }
+
+  async getByVendor(vendorId: string): Promise<Payment[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('payments').getFullList({
+      filter: `site="${siteId}" && vendor="${vendorId}"`,
+      expand: 'vendor,account,deliveries,service_bookings,payment_allocations,payment_allocations.delivery,payment_allocations.service_booking,payment_allocations.service_booking.service,credit_notes',
+      sort: '-payment_date'
+    });
+    return records.map(record => this.mapRecordToPayment(record));
+  }
+
+  async getByAccount(accountId: string): Promise<Payment[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('payments').getFullList({
+      filter: `site="${siteId}" && account="${accountId}"`,
+      expand: 'vendor,account,deliveries,service_bookings,payment_allocations,payment_allocations.delivery,payment_allocations.service_booking,payment_allocations.service_booking.service,credit_notes',
+      sort: '-payment_date'
+    });
+    return records.map(record => this.mapRecordToPayment(record));
   }
 
   async create(data: any): Promise<Payment> {
@@ -4126,6 +4194,36 @@ export class DeliveryService {
       // concurrent getAllWithPhotos() request to the same collection. A stable
       // key still lets a newer browse load supersede a stale one on site switch.
       requestKey: 'deliveries-list'
+    });
+
+    return {
+      items: result.items.map(record => this.mapRecordToDelivery(record)),
+      totalItems: result.totalItems,
+      totalPages: result.totalPages
+    };
+  }
+
+  /**
+   * Paginated, site-isolated fetch of deliveries for a single vendor. Mirrors
+   * getList() exactly but adds a vendor filter; backs the deep-link/filter
+   * feature (e.g. /deliveries?vendor=<id>) and composes with infinite scroll.
+   */
+  async getByVendor(
+    vendorId: string,
+    page: number,
+    perPage: number
+  ): Promise<{ items: Delivery[]; totalItems: number; totalPages: number }> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const result = await pb.collection('deliveries').getList(page, perPage, {
+      filter: `site="${siteId}" && vendor="${vendorId}"`,
+      expand: 'vendor,delivery_items,delivery_items.item',
+      sort: '-delivery_date',
+      // Distinct requestKey so this vendor-filtered browse isn't auto-cancelled
+      // by the concurrent getList()/getAllWithPhotos() queries to the same
+      // deliveries collection.
+      requestKey: 'deliveries-by-vendor'
     });
 
     return {
