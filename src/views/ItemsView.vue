@@ -165,14 +165,14 @@
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.name') }}</label>
               <input ref="nameInputRef" v-model="form.name" type="text" required class="input mt-1"
-                :placeholder="t('forms.enterItemName')" autofocus />
+                :placeholder="t('forms.enterItemName')" autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.description')
                 }}</label>
               <textarea v-model="form.description" class="input mt-1" rows="3"
-                :placeholder="t('forms.enterDescription')"></textarea>
+                :placeholder="t('forms.enterDescription')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
             </div>
 
             <div>
@@ -414,7 +414,7 @@ const saveItem = async () => {
   }
 };
 
-const editItem = (item: Item) => {
+const editItem = async (item: Item) => {
   editingItem.value = item;
   Object.assign(form, {
     name: item.name,
@@ -424,6 +424,8 @@ const editItem = (item: Item) => {
   });
   showAddModal.value = true;
   openModal('items-edit-modal');
+  await nextTick();
+  if (typeof nameInputRef.value?.focus === 'function') nameInputRef.value.focus();
 };
 
 const cloneItem = async (item: Item) => {

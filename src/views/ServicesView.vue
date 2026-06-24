@@ -187,7 +187,7 @@
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('services.serviceName')
               }}</label>
               <input ref="nameInputRef" v-model="form.name" type="text" required class="input mt-1"
-                :placeholder="t('forms.enterServiceName')" autofocus />
+                :placeholder="t('forms.enterServiceName')" autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
             </div>
 
             <!-- <div>
@@ -227,7 +227,7 @@
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('services.standardRate')
                 }}</label>
                 <input v-model.number="form.standard_rate" type="number" step="0.01" class="input mt-1"
-                  :placeholder="t('forms.enterRate')" />
+                  :placeholder="t('forms.enterRate')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
               </div>
             </div>
 
@@ -235,7 +235,7 @@
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.description')
               }}</label>
               <textarea v-model="form.description" class="input mt-1" rows="3"
-                :placeholder="t('forms.enterServiceDescription')"></textarea>
+                :placeholder="t('forms.enterServiceDescription')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
             </div>
 
             <!-- Tags -->
@@ -414,7 +414,7 @@ const saveService = async () => {
   }
 };
 
-const editService = (service: Service) => {
+const editService = async (service: Service) => {
   editingService.value = service;
   Object.assign(form, {
     name: service.name,
@@ -428,6 +428,8 @@ const editService = (service: Service) => {
   });
   showAddModal.value = true;
   openModal('services-edit-modal');
+  await nextTick();
+  if (typeof nameInputRef.value?.focus === 'function') nameInputRef.value.focus();
 };
 
 const toggleServiceStatus = async (service: Service) => {

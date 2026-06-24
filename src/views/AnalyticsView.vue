@@ -94,7 +94,7 @@
                   {{ setting.name }}
                 </button>
                 <button @click="confirmDeleteSetting(setting.id!)"
-                  class="ml-2 p-1 text-clay hover:bg-clay/10 rounded-md transition-colors"
+                  class="ml-2 min-h-touch min-w-[44px] inline-flex items-center justify-center text-clay hover:bg-clay/10 rounded-md transition-colors"
                   :title="t('analytics.deleteSetting')">
                   <Trash2 class="h-3.5 w-3.5" />
                 </button>
@@ -300,9 +300,10 @@
           {{ t('analytics.saveFilters') }}
         </h2>
         <label class="label">{{ t('analytics.settingName') }}</label>
-        <input v-model="settingName" type="text" class="input mb-4 focus:border-ink dark:focus:border-cream rounded-md"
+        <input ref="settingNameRef" v-model="settingName" type="text" class="input mb-4 focus:border-ink dark:focus:border-cream rounded-md"
           :placeholder="t('analytics.enterSettingName')"
-          @keyup.enter="handleSaveSetting" @keyup.esc="showSaveModal = false" autofocus />
+          @keyup.enter="handleSaveSetting" @keyup.esc="showSaveModal = false" autofocus
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
         <div class="flex gap-2 justify-end">
           <button @click="showSaveModal = false" class="btn-secondary">
             {{ t('common.cancel') }}
@@ -338,9 +339,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import Skeleton from '../components/Skeleton.vue';
 import { useI18n } from '../composables/useI18n';
+import { useModalEscape } from '../composables/useModalEscape';
 import { useTheme } from '../composables/useTheme';
 import { useAnalytics } from '../composables/useAnalytics';
 import TagSelector from '../components/TagSelector.vue';
@@ -398,6 +400,19 @@ const showSaveModal = ref(false);
 const showDeleteConfirm = ref(false);
 const settingName = ref('');
 const settingToDelete = ref<string | null>(null);
+const settingNameRef = ref<HTMLInputElement>();
+
+// ESC key handling for modals
+useModalEscape(() => { showSaveModal.value = false; }, () => showSaveModal.value);
+useModalEscape(() => { showDeleteConfirm.value = false; }, () => showDeleteConfirm.value);
+
+// Focus the setting-name input when the save modal opens
+watch(showSaveModal, async (open) => {
+  if (open) {
+    await nextTick();
+    if (typeof settingNameRef.value?.focus === 'function') settingNameRef.value.focus();
+  }
+});
 
 // Computed properties for amount inputs to handle empty values properly
 const amountMinInput = computed({

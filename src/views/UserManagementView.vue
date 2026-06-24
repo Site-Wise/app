@@ -107,7 +107,18 @@
             </div>
             
             <div class="p-6 space-y-4">
-              <div v-for="siteUser in filteredSiteUsers" :key="siteUser.id" class="group relative">
+              <!-- Loading skeleton rows -->
+              <template v-if="usersLoading">
+                <div v-for="i in 3" :key="'skel-user-' + i" class="flex items-center gap-4 p-4 rounded-xl border border-stone-200 dark:border-ink-4 bg-stone-50 dark:bg-ink-2" aria-hidden="true">
+                  <Skeleton width="2.5rem" height="2.5rem" rounded="rounded-full" />
+                  <div class="flex-1 min-w-0 space-y-2">
+                    <Skeleton height="1rem" width="40%" />
+                    <Skeleton height="0.75rem" width="55%" />
+                  </div>
+                </div>
+              </template>
+
+              <div v-else v-for="siteUser in filteredSiteUsers" :key="siteUser.id" class="group relative">
                 <div class="flex items-center gap-4 p-4 rounded-xl border border-stone-200 dark:border-ink-4 bg-stone-50 dark:bg-ink-2 hover:bg-white dark:hover:bg-ink-2 hover:shadow-card transition-all duration-200">
                   <!-- User Avatar -->
                   <div class="relative">
@@ -155,7 +166,7 @@
                 </div>
               </div>
               
-              <div v-if="filteredSiteUsers.length === 0" class="text-center py-12">
+              <div v-if="!usersLoading && filteredSiteUsers.length === 0" class="text-center py-12">
                 <div class="mx-auto w-24 h-24 bg-stone-100 dark:bg-ink-2 rounded-xl flex items-center justify-center mb-4">
                   <Users class="h-12 w-12 text-stone-400" />
                 </div>
@@ -283,6 +294,7 @@
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">{{ t('auth.email') }} ({{ t('users.forUserIdentification') }})</label>
               <div class="relative">
                 <input
+                  ref="inviteEmailRef"
                   v-model="inviteForm.email"
                   type="email"
                   required
@@ -439,7 +451,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue';
+import { ref, reactive, computed, watch, nextTick } from 'vue';
+import { useModalEscape } from '../composables/useModalEscape';
 import { 
   Users, 
   UserPlus, 
@@ -460,6 +473,7 @@ import {
   BarChart3,
   Zap
 } from 'lucide-vue-next';
+import Skeleton from '../components/Skeleton.vue';
 import { useI18n } from '../composables/useI18n';
 import { useSite } from '../composables/useSite';
 import { useInvitations } from '../composables/useInvitations';
@@ -483,11 +497,24 @@ const {
 } = useInvitations();
 
 const siteUsers = ref<SiteUser[]>([]);
+const usersLoading = ref(true);
 const showInviteModal = ref(false);
 const showPendingInvites = ref(false);
 const editingUser = ref<SiteUser | null>(null);
 const inviteLoading = ref(false);
 const roleLoading = ref(false);
+const inviteEmailRef = ref<HTMLInputElement>();
+
+// ESC key handling for the invite modal
+useModalEscape(() => closeInviteModal(), () => showInviteModal.value);
+
+// Focus the email input when the invite modal opens
+watch(showInviteModal, async (open) => {
+  if (open) {
+    await nextTick();
+    if (typeof inviteEmailRef.value?.focus === 'function') inviteEmailRef.value.focus();
+  }
+});
 
 const inviteForm = reactive({
   email: '',
@@ -602,7 +629,8 @@ const isCurrentUser = (siteUser: SiteUser) => {
 
 const loadSiteUsers = async () => {
   if (!currentSite.value) return;
-  
+
+  usersLoading.value = true;
   try {
     const users = await siteUserService.getBySite(currentSite.value.id!);
     siteUsers.value = users;
@@ -610,6 +638,8 @@ const loadSiteUsers = async () => {
     await loadSiteInvitations(currentSite.value.id!);
   } catch (error) {
     console.error('Error loading site users:', error);
+  } finally {
+    usersLoading.value = false;
   }
 };
 

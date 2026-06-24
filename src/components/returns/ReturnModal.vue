@@ -3,8 +3,6 @@
   <div
     class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-sm"
     @click="$emit('close')"
-    @keydown.esc="$emit('close')"
-    tabindex="-1"
   >
     <!-- Panel -->
     <div
@@ -111,7 +109,7 @@
                   <button
                     type="button"
                     @click="removeReturnItem(index)"
-                    class="text-clay-600 dark:text-clay-400 hover:text-clay-700 dark:hover:text-clay-300 p-1 rounded active:scale-[0.98]"
+                    class="text-clay-600 dark:text-clay-400 hover:text-clay-700 dark:hover:text-clay-300 min-h-touch min-w-[44px] inline-flex items-center justify-center rounded active:scale-[0.98]"
                   >
                     <Trash2 class="h-4 w-4" />
                   </button>
@@ -142,6 +140,10 @@
                       required
                       class="input text-sm font-mono sw-tabular min-h-[44px]"
                       @input="updateReturnAmount(index)"
+                      autocomplete="off"
+                      autocorrect="off"
+                      autocapitalize="off"
+                      spellcheck="false"
                     />
                   </div>
 
@@ -156,6 +158,10 @@
                       required
                       class="input text-sm font-mono sw-tabular min-h-[44px]"
                       @input="updateReturnAmount(index)"
+                      autocomplete="off"
+                      autocorrect="off"
+                      autocapitalize="off"
+                      spellcheck="false"
                     />
                   </div>
                 </div>
@@ -193,6 +199,10 @@
                     class="input text-sm"
                     rows="2"
                     :placeholder="t('vendors.additionalItemNotes')"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
                   ></textarea>
                 </div>
               </div>
@@ -221,6 +231,10 @@
               class="input mt-1"
               rows="3"
               :placeholder="t('vendors.additionalReturnNotes')"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
             ></textarea>
           </div>
 
@@ -340,6 +354,7 @@
 import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue';
 import { X, Plus, Trash2, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '../../composables/useI18n';
+import { useModalEscape } from '../../composables/useModalEscape';
 import { useToast } from '../../composables/useToast';
 import {
   vendorReturnService,
@@ -387,6 +402,9 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const toast = useToast();
+
+// ESC key handling for modal (defers to the nested item-selection modal when it's open)
+useModalEscape(() => emit('close'), () => !showItemSelection.value);
 
 // Refs - used in template via ref="vendorSearchRef"
 const vendorSearchRef = ref<InstanceType<typeof VendorSearchBox> | null>(null);

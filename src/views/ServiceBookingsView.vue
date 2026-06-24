@@ -324,7 +324,7 @@
               <div>
                 <label class="block text-sm font-medium text-stone-600 dark:text-stone-300">{{ t('serviceBookings.duration') }}</label>
                 <div class="flex gap-2 mt-1">
-                  <input v-model.number="form.duration" type="number" step="0.5" required class="input flex-1" placeholder="0" @input="calculateTotal" />
+                  <input v-model.number="form.duration" type="number" step="0.5" required class="input flex-1" placeholder="0" @input="calculateTotal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
                   <button
                     v-if="isHourlyService"
                     type="button"
@@ -347,6 +347,10 @@
                   class="input mt-1"
                   placeholder="0.00"
                   @input="handleUnitRateChange"
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"
+                  spellcheck="false"
                 />
                 <div v-if="showUnitRateWarning && editingBooking && hasPayments(editingBooking)" class="mt-1 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
                   <p class="text-xs text-amber-800 dark:text-amber-300">
@@ -373,6 +377,10 @@
                   required
                   class="input mt-1 pr-8"
                   placeholder="0"
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"
+                  spellcheck="false"
                 />
                 <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-stone-500 dark:text-stone-400 text-sm mt-0.5">%</span>
               </div>
@@ -389,7 +397,7 @@
 
             <div>
               <label class="block text-sm font-medium text-stone-600 dark:text-stone-300">{{ t('common.notes') }}</label>
-              <textarea v-model="form.notes" class="input mt-1" rows="3" :placeholder="t('forms.serviceNotes')"></textarea>
+              <textarea v-model="form.notes" class="input mt-1" rows="3" :placeholder="t('forms.serviceNotes')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
             </div>
 
             <!-- Keyboard shortcut hint for new bookings (desktop only) -->
@@ -810,7 +818,7 @@ const formatDateForInput = (dateString: string) => {
   return date.toISOString().slice(0, 10); // YYYY-MM-DD format
 };
 
-const editBooking = (booking: ServiceBooking) => {
+const editBooking = async (booking: ServiceBooking) => {
   editingBooking.value = booking;
   showAddModal.value = true;
   openModal('service-bookings-edit-modal');
@@ -826,6 +834,8 @@ const editBooking = (booking: ServiceBooking) => {
     percent_completed: booking.percent_completed || 0,
     notes: booking.notes || ''
   });
+  await nextTick();
+  if (typeof serviceInputRef.value?.focus === 'function') serviceInputRef.value.focus();
 };
 
 const viewBooking = (booking: ServiceBooking) => {
@@ -925,10 +935,12 @@ const handleBookingAction = (booking: ServiceBooking, action: string) => {
   }
 };
 
-const handleAddServiceBooking = () => {
+const handleAddServiceBooking = async () => {
   if (canCreateServiceBooking.value) {
     showAddModal.value = true;
     openModal('service-bookings-add-modal');
+    await nextTick();
+    if (typeof serviceInputRef.value?.focus === 'function') serviceInputRef.value.focus();
   }
 };
 

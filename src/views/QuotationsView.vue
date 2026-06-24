@@ -241,12 +241,13 @@
           <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5 space-y-4">
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.item') }}</label>
-              <select ref="firstInputRef" v-model="form.item" required class="input mt-1" autofocus>
-                <option value="">{{ t('forms.selectItem') }}</option>
-                <option v-for="item in items" :key="item.id" :value="item.id">
-                  {{ item.name }} ({{ getUnitDisplay(item.unit) }})
-                </option>
-              </select>
+              <ItemSelector
+                ref="firstInputRef"
+                v-model="form.item"
+                :items="items"
+                :placeholder="t('forms.selectItem')"
+                class="mt-1"
+              />
             </div>
 
             <div>
@@ -266,11 +267,11 @@
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('forms.unitPrice') }}</label>
-                <input v-model.number="form.unit_price" type="number" step="0.01" required class="input mt-1 font-mono tabular-nums" :placeholder="t('forms.enterAmount')" />
+                <input v-model.number="form.unit_price" type="number" step="0.01" required class="input mt-1 font-mono tabular-nums" :placeholder="t('forms.enterAmount')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('quotations.minimumQuantity') }}</label>
-                <input v-model.number="form.minimum_quantity" type="number" class="input mt-1" :placeholder="t('forms.optional')" />
+                <input v-model.number="form.minimum_quantity" type="number" class="input mt-1" :placeholder="t('forms.optional')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
               </div>
             </div>
 
@@ -291,7 +292,7 @@
 
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.notes') }}</label>
-              <textarea v-model="form.notes" class="input mt-1" rows="3" :placeholder="t('quotations.additionalNotes')"></textarea>
+              <textarea v-model="form.notes" class="input mt-1" rows="3" :placeholder="t('quotations.additionalNotes')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
             </div>
           </div>
 
@@ -332,6 +333,7 @@ import { useQuotationSearch } from '../composables/useSearch';
 import { useModalState } from '../composables/useModalState';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import VendorSearchBox from '../components/VendorSearchBox.vue';
+import ItemSelector from '../components/ItemSelector.vue';
 
 const { t } = useI18n();
 const { canDelete } = usePermissions();
@@ -381,7 +383,7 @@ const showAddModal = ref(false);
 const editingQuotation = ref<Quotation | null>(null);
 const loading = ref(false);
 
-const firstInputRef = ref<HTMLSelectElement>();
+const firstInputRef = ref<{ focus: () => void }>();
 
 const form = reactive({
   vendor: '',
@@ -440,7 +442,7 @@ const saveQuotation = async () => {
   }
 };
 
-const editQuotation = (quotation: Quotation) => {
+const editQuotation = async (quotation: Quotation) => {
   editingQuotation.value = quotation;
   Object.assign(form, {
     vendor: quotation.vendor,
@@ -453,6 +455,8 @@ const editQuotation = (quotation: Quotation) => {
   });
   showAddModal.value = true;
   openModal('quotations-edit-modal');
+  await nextTick();
+  if (typeof firstInputRef.value?.focus === 'function') firstInputRef.value.focus();
 };
 
 const deleteQuotation = async (id: string) => {
@@ -513,7 +517,7 @@ const handleAddQuotation = async () => {
   showAddModal.value = true;
   openModal('quotations-add-modal');
   await nextTick();
-  firstInputRef.value?.focus();
+  if (typeof firstInputRef.value?.focus === 'function') firstInputRef.value.focus();
 };
 
 // Site change is handled automatically by useSiteData

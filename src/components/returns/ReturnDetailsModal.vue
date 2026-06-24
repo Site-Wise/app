@@ -387,6 +387,10 @@
               rows="4"
               :placeholder="t('vendors.addApprovalNotes')"
               autofocus
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
             ></textarea>
           </div>
         </form>
@@ -448,6 +452,10 @@
               :placeholder="t('vendors.provideRejectionReason')"
               required
               autofocus
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
             ></textarea>
           </div>
         </form>

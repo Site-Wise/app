@@ -72,13 +72,13 @@
           <div>
             <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">{{ t('delivery.deliveryReference') }}</label>
             <input v-model="deliveryForm.delivery_reference" type="text" class="input min-h-[44px]"
-              :placeholder="t('delivery.deliveryReferencePlaceholder')" />
+              :placeholder="t('delivery.deliveryReferencePlaceholder')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
           </div>
 
           <div>
             <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">{{ t('common.notes') }}</label>
             <textarea v-model="deliveryForm.notes" class="input" rows="3"
-              :placeholder="t('forms.deliveryNotes')"></textarea>
+              :placeholder="t('forms.deliveryNotes')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
           </div>
 
           <div>
@@ -95,7 +95,7 @@
                     @click="openPhotoGallery(index)" />
                   <div class="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button type="button" @click.stop="removeExistingPhoto(index)"
-                      class="bg-clay-500 text-white rounded-full p-1 hover:bg-clay-600 transition-colors shadow-lg"
+                      class="bg-clay-500 text-white rounded-full min-h-touch min-w-[44px] inline-flex items-center justify-center hover:bg-clay-600 transition-colors shadow-lg"
                       :title="t('common.deleteAction')">
                       <X class="h-3 w-3" />
                     </button>
@@ -274,7 +274,7 @@
                     <span class="text-stone-500 dark:text-stone-400">₹</span>
                     <input v-model.number="deliveryForm.rounded_off_with" type="number" step="0.01"
                       class="w-24 px-2 py-2 text-center text-sm font-mono sw-tabular border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream focus:ring-2 focus:ring-amber-500 focus:border-transparent min-h-[44px]"
-                      :placeholder="t('delivery.enterRoundOff')" />
+                      :placeholder="t('delivery.enterRoundOff')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
                   </div>
                 </div>
 

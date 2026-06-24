@@ -212,18 +212,18 @@
               <div>
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('vendors.contactPerson') }}</label>
                 <input ref="firstInputRef" v-model="form.contact_person" type="text" class="input mt-1"
-                  :placeholder="t('forms.enterContactPerson')" autofocus />
+                  :placeholder="t('forms.enterContactPerson')" autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
               </div>
 
               <div>
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('vendors.companyName') }}</label>
-                <input v-model="form.name" type="text" class="input mt-1" :placeholder="t('forms.enterCompanyName')" />
+                <input v-model="form.name" type="text" class="input mt-1" :placeholder="t('forms.enterCompanyName')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
               </div>
 
               <div>
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('vendors.paymentDetails') }}</label>
                 <textarea v-model="form.payment_details" class="input mt-1" rows="2"
-                  :placeholder="t('forms.enterPaymentDetails')"></textarea>
+                  :placeholder="t('forms.enterPaymentDetails')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
               </div>
 
               <div>
@@ -239,7 +239,7 @@
               <div>
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.address') }}</label>
                 <textarea v-model="form.address" class="input mt-1" rows="2"
-                  :placeholder="t('forms.enterAddress')"></textarea>
+                  :placeholder="t('forms.enterAddress')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
               </div>
 
               <!-- Tags -->
@@ -494,7 +494,7 @@ const saveVendor = async () => {
   }
 };
 
-const editVendor = (vendor: Vendor) => {
+const editVendor = async (vendor: Vendor) => {
   editingVendor.value = vendor;
   Object.assign(form, {
     contact_person: vendor.contact_person || '',
@@ -505,6 +505,8 @@ const editVendor = (vendor: Vendor) => {
     address: vendor.address || '',
     tags: vendor.tags ? [...vendor.tags] : []
   });
+  await nextTick();
+  if (typeof firstInputRef.value?.focus === 'function') firstInputRef.value.focus();
 };
 
 const deleteVendor = async (id: string) => {
