@@ -299,6 +299,9 @@
       :is-edit="isEditMode"
       :return-data="selectedReturn"
       :vendors="vendors"
+      :deliveries="deliveries"
+      :service-bookings="serviceBookings"
+      :payments="payments"
       @close="closeReturnModal"
       @save="handleReturnSave"
     />
@@ -340,10 +343,14 @@ import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useSiteData } from '../composables/useSiteData';
 import { useModalState } from '../composables/useModalState';
+import { useKeyboardShortcutSingle } from '../composables/useKeyboardShortcut';
 import {
   vendorReturnService,
   vendorService,
   accountService,
+  deliveryService,
+  serviceBookingService,
+  paymentService,
   type VendorReturn
 } from '../services/pocketbase';
 import ReturnModal from '../components/returns/ReturnModal.vue';
@@ -379,10 +386,27 @@ const { data: accountsData } = useSiteData(
   async () => await accountService.getAll()
 );
 
+// Load deliveries, service bookings and payments so the vendor picker in the
+// return modal can show each vendor's outstanding balance
+const { data: deliveriesData } = useSiteData(
+  async () => await deliveryService.getAll()
+);
+
+const { data: serviceBookingsData } = useSiteData(
+  async () => await serviceBookingService.getAll()
+);
+
+const { data: paymentsData } = useSiteData(
+  async () => await paymentService.getAll()
+);
+
 // Computed properties
 const returns = computed(() => returnsData.value || []);
 const vendors = computed(() => vendorsData.value || []);
 const accounts = computed(() => accountsData.value || []);
+const deliveries = computed(() => deliveriesData.value || []);
+const serviceBookings = computed(() => serviceBookingsData.value || []);
+const payments = computed(() => paymentsData.value || []);
 
 const filteredReturns = computed(() => {
   let filtered = returns.value;
@@ -451,6 +475,12 @@ const openCreateModal = () => {
   showReturnModal.value = true;
   openModal('vendor-returns-add-modal');
 };
+
+// Shift+Alt+N opens the create-return modal (respects the create limit, matching the button)
+useKeyboardShortcutSingle('n', () => {
+  if (!canCreateReturn.value) return;
+  openCreateModal();
+}, { shiftKey: true, altKey: true });
 
 const closeReturnModal = () => {
   showReturnModal.value = false;

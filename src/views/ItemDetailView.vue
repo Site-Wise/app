@@ -250,10 +250,11 @@ import {
 } from 'lucide-vue-next';
 import {
   itemService,
-  deliveryService,
+  deliveryItemService,
   type Item,
   type DeliveryItem
 } from '../services/pocketbase';
+import { buildItemHistoryFromDeliveryItems } from '../utils/detailViewSelectors';
 
 // Extended DeliveryItem with delivery context
 interface ExtendedDeliveryItem extends DeliveryItem {
@@ -296,35 +297,18 @@ const loadItemData = async () => {
   const itemId = route.params.id as string;
 
   try {
-    const [allItems, allDeliveries] = await Promise.all([
-      itemService.getAll(),
-      deliveryService.getAll()
+    // Targeted queries: the single item by id, and only this item's delivery_items
+    // (each carrying its parent delivery + vendor expand) instead of getAll() + JS join.
+    const [itemRecord, itemDeliveryItems] = await Promise.all([
+      itemService.getById(itemId),
+      deliveryItemService.getByItem(itemId)
     ]);
 
-    item.value = allItems.find(i => i.id === itemId) || null;
-    
-    // Get delivery items for this specific item from all deliveries
-    const allDeliveryItems: ExtendedDeliveryItem[] = [];
-    allDeliveries.forEach(delivery => {
-      if (delivery.expand?.delivery_items) {
-        delivery.expand.delivery_items.forEach(deliveryItem => {
-          if (deliveryItem.item === itemId) {
-            // Add delivery context to delivery item
-            allDeliveryItems.push({
-              ...deliveryItem,
-              delivery_date: delivery.delivery_date,
-              expand: {
-                ...deliveryItem.expand,
-                delivery: delivery
-              }
-            });
-          }
-        });
-      }
-    });
-    
-    itemDeliveries.value = allDeliveryItems
-      .sort((a, b) => new Date(a.delivery_date || '').getTime() - new Date(b.delivery_date || '').getTime());
+    item.value = itemRecord;
+
+    // Adapt the fetched delivery_items into the same date-ascending, delivery-context
+    // shape the previous getAll()+join produced.
+    itemDeliveries.value = buildItemHistoryFromDeliveryItems(itemDeliveryItems) as ExtendedDeliveryItem[];
 
     if (!item.value) {
       router.push('/items');

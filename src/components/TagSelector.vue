@@ -22,7 +22,8 @@
       <div class="relative">
         <input v-model="searchQuery" type="text" class="input pr-10"
           :placeholder="placeholder || t('tags.searchOrCreateTag')" @input="handleSearch"
-          @keydown.enter.prevent="handleEnterKey" @keydown.escape="hideDropdown" @focus="showDropdown = true" />
+          @keydown.enter.prevent="handleEnterKey" @keydown.escape="hideDropdown" @focus="showDropdown = true"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
         <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
           <Search class="h-4 w-4 text-stone-500 dark:text-stone-400" />
         </div>

@@ -699,6 +699,13 @@ import {
 } from '../services/pocketbase';
 import { DeliveryPaymentCalculator, type DeliveryWithPaymentStatus } from '../services/deliveryUtils';
 import { TallyXmlExporter } from '../utils/tallyXmlExport';
+import {
+  selectVendorDeliveries,
+  selectVendorServiceBookings,
+  selectVendorPayments,
+  selectVendorRefundTransactions,
+  resolveTags,
+} from '../utils/detailViewSelectors';
 
 const route = useRoute();
 const router = useRouter();
@@ -1183,38 +1190,27 @@ const loadVendorData = async () => {
     allServiceBookings.value = allServiceBookingsData;
     paymentAllocations.value = allPaymentAllocationsData;
     vendor.value = vendorData.find(v => v.id === vendorId) || null;
-    
-    // Filter vendor deliveries and enhance with payment status
-    const filteredDeliveries = allDeliveriesData
-      .filter(delivery => delivery.vendor === vendorId)
-      .sort((a, b) => new Date(b.delivery_date).getTime() - new Date(a.delivery_date).getTime());
-    
+
+    // Derive the per-vendor association sets via pure selectors (same membership/sort
+    // rules as before — extracted so the membership safety-net binds to real code).
+    const filteredDeliveries = selectVendorDeliveries(allDeliveriesData, vendorId);
+
     vendorDeliveries.value = DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus(
       filteredDeliveries,
       allPaymentAllocationsData
     );
-    vendorServiceBookings.value = allServiceBookingsData
-      .filter(booking => booking.vendor === vendorId)
-      .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+    vendorServiceBookings.value = selectVendorServiceBookings(allServiceBookingsData, vendorId);
     allPayments.value = allPaymentsData;
-    vendorPayments.value = allPaymentsData
-      .filter(payment => payment.vendor === vendorId)
-      .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime());
+    vendorPayments.value = selectVendorPayments(allPaymentsData, vendorId);
     vendorReturns.value = allReturns;
     vendorCreditNotes.value = allCreditNotes;
     vendorCreditNoteUsages.value = allCreditNoteUsages;
-    // Filter refund transactions (credit transactions with vendor)
-    vendorRefunds.value = allTransactions
-      .filter(transaction => transaction.type === 'credit' && transaction.vendor === vendorId)
-      .sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime());
+    // Refund transactions = credit transactions for this vendor (newest first).
+    vendorRefunds.value = selectVendorRefundTransactions(allTransactions, vendorId);
     accounts.value = accountsData;
 
     // Map tags for the vendor
-    if (vendor.value && vendor.value.tags && vendor.value.tags.length > 0) {
-      vendorTags.value = allTags.filter(tag => vendor.value!.tags!.includes(tag.id!));
-    } else {
-      vendorTags.value = [];
-    }
+    vendorTags.value = resolveTags(allTags, vendor.value?.tags);
 
     if (!vendor.value) {
       router.push('/vendors');

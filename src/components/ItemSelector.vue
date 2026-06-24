@@ -21,6 +21,10 @@
           @focus="showDropdown = true"
           @click="showDropdown = true"
           :readonly="readonly"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
         />
         <div class="absolute inset-y-0 right-0 pr-3 flex items-center space-x-1">
           <button

@@ -251,12 +251,16 @@
 
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.vendor') }}</label>
-              <select v-model="form.vendor" required class="input mt-1">
-                <option value="">{{ t('forms.selectVendor') }}</option>
-                <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
-                  {{ vendor.name }}
-                </option>
-              </select>
+              <VendorSearchBox
+                v-model="form.vendor"
+                :vendors="vendors"
+                :deliveries="deliveries"
+                :service-bookings="serviceBookings"
+                :payments="payments"
+                :placeholder="t('forms.selectVendor')"
+                :required="true"
+                class="mt-1"
+              />
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -316,6 +320,9 @@ import {
   quotationService,
   itemService,
   vendorService,
+  deliveryService,
+  serviceBookingService,
+  paymentService,
   type Quotation
 } from '../services/pocketbase';
 import { useI18n } from '../composables/useI18n';
@@ -324,6 +331,7 @@ import { useSiteData } from '../composables/useSiteData';
 import { useQuotationSearch } from '../composables/useSearch';
 import { useModalState } from '../composables/useModalState';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
+import VendorSearchBox from '../components/VendorSearchBox.vue';
 
 const { t } = useI18n();
 const { canDelete } = usePermissions();
@@ -349,10 +357,26 @@ const { data: vendorsData } = useSiteData(
   async () => await vendorService.getAll()
 );
 
+// Load deliveries, service bookings and payments so the vendor picker can show balances
+const { data: deliveriesData } = useSiteData(
+  async () => await deliveryService.getAll()
+);
+
+const { data: serviceBookingsData } = useSiteData(
+  async () => await serviceBookingService.getAll()
+);
+
+const { data: paymentsData } = useSiteData(
+  async () => await paymentService.getAll()
+);
+
 // Computed properties from useSiteData
 const allQuotations = computed(() => allQuotationsData.value || []);
 const items = computed(() => itemsData.value || []);
 const vendors = computed(() => vendorsData.value || []);
+const deliveries = computed(() => deliveriesData.value || []);
+const serviceBookings = computed(() => serviceBookingsData.value || []);
+const payments = computed(() => paymentsData.value || []);
 const showAddModal = ref(false);
 const editingQuotation = ref<Quotation | null>(null);
 const loading = ref(false);

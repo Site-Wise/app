@@ -114,6 +114,7 @@
     "payments": "विक्रेता या खाते से भुगतान खोजें...",
     "returns": "विक्रेता, कारण, या स्थिति से वापसी खोजें...",
     "noResults": "कोई परिणाम नहीं मिला",
+    "noVendorsFound": "\"{query}\" से मेल खाने वाला कोई विक्रेता नहीं मिला",
     "resultsCount": "{count} परिणाम मिले"
   },
   "filters": {
@@ -479,6 +480,7 @@
       "other": "अन्य"
     },
     "unnamedVendor": "अज्ञात विक्रेता",
+    "pendingItems": "{count} लंबित आइटम",
     "totalDeliveries": "कुल डिलीवरी",
     "recentDeliveries": "हाल की डिलीवरी",
     "paymentHistory": "भुगतान इतिहास",

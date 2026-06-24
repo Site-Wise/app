@@ -439,7 +439,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, watch } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
 import { 
   Users, 
   UserPlus, 
@@ -702,14 +702,12 @@ const closeInviteModal = () => {
   });
 };
 
-// Watch for currentSite changes and load users
+// Watch for currentSite changes and load users.
+// `immediate: true` already triggers the initial load on mount, so a separate
+// onMounted(loadSiteUsers) would just duplicate the first fetch.
 watch(currentSite, (newSite) => {
   if (newSite) {
     loadSiteUsers();
   }
 }, { immediate: true });
-
-onMounted(() => {
-  loadSiteUsers();
-});
 </script>

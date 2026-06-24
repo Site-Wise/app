@@ -337,7 +337,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue';
+import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue';
 import { X, Plus, Trash2, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '../../composables/useI18n';
 import { useToast } from '../../composables/useToast';
@@ -390,8 +390,16 @@ const toast = useToast();
 
 // Refs - used in template via ref="vendorSearchRef"
 const vendorSearchRef = ref<InstanceType<typeof VendorSearchBox> | null>(null);
-// Ensure TypeScript knows this ref is used (template refs are not detected as used)
-void vendorSearchRef;
+
+// Autofocus the first field (vendor picker) when the modal mounts. The bound
+// :autofocus attribute does not fire for dynamically-inserted modal content,
+// so focus it explicitly after the DOM is ready.
+onMounted(async () => {
+  await nextTick();
+  if (typeof vendorSearchRef.value?.focus === 'function') {
+    vendorSearchRef.value.focus();
+  }
+});
 
 // Form data
 const form = reactive({

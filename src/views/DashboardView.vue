@@ -285,13 +285,12 @@ import {
   paymentService,
   deliveryService,
   serviceBookingService,
-  ServiceBookingService,
   vendorRefundService,
   vendorReturnService,
   vendorCreditNoteService,
   vendorService
 } from '../services/pocketbase';
-import { DeliveryPaymentCalculator } from '../services/deliveryUtils';
+import { computeDashboardStats } from '../utils/dashboardStats';
 import { useSiteStore } from '../stores/site';
 import NewUserOnboarding from '../components/NewUserOnboarding.vue';
 
@@ -362,110 +361,23 @@ const creditNotes = computed(() => dashboardData.value?.creditNotes || []);
 const vendors = computed(() => dashboardData.value?.vendors || []);
 
 
-const stats = computed(() => {
-  // Calculate gross expenses from deliveries and service bookings
-  const grossExpenses = deliveries.value.reduce((sum, delivery) => {
-    return sum + delivery.total_amount;
-  }, 0) + serviceBookings.value.reduce((sum, booking) => {
-    return sum + booking.total_amount;
-  }, 0);
-
-  // Calculate total refunds received
-  const totalRefunds = vendorRefunds.value.reduce((sum, refund) => {
-    return sum + refund.refund_amount;
-  }, 0);
-
-  // Net expenses = Gross expenses - Refunds
-  const totalExpenses = grossExpenses - totalRefunds;
-
-  const totalSqft = currentSite.value?.total_planned_area || 1;
-  const expensePerSqft = Math.round(totalExpenses / totalSqft);
-
-  // Outstanding is summed PER ITEM, never netted globally: an overpayment/advance on
-  // one delivery or booking must not cancel out a genuine balance owed on another.
-  //
-  // The `paid_amount`/`payment_status` fields on deliveries & bookings are deprecated
-  // (always 0 from the API) — the canonical "how much is paid against this item" lives
-  // in the payment_allocations pivot, carried on each payment's expand. Paid = sum of
-  // allocations referencing the item. This is the same source VendorService uses, so the
-  // site-wide total here equals the sum of every vendor's outstanding.
-  const allocations = payments.value.flatMap(p => p.expand?.payment_allocations || []);
-
-  // Deliveries: outstanding = total_amount - allocated (clamped at 0).
-  const deliveriesOutstanding = deliveries.value.reduce((sum, delivery) => {
-    return sum + DeliveryPaymentCalculator.calculateOutstandingAmount(delivery, allocations);
-  }, 0);
-
-  // Service bookings: due is the progress-based amount (total scaled by percent
-  // completed), minus what's been allocated to the booking (clamped at 0).
-  const serviceBookingsOutstanding = serviceBookings.value.reduce((sum, booking) => {
-    const allocated = allocations
-      .filter(a => a.service_booking === booking.id)
-      .reduce((s, a) => s + a.allocated_amount, 0);
-    return sum + ServiceBookingService.calculateOutstandingAmountFromData(booking, allocated);
-  }, 0);
-
-  const outstandingAmount = deliveriesOutstanding + serviceBookingsOutstanding;
-
-  // Count of items with an outstanding balance (honest "unpaid" note for the outstanding
-  // tile) — deliveries not fully paid plus service bookings whose progress-based due
-  // exceeds what's been allocated.
-  const unpaidCount =
-    deliveries.value.filter(
-      d => DeliveryPaymentCalculator.calculateOutstandingAmount(d, allocations) > 0
-    ).length +
-    serviceBookings.value.filter(b => {
-      const allocated = allocations
-        .filter(a => a.service_booking === b.id)
-        .reduce((s, a) => s + a.allocated_amount, 0);
-      return ServiceBookingService.calculateOutstandingAmountFromData(b, allocated) > 0;
-    }).length;
-
-  // Advances = money paid to vendors that isn't (fully) attributed to a delivery or
-  // service booking yet. Per payment: max(0, amount - sum(allocated_amount)).
-  let advances = 0;
-  let advanceCount = 0;
-  for (const payment of payments.value) {
-    const allocations = payment.expand?.payment_allocations || [];
-    const allocated = allocations.reduce((sum, a) => sum + (a.allocated_amount || 0), 0);
-    const unattributed = payment.amount - allocated;
-    if (unattributed > 0) {
-      advances += unattributed;
-      advanceCount += 1;
-    }
-  }
-
-  // Pending recovery = money owed back on vendor returns that haven't been settled
-  // yet — i.e. returns (not rejected) with neither a linked refund/adjustment nor a
-  // credit note. The moment a credit note or refund is recorded, the return drops off.
-  const refundedReturnIds = new Set(
-    vendorRefunds.value.map(r => r.vendor_return).filter(Boolean)
-  );
-  const creditedReturnIds = new Set(
-    creditNotes.value.map(cn => cn.return_id).filter(Boolean)
-  );
-  let pendingRecovery = 0;
-  let pendingRecoveryCount = 0;
-  for (const ret of vendorReturns.value) {
-    if (ret.status === 'rejected') continue;
-    const settled = refundedReturnIds.has(ret.id!) || creditedReturnIds.has(ret.id!);
-    if (!settled) {
-      pendingRecovery += ret.total_return_amount || 0;
-      pendingRecoveryCount += 1;
-    }
-  }
-
-  return {
-    totalExpenses,
-    expensePerSqft,
-    outstandingAmount,
-    unpaidCount,
-    advances,
-    advanceCount,
-    pendingRecovery,
-    pendingRecoveryCount
-  };
-});
+// Dashboard tile numbers are computed by the pure computeDashboardStats helper
+// (src/utils/dashboardStats.ts). The math — gross/net expenses, expense-per-sqft,
+// per-item-clamped site outstanding, unpaid count, advances and pending recovery — is
+// pinned by the financial safety-net test, which binds to that same helper. This view
+// only supplies the loaded collections; the deferred shared-cache refactor will change
+// only WHERE those collections come from, not the numbers.
+const stats = computed(() =>
+  computeDashboardStats({
+    deliveries: deliveries.value,
+    serviceBookings: serviceBookings.value,
+    payments: payments.value,
+    vendorRefunds: vendorRefunds.value,
+    vendorReturns: vendorReturns.value,
+    creditNotes: creditNotes.value,
+    totalPlannedArea: currentSite.value?.total_planned_area || 1,
+  })
+);
 
 // Payments chart period — toggle between last 7 and last 30 days.
 const chartPeriod = ref<'week' | 'month'>('week');

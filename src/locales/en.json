@@ -114,6 +114,7 @@
     "payments": "Search payments by vendor or account...",
     "returns": "Search returns by vendor, reason, or status...",
     "noResults": "No results found",
+    "noVendorsFound": "No vendors found matching \"{query}\"",
     "resultsCount": "{count} results found"
   },
   "filters": {
@@ -479,6 +480,7 @@
       "other": "Other"
     },
     "unnamedVendor": "Unnamed Vendor",
+    "pendingItems": "{count} pending item(s)",
     "totalDeliveries": "Total Deliveries",
     "recentDeliveries": "Recent Deliveries",
     "paymentHistory": "Payment History",

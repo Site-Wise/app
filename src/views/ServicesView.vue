@@ -304,6 +304,7 @@ import {
   type Tag as TagType
 } from '../services/pocketbase';
 import { useServiceSearch } from '../composables/useSearch';
+import { computeServiceBookingCounts, getServiceBookingsCount as getBookingsCount } from '../utils/serviceAggregations';
 
 const { t } = useI18n();
 const { canUpdate, canDelete } = usePermissions();
@@ -363,9 +364,12 @@ const getServiceIcon = (category: Service['category']) => {
   return icons[category] || Wrench;
 };
 
-const getServiceBookingsCount = (serviceId: string) => {
-  return serviceBookings.value?.filter(booking => booking.service === serviceId).length || 0;
-};
+// Precompute booking counts ONCE per bookings change so each service card reads its
+// count via an O(1) Map lookup instead of re-filtering all bookings per card.
+const serviceBookingCounts = computed(() => computeServiceBookingCounts(serviceBookings.value));
+
+const getServiceBookingsCount = (serviceId: string) =>
+  getBookingsCount(serviceBookingCounts.value, serviceId);
 
 
 const viewServiceDetail = (serviceId: string) => {

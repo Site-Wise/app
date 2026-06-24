@@ -1657,6 +1657,17 @@ export class ServiceBookingService {
     }
   }
 
+  async getByService(serviceId: string): Promise<ServiceBooking[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('service_bookings').getFullList({
+      filter: `site="${siteId}" && service="${serviceId}"`,
+      expand: 'vendor,service'
+    });
+    return records.map(record => this.mapRecordToServiceBooking(record));
+  }
+
   async create(data: Omit<ServiceBooking, 'id' | 'site'>): Promise<ServiceBooking> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
@@ -4359,6 +4370,20 @@ export class DeliveryItemService {
     return records.map(record => this.mapRecordToDeliveryItem(record));
   }
 
+  async getByItem(itemId: string): Promise<DeliveryItem[]> {
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    const records = await pb.collection('delivery_items').getFullList({
+      filter: `site="${currentSite}" && item="${itemId}"`,
+      expand: 'delivery,delivery.vendor,item',
+      sort: '-created'
+    });
+    return records.map(record => this.mapRecordToDeliveryItem(record));
+  }
+
   async getById(id: string): Promise<DeliveryItem> {
     const currentSite = getCurrentSiteId();
     if (!currentSite) {
@@ -4595,6 +4620,26 @@ export class DeliveryItemService {
       total_amount: record.total_amount,
       payment_status: record.payment_status,
       paid_amount: record.paid_amount || 0,
+      site: record.site,
+      created: record.created,
+      updated: record.updated,
+      // Carry the nested vendor expand when present (e.g. delivery_items fetched with
+      // expand 'delivery,delivery.vendor') so callers can read delivery.expand.vendor.
+      expand: record.expand?.vendor ? {
+        vendor: this.mapRecordToVendorForDelivery(record.expand.vendor)
+      } : undefined
+    };
+  }
+
+  private mapRecordToVendorForDelivery(record: RecordModel): Vendor {
+    return {
+      id: record.id,
+      name: record.name,
+      contact_person: record.contact_person,
+      email: record.email,
+      phone: record.phone,
+      address: record.address,
+      tags: record.tags || [],
       site: record.site,
       created: record.created,
       updated: record.updated

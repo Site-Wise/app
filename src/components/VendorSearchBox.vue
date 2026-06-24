@@ -63,31 +63,13 @@
       <!-- Selected vendor with outstanding amount -->
       <div
         v-if="selectedVendor && !searchQuery"
-        class="px-4 py-3 border-b border-stone-200 dark:border-ink-4 bg-amber-50 dark:bg-amber-500/10"
+        class="border-b border-stone-200 dark:border-ink-4 bg-amber-50 dark:bg-amber-500/10"
       >
-        <div class="flex items-center justify-between">
-          <div class="flex items-center">
-            <div class="flex-shrink-0 w-2 h-2 bg-forest-500 rounded-full mr-3"></div>
-            <span class="text-sm font-medium text-ink dark:text-cream">
-              {{ selectedVendor.contact_person }}
-            </span>
-          </div>
-          <div class="text-right">
-            <div v-if="getVendorBalance(selectedVendor).amount > 0" class="text-sm font-mono font-semibold sw-tabular"
-                 :class="{
-                   'text-clay-600 dark:text-clay-400': getVendorBalance(selectedVendor).type === 'due',
-                   'text-forest-600 dark:text-forest-400': getVendorBalance(selectedVendor).type === 'advance'
-                 }">
-              ₹{{ getVendorBalance(selectedVendor).amount.toFixed(2) }}
-            </div>
-            <div v-if="getVendorBalance(selectedVendor).amount > 0" class="text-xs text-stone-500 dark:text-stone-400">
-              {{ getVendorBalance(selectedVendor).type === 'due' ? t('common.amountDue') : t('common.extraAdvance') }}
-            </div>
-            <div v-if="pendingItemsCount > 0" class="text-xs text-stone-500 dark:text-stone-400 mt-1">
-              {{ pendingItemsCount }} pending {{ pendingItemsCount === 1 ? 'item' : 'items' }}
-            </div>
-          </div>
-        </div>
+        <VendorOption
+          :vendor="selectedVendor"
+          :balance="getSignedBalance(selectedVendor)"
+          :pending-count="pendingItemsCount"
+        />
       </div>
 
       <!-- Vendor search results -->
@@ -97,33 +79,20 @@
           :key="vendor.id"
           @mousedown="selectVendor(vendor)"
           @mouseenter="highlightedIndex = index"
-          class="px-4 py-2 cursor-pointer hover:bg-stone-50 dark:hover:bg-ink-4 text-sm"
-          :class="{ 'bg-stone-50 dark:bg-ink-4': highlightedIndex === index }"
+          class="cursor-pointer"
         >
-          <div class="flex items-center justify-between">
-            <span class="text-ink dark:text-cream">{{ vendor.contact_person }}</span>
-            <div class="text-right">
-              <div v-if="getVendorBalance(vendor).amount > 0" class="text-xs font-mono sw-tabular"
-                   :class="{
-                     'text-clay-600 dark:text-clay-400': getVendorBalance(vendor).type === 'due',
-                     'text-forest-600 dark:text-forest-400': getVendorBalance(vendor).type === 'advance'
-                   }">
-                ₹{{ getVendorBalance(vendor).amount.toFixed(2) }}
-              </div>
-              <div v-if="getVendorBalance(vendor).amount > 0" class="text-xs text-stone-500 dark:text-stone-400">
-                {{ getVendorBalance(vendor).type === 'due' ? t('common.amountDue') : t('common.extraAdvance') }}
-              </div>
-              <div v-if="getVendorPendingCount(vendor) > 0" class="text-xs text-stone-500 dark:text-stone-400 mt-1">
-                {{ getVendorPendingCount(vendor) }} pending {{ getVendorPendingCount(vendor) === 1 ? 'item' : 'items' }}
-              </div>
-            </div>
-          </div>
+          <VendorOption
+            :vendor="vendor"
+            :balance="getSignedBalance(vendor)"
+            :highlighted="highlightedIndex === index"
+            :pending-count="getVendorPendingCount(vendor)"
+          />
         </div>
       </div>
 
       <!-- No results message -->
       <div v-if="filteredVendors.length === 0 && searchQuery && !selectedVendor" class="px-4 py-3 text-sm text-stone-500 dark:text-stone-400">
-        No vendors found matching "{{ searchQuery }}"
+        {{ t('search.noVendorsFound', { query: searchQuery }) }}
       </div>
     </div>
   </div>
@@ -135,6 +104,7 @@ import { Loader2 } from 'lucide-vue-next';
 import type { Vendor, Delivery, ServiceBooking, Payment } from '../services/pocketbase';
 import { VendorService } from '../services/pocketbase';
 import { useI18n } from '../composables/useI18n';
+import VendorOption from './VendorOption.vue';
 
 interface Props {
   modelValue: string;
@@ -210,6 +180,16 @@ const filteredVendors = computed(() => {
 });
 
 // Helper functions
+// Signed outstanding for VendorOption: > 0 = due, < 0 = advance, 0 = settled.
+const getSignedBalance = (vendor: Vendor): number => {
+  return VendorService.calculateOutstandingFromData(
+    vendor.id!,
+    props.deliveries,
+    props.serviceBookings,
+    props.payments
+  );
+};
+
 const getVendorBalance = (vendor: Vendor): { amount: number; type: 'due' | 'advance' | 'settled' } => {
   const outstandingAmount = VendorService.calculateOutstandingFromData(
     vendor.id!,

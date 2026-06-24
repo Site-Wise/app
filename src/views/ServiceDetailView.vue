@@ -191,12 +191,13 @@ import {
   DollarSign,
   Loader2
 } from 'lucide-vue-next';
-import { 
-  serviceService, 
+import {
+  serviceService,
   serviceBookingService,
   type Service,
   type ServiceBooking
 } from '../services/pocketbase';
+import { selectServiceBookings } from '../utils/detailViewSelectors';
 
 const route = useRoute();
 const router = useRouter();
@@ -238,16 +239,18 @@ const loadServiceData = async () => {
   const serviceId = route.params.id as string;
   
   try {
-    const [allServices, allBookings] = await Promise.all([
-      serviceService.getAll(),
-      serviceBookingService.getAll()
+    // Targeted queries: the single service by id, and only this service's bookings
+    // instead of getAll() + JS find()/filter().
+    const [serviceRecord, serviceBookingsData] = await Promise.all([
+      serviceService.getById(serviceId),
+      serviceBookingService.getByService(serviceId)
     ]);
-    
-    service.value = allServices.find(s => s.id === serviceId) || null;
-    serviceBookings.value = allBookings
-      .filter(booking => booking.service === serviceId)
-      .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
-      
+
+    service.value = serviceRecord;
+    // selectServiceBookings re-applies the service-id membership + ascending start_date
+    // sort, keeping the displayed set identical to the previous client-side filter.
+    serviceBookings.value = selectServiceBookings(serviceBookingsData, serviceId);
+
     if (!service.value) {
       router.push('/services');
       return;

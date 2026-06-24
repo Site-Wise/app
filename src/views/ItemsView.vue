@@ -246,6 +246,7 @@ import {
 } from '../services/pocketbase';
 import { usePermissions } from '../composables/usePermissions';
 import { useModalState } from '../composables/useModalState';
+import { computeItemDeliveryStats, getDeliveredQuantity, getAveragePrice } from '../utils/itemAggregations';
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
@@ -303,19 +304,12 @@ const form = reactive({
 });
 
 
-const getItemDeliveredQuantity = (itemId: string) => {
-  let totalQuantity = 0;
-  deliveries.value.forEach(delivery => {
-    if (delivery.expand?.delivery_items) {
-      delivery.expand.delivery_items.forEach(deliveryItem => {
-        if (deliveryItem.item === itemId) {
-          totalQuantity += deliveryItem.quantity;
-        }
-      });
-    }
-  });
-  return totalQuantity;
-};
+// Precompute per-item delivery stats ONCE per deliveries change, so each item card
+// reads its totals via an O(1) Map lookup instead of re-scanning every delivery.
+const itemDeliveryStats = computed(() => computeItemDeliveryStats(deliveries.value));
+
+const getItemDeliveredQuantity = (itemId: string) =>
+  getDeliveredQuantity(itemDeliveryStats.value, itemId);
 
 // Units must not change once deliveries exist for the item — changing the unit
 // would silently corrupt delivered-quantity and average-price calculations.
@@ -323,23 +317,8 @@ const editingItemHasDeliveries = computed(() =>
   !!editingItem.value && getItemDeliveredQuantity(editingItem.value.id!) > 0
 );
 
-const getItemAveragePrice = (itemId: string) => {
-  let totalValue = 0;
-  let totalQuantity = 0;
-
-  deliveries.value.forEach(delivery => {
-    if (delivery.expand?.delivery_items) {
-      delivery.expand.delivery_items.forEach(deliveryItem => {
-        if (deliveryItem.item === itemId) {
-          totalValue += deliveryItem.total_amount;
-          totalQuantity += deliveryItem.quantity;
-        }
-      });
-    }
-  });
-
-  return totalQuantity > 0 ? totalValue / totalQuantity : 0;
-};
+const getItemAveragePrice = (itemId: string) =>
+  getAveragePrice(itemDeliveryStats.value, itemId);
 
 const getUnitDisplay = (unitKey: string) => {
   // If translation exists, show "Translation (key)", otherwise just show the key

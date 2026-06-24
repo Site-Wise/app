@@ -284,9 +284,9 @@
               <VendorSearchBox
                 v-model="form.vendor"
                 :vendors="vendors"
-                :deliveries="[]"
-                :service-bookings="[]"
-                :payments="[]"
+                :deliveries="deliveries"
+                :service-bookings="allServiceBookings"
+                :payments="payments"
                 :placeholder="t('forms.selectProvider')"
                 :required="true"
                 :disabled="!!(editingBooking && hasPayments(editingBooking))"
@@ -546,13 +546,15 @@ import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import VendorSearchBox from '../components/VendorSearchBox.vue';
 import ServiceSearchBox from '../components/ServiceSearchBox.vue';
 import TimeCalculatorModal from '../components/TimeCalculatorModal.vue';
-import { 
-  serviceBookingService, 
+import {
+  serviceBookingService,
   serviceService,
   vendorService,
   paymentAllocationService,
+  deliveryService,
+  paymentService,
   ServiceBookingService,
-  type ServiceBooking 
+  type ServiceBooking
 } from '../services/pocketbase';
 
 // Extended ServiceBooking with computed payment properties
@@ -634,9 +636,21 @@ const { data: vendorsData } = useSiteData(
   async () => await vendorService.getAll()
 );
 
+// Load deliveries and payments so the vendor picker can show outstanding balances
+const { data: deliveriesData } = useSiteData(
+  async () => await deliveryService.getAll()
+);
+
+const { data: paymentsData } = useSiteData(
+  async () => await paymentService.getAll()
+);
+
 // Computed properties from useSiteData
 const services = computed(() => servicesData.value || []);
 const vendors = computed(() => vendorsData.value || []);
+const deliveries = computed(() => deliveriesData.value || []);
+const payments = computed(() => paymentsData.value || []);
+const allServiceBookings = computed(() => allServiceBookingsData.value || []);
 const showAddModal = ref(false);
 const editingBooking = ref<ServiceBooking | null>(null);
 const viewingBooking = ref<ServiceBooking | null>(null);

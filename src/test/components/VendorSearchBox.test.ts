@@ -7,12 +7,18 @@ import type { Vendor, Delivery, ServiceBooking } from '../../services/pocketbase
 // Mock useI18n
 vi.mock('../../composables/useI18n', () => ({
   useI18n: () => ({
-    t: (key: string) => {
+    t: (key: string, values?: Record<string, unknown>) => {
       const translations: Record<string, string> = {
         'common.amountDue': 'Amount Due',
-        'common.extraAdvance': 'Extra Advance'
+        'common.extraAdvance': 'Extra Advance',
+        'vendors.pendingItems': '{count} pending item(s)',
+        'vendors.unnamedVendor': 'Unnamed Vendor'
       };
-      return translations[key] || key;
+      const template = translations[key] || key;
+      if (values) {
+        return template.replace(/\{(\w+)\}/g, (m, k) => values[k] !== undefined ? String(values[k]) : m);
+      }
+      return template;
     }
   })
 }));

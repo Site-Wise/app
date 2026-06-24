@@ -22,6 +22,7 @@ vi.mock('../../services/pocketbase', () => ({
   },
   siteUserService: {
     getUserRoleForSite: vi.fn(),
+    getUserRolesForSites: vi.fn(),
     getBySite: vi.fn()
   },
   pb: {
@@ -49,6 +50,20 @@ describe('useInvitations', () => {
     mockSiteInvitationService = vi.mocked(siteInvitationService)
     mockSiteUserService = vi.mocked(siteUserService)
     mockPb = vi.mocked(pb)
+
+    // loadReceivedInvitations now resolves site membership via the batched
+    // getUserRolesForSites call. By default, delegate it to the per-site
+    // getUserRoleForSite mock (in site order) so existing test cases that program
+    // getUserRoleForSite continue to drive the same membership outcome.
+    mockSiteUserService.getUserRolesForSites.mockImplementation(
+      async (_userId: string, siteIds: string[]) => {
+        const map: Record<string, any> = {}
+        for (const siteId of siteIds) {
+          map[siteId] = await mockSiteUserService.getUserRoleForSite(_userId, siteId)
+        }
+        return map
+      }
+    )
 
     // Reset auth service to have a valid user
     vi.mocked(authService).currentUser = {
