@@ -454,7 +454,7 @@ const editQuotation = async (quotation: Quotation) => {
     status: quotation.status
   });
   showAddModal.value = true;
-  openModal('quotations-edit-modal');
+  openModal('quotations-edit-modal', closeModal);
   await nextTick();
   if (typeof firstInputRef.value?.focus === 'function') firstInputRef.value.focus();
 };
@@ -515,7 +515,7 @@ const closeModal = () => {
 
 const handleAddQuotation = async () => {
   showAddModal.value = true;
-  openModal('quotations-add-modal');
+  openModal('quotations-add-modal', closeModal);
   await nextTick();
   if (typeof firstInputRef.value?.focus === 'function') firstInputRef.value.focus();
 };

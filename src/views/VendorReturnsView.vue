@@ -473,7 +473,7 @@ const openCreateModal = () => {
   isEditMode.value = false;
   selectedReturn.value = null;
   showReturnModal.value = true;
-  openModal('vendor-returns-add-modal');
+  openModal('vendor-returns-add-modal', closeReturnModal);
 };
 
 // Shift+Alt+N opens the create-return modal (respects the create limit, matching the button)
@@ -503,7 +503,7 @@ const closeRefundModal = () => {
 const viewReturn = (returnItem: VendorReturn) => {
   selectedReturn.value = returnItem;
   showDetailsModal.value = true;
-  openModal('vendor-returns-details-modal');
+  openModal('vendor-returns-details-modal', closeDetailsModal);
 };
 
 const approveReturn = async (returnItem: VendorReturn) => {
@@ -518,7 +518,7 @@ const approveReturn = async (returnItem: VendorReturn) => {
 const processRefund = (returnItem: VendorReturn) => {
   selectedReturn.value = returnItem;
   showRefundModal.value = true;
-  openModal('vendor-returns-refund-modal');
+  openModal('vendor-returns-refund-modal', closeRefundModal);
 };
 
 const handleReturnSave = async () => {

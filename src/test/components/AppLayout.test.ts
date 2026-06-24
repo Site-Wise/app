@@ -41,7 +41,9 @@ const mockRouter = {
   replace: vi.fn(),
   go: vi.fn(),
   back: vi.fn(),
-  forward: vi.fn()
+  forward: vi.fn(),
+  // afterEach returns an unregister fn; AppLayout stores & calls it on unmount.
+  afterEach: vi.fn(() => vi.fn())
 }
 
 const mockRoute = {
@@ -138,7 +140,39 @@ vi.mock('../../composables/usePWAUpdate', () => ({
 
 vi.mock('../../composables/useModalState', () => ({
   useModalState: () => ({
-    isAnyModalOpen: { value: false }
+    isAnyModalOpen: { value: false },
+    openModalCount: { value: 0 },
+    handlePopState: vi.fn(),
+    resetModalStack: vi.fn()
+  }),
+  // Module-level exports used directly by AppLayout (popstate + scroll-lock wiring).
+  handlePopState: vi.fn(),
+  resetModalStack: vi.fn(),
+  setHistoryIntegrationEnabled: vi.fn()
+}))
+
+// Centralized body-scroll-lock is mounted by AppLayout; stub it so the test
+// doesn't depend on a real openModalCount ref / DOM body mutation.
+vi.mock('../../composables/useBodyScrollLock', () => ({
+  useBodyScrollLock: () => ({ lock: vi.fn(), unlock: vi.fn() })
+}))
+
+// usePlatform resolves asynchronously via onMounted; provide a stable web default.
+vi.mock('../../composables/usePlatform', () => ({
+  usePlatform: () => ({
+    platformInfo: {
+      value: {
+        platform: 'web',
+        arch: 'unknown',
+        isNative: false,
+        isTauri: false,
+        isPWA: false,
+        isMobile: false,
+        isDesktop: true
+      }
+    },
+    isLoading: { value: false },
+    capabilities: { value: {} }
   })
 }))
 

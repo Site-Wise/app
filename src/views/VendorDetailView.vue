@@ -1226,7 +1226,7 @@ const recordPayment = () => {
   currentPayment.value = null;
   currentAllocations.value = [];
   showPaymentModal.value = true;
-  openModal('vendor-detail-payment-modal');
+  openModal('vendor-detail-payment-modal', handlePaymentModalClose);
 };
 
 const handlePaymentModalSubmit = async (data: any) => {

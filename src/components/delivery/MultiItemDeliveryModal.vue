@@ -988,7 +988,9 @@ const loadData = async () => {
 // Initialize
 onMounted(async () => {
   loadData();
-  openModal('multi-item-delivery-modal');
+  // Register with the modal manager and let hardware/browser BACK close the
+  // sheet by emitting 'close' to the parent (which unmounts us → onUnmounted).
+  openModal('multi-item-delivery-modal', () => emit('close'));
 
   // Focus vendor input after modal is opened and DOM is ready
   await nextTick();

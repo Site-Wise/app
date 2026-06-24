@@ -411,7 +411,7 @@ const editAccount = async (account: Account) => {
     opening_balance: account.opening_balance
   });
   showAddModal.value = true;
-  openModal('accounts-edit-modal');
+  openModal('accounts-edit-modal', closeModal);
   await nextTick();
   if (typeof firstInputRef.value?.focus === 'function') firstInputRef.value.focus();
 };
@@ -492,7 +492,7 @@ const handleAccountAction = (account: Account, action: string) => {
 
 const handleAddAccount = async () => {
   showAddModal.value = true;
-  openModal('accounts-add-modal');
+  openModal('accounts-add-modal', closeModal);
   await nextTick();
   firstInputRef.value?.focus();
 };

@@ -384,7 +384,7 @@ const handleAddItem = async () => {
     return;
   }
   showAddModal.value = true;
-  openModal('items-add-modal');
+  openModal('items-add-modal', closeModal);
   await nextTick();
   nameInputRef.value?.focus();
 };
@@ -423,7 +423,7 @@ const editItem = async (item: Item) => {
     tags: item.tags || []
   });
   showAddModal.value = true;
-  openModal('items-edit-modal');
+  openModal('items-edit-modal', closeModal);
   await nextTick();
   if (typeof nameInputRef.value?.focus === 'function') nameInputRef.value.focus();
 };
@@ -447,7 +447,7 @@ const cloneItem = async (item: Item) => {
 
   // Show the modal
   showAddModal.value = true;
-  openModal('items-clone-modal');
+  openModal('items-clone-modal', closeModal);
   await nextTick();
   nameInputRef.value?.focus();
 };
@@ -486,7 +486,7 @@ const closeModal = () => {
 
 const handleQuickAction = async () => {
   showAddModal.value = true;
-  openModal('items-add-modal');
+  openModal('items-add-modal', closeModal);
   await nextTick();
   nameInputRef.value?.focus();
 };

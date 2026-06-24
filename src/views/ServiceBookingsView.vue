@@ -821,7 +821,7 @@ const formatDateForInput = (dateString: string) => {
 const editBooking = async (booking: ServiceBooking) => {
   editingBooking.value = booking;
   showAddModal.value = true;
-  openModal('service-bookings-edit-modal');
+  openModal('service-bookings-edit-modal', closeModal);
   originalUnitRate.value = booking.unit_rate;
   showUnitRateWarning.value = false;
   Object.assign(form, {
@@ -938,7 +938,7 @@ const handleBookingAction = (booking: ServiceBooking, action: string) => {
 const handleAddServiceBooking = async () => {
   if (canCreateServiceBooking.value) {
     showAddModal.value = true;
-    openModal('service-bookings-add-modal');
+    openModal('service-bookings-add-modal', closeModal);
     await nextTick();
     if (typeof serviceInputRef.value?.focus === 'function') serviceInputRef.value.focus();
   }

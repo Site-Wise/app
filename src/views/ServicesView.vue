@@ -427,7 +427,7 @@ const editService = async (service: Service) => {
     is_active: service.is_active
   });
   showAddModal.value = true;
-  openModal('services-edit-modal');
+  openModal('services-edit-modal', closeModal);
   await nextTick();
   if (typeof nameInputRef.value?.focus === 'function') nameInputRef.value.focus();
 };
@@ -519,7 +519,7 @@ const handleAddService = async () => {
   }
 
   showAddModal.value = true;
-  openModal('services-add-modal');
+  openModal('services-add-modal', closeModal);
   await nextTick();
   nameInputRef.value?.focus();
 };
@@ -527,7 +527,7 @@ const handleAddService = async () => {
 const handleQuickAction = async () => {
   if (canCreateService.value) {
     showAddModal.value = true;
-    openModal('services-add-modal');
+    openModal('services-add-modal', closeModal);
     await nextTick();
     nameInputRef.value?.focus();
   }

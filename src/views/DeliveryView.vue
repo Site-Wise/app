@@ -850,13 +850,17 @@ const reloadAllData = async () => {
 const handleAddDelivery = () => {
   editingDelivery.value = null;
   showAddModal.value = true;
-  openModal('delivery-add-modal');
+  // NOTE: the MultiItemDeliveryModal child registers itself with the modal
+  // manager ('multi-item-delivery-modal') on mount, so DeliveryView must NOT
+  // also push a 'delivery-add-modal' entry — that would create a duplicate
+  // history entry for the same visual sheet. The child's entry drives both
+  // back-button close and FAB hiding.
 };
 
 const editDelivery = (delivery: Delivery) => {
   editingDelivery.value = delivery;
   showAddModal.value = true;
-  openModal('delivery-edit-modal');
+  // See handleAddDelivery: registration is owned by the child modal component.
 };
 
 const orphanedItemsFound = ref(false);
@@ -866,7 +870,7 @@ const viewDelivery = async (delivery: Delivery) => {
   try {
     loadingDeliveryDetails.value = true;
     orphanedItemsFound.value = false;
-    openModal('delivery-view-modal');
+    openModal('delivery-view-modal', closeViewModal);
     // Fetch the full delivery with all expanded relationships
     const fullDelivery = await deliveryService.getById(delivery.id!);
     

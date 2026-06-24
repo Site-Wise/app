@@ -282,8 +282,8 @@
     <div
       v-if="showItemSelection"
       class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-ink/60"
-      @click="showItemSelection = false"
-      @keydown.esc="showItemSelection = false"
+      @click="closeItemSelection"
+      @keydown.esc="closeItemSelection"
     >
       <div
         class="w-full sm:max-w-md bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[85vh] sm:max-h-[75vh] flex flex-col overflow-hidden"
@@ -300,7 +300,7 @@
             </h3>
           </div>
           <button
-            @click="showItemSelection = false"
+            @click="closeItemSelection"
             class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors flex-shrink-0 active:scale-[0.98]"
             :aria-label="t('common.close')"
           >
@@ -351,10 +351,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue';
+import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { X, Plus, Trash2, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '../../composables/useI18n';
 import { useModalEscape } from '../../composables/useModalEscape';
+import { useModalState } from '../../composables/useModalState';
 import { useToast } from '../../composables/useToast';
 import {
   vendorReturnService,
@@ -436,6 +437,23 @@ const uploadedFiles = ref<File[]>([]);
 const returnItems = ref<ReturnItemForm[]>([]);
 const loading = ref(false);
 const showItemSelection = ref(false);
+
+// Nested item-selection sheet — register it with the modal manager so a
+// hardware/browser BACK press closes THIS innermost sheet first (LIFO) rather
+// than the parent return modal. closeItemSelection() flips the local boolean
+// and removes the entry; the manager handles the history reconciliation.
+const { openModal: openModalState, closeModal: closeModalState } = useModalState();
+const closeItemSelection = () => {
+  showItemSelection.value = false;
+  closeModalState('return-item-selection');
+};
+
+// Clean up the nested-sheet entry if the whole modal is torn down while it's open.
+onUnmounted(() => {
+  if (showItemSelection.value) {
+    closeModalState('return-item-selection');
+  }
+});
 const vendorDeliveryItems = ref<DeliveryItem[]>([]);
 const loadingDeliveryItems = ref(false);
 const deliveryItemsReturnInfo = ref<Record<string, {
@@ -529,6 +547,7 @@ const fetchVendorDeliveryItems = async (vendorId: string) => {
 const addReturnItem = () => {
   if (!form.vendor) return;
   showItemSelection.value = true;
+  openModalState('return-item-selection', closeItemSelection);
 };
 
 const removeReturnItem = (index: number) => {
@@ -547,7 +566,7 @@ const selectDeliveryItem = (deliveryItem: DeliveryItem) => {
   };
 
   returnItems.value.push(returnItem);
-  showItemSelection.value = false;
+  closeItemSelection();
 };
 
 const updateReturnAmount = (index: number) => {

@@ -619,8 +619,8 @@
 
     <!-- View Payment Modal -->
     <div v-if="viewingPayment" class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60"
-      @click="viewingPayment = null; closeModalState('payments-view-modal')"
-      @keydown.esc="viewingPayment = null; closeModalState('payments-view-modal')" tabindex="-1">
+      @click="closePaymentViewModal()"
+      @keydown.esc="closePaymentViewModal()" tabindex="-1">
       <div
         class="w-full sm:max-w-lg bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden"
         @click.stop>
@@ -640,7 +640,7 @@
             <h3 class="font-display text-lg font-semibold text-ink dark:text-cream leading-tight truncate">{{ t('payments.paymentDetails') }}</h3>
           </div>
           <button
-            @click="viewingPayment = null; closeModalState('payments-view-modal')"
+            @click="closePaymentViewModal()"
             class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-ink-4 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
             <X class="h-4 w-4" />
           </button>
@@ -768,7 +768,7 @@
             @click="deletePayment(viewingPayment)" class="flex-1 btn-danger">
             {{ t('common.deleteAction') }}
           </button>
-          <button @click="viewingPayment = null; closeModalState('payments-view-modal')" :class="[
+          <button @click="closePaymentViewModal()" :class="[
             viewingPayment && (canPaymentBeEdited(viewingPayment, viewingPaymentAllocations) || canPaymentBeDeleted(viewingPayment, viewingPaymentAllocations)) ? 'flex-1' : 'w-full',
             'btn-outline'
           ]">
@@ -1055,7 +1055,7 @@ const handleAddPayment = () => {
   currentPayment.value = null;
   currentAllocations.value = [];
   showPaymentModal.value = true;
-  openModal('payments-add-modal');
+  openModal('payments-add-modal', handlePaymentModalClose);
 };
 
 
@@ -1070,7 +1070,7 @@ const quickPayment = (vendor: VendorWithOutstanding) => {
   currentPayment.value = null;
   currentAllocations.value = [];
   showPaymentModal.value = true;
-  openModal('payments-paynow-modal');
+  openModal('payments-paynow-modal', handlePaymentModalClose);
 };
 
 const handleDuePaymentVendorClick = (vendor: VendorWithOutstanding) => {
@@ -1094,9 +1094,14 @@ const handleHeaderMobileAction = (action: string) => {
   }
 };
 
+const closePaymentViewModal = () => {
+  viewingPayment.value = null;
+  closeModalState('payments-view-modal');
+};
+
 const viewPayment = async (payment: Payment) => {
   viewingPayment.value = payment;
-  openModal('payments-view-modal');
+  openModal('payments-view-modal', closePaymentViewModal);
   // Use allocations from expand data if available, otherwise load them
   if (payment.expand?.payment_allocations) {
     viewingPaymentAllocations.value = payment.expand.payment_allocations;
@@ -1160,7 +1165,7 @@ const startEditPayment = async (payment: Payment) => {
   closeModalState('payments-view-modal');
   viewingPayment.value = null;
   showPaymentModal.value = true;
-  openModal('payments-edit-modal');
+  openModal('payments-edit-modal', handlePaymentModalClose);
 };
 
 const deletePayment = async (payment: Payment) => {
