@@ -156,10 +156,15 @@
             <tbody class="divide-y divide-stone-200 dark:divide-ink-4">
               <tr v-for="booking in serviceBookings" :key="booking.id" @click="viewBooking(booking)"
                   class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap cursor-pointer">
-                <td class="py-3.5 px-4 align-middle">
+                <td class="py-3.5 px-4 align-middle max-w-xs">
                   <div class="font-medium text-sm text-ink dark:text-cream leading-snug">{{ booking.expand?.service?.name || 'Unknown Service' }}</div>
                   <div v-if="booking.expand?.service?.category" class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{{ booking.expand.service.category }}</div>
                   <div class="lg:hidden text-xs text-stone-500 dark:text-stone-400 mt-0.5 truncate">{{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}</div>
+                  <!-- Notes: what/where this booking is for (same service used across locations) -->
+                  <div v-if="booking.notes" class="flex items-start gap-1 mt-1 text-xs text-stone-600 dark:text-stone-300" :title="booking.notes">
+                    <StickyNote class="h-3 w-3 flex-none mt-0.5 text-stone-400 dark:text-stone-500" />
+                    <span class="line-clamp-2 leading-snug">{{ booking.notes }}</span>
+                  </div>
                 </td>
                 <td class="py-3.5 px-4 align-middle hidden lg:table-cell">
                   <div class="font-medium text-sm text-ink dark:text-cream leading-snug">{{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}</div>
@@ -206,6 +211,11 @@
                 <div class="min-w-0">
                   <h3 class="font-display font-semibold text-base text-ink dark:text-cream truncate">{{ booking.expand?.service?.name || 'Unknown Service' }}</h3>
                   <p class="text-sm text-stone-500 dark:text-stone-400 truncate mt-0.5">{{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}<span v-if="booking.expand?.vendor?.name"> · {{ booking.expand.vendor.name }}</span></p>
+                  <!-- Notes: what/where this booking is for -->
+                  <p v-if="booking.notes" class="flex items-start gap-1 text-xs text-stone-600 dark:text-stone-300 mt-1.5">
+                    <StickyNote class="h-3 w-3 flex-none mt-0.5 text-stone-400 dark:text-stone-500" />
+                    <span class="line-clamp-2 leading-snug">{{ booking.notes }}</span>
+                  </p>
                 </div>
                 <div @click.stop class="flex-none -mr-1"><CardDropdownMenu :actions="getBookingActions(booking)" @action="handleBookingAction(booking, $event)" /></div>
               </div>
@@ -537,7 +547,8 @@ import {
   Loader2,
   Eye,
   X,
-  Clock
+  Clock,
+  StickyNote
 } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
 import { useI18n } from '../composables/useI18n';
