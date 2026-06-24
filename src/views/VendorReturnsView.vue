@@ -60,13 +60,34 @@
           <option value="refunded">{{ t('vendors.returnStatuses.refunded') }}</option>
         </select>
 
-        <select v-model="vendorFilter" class="input min-w-0">
+        <select :value="filters.vendor || ''" @change="onVendorFilterChange" class="input min-w-0">
           <option value="">{{ t('filters.allVendors') }}</option>
           <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
             {{ vendor.name || vendor.contact_person || t('common.unnamedVendor') }}
           </option>
         </select>
       </div>
+    </div>
+
+    <!-- Active vendor-filter chip: dismissible so the user is never stuck on a
+         filtered view. Shown on both mobile and desktop. -->
+    <div v-if="hasActiveFilter" class="flex items-center gap-2">
+      <span
+        class="inline-flex items-center gap-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 pl-3 pr-1 py-1 text-sm font-medium"
+      >
+        <span class="truncate max-w-[60vw] sm:max-w-xs">
+          {{ t('common.filteredBy', { label: filterVendorName || t('common.filtered') }) }}
+        </span>
+        <button
+          type="button"
+          @click="clearFilter('vendor')"
+          class="flex items-center justify-center h-11 w-11 sm:h-7 sm:w-7 -my-2 sm:my-0 rounded-full text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800/40 transition-colors"
+          :title="t('common.clearFilter')"
+          :aria-label="t('common.clearFilter')"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </span>
     </div>
 
     <!-- Stats Cards -->
@@ -155,7 +176,12 @@
               <!-- xl table cells -->
               <td class="hidden xl:table-cell px-4 py-3.5">
                 <div class="font-medium text-ink dark:text-cream">
-                  {{ returnItem.expand?.vendor?.contact_person || returnItem.expand?.vendor?.name || t('common.unknownVendor') }}
+                  <RecordLink
+                    type="vendor"
+                    mode="detail"
+                    :id="returnItem.vendor"
+                    :label="returnItem.expand?.vendor?.contact_person || returnItem.expand?.vendor?.name || t('common.unknownVendor')"
+                  />
                 </div>
                 <div class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
                   {{ t(`vendors.returnReasons.${returnItem.reason}`) }}
@@ -218,7 +244,12 @@
                       </div>
                       <div class="min-w-0">
                         <div class="font-medium text-ink dark:text-cream truncate">
-                          {{ returnItem.expand?.vendor?.contact_person || returnItem.expand?.vendor?.name || t('common.unknownVendor') }}
+                          <RecordLink
+                            type="vendor"
+                            mode="detail"
+                            :id="returnItem.vendor"
+                            :label="returnItem.expand?.vendor?.contact_person || returnItem.expand?.vendor?.name || t('common.unknownVendor')"
+                          />
                         </div>
                         <div class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
                           {{ t(`vendors.returnReasons.${returnItem.reason}`) }}
@@ -288,7 +319,7 @@
         <RotateCcw class="h-12 w-12 text-stone-300 dark:text-stone-600 mb-4" />
         <h3 class="font-display text-base font-semibold text-ink dark:text-cream">{{ t('vendors.noReturnsFound') }}</h3>
         <p class="mt-1 text-sm text-stone-500 dark:text-stone-400 max-w-sm">
-          {{ searchQuery || statusFilter || vendorFilter ? t('vendors.tryAdjustingFilters') : t('vendors.getStartedReturn') }}
+          {{ searchQuery || statusFilter || hasActiveFilter ? t('vendors.tryAdjustingFilters') : t('vendors.getStartedReturn') }}
         </p>
       </div>
     </div>
@@ -329,17 +360,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import {
   Plus,
   Download,
   Eye,
   Check,
   DollarSign,
-  RotateCcw
+  RotateCcw,
+  X
 } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
+import RecordLink from '../components/RecordLink.vue';
 import { useI18n } from '../composables/useI18n';
+import { useUrlFilters } from '../composables/useUrlFilters';
 import { useSubscription } from '../composables/useSubscription';
 import { useSiteData } from '../composables/useSiteData';
 import { useModalState } from '../composables/useModalState';
@@ -362,10 +396,12 @@ const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { openModal, closeModal: closeModalState } = useModalState();
 
+// URL-driven relation filter (?vendor=<id>) for cross-linking from VendorDetailView.
+const { filters, hasActiveFilter, clearFilter, setFilter } = useUrlFilters(['vendor']);
+
 // State
 const searchQuery = ref('');
 const statusFilter = ref('');
-const vendorFilter = ref('');
 const loading = ref(false);
 const showReturnModal = ref(false);
 const showDetailsModal = ref(false);
@@ -373,10 +409,18 @@ const showRefundModal = ref(false);
 const isEditMode = ref(false);
 const selectedReturn = ref<VendorReturn | null>(null);
 
-// Use site data management
+// Use site data management.
+// The loader branches on the active vendor filter: getByVendor when filtering
+// (server-side, site-scoped), getAll otherwise. The URL ?vendor=<id> drives this.
 const { data: returnsData, loading: returnsLoading, reload: reloadReturns } = useSiteData(
-  async () => await vendorReturnService.getAll()
+  async () => filters.vendor
+    ? await vendorReturnService.getByVendor(filters.vendor)
+    : await vendorReturnService.getAll()
 );
+
+// When the vendor filter changes, reload the returns list. reloadReturns() handles
+// the auto-cancel race internally, so NO onMounted loader is needed.
+watch(() => filters.vendor, () => reloadReturns());
 
 const { data: vendorsData } = useSiteData(
   async () => await vendorService.getAll()
@@ -425,12 +469,31 @@ const filteredReturns = computed(() => {
     filtered = filtered.filter(r => r.status === statusFilter.value);
   }
 
-  if (vendorFilter.value) {
-    filtered = filtered.filter(r => r.vendor === vendorFilter.value);
-  }
+  // NOTE: vendor filtering is now done server-side via the URL-driven loader
+  // (getByVendor), so no client-side vendor branch is needed here.
 
   return filtered;
 });
+
+// Vendor name for the dismissible filter chip. Prefer the first loaded return's
+// expanded vendor; fall back to a lookup in the vendors list by the filtered id.
+const filterVendorName = computed(() => {
+  if (!filters.vendor) return '';
+  const fromReturns = returns.value[0]?.expand?.vendor?.contact_person;
+  if (fromReturns) return fromReturns;
+  const vendor = vendors.value.find(v => v.id === filters.vendor);
+  return vendor?.contact_person || vendor?.name || '';
+});
+
+// The vendor dropdown writes to the URL: empty option clears, an id sets it.
+const onVendorFilterChange = (event: Event) => {
+  const value = (event.target as HTMLSelectElement).value;
+  if (value) {
+    setFilter('vendor', value);
+  } else {
+    clearFilter('vendor');
+  }
+};
 
 const pendingReturns = computed(() =>
   returns.value.filter(r => r.status === 'initiated').length

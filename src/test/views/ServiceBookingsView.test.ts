@@ -1,5 +1,28 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { ref, computed } from 'vue'
 import type { ServiceBooking, PaymentAllocation } from '../../services/pocketbase'
+
+// --- URL-filter relation loader test scaffolding -----------------------------
+// Reactive filter object that the mocked useUrlFilters returns, so tests can
+// toggle the active relation filter before mounting the view.
+const mockFilters = vi.hoisted(() => ({ vendor: undefined as string | undefined, service: undefined as string | undefined }))
+
+vi.mock('../../composables/useUrlFilters', () => ({
+  useUrlFilters: () => ({
+    filters: mockFilters,
+    hasActiveFilter: computed(() => !!(mockFilters.vendor || mockFilters.service)),
+    clearFilter: vi.fn(),
+    setFilter: vi.fn(),
+    activeFilterEntries: computed(() => []),
+    openRecord: vi.fn()
+  })
+}))
+
+const serviceBookingMocks = vi.hoisted(() => ({
+  getAll: vi.fn().mockResolvedValue([]),
+  getByVendor: vi.fn().mockResolvedValue([]),
+  getByService: vi.fn().mockResolvedValue([])
+}))
 
 /**
  * Tests for ServiceBookingsView Business Logic
@@ -660,5 +683,153 @@ describe('ServiceBookingsView Logic', () => {
       expect(form.start_date).toBe('2024-03-20')
       expect(form.total_amount).toBe(2400)
     })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// URL-driven relation-filter loader branching.
+//
+// The primary bookings useSiteData loader must branch on the active filter:
+//   filters.vendor  -> serviceBookingService.getByVendor
+//   filters.service -> serviceBookingService.getByService
+//   neither         -> serviceBookingService.getAll
+//
+// We mock useSiteData so that the FIRST loader registered (the bookings loader)
+// is captured and invoked, exercising the real branching closure in the view.
+// ---------------------------------------------------------------------------
+
+// useSiteData: capture every registered loader; immediately invoke them so the
+// view's branching closure runs against the mocked serviceBookingService.
+vi.mock('../../composables/useSiteData', () => ({
+  useSiteData: (loadFn: (siteId: string) => Promise<any>) => {
+    // Fire-and-forget; the loader's call into serviceBookingService is synchronous
+    // up to the awaited service method, which is enough to assert the branch.
+    loadFn('site-1')
+    return {
+      data: ref([] as any[]),
+      loading: ref(false),
+      error: ref(null),
+      reload: vi.fn(async () => { await loadFn('site-1') })
+    }
+  }
+}))
+
+vi.mock('../../composables/useSearch', () => ({
+  useServiceBookingSearch: () => ({
+    searchQuery: ref(''),
+    loading: ref(false),
+    results: ref([] as any[]),
+    loadAll: vi.fn()
+  })
+}))
+
+vi.mock('../../composables/usePermissions', () => ({
+  usePermissions: () => ({
+    canCreate: ref(true),
+    canUpdate: ref(true),
+    canDelete: ref(true),
+    canRead: ref(true),
+    canViewFinancials: ref(true)
+  })
+}))
+
+vi.mock('../../composables/useSubscription', () => ({
+  useSubscription: () => ({
+    checkCreateLimit: vi.fn().mockReturnValue(true),
+    isReadOnly: ref(false)
+  })
+}))
+
+vi.mock('../../composables/useToast', () => ({
+  useToast: () => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() })
+}))
+
+vi.mock('../../composables/useModalState', () => ({
+  useModalState: () => ({ openModal: vi.fn(), closeModal: vi.fn() })
+}))
+
+vi.mock('../../composables/useQuickActionModal', () => ({
+  useQuickActionModal: vi.fn()
+}))
+
+vi.mock('../../composables/useI18n', () => ({
+  useI18n: () => ({ t: (key: string) => key })
+}))
+
+vi.mock('../../services/pocketbase', () => ({
+  serviceBookingService: serviceBookingMocks,
+  serviceService: { getAll: vi.fn().mockResolvedValue([]) },
+  vendorService: { getAll: vi.fn().mockResolvedValue([]) },
+  paymentAllocationService: { getAll: vi.fn().mockResolvedValue([]) },
+  deliveryService: { getAll: vi.fn().mockResolvedValue([]) },
+  paymentService: { getAll: vi.fn().mockResolvedValue([]) },
+  ServiceBookingService: {
+    calculatePaymentStatusFromData: vi.fn().mockReturnValue('pending'),
+    calculateProgressBasedAmount: vi.fn().mockReturnValue(0),
+    calculateOutstandingAmountFromData: vi.fn().mockReturnValue(0)
+  },
+  getCurrentSiteId: vi.fn(() => 'site-1'),
+  setCurrentSiteId: vi.fn(),
+  getCurrentUserRole: vi.fn(() => 'owner'),
+  setCurrentUserRole: vi.fn(),
+  calculatePermissions: vi.fn().mockReturnValue({
+    canCreate: true, canRead: true, canUpdate: true, canDelete: true,
+    canManageUsers: true, canManageRoles: true, canExport: true, canViewFinancials: true
+  })
+}))
+
+describe('ServiceBookingsView URL-filter loader branching', () => {
+  let mount: typeof import('@vue/test-utils').mount
+  let ServiceBookingsView: any
+
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    mockFilters.vendor = undefined
+    mockFilters.service = undefined
+    serviceBookingMocks.getAll.mockResolvedValue([])
+    serviceBookingMocks.getByVendor.mockResolvedValue([])
+    serviceBookingMocks.getByService.mockResolvedValue([])
+    ;({ mount } = await import('@vue/test-utils'))
+    ServiceBookingsView = (await import('../../views/ServiceBookingsView.vue')).default
+  })
+
+  const mountView = () =>
+    mount(ServiceBookingsView, {
+      global: {
+        stubs: {
+          RecordLink: { template: '<span><slot />{{ label }}</span>', props: ['type', 'mode', 'id', 'label'] },
+          SearchBox: true,
+          CardDropdownMenu: true,
+          PhotoGallery: true,
+          VendorSearchBox: true,
+          ServiceSearchBox: true,
+          TimeCalculatorModal: true,
+          Skeleton: true,
+          'router-link': { template: '<a><slot /></a>', props: ['to'] }
+        }
+      }
+    })
+
+  it('branches to getByVendor when filtered by vendor', () => {
+    mockFilters.vendor = 'vendor-42'
+    mountView()
+    expect(serviceBookingMocks.getByVendor).toHaveBeenCalledWith('vendor-42')
+    expect(serviceBookingMocks.getByService).not.toHaveBeenCalled()
+    expect(serviceBookingMocks.getAll).not.toHaveBeenCalled()
+  })
+
+  it('branches to getByService when filtered by service', () => {
+    mockFilters.service = 'service-7'
+    mountView()
+    expect(serviceBookingMocks.getByService).toHaveBeenCalledWith('service-7')
+    expect(serviceBookingMocks.getByVendor).not.toHaveBeenCalled()
+    expect(serviceBookingMocks.getAll).not.toHaveBeenCalled()
+  })
+
+  it('falls back to getAll when no filter is active', () => {
+    mountView()
+    expect(serviceBookingMocks.getAll).toHaveBeenCalled()
+    expect(serviceBookingMocks.getByVendor).not.toHaveBeenCalled()
+    expect(serviceBookingMocks.getByService).not.toHaveBeenCalled()
   })
 })

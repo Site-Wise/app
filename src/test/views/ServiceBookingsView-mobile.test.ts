@@ -176,7 +176,11 @@ vi.mock('../../composables/usePermissions', () => ({
   usePermissions: () => ({
     canCreate: { value: true },
     canUpdate: { value: true },
-    canDelete: { value: true }
+    canDelete: { value: true },
+    // RecordLink (cross-reference links) reads these; provide them so the
+    // component renders as a real link instead of throwing on undefined.value.
+    canRead: { value: true },
+    canViewFinancials: { value: true }
   })
 }))
 

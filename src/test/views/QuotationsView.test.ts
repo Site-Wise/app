@@ -15,6 +15,29 @@ vi.mock('../../composables/useSite', () => ({
   })
 }))
 
+// Mock useUrlFilters — controllable per-test via the shared `mockFilters` object.
+// `filters` is a plain reactive record; tests mutate `mockFilters.value` before
+// mounting (or clear it) to exercise the loader's relation-filter branching.
+const mockFilters = vi.hoisted(() => ({ value: {} as Record<string, string> }))
+vi.mock('../../composables/useUrlFilters', () => {
+  const { reactive, computed } = require('vue')
+  return {
+    useUrlFilters: () => {
+      const filters = reactive({ ...mockFilters.value })
+      return {
+        filters,
+        hasActiveFilter: computed(() => Object.keys(filters).length > 0),
+        activeFilterEntries: computed(() =>
+          Object.entries(filters).map(([key, value]) => ({ key, value }))
+        ),
+        setFilter: vi.fn(),
+        clearFilter: vi.fn(),
+        openRecord: vi.fn()
+      }
+    }
+  }
+})
+
 // Mock search composable
 vi.mock('../../composables/useSearch', () => ({
   useQuotationSearch: () => {
@@ -58,6 +81,9 @@ vi.mock('../../composables/useI18n', () => ({
         'forms.enterValidUntil': 'Enter valid until date',
         'forms.enterNotes': 'Enter notes',
         'messages.confirmDelete': 'Are you sure you want to delete this {item}?',
+        'common.filteredBy': 'Filtered by {label}',
+        'common.filtered': 'filtered',
+        'common.clearFilter': 'Clear filter',
         'units.kg': 'kg',
         'units.pcs': 'pcs'
       }
@@ -123,6 +149,9 @@ vi.mock('../../services/pocketbase', () => {
   return {
     quotationService: {
       getAll: vi.fn().mockResolvedValue([mockQuotation]),
+      getByVendor: vi.fn().mockResolvedValue([mockQuotation]),
+      getByItem: vi.fn().mockResolvedValue([mockQuotation]),
+      getByService: vi.fn().mockResolvedValue([mockQuotation]),
       create: vi.fn().mockResolvedValue({ id: 'new-quotation' }),
       update: vi.fn().mockResolvedValue(mockQuotation),
       delete: vi.fn().mockResolvedValue(true)
@@ -182,7 +211,11 @@ describe('QuotationsView', () => {
       global: {
         plugins: [router, pinia],
         stubs: {
-          'router-link': true
+          'router-link': true,
+          RecordLink: {
+            props: ['type', 'id', 'label', 'mode', 'target', 'filterKey'],
+            template: '<span class="record-link-stub">{{ label }}</span>'
+          }
         }
       }
     })
@@ -190,7 +223,9 @@ describe('QuotationsView', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks()
-    
+    // Reset URL filters to unfiltered between tests.
+    mockFilters.value = {}
+
     const { pinia: testPinia, siteStore: testSiteStore } = setupTestPinia()
     pinia = testPinia
     siteStore = testSiteStore
@@ -560,6 +595,82 @@ describe('QuotationsView', () => {
     it('should handle add quotation keyboard shortcut', async () => {
       await wrapper.vm.handleAddQuotation()
       expect(wrapper.vm.showAddModal).toBe(true)
+    })
+  })
+
+  describe('Relation Filtering', () => {
+    // Helper: build a wrapper whose useSiteData mock actually INVOKES the loader so
+    // we can assert which quotationService branch runs for the active filter.
+    const mountWithInvokingLoader = async () => {
+      const { useSiteData } = await import('../../composables/useSiteData')
+      vi.mocked(useSiteData).mockImplementation((serviceFunction: any) => {
+        const { ref } = require('vue')
+        const funcString = serviceFunction.toString()
+        // Only invoke the primary quotations loader; leave the others inert.
+        if (funcString.includes('quotationService.getByVendor')) {
+          // Fire-and-forget: kicks off the branch so the spy records the call.
+          serviceFunction('site-1')
+        }
+        return {
+          data: ref([]),
+          loading: ref(false),
+          error: ref(null),
+          reload: vi.fn()
+        }
+      })
+      const w = createWrapper()
+      await w.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 0))
+      return w
+    }
+
+    it('branches to getByVendor when ?vendor is active', async () => {
+      const { quotationService } = await import('../../services/pocketbase')
+      mockFilters.value = { vendor: 'vendor-9' }
+
+      const w = await mountWithInvokingLoader()
+
+      expect(quotationService.getByVendor).toHaveBeenCalledWith('vendor-9')
+      expect(quotationService.getByItem).not.toHaveBeenCalled()
+      expect(quotationService.getByService).not.toHaveBeenCalled()
+      w.unmount()
+    })
+
+    it('branches to getByItem when only ?item is active', async () => {
+      const { quotationService } = await import('../../services/pocketbase')
+      mockFilters.value = { item: 'item-9' }
+
+      const { useSiteData } = await import('../../composables/useSiteData')
+      vi.mocked(useSiteData).mockImplementation((serviceFunction: any) => {
+        const { ref } = require('vue')
+        if (serviceFunction.toString().includes('quotationService.getByVendor')) {
+          serviceFunction('site-1')
+        }
+        return { data: ref([]), loading: ref(false), error: ref(null), reload: vi.fn() }
+      })
+      const w = createWrapper()
+      await w.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      expect(quotationService.getByItem).toHaveBeenCalledWith('item-9')
+      expect(quotationService.getByVendor).not.toHaveBeenCalled()
+      expect(quotationService.getAll).not.toHaveBeenCalled()
+      w.unmount()
+    })
+
+    it('shows a dismissible filter chip when a filter is active', async () => {
+      mockFilters.value = { vendor: 'vendor-1' }
+      const w = createWrapper()
+      await w.vm.$nextTick()
+
+      expect(w.vm.hasActiveFilter).toBe(true)
+      // The chip clear button carries the clearFilter title.
+      expect(w.text()).toContain('Filtered by')
+      w.unmount()
+    })
+
+    it('does not show the chip when no filter is active', () => {
+      expect(wrapper.vm.hasActiveFilter).toBe(false)
     })
   })
 

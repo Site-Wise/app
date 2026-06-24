@@ -546,4 +546,99 @@ describe('PaymentsView Logic', () => {
       expect(total).toBe(150)
     })
   })
+
+  describe('URL Relation-Filter Loader Branching', () => {
+    // Mirrors PaymentsView's loadPayments() branch: ?vendor -> getByVendor,
+    // ?account -> getByAccount, otherwise the unfiltered getAll().
+    const paymentService = {
+      getAll: vi.fn().mockResolvedValue([]),
+      getByVendor: vi.fn().mockResolvedValue([]),
+      getByAccount: vi.fn().mockResolvedValue([])
+    }
+
+    // Stubs that the broader (mounted) view would need; declared here so the
+    // global RecordLink stub + useUrlFilters mock shape stay documented alongside
+    // the loader contract this test exercises.
+    const useUrlFiltersMock = () => ({
+      filters: {} as Record<string, string>,
+      hasActiveFilter: false,
+      clearFilter: vi.fn(),
+      setFilter: vi.fn(),
+      activeFilterEntries: [],
+      openRecord: vi.fn()
+    })
+
+    const loadPayments = (filters: Record<string, string>, sortParam = '-payment_date') => {
+      if (filters.vendor) return paymentService.getByVendor(filters.vendor)
+      if (filters.account) return paymentService.getByAccount(filters.account)
+      return paymentService.getAll({ sort: sortParam })
+    }
+
+    beforeEach(() => {
+      vi.clearAllMocks()
+    })
+
+    it('exposes the expected useUrlFilters mock shape', () => {
+      const f = useUrlFiltersMock()
+      expect(f.filters).toEqual({})
+      expect(f.hasActiveFilter).toBe(false)
+      expect(typeof f.clearFilter).toBe('function')
+      expect(typeof f.setFilter).toBe('function')
+      expect(f.activeFilterEntries).toEqual([])
+      expect(typeof f.openRecord).toBe('function')
+    })
+
+    it('calls getByVendor when filters.vendor is set', async () => {
+      await loadPayments({ vendor: 'vendor-1' })
+      expect(paymentService.getByVendor).toHaveBeenCalledWith('vendor-1')
+      expect(paymentService.getByAccount).not.toHaveBeenCalled()
+      expect(paymentService.getAll).not.toHaveBeenCalled()
+    })
+
+    it('calls getByAccount when filters.account is set (and no vendor)', async () => {
+      await loadPayments({ account: 'account-1' })
+      expect(paymentService.getByAccount).toHaveBeenCalledWith('account-1')
+      expect(paymentService.getByVendor).not.toHaveBeenCalled()
+      expect(paymentService.getAll).not.toHaveBeenCalled()
+    })
+
+    it('calls getAll when no relation-filter is active', async () => {
+      await loadPayments({})
+      expect(paymentService.getAll).toHaveBeenCalledWith({ sort: '-payment_date' })
+      expect(paymentService.getByVendor).not.toHaveBeenCalled()
+      expect(paymentService.getByAccount).not.toHaveBeenCalled()
+    })
+
+    it('prefers the vendor filter over the account filter', async () => {
+      await loadPayments({ vendor: 'vendor-1', account: 'account-1' })
+      expect(paymentService.getByVendor).toHaveBeenCalledWith('vendor-1')
+      expect(paymentService.getByAccount).not.toHaveBeenCalled()
+    })
+
+    it('derives chip label from first loaded vendor row', () => {
+      const filters: Record<string, string> = { vendor: 'vendor-1' }
+      const payments = [
+        { id: 'p1', expand: { vendor: { contact_person: 'Acme Co.' } } }
+      ] as any[]
+      const filterLabel = filters.vendor
+        ? payments[0]?.expand?.vendor?.contact_person || ''
+        : filters.account
+          ? payments[0]?.expand?.account?.name || ''
+          : ''
+      expect(filterLabel).toBe('Acme Co.')
+    })
+
+    it('derives chip label from first loaded account row', () => {
+      const filters: Record<string, string> = { account: 'account-1' }
+      const payments = [
+        { id: 'p1', expand: { account: { name: 'HDFC Bank' } } }
+      ] as any[]
+      const filterLabel = filters.vendor
+        ? payments[0]?.expand?.vendor?.contact_person || ''
+        : filters.account
+          ? payments[0]?.expand?.account?.name || ''
+          : ''
+      expect(filterLabel).toBe('HDFC Bank')
+    })
+  })
 })

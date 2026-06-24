@@ -15,6 +15,28 @@ vi.mock('../../composables/useSite', () => ({
   })
 }))
 
+// Mock useUrlFilters: a controllable reactive `filters` object plus spies.
+// Tests can mutate `mockUrlFilters.filters.vendor` to simulate the ?vendor= URL.
+const mockSetFilter = vi.fn()
+const mockClearFilter = vi.fn()
+const mockUrlFilters = (() => {
+  const { reactive, computed } = require('vue')
+  const filters = reactive<Record<string, string>>({})
+  return {
+    filters,
+    hasActiveFilter: computed(() => Object.keys(filters).length > 0),
+    activeFilterEntries: computed(() =>
+      Object.entries(filters).map(([key, value]) => ({ key, value }))
+    ),
+    setFilter: mockSetFilter,
+    clearFilter: mockClearFilter,
+    openRecord: vi.fn()
+  }
+})()
+vi.mock('../../composables/useUrlFilters', () => ({
+  useUrlFilters: () => mockUrlFilters
+}))
+
 // Mock i18n composable
 vi.mock('../../composables/useI18n', () => ({
   useI18n: () => ({
@@ -163,6 +185,7 @@ vi.mock('../../services/pocketbase', () => {
   return {
     vendorReturnService: {
       getAll: vi.fn().mockResolvedValue([mockVendorReturn]),
+      getByVendor: vi.fn().mockResolvedValue([mockVendorReturn]),
       create: vi.fn().mockResolvedValue({ id: 'new-return' }),
       update: vi.fn().mockResolvedValue(mockVendorReturn),
       delete: vi.fn().mockResolvedValue(true),
@@ -249,7 +272,12 @@ describe('VendorReturnsView', () => {
       global: {
         plugins: [router, pinia],
         stubs: {
-          'router-link': true
+          'router-link': true,
+          RecordLink: {
+            name: 'RecordLink',
+            template: '<span class="record-link-stub">{{ label }}</span>',
+            props: ['type', 'mode', 'id', 'label', 'target', 'filterKey']
+          }
         }
       }
     })
@@ -257,7 +285,10 @@ describe('VendorReturnsView', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks()
-    
+
+    // Reset URL-filter state between tests (no active vendor filter by default).
+    Object.keys(mockUrlFilters.filters).forEach(k => delete mockUrlFilters.filters[k])
+
     const { pinia: testPinia, siteStore: testSiteStore } = setupTestPinia()
     pinia = testPinia
     siteStore = testSiteStore
@@ -306,7 +337,10 @@ describe('VendorReturnsView', () => {
       // Check the function to determine which data to return
       const funcString = serviceFunction.toString()
       
-      if (funcString.includes('vendorReturnService.getAll')) {
+      if (funcString.includes('vendorReturnService.getByVendor') || funcString.includes('vendorReturnService.getAll')) {
+        // Invoke the real loader so the branched service call (getAll vs
+        // getByVendor) is recorded against the pocketbase mock.
+        serviceFunction('site-1')
         return {
           data: ref(mockReturns),
           loading: ref(false),
@@ -465,17 +499,25 @@ describe('VendorReturnsView', () => {
       expect(filtered[0].status).toBe('initiated')
     })
 
-    it('should filter returns by vendor', async () => {
+    it('should drive the URL when the vendor dropdown changes (server-side filter)', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
-      
-      // Set vendor filter
-      wrapper.vm.vendorFilter = 'vendor-1'
+
+      // The vendor dropdown is the second <select> (status is first).
+      const vendorSelect = wrapper.findAll('select')[1]
+      await vendorSelect.setValue('vendor-1')
+
+      expect(mockSetFilter).toHaveBeenCalledWith('vendor', 'vendor-1')
+    })
+
+    it('should clear the URL filter when the "all vendors" option is chosen', async () => {
       await wrapper.vm.$nextTick()
-      
-      const filtered = wrapper.vm.filteredReturns
-      expect(filtered.length).toBe(1)
-      expect(filtered[0].vendor).toBe('vendor-1')
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      const vendorSelect = wrapper.findAll('select')[1]
+      await vendorSelect.setValue('')
+
+      expect(mockClearFilter).toHaveBeenCalledWith('vendor')
     })
 
     it('should show no results when filters don\'t match', async () => {
@@ -488,6 +530,46 @@ describe('VendorReturnsView', () => {
       
       const filtered = wrapper.vm.filteredReturns
       expect(filtered.length).toBe(0)
+    })
+  })
+
+  describe('URL-driven vendor filter', () => {
+    it('loader calls getAll when no vendor filter is active', async () => {
+      const { vendorReturnService } = await import('../../services/pocketbase')
+
+      // Default beforeEach mount: no active vendor filter.
+      expect(vendorReturnService.getAll).toHaveBeenCalled()
+      expect(vendorReturnService.getByVendor).not.toHaveBeenCalled()
+    })
+
+    it('loader branches to getByVendor when filters.vendor is set', async () => {
+      const { vendorReturnService } = await import('../../services/pocketbase')
+      vi.mocked(vendorReturnService.getAll).mockClear()
+      vi.mocked(vendorReturnService.getByVendor).mockClear()
+
+      // Simulate ?vendor=vendor-1 in the URL, then (re)mount the view.
+      mockUrlFilters.filters.vendor = 'vendor-1'
+      const filteredWrapper = createWrapper()
+      await filteredWrapper.vm.$nextTick()
+
+      expect(vendorReturnService.getByVendor).toHaveBeenCalledWith('vendor-1')
+      expect(vendorReturnService.getAll).not.toHaveBeenCalled()
+
+      filteredWrapper.unmount()
+    })
+
+    it('shows a dismissible chip when a vendor filter is active', async () => {
+      mockUrlFilters.filters.vendor = 'vendor-1'
+      const filteredWrapper = createWrapper()
+      await filteredWrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // Chip uses common.filteredBy; clicking the ✕ calls clearFilter('vendor').
+      expect(filteredWrapper.vm.hasActiveFilter).toBe(true)
+      filteredWrapper.vm.clearFilter('vendor')
+      expect(mockClearFilter).toHaveBeenCalledWith('vendor')
+
+      filteredWrapper.unmount()
     })
   })
 
@@ -665,8 +747,8 @@ describe('VendorReturnsView', () => {
       vi.mocked(useSiteData).mockImplementation((serviceFunction) => {
         const { ref } = require('vue')
         const funcString = serviceFunction.toString()
-        
-        if (funcString.includes('vendorReturnService.getAll')) {
+
+        if (funcString.includes('vendorReturnService.getByVendor') || funcString.includes('vendorReturnService.getAll')) {
           return {
             data: ref([]),
             loading: ref(false),

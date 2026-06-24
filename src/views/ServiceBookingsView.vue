@@ -78,6 +78,27 @@
       </div>
     </div>
 
+    <!-- Active relation-filter chip: dismissible so the user is never stuck on a
+         filtered view. Shown on both mobile and desktop. -->
+    <div v-if="hasActiveFilter" class="mb-4 flex items-center gap-2">
+      <span
+        class="inline-flex items-center gap-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 pl-3 pr-1 py-1 text-sm font-medium"
+      >
+        <span class="truncate max-w-[60vw] sm:max-w-xs">
+          {{ t('common.filteredBy', { label: filterLabel || t('common.filtered') }) }}
+        </span>
+        <button
+          type="button"
+          @click="clearFilter()"
+          class="flex items-center justify-center h-11 w-11 sm:h-7 sm:w-7 -my-2 sm:my-0 rounded-full text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800/40 transition-colors"
+          :title="t('common.clearFilter')"
+          :aria-label="t('common.clearFilter')"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </span>
+    </div>
+
     <!-- Service Bookings -->
     <div>
       <!-- Skeleton loading state: md+ table -->
@@ -158,13 +179,27 @@
                   class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap cursor-pointer">
                 <td class="py-3.5 px-4 align-middle max-w-xs">
                   <div class="text-sm leading-snug">
-                    <span class="font-medium text-ink dark:text-cream">{{ booking.expand?.service?.name || 'Unknown Service' }}</span>
+                    <span class="font-medium text-ink dark:text-cream">
+                      <RecordLink
+                        type="service"
+                        mode="detail"
+                        :id="booking.service"
+                        :label="booking.expand?.service?.name || 'Unknown Service'"
+                      />
+                    </span>
                     <template v-if="booking.expand?.service?.category">
                       <span class="mx-1.5 text-stone-300 dark:text-stone-600">|</span>
                       <span class="text-stone-500 dark:text-stone-400">{{ booking.expand.service.category }}</span>
                     </template>
                   </div>
-                  <div class="lg:hidden text-xs text-stone-500 dark:text-stone-400 mt-0.5 truncate">{{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}</div>
+                  <div class="lg:hidden text-xs text-stone-500 dark:text-stone-400 mt-0.5 truncate">
+                    <RecordLink
+                      type="vendor"
+                      mode="detail"
+                      :id="booking.vendor"
+                      :label="booking.expand?.vendor?.contact_person || 'Unknown Vendor'"
+                    />
+                  </div>
                   <!-- Notes: what/where this booking is for (same service used across locations) -->
                   <div v-if="booking.notes" class="flex items-start gap-1 mt-1 text-xs text-stone-600 dark:text-stone-300" :title="booking.notes">
                     <StickyNote class="h-3 w-3 flex-none mt-0.5 text-stone-400 dark:text-stone-500" />
@@ -172,7 +207,14 @@
                   </div>
                 </td>
                 <td class="py-3.5 px-4 align-middle hidden lg:table-cell">
-                  <div class="font-medium text-sm text-ink dark:text-cream leading-snug">{{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}</div>
+                  <div class="font-medium text-sm text-ink dark:text-cream leading-snug">
+                    <RecordLink
+                      type="vendor"
+                      mode="detail"
+                      :id="booking.vendor"
+                      :label="booking.expand?.vendor?.contact_person || 'Unknown Vendor'"
+                    />
+                  </div>
                   <div v-if="booking.expand?.vendor?.name" class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{{ booking.expand.vendor.name }}</div>
                 </td>
                 <td class="py-3.5 px-4 align-middle text-right hidden xl:table-cell">
@@ -214,8 +256,22 @@
             <div class="pl-5 pr-3 py-4">
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
-                  <h3 class="font-display font-semibold text-base text-ink dark:text-cream truncate">{{ booking.expand?.service?.name || 'Unknown Service' }}</h3>
-                  <p class="text-sm text-stone-500 dark:text-stone-400 truncate mt-0.5">{{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}<span v-if="booking.expand?.vendor?.name"> · {{ booking.expand.vendor.name }}</span></p>
+                  <h3 class="font-display font-semibold text-base text-ink dark:text-cream truncate">
+                    <RecordLink
+                      type="service"
+                      mode="detail"
+                      :id="booking.service"
+                      :label="booking.expand?.service?.name || 'Unknown Service'"
+                    />
+                  </h3>
+                  <p class="text-sm text-stone-500 dark:text-stone-400 truncate mt-0.5">
+                    <RecordLink
+                      type="vendor"
+                      mode="detail"
+                      :id="booking.vendor"
+                      :label="booking.expand?.vendor?.contact_person || 'Unknown Vendor'"
+                    /><span v-if="booking.expand?.vendor?.name"> · {{ booking.expand.vendor.name }}</span>
+                  </p>
                   <!-- Notes: what/where this booking is for -->
                   <p v-if="booking.notes" class="flex items-start gap-1 text-xs text-stone-600 dark:text-stone-300 mt-1.5">
                     <StickyNote class="h-3 w-3 flex-none mt-0.5 text-stone-400 dark:text-stone-500" />
@@ -542,7 +598,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, nextTick } from 'vue';
+import { ref, reactive, computed, nextTick, watch } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import {
   Calendar,
@@ -556,7 +612,9 @@ import {
   StickyNote
 } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
+import RecordLink from '../components/RecordLink.vue';
 import { useI18n } from '../composables/useI18n';
+import { useUrlFilters } from '../composables/useUrlFilters';
 import { usePermissions } from '../composables/usePermissions';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
@@ -592,6 +650,11 @@ const { canCreate, canUpdate, canDelete } = usePermissions();
 const { success: showSuccessToast, error: showErrorToast } = useToast();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { openModal, closeModal: closeModalState } = useModalState();
+
+// URL-driven relation filters (?vendor=<id> / ?service=<id>) for cross-linking
+// from VendorDetailView / ServiceDetailView. Filter and search are mutually
+// exclusive via the existing search switch.
+const { filters, hasActiveFilter, clearFilter } = useUrlFilters(['vendor', 'service']);
 
 // Search functionality
 const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useServiceBookingSearch();
@@ -635,10 +698,29 @@ const serviceBookings = computed((): ServiceBookingWithPaymentStatus[] => {
   }));
 });
 
-// Use site data management - Load service bookings
+// Use site data management - Load service bookings.
+// The loader branches on the active relation filter: getByVendor when filtering
+// by vendor, getByService when filtering by service, getAll otherwise.
 const { data: allServiceBookingsData, loading: bookingsLoading, reload: reloadBookings } = useSiteData(
-  async () => await serviceBookingService.getAll()
+  async () => {
+    if (filters.vendor) return await serviceBookingService.getByVendor(filters.vendor);
+    if (filters.service) return await serviceBookingService.getByService(filters.service);
+    return await serviceBookingService.getAll();
+  }
 );
+
+// When the vendor/service filter changes, reload the bookings list. useSiteData's
+// reload resets and re-runs the loader; no onMounted loader is needed.
+watch(() => [filters.vendor, filters.service], () => reloadBookings());
+
+// Active filter entity name for the dismissible chip, derived reactively from the
+// first loaded booking. Falls back to a generic label until results arrive.
+const filterLabel = computed(() => {
+  const list = allServiceBookingsData.value || [];
+  if (filters.vendor) return list[0]?.expand?.vendor?.contact_person || '';
+  if (filters.service) return list[0]?.expand?.service?.name || '';
+  return '';
+});
 
 // Load payment allocations separately
 const { data: paymentAllocationsData } = useSiteData(

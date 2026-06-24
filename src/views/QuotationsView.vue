@@ -47,6 +47,27 @@
       </div>
     </div>
 
+    <!-- Active relation-filter chip: dismissible so the user is never stuck on a
+         filtered view. Shown on both mobile and desktop. -->
+    <div v-if="hasActiveFilter" class="mb-4 flex items-center gap-2">
+      <span
+        class="inline-flex items-center gap-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 pl-3 pr-1 py-1 text-sm font-medium"
+      >
+        <span class="truncate max-w-[60vw] sm:max-w-xs">
+          {{ t('common.filteredBy', { label: filterLabel || t('common.filtered') }) }}
+        </span>
+        <button
+          type="button"
+          @click="clearFilter()"
+          class="flex items-center justify-center h-11 w-11 sm:h-7 sm:w-7 -my-2 sm:my-0 rounded-full text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800/40 transition-colors"
+          :title="t('common.clearFilter')"
+          :aria-label="t('common.clearFilter')"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </span>
+    </div>
+
     <!-- Quotations List -->
     <div class="overflow-x-auto">
 
@@ -81,14 +102,37 @@
             :key="quotation.id"
             class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap"
           >
-            <!-- Item + unit -->
+            <!-- Item / Service + unit -->
             <td class="hidden xl:table-cell py-3.5 px-4">
-              <div class="font-medium text-ink dark:text-cream text-sm">{{ quotation.expand?.item?.name }}</div>
+              <div class="font-medium text-sm">
+                <RecordLink
+                  v-if="quotation.service"
+                  type="service"
+                  mode="detail"
+                  :id="quotation.service"
+                  :label="quotation.expand?.service?.name || t('common.item')"
+                />
+                <RecordLink
+                  v-else-if="quotation.item"
+                  type="item"
+                  mode="detail"
+                  :id="quotation.item"
+                  :label="quotation.expand?.item?.name || t('common.item')"
+                />
+                <span v-else class="text-ink dark:text-cream">{{ quotation.expand?.item?.name }}</span>
+              </div>
               <div class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{{ getUnitDisplay(quotation.expand?.item?.unit || 'units') }}</div>
             </td>
             <!-- Vendor -->
-            <td class="hidden xl:table-cell py-3.5 px-4 text-sm text-stone-600 dark:text-stone-400">
-              {{ quotation.expand?.vendor?.contact_person }}
+            <td class="hidden xl:table-cell py-3.5 px-4 text-sm">
+              <RecordLink
+                v-if="quotation.vendor"
+                type="vendor"
+                mode="detail"
+                :id="quotation.vendor"
+                :label="quotation.expand?.vendor?.contact_person || t('common.vendor')"
+              />
+              <span v-else class="text-stone-600 dark:text-stone-400">{{ quotation.expand?.vendor?.contact_person }}</span>
             </td>
             <!-- Unit Price -->
             <td class="hidden xl:table-cell py-3.5 px-4 text-right font-mono sw-tabular text-sm text-forest-700 dark:text-forest-400">
@@ -159,11 +203,32 @@
           <!-- Card header: item name + status + dropdown -->
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0 flex-1">
-              <div class="font-display text-base font-semibold text-ink dark:text-cream truncate">
-                {{ quotation.expand?.item?.name }}
+              <div class="font-display text-base font-semibold truncate">
+                <RecordLink
+                  v-if="quotation.service"
+                  type="service"
+                  mode="detail"
+                  :id="quotation.service"
+                  :label="quotation.expand?.service?.name || t('common.item')"
+                />
+                <RecordLink
+                  v-else-if="quotation.item"
+                  type="item"
+                  mode="detail"
+                  :id="quotation.item"
+                  :label="quotation.expand?.item?.name || t('common.item')"
+                />
+                <span v-else class="text-ink dark:text-cream">{{ quotation.expand?.item?.name }}</span>
               </div>
-              <div class="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
-                {{ quotation.expand?.vendor?.contact_person }}
+              <div class="text-sm mt-0.5">
+                <RecordLink
+                  v-if="quotation.vendor"
+                  type="vendor"
+                  mode="detail"
+                  :id="quotation.vendor"
+                  :label="quotation.expand?.vendor?.contact_person || t('common.vendor')"
+                />
+                <span v-else class="text-stone-500 dark:text-stone-400">{{ quotation.expand?.vendor?.contact_person }}</span>
               </div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
@@ -313,10 +378,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, nextTick } from 'vue';
+import { ref, reactive, computed, nextTick, watch } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { FileText, Plus, Edit2, Trash2, Loader2, X } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
+import RecordLink from '../components/RecordLink.vue';
 import {
   quotationService,
   itemService,
@@ -328,6 +394,7 @@ import {
 } from '../services/pocketbase';
 import { useI18n } from '../composables/useI18n';
 import { usePermissions } from '../composables/usePermissions';
+import { useUrlFilters } from '../composables/useUrlFilters';
 import { useSiteData } from '../composables/useSiteData';
 import { useQuotationSearch } from '../composables/useSearch';
 import { useModalState } from '../composables/useModalState';
@@ -338,6 +405,11 @@ import ItemSelector from '../components/ItemSelector.vue';
 const { t } = useI18n();
 const { canDelete } = usePermissions();
 const { openModal, closeModal: closeModalState } = useModalState();
+
+// URL-driven relation filters (?vendor=<id> / ?item=<id> / ?service=<id>) for
+// cross-linking from VendorDetailView / ItemDetailView / ServiceDetailView.
+const { filters, hasActiveFilter, clearFilter } = useUrlFilters(['vendor', 'item', 'service']);
+
 // Search functionality
 const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useQuotationSearch();
 
@@ -346,10 +418,33 @@ const quotations = computed(() => {
   return searchQuery.value.trim() ? searchResults.value : allQuotations.value
 });
 
-// Use site data management
+// Use site data management. The primary loader branches on the active relation
+// filter by precedence (vendor -> item -> service -> unfiltered). All branches
+// are site-scoped and expand vendor,item,service so rows render identically.
 const { data: allQuotationsData, loading: quotationsLoading, reload: reloadQuotations } = useSiteData(
-  async () => await quotationService.getAll()
+  async () => {
+    if (filters.vendor) return await quotationService.getByVendor(filters.vendor);
+    if (filters.item) return await quotationService.getByItem(filters.item);
+    if (filters.service) return await quotationService.getByService(filters.service);
+    return await quotationService.getAll();
+  }
 );
+
+// When any relation filter changes, reload the primary list. reloadQuotations()
+// is guarded by useSiteData against the auto-cancel race, so NO onMounted loader
+// is needed.
+watch(() => [filters.vendor, filters.item, filters.service], () => reloadQuotations());
+
+// Label for the dismissible filter chip, derived reactively from the first loaded
+// row's expanded relation. Falls back to a generic label until results arrive.
+const filterLabel = computed(() => {
+  const first = allQuotations.value[0];
+  if (!first) return '';
+  if (filters.vendor) return first.expand?.vendor?.contact_person || '';
+  if (filters.item) return first.expand?.item?.name || '';
+  if (filters.service) return first.expand?.service?.name || '';
+  return '';
+});
 
 const { data: itemsData } = useSiteData(
   async () => await itemService.getAll()

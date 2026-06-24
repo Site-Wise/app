@@ -94,6 +94,27 @@
       </div>
     </div>
 
+    <!-- Active relation-filter chip: dismissible so the user is never stuck on a
+         filtered view (?vendor / ?account). Shown on both mobile and desktop. -->
+    <div v-if="hasActiveFilter" class="mb-4 flex items-center gap-2">
+      <span
+        class="inline-flex items-center gap-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 pl-3 pr-1 py-1 text-sm font-medium"
+      >
+        <span class="truncate max-w-[60vw] sm:max-w-xs">
+          {{ t('common.filteredBy', { label: filterLabel || t('common.filtered') }) }}
+        </span>
+        <button
+          type="button"
+          @click="clearFilter()"
+          class="flex items-center justify-center h-11 w-11 sm:h-7 sm:w-7 -my-2 sm:my-0 rounded-full text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800/40 transition-colors"
+          :title="t('common.clearFilter')"
+          :aria-label="t('common.clearFilter')"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </span>
+    </div>
+
     <!-- xl+ Table View -->
     <div class="hidden xl:block overflow-x-auto rounded-lg border border-stone-200 dark:border-ink-4 shadow-card dark:shadow-inset-hi">
       <table class="min-w-full divide-y divide-stone-200 dark:divide-ink-4">
@@ -161,7 +182,12 @@
             <!-- Vendor column (primary) -->
             <td class="px-4 py-3.5 whitespace-nowrap">
               <div class="font-medium text-sm text-ink dark:text-cream">
-                {{ payment.expand?.vendor?.contact_person || t('common.unknown') + ' ' + t('common.vendor') }}
+                <RecordLink
+                  type="vendor"
+                  mode="detail"
+                  :id="payment.vendor"
+                  :label="payment.expand?.vendor?.contact_person || t('common.unknownVendor')"
+                />
               </div>
               <div v-if="payment.expand?.vendor?.name" class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
                 {{ payment.expand.vendor.name }}
@@ -220,7 +246,14 @@
               <div v-if="payment.expand?.account" class="flex items-center gap-2">
                 <component :is="getAccountIcon(payment.expand.account.type)"
                   class="h-4 w-4 text-stone-400 dark:text-stone-500 flex-shrink-0" />
-                <span class="text-sm text-stone-600 dark:text-stone-400">{{ payment.expand.account.name }}</span>
+                <span class="text-sm text-stone-600 dark:text-stone-400">
+                  <RecordLink
+                    type="account"
+                    mode="detail"
+                    :id="payment.account"
+                    :label="payment.expand.account.name"
+                  />
+                </span>
               </div>
               <div v-if="payment.credit_notes && payment.credit_notes.length > 0" class="flex items-center gap-2 mt-0.5">
                 <svg class="h-4 w-4 text-forest-600 dark:text-forest-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -316,7 +349,12 @@
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <h3 class="font-display text-sm font-semibold text-ink dark:text-cream truncate">
-                  {{ payment.expand?.vendor?.contact_person || t('common.unknown') + ' ' + t('common.vendor') }}
+                  <RecordLink
+                    type="vendor"
+                    mode="detail"
+                    :id="payment.vendor"
+                    :label="payment.expand?.vendor?.contact_person || t('common.unknownVendor')"
+                  />
                 </h3>
                 <!-- Allocation badge -->
                 <span v-if="payment.expand?.payment_allocations && getAllocatedAmount(payment.expand.payment_allocations) === payment.amount"
@@ -361,7 +399,13 @@
             <div class="px-4 py-2.5 border-r border-stone-200 dark:border-ink-4">
               <div class="text-[10px] uppercase tracking-wide font-semibold text-stone-400 dark:text-stone-500 mb-0.5">{{ t('common.account') }}</div>
               <div class="text-xs text-ink dark:text-cream truncate">
-                <span v-if="payment.expand?.account">{{ payment.expand.account.name }}</span>
+                <RecordLink
+                  v-if="payment.expand?.account"
+                  type="account"
+                  mode="detail"
+                  :id="payment.account"
+                  :label="payment.expand.account.name"
+                />
                 <span v-else-if="payment.credit_notes && payment.credit_notes.length > 0" class="text-amber-700 dark:text-amber-400">Credit Note</span>
                 <span v-else class="text-stone-400 dark:text-stone-500">—</span>
               </div>
@@ -803,7 +847,9 @@ import {
   X
 } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
+import RecordLink from '../components/RecordLink.vue';
 import { useI18n } from '../composables/useI18n';
+import { useUrlFilters } from '../composables/useUrlFilters';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
@@ -837,6 +883,10 @@ const { success, error } = useToast();
 const { registerShortcut } = useKeyboardShortcuts();
 const { openModal, closeModal: closeModalState } = useModalState();
 
+// URL-driven relation filters (?vendor=<id> / ?account=<id>) for cross-linking
+// from VendorDetailView / AccountDetailView.
+const { filters, hasActiveFilter, clearFilter } = useUrlFilters(['vendor', 'account']);
+
 // Search functionality
 const { searchQuery, loading: searchLoading, results: searchResults } = usePaymentSearch();
 
@@ -862,8 +912,17 @@ const { data: paymentsData, loading: paymentsLoading, reload: reloadPayments } =
   }
   // Note: vendor sorting will be done client-side since it's a relation
 
+  // Branch the primary payments fetch on the active URL relation-filter:
+  // ?vendor -> getByVendor, ?account -> getByAccount, otherwise the full getAll().
+  // Both filtered fetches are site-scoped, fully-expanded getFullList queries.
+  const loadPayments = () => {
+    if (filters.vendor) return paymentService.getByVendor(filters.vendor);
+    if (filters.account) return paymentService.getByAccount(filters.account);
+    return paymentService.getAll({ sort: sortParam });
+  };
+
   const [payments, vendors, accounts, deliveries, serviceBookings] = await Promise.all([
-    paymentService.getAll({ sort: sortParam }),
+    loadPayments(),
     vendorService.getAll(),
     accountService.getAll(),
     deliveryService.getAll(),
@@ -906,6 +965,20 @@ const vendors = computed(() => paymentsData.value?.vendors || []);
 const accounts = computed(() => paymentsData.value?.accounts || []);
 const deliveries = computed(() => paymentsData.value?.deliveries || []);
 const serviceBookings = computed(() => paymentsData.value?.serviceBookings || []);
+
+// When the URL relation-filter changes, reload the primary list from the loader.
+// reloadPayments() re-runs the loader (which re-reads `filters`); useSiteData's
+// internal load guard prevents the auto-cancel race, so NO onMounted loader is needed.
+watch(() => [filters.vendor, filters.account], () => reloadPayments());
+
+// Label for the dismissible filter chip, derived from the first loaded row's
+// expanded relation. Falls back to a generic label until results arrive.
+const filterLabel = computed(() => {
+  const list = paymentsData.value?.payments || [];
+  if (filters.vendor) return list[0]?.expand?.vendor?.contact_person || '';
+  if (filters.account) return list[0]?.expand?.account?.name || '';
+  return '';
+});
 // Unified modal state
 const showPaymentModal = ref(false);
 const paymentModalMode = ref<'CREATE' | 'PAY_NOW' | 'EDIT'>('CREATE');
