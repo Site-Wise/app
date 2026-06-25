@@ -8,29 +8,94 @@
           {{ t('serviceBookings.subtitle') }}
         </p>
       </div>
-      <button
-        @click="handleAddServiceBooking" 
-        :disabled="!canCreateServiceBooking"
-        :class="[
-          canCreateServiceBooking ? 'btn-primary' : 'btn-disabled'
-        ]"
-        :title="!canCreateServiceBooking ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
-        data-keyboard-shortcut="n"
-      >
-        <Plus class="mr-2 h-4 w-4" />
-        {{ t('serviceBookings.bookService') }}
-      </button>
+      <div class="flex items-center space-x-3">
+        <button
+          @click="viewAllImages"
+          :disabled="allImages.length === 0"
+          :class="[
+            allImages.length > 0 ? 'btn-outline' : 'btn-disabled',
+            'hidden md:flex items-center'
+          ]"
+          :title="allImages.length === 0 ? t('delivery.noImages') : t('delivery.viewAllImages')"
+        >
+          <Images class="mr-2 h-4 w-4" />
+          {{ t('delivery.viewAllImages') }} ({{ allImages.length }})
+        </button>
+        <button
+          @click="handleAddServiceBooking"
+          :disabled="!canCreateServiceBooking"
+          :class="[
+            canCreateServiceBooking ? 'btn-primary' : 'btn-disabled',
+            'hidden md:flex items-center'
+          ]"
+          :title="!canCreateServiceBooking ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
+          data-keyboard-shortcut="n"
+        >
+          <Plus class="mr-2 h-4 w-4" />
+          {{ t('serviceBookings.bookService') }}
+        </button>
+      </div>
     </div>
 
     <!-- Mobile Header with Search -->
     <div class="md:hidden mb-6">
-      <div class="mb-4">
-        <h1 class="font-display text-2xl font-bold text-ink dark:text-cream">{{ t('serviceBookings.title') }}</h1>
-        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">
-          {{ t('serviceBookings.subtitle') }}
-        </p>
+      <div class="mb-4 flex items-center justify-between">
+        <div>
+          <h1 class="font-display text-2xl font-bold text-ink dark:text-cream">{{ t('serviceBookings.title') }}</h1>
+          <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">
+            {{ t('serviceBookings.subtitle') }}
+          </p>
+        </div>
+
+        <!-- Mobile Action Menu -->
+        <div class="relative mobile-action-menu">
+          <button
+            @click="showMobileActionMenu = !showMobileActionMenu"
+            class="p-2 rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors"
+          >
+            <MoreVertical class="h-5 w-5 text-stone-500 dark:text-stone-400" />
+          </button>
+
+          <!-- Mobile Dropdown Menu -->
+          <div
+            v-if="showMobileActionMenu"
+            class="absolute right-0 mt-2 w-56 bg-white dark:bg-ink-3 rounded-md shadow-modal z-10 border border-stone-200 dark:border-ink-4"
+          >
+            <div class="py-1">
+              <button
+                @click="handleMobileAction('viewAllImages')"
+                :disabled="allImages.length === 0"
+                :class="[
+                  'flex items-center w-full px-4 py-3 text-sm transition-colors',
+                  allImages.length > 0
+                    ? 'text-ink dark:text-cream hover:bg-stone-100 dark:hover:bg-ink-2'
+                    : 'text-stone-400 dark:text-stone-600 cursor-not-allowed'
+                ]"
+              >
+                <Images class="mr-3 h-5 w-5" />
+                {{ t('delivery.viewAllImages') }} ({{ allImages.length }})
+              </button>
+
+              <div class="border-t border-stone-200 dark:border-ink-4 my-1"></div>
+
+              <button
+                @click="handleMobileAction('addServiceBooking')"
+                :disabled="!canCreateServiceBooking"
+                :class="[
+                  'flex items-center w-full px-4 py-3 text-sm transition-colors',
+                  canCreateServiceBooking
+                    ? 'text-ink bg-amber-500 hover:bg-amber-600'
+                    : 'text-stone-400 dark:text-stone-600 cursor-not-allowed'
+                ]"
+              >
+                <Plus class="mr-3 h-5 w-5" />
+                {{ t('serviceBookings.bookService') }}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      
+
       <!-- Mobile Search Box -->
       <SearchBox
         v-model="searchQuery"
@@ -640,6 +705,14 @@
       @close="closeTimeCalculator"
       @apply="handleTimeCalculatorApply"
     />
+
+    <!-- Page-level combined image gallery ("View all images") -->
+    <ImageSlider
+      v-model:show="showPhotoGallery"
+      :images="showAllImagesMode ? allImagesGalleryData.images : []"
+      :overlay-info="showAllImagesMode ? allImagesGalleryData.overlayInfo : []"
+      @close="showPhotoGallery = false; showAllImagesMode = false"
+    />
   </div>
 </template>
 
@@ -655,7 +728,8 @@ import {
   X,
   Clock,
   StickyNote,
-  Images
+  Images,
+  MoreVertical
 } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
 import FileUploadComponent from '../components/FileUploadComponent.vue';
@@ -671,6 +745,7 @@ import { useSiteData } from '../composables/useSiteData';
 import { useQuickActionModal } from '../composables/useQuickActionModal';
 import { useServiceBookingSearch } from '../composables/useSearch';
 import PhotoGallery from '../components/PhotoGallery.vue';
+import ImageSlider from '../components/ImageSlider.vue';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import VendorSearchBox from '../components/VendorSearchBox.vue';
@@ -810,6 +885,21 @@ const editingBooking = ref<ServiceBooking | null>(null);
 const viewingBooking = ref<ServiceBooking | null>(null);
 const showTimeCalculator = ref(false);
 const loading = ref(false);
+const showMobileActionMenu = ref(false);
+
+// Page-level "View all images" gallery state (mirrors DeliveryView). The
+// ImageSlider runs in "all images mode" showing every completion photo across
+// the listed bookings with per-photo overlay info.
+const showPhotoGallery = ref(false);
+const showAllImagesMode = ref(false);
+const allImagesGalleryData = ref<{
+  images: string[];
+  overlayInfo: Array<{
+    vendorName?: string;
+    items?: string[];
+    deliveryDate?: string;
+  }>;
+}>({ images: [], overlayInfo: [] });
 const showUnitRateWarning = ref(false);
 const originalUnitRate = ref(0);
 
@@ -851,6 +941,24 @@ const searchResultsTotal = computed(() => {
   return serviceBookings.value.reduce((total, booking) => {
     return total + (booking.total_amount || 0);
   }, 0);
+});
+
+// Aggregate every completion photo across the currently-listed bookings, so the
+// page-level "View all images (N)" count + gallery span all bookings (or the
+// filtered/search set). Mirrors DeliveryView's `allImages`.
+const allImages = computed(() => {
+  const source = serviceBookings.value;
+  const images: Array<{ booking: ServiceBooking; photo: string; index: number }> = [];
+
+  source.forEach(booking => {
+    if (booking.completion_photos && booking.completion_photos.length > 0) {
+      booking.completion_photos.forEach((photo, index) => {
+        images.push({ booking, photo, index });
+      });
+    }
+  });
+
+  return images;
 });
 
 // Check if selected service uses hourly calculation
@@ -1035,6 +1143,55 @@ const editBooking = async (booking: ServiceBooking) => {
 
 const viewBooking = (booking: ServiceBooking) => {
   viewingBooking.value = booking;
+};
+
+// Open the combined gallery across all listed bookings' completion photos.
+// Mirrors DeliveryView.viewAllImages: builds the photo URLs + per-photo overlay
+// (vendor contact_person, service name, booking date) and switches the
+// ImageSlider into all-images mode.
+const viewAllImages = () => {
+  if (allImages.value.length === 0) return;
+
+  const allImageUrls: string[] = [];
+  const allImageOverlays: Array<{
+    vendorName?: string;
+    items?: string[];
+    deliveryDate?: string;
+  }> = [];
+
+  allImages.value.forEach(({ booking, photo }) => {
+    allImageUrls.push(getBookingPhotoUrl(booking.id!, photo));
+
+    const vendorName = booking.expand?.vendor?.contact_person || 'Unknown Vendor';
+    const serviceName = booking.expand?.service?.name || 'Unknown Service';
+
+    allImageOverlays.push({
+      vendorName,
+      items: [serviceName],
+      deliveryDate: booking.start_date
+    });
+  });
+
+  allImagesGalleryData.value = {
+    images: allImageUrls,
+    overlayInfo: allImageOverlays
+  };
+
+  showAllImagesMode.value = true;
+  showPhotoGallery.value = true;
+};
+
+const handleMobileAction = (action: string) => {
+  showMobileActionMenu.value = false;
+
+  switch (action) {
+    case 'viewAllImages':
+      viewAllImages();
+      break;
+    case 'addServiceBooking':
+      handleAddServiceBooking();
+      break;
+  }
 };
 
 // Document-level ESC so the view modal closes without first clicking inside it.
