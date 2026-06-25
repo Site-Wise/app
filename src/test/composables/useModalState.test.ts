@@ -1,695 +1,391 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import {
+  useModalState,
+  handlePopState,
+  resetModalStack,
+  setHistoryIntegrationEnabled,
+} from '../../composables/useModalState'
 
-describe('useModalState Logic', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
+/**
+ * Intent-based tests for the REAL useModalState module.
+ *
+ * useModalState is a module-level LIFO singleton with History-API back-button
+ * integration. We therefore:
+ *   - resetModalStack() in beforeEach to flush leaked stack/guard state
+ *   - re-enable history integration in beforeEach (some tests disable it)
+ *   - stub window.history.pushState/back with vi.fn() and RESTORE them in
+ *     afterEach so no flakiness leaks across files.
+ */
+
+let pushStateSpy: ReturnType<typeof vi.spyOn>
+let backSpy: ReturnType<typeof vi.spyOn>
+
+beforeEach(() => {
+  // Clean module-level singleton state before each test.
+  resetModalStack()
+  setHistoryIntegrationEnabled(true)
+
+  // Stub the History API. back() is a no-op spy (we never want a real
+  // navigation, and happy-dom navigation is disabled anyway). pushState keeps
+  // a working no-op so canUseHistory() still sees a function.
+  pushStateSpy = vi.spyOn(window.history, 'pushState').mockImplementation(() => {})
+  backSpy = vi.spyOn(window.history, 'back').mockImplementation(() => {})
+})
+
+afterEach(() => {
+  // Restore real history methods + flush stack so nothing leaks.
+  pushStateSpy.mockRestore()
+  backSpy.mockRestore()
+  resetModalStack()
+  setHistoryIntegrationEnabled(true)
+})
+
+describe('useModalState - openModal', () => {
+  it('pushes an entry onto the stack and reflects it in computed state', () => {
+    const { openModal, isAnyModalOpen, openModalCount, isModalOpen } = useModalState()
+
+    expect(isAnyModalOpen.value).toBe(false)
+    expect(openModalCount.value).toBe(0)
+
+    openModal('modal-a')
+
+    expect(isAnyModalOpen.value).toBe(true)
+    expect(openModalCount.value).toBe(1)
+    expect(isModalOpen('modal-a').value).toBe(true)
+    expect(isModalOpen('other').value).toBe(false)
   })
 
-  describe('Modal Registration Logic', () => {
-    it('should add modal to active modals set when opened', () => {
-      const activeModals = new Set<string>()
-      const openModal = (modalId: string) => {
-        activeModals.add(modalId)
-      }
+  it('calls history.pushState once when history integration is enabled', () => {
+    const { openModal } = useModalState()
 
-      openModal('modal-1')
-      expect(activeModals.has('modal-1')).toBe(true)
-      expect(activeModals.size).toBe(1)
-    })
+    openModal('modal-a')
 
-    it('should remove modal from active modals set when closed', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
-
-      const closeModal = (modalId: string) => {
-        activeModals.delete(modalId)
-      }
-
-      closeModal('modal-1')
-      expect(activeModals.has('modal-1')).toBe(false)
-      expect(activeModals.size).toBe(0)
-    })
-
-    it('should handle opening multiple modals', () => {
-      const activeModals = new Set<string>()
-      const openModal = (modalId: string) => {
-        activeModals.add(modalId)
-      }
-
-      openModal('modal-1')
-      openModal('modal-2')
-      openModal('modal-3')
-
-      expect(activeModals.size).toBe(3)
-      expect(activeModals.has('modal-1')).toBe(true)
-      expect(activeModals.has('modal-2')).toBe(true)
-      expect(activeModals.has('modal-3')).toBe(true)
-    })
-
-    it('should handle closing specific modal while others remain open', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
-      activeModals.add('modal-2')
-      activeModals.add('modal-3')
-
-      const closeModal = (modalId: string) => {
-        activeModals.delete(modalId)
-      }
-
-      closeModal('modal-2')
-
-      expect(activeModals.size).toBe(2)
-      expect(activeModals.has('modal-1')).toBe(true)
-      expect(activeModals.has('modal-2')).toBe(false)
-      expect(activeModals.has('modal-3')).toBe(true)
-    })
-
-    it('should not add duplicate modal IDs', () => {
-      const activeModals = new Set<string>()
-      const openModal = (modalId: string) => {
-        activeModals.add(modalId)
-      }
-
-      openModal('modal-1')
-      openModal('modal-1')
-      openModal('modal-1')
-
-      expect(activeModals.size).toBe(1)
-      expect(activeModals.has('modal-1')).toBe(true)
-    })
-
-    it('should handle closing non-existent modal gracefully', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
-
-      const closeModal = (modalId: string) => {
-        activeModals.delete(modalId)
-      }
-
-      expect(() => closeModal('modal-2')).not.toThrow()
-      expect(activeModals.size).toBe(1)
-      expect(activeModals.has('modal-1')).toBe(true)
-    })
+    expect(pushStateSpy).toHaveBeenCalledTimes(1)
+    // State payload carries the modal id so handlePopState can recognise it.
+    expect(pushStateSpy).toHaveBeenCalledWith({ swModal: 'modal-a' }, '')
   })
 
-  describe('Modal State Checking Logic', () => {
-    it('should detect when any modal is open', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
+  it('does not call history.pushState when integration is disabled', () => {
+    setHistoryIntegrationEnabled(false)
+    const { openModal, openModalCount } = useModalState()
 
-      const isAnyModalOpen = () => activeModals.size > 0
+    openModal('modal-a')
 
-      expect(isAnyModalOpen()).toBe(true)
-    })
-
-    it('should detect when no modals are open', () => {
-      const activeModals = new Set<string>()
-
-      const isAnyModalOpen = () => activeModals.size > 0
-
-      expect(isAnyModalOpen()).toBe(false)
-    })
-
-    it('should detect if specific modal is open', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
-      activeModals.add('modal-2')
-
-      const isModalOpen = (modalId: string) => activeModals.has(modalId)
-
-      expect(isModalOpen('modal-1')).toBe(true)
-      expect(isModalOpen('modal-2')).toBe(true)
-      expect(isModalOpen('modal-3')).toBe(false)
-    })
-
-    it('should count open modals correctly', () => {
-      const activeModals = new Set<string>()
-
-      const getOpenModalCount = () => activeModals.size
-
-      expect(getOpenModalCount()).toBe(0)
-
-      activeModals.add('modal-1')
-      expect(getOpenModalCount()).toBe(1)
-
-      activeModals.add('modal-2')
-      expect(getOpenModalCount()).toBe(2)
-
-      activeModals.add('modal-3')
-      expect(getOpenModalCount()).toBe(3)
-
-      activeModals.delete('modal-1')
-      expect(getOpenModalCount()).toBe(2)
-    })
+    expect(pushStateSpy).not.toHaveBeenCalled()
+    // Stack still tracks the modal even without history integration.
+    expect(openModalCount.value).toBe(1)
   })
 
-  describe('Modal Stack Management', () => {
-    it('should maintain modal order in stack', () => {
-      const activeModals = new Set<string>()
-      const openModal = (modalId: string) => {
-        activeModals.add(modalId)
-      }
+  it('stacks multiple modals in open order (LIFO stack)', () => {
+    const { openModal, openModalCount, isModalOpen } = useModalState()
 
-      openModal('modal-1')
-      openModal('modal-2')
-      openModal('modal-3')
+    openModal('a')
+    openModal('b')
+    openModal('c')
 
-      const modalStack = Array.from(activeModals)
-      expect(modalStack).toEqual(['modal-1', 'modal-2', 'modal-3'])
-    })
-
-    it('should handle LIFO (Last In First Out) close pattern', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
-      activeModals.add('modal-2')
-      activeModals.add('modal-3')
-
-      const closeModal = (modalId: string) => {
-        activeModals.delete(modalId)
-      }
-
-      // Close in reverse order
-      closeModal('modal-3')
-      closeModal('modal-2')
-      closeModal('modal-1')
-
-      expect(activeModals.size).toBe(0)
-    })
-
-    it('should handle FIFO (First In First Out) close pattern', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
-      activeModals.add('modal-2')
-      activeModals.add('modal-3')
-
-      const closeModal = (modalId: string) => {
-        activeModals.delete(modalId)
-      }
-
-      // Close in order
-      closeModal('modal-1')
-      closeModal('modal-2')
-      closeModal('modal-3')
-
-      expect(activeModals.size).toBe(0)
-    })
-
-    it('should get topmost modal', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
-      activeModals.add('modal-2')
-      activeModals.add('modal-3')
-
-      const getTopmostModal = () => {
-        const modalStack = Array.from(activeModals)
-        return modalStack[modalStack.length - 1]
-      }
-
-      expect(getTopmostModal()).toBe('modal-3')
-    })
-
-    it('should get bottommost modal', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
-      activeModals.add('modal-2')
-      activeModals.add('modal-3')
-
-      const getBottommostModal = () => {
-        const modalStack = Array.from(activeModals)
-        return modalStack[0]
-      }
-
-      expect(getBottommostModal()).toBe('modal-1')
-    })
+    expect(openModalCount.value).toBe(3)
+    expect(isModalOpen('a').value).toBe(true)
+    expect(isModalOpen('b').value).toBe(true)
+    expect(isModalOpen('c').value).toBe(true)
+    expect(pushStateSpy).toHaveBeenCalledTimes(3)
   })
 
-  describe('Modal ID Validation', () => {
-    it('should accept valid string modal IDs', () => {
-      const isValidModalId = (modalId: any): boolean => {
-        return typeof modalId === 'string' && modalId.length > 0
-      }
-
-      expect(isValidModalId('modal-1')).toBe(true)
-      expect(isValidModalId('create-item-modal')).toBe(true)
-      expect(isValidModalId('confirmDialog')).toBe(true)
+  it('degrades gracefully when pushState throws (ownsHistoryEntry=false)', () => {
+    pushStateSpy.mockImplementation(() => {
+      throw new Error('restricted environment')
     })
+    const { openModal, closeModal, openModalCount } = useModalState()
 
-    it('should reject invalid modal IDs', () => {
-      const isValidModalId = (modalId: any): boolean => {
-        return typeof modalId === 'string' && modalId.length > 0
-      }
+    expect(() => openModal('modal-a')).not.toThrow()
+    expect(openModalCount.value).toBe(1)
 
-      expect(isValidModalId('')).toBe(false)
-      expect(isValidModalId(null)).toBe(false)
-      expect(isValidModalId(undefined)).toBe(false)
-      expect(isValidModalId(123)).toBe(false)
-      expect(isValidModalId({})).toBe(false)
-    })
+    // Since pushState failed, ownsHistoryEntry is false → closing must NOT
+    // call history.back().
+    closeModal('modal-a')
+    expect(backSpy).not.toHaveBeenCalled()
+    expect(openModalCount.value).toBe(0)
+  })
+})
 
-    it('should handle modal IDs with special characters', () => {
-      const activeModals = new Set<string>()
-      const openModal = (modalId: string) => {
-        activeModals.add(modalId)
-      }
+describe('useModalState - closeModal (programmatic path)', () => {
+  it('removes the entry and calls history.back() once for an owned entry', () => {
+    const { openModal, closeModal, openModalCount } = useModalState()
 
-      openModal('modal-123')
-      openModal('modal_abc')
-      openModal('modal.xyz')
-      openModal('modal:test')
+    openModal('modal-a')
+    closeModal('modal-a')
 
-      expect(activeModals.size).toBe(4)
-      expect(activeModals.has('modal-123')).toBe(true)
-      expect(activeModals.has('modal_abc')).toBe(true)
-      expect(activeModals.has('modal.xyz')).toBe(true)
-      expect(activeModals.has('modal:test')).toBe(true)
-    })
+    expect(openModalCount.value).toBe(0)
+    expect(backSpy).toHaveBeenCalledTimes(1)
   })
 
-  describe('Concurrent Modal Operations', () => {
-    it('should handle rapid open/close operations', () => {
-      const activeModals = new Set<string>()
-      const openModal = (modalId: string) => {
-        activeModals.add(modalId)
-      }
-      const closeModal = (modalId: string) => {
-        activeModals.delete(modalId)
-      }
+  it('is idempotent: closing an unknown id is a no-op and never calls history.back()', () => {
+    const { openModal, closeModal, openModalCount } = useModalState()
 
-      openModal('modal-1')
-      closeModal('modal-1')
-      openModal('modal-1')
-      closeModal('modal-1')
-      openModal('modal-1')
+    openModal('modal-a')
+    closeModal('does-not-exist')
 
-      expect(activeModals.has('modal-1')).toBe(true)
-      expect(activeModals.size).toBe(1)
-    })
-
-    it('should handle multiple modals opening simultaneously', () => {
-      const activeModals = new Set<string>()
-      const openModal = (modalId: string) => {
-        activeModals.add(modalId)
-      }
-
-      // Simulate simultaneous opens
-      const modalsToOpen = ['modal-1', 'modal-2', 'modal-3', 'modal-4', 'modal-5']
-      modalsToOpen.forEach(modalId => openModal(modalId))
-
-      expect(activeModals.size).toBe(5)
-      modalsToOpen.forEach(modalId => {
-        expect(activeModals.has(modalId)).toBe(true)
-      })
-    })
-
-    it('should handle multiple modals closing simultaneously', () => {
-      const activeModals = new Set<string>()
-      const modalsToClose = ['modal-1', 'modal-2', 'modal-3', 'modal-4', 'modal-5']
-
-      // Pre-populate
-      modalsToClose.forEach(modalId => activeModals.add(modalId))
-
-      const closeModal = (modalId: string) => {
-        activeModals.delete(modalId)
-      }
-
-      // Simulate simultaneous closes
-      modalsToClose.forEach(modalId => closeModal(modalId))
-
-      expect(activeModals.size).toBe(0)
-    })
+    expect(openModalCount.value).toBe(1)
+    expect(backSpy).not.toHaveBeenCalled()
   })
 
-  describe('Modal State Transitions', () => {
-    it('should transition from no modals to single modal', () => {
-      const activeModals = new Set<string>()
-      const openModal = (modalId: string) => {
-        activeModals.add(modalId)
-      }
-      const isAnyModalOpen = () => activeModals.size > 0
+  it('closing an already-closed id a second time is a no-op (no extra history.back)', () => {
+    const { openModal, closeModal, openModalCount } = useModalState()
 
-      expect(isAnyModalOpen()).toBe(false)
+    openModal('modal-a')
+    closeModal('modal-a')
+    expect(backSpy).toHaveBeenCalledTimes(1)
 
-      openModal('modal-1')
-
-      expect(isAnyModalOpen()).toBe(true)
-      expect(activeModals.size).toBe(1)
-    })
-
-    it('should transition from single modal to multiple modals', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
-
-      const openModal = (modalId: string) => {
-        activeModals.add(modalId)
-      }
-
-      expect(activeModals.size).toBe(1)
-
-      openModal('modal-2')
-      openModal('modal-3')
-
-      expect(activeModals.size).toBe(3)
-    })
-
-    it('should transition from multiple modals to single modal', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
-      activeModals.add('modal-2')
-      activeModals.add('modal-3')
-
-      const closeModal = (modalId: string) => {
-        activeModals.delete(modalId)
-      }
-
-      expect(activeModals.size).toBe(3)
-
-      closeModal('modal-2')
-      closeModal('modal-3')
-
-      expect(activeModals.size).toBe(1)
-      expect(activeModals.has('modal-1')).toBe(true)
-    })
-
-    it('should transition from single modal to no modals', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
-
-      const closeModal = (modalId: string) => {
-        activeModals.delete(modalId)
-      }
-      const isAnyModalOpen = () => activeModals.size > 0
-
-      expect(isAnyModalOpen()).toBe(true)
-
-      closeModal('modal-1')
-
-      expect(isAnyModalOpen()).toBe(false)
-      expect(activeModals.size).toBe(0)
-    })
+    closeModal('modal-a')
+    expect(backSpy).toHaveBeenCalledTimes(1) // unchanged
+    expect(openModalCount.value).toBe(0)
   })
 
-  describe('Modal State Queries', () => {
-    it('should query if modal exists in set', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
-      activeModals.add('modal-2')
+  it('does not call history.back() when the entry does not own a history entry', () => {
+    setHistoryIntegrationEnabled(false)
+    const { openModal, closeModal, openModalCount } = useModalState()
 
-      expect(activeModals.has('modal-1')).toBe(true)
-      expect(activeModals.has('modal-2')).toBe(true)
-      expect(activeModals.has('modal-3')).toBe(false)
-    })
+    openModal('modal-a') // ownsHistoryEntry = false (integration disabled)
+    closeModal('modal-a')
 
-    it('should get all active modal IDs', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
-      activeModals.add('modal-2')
-      activeModals.add('modal-3')
-
-      const getAllActiveModals = () => Array.from(activeModals)
-
-      expect(getAllActiveModals()).toHaveLength(3)
-      expect(getAllActiveModals()).toContain('modal-1')
-      expect(getAllActiveModals()).toContain('modal-2')
-      expect(getAllActiveModals()).toContain('modal-3')
-    })
-
-    it('should check if multiple specific modals are open', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
-      activeModals.add('modal-2')
-
-      const areModalsOpen = (modalIds: string[]) => {
-        return modalIds.every(id => activeModals.has(id))
-      }
-
-      expect(areModalsOpen(['modal-1', 'modal-2'])).toBe(true)
-      expect(areModalsOpen(['modal-1', 'modal-3'])).toBe(false)
-      expect(areModalsOpen(['modal-3', 'modal-4'])).toBe(false)
-    })
-
-    it('should check if any of multiple specific modals are open', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
-
-      const isAnyModalOpen = (modalIds: string[]) => {
-        return modalIds.some(id => activeModals.has(id))
-      }
-
-      expect(isAnyModalOpen(['modal-1', 'modal-2'])).toBe(true)
-      expect(isAnyModalOpen(['modal-2', 'modal-3'])).toBe(false)
-      expect(isAnyModalOpen(['modal-1'])).toBe(true)
-    })
+    expect(backSpy).not.toHaveBeenCalled()
+    expect(openModalCount.value).toBe(0)
   })
 
-  describe('Modal Cleanup Operations', () => {
-    it('should clear all modals', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
-      activeModals.add('modal-2')
-      activeModals.add('modal-3')
+  it('closes a middle entry in a deep stack without affecting the others', () => {
+    const { openModal, closeModal, isModalOpen, openModalCount } = useModalState()
 
-      const clearAllModals = () => {
-        activeModals.clear()
-      }
+    openModal('a')
+    openModal('b')
+    openModal('c')
 
-      expect(activeModals.size).toBe(3)
+    closeModal('b')
 
-      clearAllModals()
+    expect(openModalCount.value).toBe(2)
+    expect(isModalOpen('a').value).toBe(true)
+    expect(isModalOpen('b').value).toBe(false)
+    expect(isModalOpen('c').value).toBe(true)
+    expect(backSpy).toHaveBeenCalledTimes(1)
+  })
+})
 
-      expect(activeModals.size).toBe(0)
-    })
+describe('useModalState - handlePopState (hardware/browser back)', () => {
+  it('closes the TOP entry and runs its close callback', () => {
+    const { openModal, openModalCount } = useModalState()
+    const closeCb = vi.fn()
 
-    it('should close modals matching pattern', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('confirm-delete')
-      activeModals.add('confirm-save')
-      activeModals.add('edit-item')
+    openModal('modal-a', closeCb)
+    handlePopState()
 
-      const closeModalsMatching = (pattern: string) => {
-        Array.from(activeModals).forEach(modalId => {
-          if (modalId.includes(pattern)) {
-            activeModals.delete(modalId)
-          }
-        })
-      }
-
-      closeModalsMatching('confirm')
-
-      expect(activeModals.size).toBe(1)
-      expect(activeModals.has('edit-item')).toBe(true)
-      expect(activeModals.has('confirm-delete')).toBe(false)
-      expect(activeModals.has('confirm-save')).toBe(false)
-    })
-
-    it('should close all except specified modal', () => {
-      const activeModals = new Set<string>()
-      activeModals.add('modal-1')
-      activeModals.add('modal-2')
-      activeModals.add('modal-3')
-
-      const closeAllExcept = (keepModalId: string) => {
-        Array.from(activeModals).forEach(modalId => {
-          if (modalId !== keepModalId) {
-            activeModals.delete(modalId)
-          }
-        })
-      }
-
-      closeAllExcept('modal-2')
-
-      expect(activeModals.size).toBe(1)
-      expect(activeModals.has('modal-2')).toBe(true)
-    })
+    expect(closeCb).toHaveBeenCalledTimes(1)
+    expect(openModalCount.value).toBe(0)
   })
 
-  describe('Integration Scenarios', () => {
-    it('should handle typical user workflow', () => {
-      const activeModals = new Set<string>()
-      const openModal = (modalId: string) => {
-        activeModals.add(modalId)
-      }
-      const closeModal = (modalId: string) => {
-        activeModals.delete(modalId)
-      }
-      const isAnyModalOpen = () => activeModals.size > 0
+  it('does NOT call history.back() again when the close callback re-enters closeModal (isHandlingPopState guard)', () => {
+    const { openModal, closeModal, openModalCount } = useModalState()
+    // Realistic view callback: flips local state AND calls closeModal(id).
+    const closeCb = vi.fn(() => closeModal('modal-a'))
 
-      // User opens create item modal
-      expect(isAnyModalOpen()).toBe(false)
-      openModal('create-item')
-      expect(isAnyModalOpen()).toBe(true)
+    openModal('modal-a', closeCb)
+    expect(backSpy).not.toHaveBeenCalled()
 
-      // User opens confirmation dialog
-      openModal('confirm-save')
-      expect(activeModals.size).toBe(2)
+    handlePopState()
 
-      // User confirms and closes confirmation
-      closeModal('confirm-save')
-      expect(activeModals.size).toBe(1)
-
-      // User closes create item modal
-      closeModal('create-item')
-      expect(isAnyModalOpen()).toBe(false)
-    })
-
-    it('should handle nested modal scenario', () => {
-      const activeModals = new Set<string>()
-      const openModal = (modalId: string) => {
-        activeModals.add(modalId)
-      }
-      const closeModal = (modalId: string) => {
-        activeModals.delete(modalId)
-      }
-
-      // Open parent modal
-      openModal('parent-modal')
-      expect(activeModals.size).toBe(1)
-
-      // Open child modal
-      openModal('child-modal')
-      expect(activeModals.size).toBe(2)
-
-      // Open grandchild modal
-      openModal('grandchild-modal')
-      expect(activeModals.size).toBe(3)
-
-      // Close grandchild
-      closeModal('grandchild-modal')
-      expect(activeModals.size).toBe(2)
-
-      // Close child
-      closeModal('child-modal')
-      expect(activeModals.size).toBe(1)
-
-      // Close parent
-      closeModal('parent-modal')
-      expect(activeModals.size).toBe(0)
-    })
+    expect(closeCb).toHaveBeenCalledTimes(1)
+    // The re-entrant closeModal must NOT trigger history.back (browser already
+    // consumed the entry).
+    expect(backSpy).not.toHaveBeenCalled()
+    expect(openModalCount.value).toBe(0)
   })
 
-  describe('Composable Integration', () => {
-    it('should handle composable import without errors', async () => {
-      const { useModalState } = await import('../../composables/useModalState')
-      expect(useModalState).toBeDefined()
-      expect(typeof useModalState).toBe('function')
-    })
+  it('pops the top entry defensively even when no close callback is provided', () => {
+    const { openModal, openModalCount } = useModalState()
 
-    it('should validate composable return type structure', () => {
-      interface UseModalStateReturn {
-        openModal: (modalId: string) => void
-        closeModal: (modalId: string) => void
-        isAnyModalOpen: { value: boolean }
-        isModalOpen: (modalId: string) => { value: boolean }
-        openModalCount: { value: number }
-      }
+    openModal('modal-a') // no close callback
+    handlePopState()
 
-      const mockReturn: UseModalStateReturn = {
-        openModal: (modalId: string) => {},
-        closeModal: (modalId: string) => {},
-        isAnyModalOpen: { value: false },
-        isModalOpen: (modalId: string) => ({ value: false }),
-        openModalCount: { value: 0 }
-      }
-
-      expect(mockReturn.openModal).toBeDefined()
-      expect(mockReturn.closeModal).toBeDefined()
-      expect(mockReturn.isAnyModalOpen).toBeDefined()
-      expect(mockReturn.isModalOpen).toBeDefined()
-      expect(mockReturn.openModalCount).toBeDefined()
-      expect(typeof mockReturn.openModal).toBe('function')
-      expect(typeof mockReturn.closeModal).toBe('function')
-      expect(typeof mockReturn.isModalOpen).toBe('function')
-    })
+    expect(openModalCount.value).toBe(0)
+    expect(backSpy).not.toHaveBeenCalled()
   })
 
-  describe('Edge Cases', () => {
-    it('should handle reopening a modal that was just closed', () => {
-      const activeModals = new Set<string>()
-      const openModal = (modalId: string) => {
-        activeModals.add(modalId)
-      }
-      const closeModal = (modalId: string) => {
-        activeModals.delete(modalId)
-      }
+  it('is a pass-through no-op when the stack is empty', () => {
+    const { openModalCount } = useModalState()
 
-      openModal('modal-1')
-      closeModal('modal-1')
-      openModal('modal-1')
-
-      expect(activeModals.has('modal-1')).toBe(true)
-      expect(activeModals.size).toBe(1)
-    })
-
-    it('should handle very long modal IDs', () => {
-      const activeModals = new Set<string>()
-      const openModal = (modalId: string) => {
-        activeModals.add(modalId)
-      }
-
-      const longModalId = 'a'.repeat(1000)
-      openModal(longModalId)
-
-      expect(activeModals.has(longModalId)).toBe(true)
-    })
-
-    it('should handle modal IDs with unicode characters', () => {
-      const activeModals = new Set<string>()
-      const openModal = (modalId: string) => {
-        activeModals.add(modalId)
-      }
-
-      openModal('modal-🎉')
-      openModal('modal-中文')
-      openModal('modal-العربية')
-
-      expect(activeModals.size).toBe(3)
-      expect(activeModals.has('modal-🎉')).toBe(true)
-      expect(activeModals.has('modal-中文')).toBe(true)
-      expect(activeModals.has('modal-العربية')).toBe(true)
-    })
-
-    it('should handle empty set operations', () => {
-      const activeModals = new Set<string>()
-      const closeModal = (modalId: string) => {
-        activeModals.delete(modalId)
-      }
-
-      expect(() => closeModal('modal-1')).not.toThrow()
-      expect(activeModals.size).toBe(0)
-
-      const isAnyModalOpen = () => activeModals.size > 0
-      expect(isAnyModalOpen()).toBe(false)
-    })
+    expect(() => handlePopState()).not.toThrow()
+    expect(openModalCount.value).toBe(0)
+    expect(backSpy).not.toHaveBeenCalled()
   })
 
-  describe('Performance Considerations', () => {
-    it('should handle large number of modals efficiently', () => {
-      const activeModals = new Set<string>()
-      const openModal = (modalId: string) => {
-        activeModals.add(modalId)
-      }
+  it('swallows the echo popstate from our own programmatic history.back()', () => {
+    const { openModal, closeModal, openModalCount } = useModalState()
+    const closeCb = vi.fn()
 
-      // Open 100 modals
-      for (let i = 0; i < 100; i++) {
-        openModal(`modal-${i}`)
-      }
+    // Two modals so we can prove the echo does NOT close the second one.
+    openModal('a')
+    openModal('b', closeCb)
 
-      expect(activeModals.size).toBe(100)
-      expect(activeModals.has('modal-50')).toBe(true)
+    // Programmatic close of top entry 'b' → sets isProgrammaticClose, calls back().
+    closeModal('b')
+    expect(backSpy).toHaveBeenCalledTimes(1)
+    expect(openModalCount.value).toBe(1) // only 'b' gone
+
+    // The browser now fires the echo popstate for our own back(): it must be
+    // swallowed and must NOT pop 'a'.
+    handlePopState()
+
+    expect(openModalCount.value).toBe(1)
+    expect(closeCb).not.toHaveBeenCalled()
+  })
+})
+
+describe('useModalState - nested / stacked LIFO popstate behaviour', () => {
+  it('closes B then A in LIFO order across successive popstates, history stays consistent', () => {
+    const { openModal, closeModal, isModalOpen, openModalCount } = useModalState()
+
+    const closeA = vi.fn(() => closeModal('a'))
+    const closeB = vi.fn(() => closeModal('b'))
+
+    openModal('a', closeA)
+    openModal('b', closeB)
+    expect(openModalCount.value).toBe(2)
+
+    // First back press closes the innermost (top) modal B.
+    handlePopState()
+    expect(closeB).toHaveBeenCalledTimes(1)
+    expect(closeA).not.toHaveBeenCalled()
+    expect(isModalOpen('b').value).toBe(false)
+    expect(isModalOpen('a').value).toBe(true)
+    expect(openModalCount.value).toBe(1)
+
+    // Second back press closes A.
+    handlePopState()
+    expect(closeA).toHaveBeenCalledTimes(1)
+    expect(openModalCount.value).toBe(0)
+
+    // Neither hardware-back path ever called history.back() itself.
+    expect(backSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('useModalState - setHistoryIntegrationEnabled / canUseHistory', () => {
+  it('disabling integration skips both pushState and back() (Tauri desktop path)', () => {
+    setHistoryIntegrationEnabled(false)
+    const { openModal, closeModal, openModalCount } = useModalState()
+
+    openModal('a')
+    openModal('b')
+    closeModal('b')
+    closeModal('a')
+
+    expect(pushStateSpy).not.toHaveBeenCalled()
+    expect(backSpy).not.toHaveBeenCalled()
+    expect(openModalCount.value).toBe(0)
+  })
+
+  it('re-enabling integration restores the pushState/back path', () => {
+    setHistoryIntegrationEnabled(false)
+    const first = useModalState()
+    first.openModal('a')
+    expect(pushStateSpy).not.toHaveBeenCalled()
+    first.closeModal('a')
+
+    setHistoryIntegrationEnabled(true)
+    const { openModal, closeModal } = useModalState()
+    openModal('b')
+    expect(pushStateSpy).toHaveBeenCalledTimes(1)
+    closeModal('b')
+    expect(backSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('degrades gracefully when the History API pushState is absent', () => {
+    // Simulate a partial/SSR-like History API where pushState is not a function.
+    // (pushState may live on the prototype, so we override the property to a
+    // non-function value rather than delete it.)
+    const pushDescriptor = Object.getOwnPropertyDescriptor(window.history, 'pushState')
+    pushStateSpy.mockRestore()
+    Object.defineProperty(window.history, 'pushState', {
+      configurable: true,
+      writable: true,
+      value: undefined,
     })
 
-    it('should efficiently check modal state', () => {
-      const activeModals = new Set<string>()
-
-      // Add many modals
-      for (let i = 0; i < 50; i++) {
-        activeModals.add(`modal-${i}`)
+    try {
+      const { openModal, closeModal, openModalCount } = useModalState()
+      expect(() => openModal('a')).not.toThrow()
+      // canUseHistory() is false → no ownership → close must not call back().
+      closeModal('a')
+      expect(backSpy).not.toHaveBeenCalled()
+      expect(openModalCount.value).toBe(0)
+    } finally {
+      // Restore the original pushState so afterEach and other tests are clean.
+      if (pushDescriptor) {
+        Object.defineProperty(window.history, 'pushState', pushDescriptor)
+      } else {
+        delete (window.history as any).pushState
       }
+    }
+  })
+})
 
-      const isModalOpen = (modalId: string) => activeModals.has(modalId)
+describe('useModalState - resetModalStack', () => {
+  it('flushes the stack and resets state', () => {
+    const { openModal, isAnyModalOpen, openModalCount } = useModalState()
 
-      // Check operations should be O(1)
-      expect(isModalOpen('modal-25')).toBe(true)
-      expect(isModalOpen('modal-100')).toBe(false)
-    })
+    openModal('a')
+    openModal('b')
+    expect(openModalCount.value).toBe(2)
+
+    resetModalStack()
+
+    expect(openModalCount.value).toBe(0)
+    expect(isAnyModalOpen.value).toBe(false)
+  })
+
+  it('is a no-op on an empty stack', () => {
+    const { openModalCount } = useModalState()
+    expect(() => resetModalStack()).not.toThrow()
+    expect(openModalCount.value).toBe(0)
+  })
+
+  it('resets the guard flags so a subsequent programmatic close still calls history.back()', () => {
+    const { openModal, closeModal } = useModalState()
+
+    // Put the module into a programmatic-close state, then reset mid-flight.
+    openModal('a')
+    closeModal('a') // sets isProgrammaticClose = true (echo popstate not yet delivered)
+    expect(backSpy).toHaveBeenCalledTimes(1)
+
+    resetModalStack() // clears isProgrammaticClose / isHandlingPopState
+
+    // After reset, a brand-new modal close must behave normally (back called again).
+    openModal('b')
+    closeModal('b')
+    expect(backSpy).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps the singleton shared across separate useModalState() callers', () => {
+    const a = useModalState()
+    const b = useModalState()
+
+    a.openModal('shared')
+    // Second instance observes the same module-level stack.
+    expect(b.isAnyModalOpen.value).toBe(true)
+    expect(b.openModalCount.value).toBe(1)
+    expect(b.isModalOpen('shared').value).toBe(true)
+
+    b.closeModal('shared')
+    expect(a.openModalCount.value).toBe(0)
+  })
+})
+
+describe('useModalState - composable surface', () => {
+  it('exposes the expected API', () => {
+    const api = useModalState()
+    expect(typeof api.openModal).toBe('function')
+    expect(typeof api.closeModal).toBe('function')
+    expect(typeof api.isModalOpen).toBe('function')
+    expect(typeof api.handlePopState).toBe('function')
+    expect(typeof api.resetModalStack).toBe('function')
+    expect(api.isAnyModalOpen).toHaveProperty('value')
+    expect(api.openModalCount).toHaveProperty('value')
   })
 })
