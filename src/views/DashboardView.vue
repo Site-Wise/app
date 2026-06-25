@@ -206,7 +206,17 @@
                 <td class="hidden lg:table-cell px-4 py-3 font-mono sw-tabular text-stone-600 dark:text-stone-300">
                   {{ formatLedgerDate(row.date) }}
                 </td>
-                <td class="hidden lg:table-cell px-4 py-3 text-ink dark:text-cream">{{ row.vendorName }}</td>
+                <td class="hidden lg:table-cell px-4 py-3 text-ink dark:text-cream">
+                  <RecordLink
+                    v-if="row.vendorId"
+                    type="vendor"
+                    mode="detail"
+                    :id="row.vendorId"
+                    :label="row.vendorLabel"
+                  />
+                  <span v-else>{{ row.vendorLabel }}</span>
+                  <div v-if="row.vendorCompany" class="text-xs text-stone-500 dark:text-stone-400">{{ row.vendorCompany }}</div>
+                </td>
                 <td class="hidden lg:table-cell px-4 py-3">
                   <span class="inline-flex items-center gap-2 text-stone-600 dark:text-stone-300">
                     <span class="h-2 w-2 rounded-[2px]" :style="{ backgroundColor: categoryDotColor(row.category) }"></span>
@@ -226,8 +236,18 @@
                     <div class="min-w-0">
                       <div class="flex items-center gap-2">
                         <span class="h-2 w-2 rounded-[2px] shrink-0" :style="{ backgroundColor: categoryDotColor(row.category) }"></span>
-                        <span class="font-medium text-ink dark:text-cream truncate">{{ row.vendorName }}</span>
+                        <span class="font-medium truncate">
+                          <RecordLink
+                            v-if="row.vendorId"
+                            type="vendor"
+                            mode="detail"
+                            :id="row.vendorId"
+                            :label="row.vendorLabel"
+                          />
+                          <span v-else class="text-ink dark:text-cream">{{ row.vendorLabel }}</span>
+                        </span>
                       </div>
+                      <div v-if="row.vendorCompany" class="mt-0.5 text-xs text-stone-500 dark:text-stone-400 truncate">{{ row.vendorCompany }}</div>
                       <div class="mt-0.5 flex items-center gap-1.5 text-xs text-stone-500 dark:text-stone-400">
                         <span>{{ categoryLabel(row.category) }}</span>
                         <span class="text-stone-400 dark:text-stone-500">•</span>
@@ -262,6 +282,7 @@ const DashboardLineChart = defineAsyncComponent({
   loadingComponent: ChartLoadingPlaceholder
 });
 import Skeleton from '../components/Skeleton.vue';
+import RecordLink from '../components/RecordLink.vue';
 import { useSite } from '../composables/useSite';
 import { useSiteData } from '../composables/useSiteData';
 import { useI18n } from '../composables/useI18n';
@@ -499,7 +520,11 @@ type LedgerCategory = 'material' | 'service' | 'payment';
 interface LedgerRow {
   id: string;
   date: string; // ISO date used for sorting
-  vendorName: string;
+  // App-wide vendor display convention: contact_person is the prominent label,
+  // company `name` is a muted subtext shown only when BOTH exist.
+  vendorId?: string;
+  vendorLabel: string;
+  vendorCompany?: string;
   category: LedgerCategory;
   amount: number;
   // semantic status mapped to sw-badge variant
@@ -507,11 +532,21 @@ interface LedgerRow {
   statusVariant: 'success' | 'accent' | 'danger';
 }
 
-// Resolve a vendor id to its display name from the loaded vendors array.
-const vendorNameById = (vendorId?: string): string => {
-  if (!vendorId) return t('common.unknownVendor');
-  const match = vendors.value.find(v => v.id === vendorId);
-  return match?.name || t('common.unknownVendor');
+// Resolve a vendor id to its display parts from the loaded vendors array.
+// Mirrors VendorsView/VendorOption: contact_person as main label (fallback to
+// company name, then unknown-vendor fallback); company name kept separately so
+// it can be rendered as muted subtext only when both values exist.
+const vendorPartsById = (vendorId?: string): { id?: string; label: string; company?: string } => {
+  const match = vendorId ? vendors.value.find(v => v.id === vendorId) : undefined;
+  const contactPerson = match?.contact_person;
+  const company = match?.name;
+  const label = contactPerson || company || t('common.unknownVendor');
+  return {
+    id: match?.id,
+    label,
+    // Only expose company as subtext when both contact_person and name exist.
+    company: contactPerson && company ? company : undefined
+  };
 };
 
 // Map a delivery/booking payment_status to a badge variant + label.
@@ -543,10 +578,13 @@ const recentTransactions = computed<LedgerRow[]>(() => {
 
   for (const d of deliveries.value) {
     const status = statusFromPayment(d.payment_status);
+    const vendor = vendorPartsById(d.vendor);
     rows.push({
       id: `delivery-${d.id}`,
       date: d.delivery_date,
-      vendorName: vendorNameById(d.vendor),
+      vendorId: vendor.id,
+      vendorLabel: vendor.label,
+      vendorCompany: vendor.company,
       category: 'material',
       amount: d.total_amount,
       statusKey: status.key,
@@ -556,10 +594,13 @@ const recentTransactions = computed<LedgerRow[]>(() => {
 
   for (const b of serviceBookings.value) {
     const status = statusFromPayment(b.payment_status);
+    const vendor = vendorPartsById(b.vendor);
     rows.push({
       id: `booking-${b.id}`,
       date: b.start_date,
-      vendorName: vendorNameById(b.vendor),
+      vendorId: vendor.id,
+      vendorLabel: vendor.label,
+      vendorCompany: vendor.company,
       category: 'service',
       amount: b.total_amount,
       statusKey: status.key,
@@ -568,10 +609,13 @@ const recentTransactions = computed<LedgerRow[]>(() => {
   }
 
   for (const p of payments.value) {
+    const vendor = vendorPartsById(p.vendor);
     rows.push({
       id: `payment-${p.id}`,
       date: p.payment_date || p.created || '',
-      vendorName: vendorNameById(p.vendor),
+      vendorId: vendor.id,
+      vendorLabel: vendor.label,
+      vendorCompany: vendor.company,
       category: 'payment',
       amount: p.amount,
       statusKey: 'common.paid',
