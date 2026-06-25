@@ -86,4 +86,14 @@ describe('DeliveryService request keys (auto-cancellation guard)', () => {
       })
     );
   });
+
+  it('getList defaults to "-delivery_date" sort when no sort arg is supplied', async () => {
+    await service.getList(1, 50);
+    expect(getListSpy.mock.calls[0][2].sort).toBe('-delivery_date');
+  });
+
+  it('getList passes a provided sort string to the query (server-side sort)', async () => {
+    await service.getList(1, 50, 'total_amount');
+    expect(getListSpy.mock.calls[0][2].sort).toBe('total_amount');
+  });
 });

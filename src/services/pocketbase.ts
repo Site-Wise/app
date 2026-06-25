@@ -4181,7 +4181,8 @@ export class DeliveryService {
    */
   async getList(
     page: number,
-    perPage: number
+    perPage: number,
+    sort: string = '-delivery_date'
   ): Promise<{ items: Delivery[]; totalItems: number; totalPages: number }> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
@@ -4189,7 +4190,7 @@ export class DeliveryService {
     const result = await pb.collection('deliveries').getList(page, perPage, {
       filter: `site="${siteId}"`,
       expand: 'vendor,delivery_items,delivery_items.item',
-      sort: '-delivery_date',
+      sort,
       // Distinct requestKey so the browse list isn't auto-cancelled by the
       // concurrent getAllWithPhotos() request to the same collection. A stable
       // key still lets a newer browse load supersede a stale one on site switch.
@@ -4211,7 +4212,8 @@ export class DeliveryService {
   async getByVendor(
     vendorId: string,
     page: number,
-    perPage: number
+    perPage: number,
+    sort: string = '-delivery_date'
   ): Promise<{ items: Delivery[]; totalItems: number; totalPages: number }> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
@@ -4219,7 +4221,7 @@ export class DeliveryService {
     const result = await pb.collection('deliveries').getList(page, perPage, {
       filter: `site="${siteId}" && vendor="${vendorId}"`,
       expand: 'vendor,delivery_items,delivery_items.item',
-      sort: '-delivery_date',
+      sort,
       // Distinct requestKey so this vendor-filtered browse isn't auto-cancelled
       // by the concurrent getList()/getAllWithPhotos() queries to the same
       // deliveries collection.

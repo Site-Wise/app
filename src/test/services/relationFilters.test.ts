@@ -81,6 +81,16 @@ describe('Relation-filtered query methods (deep-link/filter feature)', () => {
       expect(opts.requestKey).toBe('deliveries-by-vendor');
     });
 
+    it('defaults to "-delivery_date" sort when no sort arg is supplied', async () => {
+      await service.getByVendor('vendor-9', 1, 50);
+      expect(getListSpy.mock.calls[0][2].sort).toBe('-delivery_date');
+    });
+
+    it('passes a provided sort string to the query', async () => {
+      await service.getByVendor('vendor-9', 1, 50, 'total_amount');
+      expect(getListSpy.mock.calls[0][2].sort).toBe('total_amount');
+    });
+
     it('returns mapped items with pagination metadata', async () => {
       getListSpy.mockResolvedValue({ items: [], totalItems: 7, totalPages: 1 });
       const result = await service.getByVendor('vendor-9', 1, 50);
