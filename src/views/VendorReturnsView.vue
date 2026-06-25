@@ -120,18 +120,42 @@
           <!-- xl Desktop Headers -->
           <thead class="bg-cream-2 dark:bg-ink-2 hidden xl:table-header-group">
             <tr>
-              <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
-                {{ t('common.vendor') }}
-              </th>
-              <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
-                {{ t('vendors.returnDate') }}
-              </th>
-              <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
-                {{ t('vendors.returnAmount') }}
-              </th>
-              <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
-                {{ t('common.status') }}
-              </th>
+              <SortableTh
+                sort-key="vendor"
+                :active-key="sortKey"
+                :direction="sortDir"
+                :label="t('common.vendor')"
+                align="left"
+                th-class="px-4 py-3 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400"
+                @sort="toggleSort"
+              />
+              <SortableTh
+                sort-key="returnDate"
+                :active-key="sortKey"
+                :direction="sortDir"
+                :label="t('vendors.returnDate')"
+                align="right"
+                th-class="px-4 py-3 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400"
+                @sort="toggleSort"
+              />
+              <SortableTh
+                sort-key="amount"
+                :active-key="sortKey"
+                :direction="sortDir"
+                :label="t('vendors.returnAmount')"
+                align="right"
+                th-class="px-4 py-3 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400"
+                @sort="toggleSort"
+              />
+              <SortableTh
+                sort-key="status"
+                :active-key="sortKey"
+                :direction="sortDir"
+                :label="t('common.status')"
+                align="left"
+                th-class="px-4 py-3 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400"
+                @sort="toggleSort"
+              />
               <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
                 {{ t('common.actions') }}
               </th>
@@ -172,7 +196,7 @@
                 </td>
               </tr>
             </template>
-            <tr v-else v-for="returnItem in filteredReturns" :key="returnItem.id" @click="viewReturn(returnItem)" class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap cursor-pointer">
+            <tr v-else v-for="returnItem in sortedReturns" :key="returnItem.id" @click="viewReturn(returnItem)" class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap cursor-pointer">
               <!-- xl table cells -->
               <td class="hidden xl:table-cell px-4 py-3.5">
                 <div class="font-medium text-ink dark:text-cream">
@@ -311,7 +335,7 @@
       </div>
 
       <!-- Empty State -->
-      <div v-if="filteredReturns.length === 0" class="flex flex-col items-center justify-center py-16 px-4 text-center">
+      <div v-if="sortedReturns.length === 0" class="flex flex-col items-center justify-center py-16 px-4 text-center">
         <RotateCcw class="h-12 w-12 text-stone-300 dark:text-stone-600 mb-4" />
         <h3 class="font-display text-base font-semibold text-ink dark:text-cream">{{ t('vendors.noReturnsFound') }}</h3>
         <p class="mt-1 text-sm text-stone-500 dark:text-stone-400 max-w-sm">
@@ -367,7 +391,9 @@ import {
 } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
 import RecordLink from '../components/RecordLink.vue';
+import SortableTh from '../components/SortableTh.vue';
 import { useI18n } from '../composables/useI18n';
+import { useTableSort } from '../composables/useTableSort';
 import { useUrlFilters } from '../composables/useUrlFilters';
 import { useSubscription } from '../composables/useSubscription';
 import { useSiteData } from '../composables/useSiteData';
@@ -469,6 +495,31 @@ const filteredReturns = computed(() => {
 
   return filtered;
 });
+
+// Client-side column sort, applied on top of the already-filtered list so the
+// status filter, search and URL vendor filter compose with sorting. Default:
+// newest returns first (return_date descending).
+const { sortKey, sortDir, toggleSort, sortRows } = useTableSort<VendorReturn>({
+  defaultKey: 'returnDate',
+  defaultDir: 'desc',
+});
+
+const sortedReturns = computed(() =>
+  sortRows(filteredReturns.value, (row, key) => {
+    switch (key) {
+      case 'vendor':
+        return row.expand?.vendor?.contact_person;
+      case 'returnDate':
+        return row.return_date;
+      case 'amount':
+        return row.total_return_amount;
+      case 'status':
+        return row.status;
+      default:
+        return undefined;
+    }
+  })
+);
 
 // Vendor name for the dismissible filter chip. Prefer the first loaded return's
 // expanded vendor; fall back to a lookup in the vendors list by the filtered id.

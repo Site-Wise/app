@@ -568,7 +568,8 @@ describe('DeliveryView', () => {
 
       await capturedLoader('site-1', 1, 50)
 
-      expect(deliveryService.getList).toHaveBeenCalledWith(1, 50)
+      // The loader now forwards the active server sort string (default desc date).
+      expect(deliveryService.getList).toHaveBeenCalledWith(1, 50, '-delivery_date')
       expect(deliveryService.getByVendor).not.toHaveBeenCalled()
     })
 
@@ -595,7 +596,7 @@ describe('DeliveryView', () => {
       const { deliveryService } = await import('../../services/pocketbase')
       await capturedLoader('site-1', 1, 50)
 
-      expect(deliveryService.getByVendor).toHaveBeenCalledWith('vendor-1', 1, 50)
+      expect(deliveryService.getByVendor).toHaveBeenCalledWith('vendor-1', 1, 50, '-delivery_date')
 
       localWrapper.unmount()
     })
@@ -625,6 +626,109 @@ describe('DeliveryView', () => {
       expect(localWrapper.text()).toContain('Filtered by Test Vendor')
 
       localWrapper.unmount()
+    })
+  })
+
+  describe('Column Sorting (server-side browse / client-side search)', () => {
+    it('defaults to descending delivery_date server sort', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+      expect(typeof capturedLoader).toBe('function')
+
+      await capturedLoader('site-1', 1, 50)
+
+      // Default sort key is deliveryDate / desc -> '-delivery_date'.
+      expect(deliveryService.getList).toHaveBeenCalledWith(1, 50, '-delivery_date')
+    })
+
+    it('clicking the Total header sets sortKey="total" and passes total_amount server sort', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+
+      // First click activates the column in the default (desc) direction.
+      wrapper.vm.toggleSort('total')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.sortKey).toBe('total')
+      expect(wrapper.vm.sortDir).toBe('desc')
+
+      vi.mocked(deliveryService.getList).mockClear()
+      await capturedLoader('site-1', 1, 50)
+      expect(deliveryService.getList).toHaveBeenCalledWith(1, 50, '-total_amount')
+
+      // Toggling again flips to ascending -> 'total_amount'.
+      wrapper.vm.toggleSort('total')
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.sortDir).toBe('asc')
+
+      vi.mocked(deliveryService.getList).mockClear()
+      await capturedLoader('site-1', 1, 50)
+      expect(deliveryService.getList).toHaveBeenCalledWith(1, 50, 'total_amount')
+    })
+
+    it('toggling the Delivery Date header flips between -delivery_date and delivery_date', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+
+      // Default is deliveryDate desc; first toggle flips to ascending.
+      wrapper.vm.toggleSort('deliveryDate')
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.sortKey).toBe('deliveryDate')
+      expect(wrapper.vm.sortDir).toBe('asc')
+
+      vi.mocked(deliveryService.getList).mockClear()
+      await capturedLoader('site-1', 1, 50)
+      expect(deliveryService.getList).toHaveBeenCalledWith(1, 50, 'delivery_date')
+
+      // Toggle back to descending.
+      wrapper.vm.toggleSort('deliveryDate')
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.sortDir).toBe('desc')
+
+      vi.mocked(deliveryService.getList).mockClear()
+      await capturedLoader('site-1', 1, 50)
+      expect(deliveryService.getList).toHaveBeenCalledWith(1, 50, '-delivery_date')
+    })
+
+    it('maps the vendor column to a vendor server sort', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+
+      wrapper.vm.toggleSort('vendor')
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.sortKey).toBe('vendor')
+
+      vi.mocked(deliveryService.getList).mockClear()
+      await capturedLoader('site-1', 1, 50)
+      // Default direction (desc) -> '-vendor'.
+      expect(deliveryService.getList).toHaveBeenCalledWith(1, 50, '-vendor')
+    })
+
+    it('reloads the infinite list when the server sort changes', async () => {
+      await wrapper.vm.$nextTick()
+      const reloadSpy = wrapper.vm.reloadDeliveries
+      expect(typeof reloadSpy).toBe('function')
+
+      // Changing the active sort should trigger a reload (resets to page 1).
+      wrapper.vm.toggleSort('total')
+      await wrapper.vm.$nextTick()
+
+      expect(reloadSpy).toHaveBeenCalled()
+    })
+
+    it('client-sorts the search results by the active key in search mode', async () => {
+      // Simulate search mode with a small unsorted result set.
+      wrapper.vm.searchQuery = 'foo'
+      // Two rows with differing totals; ascending sort should reorder them.
+      ;(wrapper.vm as any).searchResults = [
+        { id: 'b', vendor: 'vendor-z', delivery_date: '2024-02-01', total_amount: 500, payment_status: 'pending', expand: { vendor: { contact_person: 'Zed' }, delivery_items: [] } },
+        { id: 'a', vendor: 'vendor-a', delivery_date: '2024-01-01', total_amount: 100, payment_status: 'pending', expand: { vendor: { contact_person: 'Abe' }, delivery_items: [] } }
+      ]
+
+      // Sort by total ascending.
+      wrapper.vm.toggleSort('total') // desc
+      wrapper.vm.toggleSort('total') // asc
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.sortDir).toBe('asc')
+
+      const sortedTotals = wrapper.vm.deliveries.map((d: any) => d.total_amount)
+      expect(sortedTotals).toEqual([100, 500])
     })
   })
 

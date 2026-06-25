@@ -120,33 +120,22 @@
       <table class="min-w-full divide-y divide-stone-200 dark:divide-ink-4">
         <thead class="bg-cream-2 dark:bg-ink-2">
           <tr>
-            <th @click="handleSort('vendor')"
-              class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4 cursor-pointer hover:bg-stone-100 dark:hover:bg-ink-3 transition-colors duration-150">
-              <div class="flex items-center gap-1">
-                <span>{{ t('common.vendor') }}</span>
-                <component :is="getSortIcon('vendor')" class="h-3 w-3"
-                  :class="sortField === 'vendor' ? 'text-amber-700 dark:text-amber-400' : ''" />
-              </div>
-            </th>
-            <th @click="handleSort('date')"
-              class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4 cursor-pointer hover:bg-stone-100 dark:hover:bg-ink-3 transition-colors duration-150">
-              <div class="flex items-center justify-end gap-1">
-                <span>{{ t('common.date') }}</span>
-                <component :is="getSortIcon('date')" class="h-3 w-3"
-                  :class="sortField === 'date' ? 'text-amber-700 dark:text-amber-400' : ''" />
-              </div>
-            </th>
-            <th @click="handleSort('amount')"
-              class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4 cursor-pointer hover:bg-stone-100 dark:hover:bg-ink-3 transition-colors duration-150">
-              <div class="flex items-center justify-end gap-1">
-                <span>{{ t('common.amount') }}</span>
-                <component :is="getSortIcon('amount')" class="h-3 w-3"
-                  :class="sortField === 'amount' ? 'text-amber-700 dark:text-amber-400' : ''" />
-              </div>
-            </th>
-            <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">
+            <SortableTh :sort-key="'vendor'" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" :align="'left'"
+              :th-class="'px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4 hover:bg-stone-100 dark:hover:bg-ink-3 duration-150'">
+              {{ t('common.vendor') }}
+            </SortableTh>
+            <SortableTh :sort-key="'date'" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" :align="'right'"
+              :th-class="'px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4 hover:bg-stone-100 dark:hover:bg-ink-3 duration-150'">
+              {{ t('common.date') }}
+            </SortableTh>
+            <SortableTh :sort-key="'amount'" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" :align="'right'"
+              :th-class="'px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4 hover:bg-stone-100 dark:hover:bg-ink-3 duration-150'">
+              {{ t('common.amount') }}
+            </SortableTh>
+            <SortableTh :sort-key="'account'" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" :align="'left'"
+              :th-class="'px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4 hover:bg-stone-100 dark:hover:bg-ink-3 duration-150'">
               {{ t('common.account') }}
-            </th>
+            </SortableTh>
             <th class="relative px-4 py-3 border-b border-stone-200 dark:border-ink-4">
               <span class="sr-only">{{ t('common.actions') }}</span>
             </th>
@@ -422,13 +411,8 @@
         <!-- Mobile Headers (lg:hidden pattern for test assertions) -->
         <thead class="bg-cream-2 dark:bg-ink-2 lg:hidden">
           <tr>
-            <th @click="handleSort('vendor')"
-              class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 cursor-pointer hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150">
-              <div class="flex items-center gap-1">
-                <span>{{ t('common.vendor') }}</span>
-                <component :is="getSortIcon('vendor')" class="h-3 w-3"
-                  :class="sortField === 'vendor' ? 'text-amber-700 dark:text-amber-400' : ''" />
-              </div>
+            <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
+              {{ t('common.vendor') }}
             </th>
             <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
               {{ t('common.account') }}
@@ -441,13 +425,8 @@
         <!-- Desktop Headers (hidden lg:table-header-group pattern for test assertions) -->
         <thead class="bg-cream-2 dark:bg-ink-2 hidden lg:table-header-group">
           <tr>
-            <th @click="handleSort('vendor')"
-              class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 cursor-pointer transition-colors duration-150">
-              <div class="flex items-center gap-1">
-                <span>{{ t('common.vendor') }}</span>
-                <component :is="getSortIcon('vendor')" class="h-3 w-3"
-                  :class="sortField === 'vendor' ? 'text-amber-700 dark:text-amber-400' : ''" />
-              </div>
+            <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
+              {{ t('common.vendor') }}
             </th>
             <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
               {{ t('common.account') }}
@@ -825,15 +804,14 @@ import {
   Wallet,
   Smartphone,
   Building2,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   AlertCircle,
   MoreVertical,
   X
 } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
 import RecordLink from '../components/RecordLink.vue';
+import SortableTh from '../components/SortableTh.vue';
+import { useTableSort, type SortAccessor } from '../composables/useTableSort';
 import { useI18n } from '../composables/useI18n';
 import { useUrlFilters } from '../composables/useUrlFilters';
 import { useModalEscape } from '../composables/useModalEscape';
@@ -882,30 +860,41 @@ interface VendorWithOutstanding extends Vendor {
   pendingItems: number;
 }
 
-// Sort state
-type SortField = 'vendor' | 'amount' | 'date' | null;
-type SortOrder = 'asc' | 'desc';
-const sortField = ref<SortField>('date'); // Default sort by date
-const sortOrder = ref<SortOrder>('desc'); // Default descending (newest first)
+// Desktop table column sorting (client-side, since the full list is loaded).
+// Default: most-recent payment first.
+const { sortKey, sortDir, toggleSort, sortRows } = useTableSort<Payment>({
+  defaultKey: 'date',
+  defaultDir: 'desc',
+});
+
+// Maps a column key -> the comparable value for that row.
+const paymentSortAccessor: SortAccessor<Payment> = (row, key) => {
+  switch (key) {
+    case 'vendor': return row.expand?.vendor?.contact_person;
+    case 'account': return row.expand?.account?.name;
+    case 'amount': return row.amount;
+    case 'date': return row.payment_date;
+    case 'status': {
+      const allocations = row.expand?.payment_allocations || [];
+      const allocated = allocations.reduce((sum, a) => sum + a.allocated_amount, 0);
+      if (allocations.length === 0 || allocated === 0) return 'unallocated';
+      if (allocated >= row.amount) return 'allocated';
+      return 'partial';
+    }
+    default: return undefined;
+  }
+};
 
 // Use site data management - consolidated to prevent auto-cancellation issues
 const { data: paymentsData, loading: paymentsLoading, reload: reloadPayments } = useSiteData(async () => {
-  // Build sort parameter for backend
-  let sortParam = '-payment_date'; // Default
-  if (sortField.value === 'date') {
-    sortParam = sortOrder.value === 'desc' ? '-payment_date' : 'payment_date';
-  } else if (sortField.value === 'amount') {
-    sortParam = sortOrder.value === 'desc' ? '-amount' : 'amount';
-  }
-  // Note: vendor sorting will be done client-side since it's a relation
-
   // Branch the primary payments fetch on the active URL relation-filter:
   // ?vendor -> getByVendor, ?account -> getByAccount, otherwise the full getAll().
   // Both filtered fetches are site-scoped, fully-expanded getFullList queries.
+  // Sorting is applied client-side (sortRows) over the full list, so no server sort.
   const loadPayments = () => {
     if (filters.vendor) return paymentService.getByVendor(filters.vendor);
     if (filters.account) return paymentService.getByAccount(filters.account);
-    return paymentService.getAll({ sort: sortParam });
+    return paymentService.getAll();
   };
 
   const [payments, vendors, accounts, deliveries, serviceBookings] = await Promise.all([
@@ -927,26 +916,14 @@ const { data: paymentsData, loading: paymentsLoading, reload: reloadPayments } =
 
 // Computed properties from consolidated useSiteData
 const payments = computed<Payment[]>(() => {
-  let paymentsList: Payment[];
-
   // If there's a search query, use search results; otherwise use all payments from useSiteData
-  if (searchQuery.value.trim()) {
-    paymentsList = searchResults.value || [];
-  } else {
-    paymentsList = paymentsData.value?.payments || [];
-  }
+  const paymentsList = searchQuery.value.trim()
+    ? (searchResults.value || [])
+    : (paymentsData.value?.payments || []);
 
-  // Apply client-side sorting for vendor (since it's a relation)
-  if (sortField.value === 'vendor') {
-    paymentsList = [...paymentsList].sort((a, b) => {
-      const vendorA = a.expand?.vendor?.contact_person || a.expand?.vendor?.name || '';
-      const vendorB = b.expand?.vendor?.contact_person || b.expand?.vendor?.name || '';
-      const comparison = vendorA.localeCompare(vendorB);
-      return sortOrder.value === 'asc' ? comparison : -comparison;
-    });
-  }
-
-  return paymentsList;
+  // Apply the active desktop column sort over the displayed list (browse + search).
+  // sortRows is pure & stable and returns a new array (no mutation).
+  return sortRows(paymentsList, paymentSortAccessor);
 });
 const vendors = computed(() => paymentsData.value?.vendors || []);
 const accounts = computed(() => paymentsData.value?.accounts || []);
@@ -1077,34 +1054,6 @@ const reloadAllData = async () => {
   // With consolidated useSiteData, one reload call reloads all data
   await reloadPayments();
 };
-
-// Sort handler
-const handleSort = (field: SortField) => {
-  if (sortField.value === field) {
-    // Toggle sort order if clicking the same field
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
-  } else {
-    // Set new field and default to descending
-    sortField.value = field;
-    sortOrder.value = 'desc';
-  }
-};
-
-// Watch sort changes and reload data for backend-sorted fields
-watch([sortField, sortOrder], () => {
-  // Only reload for backend-sorted fields (amount and date)
-  // Vendor sorting is done client-side
-  if (sortField.value === 'amount' || sortField.value === 'date') {
-    reloadPayments();
-  }
-});
-
-// Helper function to get sort icon
-const getSortIcon = (field: SortField) => {
-  if (sortField.value !== field) return ArrowUpDown;
-  return sortOrder.value === 'asc' ? ArrowUp : ArrowDown;
-};
-
 
 const handleAddPayment = () => {
   if (!canCreatePayment) {

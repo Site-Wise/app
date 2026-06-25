@@ -215,7 +215,9 @@ vi.mock('../../composables/useSiteData', () => ({
             id: 'booking-1',
             service: 'service-1',
             vendor: 'vendor-1',
-            start_date: '2024-01-15',
+            // Later date so booking-1 stays first under the view's default
+            // start-date DESC table sort, preserving these tests' card[0] ordering.
+            start_date: '2024-01-20',
             duration: 5,
             unit_rate: 100,
             total_amount: 500,
@@ -232,7 +234,7 @@ vi.mock('../../composables/useSiteData', () => ({
             id: 'booking-2',
             service: 'service-2',
             vendor: 'vendor-2',
-            start_date: '2024-01-20',
+            start_date: '2024-01-15',
             duration: 3,
             unit_rate: 150,
             total_amount: 450,

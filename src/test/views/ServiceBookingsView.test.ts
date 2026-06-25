@@ -886,7 +886,9 @@ describe('ServiceBookingsView "View all images" gallery', () => {
       id: 'booking-1',
       service: 'service-1',
       vendor: 'vendor-1',
-      start_date: '2024-03-15',
+      // Latest date so booking-1 stays first under the default start-date DESC
+      // table sort, keeping allImages/overlayInfo in booking-1/2/3 order.
+      start_date: '2024-05-01',
       duration: 8,
       unit_rate: 500,
       total_amount: 4000,
@@ -918,7 +920,7 @@ describe('ServiceBookingsView "View all images" gallery', () => {
       id: 'booking-3',
       service: 'service-3',
       vendor: 'vendor-3',
-      start_date: '2024-05-01',
+      start_date: '2024-03-15',
       duration: 2,
       unit_rate: 100,
       total_amount: 200,
@@ -1060,7 +1062,7 @@ describe('ServiceBookingsView "View all images" gallery', () => {
       expect(data.overlayInfo[0]).toMatchObject({
         vendorName: 'Alice Vendor',
         items: ['Plumbing'],
-        deliveryDate: '2024-03-15'
+        deliveryDate: '2024-05-01'
       })
       expect(data.overlayInfo[2]).toMatchObject({
         vendorName: 'Bob Vendor',
@@ -1124,5 +1126,189 @@ describe('ServiceBookingsView "View all images" gallery', () => {
 
       wrapper.unmount()
     })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Desktop table column sorting (useTableSort + SortableTh).
+//
+// The view sorts the displayed bookings CLIENT-side via sortRows with a column
+// accessor. Default sort is start date, descending. Clicking a SortableTh header
+// sets the active sort key; re-clicking the same header flips the direction.
+//
+// We reuse the bookings loader seeding (siteDataControl) so `serviceBookings`
+// resolves against real fixtures and the displayed (sorted) array is observable.
+// ---------------------------------------------------------------------------
+
+describe('ServiceBookingsView desktop column sorting', () => {
+  let mount: typeof import('@vue/test-utils').mount
+  let ServiceBookingsView: any
+
+  // Three bookings whose total_amount / start_date orderings are all distinct so
+  // each sort key produces an unambiguous expected order.
+  const makeBookings = () => [
+    {
+      id: 'booking-1',
+      service: 'service-1',
+      vendor: 'vendor-1',
+      start_date: '2024-03-15',
+      duration: 8,
+      unit_rate: 500,
+      total_amount: 4000,
+      percent_completed: 50,
+      site: 'site-1',
+      expand: {
+        vendor: { id: 'vendor-1', contact_person: 'Alice Vendor', name: 'Alice Co' },
+        service: { id: 'service-1', name: 'Plumbing' }
+      }
+    },
+    {
+      id: 'booking-2',
+      service: 'service-2',
+      vendor: 'vendor-2',
+      start_date: '2024-01-01',
+      duration: 4,
+      unit_rate: 600,
+      total_amount: 9000,
+      percent_completed: 100,
+      site: 'site-1',
+      expand: {
+        vendor: { id: 'vendor-2', contact_person: 'Bob Vendor', name: 'Bob Co' },
+        service: { id: 'service-2', name: 'Electrical' }
+      }
+    },
+    {
+      id: 'booking-3',
+      service: 'service-3',
+      vendor: 'vendor-3',
+      start_date: '2024-05-01',
+      duration: 2,
+      unit_rate: 100,
+      total_amount: 200,
+      percent_completed: 0,
+      site: 'site-1',
+      expand: {
+        vendor: { id: 'vendor-3', contact_person: 'Carol Vendor', name: 'Carol Co' },
+        service: { id: 'service-3', name: 'Carpentry' }
+      }
+    }
+  ]
+
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    siteDataCallIndex = 0
+    siteDataControl.bookings = []
+    mockFilters.vendor = undefined
+    mockFilters.service = undefined
+    serviceBookingMocks.getAll.mockResolvedValue([])
+    serviceBookingMocks.getByVendor.mockResolvedValue([])
+    serviceBookingMocks.getByService.mockResolvedValue([])
+    ;({ mount } = await import('@vue/test-utils'))
+    ServiceBookingsView = (await import('../../views/ServiceBookingsView.vue')).default
+  })
+
+  const mountView = () =>
+    mount(ServiceBookingsView, {
+      global: {
+        stubs: {
+          RecordLink: { template: '<span><slot />{{ label }}</span>', props: ['type', 'mode', 'id', 'label'] },
+          SearchBox: true,
+          CardDropdownMenu: true,
+          PhotoGallery: true,
+          ImageSlider: {
+            name: 'ImageSlider',
+            template: '<div class="mock-image-slider" v-if="show"></div>',
+            props: ['show', 'images', 'overlayInfo', 'initialIndex'],
+            emits: ['close', 'update:show']
+          },
+          FileUploadComponent: true,
+          VendorSearchBox: true,
+          ServiceSearchBox: true,
+          TimeCalculatorModal: true,
+          Skeleton: true,
+          'router-link': { template: '<a><slot /></a>', props: ['to'] }
+        }
+      }
+    })
+
+  // The displayed (sorted) bookings array exposed by the view.
+  const displayedIds = (wrapper: any) =>
+    (wrapper.vm.serviceBookings as any[]).map(b => b.id)
+
+  it('defaults to start date descending', () => {
+    siteDataControl.bookings = makeBookings()
+    const wrapper = mountView()
+
+    expect(wrapper.vm.sortKey).toBe('startDate')
+    expect(wrapper.vm.sortDir).toBe('desc')
+    // 2024-05-01 (b3) > 2024-03-15 (b1) > 2024-01-01 (b2)
+    expect(displayedIds(wrapper)).toEqual(['booking-3', 'booking-1', 'booking-2'])
+
+    wrapper.unmount()
+  })
+
+  it('clicking the total header sets sortKey="total" and total-sorts the displayed bookings', async () => {
+    siteDataControl.bookings = makeBookings()
+    const wrapper = mountView()
+
+    wrapper.vm.toggleSort('total')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.vm.sortKey).toBe('total')
+    // toggleSort applies the composable's default dir (desc) for a newly-active key.
+    expect(wrapper.vm.sortDir).toBe('desc')
+    // total desc: 9000 (b2) > 4000 (b1) > 200 (b3)
+    expect(displayedIds(wrapper)).toEqual(['booking-2', 'booking-1', 'booking-3'])
+
+    wrapper.unmount()
+  })
+
+  it('re-clicking the same header flips the sort direction', async () => {
+    siteDataControl.bookings = makeBookings()
+    const wrapper = mountView()
+
+    wrapper.vm.toggleSort('total')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.vm.sortDir).toBe('desc')
+    expect(displayedIds(wrapper)).toEqual(['booking-2', 'booking-1', 'booking-3'])
+
+    wrapper.vm.toggleSort('total')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.vm.sortKey).toBe('total')
+    expect(wrapper.vm.sortDir).toBe('asc')
+    // total asc: 200 (b3) < 4000 (b1) < 9000 (b2)
+    expect(displayedIds(wrapper)).toEqual(['booking-3', 'booking-1', 'booking-2'])
+
+    wrapper.unmount()
+  })
+
+  it('clicking the total header via the rendered SortableTh component triggers the sort', async () => {
+    siteDataControl.bookings = makeBookings()
+    const wrapper = mountView()
+
+    // Find the rendered SortableTh whose sort-key is "total" and click it.
+    const headers = wrapper.findAllComponents({ name: 'SortableTh' })
+    const totalHeader = headers.find((h: any) => h.props('sortKey') === 'total')
+    expect(totalHeader).toBeTruthy()
+
+    await totalHeader!.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.vm.sortKey).toBe('total')
+    expect(displayedIds(wrapper)).toEqual(['booking-2', 'booking-1', 'booking-3'])
+
+    wrapper.unmount()
+  })
+
+  it('sorts by service name using the expand accessor', async () => {
+    siteDataControl.bookings = makeBookings()
+    const wrapper = mountView()
+
+    wrapper.vm.toggleSort('service')
+    await wrapper.vm.$nextTick()
+    // service desc: Plumbing (b1) > Electrical (b2) > Carpentry (b3)
+    expect(displayedIds(wrapper)).toEqual(['booking-1', 'booking-2', 'booking-3'])
+
+    wrapper.unmount()
   })
 })

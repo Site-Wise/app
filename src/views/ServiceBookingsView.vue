@@ -230,12 +230,12 @@
           <table class="min-w-full">
             <thead class="bg-cream-2 dark:bg-ink-2 border-b border-stone-200 dark:border-ink-4">
               <tr>
-                <th class="py-3 px-4 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('services.service') }}</th>
-                <th class="py-3 px-4 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 hidden lg:table-cell">{{ t('services.vendor') }}</th>
-                <th class="py-3 px-4 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 hidden xl:table-cell">{{ t('serviceBookings.startDate') }}</th>
-                <th class="py-3 px-4 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('serviceBookings.progress') }}</th>
-                <th class="py-3 px-4 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('common.total') }}</th>
-                <th class="py-3 px-4 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('serviceBookings.paymentStatus') }}</th>
+                <SortableTh sort-key="service" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="left" th-class="py-3 px-4 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400" :label="t('services.service')" />
+                <SortableTh sort-key="vendor" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="left" th-class="py-3 px-4 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 hidden lg:table-cell" :label="t('services.vendor')" />
+                <SortableTh sort-key="startDate" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="right" th-class="py-3 px-4 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 hidden xl:table-cell" :label="t('serviceBookings.startDate')" />
+                <SortableTh sort-key="progress" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="left" th-class="py-3 px-4 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400" :label="t('serviceBookings.progress')" />
+                <SortableTh sort-key="total" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="right" th-class="py-3 px-4 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400" :label="t('common.total')" />
+                <SortableTh sort-key="paymentStatus" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="left" th-class="py-3 px-4 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400" :label="t('serviceBookings.paymentStatus')" />
                 <th class="py-3 px-4 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('common.actions') }}</th>
               </tr>
             </thead>
@@ -734,7 +734,9 @@ import {
 import Skeleton from '../components/Skeleton.vue';
 import FileUploadComponent from '../components/FileUploadComponent.vue';
 import RecordLink from '../components/RecordLink.vue';
+import SortableTh from '../components/SortableTh.vue';
 import { useI18n } from '../composables/useI18n';
+import { useTableSort } from '../composables/useTableSort';
 import { useUrlFilters } from '../composables/useUrlFilters';
 import { useModalEscape } from '../composables/useModalEscape';
 import { usePermissions } from '../composables/usePermissions';
@@ -782,6 +784,22 @@ const { filters, hasActiveFilter, clearFilter } = useUrlFilters(['vendor', 'serv
 // Search functionality
 const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useServiceBookingSearch();
 
+// Desktop table column sorting (client-side over the full displayed list).
+const { sortKey, sortDir, toggleSort, sortRows } = useTableSort({ defaultKey: 'startDate', defaultDir: 'desc' });
+
+// Maps a column's sort key to the comparable value on a booking row.
+const sortAccessor = (row: ServiceBookingWithPaymentStatus, key: string): unknown => {
+  switch (key) {
+    case 'service': return row.expand?.service?.name;
+    case 'vendor': return row.expand?.vendor?.contact_person;
+    case 'startDate': return row.start_date;
+    case 'progress': return row.percent_completed;
+    case 'total': return row.total_amount;
+    case 'paymentStatus': return row.payment_status;
+    default: return undefined;
+  }
+};
+
 // Client-side payment status calculation
 const paymentAllocations = computed(() => paymentAllocationsData.value || []);
 
@@ -814,11 +832,14 @@ const serviceBookings = computed((): ServiceBookingWithPaymentStatus[] => {
   const baseBookings = searchQuery.value.trim() ? searchResults.value : (allServiceBookingsData.value || []);
   
   // Add computed payment status and outstanding amount to each booking
-  return baseBookings.map(booking => ({
+  const withStatus = baseBookings.map(booking => ({
     ...booking,
     payment_status: calculatePaymentStatus(booking),
     outstanding: calculateOutstandingAmount(booking)
   }));
+
+  // Client-side column sort over the full displayed list (browse + search).
+  return sortRows(withStatus, sortAccessor);
 });
 
 // Use site data management - Load service bookings.

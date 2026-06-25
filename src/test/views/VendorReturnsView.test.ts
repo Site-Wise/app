@@ -881,6 +881,135 @@ describe('VendorReturnsView', () => {
     })
   })
 
+  describe('Column Sorting', () => {
+    // Three returns with distinct vendors, dates, amounts and statuses so each
+    // sort direction is unambiguous.
+    const sortReturns = [
+      {
+        id: 'r-b', vendor: 'v-b', return_date: '2024-02-10',
+        total_return_amount: 200, actual_refund_amount: 0, reason: 'Defective items',
+        status: 'approved', site: 'site-1',
+        expand: { vendor: { id: 'v-b', name: 'Bravo', contact_person: 'Bravo' } }
+      },
+      {
+        id: 'r-a', vendor: 'v-a', return_date: '2024-01-01',
+        total_return_amount: 900, actual_refund_amount: 0, reason: 'Defective items',
+        status: 'initiated', site: 'site-1',
+        expand: { vendor: { id: 'v-a', name: 'Alpha', contact_person: 'Alpha' } }
+      },
+      {
+        id: 'r-c', vendor: 'v-c', return_date: '2024-03-20',
+        total_return_amount: 500, actual_refund_amount: 0, reason: 'Defective items',
+        status: 'completed', site: 'site-1',
+        expand: { vendor: { id: 'v-c', name: 'Charlie', contact_person: 'Charlie' } }
+      }
+    ]
+
+    const mountWithReturns = async (data: any[]) => {
+      const { useSiteData } = await import('../../composables/useSiteData')
+      vi.mocked(useSiteData).mockImplementation((serviceFunction: any) => {
+        const { ref } = require('vue')
+        const funcString = serviceFunction.toString()
+        if (funcString.includes('vendorReturnService.getByVendor') || funcString.includes('vendorReturnService.getAll')) {
+          return { data: ref(data), loading: ref(false), error: ref(null), reload: vi.fn() }
+        }
+        return { data: ref([]), loading: ref(false), error: ref(null), reload: vi.fn() }
+      })
+      const w = createWrapper()
+      await w.vm.$nextTick()
+      return w
+    }
+
+    const ids = (w: any) => w.vm.sortedReturns.map((r: any) => r.id)
+
+    it('defaults to return_date descending (newest first)', async () => {
+      const w = await mountWithReturns(sortReturns)
+      expect(w.vm.sortKey).toBe('returnDate')
+      expect(w.vm.sortDir).toBe('desc')
+      // r-c (Mar) > r-b (Feb) > r-a (Jan)
+      expect(ids(w)).toEqual(['r-c', 'r-b', 'r-a'])
+      w.unmount()
+    })
+
+    it('sorts by amount when the amount header is clicked', async () => {
+      const w = await mountWithReturns(sortReturns)
+      const headers = w.findAll('th')
+      // Vendor, Return Date, Return Amount, Status, Actions
+      const amountHeader = headers.find((h: any) => h.text().includes('vendors.returnAmount'))
+      expect(amountHeader).toBeDefined()
+      // First click on a new column applies the default direction (desc).
+      await amountHeader.trigger('click')
+      await w.vm.$nextTick()
+      expect(w.vm.sortKey).toBe('amount')
+      expect(w.vm.sortDir).toBe('desc')
+      // 900 (r-a) > 500 (r-c) > 200 (r-b)
+      expect(ids(w)).toEqual(['r-a', 'r-c', 'r-b'])
+      w.unmount()
+    })
+
+    it('flips amount to ascending on a second click', async () => {
+      const w = await mountWithReturns(sortReturns)
+      const amountHeader = w.findAll('th').find((h: any) => h.text().includes('vendors.returnAmount'))
+      await amountHeader.trigger('click')
+      await w.vm.$nextTick()
+      await amountHeader.trigger('click')
+      await w.vm.$nextTick()
+      expect(w.vm.sortKey).toBe('amount')
+      expect(w.vm.sortDir).toBe('asc')
+      // 200 (r-b) < 500 (r-c) < 900 (r-a)
+      expect(ids(w)).toEqual(['r-b', 'r-c', 'r-a'])
+      w.unmount()
+    })
+
+    it('sorts by return date ascending after re-clicking the date header', async () => {
+      const w = await mountWithReturns(sortReturns)
+      const dateHeader = w.findAll('th').find((h: any) => h.text().includes('vendors.returnDate'))
+      // returnDate is the default column (desc). Re-clicking flips it to asc.
+      await dateHeader.trigger('click')
+      await w.vm.$nextTick()
+      expect(w.vm.sortKey).toBe('returnDate')
+      expect(w.vm.sortDir).toBe('asc')
+      // Jan (r-a) < Feb (r-b) < Mar (r-c)
+      expect(ids(w)).toEqual(['r-a', 'r-b', 'r-c'])
+      w.unmount()
+    })
+
+    it('composes sorting with the status filter', async () => {
+      const w = await mountWithReturns(sortReturns)
+      w.vm.statusFilter = 'completed'
+      await w.vm.$nextTick()
+      // Sort by amount while filtered to a single status.
+      const amountHeader = w.findAll('th').find((h: any) => h.text().includes('vendors.returnAmount'))
+      await amountHeader.trigger('click')
+      await w.vm.$nextTick()
+      // Only r-c is 'completed'.
+      expect(ids(w)).toEqual(['r-c'])
+      w.unmount()
+    })
+
+    it('composes sorting with a multi-row status filter', async () => {
+      // Two returns sharing the 'approved' status with different amounts.
+      const data = [
+        { ...sortReturns[0], id: 'r-b', total_return_amount: 200, status: 'approved' },
+        { ...sortReturns[1], id: 'r-a', total_return_amount: 900, status: 'approved' },
+        { ...sortReturns[2], id: 'r-c', total_return_amount: 500, status: 'completed' }
+      ]
+      const w = await mountWithReturns(data)
+      w.vm.statusFilter = 'approved'
+      await w.vm.$nextTick()
+      const amountHeader = w.findAll('th').find((h: any) => h.text().includes('vendors.returnAmount'))
+      // First click -> amount desc; filtered to 'approved' (r-a 900, r-b 200).
+      await amountHeader.trigger('click')
+      await w.vm.$nextTick()
+      expect(ids(w)).toEqual(['r-a', 'r-b'])
+      // Second click -> amount asc.
+      await amountHeader.trigger('click')
+      await w.vm.$nextTick()
+      expect(ids(w)).toEqual(['r-b', 'r-a'])
+      w.unmount()
+    })
+  })
+
   describe('Reactive Data Management', () => {
     it('should handle site changes through useSiteData', async () => {
       // Site changes are handled automatically by useSiteData

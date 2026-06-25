@@ -174,10 +174,31 @@
       <table class="min-w-full divide-y divide-stone-200 dark:divide-ink-4">
           <thead class="bg-cream-2 dark:bg-ink-2 sticky top-0 z-10">
             <tr>
-              <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">{{ t('common.vendor') }}</th>
-              <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">{{ t('delivery.deliveryDate') }}</th>
+              <!-- Server-sortable (DB-backed) columns. -->
+              <SortableTh
+                sort-key="vendor" :active-key="sortKey" :direction="sortDir" @sort="toggleSort"
+                align="left"
+                th-class="px-4 py-3 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4"
+                :label="t('common.vendor')"
+              />
+              <SortableTh
+                sort-key="deliveryDate" :active-key="sortKey" :direction="sortDir" @sort="toggleSort"
+                align="right"
+                th-class="px-4 py-3 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4"
+                :label="t('delivery.deliveryDate')"
+              />
+              <!-- Item count is CLIENT-COMPUTED (derived from expand.delivery_items
+                   after load) so it has no server field; sorting it server-side
+                   would only reorder loaded pages. Kept NON-sortable. -->
               <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">{{ t('delivery.itemCount') }}</th>
-              <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">{{ t('common.total') }}</th>
+              <SortableTh
+                sort-key="total" :active-key="sortKey" :direction="sortDir" @sort="toggleSort"
+                align="right"
+                th-class="px-4 py-3 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4"
+                :label="t('common.total')"
+              />
+              <!-- Payment status is CLIENT-COMPUTED (calculated from allocations
+                   after load), so it is NOT server-sortable. Kept NON-sortable. -->
               <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">{{ t('delivery.paymentStatus') }}</th>
               <th class="relative px-4 py-3 border-b border-stone-200 dark:border-ink-4"><span class="sr-only">{{ t('common.actions') }}</span></th>
             </tr>
@@ -652,6 +673,8 @@ import { useEventListener } from '@vueuse/core';
 import { Plus, Edit2, Trash2, Loader2, Eye, X, Images, MoreVertical, AlertCircle, Link2 } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
 import RecordLink from '../components/RecordLink.vue';
+import SortableTh from '../components/SortableTh.vue';
+import { useTableSort } from '../composables/useTableSort';
 import { useI18n } from '../composables/useI18n';
 import { useUrlFilters } from '../composables/useUrlFilters';
 import { useModalEscape } from '../composables/useModalEscape';
@@ -685,12 +708,39 @@ const { openModal, closeModal } = useModalState();
 // URL-driven relation filter (?vendor=<id>) for cross-linking from VendorDetailView.
 const { filters, hasActiveFilter, clearFilter } = useUrlFilters(['vendor']);
 
+// Column sorting. Only DB-backed columns are server-sortable (deliveryDate,
+// total, vendor). The displayed `deliveries` are switched between server-paged
+// browse rows and the full search result set, so:
+//   - BROWSE mode: sorting is SERVER-SIDE (the order must be correct across ALL
+//     pages, not just the loaded ones), driven by `serverSort` -> reload.
+//   - SEARCH mode: results are a separate, full (non-paginated) set, so we sort
+//     them CLIENT-side via `sortRows`.
+const { sortKey, sortDir, toggleSort, sortRows } = useTableSort<DeliveryWithPaymentStatus>({
+  defaultKey: 'deliveryDate',
+  defaultDir: 'desc'
+});
+
+// Map the UI sortKey -> the PocketBase field for the DB-backed (server-sortable)
+// columns, then build the `field`/`-field` sort string from the direction.
+// CLIENT-COMPUTED columns (item count, payment status) are derived AFTER load and
+// therefore have no server field — they are intentionally NON-sortable (rendered
+// as plain <th>), so any unknown key here falls back to the delivery_date sort.
+const SORT_FIELD_MAP: Record<string, string> = {
+  deliveryDate: 'delivery_date',
+  total: 'total_amount',
+  vendor: 'vendor'
+};
+const serverSort = computed(() => {
+  const field = SORT_FIELD_MAP[sortKey.value ?? 'deliveryDate'] ?? 'delivery_date';
+  return `${sortDir.value === 'desc' ? '-' : ''}${field}`;
+});
+
 // Use site data management
-// Browse deliveries with incremental (infinite-scroll) loading. The server
-// already sorts by -delivery_date, so accumulated pages stay newest-first.
-// The loader branches on the active vendor filter: getByVendor when filtering,
-// getList otherwise. Both are paginated with the same shape, so infinite scroll
-// composes transparently with the filtered set.
+// Browse deliveries with incremental (infinite-scroll) loading. The server sorts
+// by `serverSort` (default -delivery_date), so accumulated pages stay in the
+// chosen order across pagination. The loader branches on the active vendor
+// filter: getByVendor when filtering, getList otherwise. Both are paginated with
+// the same shape, so infinite scroll composes transparently with the filtered set.
 const {
   items: infiniteDeliveries,
   loading: deliveriesLoading,
@@ -704,15 +754,17 @@ const {
 } = useInfiniteSiteData<Delivery>(
   (_siteId, page, perPage) =>
     filters.vendor
-      ? deliveryService.getByVendor(filters.vendor, page, perPage)
-      : deliveryService.getList(page, perPage),
+      ? deliveryService.getByVendor(filters.vendor, page, perPage, serverSort.value)
+      : deliveryService.getList(page, perPage, serverSort.value),
   { perPage: 50 }
 );
 
-// When the vendor filter changes, reset + reload the infinite list from page 1.
-// reloadDeliveries() already resets pagination and the composable's currentLoadId
-// guard prevents the auto-cancel race — so NO onMounted loader is needed.
+// When the vendor filter OR the server sort changes, reset + reload the infinite
+// list from page 1. reloadDeliveries() resets pagination and the composable's
+// currentLoadId guard + distinct requestKeys prevent the auto-cancel race — so
+// NO onMounted loader is needed.
 watch(() => filters.vendor, () => reloadDeliveries());
+watch(serverSort, () => reloadDeliveries());
 
 // Vendor name for the dismissible filter chip, derived reactively from the first
 // loaded filtered delivery. Falls back to a generic label until results arrive.
@@ -766,13 +818,33 @@ const viewingDeliveryAllocatedAmount = computed(() => {
     .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
 });
 
+// Accessor mapping a sortKey -> the comparable value on an (enhanced) delivery
+// row, used ONLY for client-side sorting of the search result set.
+const sortAccessor = (row: DeliveryWithPaymentStatus, key: string): unknown => {
+  switch (key) {
+    case 'deliveryDate': return row.delivery_date;
+    case 'total': return row.total_amount;
+    case 'vendor': return row.expand?.vendor?.contact_person ?? '';
+    default: return undefined;
+  }
+};
+
 // Display items: use search results if searching, otherwise the accumulated
 // infinite-scroll browse pages — both enhanced with calculated payment status.
 const deliveries = computed((): DeliveryWithPaymentStatus[] => {
-  const baseDeliveries = searchQuery.value.trim() ? searchResults.value : (infiniteDeliveries.value || []);
   const allocations = paymentAllocations.value || [];
 
-  return DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus(baseDeliveries, allocations);
+  if (searchQuery.value.trim()) {
+    // SEARCH mode: results are a full (non-paginated) set, so sort CLIENT-side by
+    // the active column. Enhance first so the accessor can read computed fields.
+    const enhanced = DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus(searchResults.value, allocations);
+    return sortRows(enhanced, sortAccessor);
+  }
+
+  // BROWSE mode: rows already arrive sorted from the server (across all pages).
+  // Do NOT re-sort client-side here — that would only reorder the loaded pages
+  // and produce an inconsistent order relative to not-yet-loaded rows.
+  return DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus(infiniteDeliveries.value || [], allocations);
 });
 
 // Removed unused allDeliveries computed property

@@ -706,6 +706,111 @@ describe('QuotationsView', () => {
     })
   })
 
+  describe('Column Sorting', () => {
+    // Build a wrapper with several quotations to verify ordering changes.
+    const sortQuotations = [
+      {
+        id: 'q-a', vendor: 'v-1', item: 'i-1', unit_price: 30, minimum_quantity: 5,
+        valid_until: '2024-01-10', status: 'pending', site: 'site-1',
+        expand: { vendor: { id: 'v-1', contact_person: 'Charlie' }, item: { id: 'i-1', name: 'Bricks', unit: 'pcs' } }
+      },
+      {
+        id: 'q-b', vendor: 'v-2', item: 'i-2', unit_price: 10, minimum_quantity: 50,
+        valid_until: '2024-12-31', status: 'approved', site: 'site-1',
+        expand: { vendor: { id: 'v-2', contact_person: 'Alice' }, item: { id: 'i-2', name: 'Cement', unit: 'kg' } }
+      },
+      {
+        id: 'q-c', vendor: 'v-3', item: 'i-3', unit_price: 20, minimum_quantity: 100,
+        valid_until: '2024-06-15', status: 'rejected', site: 'site-1',
+        expand: { vendor: { id: 'v-3', contact_person: 'Bob' }, item: { id: 'i-3', name: 'Aggregate', unit: 'kg' } }
+      }
+    ]
+
+    const mountWithSortData = async () => {
+      const { useSiteData } = await import('../../composables/useSiteData')
+      vi.mocked(useSiteData).mockImplementation((serviceFunction: any) => {
+        const { ref } = require('vue')
+        if (serviceFunction.toString().includes('quotationService.getAll')) {
+          return { data: ref(sortQuotations), loading: ref(false), error: ref(null), reload: vi.fn() }
+        }
+        return { data: ref([]), loading: ref(false), error: ref(null), reload: vi.fn() }
+      })
+      const w = createWrapper()
+      await w.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 0))
+      return w
+    }
+
+    it('defaults to valid_until descending', async () => {
+      const w = await mountWithSortData()
+      expect(w.vm.sortKey).toBe('valid_until')
+      expect(w.vm.sortDir).toBe('desc')
+      // Newest valid_until first: q-b (2024-12-31), q-c (2024-06-15), q-a (2024-01-10)
+      const ids = w.vm.displayedQuotations.map((q: any) => q.id)
+      expect(ids).toEqual(['q-b', 'q-c', 'q-a'])
+      w.unmount()
+    })
+
+    it('sets sortKey/sortDir and reorders when a sortable header is clicked', async () => {
+      const w = await mountWithSortData()
+      // Click the unit_price header -> ascending (default dir 'desc'? toggleSort uses defaultDir)
+      w.vm.toggleSort('unit_price')
+      await w.vm.$nextTick()
+      expect(w.vm.sortKey).toBe('unit_price')
+      // toggleSort on a new key uses the composable's default direction (desc)
+      expect(w.vm.sortDir).toBe('desc')
+      // unit_price desc: q-a (30), q-c (20), q-b (10)
+      expect(w.vm.displayedQuotations.map((q: any) => q.id)).toEqual(['q-a', 'q-c', 'q-b'])
+      w.unmount()
+    })
+
+    it('flips direction when the same header is clicked again', async () => {
+      const w = await mountWithSortData()
+      w.vm.toggleSort('unit_price')
+      await w.vm.$nextTick()
+      expect(w.vm.sortDir).toBe('desc')
+      w.vm.toggleSort('unit_price')
+      await w.vm.$nextTick()
+      expect(w.vm.sortDir).toBe('asc')
+      // unit_price asc: q-b (10), q-c (20), q-a (30)
+      expect(w.vm.displayedQuotations.map((q: any) => q.id)).toEqual(['q-b', 'q-c', 'q-a'])
+      w.unmount()
+    })
+
+    it('sorts by vendor contact_person via the accessor', async () => {
+      const w = await mountWithSortData()
+      w.vm.toggleSort('vendor')
+      w.vm.sortDir = 'asc'
+      await w.vm.$nextTick()
+      // vendor asc by contact_person: Alice (q-b), Bob (q-c), Charlie (q-a)
+      expect(w.vm.displayedQuotations.map((q: any) => q.id)).toEqual(['q-b', 'q-c', 'q-a'])
+      w.unmount()
+    })
+
+    it('sorts by item name via the accessor', async () => {
+      const w = await mountWithSortData()
+      w.vm.toggleSort('item')
+      w.vm.sortDir = 'asc'
+      await w.vm.$nextTick()
+      // item asc by name: Aggregate (q-c), Bricks (q-a), Cement (q-b)
+      expect(w.vm.displayedQuotations.map((q: any) => q.id)).toEqual(['q-c', 'q-a', 'q-b'])
+      w.unmount()
+    })
+
+    it('renders SortableTh headers that emit sort on click', async () => {
+      const w = await mountWithSortData()
+      const headers = w.findAllComponents({ name: 'SortableTh' })
+      expect(headers.length).toBe(6)
+      // Click the Status header
+      const statusHeader = headers.find((h: any) => h.props('sortKey') === 'status')
+      expect(statusHeader).toBeTruthy()
+      await statusHeader!.trigger('click')
+      await w.vm.$nextTick()
+      expect(w.vm.sortKey).toBe('status')
+      w.unmount()
+    })
+  })
+
   describe('Search Integration', () => {
     it('should use search results when searching', async () => {
       // Test the search logic directly on the component

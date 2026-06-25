@@ -75,12 +75,12 @@
       <table class="hidden xl:table min-w-full border border-stone-200 dark:border-ink-4 rounded-none bg-white dark:bg-ink-3 shadow-card dark:shadow-inset-hi">
         <thead class="hidden xl:table-header-group bg-cream-2 dark:bg-ink-2 border-b border-stone-200 dark:border-ink-4">
           <tr>
-            <th class="py-3 px-4 text-left sw-eyebrow">{{ t('common.item') }}</th>
-            <th class="py-3 px-4 text-left sw-eyebrow">{{ t('common.vendor') }}</th>
-            <th class="py-3 px-4 text-right sw-eyebrow">{{ t('quotations.unitPrice') }}</th>
-            <th class="py-3 px-4 text-right sw-eyebrow">{{ t('quotations.minimumQuantity') }}</th>
-            <th class="py-3 px-4 text-right sw-eyebrow">{{ t('quotations.validUntil') }}</th>
-            <th class="py-3 px-4 text-left sw-eyebrow">{{ t('common.status') }}</th>
+            <SortableTh sort-key="item" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="left" th-class="py-3 px-4 sw-eyebrow" :label="t('common.item')" />
+            <SortableTh sort-key="vendor" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="left" th-class="py-3 px-4 sw-eyebrow" :label="t('common.vendor')" />
+            <SortableTh sort-key="unit_price" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="right" th-class="py-3 px-4 sw-eyebrow" :label="t('quotations.unitPrice')" />
+            <SortableTh sort-key="minimum_quantity" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="right" th-class="py-3 px-4 sw-eyebrow" :label="t('quotations.minimumQuantity')" />
+            <SortableTh sort-key="valid_until" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="right" th-class="py-3 px-4 sw-eyebrow" :label="t('quotations.validUntil')" />
+            <SortableTh sort-key="status" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="left" th-class="py-3 px-4 sw-eyebrow" :label="t('common.status')" />
             <th class="py-3 px-4 text-left sw-eyebrow">{{ t('common.actions') }}</th>
           </tr>
         </thead>
@@ -98,7 +98,7 @@
           </template>
           <template v-else>
           <tr
-            v-for="quotation in quotations"
+            v-for="quotation in displayedQuotations"
             :key="quotation.id"
             @click="editQuotation(quotation)"
             class="group cursor-pointer hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap"
@@ -198,7 +198,7 @@
           </div>
         </template>
         <div v-else
-          v-for="quotation in quotations"
+          v-for="quotation in displayedQuotations"
           :key="quotation.id"
           @click="editQuotation(quotation)"
           class="card group cursor-pointer active:scale-[0.99] transition-transform duration-150 ease-snap"
@@ -273,7 +273,7 @@
       </div>
 
       <!-- Empty state -->
-      <div v-if="quotations.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
+      <div v-if="displayedQuotations.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
         <FileText class="h-12 w-12 text-stone-300 dark:text-stone-600 mb-4" />
         <h3 class="font-display text-lg font-semibold text-ink dark:text-cream">{{ t('quotations.noQuotations') }}</h3>
         <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">{{ t('quotations.getStarted') }}</p>
@@ -386,6 +386,7 @@ import { useEventListener } from '@vueuse/core';
 import { FileText, Plus, Edit2, Trash2, Loader2, X } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
 import RecordLink from '../components/RecordLink.vue';
+import SortableTh from '../components/SortableTh.vue';
 import {
   quotationService,
   itemService,
@@ -399,6 +400,7 @@ import { useI18n } from '../composables/useI18n';
 import { usePermissions } from '../composables/usePermissions';
 import { useUrlFilters } from '../composables/useUrlFilters';
 import { useSiteData } from '../composables/useSiteData';
+import { useTableSort } from '../composables/useTableSort';
 import { useQuotationSearch } from '../composables/useSearch';
 import { useModalState } from '../composables/useModalState';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
@@ -420,6 +422,36 @@ const { searchQuery, loading: searchLoading, results: searchResults, loadAll } =
 const quotations = computed(() => {
   return searchQuery.value.trim() ? searchResults.value : allQuotations.value
 });
+
+// Client-side column sorting. The full list is loaded via useSiteData, so we sort
+// the final displayed array (browse + search). Default: most recent valid_until first.
+const { sortKey, sortDir, toggleSort, sortRows } = useTableSort<Quotation>({
+  defaultKey: 'valid_until',
+  defaultDir: 'desc',
+});
+
+// Maps each sortable column key to its comparable value (nested expand-aware).
+const sortAccessor = (row: Quotation, key: string): unknown => {
+  switch (key) {
+    case 'item':
+      return row.expand?.service?.name ?? row.expand?.item?.name ?? null;
+    case 'vendor':
+      return row.expand?.vendor?.contact_person ?? null;
+    case 'unit_price':
+      return row.unit_price ?? null;
+    case 'minimum_quantity':
+      return row.minimum_quantity ?? null;
+    case 'valid_until':
+      return row.valid_until || null;
+    case 'status':
+      return row.status ?? null;
+    default:
+      return null;
+  }
+};
+
+// Final, sorted list rendered by both the desktop table and mobile cards.
+const displayedQuotations = computed(() => sortRows(quotations.value, sortAccessor));
 
 // Use site data management. The primary loader branches on the active relation
 // filter by precedence (vendor -> item -> service -> unfiltered). All branches
