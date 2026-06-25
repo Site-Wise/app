@@ -718,6 +718,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, nextTick, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { useEventListener } from '@vueuse/core';
 import {
   Calendar,
@@ -770,6 +771,7 @@ interface ServiceBookingWithPaymentStatus extends ServiceBooking {
   outstanding: number;
 }
 
+const route = useRoute();
 const { t } = useI18n();
 const { canCreate, canUpdate, canDelete } = usePermissions();
 const { success: showSuccessToast, error: showErrorToast } = useToast();
@@ -1352,6 +1354,35 @@ const handleKeyboardShortcut = async (event: KeyboardEvent) => {
     }
   }
 };
+
+// Deep-link auto-open: when the dashboard (or any cross-link) navigates to
+// /service-bookings?id=<id>, open that booking's view modal. This loads the
+// record directly via the site-scoped getById, independently of the list data
+// (useSiteData), mirroring how PaymentsView handles ?paymentId. Graceful: if the
+// id is missing/unknown (getById returns null) we silently do nothing. The
+// ?vendor= / ?service= filters are untouched and keep working.
+const openBookingFromQuery = async (id: string) => {
+  try {
+    const booking = await serviceBookingService.getById(id);
+    if (!booking) return;
+    viewBooking(booking);
+  } catch {
+    // Not found or cross-site / network error: don't open, don't toast.
+  }
+};
+
+watch(
+  // Null-safe: `route` is undefined when the component is mounted without a
+  // router (e.g. some isolated unit tests). In that case there is simply no
+  // deep-link to honour, so we read nothing rather than throwing.
+  () => route?.query?.id,
+  (id) => {
+    if (typeof id === 'string' && id) {
+      void openBookingFromQuery(id);
+    }
+  },
+  { immediate: true }
+);
 
 // Event listeners using @vueuse/core
 useQuickActionModal(handleQuickAction);

@@ -444,6 +444,116 @@ describe('DeliveryView', () => {
     expect(wrapper.vm.viewingDelivery).toBeTruthy()
   })
 
+  describe('Deep-link auto-open (?id=)', () => {
+    it('loads the delivery via getById and opens the view modal when ?id is present', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+      deliveryService.getById.mockResolvedValue({
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        delivery_reference: 'INV-001',
+        total_amount: 1500,
+        payment_status: 'paid',
+        photos: [],
+        expand: { vendor: { id: 'vendor-1', contact_person: 'Test Vendor' }, delivery_items: [] }
+      })
+
+      // Mount with the deep-link query already present so the immediate watcher fires.
+      const router = createMockRouter()
+      await router.push({ path: '/', query: { id: 'delivery-1' } })
+      await router.isReady()
+
+      const localWrapper = mount(DeliveryView, {
+        global: {
+          plugins: [router, pinia],
+          stubs: {
+            'router-link': true,
+            'router-view': true,
+            RecordLink: {
+              name: 'RecordLink',
+              template: '<span class="mock-record-link">{{ label }}</span>',
+              props: ['type', 'id', 'label', 'mode', 'target', 'filterKey']
+            }
+          }
+        }
+      })
+
+      await localWrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await localWrapper.vm.$nextTick()
+
+      expect(deliveryService.getById).toHaveBeenCalledWith('delivery-1')
+      expect(localWrapper.vm.viewingDelivery).toBeTruthy()
+      expect(localWrapper.vm.viewingDelivery.id).toBe('delivery-1')
+
+      localWrapper.unmount()
+    })
+
+    it('does not open the modal when no ?id is present', async () => {
+      const router = createMockRouter()
+      await router.push({ path: '/' })
+      await router.isReady()
+
+      const localWrapper = mount(DeliveryView, {
+        global: {
+          plugins: [router, pinia],
+          stubs: {
+            'router-link': true,
+            'router-view': true,
+            RecordLink: {
+              name: 'RecordLink',
+              template: '<span class="mock-record-link">{{ label }}</span>',
+              props: ['type', 'id', 'label', 'mode', 'target', 'filterKey']
+            }
+          }
+        }
+      })
+
+      await localWrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await localWrapper.vm.$nextTick()
+
+      // No deep-link id => the auto-open watcher never runs, so the modal stays closed.
+      expect(localWrapper.vm.viewingDelivery).toBeFalsy()
+
+      localWrapper.unmount()
+    })
+
+    it('silently does nothing when ?id refers to an unknown delivery', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+      // getById resolves null (not found / cross-site) per the service contract.
+      deliveryService.getById.mockResolvedValue(null as any)
+
+      const router = createMockRouter()
+      await router.push({ path: '/', query: { id: 'missing-id' } })
+      await router.isReady()
+
+      const localWrapper = mount(DeliveryView, {
+        global: {
+          plugins: [router, pinia],
+          stubs: {
+            'router-link': true,
+            'router-view': true,
+            RecordLink: {
+              name: 'RecordLink',
+              template: '<span class="mock-record-link">{{ label }}</span>',
+              props: ['type', 'id', 'label', 'mode', 'target', 'filterKey']
+            }
+          }
+        }
+      })
+
+      await localWrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await localWrapper.vm.$nextTick()
+
+      expect(deliveryService.getById).toHaveBeenCalledWith('missing-id')
+      expect(localWrapper.vm.viewingDelivery).toBeFalsy()
+
+      localWrapper.unmount()
+    })
+  })
+
   it('should display search functionality', async () => {
     await wrapper.vm.$nextTick()
 

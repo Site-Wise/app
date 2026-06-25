@@ -14,6 +14,16 @@ const mockFilters = vi.hoisted(() => ({ vendor: undefined as string | undefined,
 // returned `data` ref without affecting any other test (default: empty list).
 const siteDataControl = vi.hoisted(() => ({ bookings: [] as any[] }))
 
+// --- Deep-link (?id=) test scaffolding --------------------------------------
+// The view now reads route.query.id via useRoute() to auto-open a booking's view
+// modal. We mock vue-router's useRoute so tests can set the query before mount.
+// Default: empty query (no deep-link) so existing mounted tests are unaffected.
+const mockRoute = vi.hoisted(() => ({ query: {} as Record<string, any> }))
+
+vi.mock('vue-router', () => ({
+  useRoute: () => mockRoute
+}))
+
 vi.mock('../../composables/useUrlFilters', () => ({
   useUrlFilters: () => ({
     filters: mockFilters,
@@ -29,6 +39,7 @@ const serviceBookingMocks = vi.hoisted(() => ({
   getAll: vi.fn().mockResolvedValue([]),
   getByVendor: vi.fn().mockResolvedValue([]),
   getByService: vi.fn().mockResolvedValue([]),
+  getById: vi.fn().mockResolvedValue(null),
   create: vi.fn().mockResolvedValue({ id: 'booking-new' }),
   update: vi.fn().mockResolvedValue({ id: 'booking-1' }),
   uploadCompletionPhoto: vi.fn().mockResolvedValue('photo.jpg')
@@ -805,9 +816,11 @@ describe('ServiceBookingsView URL-filter loader branching', () => {
     siteDataControl.bookings = []
     mockFilters.vendor = undefined
     mockFilters.service = undefined
+    mockRoute.query = {}
     serviceBookingMocks.getAll.mockResolvedValue([])
     serviceBookingMocks.getByVendor.mockResolvedValue([])
     serviceBookingMocks.getByService.mockResolvedValue([])
+    serviceBookingMocks.getById.mockResolvedValue(null)
     ;({ mount } = await import('@vue/test-utils'))
     ServiceBookingsView = (await import('../../views/ServiceBookingsView.vue')).default
   })
@@ -835,6 +848,73 @@ describe('ServiceBookingsView URL-filter loader branching', () => {
         }
       }
     })
+
+  // -------------------------------------------------------------------------
+  // Deep-link auto-open (?id=): /service-bookings?id=<id> opens the booking's
+  // view modal via the site-scoped serviceBookingService.getById, mirroring how
+  // PaymentsView handles ?paymentId. Graceful: unknown/absent id => no modal.
+  // -------------------------------------------------------------------------
+  describe('Deep-link auto-open (?id=)', () => {
+    const fullBooking = {
+      id: 'booking-1',
+      service: 'service-1',
+      vendor: 'vendor-1',
+      start_date: '2024-05-01',
+      duration: 8,
+      unit_rate: 500,
+      total_amount: 4000,
+      percent_completed: 50,
+      site: 'site-1',
+      completion_photos: [],
+      expand: {
+        vendor: { id: 'vendor-1', contact_person: 'Alice Vendor', name: 'Alice Co' },
+        service: { id: 'service-1', name: 'Plumbing' }
+      }
+    }
+
+    it('loads the booking via getById and opens the view modal when ?id is present', async () => {
+      mockRoute.query = { id: 'booking-1' }
+      serviceBookingMocks.getById.mockResolvedValue(fullBooking)
+
+      const wrapper = mountView()
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      expect(serviceBookingMocks.getById).toHaveBeenCalledWith('booking-1')
+      expect(wrapper.vm.viewingBooking).toBeTruthy()
+      expect(wrapper.vm.viewingBooking.id).toBe('booking-1')
+
+      wrapper.unmount()
+    })
+
+    it('does not open the modal when no ?id is present', async () => {
+      const wrapper = mountView()
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      expect(serviceBookingMocks.getById).not.toHaveBeenCalled()
+      expect(wrapper.vm.viewingBooking).toBeFalsy()
+
+      wrapper.unmount()
+    })
+
+    it('silently does nothing when ?id refers to an unknown booking', async () => {
+      mockRoute.query = { id: 'missing-id' }
+      serviceBookingMocks.getById.mockResolvedValue(null)
+
+      const wrapper = mountView()
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+
+      expect(serviceBookingMocks.getById).toHaveBeenCalledWith('missing-id')
+      expect(wrapper.vm.viewingBooking).toBeFalsy()
+
+      wrapper.unmount()
+    })
+  })
 
   it('branches to getByVendor when filtered by vendor', () => {
     mockFilters.vendor = 'vendor-42'
@@ -940,9 +1020,11 @@ describe('ServiceBookingsView "View all images" gallery', () => {
     siteDataControl.bookings = []
     mockFilters.vendor = undefined
     mockFilters.service = undefined
+    mockRoute.query = {}
     serviceBookingMocks.getAll.mockResolvedValue([])
     serviceBookingMocks.getByVendor.mockResolvedValue([])
     serviceBookingMocks.getByService.mockResolvedValue([])
+    serviceBookingMocks.getById.mockResolvedValue(null)
     ;({ mount } = await import('@vue/test-utils'))
     ServiceBookingsView = (await import('../../views/ServiceBookingsView.vue')).default
   })
@@ -1200,9 +1282,11 @@ describe('ServiceBookingsView desktop column sorting', () => {
     siteDataControl.bookings = []
     mockFilters.vendor = undefined
     mockFilters.service = undefined
+    mockRoute.query = {}
     serviceBookingMocks.getAll.mockResolvedValue([])
     serviceBookingMocks.getByVendor.mockResolvedValue([])
     serviceBookingMocks.getByService.mockResolvedValue([])
+    serviceBookingMocks.getById.mockResolvedValue(null)
     ;({ mount } = await import('@vue/test-utils'))
     ServiceBookingsView = (await import('../../views/ServiceBookingsView.vue')).default
   })

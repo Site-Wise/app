@@ -669,6 +669,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { useEventListener } from '@vueuse/core';
 import { Plus, Edit2, Trash2, Loader2, Eye, X, Images, MoreVertical, AlertCircle, Link2 } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
@@ -699,6 +700,7 @@ import { usePermissions } from '../composables/usePermissions';
 import { DeliveryPaymentCalculator, type DeliveryWithPaymentStatus } from '../services/deliveryUtils';
 import { useModalState } from '../composables/useModalState';
 
+const route = useRoute();
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error, info: showInfoToast } = useToast();
@@ -1292,6 +1294,37 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
     handleAddDelivery();
   }
 };
+
+// Deep-link auto-open: when the dashboard (or any cross-link) navigates to
+// /deliveries?id=<id>, open that delivery's view modal. This runs independently
+// of the paginated browse list (useInfiniteSiteData) — it loads the record
+// directly via the site-scoped getById, mirroring how PaymentsView handles
+// ?paymentId. Graceful: if the id is missing/unknown, we silently do nothing
+// (no error toast). The `?vendor=` filter is untouched and keeps working.
+const openDeliveryFromQuery = async (id: string) => {
+  try {
+    const delivery = await deliveryService.getById(id);
+    if (!delivery) return;
+    // Reuse the existing view handler so the full expand / orphaned-item /
+    // return-info loading logic stays in one place.
+    await viewDelivery(delivery);
+  } catch {
+    // Not found or cross-site / network error: don't open, don't toast.
+  }
+};
+
+watch(
+  // Null-safe: `route` is undefined when the component is mounted without a
+  // router (e.g. some isolated unit tests). In that case there is simply no
+  // deep-link to honour, so we read nothing rather than throwing.
+  () => route?.query?.id,
+  (id) => {
+    if (typeof id === 'string' && id) {
+      void openDeliveryFromQuery(id);
+    }
+  },
+  { immediate: true }
+);
 
 // Event listeners using @vueuse/core
 useQuickActionModal(handleShowAddModal);
