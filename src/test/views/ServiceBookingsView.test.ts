@@ -7,6 +7,13 @@ import type { ServiceBooking, PaymentAllocation } from '../../services/pocketbas
 // toggle the active relation filter before mounting the view.
 const mockFilters = vi.hoisted(() => ({ vendor: undefined as string | undefined, service: undefined as string | undefined }))
 
+// --- "View all images" test scaffolding -------------------------------------
+// The view registers several useSiteData loaders; the FIRST one is the bookings
+// loader whose data feeds `serviceBookings` -> `allImages`. This hoisted control
+// object lets the gallery tests inject booking fixtures into that first loader's
+// returned `data` ref without affecting any other test (default: empty list).
+const siteDataControl = vi.hoisted(() => ({ bookings: [] as any[] }))
+
 vi.mock('../../composables/useUrlFilters', () => ({
   useUrlFilters: () => ({
     filters: mockFilters,
@@ -703,13 +710,20 @@ describe('ServiceBookingsView Logic', () => {
 
 // useSiteData: capture every registered loader; immediately invoke them so the
 // view's branching closure runs against the mocked serviceBookingService.
+// Per-mount call index: the FIRST useSiteData call in the view is the bookings
+// loader, so its data ref is seeded from siteDataControl.bookings (used by the
+// "View all images" tests). All other loaders return an empty list. The index is
+// reset in each gallery test's beforeEach so the first mount call maps to bookings.
+let siteDataCallIndex = 0
 vi.mock('../../composables/useSiteData', () => ({
   useSiteData: (loadFn: (siteId: string) => Promise<any>) => {
+    const isBookingsLoader = siteDataCallIndex === 0
+    siteDataCallIndex++
     // Fire-and-forget; the loader's call into serviceBookingService is synchronous
     // up to the awaited service method, which is enough to assert the branch.
     loadFn('site-1')
     return {
-      data: ref([] as any[]),
+      data: ref(isBookingsLoader ? siteDataControl.bookings : ([] as any[])),
       loading: ref(false),
       error: ref(null),
       reload: vi.fn(async () => { await loadFn('site-1') })
@@ -787,6 +801,8 @@ describe('ServiceBookingsView URL-filter loader branching', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks()
+    siteDataCallIndex = 0
+    siteDataControl.bookings = []
     mockFilters.vendor = undefined
     mockFilters.service = undefined
     serviceBookingMocks.getAll.mockResolvedValue([])
@@ -804,6 +820,12 @@ describe('ServiceBookingsView URL-filter loader branching', () => {
           SearchBox: true,
           CardDropdownMenu: true,
           PhotoGallery: true,
+          ImageSlider: {
+            name: 'ImageSlider',
+            template: '<div class="mock-image-slider" v-if="show"></div>',
+            props: ['show', 'images', 'overlayInfo', 'initialIndex'],
+            emits: ['close', 'update:show']
+          },
           FileUploadComponent: true,
           VendorSearchBox: true,
           ServiceSearchBox: true,
@@ -835,5 +857,272 @@ describe('ServiceBookingsView URL-filter loader branching', () => {
     expect(serviceBookingMocks.getAll).toHaveBeenCalled()
     expect(serviceBookingMocks.getByVendor).not.toHaveBeenCalled()
     expect(serviceBookingMocks.getByService).not.toHaveBeenCalled()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Page-level "View all images" feature (mirrors DeliveryView).
+//
+// The view exposes:
+//   - allImages: computed aggregating every listed booking's completion_photos
+//     into { booking, photo, index } entries (skips bookings with no photos).
+//   - the desktop header button + mobile action-menu item, both bound to
+//     viewAllImages and disabled when allImages.length === 0, showing the count.
+//   - viewAllImages(): builds allImagesGalleryData ({ images, overlayInfo }) via
+//     getBookingPhotoUrl and sets showAllImagesMode + showPhotoGallery true.
+//
+// We seed the bookings loader (the first useSiteData call) via siteDataControl so
+// `serviceBookings` -> `allImages` resolves against real fixtures.
+// ---------------------------------------------------------------------------
+
+describe('ServiceBookingsView "View all images" gallery', () => {
+  let mount: typeof import('@vue/test-utils').mount
+  let ServiceBookingsView: any
+
+  // Fixtures: two bookings with completion_photos (2 + 1) and one with none.
+  // Expanded vendor/service so overlayInfo resolves to real names.
+  const makeBookings = () => [
+    {
+      id: 'booking-1',
+      service: 'service-1',
+      vendor: 'vendor-1',
+      start_date: '2024-03-15',
+      duration: 8,
+      unit_rate: 500,
+      total_amount: 4000,
+      percent_completed: 50,
+      site: 'site-1',
+      completion_photos: ['a.jpg', 'b.jpg'],
+      expand: {
+        vendor: { id: 'vendor-1', contact_person: 'Alice Vendor', name: 'Alice Co' },
+        service: { id: 'service-1', name: 'Plumbing' }
+      }
+    },
+    {
+      id: 'booking-2',
+      service: 'service-2',
+      vendor: 'vendor-2',
+      start_date: '2024-04-01',
+      duration: 4,
+      unit_rate: 600,
+      total_amount: 2400,
+      percent_completed: 100,
+      site: 'site-1',
+      completion_photos: ['c.jpg'],
+      expand: {
+        vendor: { id: 'vendor-2', contact_person: 'Bob Vendor', name: 'Bob Co' },
+        service: { id: 'service-2', name: 'Electrical' }
+      }
+    },
+    {
+      id: 'booking-3',
+      service: 'service-3',
+      vendor: 'vendor-3',
+      start_date: '2024-05-01',
+      duration: 2,
+      unit_rate: 100,
+      total_amount: 200,
+      percent_completed: 0,
+      site: 'site-1',
+      // No completion_photos -> contributes nothing to allImages.
+      expand: {
+        vendor: { id: 'vendor-3', contact_person: 'Carol Vendor', name: 'Carol Co' },
+        service: { id: 'service-3', name: 'Carpentry' }
+      }
+    }
+  ]
+
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    siteDataCallIndex = 0
+    siteDataControl.bookings = []
+    mockFilters.vendor = undefined
+    mockFilters.service = undefined
+    serviceBookingMocks.getAll.mockResolvedValue([])
+    serviceBookingMocks.getByVendor.mockResolvedValue([])
+    serviceBookingMocks.getByService.mockResolvedValue([])
+    ;({ mount } = await import('@vue/test-utils'))
+    ServiceBookingsView = (await import('../../views/ServiceBookingsView.vue')).default
+  })
+
+  const mountView = () =>
+    mount(ServiceBookingsView, {
+      global: {
+        stubs: {
+          RecordLink: { template: '<span><slot />{{ label }}</span>', props: ['type', 'mode', 'id', 'label'] },
+          SearchBox: true,
+          CardDropdownMenu: true,
+          PhotoGallery: true,
+          ImageSlider: {
+            name: 'ImageSlider',
+            template: '<div class="mock-image-slider" v-if="show"></div>',
+            props: ['show', 'images', 'overlayInfo', 'initialIndex'],
+            emits: ['close', 'update:show']
+          },
+          FileUploadComponent: true,
+          VendorSearchBox: true,
+          ServiceSearchBox: true,
+          TimeCalculatorModal: true,
+          Skeleton: true,
+          'router-link': { template: '<a><slot /></a>', props: ['to'] }
+        }
+      }
+    })
+
+  describe('allImages aggregation', () => {
+    it('aggregates completion photos across bookings, skipping those with none', () => {
+      siteDataControl.bookings = makeBookings()
+      const wrapper = mountView()
+
+      // booking-1 (2 photos) + booking-2 (1 photo) + booking-3 (none) = 3 entries.
+      expect(wrapper.vm.allImages).toHaveLength(3)
+
+      const entries = wrapper.vm.allImages
+      // Entries reference the right booking + photo, in booking/photo order.
+      expect(entries[0].booking.id).toBe('booking-1')
+      expect(entries[0].photo).toBe('a.jpg')
+      expect(entries[1].booking.id).toBe('booking-1')
+      expect(entries[1].photo).toBe('b.jpg')
+      expect(entries[2].booking.id).toBe('booking-2')
+      expect(entries[2].photo).toBe('c.jpg')
+
+      wrapper.unmount()
+    })
+
+    it('is empty when no booking has completion photos', () => {
+      const bookings = makeBookings().map(b => ({ ...b, completion_photos: [] as string[] }))
+      siteDataControl.bookings = bookings
+      const wrapper = mountView()
+
+      expect(wrapper.vm.allImages).toHaveLength(0)
+      wrapper.unmount()
+    })
+  })
+
+  describe('header button state', () => {
+    it('disables the desktop "View all images" button and shows (0) when no photos exist', () => {
+      siteDataControl.bookings = makeBookings().map(b => ({ ...b, completion_photos: [] as string[] }))
+      const wrapper = mountView()
+
+      expect(wrapper.vm.allImages).toHaveLength(0)
+
+      // Desktop header button is the first button bound to viewAllImages: disabled.
+      const btn = wrapper.findAll('button').find((b: any) =>
+        b.text().includes('delivery.viewAllImages')
+      )
+      expect(btn).toBeTruthy()
+      expect(btn!.attributes('disabled')).toBeDefined()
+      // Count rendered in the label reflects zero photos.
+      expect(btn!.text()).toContain('(0)')
+
+      wrapper.unmount()
+    })
+
+    it('enables the desktop "View all images" button and shows the total count when photos exist', () => {
+      siteDataControl.bookings = makeBookings()
+      const wrapper = mountView()
+
+      expect(wrapper.vm.allImages).toHaveLength(3)
+
+      const btn = wrapper.findAll('button').find((b: any) =>
+        b.text().includes('delivery.viewAllImages') && b.text().includes('(3)')
+      )
+      expect(btn).toBeTruthy()
+      expect(btn!.attributes('disabled')).toBeUndefined()
+
+      wrapper.unmount()
+    })
+  })
+
+  describe('viewAllImages()', () => {
+    it('builds gallery data for every photo across bookings and opens all-images mode', () => {
+      siteDataControl.bookings = makeBookings()
+      const wrapper = mountView()
+
+      // Pre-conditions: gallery closed, no data.
+      expect(wrapper.vm.showAllImagesMode).toBe(false)
+      expect(wrapper.vm.showPhotoGallery).toBe(false)
+
+      wrapper.vm.viewAllImages()
+
+      // images: one URL per photo across all bookings (3 total).
+      const data = wrapper.vm.allImagesGalleryData
+      expect(data.images).toHaveLength(3)
+      // overlayInfo: one entry per photo, same length as images.
+      expect(data.overlayInfo).toHaveLength(3)
+
+      // URLs are built via getBookingPhotoUrl (service_bookings collection path).
+      expect(data.images[0]).toContain('/api/files/service_bookings/booking-1/a.jpg')
+      expect(data.images[1]).toContain('/api/files/service_bookings/booking-1/b.jpg')
+      expect(data.images[2]).toContain('/api/files/service_bookings/booking-2/c.jpg')
+
+      // Overlay info resolves per-photo vendor / service / date.
+      expect(data.overlayInfo[0]).toMatchObject({
+        vendorName: 'Alice Vendor',
+        items: ['Plumbing'],
+        deliveryDate: '2024-03-15'
+      })
+      expect(data.overlayInfo[2]).toMatchObject({
+        vendorName: 'Bob Vendor',
+        items: ['Electrical'],
+        deliveryDate: '2024-04-01'
+      })
+
+      // Gallery opens in all-images mode.
+      expect(wrapper.vm.showAllImagesMode).toBe(true)
+      expect(wrapper.vm.showPhotoGallery).toBe(true)
+
+      wrapper.unmount()
+    })
+
+    it('is a no-op when there are no images', () => {
+      siteDataControl.bookings = makeBookings().map(b => ({ ...b, completion_photos: [] as string[] }))
+      const wrapper = mountView()
+
+      wrapper.vm.viewAllImages()
+
+      expect(wrapper.vm.showAllImagesMode).toBe(false)
+      expect(wrapper.vm.showPhotoGallery).toBe(false)
+      expect(wrapper.vm.allImagesGalleryData.images).toHaveLength(0)
+
+      wrapper.unmount()
+    })
+
+    it('opens all-images mode via the mobile action menu', () => {
+      siteDataControl.bookings = makeBookings()
+      const wrapper = mountView()
+
+      wrapper.vm.handleMobileAction('viewAllImages')
+
+      expect(wrapper.vm.allImagesGalleryData.images).toHaveLength(3)
+      expect(wrapper.vm.showAllImagesMode).toBe(true)
+      expect(wrapper.vm.showPhotoGallery).toBe(true)
+      // The mobile menu closes after acting.
+      expect(wrapper.vm.showMobileActionMenu).toBe(false)
+
+      wrapper.unmount()
+    })
+  })
+
+  describe('closing the gallery', () => {
+    it('resets showAllImagesMode when the ImageSlider close handler runs', async () => {
+      siteDataControl.bookings = makeBookings()
+      const wrapper = mountView()
+
+      wrapper.vm.viewAllImages()
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.showAllImagesMode).toBe(true)
+
+      // ImageSlider @close handler: `showPhotoGallery = false; showAllImagesMode = false`.
+      const slider = wrapper.findComponent({ name: 'ImageSlider' })
+      expect(slider.exists()).toBe(true)
+      slider.vm.$emit('close')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showAllImagesMode).toBe(false)
+      expect(wrapper.vm.showPhotoGallery).toBe(false)
+
+      wrapper.unmount()
+    })
   })
 })
