@@ -40,7 +40,13 @@ export function usePlatform() {
         platform: string
         arch: string
         is_native: boolean
+        is_mobile?: boolean
+        is_desktop?: boolean
       }
+
+      // Derive mobile/desktop from the reported OS so Tauri on Android/iOS is
+      // correctly classified as mobile (the Rust side also reports these flags).
+      const isMobile = tauriInfo.is_mobile ?? (tauriInfo.platform === 'android' || tauriInfo.platform === 'ios')
 
       platformInfo.value = {
         platform: tauriInfo.platform as any,
@@ -48,8 +54,8 @@ export function usePlatform() {
         isNative: tauriInfo.is_native,
         isTauri: true,
         isPWA: false,
-        isMobile: false,
-        isDesktop: true
+        isMobile,
+        isDesktop: tauriInfo.is_desktop ?? !isMobile
       }
     } catch {
       // Fallback to web platform detection

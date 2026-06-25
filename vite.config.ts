@@ -1,9 +1,15 @@
 import { defineConfig } from 'vite'
+import { fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // Check if building for Tauri
 const isTauri = process.env.TAURI_PLATFORM !== undefined
+
+// When running `tauri [android|ios] dev`, Tauri sets TAURI_DEV_HOST so the
+// device/emulator can reach the Vite dev server (and HMR websocket) over the
+// network instead of localhost.
+const host = process.env.TAURI_DEV_HOST
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -121,11 +127,33 @@ export default defineConfig({
       }
     })])
   ],
+  // For Tauri (desktop + mobile) builds the PWA plugin is disabled, so the
+  // `virtual:pwa-register/vue` module it normally provides does not exist.
+  // Alias it to a no-op stub so native builds resolve cleanly.
+  resolve: {
+    alias: isTauri
+      ? {
+          'virtual:pwa-register/vue': fileURLToPath(
+            new URL('./src/stubs/pwa-register.ts', import.meta.url)
+          )
+        }
+      : {}
+  },
   // Ensure proper configuration for both environments
   clearScreen: false,
   server: {
     port: 5173,
     strictPort: true,
+    // Bind to all interfaces only for mobile dev (when TAURI_DEV_HOST is set),
+    // otherwise keep the default localhost binding.
+    host: host || false,
+    hmr: host
+      ? {
+          protocol: 'ws',
+          host,
+          port: 5174
+        }
+      : undefined,
     watch: {
       ignored: ["**/src-tauri/**"]
     }

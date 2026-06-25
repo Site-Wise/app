@@ -137,6 +137,19 @@ npm run dev:tauri      # native desktop app in dev mode
 npm run build:tauri    # produce a distributable desktop build
 ```
 
+### Run as a native Android app
+
+```bash
+npm run android:init        # one-time: generate the Android project
+npm run dev:android         # run on a connected device / emulator
+npm run build:android:apk   # build an APK
+npm run build:android:aab   # build an AAB (Play Store)
+```
+
+Requires the Android SDK, NDK, Java 17, and the Rust Android targets. See
+**[docs/MOBILE_AND_DESKTOP_BUILDS.md](docs/MOBILE_AND_DESKTOP_BUILDS.md)** for the
+full local + CI + signing guide.
+
 ### Useful scripts
 
 | Script | What it does |
@@ -145,6 +158,9 @@ npm run build:tauri    # produce a distributable desktop build
 | `npm run dev:tauri` | Native desktop app (dev) |
 | `npm run build` | Type-check + production web build |
 | `npm run build:tauri` | Build the native desktop app |
+| `npm run dev:android` | Native Android app (dev) |
+| `npm run build:android:apk` | Build an Android APK |
+| `npm run build:android:aab` | Build an Android AAB (Play Store) |
 | `npm test` | Run the test suite (Vitest) |
 | `npm run test:ui` | Vitest interactive UI |
 | `npm run test:coverage` | Tests with coverage report |
