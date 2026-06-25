@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue';
-import { translations } from '../locales';
+import { localeLoaders } from '../locales';
 
 type Language = 'en' | 'hi';
 
@@ -440,8 +440,35 @@ if (savedLanguage && ['en', 'hi'].includes(savedLanguage)) {
   currentLanguage.value = savedLanguage;
 }
 
+// Module-level reactive dictionary holding the active language's translations.
+// Starts empty: until a language is loaded, t() falls back to returning the raw
+// key (existing behaviour). Updating this ref re-renders all t() consumers.
+const dictionary = ref<Record<string, any>>({});
+const loadingLanguage = ref(false);
+
+// Track which languages have already been loaded so we don't refetch.
+const loadedLanguages = new Map<Language, Record<string, any>>();
+
+// Load a language's dictionary (async) and make it the active one. t() stays
+// synchronous; while the dictionary isn't loaded yet it returns the raw key.
+async function loadLanguage(lang: Language): Promise<void> {
+  loadingLanguage.value = true;
+  try {
+    let dict = loadedLanguages.get(lang);
+    if (!dict) {
+      const mod = await localeLoaders[lang]();
+      dict = mod.default as Record<string, any>;
+      loadedLanguages.set(lang, dict);
+    }
+    dictionary.value = dict;
+  } finally {
+    loadingLanguage.value = false;
+  }
+}
+
 export function useI18n() {
-  const setLanguage = (lang: Language) => {
+  const setLanguage = async (lang: Language) => {
+    await loadLanguage(lang);
     currentLanguage.value = lang;
     localStorage.setItem('language', lang);
     document.documentElement.lang = lang;
@@ -449,8 +476,14 @@ export function useI18n() {
 
   const t = (key: string, values?: Record<string, unknown>): string => {
     const keys = key.split('.');
-    let value: any = translations[currentLanguage.value];
+    let value: any = dictionary.value;
     
+    // Dictionary not loaded yet (e.g. before the initial loadLanguage resolves):
+    // silently fall back to the raw key without logging.
+    if (!value || Object.keys(value).length === 0) {
+      return key;
+    }
+
     for (const k of keys) {
       if (value && typeof value === 'object' && k in value) {
         value = value[k];
@@ -477,7 +510,9 @@ export function useI18n() {
 
   return {
     currentLanguage: computed(() => currentLanguage.value),
+    isLoadingLanguage: computed(() => loadingLanguage.value),
     setLanguage,
+    loadLanguage,
     t,
     availableLanguages
   };

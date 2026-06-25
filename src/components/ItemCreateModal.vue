@@ -37,12 +37,12 @@
         <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5 space-y-4 scroll-smooth-touch">
           <div>
             <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.name') }}</label>
-            <input ref="nameInputRef" v-model="form.name" type="text" required class="input mt-1" :placeholder="t('forms.enterItemName')" autofocus />
+            <input ref="nameInputRef" v-model="form.name" type="text" required class="input mt-1" :placeholder="t('forms.enterItemName')" autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
           </div>
 
           <div>
             <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.description') }}</label>
-            <textarea v-model="form.description" class="input mt-1" rows="3" :placeholder="t('forms.enterDescription')"></textarea>
+            <textarea v-model="form.description" class="input mt-1" rows="3" :placeholder="t('forms.enterDescription')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
           </div>
 
           <div>

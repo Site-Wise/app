@@ -15,10 +15,18 @@ const pinia = createPinia();
 const { initializeTheme } = useTheme();
 initializeTheme();
 
-// Initialize i18n
-const { currentLanguage } = useI18n();
+// Initialize i18n: load the active language's dictionary BEFORE mount so there
+// is zero flash-of-untranslated-content. Kept here (upstream of mount) and out
+// of App.vue to avoid interfering with the isReadyForRouting reload fix.
+const { currentLanguage, loadLanguage } = useI18n();
 document.documentElement.lang = currentLanguage.value;
 
-app.use(pinia);
-app.use(router);
-app.mount('#app');
+async function bootstrap() {
+  await loadLanguage(currentLanguage.value);
+
+  app.use(pinia);
+  app.use(router);
+  app.mount('#app');
+}
+
+bootstrap();

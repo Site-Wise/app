@@ -47,6 +47,27 @@
       </div>
     </div>
 
+    <!-- Active relation-filter chip: dismissible so the user is never stuck on a
+         filtered view. Shown on both mobile and desktop. -->
+    <div v-if="hasActiveFilter" class="mb-4 flex items-center gap-2">
+      <span
+        class="inline-flex items-center gap-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 pl-3 pr-1 py-1 text-sm font-medium"
+      >
+        <span class="truncate max-w-[60vw] sm:max-w-xs">
+          {{ t('common.filteredBy', { label: filterLabel || t('common.filtered') }) }}
+        </span>
+        <button
+          type="button"
+          @click="clearFilter()"
+          class="flex items-center justify-center h-11 w-11 sm:h-7 sm:w-7 -my-2 sm:my-0 rounded-full text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800/40 transition-colors"
+          :title="t('common.clearFilter')"
+          :aria-label="t('common.clearFilter')"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </span>
+    </div>
+
     <!-- Quotations List -->
     <div class="overflow-x-auto">
 
@@ -54,12 +75,12 @@
       <table class="hidden xl:table min-w-full border border-stone-200 dark:border-ink-4 rounded-none bg-white dark:bg-ink-3 shadow-card dark:shadow-inset-hi">
         <thead class="hidden xl:table-header-group bg-cream-2 dark:bg-ink-2 border-b border-stone-200 dark:border-ink-4">
           <tr>
-            <th class="py-3 px-4 text-left sw-eyebrow">{{ t('common.item') }}</th>
-            <th class="py-3 px-4 text-left sw-eyebrow">{{ t('common.vendor') }}</th>
-            <th class="py-3 px-4 text-right sw-eyebrow">{{ t('quotations.unitPrice') }}</th>
-            <th class="py-3 px-4 text-right sw-eyebrow">{{ t('quotations.minimumQuantity') }}</th>
-            <th class="py-3 px-4 text-right sw-eyebrow">{{ t('quotations.validUntil') }}</th>
-            <th class="py-3 px-4 text-left sw-eyebrow">{{ t('common.status') }}</th>
+            <SortableTh sort-key="item" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="left" th-class="py-3 px-4 sw-eyebrow" :label="t('common.item')" />
+            <SortableTh sort-key="vendor" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="left" th-class="py-3 px-4 sw-eyebrow" :label="t('common.vendor')" />
+            <SortableTh sort-key="unit_price" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="right" th-class="py-3 px-4 sw-eyebrow" :label="t('quotations.unitPrice')" />
+            <SortableTh sort-key="minimum_quantity" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="right" th-class="py-3 px-4 sw-eyebrow" :label="t('quotations.minimumQuantity')" />
+            <SortableTh sort-key="valid_until" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="right" th-class="py-3 px-4 sw-eyebrow" :label="t('quotations.validUntil')" />
+            <SortableTh sort-key="status" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="left" th-class="py-3 px-4 sw-eyebrow" :label="t('common.status')" />
             <th class="py-3 px-4 text-left sw-eyebrow">{{ t('common.actions') }}</th>
           </tr>
         </thead>
@@ -77,18 +98,42 @@
           </template>
           <template v-else>
           <tr
-            v-for="quotation in quotations"
+            v-for="quotation in displayedQuotations"
             :key="quotation.id"
-            class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap"
+            @click="editQuotation(quotation)"
+            class="group cursor-pointer hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap"
           >
-            <!-- Item + unit -->
+            <!-- Item / Service + unit -->
             <td class="hidden xl:table-cell py-3.5 px-4">
-              <div class="font-medium text-ink dark:text-cream text-sm">{{ quotation.expand?.item?.name }}</div>
+              <div class="font-medium text-sm">
+                <RecordLink
+                  v-if="quotation.service"
+                  type="service"
+                  mode="detail"
+                  :id="quotation.service"
+                  :label="quotation.expand?.service?.name || t('common.item')"
+                />
+                <RecordLink
+                  v-else-if="quotation.item"
+                  type="item"
+                  mode="detail"
+                  :id="quotation.item"
+                  :label="quotation.expand?.item?.name || t('common.item')"
+                />
+                <span v-else class="text-ink dark:text-cream">{{ quotation.expand?.item?.name }}</span>
+              </div>
               <div class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{{ getUnitDisplay(quotation.expand?.item?.unit || 'units') }}</div>
             </td>
             <!-- Vendor -->
-            <td class="hidden xl:table-cell py-3.5 px-4 text-sm text-stone-600 dark:text-stone-400">
-              {{ quotation.expand?.vendor?.contact_person }}
+            <td class="hidden xl:table-cell py-3.5 px-4 text-sm">
+              <RecordLink
+                v-if="quotation.vendor"
+                type="vendor"
+                mode="detail"
+                :id="quotation.vendor"
+                :label="quotation.expand?.vendor?.contact_person || t('common.vendor')"
+              />
+              <span v-else class="text-stone-600 dark:text-stone-400">{{ quotation.expand?.vendor?.contact_person }}</span>
             </td>
             <!-- Unit Price -->
             <td class="hidden xl:table-cell py-3.5 px-4 text-right font-mono sw-tabular text-sm text-forest-700 dark:text-forest-400">
@@ -108,19 +153,20 @@
                 {{ t(`common.${quotation.status}`) }}
               </span>
             </td>
-            <!-- Actions -->
-            <td class="hidden xl:table-cell py-3.5 px-4">
-              <div class="flex items-center space-x-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150" @click.stop>
+            <!-- Actions — @click.stop so editing/deleting never triggers the
+                 row's view-details click; revealed on row hover/focus. -->
+            <td class="hidden xl:table-cell py-3.5 px-4" @click.stop>
+              <div class="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150">
                 <button
-                  @click="editQuotation(quotation)"
-                  class="h-8 w-8 flex items-center justify-center text-stone-400 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap active:scale-[0.98]"
+                  @click.stop="editQuotation(quotation)"
+                  class="h-9 w-9 flex items-center justify-center text-stone-400 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap active:scale-[0.98]"
                   :title="t('common.edit')"
                 >
                   <Edit2 class="h-4 w-4" />
                 </button>
                 <button
-                  @click="deleteQuotation(quotation.id!)"
-                  class="h-8 w-8 flex items-center justify-center text-stone-400 hover:text-clay dark:hover:text-clay-400 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap active:scale-[0.98]"
+                  @click.stop="deleteQuotation(quotation.id!)"
+                  class="h-9 w-9 flex items-center justify-center text-stone-400 hover:text-clay dark:hover:text-clay-400 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap active:scale-[0.98]"
                   :title="t('common.deleteAction')"
                 >
                   <Trash2 class="h-4 w-4" />
@@ -152,18 +198,40 @@
           </div>
         </template>
         <div v-else
-          v-for="quotation in quotations"
+          v-for="quotation in displayedQuotations"
           :key="quotation.id"
-          class="card group"
+          @click="editQuotation(quotation)"
+          class="card group cursor-pointer active:scale-[0.99] transition-transform duration-150 ease-snap"
         >
           <!-- Card header: item name + status + dropdown -->
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0 flex-1">
-              <div class="font-display text-base font-semibold text-ink dark:text-cream truncate">
-                {{ quotation.expand?.item?.name }}
+              <div class="font-display text-base font-semibold truncate">
+                <RecordLink
+                  v-if="quotation.service"
+                  type="service"
+                  mode="detail"
+                  :id="quotation.service"
+                  :label="quotation.expand?.service?.name || t('common.item')"
+                />
+                <RecordLink
+                  v-else-if="quotation.item"
+                  type="item"
+                  mode="detail"
+                  :id="quotation.item"
+                  :label="quotation.expand?.item?.name || t('common.item')"
+                />
+                <span v-else class="text-ink dark:text-cream">{{ quotation.expand?.item?.name }}</span>
               </div>
-              <div class="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
-                {{ quotation.expand?.vendor?.contact_person }}
+              <div class="text-sm mt-0.5">
+                <RecordLink
+                  v-if="quotation.vendor"
+                  type="vendor"
+                  mode="detail"
+                  :id="quotation.vendor"
+                  :label="quotation.expand?.vendor?.contact_person || t('common.vendor')"
+                />
+                <span v-else class="text-stone-500 dark:text-stone-400">{{ quotation.expand?.vendor?.contact_person }}</span>
               </div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
@@ -205,7 +273,7 @@
       </div>
 
       <!-- Empty state -->
-      <div v-if="quotations.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
+      <div v-if="displayedQuotations.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
         <FileText class="h-12 w-12 text-stone-300 dark:text-stone-600 mb-4" />
         <h3 class="font-display text-lg font-semibold text-ink dark:text-cream">{{ t('quotations.noQuotations') }}</h3>
         <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">{{ t('quotations.getStarted') }}</p>
@@ -241,32 +309,37 @@
           <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5 space-y-4">
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.item') }}</label>
-              <select ref="firstInputRef" v-model="form.item" required class="input mt-1" autofocus>
-                <option value="">{{ t('forms.selectItem') }}</option>
-                <option v-for="item in items" :key="item.id" :value="item.id">
-                  {{ item.name }} ({{ getUnitDisplay(item.unit) }})
-                </option>
-              </select>
+              <ItemSelector
+                ref="firstInputRef"
+                v-model="form.item"
+                :items="items"
+                :placeholder="t('forms.selectItem')"
+                class="mt-1"
+              />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.vendor') }}</label>
-              <select v-model="form.vendor" required class="input mt-1">
-                <option value="">{{ t('forms.selectVendor') }}</option>
-                <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
-                  {{ vendor.name }}
-                </option>
-              </select>
+              <VendorSearchBox
+                v-model="form.vendor"
+                :vendors="vendors"
+                :deliveries="deliveries"
+                :service-bookings="serviceBookings"
+                :payments="payments"
+                :placeholder="t('forms.selectVendor')"
+                :required="true"
+                class="mt-1"
+              />
             </div>
 
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('forms.unitPrice') }}</label>
-                <input v-model.number="form.unit_price" type="number" step="0.01" required class="input mt-1 font-mono tabular-nums" :placeholder="t('forms.enterAmount')" />
+                <input v-model.number="form.unit_price" type="number" step="0.01" required class="input mt-1 font-mono tabular-nums" :placeholder="t('forms.enterAmount')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('quotations.minimumQuantity') }}</label>
-                <input v-model.number="form.minimum_quantity" type="number" class="input mt-1" :placeholder="t('forms.optional')" />
+                <input v-model.number="form.minimum_quantity" type="number" class="input mt-1" :placeholder="t('forms.optional')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
               </div>
             </div>
 
@@ -287,7 +360,7 @@
 
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.notes') }}</label>
-              <textarea v-model="form.notes" class="input mt-1" rows="3" :placeholder="t('quotations.additionalNotes')"></textarea>
+              <textarea v-model="form.notes" class="input mt-1" rows="3" :placeholder="t('quotations.additionalNotes')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
             </div>
           </div>
 
@@ -308,26 +381,40 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, nextTick } from 'vue';
+import { ref, reactive, computed, nextTick, watch } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { FileText, Plus, Edit2, Trash2, Loader2, X } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
+import RecordLink from '../components/RecordLink.vue';
+import SortableTh from '../components/SortableTh.vue';
 import {
   quotationService,
   itemService,
   vendorService,
+  deliveryService,
+  serviceBookingService,
+  paymentService,
   type Quotation
 } from '../services/pocketbase';
 import { useI18n } from '../composables/useI18n';
 import { usePermissions } from '../composables/usePermissions';
+import { useUrlFilters } from '../composables/useUrlFilters';
 import { useSiteData } from '../composables/useSiteData';
+import { useTableSort } from '../composables/useTableSort';
 import { useQuotationSearch } from '../composables/useSearch';
 import { useModalState } from '../composables/useModalState';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
+import VendorSearchBox from '../components/VendorSearchBox.vue';
+import ItemSelector from '../components/ItemSelector.vue';
 
 const { t } = useI18n();
 const { canDelete } = usePermissions();
 const { openModal, closeModal: closeModalState } = useModalState();
+
+// URL-driven relation filters (?vendor=<id> / ?item=<id> / ?service=<id>) for
+// cross-linking from VendorDetailView / ItemDetailView / ServiceDetailView.
+const { filters, hasActiveFilter, clearFilter } = useUrlFilters(['vendor', 'item', 'service']);
+
 // Search functionality
 const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useQuotationSearch();
 
@@ -336,10 +423,63 @@ const quotations = computed(() => {
   return searchQuery.value.trim() ? searchResults.value : allQuotations.value
 });
 
-// Use site data management
+// Client-side column sorting. The full list is loaded via useSiteData, so we sort
+// the final displayed array (browse + search). Default: most recent valid_until first.
+const { sortKey, sortDir, toggleSort, sortRows } = useTableSort<Quotation>({
+  defaultKey: 'valid_until',
+  defaultDir: 'desc',
+});
+
+// Maps each sortable column key to its comparable value (nested expand-aware).
+const sortAccessor = (row: Quotation, key: string): unknown => {
+  switch (key) {
+    case 'item':
+      return row.expand?.service?.name ?? row.expand?.item?.name ?? null;
+    case 'vendor':
+      return row.expand?.vendor?.contact_person ?? null;
+    case 'unit_price':
+      return row.unit_price ?? null;
+    case 'minimum_quantity':
+      return row.minimum_quantity ?? null;
+    case 'valid_until':
+      return row.valid_until || null;
+    case 'status':
+      return row.status ?? null;
+    default:
+      return null;
+  }
+};
+
+// Final, sorted list rendered by both the desktop table and mobile cards.
+const displayedQuotations = computed(() => sortRows(quotations.value, sortAccessor));
+
+// Use site data management. The primary loader branches on the active relation
+// filter by precedence (vendor -> item -> service -> unfiltered). All branches
+// are site-scoped and expand vendor,item,service so rows render identically.
 const { data: allQuotationsData, loading: quotationsLoading, reload: reloadQuotations } = useSiteData(
-  async () => await quotationService.getAll()
+  async () => {
+    if (filters.vendor) return await quotationService.getByVendor(filters.vendor);
+    if (filters.item) return await quotationService.getByItem(filters.item);
+    if (filters.service) return await quotationService.getByService(filters.service);
+    return await quotationService.getAll();
+  }
 );
+
+// When any relation filter changes, reload the primary list. reloadQuotations()
+// is guarded by useSiteData against the auto-cancel race, so NO onMounted loader
+// is needed.
+watch(() => [filters.vendor, filters.item, filters.service], () => reloadQuotations());
+
+// Label for the dismissible filter chip, derived reactively from the first loaded
+// row's expanded relation. Falls back to a generic label until results arrive.
+const filterLabel = computed(() => {
+  const first = allQuotations.value[0];
+  if (!first) return '';
+  if (filters.vendor) return first.expand?.vendor?.contact_person || '';
+  if (filters.item) return first.expand?.item?.name || '';
+  if (filters.service) return first.expand?.service?.name || '';
+  return '';
+});
 
 const { data: itemsData } = useSiteData(
   async () => await itemService.getAll()
@@ -349,15 +489,31 @@ const { data: vendorsData } = useSiteData(
   async () => await vendorService.getAll()
 );
 
+// Load deliveries, service bookings and payments so the vendor picker can show balances
+const { data: deliveriesData } = useSiteData(
+  async () => await deliveryService.getAll()
+);
+
+const { data: serviceBookingsData } = useSiteData(
+  async () => await serviceBookingService.getAll()
+);
+
+const { data: paymentsData } = useSiteData(
+  async () => await paymentService.getAll()
+);
+
 // Computed properties from useSiteData
 const allQuotations = computed(() => allQuotationsData.value || []);
 const items = computed(() => itemsData.value || []);
 const vendors = computed(() => vendorsData.value || []);
+const deliveries = computed(() => deliveriesData.value || []);
+const serviceBookings = computed(() => serviceBookingsData.value || []);
+const payments = computed(() => paymentsData.value || []);
 const showAddModal = ref(false);
 const editingQuotation = ref<Quotation | null>(null);
 const loading = ref(false);
 
-const firstInputRef = ref<HTMLSelectElement>();
+const firstInputRef = ref<{ focus: () => void }>();
 
 const form = reactive({
   vendor: '',
@@ -416,7 +572,7 @@ const saveQuotation = async () => {
   }
 };
 
-const editQuotation = (quotation: Quotation) => {
+const editQuotation = async (quotation: Quotation) => {
   editingQuotation.value = quotation;
   Object.assign(form, {
     vendor: quotation.vendor,
@@ -428,7 +584,9 @@ const editQuotation = (quotation: Quotation) => {
     status: quotation.status
   });
   showAddModal.value = true;
-  openModal('quotations-edit-modal');
+  openModal('quotations-edit-modal', closeModal);
+  await nextTick();
+  if (typeof firstInputRef.value?.focus === 'function') firstInputRef.value.focus();
 };
 
 const deleteQuotation = async (id: string) => {
@@ -487,9 +645,9 @@ const closeModal = () => {
 
 const handleAddQuotation = async () => {
   showAddModal.value = true;
-  openModal('quotations-add-modal');
+  openModal('quotations-add-modal', closeModal);
   await nextTick();
-  firstInputRef.value?.focus();
+  if (typeof firstInputRef.value?.focus === 'function') firstInputRef.value.focus();
 };
 
 // Site change is handled automatically by useSiteData

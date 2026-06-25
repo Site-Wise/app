@@ -162,14 +162,29 @@
     <div class="card">
       <div class="flex items-center justify-between mb-4">
         <h2 class="font-display text-lg font-semibold text-ink dark:text-cream">{{ t('vendors.recentDeliveries') }}</h2>
-        <span class="text-sm text-stone-500 dark:text-stone-400">{{ vendorDeliveries.length }} {{ t('vendors.total') }}</span>
+        <div class="flex items-center gap-3">
+          <router-link
+            v-if="vendor"
+            :to="{ path: '/deliveries', query: { vendor: vendor.id } }"
+            class="inline-flex items-center gap-1 text-sm text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 underline-offset-2 hover:underline transition-colors ease-snap"
+          >
+            {{ t('vendors.viewDeliveries') }}
+            <ExternalLink class="h-3.5 w-3.5" />
+          </router-link>
+          <span class="text-sm text-stone-500 dark:text-stone-400">{{ vendorDeliveries.length }} {{ t('vendors.total') }}</span>
+        </div>
       </div>
       <div class="space-y-3 max-h-96 overflow-y-auto">
         <div v-for="delivery in vendorDeliveries.slice(0, 5)" :key="delivery.id"
           class="p-3 bg-cream-2 dark:bg-ink-2 rounded-lg">
-          <div class="flex justify-between items-start mb-2">
-            <div>
-              <h4 class="font-medium text-ink dark:text-cream">Delivery #<span class="font-mono sw-tabular">{{ delivery.id?.slice(-6) }}</span></h4>
+          <div class="flex justify-between items-start mb-2 gap-2">
+            <div class="min-w-0">
+              <h4
+                class="font-medium text-ink dark:text-cream truncate"
+                :title="getDeliveryItemNames(delivery) || delivery.delivery_reference || ''"
+              >
+                {{ getDeliveryItemNames(delivery) || delivery.delivery_reference || '—' }}
+              </h4>
               <p class="text-sm text-stone-600 dark:text-stone-400">{{ formatDate(delivery.delivery_date) }}</p>
             </div>
             <span :class="DeliveryPaymentCalculator.getPaymentStatusClass(delivery.payment_status)">
@@ -699,6 +714,13 @@ import {
 } from '../services/pocketbase';
 import { DeliveryPaymentCalculator, type DeliveryWithPaymentStatus } from '../services/deliveryUtils';
 import { TallyXmlExporter } from '../utils/tallyXmlExport';
+import {
+  selectVendorDeliveries,
+  selectVendorServiceBookings,
+  selectVendorPayments,
+  selectVendorRefundTransactions,
+  resolveTags,
+} from '../utils/detailViewSelectors';
 
 const route = useRoute();
 const router = useRouter();
@@ -1183,38 +1205,27 @@ const loadVendorData = async () => {
     allServiceBookings.value = allServiceBookingsData;
     paymentAllocations.value = allPaymentAllocationsData;
     vendor.value = vendorData.find(v => v.id === vendorId) || null;
-    
-    // Filter vendor deliveries and enhance with payment status
-    const filteredDeliveries = allDeliveriesData
-      .filter(delivery => delivery.vendor === vendorId)
-      .sort((a, b) => new Date(b.delivery_date).getTime() - new Date(a.delivery_date).getTime());
-    
+
+    // Derive the per-vendor association sets via pure selectors (same membership/sort
+    // rules as before — extracted so the membership safety-net binds to real code).
+    const filteredDeliveries = selectVendorDeliveries(allDeliveriesData, vendorId);
+
     vendorDeliveries.value = DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus(
       filteredDeliveries,
       allPaymentAllocationsData
     );
-    vendorServiceBookings.value = allServiceBookingsData
-      .filter(booking => booking.vendor === vendorId)
-      .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+    vendorServiceBookings.value = selectVendorServiceBookings(allServiceBookingsData, vendorId);
     allPayments.value = allPaymentsData;
-    vendorPayments.value = allPaymentsData
-      .filter(payment => payment.vendor === vendorId)
-      .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime());
+    vendorPayments.value = selectVendorPayments(allPaymentsData, vendorId);
     vendorReturns.value = allReturns;
     vendorCreditNotes.value = allCreditNotes;
     vendorCreditNoteUsages.value = allCreditNoteUsages;
-    // Filter refund transactions (credit transactions with vendor)
-    vendorRefunds.value = allTransactions
-      .filter(transaction => transaction.type === 'credit' && transaction.vendor === vendorId)
-      .sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime());
+    // Refund transactions = credit transactions for this vendor (newest first).
+    vendorRefunds.value = selectVendorRefundTransactions(allTransactions, vendorId);
     accounts.value = accountsData;
 
     // Map tags for the vendor
-    if (vendor.value && vendor.value.tags && vendor.value.tags.length > 0) {
-      vendorTags.value = allTags.filter(tag => vendor.value!.tags!.includes(tag.id!));
-    } else {
-      vendorTags.value = [];
-    }
+    vendorTags.value = resolveTags(allTags, vendor.value?.tags);
 
     if (!vendor.value) {
       router.push('/vendors');
@@ -1230,7 +1241,7 @@ const recordPayment = () => {
   currentPayment.value = null;
   currentAllocations.value = [];
   showPaymentModal.value = true;
-  openModal('vendor-detail-payment-modal');
+  openModal('vendor-detail-payment-modal', handlePaymentModalClose);
 };
 
 const handlePaymentModalSubmit = async (data: any) => {
@@ -1369,6 +1380,13 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
 };
 
+const getDeliveryItemNames = (delivery: DeliveryWithPaymentStatus): string => {
+  return (delivery.expand?.delivery_items
+    ?.map((di) => di.expand?.item?.name)
+    .filter(Boolean)
+    .join(', ')) || '';
+};
+
 const getReturnStatusClass = (status: string) => {
   const classes = {
     initiated: 'status-pending',
@@ -1449,18 +1467,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.status-pending {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300;
-}
-
-.status-partial {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 dark:bg-ink-4 dark:text-stone-300;
-}
-
-.status-paid {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-forest-100 text-forest-800 dark:bg-forest-900/40 dark:text-forest-300;
-}
-
 /* Ledger table text wrapping */
 .ledger-particulars {
   @apply max-w-xs md:max-w-sm lg:max-w-md;

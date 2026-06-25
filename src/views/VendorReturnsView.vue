@@ -60,13 +60,34 @@
           <option value="refunded">{{ t('vendors.returnStatuses.refunded') }}</option>
         </select>
 
-        <select v-model="vendorFilter" class="input min-w-0">
+        <select :value="filters.vendor || ''" @change="onVendorFilterChange" class="input min-w-0">
           <option value="">{{ t('filters.allVendors') }}</option>
           <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
             {{ vendor.name || vendor.contact_person || t('common.unnamedVendor') }}
           </option>
         </select>
       </div>
+    </div>
+
+    <!-- Active vendor-filter chip: dismissible so the user is never stuck on a
+         filtered view. Shown on both mobile and desktop. -->
+    <div v-if="hasActiveFilter" class="flex items-center gap-2">
+      <span
+        class="inline-flex items-center gap-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 pl-3 pr-1 py-1 text-sm font-medium"
+      >
+        <span class="truncate max-w-[60vw] sm:max-w-xs">
+          {{ t('common.filteredBy', { label: filterVendorName || t('common.filtered') }) }}
+        </span>
+        <button
+          type="button"
+          @click="clearFilter('vendor')"
+          class="flex items-center justify-center h-11 w-11 sm:h-7 sm:w-7 -my-2 sm:my-0 rounded-full text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800/40 transition-colors"
+          :title="t('common.clearFilter')"
+          :aria-label="t('common.clearFilter')"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </span>
     </div>
 
     <!-- Stats Cards -->
@@ -99,18 +120,42 @@
           <!-- xl Desktop Headers -->
           <thead class="bg-cream-2 dark:bg-ink-2 hidden xl:table-header-group">
             <tr>
-              <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
-                {{ t('common.vendor') }}
-              </th>
-              <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
-                {{ t('vendors.returnDate') }}
-              </th>
-              <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
-                {{ t('vendors.returnAmount') }}
-              </th>
-              <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
-                {{ t('common.status') }}
-              </th>
+              <SortableTh
+                sort-key="vendor"
+                :active-key="sortKey"
+                :direction="sortDir"
+                :label="t('common.vendor')"
+                align="left"
+                th-class="px-4 py-3 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400"
+                @sort="toggleSort"
+              />
+              <SortableTh
+                sort-key="returnDate"
+                :active-key="sortKey"
+                :direction="sortDir"
+                :label="t('vendors.returnDate')"
+                align="right"
+                th-class="px-4 py-3 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400"
+                @sort="toggleSort"
+              />
+              <SortableTh
+                sort-key="amount"
+                :active-key="sortKey"
+                :direction="sortDir"
+                :label="t('vendors.returnAmount')"
+                align="right"
+                th-class="px-4 py-3 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400"
+                @sort="toggleSort"
+              />
+              <SortableTh
+                sort-key="status"
+                :active-key="sortKey"
+                :direction="sortDir"
+                :label="t('common.status')"
+                align="left"
+                th-class="px-4 py-3 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400"
+                @sort="toggleSort"
+              />
               <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
                 {{ t('common.actions') }}
               </th>
@@ -151,11 +196,16 @@
                 </td>
               </tr>
             </template>
-            <tr v-else v-for="returnItem in filteredReturns" :key="returnItem.id" class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap">
+            <tr v-else v-for="returnItem in sortedReturns" :key="returnItem.id" @click="viewReturn(returnItem)" class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap cursor-pointer">
               <!-- xl table cells -->
               <td class="hidden xl:table-cell px-4 py-3.5">
                 <div class="font-medium text-ink dark:text-cream">
-                  {{ returnItem.expand?.vendor?.contact_person || returnItem.expand?.vendor?.name || t('common.unknownVendor') }}
+                  <RecordLink
+                    type="vendor"
+                    mode="detail"
+                    :id="returnItem.vendor"
+                    :label="returnItem.expand?.vendor?.contact_person || returnItem.expand?.vendor?.name || t('common.unknownVendor')"
+                  />
                 </div>
                 <div class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
                   {{ t(`vendors.returnReasons.${returnItem.reason}`) }}
@@ -182,28 +232,26 @@
                   {{ t(`vendors.returnStatuses.${returnItem.status}`) }}
                 </span>
               </td>
-              <td class="hidden xl:table-cell px-4 py-3.5">
+              <td class="hidden xl:table-cell px-4 py-3.5" @click.stop>
                 <div class="flex items-center space-x-2">
                   <button
-                    @click="viewReturn(returnItem)"
-                    class="h-8 w-8 flex items-center justify-center rounded-md text-stone-400 hover:text-ink dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap"
-                  >
-                    <Eye class="h-4 w-4" />
-                  </button>
-                  <button
                     v-if="returnItem.status === 'initiated'"
-                    @click="approveReturn(returnItem)"
-                    class="h-8 w-8 flex items-center justify-center rounded-md text-forest-600 dark:text-forest-400 hover:text-forest-500 dark:hover:text-forest-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap"
+                    @click.stop="approveReturn(returnItem)"
+                    class="h-9 w-9 flex items-center justify-center rounded-md text-forest-600 dark:text-forest-400 hover:text-forest-500 dark:hover:text-forest-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap"
                   >
                     <Check class="h-4 w-4" />
                   </button>
                   <button
                     v-if="returnItem.status === 'approved' && returnItem.processing_option !== 'credit_note'"
-                    @click="processRefund(returnItem)"
-                    class="h-8 w-8 flex items-center justify-center rounded-md text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap"
+                    @click.stop="processRefund(returnItem)"
+                    class="h-9 w-9 flex items-center justify-center rounded-md text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150 ease-snap"
                   >
                     <DollarSign class="h-4 w-4" />
                   </button>
+                  <span
+                    v-if="returnItem.status !== 'initiated' && !(returnItem.status === 'approved' && returnItem.processing_option !== 'credit_note')"
+                    class="text-xs text-stone-400 dark:text-stone-500"
+                  >&mdash;</span>
                 </div>
               </td>
 
@@ -218,7 +266,12 @@
                       </div>
                       <div class="min-w-0">
                         <div class="font-medium text-ink dark:text-cream truncate">
-                          {{ returnItem.expand?.vendor?.contact_person || returnItem.expand?.vendor?.name || t('common.unknownVendor') }}
+                          <RecordLink
+                            type="vendor"
+                            mode="detail"
+                            :id="returnItem.vendor"
+                            :label="returnItem.expand?.vendor?.contact_person || returnItem.expand?.vendor?.name || t('common.unknownVendor')"
+                          />
                         </div>
                         <div class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
                           {{ t(`vendors.returnReasons.${returnItem.reason}`) }}
@@ -250,29 +303,27 @@
                     </div>
                   </div>
 
-                  <!-- Actions row -->
-                  <div class="flex items-center gap-2 pt-3 border-t border-stone-100 dark:border-ink-4">
-                    <button
-                      @click="viewReturn(returnItem)"
-                      class="btn-outline text-xs py-1 px-2 flex items-center"
-                    >
-                      <Eye class="h-3 w-3 mr-1" />
-                      {{ t('common.view') }}
-                    </button>
+                  <!-- Actions row: contextual actions only (the card itself opens details).
+                       @click.stop prevents the row's view handler from firing. -->
+                  <div
+                    v-if="returnItem.status === 'initiated' || (returnItem.status === 'approved' && returnItem.processing_option !== 'credit_note')"
+                    class="flex items-center gap-3 pt-3 border-t border-stone-100 dark:border-ink-4"
+                    @click.stop
+                  >
                     <button
                       v-if="returnItem.status === 'initiated'"
-                      @click="approveReturn(returnItem)"
-                      class="btn-primary text-xs py-1 px-2 flex items-center bg-forest-600 hover:bg-forest-700"
+                      @click.stop="approveReturn(returnItem)"
+                      class="btn-primary text-xs min-h-[44px] py-2 px-3 flex items-center bg-forest-600 hover:bg-forest-700"
                     >
-                      <Check class="h-3 w-3 mr-1" />
+                      <Check class="h-4 w-4 mr-1.5" />
                       {{ t('common.approve') }}
                     </button>
                     <button
                       v-if="returnItem.status === 'approved' && returnItem.processing_option !== 'credit_note'"
-                      @click="processRefund(returnItem)"
-                      class="btn-primary text-xs py-1 px-2 flex items-center"
+                      @click.stop="processRefund(returnItem)"
+                      class="btn-primary text-xs min-h-[44px] py-2 px-3 flex items-center"
                     >
-                      <DollarSign class="h-3 w-3 mr-1" />
+                      <DollarSign class="h-4 w-4 mr-1.5" />
                       {{ t('vendors.refund') }}
                     </button>
                   </div>
@@ -284,11 +335,11 @@
       </div>
 
       <!-- Empty State -->
-      <div v-if="filteredReturns.length === 0" class="flex flex-col items-center justify-center py-16 px-4 text-center">
+      <div v-if="sortedReturns.length === 0" class="flex flex-col items-center justify-center py-16 px-4 text-center">
         <RotateCcw class="h-12 w-12 text-stone-300 dark:text-stone-600 mb-4" />
         <h3 class="font-display text-base font-semibold text-ink dark:text-cream">{{ t('vendors.noReturnsFound') }}</h3>
         <p class="mt-1 text-sm text-stone-500 dark:text-stone-400 max-w-sm">
-          {{ searchQuery || statusFilter || vendorFilter ? t('vendors.tryAdjustingFilters') : t('vendors.getStartedReturn') }}
+          {{ searchQuery || statusFilter || hasActiveFilter ? t('vendors.tryAdjustingFilters') : t('vendors.getStartedReturn') }}
         </p>
       </div>
     </div>
@@ -299,6 +350,9 @@
       :is-edit="isEditMode"
       :return-data="selectedReturn"
       :vendors="vendors"
+      :deliveries="deliveries"
+      :service-bookings="serviceBookings"
+      :payments="payments"
       @close="closeReturnModal"
       @save="handleReturnSave"
     />
@@ -326,24 +380,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import {
   Plus,
   Download,
-  Eye,
   Check,
   DollarSign,
-  RotateCcw
+  RotateCcw,
+  X
 } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
+import RecordLink from '../components/RecordLink.vue';
+import SortableTh from '../components/SortableTh.vue';
 import { useI18n } from '../composables/useI18n';
+import { useTableSort } from '../composables/useTableSort';
+import { useUrlFilters } from '../composables/useUrlFilters';
 import { useSubscription } from '../composables/useSubscription';
 import { useSiteData } from '../composables/useSiteData';
 import { useModalState } from '../composables/useModalState';
+import { useKeyboardShortcutSingle } from '../composables/useKeyboardShortcut';
 import {
   vendorReturnService,
   vendorService,
   accountService,
+  deliveryService,
+  serviceBookingService,
+  paymentService,
   type VendorReturn
 } from '../services/pocketbase';
 import ReturnModal from '../components/returns/ReturnModal.vue';
@@ -355,10 +417,12 @@ const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { openModal, closeModal: closeModalState } = useModalState();
 
+// URL-driven relation filter (?vendor=<id>) for cross-linking from VendorDetailView.
+const { filters, hasActiveFilter, clearFilter, setFilter } = useUrlFilters(['vendor']);
+
 // State
 const searchQuery = ref('');
 const statusFilter = ref('');
-const vendorFilter = ref('');
 const loading = ref(false);
 const showReturnModal = ref(false);
 const showDetailsModal = ref(false);
@@ -366,10 +430,18 @@ const showRefundModal = ref(false);
 const isEditMode = ref(false);
 const selectedReturn = ref<VendorReturn | null>(null);
 
-// Use site data management
+// Use site data management.
+// The loader branches on the active vendor filter: getByVendor when filtering
+// (server-side, site-scoped), getAll otherwise. The URL ?vendor=<id> drives this.
 const { data: returnsData, loading: returnsLoading, reload: reloadReturns } = useSiteData(
-  async () => await vendorReturnService.getAll()
+  async () => filters.vendor
+    ? await vendorReturnService.getByVendor(filters.vendor)
+    : await vendorReturnService.getAll()
 );
+
+// When the vendor filter changes, reload the returns list. reloadReturns() handles
+// the auto-cancel race internally, so NO onMounted loader is needed.
+watch(() => filters.vendor, () => reloadReturns());
 
 const { data: vendorsData } = useSiteData(
   async () => await vendorService.getAll()
@@ -379,10 +451,27 @@ const { data: accountsData } = useSiteData(
   async () => await accountService.getAll()
 );
 
+// Load deliveries, service bookings and payments so the vendor picker in the
+// return modal can show each vendor's outstanding balance
+const { data: deliveriesData } = useSiteData(
+  async () => await deliveryService.getAll()
+);
+
+const { data: serviceBookingsData } = useSiteData(
+  async () => await serviceBookingService.getAll()
+);
+
+const { data: paymentsData } = useSiteData(
+  async () => await paymentService.getAll()
+);
+
 // Computed properties
 const returns = computed(() => returnsData.value || []);
 const vendors = computed(() => vendorsData.value || []);
 const accounts = computed(() => accountsData.value || []);
+const deliveries = computed(() => deliveriesData.value || []);
+const serviceBookings = computed(() => serviceBookingsData.value || []);
+const payments = computed(() => paymentsData.value || []);
 
 const filteredReturns = computed(() => {
   let filtered = returns.value;
@@ -401,12 +490,56 @@ const filteredReturns = computed(() => {
     filtered = filtered.filter(r => r.status === statusFilter.value);
   }
 
-  if (vendorFilter.value) {
-    filtered = filtered.filter(r => r.vendor === vendorFilter.value);
-  }
+  // NOTE: vendor filtering is now done server-side via the URL-driven loader
+  // (getByVendor), so no client-side vendor branch is needed here.
 
   return filtered;
 });
+
+// Client-side column sort, applied on top of the already-filtered list so the
+// status filter, search and URL vendor filter compose with sorting. Default:
+// newest returns first (return_date descending).
+const { sortKey, sortDir, toggleSort, sortRows } = useTableSort<VendorReturn>({
+  defaultKey: 'returnDate',
+  defaultDir: 'desc',
+});
+
+const sortedReturns = computed(() =>
+  sortRows(filteredReturns.value, (row, key) => {
+    switch (key) {
+      case 'vendor':
+        return row.expand?.vendor?.contact_person;
+      case 'returnDate':
+        return row.return_date;
+      case 'amount':
+        return row.total_return_amount;
+      case 'status':
+        return row.status;
+      default:
+        return undefined;
+    }
+  })
+);
+
+// Vendor name for the dismissible filter chip. Prefer the first loaded return's
+// expanded vendor; fall back to a lookup in the vendors list by the filtered id.
+const filterVendorName = computed(() => {
+  if (!filters.vendor) return '';
+  const fromReturns = returns.value[0]?.expand?.vendor?.contact_person;
+  if (fromReturns) return fromReturns;
+  const vendor = vendors.value.find(v => v.id === filters.vendor);
+  return vendor?.contact_person || vendor?.name || '';
+});
+
+// The vendor dropdown writes to the URL: empty option clears, an id sets it.
+const onVendorFilterChange = (event: Event) => {
+  const value = (event.target as HTMLSelectElement).value;
+  if (value) {
+    setFilter('vendor', value);
+  } else {
+    clearFilter('vendor');
+  }
+};
 
 const pendingReturns = computed(() =>
   returns.value.filter(r => r.status === 'initiated').length
@@ -449,8 +582,14 @@ const openCreateModal = () => {
   isEditMode.value = false;
   selectedReturn.value = null;
   showReturnModal.value = true;
-  openModal('vendor-returns-add-modal');
+  openModal('vendor-returns-add-modal', closeReturnModal);
 };
+
+// Shift+Alt+N opens the create-return modal (respects the create limit, matching the button)
+useKeyboardShortcutSingle('n', () => {
+  if (!canCreateReturn.value) return;
+  openCreateModal();
+}, { shiftKey: true, altKey: true });
 
 const closeReturnModal = () => {
   showReturnModal.value = false;
@@ -473,7 +612,7 @@ const closeRefundModal = () => {
 const viewReturn = (returnItem: VendorReturn) => {
   selectedReturn.value = returnItem;
   showDetailsModal.value = true;
-  openModal('vendor-returns-details-modal');
+  openModal('vendor-returns-details-modal', closeDetailsModal);
 };
 
 const approveReturn = async (returnItem: VendorReturn) => {
@@ -488,7 +627,7 @@ const approveReturn = async (returnItem: VendorReturn) => {
 const processRefund = (returnItem: VendorReturn) => {
   selectedReturn.value = returnItem;
   showRefundModal.value = true;
-  openModal('vendor-returns-refund-modal');
+  openModal('vendor-returns-refund-modal', closeRefundModal);
 };
 
 const handleReturnSave = async () => {

@@ -1,7 +1,26 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { isPdfFile, getEstimatedImageSize, convertPdfToImages } from '../../utils/pdfToImage'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import {
+  isPdfFile,
+  getEstimatedImageSize,
+  convertPdfToImages,
+  classifyPdfError,
+  isPasswordException,
+  isIncorrectPasswordError,
+  isNeedPasswordError,
+  PdfTooManyPagesError,
+  MAX_PDF_PAGES,
+} from '../../utils/pdfToImage'
 
 describe('pdfToImage Utilities', () => {
+  // Per-test vi.doMock('pdfjs-dist', ...) registrations otherwise leak across
+  // tests (e.g. the "Not testing full conversion" rejecting mock bleeding into
+  // the page-limit test), making them order-dependent. Unmock + reset after each.
+  afterEach(() => {
+    vi.doUnmock('pdfjs-dist')
+    vi.doUnmock('pdfjs-dist/build/pdf.worker.min.mjs?url')
+    vi.resetModules()
+  })
+
   describe('isPdfFile Function', () => {
     it('should return true for PDF mime type', () => {
       const file = new File([''], 'document.pdf', { type: 'application/pdf' })
@@ -355,6 +374,135 @@ describe('pdfToImage Utilities', () => {
 
       expect(workerSrc).toBe('worker-path.mjs')
       expect(typeof workerSrc).toBe('string')
+    })
+  })
+
+  describe('MAX_PDF_PAGES Constant', () => {
+    it('should be 10', () => {
+      expect(MAX_PDF_PAGES).toBe(10)
+    })
+  })
+
+  describe('PdfTooManyPagesError', () => {
+    it('should carry page count and max pages', () => {
+      const err = new PdfTooManyPagesError(42)
+      expect(err.name).toBe('PdfTooManyPagesError')
+      expect(err.code).toBe('PDF_TOO_MANY_PAGES')
+      expect(err.pageCount).toBe(42)
+      expect(err.maxPages).toBe(MAX_PDF_PAGES)
+    })
+
+    it('should be an instance of Error', () => {
+      const err = new PdfTooManyPagesError(11)
+      expect(err).toBeInstanceOf(Error)
+    })
+  })
+
+  describe('Password Exception Helpers', () => {
+    it('isPasswordException detects PasswordException by name', () => {
+      expect(isPasswordException({ name: 'PasswordException', code: 1 })).toBe(true)
+      expect(isPasswordException({ name: 'SomeOtherError' })).toBe(false)
+      expect(isPasswordException(null)).toBe(false)
+      expect(isPasswordException(new Error('x'))).toBe(false)
+    })
+
+    it('isNeedPasswordError detects code 1 (NEED_PASSWORD)', () => {
+      expect(isNeedPasswordError({ name: 'PasswordException', code: 1 })).toBe(true)
+      expect(isNeedPasswordError({ name: 'PasswordException', code: 2 })).toBe(false)
+      expect(isNeedPasswordError({ name: 'PasswordException' })).toBe(true) // undefined code => need
+    })
+
+    it('isIncorrectPasswordError detects code 2 (INCORRECT_PASSWORD)', () => {
+      expect(isIncorrectPasswordError({ name: 'PasswordException', code: 2 })).toBe(true)
+      expect(isIncorrectPasswordError({ name: 'PasswordException', code: 1 })).toBe(false)
+      expect(isIncorrectPasswordError(null)).toBe(false)
+    })
+  })
+
+  describe('classifyPdfError', () => {
+    it('classifies too-many-pages', () => {
+      expect(classifyPdfError(new PdfTooManyPagesError(20))).toBe('too-many-pages')
+    })
+
+    it('classifies incorrect-password (code 2)', () => {
+      expect(classifyPdfError({ name: 'PasswordException', code: 2 })).toBe('incorrect-password')
+    })
+
+    it('classifies password-required (code 1 / missing)', () => {
+      expect(classifyPdfError({ name: 'PasswordException', code: 1 })).toBe('password-required')
+      expect(classifyPdfError({ name: 'PasswordException' })).toBe('password-required')
+    })
+
+    it('classifies everything else as unknown', () => {
+      expect(classifyPdfError(new Error('boom'))).toBe('unknown')
+      expect(classifyPdfError(null)).toBe('unknown')
+      expect(classifyPdfError({ name: 'TypeError' })).toBe('unknown')
+    })
+  })
+
+  describe('convertPdfToImages Page Limit Guard', () => {
+    beforeEach(() => {
+      vi.resetModules()
+    })
+
+    it('throws PdfTooManyPagesError when numPages exceeds MAX_PDF_PAGES', async () => {
+      vi.doMock('pdfjs-dist', () => ({
+        GlobalWorkerOptions: { workerSrc: 'set' },
+        getDocument: vi.fn(() => ({
+          promise: Promise.resolve({ numPages: MAX_PDF_PAGES + 5 })
+        }))
+      }))
+      vi.doMock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({ default: 'worker' }))
+
+      const { convertPdfToImages: convert, PdfTooManyPagesError: TooMany } =
+        await import('../../utils/pdfToImage')
+
+      const pdfFile = new File(['x'], 'big.pdf', { type: 'application/pdf' })
+      pdfFile.arrayBuffer = async () => new ArrayBuffer(8)
+
+      await expect(convert(pdfFile)).rejects.toBeInstanceOf(TooMany)
+    })
+
+    it('propagates PasswordException unchanged (not wrapped in generic error)', async () => {
+      const passwordException = { name: 'PasswordException', code: 1, message: 'No password given' }
+      vi.doMock('pdfjs-dist', () => ({
+        GlobalWorkerOptions: { workerSrc: 'set' },
+        getDocument: vi.fn(() => ({
+          promise: Promise.reject(passwordException)
+        }))
+      }))
+      vi.doMock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({ default: 'worker' }))
+
+      const { convertPdfToImages: convert } = await import('../../utils/pdfToImage')
+
+      const pdfFile = new File(['x'], 'enc.pdf', { type: 'application/pdf' })
+      pdfFile.arrayBuffer = async () => new ArrayBuffer(8)
+
+      await expect(convert(pdfFile)).rejects.toMatchObject({ name: 'PasswordException' })
+    })
+
+    it('threads the password option into getDocument', async () => {
+      const getDocument = vi.fn(() => ({
+        promise: Promise.resolve({ numPages: 1, getPage: vi.fn() })
+      }))
+      vi.doMock('pdfjs-dist', () => ({
+        GlobalWorkerOptions: { workerSrc: 'set' },
+        getDocument
+      }))
+      vi.doMock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({ default: 'worker' }))
+
+      const { convertPdfToImages: convert } = await import('../../utils/pdfToImage')
+
+      const pdfFile = new File(['x'], 'enc.pdf', { type: 'application/pdf' })
+      pdfFile.arrayBuffer = async () => new ArrayBuffer(8)
+
+      // Will fail later (no real canvas/page render), but we only assert the
+      // password was passed to getDocument.
+      await convert(pdfFile, { password: 'secret' }).catch(() => {})
+
+      expect(getDocument).toHaveBeenCalledWith(
+        expect.objectContaining({ password: 'secret' })
+      )
     })
   })
 

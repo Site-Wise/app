@@ -1,4 +1,35 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
+import ItemCreateModal from '../../components/ItemCreateModal.vue'
+
+// --- Mocks for the mounted-component suite -------------------------------
+// The component passes its reactive `form` object to itemService.create and
+// then mutates it (resetForm) on success, so we snapshot the argument at call
+// time to assert against — inspecting mock.calls later would see the reset form.
+let lastCreateArg: Record<string, unknown> | null = null
+const itemCreateMock = vi.fn((arg: Record<string, unknown>) => {
+  lastCreateArg = { ...arg }
+})
+const checkCreateLimitMock = vi.fn(() => true)
+const toastSuccessMock = vi.fn()
+const toastErrorMock = vi.fn()
+
+vi.mock('../../composables/useI18n', () => ({
+  useI18n: () => ({ t: (key: string) => key }),
+}))
+
+vi.mock('../../composables/useSubscription', () => ({
+  useSubscription: () => ({ checkCreateLimit: checkCreateLimitMock }),
+}))
+
+vi.mock('../../composables/useToast', () => ({
+  useToast: () => ({ success: toastSuccessMock, error: toastErrorMock }),
+}))
+
+vi.mock('../../services/pocketbase', () => ({
+  itemService: { create: (...args: unknown[]) => itemCreateMock(...args) },
+}))
 
 describe('ItemCreateModal Logic', () => {
   beforeEach(() => {
@@ -795,8 +826,161 @@ describe('ItemCreateModal Logic', () => {
 
   describe('Component Integration', () => {
     it('should handle component import without errors', async () => {
-      const ItemCreateModal = await import('../../components/ItemCreateModal.vue')
-      expect(ItemCreateModal.default).toBeDefined()
+      const Imported = await import('../../components/ItemCreateModal.vue')
+      expect(Imported.default).toBeDefined()
     })
   })
 })
+
+// --- Mounted-component behaviour ----------------------------------------
+describe('ItemCreateModal (mounted)', () => {
+  let wrapper: ReturnType<typeof mount> | null = null
+
+  const mountModal = (props: Record<string, unknown> = {}) =>
+    mount(ItemCreateModal as any, {
+      props: { show: true, ...props },
+      global: {
+        stubs: {
+          // Stub the heavy tag picker and icons.
+          TagSelector: { template: '<div data-test="tag-selector" />' },
+          Loader2: true,
+          X: true,
+        },
+      },
+    })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    lastCreateArg = null
+    checkCreateLimitMock.mockReturnValue(true)
+    // Snapshot the (reactive) arg and resolve the created item.
+    itemCreateMock.mockImplementation((arg: Record<string, unknown>) => {
+      lastCreateArg = { ...arg }
+      return Promise.resolve({
+        id: 'item-1',
+        name: 'Cement',
+        description: '',
+        unit: 'bag',
+        tags: [],
+      })
+    })
+  })
+
+  afterEach(() => {
+    wrapper?.unmount()
+    wrapper = null
+  })
+
+  const submitButton = () =>
+    wrapper!.findAll('button').find(
+      (b) => b.text().includes('common.create') || b.text().includes('common.creating'),
+    )!
+
+  it('does not render when show is false', () => {
+    wrapper = mountModal({ show: false })
+    expect(wrapper.find('form').exists()).toBe(false)
+  })
+
+  it('renders required name and unit fields when shown', () => {
+    wrapper = mountModal()
+    const name = wrapper.find('input[type="text"]')
+    expect(name.exists()).toBe(true)
+    expect(name.attributes('required')).toBeDefined()
+    const select = wrapper.find('select')
+    expect(select.attributes('required')).toBeDefined()
+  })
+
+  it('seeds the name field from the initialName prop on open', async () => {
+    wrapper = mountModal({ show: false, initialName: 'Steel Rod' })
+    await wrapper.setProps({ show: true })
+    await nextTick()
+    expect((wrapper.find('input[type="text"]').element as HTMLInputElement).value).toBe('Steel Rod')
+  })
+
+  it('submits the form and emits created with the new item payload', async () => {
+    wrapper = mountModal()
+    await wrapper.find('input[type="text"]').setValue('Cement')
+    await wrapper.find('select').setValue('bag')
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(itemCreateMock).toHaveBeenCalledTimes(1)
+    expect(lastCreateArg).toMatchObject({ name: 'Cement', unit: 'bag' })
+    expect(toastSuccessMock).toHaveBeenCalled()
+    const created = wrapper.emitted('created')
+    expect(created).toBeTruthy()
+    expect((created![0][0] as any).id).toBe('item-1')
+  })
+
+  it('blocks creation and shows an error when the subscription limit is reached', async () => {
+    checkCreateLimitMock.mockReturnValue(false)
+    wrapper = mountModal()
+    await wrapper.find('input[type="text"]').setValue('Cement')
+    await wrapper.find('select').setValue('bag')
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(itemCreateMock).not.toHaveBeenCalled()
+    expect(toastErrorMock).toHaveBeenCalledWith('subscription.banner.freeTierLimitReached')
+    expect(wrapper.emitted('created')).toBeFalsy()
+  })
+
+  it('shows an error toast and keeps the form when create rejects', async () => {
+    itemCreateMock.mockRejectedValueOnce(new Error('network'))
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    wrapper = mountModal()
+    await wrapper.find('input[type="text"]').setValue('Cement')
+    await wrapper.find('select').setValue('bag')
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(toastErrorMock).toHaveBeenCalledWith('messages.error')
+    expect(wrapper.emitted('created')).toBeFalsy()
+    // Form not reset on error — name retained.
+    expect((wrapper.find('input[type="text"]').element as HTMLInputElement).value).toBe('Cement')
+    // Loading flag reset in finally -> submit re-enabled.
+    expect(submitButton().attributes('disabled')).toBeUndefined()
+    errSpy.mockRestore()
+  })
+
+  it('emits close from the cancel button', async () => {
+    wrapper = mountModal()
+    const cancel = wrapper.findAll('button').find((b) => b.text().includes('common.cancel'))!
+    await cancel.trigger('click')
+    expect(wrapper.emitted('close')).toBeTruthy()
+  })
+
+  it('emits close from the header close button and backdrop', async () => {
+    wrapper = mountModal()
+    await wrapper.find('.fixed.inset-0').trigger('click')
+    expect(wrapper.emitted('close')).toBeTruthy()
+  })
+
+  it('resets the form to the initial name after a successful create', async () => {
+    wrapper = mountModal({ initialName: 'Cement' })
+    await wrapper.find('input[type="text"]').setValue('Changed')
+    await wrapper.find('select').setValue('bag')
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    // resetForm restores name to initialName and clears unit.
+    expect((wrapper.find('input[type="text"]').element as HTMLInputElement).value).toBe('Cement')
+    expect((wrapper.find('select').element as HTMLSelectElement).value).toBe('')
+  })
+
+  it('updates the name when initialName changes while open', async () => {
+    wrapper = mountModal({ initialName: 'A' })
+    await nextTick()
+    await wrapper.setProps({ initialName: 'B' })
+    await nextTick()
+    expect((wrapper.find('input[type="text"]').element as HTMLInputElement).value).toBe('B')
+  })
+})
+
+// Local flushPromises helper.
+function flushPromises() {
+  return new Promise((resolve) => setTimeout(resolve, 0))
+}

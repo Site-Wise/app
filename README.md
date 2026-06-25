@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/logo.webp" alt="SiteWise Logo" width="120" height="120">
+  <img src="public/sitewise-mark.svg" alt="SiteWise Logo" width="120" height="120">
 
   # SiteWise 🏗️
 

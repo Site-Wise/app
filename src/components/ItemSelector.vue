@@ -21,13 +21,17 @@
           @focus="showDropdown = true"
           @click="showDropdown = true"
           :readonly="readonly"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
         />
         <div class="absolute inset-y-0 right-0 pr-3 flex items-center space-x-1">
           <button
             v-if="selectedItem && !readonly"
             type="button"
             @click.stop="clearSelection"
-            class="text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream p-1 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors"
+            class="text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream min-h-touch min-w-[44px] inline-flex items-center justify-center rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors"
             :title="t('common.clear')"
           >
             <X class="h-4 w-4" />

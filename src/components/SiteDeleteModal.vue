@@ -70,6 +70,10 @@
             :placeholder="site?.name"
             class="input w-full focus:border-clay-500 dark:focus:border-clay-500"
             ref="confirmInput"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
           />
         </div>
       </div>

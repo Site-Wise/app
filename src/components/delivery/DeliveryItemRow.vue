@@ -47,6 +47,10 @@
           class="input font-mono sw-tabular min-h-[44px]"
           :class="{ 'border-clay-400 dark:border-clay-500': errors.quantity }"
           placeholder="0"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
         />
         <div v-if="errors.quantity" class="text-clay-600 dark:text-clay-400 text-xs mt-1">
           {{ errors.quantity }}
@@ -74,6 +78,10 @@
             class="input pr-10 font-mono sw-tabular min-h-[44px]"
             :class="{ 'border-clay-400 dark:border-clay-500': errors.unit_price }"
             :placeholder="lastPrice !== null ? `Last: ₹${lastPrice.toFixed(2)}` : '0.00'"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
           />
           <button
             type="button"
@@ -100,6 +108,10 @@
               class="w-16 px-2 py-2 text-center text-sm font-mono sw-tabular border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream focus:ring-2 focus:ring-amber-500 focus:border-transparent min-h-[44px]"
               placeholder="0"
               autofocus
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
               @keydown.enter.prevent="applyTax('unit_price')"
               @keydown.escape="showTaxInput = null"
             />
@@ -140,6 +152,10 @@
             class="input pr-10 font-mono sw-tabular min-h-[44px]"
             :class="{ 'border-clay-400 dark:border-clay-500': errors.total_amount }"
             placeholder="0.00"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
           />
           <button
             type="button"
@@ -166,6 +182,10 @@
               class="w-16 px-2 py-2 text-center text-sm font-mono sw-tabular border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream focus:ring-2 focus:ring-amber-500 focus:border-transparent min-h-[44px]"
               placeholder="0"
               autofocus
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
               @keydown.enter.prevent="applyTax('total_amount')"
               @keydown.escape="showTaxInput = null"
             />
@@ -201,6 +221,10 @@
         class="input"
         rows="2"
         :placeholder="t('delivery.itemNotesPlaceholder')"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
       ></textarea>
     </div>
 

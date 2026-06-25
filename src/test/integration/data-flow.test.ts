@@ -198,7 +198,12 @@ describe('Data Flow Integration', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks()
-    
+
+    // i18n dictionaries are now loaded lazily per-language; this integration
+    // test asserts on translated text, so load English before mounting views.
+    const { useI18n } = await import('../../composables/useI18n')
+    await useI18n().loadLanguage('en')
+
     pinia = createPinia()
     setActivePinia(pinia)
     

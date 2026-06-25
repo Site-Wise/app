@@ -43,7 +43,7 @@
             </div>
           </div>
         </div>
-        <button @click="showCreditModal = true" class="btn-outline">
+        <button @click="openCreditModal" class="btn-outline">
           <Plus class="mr-2 h-4 w-4" />
           Add Credit Entry
         </button>
@@ -271,7 +271,7 @@
           <form @submit.prevent="saveAccount" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Account Name</label>
-              <input v-model="editForm.name" type="text" required class="input mt-1" />
+              <input ref="editNameRef" v-model="editForm.name" type="text" required class="input mt-1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
             </div>
 
             <div>
@@ -287,17 +287,17 @@
             
             <div v-if="editForm.type === 'bank' || editForm.type === 'credit_card'">
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Account Number</label>
-              <input v-model="editForm.account_number" type="text" class="input mt-1 font-mono tabular-nums" />
+              <input v-model="editForm.account_number" type="text" class="input mt-1 font-mono tabular-nums" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
             </div>
 
             <div v-if="editForm.type === 'bank' || editForm.type === 'credit_card'">
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Bank Name</label>
-              <input v-model="editForm.bank_name" type="text" class="input mt-1" />
+              <input v-model="editForm.bank_name" type="text" class="input mt-1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Description</label>
-              <textarea v-model="editForm.description" class="input mt-1" rows="2"></textarea>
+              <textarea v-model="editForm.description" class="input mt-1" rows="2" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
             </div>
 
             <div class="flex items-center">
@@ -328,19 +328,19 @@
           <form @submit.prevent="saveCreditEntry" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Amount</label>
-              <input v-model.number="creditForm.amount" type="number" min="0" step="0.01" required class="input mt-1 font-mono tabular-nums" />
+              <input ref="creditAmountRef" v-model.number="creditForm.amount" type="number" min="0" step="0.01" required class="input mt-1 font-mono tabular-nums" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Description</label>
               <input v-model="creditForm.description" type="text" required class="input mt-1"
-                     placeholder="e.g., Bank deposit, Refund, Correction" />
+                     placeholder="e.g., Bank deposit, Refund, Correction" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Reference</label>
               <input v-model="creditForm.reference" type="text" class="input mt-1 font-mono"
-                     placeholder="e.g., Transaction ID, Check number" />
+                     placeholder="e.g., Transaction ID, Check number" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
             </div>
 
             <div>
@@ -351,7 +351,7 @@
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Notes</label>
               <textarea v-model="creditForm.notes" class="input mt-1" rows="2"
-                        placeholder="Additional details about this credit entry"></textarea>
+                        placeholder="Additional details about this credit entry" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
             </div>
             
             <div class="flex space-x-3 pt-4">
@@ -375,7 +375,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, computed, nextTick } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { useRoute, useRouter } from 'vue-router';
 import { 
@@ -415,6 +415,8 @@ const showEditModal = ref(false);
 const showCreditModal = ref(false);
 const editLoading = ref(false);
 const creditLoading = ref(false);
+const editNameRef = ref<HTMLInputElement>();
+const creditAmountRef = ref<HTMLInputElement>();
 const recalculating = ref(false);
 const filterPeriod = ref('all');
 const showExportDropdown = ref(false);
@@ -572,6 +574,15 @@ const editAccount = () => {
   });
   
   showEditModal.value = true;
+  nextTick(() => {
+    if (typeof editNameRef.value?.focus === 'function') editNameRef.value.focus();
+  });
+};
+
+const openCreditModal = async () => {
+  showCreditModal.value = true;
+  await nextTick();
+  if (typeof creditAmountRef.value?.focus === 'function') creditAmountRef.value.focus();
 };
 
 const saveAccount = async () => {

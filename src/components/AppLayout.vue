@@ -327,7 +327,9 @@ import {
 } from 'lucide-vue-next';
 
 import { usePWAUpdate } from '../composables/usePWAUpdate';
-import { useModalState } from '../composables/useModalState';
+import { useModalState, handlePopState, resetModalStack, setHistoryIntegrationEnabled } from '../composables/useModalState';
+import { useBodyScrollLock } from '../composables/useBodyScrollLock';
+import { usePlatform } from '../composables/usePlatform';
 import { requestQuickActionModal } from '../composables/useQuickActionModal';
 
 const pwaUpdate = usePWAUpdate();
@@ -353,6 +355,11 @@ const { autoStartTour, resetTour, getOnboardingDebugInfo } = useOnboarding();
 const { receivedInvitationsCount, loadReceivedInvitations } = useInvitations();
 const { } = useKeyboardShortcuts(); // Initialize keyboard shortcuts system
 const { isAnyModalOpen } = useModalState();
+const { platformInfo } = usePlatform();
+
+// Central body-scroll-lock: locks/unlocks the body whenever the modal stack
+// transitions between 0 and >0 open overlays (mounted once, here).
+useBodyScrollLock();
 
 const sidebarOpen = ref(false);
 const userMenuOpen = ref(false);
@@ -572,19 +579,51 @@ watch(userMenuOpen, (isOpen) => {
   }
 });
 
+// Platform gating for per-modal history integration. usePlatform() resolves
+// asynchronously; we DEFAULT to enabled web behaviour (safe — desktop never
+// presses a hardware back button). Once resolved, disable the synthetic
+// pushState on Tauri DESKTOP so it doesn't interfere with native window-close.
+watch(
+  () => platformInfo.value,
+  (info) => {
+    if (info.isTauri && info.isDesktop) {
+      setHistoryIntegrationEnabled(false);
+    } else {
+      setHistoryIntegrationEnabled(true);
+    }
+  },
+  { immediate: true }
+);
+
+// Hardware/browser BACK while an overlay is open closes the topmost overlay
+// instead of navigating. AppLayout mounts only AFTER App.vue's
+// isReadyForRouting && hasSiteAccess gate, so this listener never runs during
+// the loading skeleton phase. handlePopState never calls router.push/redirect
+// and never touches isReadyForRouting (App.vue boot-fix safe).
+const onPopState = () => handlePopState();
+
+// A guard redirect mid-modal must not leave orphaned overlays/history entries
+// or a stale scroll-lock — flush the modal stack on every route change.
+const stopAfterEach = router.afterEach(() => {
+  resetModalStack();
+});
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
+  window.addEventListener('popstate', onPopState);
   // Load invitations when component mounts
   loadReceivedInvitations();
-  
+
   // Make debug info available in console
   (window as any).onboardingDebug = getOnboardingDebugInfo;
-  
+
   // Start onboarding tour if needed - only on initial load
   setTimeout(() => autoStartTour(), 100);
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('popstate', onPopState);
+  stopAfterEach();
 });
 </script>

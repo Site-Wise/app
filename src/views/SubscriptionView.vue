@@ -349,6 +349,7 @@ import {
   X
 } from 'lucide-vue-next';
 import { useI18n } from '../composables/useI18n';
+import { useModalEscape } from '../composables/useModalEscape';
 import { useSubscription, type SubscriptionPlan } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 
@@ -372,6 +373,11 @@ const {
 
 const showUpgradeModal = ref(false);
 const showCancelModal = ref(false);
+
+// ESC key handling for modals
+useModalEscape(() => { showUpgradeModal.value = false; }, () => showUpgradeModal.value);
+useModalEscape(() => { showCancelModal.value = false; }, () => showCancelModal.value);
+
 const availablePlans = ref<SubscriptionPlan[]>([]);
 const plansLoading = ref(false);
 const upgrading = ref(false);

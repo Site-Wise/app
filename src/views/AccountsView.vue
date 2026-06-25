@@ -55,8 +55,28 @@
       <SearchBox v-model="searchQuery" :placeholder="t('search.accounts')" :search-loading="searchLoading" />
     </div>
 
+    <!-- Loading State: skeleton card grid -->
+    <div v-if="accountsLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6" aria-hidden="true">
+      <div v-for="i in 6" :key="'skel-' + i" class="card flex flex-col">
+        <!-- Card header: title + meta line -->
+        <div class="flex items-start justify-between mb-1">
+          <div class="flex-1 min-w-0 space-y-2">
+            <Skeleton height="1.25rem" width="55%" />
+            <Skeleton height="0.875rem" width="40%" />
+          </div>
+        </div>
+        <!-- Stat strip -->
+        <div class="mt-auto pt-4 border-t border-stone-200 dark:border-ink-4 flex items-end justify-between gap-4">
+          <div class="space-y-1.5">
+            <Skeleton height="0.625rem" width="4rem" />
+            <Skeleton height="1.5rem" width="5rem" />
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Accounts Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
       <div v-for="account in accounts" :key="account.id"
         class="card flex flex-col group card-interactive cursor-pointer transition-colors duration-150 ease-snap"
         @click="viewAccountDetail(account.id!)">
@@ -179,7 +199,7 @@
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.accountName')
                 }}</label>
                 <input ref="firstInputRef" v-model="form.name" type="text" required class="input mt-1"
-                  :placeholder="t('forms.enterAccountName')" autofocus />
+                  :placeholder="t('forms.enterAccountName')" autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
               </div>
 
               <div>
@@ -199,27 +219,27 @@
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.accountNumber')
                 }}</label>
                 <input v-model="form.account_number" type="text" class="input mt-1"
-                  :placeholder="t('forms.enterAccountNumber')" />
+                  :placeholder="t('forms.enterAccountNumber')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
               </div>
 
               <div v-if="form.type === 'bank' || form.type === 'credit_card'">
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.bankName')
                 }}</label>
-                <input v-model="form.bank_name" type="text" class="input mt-1" :placeholder="t('forms.enterBankName')" />
+                <input v-model="form.bank_name" type="text" class="input mt-1" :placeholder="t('forms.enterBankName')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
               </div>
 
               <div>
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('accounts.openingBalance')
                 }}</label>
                 <input v-model.number="form.opening_balance" type="number" step="0.01" required class="input mt-1 font-mono tabular-nums"
-                  :placeholder="t('forms.enterOpeningBalance')" />
+                  :placeholder="t('forms.enterOpeningBalance')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
               </div>
 
               <div>
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.description')
                 }}</label>
                 <textarea v-model="form.description" class="input mt-1" rows="2"
-                  :placeholder="t('forms.enterDescription')"></textarea>
+                  :placeholder="t('forms.enterDescription')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
               </div>
 
               <div class="flex items-center">
@@ -268,6 +288,7 @@ import {
 } from 'lucide-vue-next';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
+import Skeleton from '../components/Skeleton.vue';
 import {
   accountService,
   type Account
@@ -285,7 +306,7 @@ const { checkCreateLimit, isReadOnly } = useSubscription();
 const { openModal, closeModal: closeModalState } = useModalState();
 const router = useRouter();
 // Use site-aware data loading
-const { data: accountsData, reload: reloadAccounts } = useSiteData(async () => {
+const { data: accountsData, loading: accountsLoading, reload: reloadAccounts } = useSiteData(async () => {
   const accounts = await accountService.getAll();
   return accounts;
 });
@@ -378,7 +399,7 @@ const saveAccount = async () => {
   }
 };
 
-const editAccount = (account: Account) => {
+const editAccount = async (account: Account) => {
   editingAccount.value = account;
   Object.assign(form, {
     name: account.name,
@@ -390,7 +411,9 @@ const editAccount = (account: Account) => {
     opening_balance: account.opening_balance
   });
   showAddModal.value = true;
-  openModal('accounts-edit-modal');
+  openModal('accounts-edit-modal', closeModal);
+  await nextTick();
+  if (typeof firstInputRef.value?.focus === 'function') firstInputRef.value.focus();
 };
 
 const toggleAccountStatus = async (account: Account) => {
@@ -469,7 +492,7 @@ const handleAccountAction = (account: Account, action: string) => {
 
 const handleAddAccount = async () => {
   showAddModal.value = true;
-  openModal('accounts-add-modal');
+  openModal('accounts-add-modal', closeModal);
   await nextTick();
   firstInputRef.value?.focus();
 };

@@ -485,6 +485,10 @@ describe('MultiItemDeliveryModal - Core Logic', () => {
       expect(wrapper.vm.canSubmit).toBe(true)
       expect(wrapper.vm.totalAmount).toBe(500)
 
+      // saveDelivery only creates from the final (Review) step
+      wrapper.vm.currentStep = 2
+      await nextTick()
+
       await wrapper.vm.saveDelivery()
 
       expect(mockServices.deliveryService.create).toHaveBeenCalledWith(

@@ -1,6 +1,5 @@
 import { ref, computed, onMounted, watch, getCurrentInstance } from 'vue';
-import { driver, type Config as DriverConfig } from 'driver.js';
-import 'driver.js/dist/driver.css';
+import type { Config as DriverConfig } from 'driver.js';
 import { useI18n } from './useI18n';
 import { useRoute } from 'vue-router';
 
@@ -120,9 +119,9 @@ export function useOnboarding() {
   };
 
   // Start a tour
-  const startTour = (tourConfig: TourConfig, forceShow = false) => {
+  const startTour = async (tourConfig: TourConfig, forceShow = false) => {
     checkOnboardingDisabled();
-    
+
     // Don't show if globally disabled or already shown (unless forced)
     if (!forceShow && (isOnboardingDisabled.value || hasTourBeenShown(tourConfig.id))) {
       return;
@@ -136,6 +135,13 @@ export function useOnboarding() {
     currentTourId.value = tourConfig.id;
 
     try {
+      // Lazy-load driver.js (and its styles) only when a tour actually starts,
+      // so merely importing this composable doesn't pull driver into the entry chunk.
+      const [{ driver }] = await Promise.all([
+        import('driver.js'),
+        import('driver.js/dist/driver.css')
+      ]);
+
       // First translate all steps
       const translatedSteps = tourConfig.steps.map(step => ({
         ...step,
@@ -564,11 +570,12 @@ export function useOnboarding() {
       steps,
       showOnce: false
     };
-    
+
     // Feature tours use a different prefix to avoid being disabled by general onboarding
     if (!hasTourBeenShown(tourConfig.id)) {
-      startTour(tourConfig, true);
+      return startTour(tourConfig, true);
     }
+    return Promise.resolve();
   };
 
   // Auto-start tour based on current route

@@ -149,7 +149,8 @@
               {{ formatDate(deliveryItem.delivery_date || '') }}
             </td>
             <td class="hidden lg:table-cell px-4 py-3.5 text-sm text-ink dark:text-cream">
-              {{ deliveryItem.expand?.delivery?.expand?.vendor?.name || 'Unknown Vendor' }}
+              {{ deliveryItem.expand?.delivery?.expand?.vendor?.contact_person || deliveryItem.expand?.delivery?.expand?.vendor?.name || 'Unknown Vendor' }}
+              <span v-if="deliveryItem.expand?.delivery?.expand?.vendor?.name && deliveryItem.expand?.delivery?.expand?.vendor?.contact_person" class="block text-xs text-stone-500 dark:text-stone-400">{{ deliveryItem.expand?.delivery?.expand?.vendor?.name }}</span>
             </td>
             <td class="hidden lg:table-cell px-4 py-3.5 whitespace-nowrap text-right text-sm font-mono sw-tabular text-ink dark:text-cream">
               {{ deliveryItem.quantity }} <span class="text-xs text-stone-500 dark:text-stone-400">{{ item.unit }}</span>
@@ -182,7 +183,8 @@
           <!-- Header: date + vendor / status -->
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
-              <p class="text-sm font-semibold text-ink dark:text-cream">{{ deliveryItem.expand?.delivery?.expand?.vendor?.name || 'Unknown Vendor' }}</p>
+              <p class="text-sm font-semibold text-ink dark:text-cream">{{ deliveryItem.expand?.delivery?.expand?.vendor?.contact_person || deliveryItem.expand?.delivery?.expand?.vendor?.name || 'Unknown Vendor' }}</p>
+              <p v-if="deliveryItem.expand?.delivery?.expand?.vendor?.name && deliveryItem.expand?.delivery?.expand?.vendor?.contact_person" class="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{{ deliveryItem.expand?.delivery?.expand?.vendor?.name }}</p>
               <p class="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{{ formatDate(deliveryItem.delivery_date || '') }}</p>
             </div>
             <span :class="`status-${deliveryItem.expand?.delivery?.payment_status || 'pending'} shrink-0`">
@@ -250,10 +252,11 @@ import {
 } from 'lucide-vue-next';
 import {
   itemService,
-  deliveryService,
+  deliveryItemService,
   type Item,
   type DeliveryItem
 } from '../services/pocketbase';
+import { buildItemHistoryFromDeliveryItems } from '../utils/detailViewSelectors';
 
 // Extended DeliveryItem with delivery context
 interface ExtendedDeliveryItem extends DeliveryItem {
@@ -296,35 +299,18 @@ const loadItemData = async () => {
   const itemId = route.params.id as string;
 
   try {
-    const [allItems, allDeliveries] = await Promise.all([
-      itemService.getAll(),
-      deliveryService.getAll()
+    // Targeted queries: the single item by id, and only this item's delivery_items
+    // (each carrying its parent delivery + vendor expand) instead of getAll() + JS join.
+    const [itemRecord, itemDeliveryItems] = await Promise.all([
+      itemService.getById(itemId),
+      deliveryItemService.getByItem(itemId)
     ]);
 
-    item.value = allItems.find(i => i.id === itemId) || null;
-    
-    // Get delivery items for this specific item from all deliveries
-    const allDeliveryItems: ExtendedDeliveryItem[] = [];
-    allDeliveries.forEach(delivery => {
-      if (delivery.expand?.delivery_items) {
-        delivery.expand.delivery_items.forEach(deliveryItem => {
-          if (deliveryItem.item === itemId) {
-            // Add delivery context to delivery item
-            allDeliveryItems.push({
-              ...deliveryItem,
-              delivery_date: delivery.delivery_date,
-              expand: {
-                ...deliveryItem.expand,
-                delivery: delivery
-              }
-            });
-          }
-        });
-      }
-    });
-    
-    itemDeliveries.value = allDeliveryItems
-      .sort((a, b) => new Date(a.delivery_date || '').getTime() - new Date(b.delivery_date || '').getTime());
+    item.value = itemRecord;
+
+    // Adapt the fetched delivery_items into the same date-ascending, delivery-context
+    // shape the previous getAll()+join produced.
+    itemDeliveries.value = buildItemHistoryFromDeliveryItems(itemDeliveryItems) as ExtendedDeliveryItem[];
 
     if (!item.value) {
       router.push('/items');

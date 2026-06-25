@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { setupTestPinia } from '../utils/test-setup'
 
@@ -104,6 +104,11 @@ vi.mock('../../services/pocketbase', async () => {
     ServiceBookingService: {
       calculateProgressBasedAmount: vi.fn().mockImplementation((booking) => {
         return (booking.total_amount * (booking.percent_completed || 0)) / 100;
+      }),
+      calculateOutstandingAmountFromData: vi.fn().mockImplementation((booking, paidAmount) => {
+        const progressAmount = (booking.total_amount * (booking.percent_completed || 0)) / 100;
+        const outstanding = progressAmount - paidAmount;
+        return outstanding > 0 ? outstanding : 0;
       })
     }
   }
@@ -185,7 +190,19 @@ vi.mock('../../composables/useSiteData', () => ({
           service_bookings: ['booking-1'],
           site: 'site-1',
           created: '2024-01-01T00:00:00Z',
-          updated: '2024-01-01T00:00:00Z'
+          updated: '2024-01-01T00:00:00Z',
+          // Outstanding is attributed via the payment_allocations pivot, not payment.amount.
+          // This 10000 is fully allocated to booking-1 (its progress-based due), leaving
+          // delivery-1's 22500 unpaid → outstanding 22500.
+          expand: {
+            payment_allocations: [{
+              id: 'alloc-1',
+              payment: 'payment-1',
+              service_booking: 'booking-1',
+              allocated_amount: 10000,
+              site: 'site-1'
+            }]
+          }
         }]
       }),
       loading: ref(false),
@@ -292,8 +309,86 @@ describe('DashboardView', () => {
     expect(wrapper.exists()).toBe(true)
   })
 
-  it('should render chart component', () => {
+  it('should render chart component', async () => {
+    // The chart is now lazy-loaded via defineAsyncComponent; let the async
+    // component loader resolve before asserting it rendered.
+    await flushPromises()
+    await wrapper.vm.$nextTick()
+
     // Check that the chart component is rendered
     expect(wrapper.find('.mock-chart').exists()).toBe(true)
+  })
+
+  describe('Recent Transactions row navigation', () => {
+    let router: any
+    let pushSpy: any
+    let localWrapper: any
+
+    beforeEach(async () => {
+      const { pinia: testPinia } = setupTestPinia()
+      router = createMockRouter()
+      pushSpy = vi.spyOn(router, 'push').mockResolvedValue(undefined as any)
+
+      localWrapper = mount(DashboardView, {
+        global: {
+          plugins: [router, testPinia],
+          stubs: {
+            'router-link': true,
+            'Line': {
+              name: 'Line',
+              template: '<div class="mock-chart">Chart Component</div>',
+              props: ['data', 'options']
+            }
+          }
+        }
+      })
+      await flushPromises()
+      await localWrapper.vm.$nextTick()
+    })
+
+    afterEach(() => {
+      localWrapper?.unmount()
+      pushSpy?.mockRestore()
+    })
+
+    // Rows are sorted by date desc. Mock data dates:
+    //   payment  -> 2024-01-20
+    //   delivery -> 2024-01-15
+    //   booking  -> 2024-01-10
+    // So clickable ledger rows render in order: [payment, delivery, booking].
+    const getLedgerRows = () => localWrapper.findAll('tbody tr')
+
+    it('navigates a payment row to /payments?paymentId=<id>', async () => {
+      const rows = getLedgerRows()
+      expect(rows.length).toBeGreaterThanOrEqual(3)
+      await rows[0].trigger('click')
+      expect(pushSpy).toHaveBeenCalledWith({
+        path: '/payments',
+        query: { paymentId: 'payment-1' }
+      })
+    })
+
+    it('navigates a delivery row to /deliveries?id=<id>', async () => {
+      const rows = getLedgerRows()
+      await rows[1].trigger('click')
+      expect(pushSpy).toHaveBeenCalledWith({
+        path: '/deliveries',
+        query: { id: 'delivery-1' }
+      })
+    })
+
+    it('navigates a service booking row to /service-bookings?id=<id>', async () => {
+      const rows = getLedgerRows()
+      await rows[2].trigger('click')
+      expect(pushSpy).toHaveBeenCalledWith({
+        path: '/service-bookings',
+        query: { id: 'booking-1' }
+      })
+    })
+
+    it('marks navigable rows with cursor-pointer', () => {
+      const rows = getLedgerRows()
+      expect(rows[0].classes()).toContain('cursor-pointer')
+    })
   })
 })

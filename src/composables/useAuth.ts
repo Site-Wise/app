@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue';
 import { authService } from '../services/pocketbase';
 import type { User } from '../services/pocketbase';
+import { useSiteStore } from '../stores/site';
 
 const user = ref<User | null>(authService.currentUser);
 
@@ -44,9 +45,10 @@ export function useAuth() {
     authService.logout();
     user.value = null;
     
-    // Clear site store to prevent race conditions
+    // Clear site store to prevent race conditions.
+    // Static import is safe: there is no useAuth <-> stores/site circular
+    // dependency (stores/site only imports services/pocketbase, not useAuth).
     try {
-      const { useSiteStore } = await import('../stores/site');
       const siteStore = useSiteStore();
       await siteStore.clearCurrentSite();
     } catch (error) {

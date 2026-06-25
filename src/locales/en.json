@@ -1,6 +1,9 @@
 {
   "common": {
     "loading": "Loading",
+    "loadMore": "Load more",
+    "loadingMore": "Loading more",
+    "loadedMore": "Loaded {count} more",
     "save": "Save",
     "cancel": "Cancel",
     "continue": "Continue",
@@ -24,6 +27,9 @@
     "searchAction": "Search",
     "filter": "Filter",
     "clearFilters": "Clear",
+    "clearFilter": "Clear filter",
+    "filteredBy": "Filtered by {label}",
+    "filtered": "Filtered",
     "export": "Export",
     "import": "Import",
     "refresh": "Refresh",
@@ -114,6 +120,7 @@
     "payments": "Search payments by vendor or account...",
     "returns": "Search returns by vendor, reason, or status...",
     "noResults": "No results found",
+    "noVendorsFound": "No vendors found matching \"{query}\"",
     "resultsCount": "{count} results found"
   },
   "filters": {
@@ -384,6 +391,7 @@
     "title": "Vendors",
     "subtitle": "Manage your vendor contacts and relationships",
     "addVendor": "Add Vendor",
+    "viewDeliveries": "View deliveries",
     "editVendor": "Edit Vendor",
     "deleteVendor": "Delete Vendor",
     "companyName": "Company Name (Optional)",
@@ -479,6 +487,7 @@
       "other": "Other"
     },
     "unnamedVendor": "Unnamed Vendor",
+    "pendingItems": "{count} pending item(s)",
     "totalDeliveries": "Total Deliveries",
     "recentDeliveries": "Recent Deliveries",
     "paymentHistory": "Payment History",
@@ -745,6 +754,8 @@
     "title": "Deliveries",
     "subtitle": "Track multi-item deliveries and manage receipts",
     "recordDelivery": "Record Delivery",
+    "filteredByVendor": "Filtered by {vendor}",
+    "filteredByVendorGeneric": "Filtered by vendor",
     "editDelivery": "Edit Delivery",
     "deleteDelivery": "Delete Delivery",
     "deliveryDate": "Delivery Date",
@@ -1299,7 +1310,16 @@
     "pdfConversionError": "Failed to convert PDF. Please try again.",
     "pdfNotAccepted": "PDF files are not accepted for this upload.",
     "pdfPageCount": "{count} page | {count} pages",
-    "estimatedSize": "Estimated size: {size}"
+    "estimatedSize": "Estimated size: {size}",
+    "supportedFilesHint": "Supported: images and PDF. Password-protected PDFs can be unlocked with a password.",
+    "pdfLimitsHint": "PDFs are limited to a maximum of {max} pages.",
+    "pdfTooManyPages": "This PDF has {count} pages; the maximum is {max}. Please upload a shorter PDF or split it.",
+    "pdfPasswordProtected": "This PDF is password-protected. Enter its password to unlock it, or upload an unlocked PDF.",
+    "pdfIncorrectPassword": "Incorrect password, try again.",
+    "pdfPasswordTitle": "Password-protected PDF",
+    "pdfPasswordPrompt": "This PDF is password-protected. Enter its password to unlock and convert it.",
+    "pdfPasswordLabel": "PDF password",
+    "pdfUnlock": "Unlock"
   },
   "badges": {
     "new": "New",

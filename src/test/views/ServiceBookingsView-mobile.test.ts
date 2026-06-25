@@ -117,9 +117,10 @@ vi.mock('../../services/pocketbase', () => {
   return {
     serviceBookingService: {
       getAll: vi.fn().mockResolvedValue(mockServiceBookings),
-      create: vi.fn().mockResolvedValue({}),
-      update: vi.fn().mockResolvedValue({}),
-      delete: vi.fn().mockResolvedValue({})
+      create: vi.fn().mockResolvedValue({ id: 'booking-new' }),
+      update: vi.fn().mockResolvedValue({ id: 'booking-1' }),
+      delete: vi.fn().mockResolvedValue({}),
+      uploadCompletionPhoto: vi.fn().mockResolvedValue('photo.jpg')
     },
     serviceService: {
       getAll: vi.fn().mockResolvedValue(mockServices)
@@ -176,7 +177,11 @@ vi.mock('../../composables/usePermissions', () => ({
   usePermissions: () => ({
     canCreate: { value: true },
     canUpdate: { value: true },
-    canDelete: { value: true }
+    canDelete: { value: true },
+    // RecordLink (cross-reference links) reads these; provide them so the
+    // component renders as a real link instead of throwing on undefined.value.
+    canRead: { value: true },
+    canViewFinancials: { value: true }
   })
 }))
 
@@ -210,7 +215,9 @@ vi.mock('../../composables/useSiteData', () => ({
             id: 'booking-1',
             service: 'service-1',
             vendor: 'vendor-1',
-            start_date: '2024-01-15',
+            // Later date so booking-1 stays first under the view's default
+            // start-date DESC table sort, preserving these tests' card[0] ordering.
+            start_date: '2024-01-20',
             duration: 5,
             unit_rate: 100,
             total_amount: 500,
@@ -227,7 +234,7 @@ vi.mock('../../composables/useSiteData', () => ({
             id: 'booking-2',
             service: 'service-2',
             vendor: 'vendor-2',
-            start_date: '2024-01-20',
+            start_date: '2024-01-15',
             duration: 3,
             unit_rate: 150,
             total_amount: 450,
@@ -290,6 +297,10 @@ vi.mock('../../composables/useSiteData', () => ({
 
 vi.mock('../../components/PhotoGallery.vue', () => ({
   default: { name: 'PhotoGallery', template: '<div>PhotoGallery</div>' }
+}))
+
+vi.mock('../../components/FileUploadComponent.vue', () => ({
+  default: { name: 'FileUploadComponent', template: '<div>FileUploadComponent</div>' }
 }))
 
 // Mock window.confirm for delete operations
@@ -505,11 +516,10 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
       expect(dropdownMenu.exists()).toBe(true)
 
       const menuItems = dropdownMenu.findAll('button')
-      expect(menuItems).toHaveLength(3) // View, Edit, Delete
+      expect(menuItems).toHaveLength(2) // Edit, Delete (row/card tap handles View)
 
-      expect(menuItems[0].text()).toContain('View')
-      expect(menuItems[1].text()).toContain('Edit')
-      expect(menuItems[2].text()).toContain('Delete')
+      expect(menuItems[0].text()).toContain('Edit')
+      expect(menuItems[1].text()).toContain('Delete')
     })
 
     it('should close menu when clicking outside', async () => {
@@ -544,8 +554,8 @@ describe('ServiceBookingsView - Mobile Responsive Design', () => {
       // Should have action items
       expect(menuItems.length).toBeGreaterThan(0)
 
-      // Should have view action at minimum
-      expect(menuItems[0].text()).toContain('View')
+      // Should have edit action at minimum (row/card tap handles View)
+      expect(menuItems[0].text()).toContain('Edit')
     })
 
     it('should handle click-outside listener properly', async () => {

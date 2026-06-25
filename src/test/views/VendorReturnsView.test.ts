@@ -15,6 +15,28 @@ vi.mock('../../composables/useSite', () => ({
   })
 }))
 
+// Mock useUrlFilters: a controllable reactive `filters` object plus spies.
+// Tests can mutate `mockUrlFilters.filters.vendor` to simulate the ?vendor= URL.
+const mockSetFilter = vi.fn()
+const mockClearFilter = vi.fn()
+const mockUrlFilters = (() => {
+  const { reactive, computed } = require('vue')
+  const filters = reactive<Record<string, string>>({})
+  return {
+    filters,
+    hasActiveFilter: computed(() => Object.keys(filters).length > 0),
+    activeFilterEntries: computed(() =>
+      Object.entries(filters).map(([key, value]) => ({ key, value }))
+    ),
+    setFilter: mockSetFilter,
+    clearFilter: mockClearFilter,
+    openRecord: vi.fn()
+  }
+})()
+vi.mock('../../composables/useUrlFilters', () => ({
+  useUrlFilters: () => mockUrlFilters
+}))
+
 // Mock i18n composable
 vi.mock('../../composables/useI18n', () => ({
   useI18n: () => ({
@@ -163,6 +185,7 @@ vi.mock('../../services/pocketbase', () => {
   return {
     vendorReturnService: {
       getAll: vi.fn().mockResolvedValue([mockVendorReturn]),
+      getByVendor: vi.fn().mockResolvedValue([mockVendorReturn]),
       create: vi.fn().mockResolvedValue({ id: 'new-return' }),
       update: vi.fn().mockResolvedValue(mockVendorReturn),
       delete: vi.fn().mockResolvedValue(true),
@@ -249,7 +272,12 @@ describe('VendorReturnsView', () => {
       global: {
         plugins: [router, pinia],
         stubs: {
-          'router-link': true
+          'router-link': true,
+          RecordLink: {
+            name: 'RecordLink',
+            template: '<span class="record-link-stub">{{ label }}</span>',
+            props: ['type', 'mode', 'id', 'label', 'target', 'filterKey']
+          }
         }
       }
     })
@@ -257,7 +285,10 @@ describe('VendorReturnsView', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks()
-    
+
+    // Reset URL-filter state between tests (no active vendor filter by default).
+    Object.keys(mockUrlFilters.filters).forEach(k => delete mockUrlFilters.filters[k])
+
     const { pinia: testPinia, siteStore: testSiteStore } = setupTestPinia()
     pinia = testPinia
     siteStore = testSiteStore
@@ -306,7 +337,10 @@ describe('VendorReturnsView', () => {
       // Check the function to determine which data to return
       const funcString = serviceFunction.toString()
       
-      if (funcString.includes('vendorReturnService.getAll')) {
+      if (funcString.includes('vendorReturnService.getByVendor') || funcString.includes('vendorReturnService.getAll')) {
+        // Invoke the real loader so the branched service call (getAll vs
+        // getByVendor) is recorded against the pocketbase mock.
+        serviceFunction('site-1')
         return {
           data: ref(mockReturns),
           loading: ref(false),
@@ -465,17 +499,25 @@ describe('VendorReturnsView', () => {
       expect(filtered[0].status).toBe('initiated')
     })
 
-    it('should filter returns by vendor', async () => {
+    it('should drive the URL when the vendor dropdown changes (server-side filter)', async () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
-      
-      // Set vendor filter
-      wrapper.vm.vendorFilter = 'vendor-1'
+
+      // The vendor dropdown is the second <select> (status is first).
+      const vendorSelect = wrapper.findAll('select')[1]
+      await vendorSelect.setValue('vendor-1')
+
+      expect(mockSetFilter).toHaveBeenCalledWith('vendor', 'vendor-1')
+    })
+
+    it('should clear the URL filter when the "all vendors" option is chosen', async () => {
       await wrapper.vm.$nextTick()
-      
-      const filtered = wrapper.vm.filteredReturns
-      expect(filtered.length).toBe(1)
-      expect(filtered[0].vendor).toBe('vendor-1')
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      const vendorSelect = wrapper.findAll('select')[1]
+      await vendorSelect.setValue('')
+
+      expect(mockClearFilter).toHaveBeenCalledWith('vendor')
     })
 
     it('should show no results when filters don\'t match', async () => {
@@ -488,6 +530,46 @@ describe('VendorReturnsView', () => {
       
       const filtered = wrapper.vm.filteredReturns
       expect(filtered.length).toBe(0)
+    })
+  })
+
+  describe('URL-driven vendor filter', () => {
+    it('loader calls getAll when no vendor filter is active', async () => {
+      const { vendorReturnService } = await import('../../services/pocketbase')
+
+      // Default beforeEach mount: no active vendor filter.
+      expect(vendorReturnService.getAll).toHaveBeenCalled()
+      expect(vendorReturnService.getByVendor).not.toHaveBeenCalled()
+    })
+
+    it('loader branches to getByVendor when filters.vendor is set', async () => {
+      const { vendorReturnService } = await import('../../services/pocketbase')
+      vi.mocked(vendorReturnService.getAll).mockClear()
+      vi.mocked(vendorReturnService.getByVendor).mockClear()
+
+      // Simulate ?vendor=vendor-1 in the URL, then (re)mount the view.
+      mockUrlFilters.filters.vendor = 'vendor-1'
+      const filteredWrapper = createWrapper()
+      await filteredWrapper.vm.$nextTick()
+
+      expect(vendorReturnService.getByVendor).toHaveBeenCalledWith('vendor-1')
+      expect(vendorReturnService.getAll).not.toHaveBeenCalled()
+
+      filteredWrapper.unmount()
+    })
+
+    it('shows a dismissible chip when a vendor filter is active', async () => {
+      mockUrlFilters.filters.vendor = 'vendor-1'
+      const filteredWrapper = createWrapper()
+      await filteredWrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // Chip uses common.filteredBy; clicking the ✕ calls clearFilter('vendor').
+      expect(filteredWrapper.vm.hasActiveFilter).toBe(true)
+      filteredWrapper.vm.clearFilter('vendor')
+      expect(mockClearFilter).toHaveBeenCalledWith('vendor')
+
+      filteredWrapper.unmount()
     })
   })
 
@@ -524,12 +606,45 @@ describe('VendorReturnsView', () => {
         vendor: 'vendor-1',
         status: 'initiated'
       }
-      
+
       wrapper.vm.viewReturn(mockReturn)
       await wrapper.vm.$nextTick()
-      
+
       expect(wrapper.vm.showDetailsModal).toBe(true)
       expect(wrapper.vm.selectedReturn).toEqual(mockReturn)
+    })
+
+    it('should open details modal when a return row is clicked (row is the view affordance)', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // The clickable row carries cursor-pointer; clicking it opens the details modal.
+      const row = wrapper.findAll('tr').find((tr: any) => tr.classes().includes('cursor-pointer'))
+      expect(row).toBeDefined()
+
+      await row.trigger('click')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showDetailsModal).toBe(true)
+      expect(wrapper.vm.selectedReturn?.id).toBe('return-1')
+    })
+
+    it('should not open details modal when an action button in the row is clicked (@click.stop)', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // The initiated return shows an approve button; clicking it must NOT bubble
+      // to the row's viewReturn handler.
+      const buttons = wrapper.findAll('button')
+      const approveButton = buttons.find((btn: any) =>
+        btn.find('svg').exists() && btn.classes().includes('text-forest-600')
+      )
+      expect(approveButton).toBeDefined()
+
+      await approveButton.trigger('click')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showDetailsModal).toBe(false)
     })
 
     it('should open refund modal when process refund is triggered', async () => {
@@ -665,8 +780,8 @@ describe('VendorReturnsView', () => {
       vi.mocked(useSiteData).mockImplementation((serviceFunction) => {
         const { ref } = require('vue')
         const funcString = serviceFunction.toString()
-        
-        if (funcString.includes('vendorReturnService.getAll')) {
+
+        if (funcString.includes('vendorReturnService.getByVendor') || funcString.includes('vendorReturnService.getAll')) {
           return {
             data: ref([]),
             loading: ref(false),
@@ -763,6 +878,135 @@ describe('VendorReturnsView', () => {
       
       expect(wrapper.vm.showRefundModal).toBe(false)
       expect((wrapper as any).reloadReturns).toHaveBeenCalled()
+    })
+  })
+
+  describe('Column Sorting', () => {
+    // Three returns with distinct vendors, dates, amounts and statuses so each
+    // sort direction is unambiguous.
+    const sortReturns = [
+      {
+        id: 'r-b', vendor: 'v-b', return_date: '2024-02-10',
+        total_return_amount: 200, actual_refund_amount: 0, reason: 'Defective items',
+        status: 'approved', site: 'site-1',
+        expand: { vendor: { id: 'v-b', name: 'Bravo', contact_person: 'Bravo' } }
+      },
+      {
+        id: 'r-a', vendor: 'v-a', return_date: '2024-01-01',
+        total_return_amount: 900, actual_refund_amount: 0, reason: 'Defective items',
+        status: 'initiated', site: 'site-1',
+        expand: { vendor: { id: 'v-a', name: 'Alpha', contact_person: 'Alpha' } }
+      },
+      {
+        id: 'r-c', vendor: 'v-c', return_date: '2024-03-20',
+        total_return_amount: 500, actual_refund_amount: 0, reason: 'Defective items',
+        status: 'completed', site: 'site-1',
+        expand: { vendor: { id: 'v-c', name: 'Charlie', contact_person: 'Charlie' } }
+      }
+    ]
+
+    const mountWithReturns = async (data: any[]) => {
+      const { useSiteData } = await import('../../composables/useSiteData')
+      vi.mocked(useSiteData).mockImplementation((serviceFunction: any) => {
+        const { ref } = require('vue')
+        const funcString = serviceFunction.toString()
+        if (funcString.includes('vendorReturnService.getByVendor') || funcString.includes('vendorReturnService.getAll')) {
+          return { data: ref(data), loading: ref(false), error: ref(null), reload: vi.fn() }
+        }
+        return { data: ref([]), loading: ref(false), error: ref(null), reload: vi.fn() }
+      })
+      const w = createWrapper()
+      await w.vm.$nextTick()
+      return w
+    }
+
+    const ids = (w: any) => w.vm.sortedReturns.map((r: any) => r.id)
+
+    it('defaults to return_date descending (newest first)', async () => {
+      const w = await mountWithReturns(sortReturns)
+      expect(w.vm.sortKey).toBe('returnDate')
+      expect(w.vm.sortDir).toBe('desc')
+      // r-c (Mar) > r-b (Feb) > r-a (Jan)
+      expect(ids(w)).toEqual(['r-c', 'r-b', 'r-a'])
+      w.unmount()
+    })
+
+    it('sorts by amount when the amount header is clicked', async () => {
+      const w = await mountWithReturns(sortReturns)
+      const headers = w.findAll('th')
+      // Vendor, Return Date, Return Amount, Status, Actions
+      const amountHeader = headers.find((h: any) => h.text().includes('vendors.returnAmount'))
+      expect(amountHeader).toBeDefined()
+      // First click on a new column applies the default direction (desc).
+      await amountHeader.trigger('click')
+      await w.vm.$nextTick()
+      expect(w.vm.sortKey).toBe('amount')
+      expect(w.vm.sortDir).toBe('desc')
+      // 900 (r-a) > 500 (r-c) > 200 (r-b)
+      expect(ids(w)).toEqual(['r-a', 'r-c', 'r-b'])
+      w.unmount()
+    })
+
+    it('flips amount to ascending on a second click', async () => {
+      const w = await mountWithReturns(sortReturns)
+      const amountHeader = w.findAll('th').find((h: any) => h.text().includes('vendors.returnAmount'))
+      await amountHeader.trigger('click')
+      await w.vm.$nextTick()
+      await amountHeader.trigger('click')
+      await w.vm.$nextTick()
+      expect(w.vm.sortKey).toBe('amount')
+      expect(w.vm.sortDir).toBe('asc')
+      // 200 (r-b) < 500 (r-c) < 900 (r-a)
+      expect(ids(w)).toEqual(['r-b', 'r-c', 'r-a'])
+      w.unmount()
+    })
+
+    it('sorts by return date ascending after re-clicking the date header', async () => {
+      const w = await mountWithReturns(sortReturns)
+      const dateHeader = w.findAll('th').find((h: any) => h.text().includes('vendors.returnDate'))
+      // returnDate is the default column (desc). Re-clicking flips it to asc.
+      await dateHeader.trigger('click')
+      await w.vm.$nextTick()
+      expect(w.vm.sortKey).toBe('returnDate')
+      expect(w.vm.sortDir).toBe('asc')
+      // Jan (r-a) < Feb (r-b) < Mar (r-c)
+      expect(ids(w)).toEqual(['r-a', 'r-b', 'r-c'])
+      w.unmount()
+    })
+
+    it('composes sorting with the status filter', async () => {
+      const w = await mountWithReturns(sortReturns)
+      w.vm.statusFilter = 'completed'
+      await w.vm.$nextTick()
+      // Sort by amount while filtered to a single status.
+      const amountHeader = w.findAll('th').find((h: any) => h.text().includes('vendors.returnAmount'))
+      await amountHeader.trigger('click')
+      await w.vm.$nextTick()
+      // Only r-c is 'completed'.
+      expect(ids(w)).toEqual(['r-c'])
+      w.unmount()
+    })
+
+    it('composes sorting with a multi-row status filter', async () => {
+      // Two returns sharing the 'approved' status with different amounts.
+      const data = [
+        { ...sortReturns[0], id: 'r-b', total_return_amount: 200, status: 'approved' },
+        { ...sortReturns[1], id: 'r-a', total_return_amount: 900, status: 'approved' },
+        { ...sortReturns[2], id: 'r-c', total_return_amount: 500, status: 'completed' }
+      ]
+      const w = await mountWithReturns(data)
+      w.vm.statusFilter = 'approved'
+      await w.vm.$nextTick()
+      const amountHeader = w.findAll('th').find((h: any) => h.text().includes('vendors.returnAmount'))
+      // First click -> amount desc; filtered to 'approved' (r-a 900, r-b 200).
+      await amountHeader.trigger('click')
+      await w.vm.$nextTick()
+      expect(ids(w)).toEqual(['r-a', 'r-b'])
+      // Second click -> amount asc.
+      await amountHeader.trigger('click')
+      await w.vm.$nextTick()
+      expect(ids(w)).toEqual(['r-b', 'r-a'])
+      w.unmount()
     })
   })
 

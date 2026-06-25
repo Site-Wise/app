@@ -1,5 +1,12 @@
 import { vi } from 'vitest'
 
+// i18n dictionaries are now loaded lazily per-language (split into async chunks).
+// Tests that mount real components with the unmocked useI18n composable assert on
+// translated text, so preload the English dictionary once for the test process.
+// (Mocked useI18n tests are unaffected.)
+import { useI18n as __useI18nForTestPreload } from '../composables/useI18n'
+await __useI18nForTestPreload().loadLanguage('en')
+
 // Mock PocketBase - using a class for proper constructor behavior in Vitest v4
 vi.mock('pocketbase', () => {
   class MockPocketBase {
@@ -37,6 +44,28 @@ Object.defineProperty(window, 'localStorage', {
     clear: vi.fn(),
   },
   writable: true,
+})
+
+// Mock IntersectionObserver (happy-dom lacks it; used by InfiniteScrollSentinel)
+class MockIntersectionObserver {
+  observe = vi.fn()
+  unobserve = vi.fn()
+  disconnect = vi.fn()
+  takeRecords = vi.fn(() => [])
+  root = null
+  rootMargin = ''
+  thresholds = []
+  constructor() {}
+}
+Object.defineProperty(window, 'IntersectionObserver', {
+  writable: true,
+  configurable: true,
+  value: MockIntersectionObserver,
+})
+Object.defineProperty(globalThis, 'IntersectionObserver', {
+  writable: true,
+  configurable: true,
+  value: MockIntersectionObserver,
 })
 
 // Mock matchMedia

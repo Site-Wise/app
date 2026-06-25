@@ -94,38 +94,48 @@
       </div>
     </div>
 
+    <!-- Active relation-filter chip: dismissible so the user is never stuck on a
+         filtered view (?vendor / ?account). Shown on both mobile and desktop. -->
+    <div v-if="hasActiveFilter" class="mb-4 flex items-center gap-2">
+      <span
+        class="inline-flex items-center gap-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 pl-3 pr-1 py-1 text-sm font-medium"
+      >
+        <span class="truncate max-w-[60vw] sm:max-w-xs">
+          {{ t('common.filteredBy', { label: filterLabel || t('common.filtered') }) }}
+        </span>
+        <button
+          type="button"
+          @click="clearFilter()"
+          class="flex items-center justify-center h-11 w-11 sm:h-7 sm:w-7 -my-2 sm:my-0 rounded-full text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800/40 transition-colors"
+          :title="t('common.clearFilter')"
+          :aria-label="t('common.clearFilter')"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </span>
+    </div>
+
     <!-- xl+ Table View -->
     <div class="hidden xl:block overflow-x-auto rounded-lg border border-stone-200 dark:border-ink-4 shadow-card dark:shadow-inset-hi">
       <table class="min-w-full divide-y divide-stone-200 dark:divide-ink-4">
         <thead class="bg-cream-2 dark:bg-ink-2">
           <tr>
-            <th @click="handleSort('vendor')"
-              class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4 cursor-pointer hover:bg-stone-100 dark:hover:bg-ink-3 transition-colors duration-150">
-              <div class="flex items-center gap-1">
-                <span>{{ t('common.vendor') }}</span>
-                <component :is="getSortIcon('vendor')" class="h-3 w-3"
-                  :class="sortField === 'vendor' ? 'text-amber-700 dark:text-amber-400' : ''" />
-              </div>
-            </th>
-            <th @click="handleSort('date')"
-              class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4 cursor-pointer hover:bg-stone-100 dark:hover:bg-ink-3 transition-colors duration-150">
-              <div class="flex items-center justify-end gap-1">
-                <span>{{ t('common.date') }}</span>
-                <component :is="getSortIcon('date')" class="h-3 w-3"
-                  :class="sortField === 'date' ? 'text-amber-700 dark:text-amber-400' : ''" />
-              </div>
-            </th>
-            <th @click="handleSort('amount')"
-              class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4 cursor-pointer hover:bg-stone-100 dark:hover:bg-ink-3 transition-colors duration-150">
-              <div class="flex items-center justify-end gap-1">
-                <span>{{ t('common.amount') }}</span>
-                <component :is="getSortIcon('amount')" class="h-3 w-3"
-                  :class="sortField === 'amount' ? 'text-amber-700 dark:text-amber-400' : ''" />
-              </div>
-            </th>
-            <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">
+            <SortableTh :sort-key="'vendor'" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" :align="'left'"
+              :th-class="'px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4 hover:bg-stone-100 dark:hover:bg-ink-3 duration-150'">
+              {{ t('common.vendor') }}
+            </SortableTh>
+            <SortableTh :sort-key="'date'" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" :align="'right'"
+              :th-class="'px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4 hover:bg-stone-100 dark:hover:bg-ink-3 duration-150'">
+              {{ t('common.date') }}
+            </SortableTh>
+            <SortableTh :sort-key="'amount'" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" :align="'right'"
+              :th-class="'px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4 hover:bg-stone-100 dark:hover:bg-ink-3 duration-150'">
+              {{ t('common.amount') }}
+            </SortableTh>
+            <SortableTh :sort-key="'account'" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" :align="'left'"
+              :th-class="'px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4 hover:bg-stone-100 dark:hover:bg-ink-3 duration-150'">
               {{ t('common.account') }}
-            </th>
+            </SortableTh>
             <th class="relative px-4 py-3 border-b border-stone-200 dark:border-ink-4">
               <span class="sr-only">{{ t('common.actions') }}</span>
             </th>
@@ -157,11 +167,17 @@
             </td>
           </tr>
           <tr v-else v-for="payment in payments" :key="payment.id"
+              @click="viewPayment(payment)"
               class="cursor-pointer hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap">
             <!-- Vendor column (primary) -->
             <td class="px-4 py-3.5 whitespace-nowrap">
               <div class="font-medium text-sm text-ink dark:text-cream">
-                {{ payment.expand?.vendor?.contact_person || t('common.unknown') + ' ' + t('common.vendor') }}
+                <RecordLink
+                  type="vendor"
+                  mode="detail"
+                  :id="payment.vendor"
+                  :label="payment.expand?.vendor?.contact_person || t('common.unknownVendor')"
+                />
               </div>
               <div v-if="payment.expand?.vendor?.name" class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
                 {{ payment.expand.vendor.name }}
@@ -220,7 +236,14 @@
               <div v-if="payment.expand?.account" class="flex items-center gap-2">
                 <component :is="getAccountIcon(payment.expand.account.type)"
                   class="h-4 w-4 text-stone-400 dark:text-stone-500 flex-shrink-0" />
-                <span class="text-sm text-stone-600 dark:text-stone-400">{{ payment.expand.account.name }}</span>
+                <span class="text-sm text-stone-600 dark:text-stone-400">
+                  <RecordLink
+                    type="account"
+                    mode="detail"
+                    :id="payment.account"
+                    :label="payment.expand.account.name"
+                  />
+                </span>
               </div>
               <div v-if="payment.credit_notes && payment.credit_notes.length > 0" class="flex items-center gap-2 mt-0.5">
                 <svg class="h-4 w-4 text-forest-600 dark:text-forest-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -236,23 +259,18 @@
                 Credit Note Only
               </div>
             </td>
-            <!-- Actions column -->
+            <!-- Actions column (sits above the clickable row; @click.stop prevents row view) -->
             <td class="px-4 py-3.5 whitespace-nowrap text-right">
-              <div class="flex items-center justify-end gap-1" @click.stop>
-                <button @click="viewPayment(payment)"
-                  class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
-                  :title="t('common.view')">
-                  <Eye class="h-4 w-4" />
-                </button>
+              <div class="flex items-center justify-end gap-2" @click.stop>
                 <button v-if="canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])"
-                  @click="startEditPayment(payment)"
-                  class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
+                  @click.stop="startEditPayment(payment)"
+                  class="h-9 w-9 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
                   :title="t('common.edit')">
                   <Edit2 class="h-4 w-4" />
                 </button>
                 <button v-if="canPaymentBeDeleted(payment, payment.expand?.payment_allocations || [])"
-                  @click="deletePayment(payment)"
-                  class="h-8 w-8 flex items-center justify-center text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
+                  @click.stop="deletePayment(payment)"
+                  class="h-9 w-9 flex items-center justify-center text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
                   :title="t('common.deleteAction')">
                   <Trash2 class="h-4 w-4" />
                 </button>
@@ -308,15 +326,21 @@
           </p>
         </div>
 
-        <!-- Payment cards -->
+        <!-- Payment cards (whole card opens the view; actions stop propagation) -->
         <div v-else v-for="payment in payments" :key="payment.id + '-card'"
-             class="bg-white dark:bg-ink-3 rounded-lg shadow-card dark:shadow-inset-hi border border-stone-200 dark:border-ink-4 overflow-hidden">
+             @click="viewPayment(payment)"
+             class="bg-white dark:bg-ink-3 rounded-lg shadow-card dark:shadow-inset-hi border border-stone-200 dark:border-ink-4 overflow-hidden cursor-pointer hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap">
           <!-- Card header: vendor + allocation status + actions -->
           <div class="flex items-start justify-between px-4 pt-4 pb-3">
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <h3 class="font-display text-sm font-semibold text-ink dark:text-cream truncate">
-                  {{ payment.expand?.vendor?.contact_person || t('common.unknown') + ' ' + t('common.vendor') }}
+                  <RecordLink
+                    type="vendor"
+                    mode="detail"
+                    :id="payment.vendor"
+                    :label="payment.expand?.vendor?.contact_person || t('common.unknownVendor')"
+                  />
                 </h3>
                 <!-- Allocation badge -->
                 <span v-if="payment.expand?.payment_allocations && getAllocatedAmount(payment.expand.payment_allocations) === payment.amount"
@@ -345,8 +369,8 @@
                 {{ payment.expand.vendor.name }}
               </div>
             </div>
-            <!-- Card actions dropdown -->
-            <div class="relative ml-2 flex-shrink-0">
+            <!-- Card actions dropdown (sits above clickable card) -->
+            <div class="relative ml-2 flex-shrink-0" @click.stop>
               <CardDropdownMenu :actions="getPaymentActions(payment)"
                 @action="handlePaymentAction(payment, $event)" />
             </div>
@@ -361,7 +385,13 @@
             <div class="px-4 py-2.5 border-r border-stone-200 dark:border-ink-4">
               <div class="text-[10px] uppercase tracking-wide font-semibold text-stone-400 dark:text-stone-500 mb-0.5">{{ t('common.account') }}</div>
               <div class="text-xs text-ink dark:text-cream truncate">
-                <span v-if="payment.expand?.account">{{ payment.expand.account.name }}</span>
+                <RecordLink
+                  v-if="payment.expand?.account"
+                  type="account"
+                  mode="detail"
+                  :id="payment.account"
+                  :label="payment.expand.account.name"
+                />
                 <span v-else-if="payment.credit_notes && payment.credit_notes.length > 0" class="text-amber-700 dark:text-amber-400">Credit Note</span>
                 <span v-else class="text-stone-400 dark:text-stone-500">—</span>
               </div>
@@ -381,13 +411,8 @@
         <!-- Mobile Headers (lg:hidden pattern for test assertions) -->
         <thead class="bg-cream-2 dark:bg-ink-2 lg:hidden">
           <tr>
-            <th @click="handleSort('vendor')"
-              class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 cursor-pointer hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150">
-              <div class="flex items-center gap-1">
-                <span>{{ t('common.vendor') }}</span>
-                <component :is="getSortIcon('vendor')" class="h-3 w-3"
-                  :class="sortField === 'vendor' ? 'text-amber-700 dark:text-amber-400' : ''" />
-              </div>
+            <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
+              {{ t('common.vendor') }}
             </th>
             <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
               {{ t('common.account') }}
@@ -400,13 +425,8 @@
         <!-- Desktop Headers (hidden lg:table-header-group pattern for test assertions) -->
         <thead class="bg-cream-2 dark:bg-ink-2 hidden lg:table-header-group">
           <tr>
-            <th @click="handleSort('vendor')"
-              class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 cursor-pointer transition-colors duration-150">
-              <div class="flex items-center gap-1">
-                <span>{{ t('common.vendor') }}</span>
-                <component :is="getSortIcon('vendor')" class="h-3 w-3"
-                  :class="sortField === 'vendor' ? 'text-amber-700 dark:text-amber-400' : ''" />
-              </div>
+            <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
+              {{ t('common.vendor') }}
             </th>
             <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">
               {{ t('common.account') }}
@@ -468,21 +488,16 @@
               </div>
             </td>
             <td class="px-4 py-3.5 whitespace-nowrap hidden lg:table-cell">
-              <div class="flex items-center gap-1" @click.stop>
-                <button @click="viewPayment(payment)"
-                  class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
-                  :title="t('common.view')">
-                  <Eye class="h-4 w-4" />
-                </button>
+              <div class="flex items-center gap-2" @click.stop>
                 <button v-if="canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])"
-                  @click="startEditPayment(payment)"
-                  class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
+                  @click.stop="startEditPayment(payment)"
+                  class="h-9 w-9 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
                   :title="t('common.edit')">
                   <Edit2 class="h-4 w-4" />
                 </button>
                 <button v-if="canPaymentBeDeleted(payment, payment.expand?.payment_allocations || [])"
-                  @click="deletePayment(payment)"
-                  class="h-8 w-8 flex items-center justify-center text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
+                  @click.stop="deletePayment(payment)"
+                  class="h-9 w-9 flex items-center justify-center text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
                   :title="t('common.deleteAction')">
                   <Trash2 class="h-4 w-4" />
                 </button>
@@ -573,11 +588,6 @@
                   <div v-if="openMobileMenuId === payment.id"
                     class="absolute right-0 top-full mt-1 bg-white dark:bg-ink-3 rounded-lg shadow-modal border border-stone-200 dark:border-ink-4 py-1 z-20 min-w-[120px] origin-top-right"
                     @click.stop>
-                    <button @click="viewPayment(payment); closeMobileMenu()"
-                      class="w-full flex items-center px-3 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150">
-                      <Eye class="h-4 w-4 mr-2" />
-                      {{ t('common.view') }}
-                    </button>
                     <button v-if="canPaymentBeEdited(payment, payment.expand?.payment_allocations || [])"
                       @click="startEditPayment(payment); closeMobileMenu()"
                       class="w-full flex items-center px-3 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-150">
@@ -619,8 +629,8 @@
 
     <!-- View Payment Modal -->
     <div v-if="viewingPayment" class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60"
-      @click="viewingPayment = null; closeModalState('payments-view-modal')"
-      @keydown.esc="viewingPayment = null; closeModalState('payments-view-modal')" tabindex="-1">
+      @click="closePaymentViewModal()"
+      @keydown.esc="closePaymentViewModal()" tabindex="-1">
       <div
         class="w-full sm:max-w-lg bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden"
         @click.stop>
@@ -640,7 +650,7 @@
             <h3 class="font-display text-lg font-semibold text-ink dark:text-cream leading-tight truncate">{{ t('payments.paymentDetails') }}</h3>
           </div>
           <button
-            @click="viewingPayment = null; closeModalState('payments-view-modal')"
+            @click="closePaymentViewModal()"
             class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-ink-4 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
             <X class="h-4 w-4" />
           </button>
@@ -768,7 +778,7 @@
             @click="deletePayment(viewingPayment)" class="flex-1 btn-danger">
             {{ t('common.deleteAction') }}
           </button>
-          <button @click="viewingPayment = null; closeModalState('payments-view-modal')" :class="[
+          <button @click="closePaymentViewModal()" :class="[
             viewingPayment && (canPaymentBeEdited(viewingPayment, viewingPaymentAllocations) || canPaymentBeDeleted(viewingPayment, viewingPaymentAllocations)) ? 'flex-1' : 'w-full',
             'btn-outline'
           ]">
@@ -787,7 +797,6 @@ import { useRoute } from 'vue-router';
 import {
   CreditCard,
   Plus,
-  Eye,
   Edit2,
   Trash2,
   Loader2,
@@ -795,15 +804,17 @@ import {
   Wallet,
   Smartphone,
   Building2,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   AlertCircle,
   MoreVertical,
   X
 } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
+import RecordLink from '../components/RecordLink.vue';
+import SortableTh from '../components/SortableTh.vue';
+import { useTableSort, type SortAccessor } from '../composables/useTableSort';
 import { useI18n } from '../composables/useI18n';
+import { useUrlFilters } from '../composables/useUrlFilters';
+import { useModalEscape } from '../composables/useModalEscape';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
@@ -837,6 +848,10 @@ const { success, error } = useToast();
 const { registerShortcut } = useKeyboardShortcuts();
 const { openModal, closeModal: closeModalState } = useModalState();
 
+// URL-driven relation filters (?vendor=<id> / ?account=<id>) for cross-linking
+// from VendorDetailView / AccountDetailView.
+const { filters, hasActiveFilter, clearFilter } = useUrlFilters(['vendor', 'account']);
+
 // Search functionality
 const { searchQuery, loading: searchLoading, results: searchResults } = usePaymentSearch();
 
@@ -845,25 +860,45 @@ interface VendorWithOutstanding extends Vendor {
   pendingItems: number;
 }
 
-// Sort state
-type SortField = 'vendor' | 'amount' | 'date' | null;
-type SortOrder = 'asc' | 'desc';
-const sortField = ref<SortField>('date'); // Default sort by date
-const sortOrder = ref<SortOrder>('desc'); // Default descending (newest first)
+// Desktop table column sorting (client-side, since the full list is loaded).
+// Default: most-recent payment first.
+const { sortKey, sortDir, toggleSort, sortRows } = useTableSort<Payment>({
+  defaultKey: 'date',
+  defaultDir: 'desc',
+});
+
+// Maps a column key -> the comparable value for that row.
+const paymentSortAccessor: SortAccessor<Payment> = (row, key) => {
+  switch (key) {
+    case 'vendor': return row.expand?.vendor?.contact_person;
+    case 'account': return row.expand?.account?.name;
+    case 'amount': return row.amount;
+    case 'date': return row.payment_date;
+    case 'status': {
+      const allocations = row.expand?.payment_allocations || [];
+      const allocated = allocations.reduce((sum, a) => sum + a.allocated_amount, 0);
+      if (allocations.length === 0 || allocated === 0) return 'unallocated';
+      if (allocated >= row.amount) return 'allocated';
+      return 'partial';
+    }
+    default: return undefined;
+  }
+};
 
 // Use site data management - consolidated to prevent auto-cancellation issues
 const { data: paymentsData, loading: paymentsLoading, reload: reloadPayments } = useSiteData(async () => {
-  // Build sort parameter for backend
-  let sortParam = '-payment_date'; // Default
-  if (sortField.value === 'date') {
-    sortParam = sortOrder.value === 'desc' ? '-payment_date' : 'payment_date';
-  } else if (sortField.value === 'amount') {
-    sortParam = sortOrder.value === 'desc' ? '-amount' : 'amount';
-  }
-  // Note: vendor sorting will be done client-side since it's a relation
+  // Branch the primary payments fetch on the active URL relation-filter:
+  // ?vendor -> getByVendor, ?account -> getByAccount, otherwise the full getAll().
+  // Both filtered fetches are site-scoped, fully-expanded getFullList queries.
+  // Sorting is applied client-side (sortRows) over the full list, so no server sort.
+  const loadPayments = () => {
+    if (filters.vendor) return paymentService.getByVendor(filters.vendor);
+    if (filters.account) return paymentService.getByAccount(filters.account);
+    return paymentService.getAll();
+  };
 
   const [payments, vendors, accounts, deliveries, serviceBookings] = await Promise.all([
-    paymentService.getAll({ sort: sortParam }),
+    loadPayments(),
     vendorService.getAll(),
     accountService.getAll(),
     deliveryService.getAll(),
@@ -881,31 +916,33 @@ const { data: paymentsData, loading: paymentsLoading, reload: reloadPayments } =
 
 // Computed properties from consolidated useSiteData
 const payments = computed<Payment[]>(() => {
-  let paymentsList: Payment[];
-
   // If there's a search query, use search results; otherwise use all payments from useSiteData
-  if (searchQuery.value.trim()) {
-    paymentsList = searchResults.value || [];
-  } else {
-    paymentsList = paymentsData.value?.payments || [];
-  }
+  const paymentsList = searchQuery.value.trim()
+    ? (searchResults.value || [])
+    : (paymentsData.value?.payments || []);
 
-  // Apply client-side sorting for vendor (since it's a relation)
-  if (sortField.value === 'vendor') {
-    paymentsList = [...paymentsList].sort((a, b) => {
-      const vendorA = a.expand?.vendor?.contact_person || a.expand?.vendor?.name || '';
-      const vendorB = b.expand?.vendor?.contact_person || b.expand?.vendor?.name || '';
-      const comparison = vendorA.localeCompare(vendorB);
-      return sortOrder.value === 'asc' ? comparison : -comparison;
-    });
-  }
-
-  return paymentsList;
+  // Apply the active desktop column sort over the displayed list (browse + search).
+  // sortRows is pure & stable and returns a new array (no mutation).
+  return sortRows(paymentsList, paymentSortAccessor);
 });
 const vendors = computed(() => paymentsData.value?.vendors || []);
 const accounts = computed(() => paymentsData.value?.accounts || []);
 const deliveries = computed(() => paymentsData.value?.deliveries || []);
 const serviceBookings = computed(() => paymentsData.value?.serviceBookings || []);
+
+// When the URL relation-filter changes, reload the primary list from the loader.
+// reloadPayments() re-runs the loader (which re-reads `filters`); useSiteData's
+// internal load guard prevents the auto-cancel race, so NO onMounted loader is needed.
+watch(() => [filters.vendor, filters.account], () => reloadPayments());
+
+// Label for the dismissible filter chip, derived from the first loaded row's
+// expanded relation. Falls back to a generic label until results arrive.
+const filterLabel = computed(() => {
+  const list = paymentsData.value?.payments || [];
+  if (filters.vendor) return list[0]?.expand?.vendor?.contact_person || '';
+  if (filters.account) return list[0]?.expand?.account?.name || '';
+  return '';
+});
 // Unified modal state
 const showPaymentModal = ref(false);
 const paymentModalMode = ref<'CREATE' | 'PAY_NOW' | 'EDIT'>('CREATE');
@@ -1018,34 +1055,6 @@ const reloadAllData = async () => {
   await reloadPayments();
 };
 
-// Sort handler
-const handleSort = (field: SortField) => {
-  if (sortField.value === field) {
-    // Toggle sort order if clicking the same field
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
-  } else {
-    // Set new field and default to descending
-    sortField.value = field;
-    sortOrder.value = 'desc';
-  }
-};
-
-// Watch sort changes and reload data for backend-sorted fields
-watch([sortField, sortOrder], () => {
-  // Only reload for backend-sorted fields (amount and date)
-  // Vendor sorting is done client-side
-  if (sortField.value === 'amount' || sortField.value === 'date') {
-    reloadPayments();
-  }
-});
-
-// Helper function to get sort icon
-const getSortIcon = (field: SortField) => {
-  if (sortField.value !== field) return ArrowUpDown;
-  return sortOrder.value === 'asc' ? ArrowUp : ArrowDown;
-};
-
-
 const handleAddPayment = () => {
   if (!canCreatePayment) {
     error(t('subscription.banner.freeTierLimitReached'));
@@ -1055,7 +1064,7 @@ const handleAddPayment = () => {
   currentPayment.value = null;
   currentAllocations.value = [];
   showPaymentModal.value = true;
-  openModal('payments-add-modal');
+  openModal('payments-add-modal', handlePaymentModalClose);
 };
 
 
@@ -1070,7 +1079,7 @@ const quickPayment = (vendor: VendorWithOutstanding) => {
   currentPayment.value = null;
   currentAllocations.value = [];
   showPaymentModal.value = true;
-  openModal('payments-paynow-modal');
+  openModal('payments-paynow-modal', handlePaymentModalClose);
 };
 
 const handleDuePaymentVendorClick = (vendor: VendorWithOutstanding) => {
@@ -1094,9 +1103,17 @@ const handleHeaderMobileAction = (action: string) => {
   }
 };
 
+const closePaymentViewModal = () => {
+  viewingPayment.value = null;
+  closeModalState('payments-view-modal');
+};
+
+// Document-level ESC so the view modal closes without first clicking inside it.
+useModalEscape(() => closePaymentViewModal(), () => !!viewingPayment.value);
+
 const viewPayment = async (payment: Payment) => {
   viewingPayment.value = payment;
-  openModal('payments-view-modal');
+  openModal('payments-view-modal', closePaymentViewModal);
   // Use allocations from expand data if available, otherwise load them
   if (payment.expand?.payment_allocations) {
     viewingPaymentAllocations.value = payment.expand.payment_allocations;
@@ -1160,7 +1177,7 @@ const startEditPayment = async (payment: Payment) => {
   closeModalState('payments-view-modal');
   viewingPayment.value = null;
   showPaymentModal.value = true;
-  openModal('payments-edit-modal');
+  openModal('payments-edit-modal', handlePaymentModalClose);
 };
 
 const deletePayment = async (payment: Payment) => {
@@ -1363,12 +1380,6 @@ const handleQuickAction = () => {
 
 const getPaymentActions = (payment: Payment) => {
   return [
-    {
-      key: 'view',
-      label: t('common.view'),
-      icon: Eye,
-      variant: 'default' as const
-    },
     {
       key: 'edit',
       label: t('common.edit'),

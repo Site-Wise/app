@@ -10,6 +10,10 @@ vi.mock('../../composables/useI18n', () => ({
         'delivery.title': 'Deliveries',
         'delivery.subtitle': 'Track multi-item deliveries and manage receipts',
         'delivery.recordDelivery': 'Record Delivery',
+        'delivery.filteredByVendor': 'Filtered by {vendor}',
+        'delivery.filteredByVendorGeneric': 'Filtered by vendor',
+        'common.clearFilter': 'Clear filter',
+        'common.unknownVendor': 'Unknown Vendor',
         'delivery.deliveryDetails': 'Delivery Details',
         'delivery.deliveryDate': 'Delivery Date',
         'delivery.paymentStatus': 'Payment Status',
@@ -52,10 +56,39 @@ vi.mock('../../composables/useI18n', () => ({
   })
 }))
 
-// Mock useSiteData composable with multiple calls
+// Mock useSiteData composable with multiple calls (payment allocations + photos)
 vi.mock('../../composables/useSiteData', () => ({
   useSiteData: vi.fn()
 }))
+
+// Mock useInfiniteSiteData composable (browse list)
+vi.mock('../../composables/useInfiniteSiteData', () => ({
+  useInfiniteSiteData: vi.fn()
+}))
+
+// Mock useUrlFilters composable (?vendor= deep-link filter). Default: no filter.
+const mockUrlFilters: { vendor?: string } = {}
+vi.mock('../../composables/useUrlFilters', () => {
+  const { computed } = require('vue')
+  return {
+    useUrlFilters: () => ({
+      filters: mockUrlFilters,
+      hasActiveFilter: computed(() => Object.keys(mockUrlFilters).length > 0),
+      activeFilterEntries: computed(() =>
+        Object.entries(mockUrlFilters).map(([key, value]) => ({ key, value }))
+      ),
+      setFilter: vi.fn(),
+      clearFilter: vi.fn((key?: string) => {
+        if (key === undefined) {
+          Object.keys(mockUrlFilters).forEach(k => delete (mockUrlFilters as any)[k])
+        } else {
+          delete (mockUrlFilters as any)[key]
+        }
+      }),
+      openRecord: vi.fn()
+    })
+  }
+})
 
 // Mock useSite composable
 vi.mock('../../composables/useSite', () => ({
@@ -102,9 +135,19 @@ vi.mock('../../composables/useSearch', () => ({
 vi.mock('../../services/pocketbase', () => ({
   deliveryService: {
     getAll: vi.fn().mockResolvedValue([]),
+    getList: vi.fn().mockResolvedValue({ items: [], totalItems: 0, totalPages: 0 }),
+    getAllWithPhotos: vi.fn().mockResolvedValue([]),
+    getByVendor: vi.fn().mockResolvedValue({ items: [], totalItems: 0, totalPages: 0 }),
+    getById: vi.fn().mockResolvedValue({}),
     create: vi.fn().mockResolvedValue({}),
     update: vi.fn().mockResolvedValue({}),
     delete: vi.fn().mockResolvedValue(true)
+  },
+  paymentAllocationService: {
+    getAll: vi.fn().mockResolvedValue([])
+  },
+  vendorReturnService: {
+    getReturnInfoForDeliveryItems: vi.fn().mockResolvedValue({})
   },
   getCurrentSiteId: vi.fn().mockReturnValue('site-1'),
   setCurrentSiteId: vi.fn(),
@@ -173,9 +216,12 @@ describe('DeliveryView', () => {
   let wrapper: any
   let pinia: any
   let siteStore: any
+  let capturedLoader: any
 
   beforeEach(async () => {
     vi.clearAllMocks()
+    // Reset the URL filter between tests (default: no active filter).
+    Object.keys(mockUrlFilters).forEach(k => delete (mockUrlFilters as any)[k])
     const testSetup = setupTestPinia()
     pinia = testSetup.pinia
     siteStore = testSetup.siteStore
@@ -256,29 +302,39 @@ describe('DeliveryView', () => {
       }
     ]
     
-    // Mock useSiteData to return different data based on calls
+    // Mock useInfiniteSiteData to return the browse deliveries
+    const { useInfiniteSiteData } = await import('../../composables/useInfiniteSiteData')
     const { useSiteData } = await import('../../composables/useSiteData')
-    const { ref } = await import('vue')
-    
-    let callCount = 0
-    vi.mocked(useSiteData).mockImplementation(() => {
-      callCount++
-      if (callCount === 1) {
-        // First call is for deliveries
-        return {
-          data: ref(mockDeliveries),
-          loading: ref(false),
-          reload: vi.fn()
-        }
-      } else {
-        // Second call is for payment allocations
-        return {
-          data: ref([]),
-          loading: ref(false),
-          reload: vi.fn()
-        }
-      }
+    const { ref, computed } = await import('vue')
+
+    vi.mocked(useInfiniteSiteData).mockImplementation((loader: any) => {
+      // Capture the loader so tests can assert it branches on the vendor filter.
+      capturedLoader = loader
+      const items = ref(mockDeliveries) as any
+      return {
+        items,
+        loading: ref(false),
+        loadingMore: ref(false),
+        error: ref(null),
+        hasMore: computed(() => false) as any,
+        totalItems: ref(mockDeliveries.length),
+        currentPage: ref(1),
+        loadMore: vi.fn(),
+        reload: vi.fn(),
+        reset: vi.fn(),
+        patchItem: vi.fn(),
+        removeItem: vi.fn(),
+        prependItem: vi.fn()
+      } as any
     })
+
+    // Mock useSiteData for payment allocations and the photo query (both return [])
+    vi.mocked(useSiteData).mockImplementation(() => ({
+      data: ref([]) as any,
+      loading: ref(false),
+      error: ref(null),
+      reload: vi.fn()
+    }))
     
     const router = createMockRouter()
     
@@ -287,7 +343,12 @@ describe('DeliveryView', () => {
         plugins: [router, pinia],
         stubs: {
           'router-link': true,
-          'router-view': true
+          'router-view': true,
+          RecordLink: {
+            name: 'RecordLink',
+            template: '<span class="mock-record-link">{{ label }}</span>',
+            props: ['type', 'id', 'label', 'mode', 'target', 'filterKey']
+          }
         }
       }
     })
@@ -349,23 +410,148 @@ describe('DeliveryView', () => {
     }
   })
 
-  it('should handle delivery actions', async () => {
+  it('should open the view modal when a desktop row is clicked', async () => {
+    // getById is hit by viewDelivery to fetch the fully-expanded record that the
+    // view modal renders, so it must resolve a complete delivery shape.
+    const { deliveryService } = await import('../../services/pocketbase')
+    deliveryService.getById.mockResolvedValue({
+      id: 'delivery-1',
+      vendor: 'vendor-1',
+      delivery_date: '2024-01-15',
+      delivery_reference: 'INV-001',
+      total_amount: 1500,
+      payment_status: 'paid',
+      photos: [],
+      expand: { vendor: { id: 'vendor-1', contact_person: 'Test Vendor' }, delivery_items: [] }
+    })
+
     // Wait for data loading
     await wrapper.vm.$nextTick()
     await new Promise(resolve => setTimeout(resolve, 50))
     await wrapper.vm.$nextTick()
 
-    // Test view action
-    const viewButtons = wrapper.findAll('button').filter((btn: any) => 
-      btn.text().includes('View') || btn.find('svg[data-testid="eye"]').exists()
-    )
-    
-    if (viewButtons.length > 0) {
-      await viewButtons[0].trigger('click')
-      await wrapper.vm.$nextTick()
-      // Should open view modal (check component state)
-      expect(wrapper.vm.viewingDelivery).toBeTruthy()
-    }
+    // The redundant eye/view button was removed; the whole row is now the
+    // "view details" affordance. Clicking a data row opens the view modal.
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows.length).toBeGreaterThan(0)
+
+    await rows[0].trigger('click')
+    await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 50))
+    await wrapper.vm.$nextTick()
+
+    // Should open view modal (check component state)
+    expect(wrapper.vm.viewingDelivery).toBeTruthy()
+  })
+
+  describe('Deep-link auto-open (?id=)', () => {
+    it('loads the delivery via getById and opens the view modal when ?id is present', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+      deliveryService.getById.mockResolvedValue({
+        id: 'delivery-1',
+        vendor: 'vendor-1',
+        delivery_date: '2024-01-15',
+        delivery_reference: 'INV-001',
+        total_amount: 1500,
+        payment_status: 'paid',
+        photos: [],
+        expand: { vendor: { id: 'vendor-1', contact_person: 'Test Vendor' }, delivery_items: [] }
+      })
+
+      // Mount with the deep-link query already present so the immediate watcher fires.
+      const router = createMockRouter()
+      await router.push({ path: '/', query: { id: 'delivery-1' } })
+      await router.isReady()
+
+      const localWrapper = mount(DeliveryView, {
+        global: {
+          plugins: [router, pinia],
+          stubs: {
+            'router-link': true,
+            'router-view': true,
+            RecordLink: {
+              name: 'RecordLink',
+              template: '<span class="mock-record-link">{{ label }}</span>',
+              props: ['type', 'id', 'label', 'mode', 'target', 'filterKey']
+            }
+          }
+        }
+      })
+
+      await localWrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await localWrapper.vm.$nextTick()
+
+      expect(deliveryService.getById).toHaveBeenCalledWith('delivery-1')
+      expect(localWrapper.vm.viewingDelivery).toBeTruthy()
+      expect(localWrapper.vm.viewingDelivery.id).toBe('delivery-1')
+
+      localWrapper.unmount()
+    })
+
+    it('does not open the modal when no ?id is present', async () => {
+      const router = createMockRouter()
+      await router.push({ path: '/' })
+      await router.isReady()
+
+      const localWrapper = mount(DeliveryView, {
+        global: {
+          plugins: [router, pinia],
+          stubs: {
+            'router-link': true,
+            'router-view': true,
+            RecordLink: {
+              name: 'RecordLink',
+              template: '<span class="mock-record-link">{{ label }}</span>',
+              props: ['type', 'id', 'label', 'mode', 'target', 'filterKey']
+            }
+          }
+        }
+      })
+
+      await localWrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await localWrapper.vm.$nextTick()
+
+      // No deep-link id => the auto-open watcher never runs, so the modal stays closed.
+      expect(localWrapper.vm.viewingDelivery).toBeFalsy()
+
+      localWrapper.unmount()
+    })
+
+    it('silently does nothing when ?id refers to an unknown delivery', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+      // getById resolves null (not found / cross-site) per the service contract.
+      deliveryService.getById.mockResolvedValue(null as any)
+
+      const router = createMockRouter()
+      await router.push({ path: '/', query: { id: 'missing-id' } })
+      await router.isReady()
+
+      const localWrapper = mount(DeliveryView, {
+        global: {
+          plugins: [router, pinia],
+          stubs: {
+            'router-link': true,
+            'router-view': true,
+            RecordLink: {
+              name: 'RecordLink',
+              template: '<span class="mock-record-link">{{ label }}</span>',
+              props: ['type', 'id', 'label', 'mode', 'target', 'filterKey']
+            }
+          }
+        }
+      })
+
+      await localWrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await localWrapper.vm.$nextTick()
+
+      expect(deliveryService.getById).toHaveBeenCalledWith('missing-id')
+      expect(localWrapper.vm.viewingDelivery).toBeFalsy()
+
+      localWrapper.unmount()
+    })
   })
 
   it('should display search functionality', async () => {
@@ -483,6 +669,177 @@ describe('DeliveryView', () => {
     
     // Check that the component still exists after the site change
     expect(wrapper.exists()).toBe(true)
+  })
+
+  describe('Vendor URL filter (?vendor=)', () => {
+    it('loader calls getList when no vendor filter is active', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+      expect(typeof capturedLoader).toBe('function')
+
+      await capturedLoader('site-1', 1, 50)
+
+      // The loader now forwards the active server sort string (default desc date).
+      expect(deliveryService.getList).toHaveBeenCalledWith(1, 50, '-delivery_date')
+      expect(deliveryService.getByVendor).not.toHaveBeenCalled()
+    })
+
+    it('loader calls getByVendor when a vendor filter is active', async () => {
+      // Activate the filter, then remount so the loader closes over it.
+      mockUrlFilters.vendor = 'vendor-1'
+
+      const router = createMockRouter()
+      const localWrapper = mount(DeliveryView, {
+        global: {
+          plugins: [router, pinia],
+          stubs: {
+            'router-link': true,
+            'router-view': true,
+            RecordLink: {
+              name: 'RecordLink',
+              template: '<span class="mock-record-link">{{ label }}</span>',
+              props: ['type', 'id', 'label', 'mode', 'target', 'filterKey']
+            }
+          }
+        }
+      })
+
+      const { deliveryService } = await import('../../services/pocketbase')
+      await capturedLoader('site-1', 1, 50)
+
+      expect(deliveryService.getByVendor).toHaveBeenCalledWith('vendor-1', 1, 50, '-delivery_date')
+
+      localWrapper.unmount()
+    })
+
+    it('renders the dismissible filter chip when a vendor filter is active', async () => {
+      mockUrlFilters.vendor = 'vendor-1'
+
+      const router = createMockRouter()
+      const localWrapper = mount(DeliveryView, {
+        global: {
+          plugins: [router, pinia],
+          stubs: {
+            'router-link': true,
+            'router-view': true,
+            RecordLink: {
+              name: 'RecordLink',
+              template: '<span class="mock-record-link">{{ label }}</span>',
+              props: ['type', 'id', 'label', 'mode', 'target', 'filterKey']
+            }
+          }
+        }
+      })
+
+      await localWrapper.vm.$nextTick()
+
+      // Chip shows the first loaded delivery's vendor name.
+      expect(localWrapper.text()).toContain('Filtered by Test Vendor')
+
+      localWrapper.unmount()
+    })
+  })
+
+  describe('Column Sorting (server-side browse / client-side search)', () => {
+    it('defaults to descending delivery_date server sort', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+      expect(typeof capturedLoader).toBe('function')
+
+      await capturedLoader('site-1', 1, 50)
+
+      // Default sort key is deliveryDate / desc -> '-delivery_date'.
+      expect(deliveryService.getList).toHaveBeenCalledWith(1, 50, '-delivery_date')
+    })
+
+    it('clicking the Total header sets sortKey="total" and passes total_amount server sort', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+
+      // First click activates the column in the default (desc) direction.
+      wrapper.vm.toggleSort('total')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.sortKey).toBe('total')
+      expect(wrapper.vm.sortDir).toBe('desc')
+
+      vi.mocked(deliveryService.getList).mockClear()
+      await capturedLoader('site-1', 1, 50)
+      expect(deliveryService.getList).toHaveBeenCalledWith(1, 50, '-total_amount')
+
+      // Toggling again flips to ascending -> 'total_amount'.
+      wrapper.vm.toggleSort('total')
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.sortDir).toBe('asc')
+
+      vi.mocked(deliveryService.getList).mockClear()
+      await capturedLoader('site-1', 1, 50)
+      expect(deliveryService.getList).toHaveBeenCalledWith(1, 50, 'total_amount')
+    })
+
+    it('toggling the Delivery Date header flips between -delivery_date and delivery_date', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+
+      // Default is deliveryDate desc; first toggle flips to ascending.
+      wrapper.vm.toggleSort('deliveryDate')
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.sortKey).toBe('deliveryDate')
+      expect(wrapper.vm.sortDir).toBe('asc')
+
+      vi.mocked(deliveryService.getList).mockClear()
+      await capturedLoader('site-1', 1, 50)
+      expect(deliveryService.getList).toHaveBeenCalledWith(1, 50, 'delivery_date')
+
+      // Toggle back to descending.
+      wrapper.vm.toggleSort('deliveryDate')
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.sortDir).toBe('desc')
+
+      vi.mocked(deliveryService.getList).mockClear()
+      await capturedLoader('site-1', 1, 50)
+      expect(deliveryService.getList).toHaveBeenCalledWith(1, 50, '-delivery_date')
+    })
+
+    it('maps the vendor column to a vendor server sort', async () => {
+      const { deliveryService } = await import('../../services/pocketbase')
+
+      wrapper.vm.toggleSort('vendor')
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.sortKey).toBe('vendor')
+
+      vi.mocked(deliveryService.getList).mockClear()
+      await capturedLoader('site-1', 1, 50)
+      // Default direction (desc) -> '-vendor'.
+      expect(deliveryService.getList).toHaveBeenCalledWith(1, 50, '-vendor')
+    })
+
+    it('reloads the infinite list when the server sort changes', async () => {
+      await wrapper.vm.$nextTick()
+      const reloadSpy = wrapper.vm.reloadDeliveries
+      expect(typeof reloadSpy).toBe('function')
+
+      // Changing the active sort should trigger a reload (resets to page 1).
+      wrapper.vm.toggleSort('total')
+      await wrapper.vm.$nextTick()
+
+      expect(reloadSpy).toHaveBeenCalled()
+    })
+
+    it('client-sorts the search results by the active key in search mode', async () => {
+      // Simulate search mode with a small unsorted result set.
+      wrapper.vm.searchQuery = 'foo'
+      // Two rows with differing totals; ascending sort should reorder them.
+      ;(wrapper.vm as any).searchResults = [
+        { id: 'b', vendor: 'vendor-z', delivery_date: '2024-02-01', total_amount: 500, payment_status: 'pending', expand: { vendor: { contact_person: 'Zed' }, delivery_items: [] } },
+        { id: 'a', vendor: 'vendor-a', delivery_date: '2024-01-01', total_amount: 100, payment_status: 'pending', expand: { vendor: { contact_person: 'Abe' }, delivery_items: [] } }
+      ]
+
+      // Sort by total ascending.
+      wrapper.vm.toggleSort('total') // desc
+      wrapper.vm.toggleSort('total') // asc
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.sortDir).toBe('asc')
+
+      const sortedTotals = wrapper.vm.deliveries.map((d: any) => d.total_amount)
+      expect(sortedTotals).toEqual([100, 500])
+    })
   })
 
   describe('Delivery Deletion', () => {

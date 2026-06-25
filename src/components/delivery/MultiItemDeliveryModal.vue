@@ -72,13 +72,13 @@
           <div>
             <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">{{ t('delivery.deliveryReference') }}</label>
             <input v-model="deliveryForm.delivery_reference" type="text" class="input min-h-[44px]"
-              :placeholder="t('delivery.deliveryReferencePlaceholder')" />
+              :placeholder="t('delivery.deliveryReferencePlaceholder')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
           </div>
 
           <div>
             <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">{{ t('common.notes') }}</label>
             <textarea v-model="deliveryForm.notes" class="input" rows="3"
-              :placeholder="t('forms.deliveryNotes')"></textarea>
+              :placeholder="t('forms.deliveryNotes')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
           </div>
 
           <div>
@@ -95,7 +95,7 @@
                     @click="openPhotoGallery(index)" />
                   <div class="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button type="button" @click.stop="removeExistingPhoto(index)"
-                      class="bg-clay-500 text-white rounded-full p-1 hover:bg-clay-600 transition-colors shadow-lg"
+                      class="bg-clay-500 text-white rounded-full min-h-touch min-w-[44px] inline-flex items-center justify-center hover:bg-clay-600 transition-colors shadow-lg"
                       :title="t('common.deleteAction')">
                       <X class="h-3 w-3" />
                     </button>
@@ -274,7 +274,7 @@
                     <span class="text-stone-500 dark:text-stone-400">₹</span>
                     <input v-model.number="deliveryForm.rounded_off_with" type="number" step="0.01"
                       class="w-24 px-2 py-2 text-center text-sm font-mono sw-tabular border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream focus:ring-2 focus:ring-amber-500 focus:border-transparent min-h-[44px]"
-                      :placeholder="t('delivery.enterRoundOff')" />
+                      :placeholder="t('delivery.enterRoundOff')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
                   </div>
                 </div>
 
@@ -425,6 +425,19 @@ const payments = ref<Payment[]>([]);
 const serviceBookings = ref<ServiceBooking[]>([]);
 const deliveries = ref<Delivery[]>([]);
 const vendorInputRef = ref<InstanceType<typeof VendorSearchBox>>();
+
+// Track deferred focus timers so they can be cancelled if the component
+// unmounts before they fire. Without this, a pending focus callback can run
+// after teardown (e.g. in tests) where refs/DOM are gone.
+const pendingFocusTimers = new Set<ReturnType<typeof setTimeout>>();
+const deferFocus = (fn: () => void, delay: number) => {
+  const id = setTimeout(() => {
+    pendingFocusTimers.delete(id);
+    fn();
+  }, delay);
+  pendingFocusTimers.add(id);
+};
+
 const selectedFilesForUpload = ref<File[]>([]);
 const existingPhotos = ref<string[]>([]);
 const showPhotoGallery = ref(false);
@@ -732,13 +745,18 @@ const handleKeyboardShortcuts = (event: KeyboardEvent) => {
       return;
     }
 
-    // On Review step (2) - Create delivery
-    if (currentStep.value === 2) {
+    // On the FINAL (Review) step only - Create delivery.
+    // Guard strictly on the last step so Ctrl+Enter on any earlier step can
+    // never trigger a create (which would otherwise show a phantom success toast).
+    if (currentStep.value === steps.length - 1) {
       if (canSubmit.value && !loading.value) {
         saveDelivery();
       }
       return;
     }
+
+    // Any other (intermediate) step: do nothing on Ctrl+Enter.
+    return;
   }
 };
 
@@ -749,7 +767,7 @@ const nextStep = async () => {
     // Auto-focus item selector when moving to step 1 (items step)
     if (currentStep.value === 1) {
       await nextTick();
-      setTimeout(() => {
+      deferFocus(() => {
         newItemRowRef.value?.focusItemSelector();
       }, 50);
     }
@@ -763,7 +781,7 @@ const previousStep = async () => {
     // Auto-focus vendor input when going back to step 0
     if (currentStep.value === 0) {
       await nextTick();
-      setTimeout(() => {
+      deferFocus(() => {
         vendorInputRef.value?.focus();
       }, 50);
     }
@@ -810,6 +828,10 @@ const handleDeliveryItemChanges = async (deliveryId: string) => {
 };
 
 const saveDelivery = async () => {
+  // Defensive guard: only ever create/update from the final (Review) step.
+  // Prevents any off-step caller (keyboard shortcut, future code) from
+  // triggering a premature create and a phantom success toast.
+  if (currentStep.value !== steps.length - 1) return;
   if (!canSubmit.value) return;
 
   loading.value = true;
@@ -923,7 +945,7 @@ const resetForm = async () => {
 
   // Focus vendor input after form reset
   await nextTick();
-  setTimeout(() => {
+  deferFocus(() => {
     vendorInputRef.value?.focus();
   }, 50);
 };
@@ -988,11 +1010,13 @@ const loadData = async () => {
 // Initialize
 onMounted(async () => {
   loadData();
-  openModal('multi-item-delivery-modal');
+  // Register with the modal manager and let hardware/browser BACK close the
+  // sheet by emitting 'close' to the parent (which unmounts us → onUnmounted).
+  openModal('multi-item-delivery-modal', () => emit('close'));
 
   // Focus vendor input after modal is opened and DOM is ready
   await nextTick();
-  setTimeout(() => {
+  deferFocus(() => {
     vendorInputRef.value?.focus();
   }, 100);
 
@@ -1001,6 +1025,10 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  // Cancel any deferred focus timers so their callbacks never run after the
+  // component (and its refs/DOM) have been torn down.
+  pendingFocusTimers.forEach(clearTimeout);
+  pendingFocusTimers.clear();
   closeModal('multi-item-delivery-modal');
 });
 </script>

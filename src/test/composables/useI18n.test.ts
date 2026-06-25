@@ -1,7 +1,13 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll } from 'vitest'
 import { useI18n } from '../../composables/useI18n'
 
 describe('useI18n', () => {
+  // Dictionaries are now loaded lazily per-language; load English before asserting.
+  beforeAll(async () => {
+    const { loadLanguage } = useI18n()
+    await loadLanguage('en')
+  })
+
   it('should translate simple keys', () => {
     const { t } = useI18n()
     

@@ -40,21 +40,18 @@ export function useInvitations() {
         invitation => invitation.email === user.email && invitation.status === 'pending'
       );
 
-      // Filter out invitations for sites where the user is already a member
-      const validInvitations = [];
-      for (const invitation of pendingInvitationsForUser) {
-        try {
-          const existingRole = await siteUserService.getUserRoleForSite(user.id, invitation.site);
-          // Only include invitation if user is NOT already a member
-          if (!existingRole) {
-            validInvitations.push(invitation);
-          }
-        } catch (error) {
-          // If there's an error checking membership, include the invitation
-          // (better to show it than hide a valid invitation)
-          validInvitations.push(invitation);
-        }
-      }
+      // Filter out invitations for sites where the user is already a member.
+      // Resolve every invitation's site role in ONE batched lookup instead of an N+1
+      // loop of per-site getUserRoleForSite calls. getUserRolesForSites returns a map
+      // with null for sites where the user has no role (and null-for-all on error, which
+      // preserves the previous fail-open behaviour of keeping the invitation visible).
+      const siteIds = [...new Set(pendingInvitationsForUser.map(inv => inv.site))];
+      const roleMap = await siteUserService.getUserRolesForSites(user.id, siteIds);
+
+      // Keep an invitation only if the user is NOT already a member of its site.
+      const validInvitations = pendingInvitationsForUser.filter(
+        invitation => !roleMap[invitation.site]
+      );
 
       receivedInvitations.value = validInvitations;
     } catch (error) {

@@ -558,26 +558,24 @@ describe('PaymentsView - Mobile Responsive Design', () => {
       expect(dropdown.exists()).toBe(true)
     })
 
-    it('should display view option in dropdown menu', async () => {
+    it('should display edit/delete options in dropdown menu (view is the row/card click)', async () => {
       wrapper = createWrapper()
-      
+
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
 
-      // Open menu for first item
-      const mobileActionCells = wrapper.findAll('td.lg\\:hidden')
-      const actionCell = mobileActionCells[2]
-      const menuButton = actionCell.find('button')
-      
-      await menuButton.trigger('click')
+      // Open menu for first item (set state directly to avoid toggle ordering leaks)
+      wrapper.vm.openMobileMenuId = 'payment-1'
       await wrapper.vm.$nextTick()
 
+      const mobileActionCells = wrapper.findAll('td.lg\\:hidden')
+      const actionCell = mobileActionCells[2]
       const dropdown = actionCell.find('.absolute')
       const menuButtons = dropdown.findAll('button')
-      
-      expect(menuButtons.length).toBeGreaterThanOrEqual(2)
-      expect(menuButtons.some((btn: any) => btn.text().includes('View'))).toBe(true)
+
+      // The redundant "View" action was removed; clicking the row/card opens the view.
+      expect(menuButtons.some((btn: any) => btn.text().includes('View'))).toBe(false)
       expect(menuButtons.some((btn: any) => btn.text().includes('Edit'))).toBe(true)
     })
 
@@ -856,6 +854,77 @@ describe('PaymentsView - Mobile Responsive Design', () => {
         expect(wrapper.vm.paymentModalMode).toBe('EDIT')
         expect(wrapper.vm.currentPayment).toStrictEqual(payment)
       }
+    })
+  })
+
+  // Sorting is a desktop-table feature; these assertions drive the shared
+  // useTableSort state (sortKey/sortDir) and the displayed `payments` list,
+  // which is the same computed the desktop <tbody> v-for iterates.
+  describe('Desktop Table Column Sorting', () => {
+    const settle = async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+    }
+
+    it('defaults to date-descending (most recent first)', async () => {
+      wrapper = createWrapper()
+      await settle()
+
+      expect(wrapper.vm.sortKey).toBe('date')
+      expect(wrapper.vm.sortDir).toBe('desc')
+
+      // payment-1 (2024-01-20) is more recent than payment-2 (2024-01-15)
+      const ids = wrapper.vm.payments.map((p: any) => p.id)
+      expect(ids).toEqual(['payment-1', 'payment-2'])
+    })
+
+    it('clicking the amount header sorts by amount and orders the displayed list', async () => {
+      wrapper = createWrapper()
+      await settle()
+
+      // Default toggle direction is desc -> largest amount first.
+      wrapper.vm.toggleSort('amount')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.sortKey).toBe('amount')
+      expect(wrapper.vm.sortDir).toBe('desc')
+
+      // payment-2 amount 10000 > payment-1 amount 5000
+      const ids = wrapper.vm.payments.map((p: any) => p.id)
+      expect(ids).toEqual(['payment-2', 'payment-1'])
+    })
+
+    it('clicking the amount header again flips the direction (asc)', async () => {
+      wrapper = createWrapper()
+      await settle()
+
+      wrapper.vm.toggleSort('amount')
+      await wrapper.vm.$nextTick()
+      wrapper.vm.toggleSort('amount')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.sortKey).toBe('amount')
+      expect(wrapper.vm.sortDir).toBe('asc')
+
+      // Ascending -> smallest amount first (payment-1 5000, payment-2 10000)
+      const ids = wrapper.vm.payments.map((p: any) => p.id)
+      expect(ids).toEqual(['payment-1', 'payment-2'])
+    })
+
+    it('exposes sortRows accessor mapping for derived columns', async () => {
+      wrapper = createWrapper()
+      await settle()
+
+      // Switching to the vendor column sorts by expanded contact_person.
+      wrapper.vm.toggleSort('vendor')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.sortKey).toBe('vendor')
+      // 'ABC Steel Co.' (payment-1) < 'XYZ Cement Ltd.' (payment-2) ascending,
+      // toggle default is desc -> XYZ first.
+      const ids = wrapper.vm.payments.map((p: any) => p.id)
+      expect(ids).toEqual(['payment-2', 'payment-1'])
     })
   })
 })

@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { authService, getCurrentSiteId, getCurrentUserRole, calculatePermissions } from '../services/pocketbase';
 import { startRouteProgress, endRouteProgress } from '../composables/useRouteProgress';
+// Statically imported because App.vue also imports it statically (it renders during
+// the boot/site-selection phase), so a lazy route import here is ineffective anyway.
+import SiteSelectionView from '../views/SiteSelectionView.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -26,7 +29,7 @@ const router = createRouter({
     {
       path: '/select-site',
       name: 'SiteSelection',
-      component: () => import('../views/SiteSelectionView.vue'),
+      component: SiteSelectionView,
       meta: { requiresAuth: true }
     },
     {

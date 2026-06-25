@@ -8,29 +8,94 @@
           {{ t('serviceBookings.subtitle') }}
         </p>
       </div>
-      <button
-        @click="handleAddServiceBooking" 
-        :disabled="!canCreateServiceBooking"
-        :class="[
-          canCreateServiceBooking ? 'btn-primary' : 'btn-disabled'
-        ]"
-        :title="!canCreateServiceBooking ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
-        data-keyboard-shortcut="n"
-      >
-        <Plus class="mr-2 h-4 w-4" />
-        {{ t('serviceBookings.bookService') }}
-      </button>
+      <div class="flex items-center space-x-3">
+        <button
+          @click="viewAllImages"
+          :disabled="allImages.length === 0"
+          :class="[
+            allImages.length > 0 ? 'btn-outline' : 'btn-disabled',
+            'hidden md:flex items-center'
+          ]"
+          :title="allImages.length === 0 ? t('delivery.noImages') : t('delivery.viewAllImages')"
+        >
+          <Images class="mr-2 h-4 w-4" />
+          {{ t('delivery.viewAllImages') }} ({{ allImages.length }})
+        </button>
+        <button
+          @click="handleAddServiceBooking"
+          :disabled="!canCreateServiceBooking"
+          :class="[
+            canCreateServiceBooking ? 'btn-primary' : 'btn-disabled',
+            'hidden md:flex items-center'
+          ]"
+          :title="!canCreateServiceBooking ? t('subscription.banner.freeTierLimitReached') : t('common.keyboardShortcut', { keys: 'Shift+Alt+N' })"
+          data-keyboard-shortcut="n"
+        >
+          <Plus class="mr-2 h-4 w-4" />
+          {{ t('serviceBookings.bookService') }}
+        </button>
+      </div>
     </div>
 
     <!-- Mobile Header with Search -->
     <div class="md:hidden mb-6">
-      <div class="mb-4">
-        <h1 class="font-display text-2xl font-bold text-ink dark:text-cream">{{ t('serviceBookings.title') }}</h1>
-        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">
-          {{ t('serviceBookings.subtitle') }}
-        </p>
+      <div class="mb-4 flex items-center justify-between">
+        <div>
+          <h1 class="font-display text-2xl font-bold text-ink dark:text-cream">{{ t('serviceBookings.title') }}</h1>
+          <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">
+            {{ t('serviceBookings.subtitle') }}
+          </p>
+        </div>
+
+        <!-- Mobile Action Menu -->
+        <div class="relative mobile-action-menu">
+          <button
+            @click="showMobileActionMenu = !showMobileActionMenu"
+            class="p-2 rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors"
+          >
+            <MoreVertical class="h-5 w-5 text-stone-500 dark:text-stone-400" />
+          </button>
+
+          <!-- Mobile Dropdown Menu -->
+          <div
+            v-if="showMobileActionMenu"
+            class="absolute right-0 mt-2 w-56 bg-white dark:bg-ink-3 rounded-md shadow-modal z-10 border border-stone-200 dark:border-ink-4"
+          >
+            <div class="py-1">
+              <button
+                @click="handleMobileAction('viewAllImages')"
+                :disabled="allImages.length === 0"
+                :class="[
+                  'flex items-center w-full px-4 py-3 text-sm transition-colors',
+                  allImages.length > 0
+                    ? 'text-ink dark:text-cream hover:bg-stone-100 dark:hover:bg-ink-2'
+                    : 'text-stone-400 dark:text-stone-600 cursor-not-allowed'
+                ]"
+              >
+                <Images class="mr-3 h-5 w-5" />
+                {{ t('delivery.viewAllImages') }} ({{ allImages.length }})
+              </button>
+
+              <div class="border-t border-stone-200 dark:border-ink-4 my-1"></div>
+
+              <button
+                @click="handleMobileAction('addServiceBooking')"
+                :disabled="!canCreateServiceBooking"
+                :class="[
+                  'flex items-center w-full px-4 py-3 text-sm transition-colors',
+                  canCreateServiceBooking
+                    ? 'text-ink bg-amber-500 hover:bg-amber-600'
+                    : 'text-stone-400 dark:text-stone-600 cursor-not-allowed'
+                ]"
+              >
+                <Plus class="mr-3 h-5 w-5" />
+                {{ t('serviceBookings.bookService') }}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      
+
       <!-- Mobile Search Box -->
       <SearchBox
         v-model="searchQuery"
@@ -76,6 +141,27 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Active relation-filter chip: dismissible so the user is never stuck on a
+         filtered view. Shown on both mobile and desktop. -->
+    <div v-if="hasActiveFilter" class="mb-4 flex items-center gap-2">
+      <span
+        class="inline-flex items-center gap-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 pl-3 pr-1 py-1 text-sm font-medium"
+      >
+        <span class="truncate max-w-[60vw] sm:max-w-xs">
+          {{ t('common.filteredBy', { label: filterLabel || t('common.filtered') }) }}
+        </span>
+        <button
+          type="button"
+          @click="clearFilter()"
+          class="flex items-center justify-center h-11 w-11 sm:h-7 sm:w-7 -my-2 sm:my-0 rounded-full text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800/40 transition-colors"
+          :title="t('common.clearFilter')"
+          :aria-label="t('common.clearFilter')"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </span>
     </div>
 
     <!-- Service Bookings -->
@@ -144,25 +230,67 @@
           <table class="min-w-full">
             <thead class="bg-cream-2 dark:bg-ink-2 border-b border-stone-200 dark:border-ink-4">
               <tr>
-                <th class="py-3 px-4 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('services.service') }}</th>
-                <th class="py-3 px-4 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 hidden lg:table-cell">{{ t('services.vendor') }}</th>
-                <th class="py-3 px-4 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 hidden xl:table-cell">{{ t('serviceBookings.startDate') }}</th>
-                <th class="py-3 px-4 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('serviceBookings.progress') }}</th>
-                <th class="py-3 px-4 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('common.total') }}</th>
-                <th class="py-3 px-4 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('serviceBookings.paymentStatus') }}</th>
+                <SortableTh sort-key="service" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="left" th-class="py-3 px-4 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400" :label="t('services.service')" />
+                <SortableTh sort-key="vendor" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="left" th-class="py-3 px-4 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 hidden lg:table-cell" :label="t('services.vendor')" />
+                <SortableTh sort-key="startDate" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="right" th-class="py-3 px-4 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 hidden xl:table-cell" :label="t('serviceBookings.startDate')" />
+                <SortableTh sort-key="progress" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="left" th-class="py-3 px-4 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400" :label="t('serviceBookings.progress')" />
+                <SortableTh sort-key="total" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="right" th-class="py-3 px-4 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400" :label="t('common.total')" />
+                <SortableTh sort-key="paymentStatus" :active-key="sortKey" :direction="sortDir" @sort="toggleSort" align="left" th-class="py-3 px-4 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400" :label="t('serviceBookings.paymentStatus')" />
                 <th class="py-3 px-4 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400">{{ t('common.actions') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-stone-200 dark:divide-ink-4">
               <tr v-for="booking in serviceBookings" :key="booking.id" @click="viewBooking(booking)"
                   class="hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap cursor-pointer">
-                <td class="py-3.5 px-4 align-middle">
-                  <div class="font-medium text-sm text-ink dark:text-cream leading-snug">{{ booking.expand?.service?.name || 'Unknown Service' }}</div>
-                  <div v-if="booking.expand?.service?.category" class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{{ booking.expand.service.category }}</div>
-                  <div class="lg:hidden text-xs text-stone-500 dark:text-stone-400 mt-0.5 truncate">{{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}</div>
+                <td class="py-3.5 px-4 align-middle max-w-xs">
+                  <div class="text-sm leading-snug">
+                    <span class="font-medium text-ink dark:text-cream">
+                      <RecordLink
+                        type="service"
+                        mode="detail"
+                        :id="booking.service"
+                        :label="booking.expand?.service?.name || 'Unknown Service'"
+                      />
+                    </span>
+                    <template v-if="booking.expand?.service?.category">
+                      <span class="mx-1.5 text-stone-300 dark:text-stone-600">|</span>
+                      <span class="text-stone-500 dark:text-stone-400">{{ booking.expand.service.category }}</span>
+                    </template>
+                  </div>
+                  <div class="lg:hidden text-xs text-stone-500 dark:text-stone-400 mt-0.5 truncate">
+                    <RecordLink
+                      type="vendor"
+                      mode="detail"
+                      :id="booking.vendor"
+                      :label="booking.expand?.vendor?.contact_person || 'Unknown Vendor'"
+                    />
+                  </div>
+                  <!-- Notes: what/where this booking is for (same service used across locations) -->
+                  <div v-if="booking.notes" class="flex items-start gap-1 mt-1 text-xs text-stone-600 dark:text-stone-300" :title="booking.notes">
+                    <StickyNote class="h-3 w-3 flex-none mt-0.5 text-stone-400 dark:text-stone-500" />
+                    <span class="line-clamp-2 leading-snug">{{ booking.notes }}</span>
+                  </div>
+                  <!-- Photo count: opens the gallery, mirrors Delivery's "View images (N)" -->
+                  <button
+                    v-if="(booking.completion_photos?.length || 0) > 0"
+                    type="button"
+                    @click.stop="viewBooking(booking)"
+                    class="inline-flex items-center gap-1 mt-1 text-xs text-amber-700 dark:text-amber-400 hover:underline"
+                    :title="t('delivery.viewAllImages')"
+                  >
+                    <Images class="h-3 w-3 flex-none" />
+                    <span>{{ t('delivery.viewAllImages') }} ({{ booking.completion_photos!.length }})</span>
+                  </button>
                 </td>
                 <td class="py-3.5 px-4 align-middle hidden lg:table-cell">
-                  <div class="font-medium text-sm text-ink dark:text-cream leading-snug">{{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}</div>
+                  <div class="font-medium text-sm text-ink dark:text-cream leading-snug">
+                    <RecordLink
+                      type="vendor"
+                      mode="detail"
+                      :id="booking.vendor"
+                      :label="booking.expand?.vendor?.contact_person || 'Unknown Vendor'"
+                    />
+                  </div>
                   <div v-if="booking.expand?.vendor?.name" class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{{ booking.expand.vendor.name }}</div>
                 </td>
                 <td class="py-3.5 px-4 align-middle text-right hidden xl:table-cell">
@@ -185,10 +313,9 @@
                   <div v-if="booking.payment_status === 'partial'" class="text-xs font-mono sw-tabular text-amber-700 dark:text-amber-400 mt-0.5">₹{{ booking.outstanding.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} {{ t('serviceBookings.pendingLabel') }}</div>
                 </td>
                 <td class="py-3.5 px-4 align-middle" @click.stop>
-                  <div class="flex items-center justify-end gap-1">
-                    <button @click="viewBooking(booking)" class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150" :title="t('common.view')"><Eye class="h-4 w-4" /></button>
-                    <button v-if="canEditBooking(booking)" @click="editBooking(booking)" class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150" :title="t('common.edit')"><Edit2 class="h-4 w-4" /></button>
-                    <button @click="deleteBooking(booking.id!)" :disabled="!canDeleteBooking(booking)" :class="[canDeleteBooking(booking) ? 'text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 hover:bg-stone-100 dark:hover:bg-ink-2' : 'text-stone-300 dark:text-stone-600 cursor-not-allowed','h-8 w-8 flex items-center justify-center rounded-md transition-colors duration-150']" :title="hasPayments(booking) ? t('serviceBookings.cannotDeleteWithPayments') : t('common.deleteAction')"><Trash2 class="h-4 w-4" /></button>
+                  <div class="flex items-center justify-end gap-1.5 lg:gap-1">
+                    <button v-if="canEditBooking(booking)" @click="editBooking(booking)" class="min-h-touch min-w-[44px] lg:h-8 lg:w-8 lg:min-h-0 lg:min-w-0 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150" :title="t('common.edit')"><Edit2 class="h-4 w-4" /></button>
+                    <button @click="deleteBooking(booking.id!)" :disabled="!canDeleteBooking(booking)" :class="[canDeleteBooking(booking) ? 'text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 hover:bg-stone-100 dark:hover:bg-ink-2' : 'text-stone-300 dark:text-stone-600 cursor-not-allowed','min-h-touch min-w-[44px] lg:h-8 lg:w-8 lg:min-h-0 lg:min-w-0 flex items-center justify-center rounded-md transition-colors duration-150']" :title="hasPayments(booking) ? t('serviceBookings.cannotDeleteWithPayments') : t('common.deleteAction')"><Trash2 class="h-4 w-4" /></button>
                   </div>
                 </td>
               </tr>
@@ -204,8 +331,37 @@
             <div class="pl-5 pr-3 py-4">
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
-                  <h3 class="font-display font-semibold text-base text-ink dark:text-cream truncate">{{ booking.expand?.service?.name || 'Unknown Service' }}</h3>
-                  <p class="text-sm text-stone-500 dark:text-stone-400 truncate mt-0.5">{{ booking.expand?.vendor?.contact_person || 'Unknown Vendor' }}<span v-if="booking.expand?.vendor?.name"> · {{ booking.expand.vendor.name }}</span></p>
+                  <h3 class="font-display font-semibold text-base text-ink dark:text-cream truncate">
+                    <RecordLink
+                      type="service"
+                      mode="detail"
+                      :id="booking.service"
+                      :label="booking.expand?.service?.name || 'Unknown Service'"
+                    />
+                  </h3>
+                  <p class="text-sm text-stone-500 dark:text-stone-400 truncate mt-0.5">
+                    <RecordLink
+                      type="vendor"
+                      mode="detail"
+                      :id="booking.vendor"
+                      :label="booking.expand?.vendor?.contact_person || 'Unknown Vendor'"
+                    /><span v-if="booking.expand?.vendor?.name"> · {{ booking.expand.vendor.name }}</span>
+                  </p>
+                  <!-- Notes: what/where this booking is for -->
+                  <p v-if="booking.notes" class="flex items-start gap-1 text-xs text-stone-600 dark:text-stone-300 mt-1.5">
+                    <StickyNote class="h-3 w-3 flex-none mt-0.5 text-stone-400 dark:text-stone-500" />
+                    <span class="line-clamp-2 leading-snug">{{ booking.notes }}</span>
+                  </p>
+                  <!-- Photo count: opens the gallery, mirrors Delivery's "View images (N)" -->
+                  <button
+                    v-if="(booking.completion_photos?.length || 0) > 0"
+                    type="button"
+                    @click.stop="viewBooking(booking)"
+                    class="inline-flex items-center gap-1 mt-1.5 text-xs text-amber-700 dark:text-amber-400"
+                  >
+                    <Images class="h-3 w-3 flex-none" />
+                    <span>{{ t('delivery.viewAllImages') }} ({{ booking.completion_photos!.length }})</span>
+                  </button>
                 </div>
                 <div @click.stop class="flex-none -mr-1"><CardDropdownMenu :actions="getBookingActions(booking)" @action="handleBookingAction(booking, $event)" /></div>
               </div>
@@ -284,9 +440,9 @@
               <VendorSearchBox
                 v-model="form.vendor"
                 :vendors="vendors"
-                :deliveries="[]"
-                :service-bookings="[]"
-                :payments="[]"
+                :deliveries="deliveries"
+                :service-bookings="allServiceBookings"
+                :payments="payments"
                 :placeholder="t('forms.selectProvider')"
                 :required="true"
                 :disabled="!!(editingBooking && hasPayments(editingBooking))"
@@ -324,7 +480,7 @@
               <div>
                 <label class="block text-sm font-medium text-stone-600 dark:text-stone-300">{{ t('serviceBookings.duration') }}</label>
                 <div class="flex gap-2 mt-1">
-                  <input v-model.number="form.duration" type="number" step="0.5" required class="input flex-1" placeholder="0" @input="calculateTotal" />
+                  <input v-model.number="form.duration" type="number" step="0.5" required class="input flex-1" placeholder="0" @input="calculateTotal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
                   <button
                     v-if="isHourlyService"
                     type="button"
@@ -347,6 +503,10 @@
                   class="input mt-1"
                   placeholder="0.00"
                   @input="handleUnitRateChange"
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"
+                  spellcheck="false"
                 />
                 <div v-if="showUnitRateWarning && editingBooking && hasPayments(editingBooking)" class="mt-1 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
                   <p class="text-xs text-amber-800 dark:text-amber-300">
@@ -373,6 +533,10 @@
                   required
                   class="input mt-1 pr-8"
                   placeholder="0"
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"
+                  spellcheck="false"
                 />
                 <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-stone-500 dark:text-stone-400 text-sm mt-0.5">%</span>
               </div>
@@ -389,7 +553,33 @@
 
             <div>
               <label class="block text-sm font-medium text-stone-600 dark:text-stone-300">{{ t('common.notes') }}</label>
-              <textarea v-model="form.notes" class="input mt-1" rows="3" :placeholder="t('forms.serviceNotes')"></textarea>
+              <textarea v-model="form.notes" class="input mt-1" rows="3" :placeholder="t('forms.serviceNotes')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+            </div>
+
+            <!-- Photos: mirrors the Delivery modal upload UX -->
+            <div>
+              <label class="block text-sm font-medium text-stone-600 dark:text-stone-300 mb-2">{{ t('serviceBookings.completionPhotos') }}</label>
+
+              <!-- Existing photos (edit mode): preserved unless explicitly removed -->
+              <div v-if="existingBookingPhotos.length > 0" class="mb-4">
+                <p class="text-sm text-stone-600 dark:text-stone-400 mb-2">{{ t('delivery.existingPhotos') }}</p>
+                <div class="flex gap-2 overflow-x-auto pb-2">
+                  <div v-for="(photo, index) in existingBookingPhotos" :key="photo" class="relative group flex-shrink-0">
+                    <img :src="getBookingPhotoUrl(editingBooking!.id!, photo)" :alt="`Photo ${index + 1}`"
+                      class="w-16 h-16 object-cover rounded-lg border border-stone-200 dark:border-ink-4" />
+                    <div class="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button type="button" @click.stop="removeExistingBookingPhoto(index)"
+                        class="bg-clay-500 text-white rounded-full min-h-touch min-w-[44px] inline-flex items-center justify-center hover:bg-clay-600 transition-colors shadow-lg"
+                        :title="t('common.deleteAction')">
+                        <X class="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <FileUploadComponent v-model="selectedBookingPhotos" accept-types="image/*,application/pdf"
+                :multiple="true" :allow-camera="true" @files-selected="handleBookingFilesSelected" />
             </div>
 
             <!-- Keyboard shortcut hint for new bookings (desktop only) -->
@@ -515,11 +705,20 @@
       @close="closeTimeCalculator"
       @apply="handleTimeCalculatorApply"
     />
+
+    <!-- Page-level combined image gallery ("View all images") -->
+    <ImageSlider
+      v-model:show="showPhotoGallery"
+      :images="showAllImagesMode ? allImagesGalleryData.images : []"
+      :overlay-info="showAllImagesMode ? allImagesGalleryData.overlayInfo : []"
+      @close="showPhotoGallery = false; showAllImagesMode = false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, nextTick } from 'vue';
+import { ref, reactive, computed, nextTick, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { useEventListener } from '@vueuse/core';
 import {
   Calendar,
@@ -527,12 +726,20 @@ import {
   Edit2,
   Trash2,
   Loader2,
-  Eye,
   X,
-  Clock
+  Clock,
+  StickyNote,
+  Images,
+  MoreVertical
 } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
+import FileUploadComponent from '../components/FileUploadComponent.vue';
+import RecordLink from '../components/RecordLink.vue';
+import SortableTh from '../components/SortableTh.vue';
 import { useI18n } from '../composables/useI18n';
+import { useTableSort } from '../composables/useTableSort';
+import { useUrlFilters } from '../composables/useUrlFilters';
+import { useModalEscape } from '../composables/useModalEscape';
 import { usePermissions } from '../composables/usePermissions';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
@@ -541,18 +748,21 @@ import { useSiteData } from '../composables/useSiteData';
 import { useQuickActionModal } from '../composables/useQuickActionModal';
 import { useServiceBookingSearch } from '../composables/useSearch';
 import PhotoGallery from '../components/PhotoGallery.vue';
+import ImageSlider from '../components/ImageSlider.vue';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
 import VendorSearchBox from '../components/VendorSearchBox.vue';
 import ServiceSearchBox from '../components/ServiceSearchBox.vue';
 import TimeCalculatorModal from '../components/TimeCalculatorModal.vue';
-import { 
-  serviceBookingService, 
+import {
+  serviceBookingService,
   serviceService,
   vendorService,
   paymentAllocationService,
+  deliveryService,
+  paymentService,
   ServiceBookingService,
-  type ServiceBooking 
+  type ServiceBooking
 } from '../services/pocketbase';
 
 // Extended ServiceBooking with computed payment properties
@@ -561,14 +771,36 @@ interface ServiceBookingWithPaymentStatus extends ServiceBooking {
   outstanding: number;
 }
 
+const route = useRoute();
 const { t } = useI18n();
 const { canCreate, canUpdate, canDelete } = usePermissions();
 const { success: showSuccessToast, error: showErrorToast } = useToast();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { openModal, closeModal: closeModalState } = useModalState();
 
+// URL-driven relation filters (?vendor=<id> / ?service=<id>) for cross-linking
+// from VendorDetailView / ServiceDetailView. Filter and search are mutually
+// exclusive via the existing search switch.
+const { filters, hasActiveFilter, clearFilter } = useUrlFilters(['vendor', 'service']);
+
 // Search functionality
 const { searchQuery, loading: searchLoading, results: searchResults, loadAll } = useServiceBookingSearch();
+
+// Desktop table column sorting (client-side over the full displayed list).
+const { sortKey, sortDir, toggleSort, sortRows } = useTableSort({ defaultKey: 'startDate', defaultDir: 'desc' });
+
+// Maps a column's sort key to the comparable value on a booking row.
+const sortAccessor = (row: ServiceBookingWithPaymentStatus, key: string): unknown => {
+  switch (key) {
+    case 'service': return row.expand?.service?.name;
+    case 'vendor': return row.expand?.vendor?.contact_person;
+    case 'startDate': return row.start_date;
+    case 'progress': return row.percent_completed;
+    case 'total': return row.total_amount;
+    case 'paymentStatus': return row.payment_status;
+    default: return undefined;
+  }
+};
 
 // Client-side payment status calculation
 const paymentAllocations = computed(() => paymentAllocationsData.value || []);
@@ -602,17 +834,39 @@ const serviceBookings = computed((): ServiceBookingWithPaymentStatus[] => {
   const baseBookings = searchQuery.value.trim() ? searchResults.value : (allServiceBookingsData.value || []);
   
   // Add computed payment status and outstanding amount to each booking
-  return baseBookings.map(booking => ({
+  const withStatus = baseBookings.map(booking => ({
     ...booking,
     payment_status: calculatePaymentStatus(booking),
     outstanding: calculateOutstandingAmount(booking)
   }));
+
+  // Client-side column sort over the full displayed list (browse + search).
+  return sortRows(withStatus, sortAccessor);
 });
 
-// Use site data management - Load service bookings
+// Use site data management - Load service bookings.
+// The loader branches on the active relation filter: getByVendor when filtering
+// by vendor, getByService when filtering by service, getAll otherwise.
 const { data: allServiceBookingsData, loading: bookingsLoading, reload: reloadBookings } = useSiteData(
-  async () => await serviceBookingService.getAll()
+  async () => {
+    if (filters.vendor) return await serviceBookingService.getByVendor(filters.vendor);
+    if (filters.service) return await serviceBookingService.getByService(filters.service);
+    return await serviceBookingService.getAll();
+  }
 );
+
+// When the vendor/service filter changes, reload the bookings list. useSiteData's
+// reload resets and re-runs the loader; no onMounted loader is needed.
+watch(() => [filters.vendor, filters.service], () => reloadBookings());
+
+// Active filter entity name for the dismissible chip, derived reactively from the
+// first loaded booking. Falls back to a generic label until results arrive.
+const filterLabel = computed(() => {
+  const list = allServiceBookingsData.value || [];
+  if (filters.vendor) return list[0]?.expand?.vendor?.contact_person || '';
+  if (filters.service) return list[0]?.expand?.service?.name || '';
+  return '';
+});
 
 // Load payment allocations separately
 const { data: paymentAllocationsData } = useSiteData(
@@ -634,16 +888,48 @@ const { data: vendorsData } = useSiteData(
   async () => await vendorService.getAll()
 );
 
+// Load deliveries and payments so the vendor picker can show outstanding balances
+const { data: deliveriesData } = useSiteData(
+  async () => await deliveryService.getAll()
+);
+
+const { data: paymentsData } = useSiteData(
+  async () => await paymentService.getAll()
+);
+
 // Computed properties from useSiteData
 const services = computed(() => servicesData.value || []);
 const vendors = computed(() => vendorsData.value || []);
+const deliveries = computed(() => deliveriesData.value || []);
+const payments = computed(() => paymentsData.value || []);
+const allServiceBookings = computed(() => allServiceBookingsData.value || []);
 const showAddModal = ref(false);
 const editingBooking = ref<ServiceBooking | null>(null);
 const viewingBooking = ref<ServiceBooking | null>(null);
 const showTimeCalculator = ref(false);
 const loading = ref(false);
+const showMobileActionMenu = ref(false);
+
+// Page-level "View all images" gallery state (mirrors DeliveryView). The
+// ImageSlider runs in "all images mode" showing every completion photo across
+// the listed bookings with per-photo overlay info.
+const showPhotoGallery = ref(false);
+const showAllImagesMode = ref(false);
+const allImagesGalleryData = ref<{
+  images: string[];
+  overlayInfo: Array<{
+    vendorName?: string;
+    items?: string[];
+    deliveryDate?: string;
+  }>;
+}>({ images: [], overlayInfo: [] });
 const showUnitRateWarning = ref(false);
 const originalUnitRate = ref(0);
+
+// Photo upload state (mirrors the Delivery modal): files chosen for upload and,
+// in edit mode, the existing completion_photos we want to preserve.
+const selectedBookingPhotos = ref<File[]>([]);
+const existingBookingPhotos = ref<string[]>([]);
 
 const serviceInputRef = ref<InstanceType<typeof ServiceSearchBox>>();
 const startDateInputRef = ref<HTMLInputElement>();
@@ -678,6 +964,24 @@ const searchResultsTotal = computed(() => {
   return serviceBookings.value.reduce((total, booking) => {
     return total + (booking.total_amount || 0);
   }, 0);
+});
+
+// Aggregate every completion photo across the currently-listed bookings, so the
+// page-level "View all images (N)" count + gallery span all bookings (or the
+// filtered/search set). Mirrors DeliveryView's `allImages`.
+const allImages = computed(() => {
+  const source = serviceBookings.value;
+  const images: Array<{ booking: ServiceBooking; photo: string; index: number }> = [];
+
+  source.forEach(booking => {
+    if (booking.completion_photos && booking.completion_photos.length > 0) {
+      booking.completion_photos.forEach((photo, index) => {
+        images.push({ booking, photo, index });
+      });
+    }
+  });
+
+  return images;
 });
 
 // Check if selected service uses hourly calculation
@@ -726,6 +1030,34 @@ const handleServiceSelected = (service: any) => {
   }
 };
 
+// Photo helpers (mirror the Delivery modal)
+const handleBookingFilesSelected = (files: File[]) => {
+  selectedBookingPhotos.value = files;
+};
+
+const getBookingPhotoUrl = (bookingId: string, filename: string) => {
+  return `${import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090'}/api/files/service_bookings/${bookingId}/${filename}`;
+};
+
+const removeExistingBookingPhoto = (index: number) => {
+  existingBookingPhotos.value.splice(index, 1);
+};
+
+// Upload any newly-selected photos after the booking has been created/updated.
+// Mirrors the Delivery modal's upload-on-save loop; uploadCompletionPhoto appends
+// each file to the record's completion_photos.
+const uploadSelectedBookingPhotos = async (bookingId: string) => {
+  if (selectedBookingPhotos.value.length === 0) return;
+  try {
+    for (const file of selectedBookingPhotos.value) {
+      await serviceBookingService.uploadCompletionPhoto(bookingId, file);
+    }
+  } catch (uploadError) {
+    console.error('Error uploading completion photos:', uploadError);
+    showErrorToast(t('delivery.photoUploadError'));
+  }
+};
+
 const handleKeydown = async (event: KeyboardEvent) => {
   // CTRL + ENTER to save and keep modal open (for multiple bookings)
   if (event.ctrlKey && event.key === 'Enter') {
@@ -740,20 +1072,29 @@ const handleKeydown = async (event: KeyboardEvent) => {
 const saveBooking = async (keepModalOpen = false) => {
   loading.value = true;
   try {
-    const data = { ...form };
+    const data: Record<string, any> = { ...form };
 
     // Ensure dates are in proper format (keep as date strings)
     if (data.start_date) {
       data.start_date = data.start_date; // Keep YYYY-MM-DD format
     }
 
+    // On edit, persist the (possibly trimmed) set of existing photos so removals
+    // stick and kept photos are preserved before any new files are appended.
+    // Mirrors the Delivery modal's `deliveryData.photos = existingPhotos.value`.
     if (editingBooking.value) {
-      await serviceBookingService.update(editingBooking.value.id!, data);
+      data.completion_photos = [...existingBookingPhotos.value];
+    }
+
+    if (editingBooking.value) {
+      const updated = await serviceBookingService.update(editingBooking.value.id!, data);
+      await uploadSelectedBookingPhotos(updated.id!);
       await reloadAllData();
       showSuccessToast(t('messages.updateSuccess', { item: t('common.serviceBooking') }));
       closeModal();
     } else {
-      await serviceBookingService.create(data);
+      const created = await serviceBookingService.create(data as Omit<ServiceBooking, 'id' | 'site'>);
+      await uploadSelectedBookingPhotos(created.id!);
       await reloadAllData();
       showSuccessToast(t('messages.createSuccess', { item: t('common.serviceBooking') }));
 
@@ -774,6 +1115,10 @@ const saveBooking = async (keepModalOpen = false) => {
           percent_completed: 0,
           notes: ''
         });
+
+        // Clear photo selection so the next booking starts fresh
+        selectedBookingPhotos.value = [];
+        existingBookingPhotos.value = [];
 
         // Focus on start date for next booking
         await nextTick();
@@ -796,10 +1141,10 @@ const formatDateForInput = (dateString: string) => {
   return date.toISOString().slice(0, 10); // YYYY-MM-DD format
 };
 
-const editBooking = (booking: ServiceBooking) => {
+const editBooking = async (booking: ServiceBooking) => {
   editingBooking.value = booking;
   showAddModal.value = true;
-  openModal('service-bookings-edit-modal');
+  openModal('service-bookings-edit-modal', closeModal);
   originalUnitRate.value = booking.unit_rate;
   showUnitRateWarning.value = false;
   Object.assign(form, {
@@ -812,11 +1157,68 @@ const editBooking = (booking: ServiceBooking) => {
     percent_completed: booking.percent_completed || 0,
     notes: booking.notes || ''
   });
+  // Preserve existing photos on edit; new selections are added on top.
+  existingBookingPhotos.value = [...(booking.completion_photos || [])];
+  selectedBookingPhotos.value = [];
+  await nextTick();
+  if (typeof serviceInputRef.value?.focus === 'function') serviceInputRef.value.focus();
 };
 
 const viewBooking = (booking: ServiceBooking) => {
   viewingBooking.value = booking;
 };
+
+// Open the combined gallery across all listed bookings' completion photos.
+// Mirrors DeliveryView.viewAllImages: builds the photo URLs + per-photo overlay
+// (vendor contact_person, service name, booking date) and switches the
+// ImageSlider into all-images mode.
+const viewAllImages = () => {
+  if (allImages.value.length === 0) return;
+
+  const allImageUrls: string[] = [];
+  const allImageOverlays: Array<{
+    vendorName?: string;
+    items?: string[];
+    deliveryDate?: string;
+  }> = [];
+
+  allImages.value.forEach(({ booking, photo }) => {
+    allImageUrls.push(getBookingPhotoUrl(booking.id!, photo));
+
+    const vendorName = booking.expand?.vendor?.contact_person || 'Unknown Vendor';
+    const serviceName = booking.expand?.service?.name || 'Unknown Service';
+
+    allImageOverlays.push({
+      vendorName,
+      items: [serviceName],
+      deliveryDate: booking.start_date
+    });
+  });
+
+  allImagesGalleryData.value = {
+    images: allImageUrls,
+    overlayInfo: allImageOverlays
+  };
+
+  showAllImagesMode.value = true;
+  showPhotoGallery.value = true;
+};
+
+const handleMobileAction = (action: string) => {
+  showMobileActionMenu.value = false;
+
+  switch (action) {
+    case 'viewAllImages':
+      viewAllImages();
+      break;
+    case 'addServiceBooking':
+      handleAddServiceBooking();
+      break;
+  }
+};
+
+// Document-level ESC so the view modal closes without first clicking inside it.
+useModalEscape(() => { viewingBooking.value = null; }, () => !!viewingBooking.value);
 
 const deleteBooking = async (id: string) => {
   if (confirm(t('messages.confirmDelete', { item: t('serviceBookings.booking') }))) {
@@ -875,12 +1277,6 @@ const canDeleteBooking = (booking: ServiceBooking) => {
 const getBookingActions = (booking: ServiceBooking) => {
   return [
     {
-      key: 'view',
-      label: t('common.view'),
-      icon: Eye,
-      variant: 'default' as const
-    },
-    {
       key: 'edit',
       label: t('common.edit'),
       icon: Edit2,
@@ -899,9 +1295,6 @@ const getBookingActions = (booking: ServiceBooking) => {
 
 const handleBookingAction = (booking: ServiceBooking, action: string) => {
   switch (action) {
-    case 'view':
-      viewBooking(booking);
-      break;
     case 'edit':
       editBooking(booking);
       break;
@@ -911,10 +1304,12 @@ const handleBookingAction = (booking: ServiceBooking, action: string) => {
   }
 };
 
-const handleAddServiceBooking = () => {
+const handleAddServiceBooking = async () => {
   if (canCreateServiceBooking.value) {
     showAddModal.value = true;
-    openModal('service-bookings-add-modal');
+    openModal('service-bookings-add-modal', closeModal);
+    await nextTick();
+    if (typeof serviceInputRef.value?.focus === 'function') serviceInputRef.value.focus();
   }
 };
 
@@ -925,6 +1320,8 @@ const closeModal = () => {
   editingBooking.value = null;
   showUnitRateWarning.value = false;
   originalUnitRate.value = 0;
+  selectedBookingPhotos.value = [];
+  existingBookingPhotos.value = [];
   Object.assign(form, {
     service: '',
     vendor: '',
@@ -957,6 +1354,35 @@ const handleKeyboardShortcut = async (event: KeyboardEvent) => {
     }
   }
 };
+
+// Deep-link auto-open: when the dashboard (or any cross-link) navigates to
+// /service-bookings?id=<id>, open that booking's view modal. This loads the
+// record directly via the site-scoped getById, independently of the list data
+// (useSiteData), mirroring how PaymentsView handles ?paymentId. Graceful: if the
+// id is missing/unknown (getById returns null) we silently do nothing. The
+// ?vendor= / ?service= filters are untouched and keep working.
+const openBookingFromQuery = async (id: string) => {
+  try {
+    const booking = await serviceBookingService.getById(id);
+    if (!booking) return;
+    viewBooking(booking);
+  } catch {
+    // Not found or cross-site / network error: don't open, don't toast.
+  }
+};
+
+watch(
+  // Null-safe: `route` is undefined when the component is mounted without a
+  // router (e.g. some isolated unit tests). In that case there is simply no
+  // deep-link to honour, so we read nothing rather than throwing.
+  () => route?.query?.id,
+  (id) => {
+    if (typeof id === 'string' && id) {
+      void openBookingFromQuery(id);
+    }
+  },
+  { immediate: true }
+);
 
 // Event listeners using @vueuse/core
 useQuickActionModal(handleQuickAction);

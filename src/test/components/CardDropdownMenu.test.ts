@@ -1,648 +1,321 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { h } from 'vue'
+import CardDropdownMenu from '../../components/CardDropdownMenu.vue'
 
-describe('CardDropdownMenu Logic', () => {
+// Translate -> key so we can assert/ignore i18n deterministically.
+vi.mock('../../composables/useI18n', () => ({
+  useI18n: () => ({ t: (key: string) => key }),
+}))
+
+// A trivial stand-in icon component for action.icon.
+const StubIcon = { name: 'StubIcon', render: () => h('svg') }
+
+type Action = {
+  key: string
+  label: string
+  icon: any
+  variant?: 'default' | 'danger'
+  disabled?: boolean
+  hidden?: boolean
+}
+
+function makeActions(overrides: Partial<Action>[] = []): Action[] {
+  const base: Action[] = [
+    { key: 'view', label: 'View', icon: StubIcon },
+    { key: 'edit', label: 'Edit', icon: StubIcon },
+    { key: 'delete', label: 'Delete', icon: StubIcon, variant: 'danger' },
+  ]
+  if (overrides.length === 0) return base
+  return overrides as Action[]
+}
+
+/**
+ * The menu content is teleported to <body>, so it lives in document.body and not
+ * inside the wrapper element. We query the document for menu/menuitem nodes.
+ */
+function getMenu(): HTMLElement | null {
+  return document.body.querySelector('[role="menu"]')
+}
+function getMenuItems(): HTMLButtonElement[] {
+  return Array.from(document.body.querySelectorAll('[role="menuitem"]')) as HTMLButtonElement[]
+}
+function getScrim(): HTMLElement | null {
+  // The scrim is the fixed inset-0 overlay teleported alongside the menu.
+  return document.body.querySelector('.fixed.inset-0')
+}
+
+function mountMenu(actions: Action[] = makeActions()) {
+  return mount(CardDropdownMenu, {
+    props: { actions },
+    attachTo: document.body,
+  })
+}
+
+describe('CardDropdownMenu (mounted)', () => {
+  let wrappers: any[] = []
+
+  function track<T>(w: T): T {
+    wrappers.push(w)
+    return w
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  describe('Action Handling Logic', () => {
-    it('should handle action click when not disabled', () => {
-      const mockEmit = vi.fn()
-      const handleAction = (action: any, isOpen: { value: boolean }, emit: typeof mockEmit) => {
-        if (!action.disabled) {
-          isOpen.value = false
-          emit('action', action.key)
-        }
+  afterEach(() => {
+    // Unmount every wrapper to trigger onUnmounted cleanup (window scroll/resize
+    // + document keydown listeners). Then scrub any leftover teleported nodes.
+    wrappers.forEach((w) => {
+      try {
+        w.unmount()
+      } catch {
+        /* ignore */
       }
-      
-      const mockAction = {
-        key: 'edit',
-        label: 'Edit',
-        disabled: false
-      }
-      
-      const isOpen = { value: true }
-      handleAction(mockAction, isOpen, mockEmit)
-      
-      expect(isOpen.value).toBe(false)
-      expect(mockEmit).toHaveBeenCalledWith('action', 'edit')
+    })
+    wrappers = []
+    document.body.querySelectorAll('[role="menu"], .fixed.inset-0').forEach((n) => n.remove())
+    vi.restoreAllMocks()
+  })
+
+  it('renders only the trigger button initially (menu closed)', () => {
+    const wrapper = track(mountMenu())
+    const trigger = wrapper.get('button')
+    expect(trigger.attributes('aria-haspopup')).toBe('menu')
+    expect(trigger.attributes('aria-expanded')).toBe('false')
+    expect(getMenu()).toBeNull()
+  })
+
+  it('opens the menu on trigger click and toggles closed again', async () => {
+    const wrapper = track(mountMenu())
+    const trigger = wrapper.get('button')
+
+    await trigger.trigger('click')
+    await vi.waitFor(() => {
+      expect(getMenu()).not.toBeNull()
+    })
+    expect(trigger.attributes('aria-expanded')).toBe('true')
+    // All three actions rendered as menu items.
+    expect(getMenuItems()).toHaveLength(3)
+
+    await trigger.trigger('click')
+    await vi.waitFor(() => {
+      expect(getMenu()).toBeNull()
+    })
+    expect(wrapper.get('button').attributes('aria-expanded')).toBe('false')
+  })
+
+  it('emits action with the key and closes when an enabled item is clicked', async () => {
+    const wrapper = track(mountMenu())
+    await wrapper.get('button').trigger('click')
+    await vi.waitFor(() => expect(getMenu()).not.toBeNull())
+
+    const items = getMenuItems()
+    const editBtn = items.find((b) => b.textContent?.includes('Edit'))!
+    editBtn.click()
+
+    await vi.waitFor(() => {
+      expect(wrapper.emitted('action')).toBeTruthy()
+    })
+    expect(wrapper.emitted('action')![0]).toEqual(['edit'])
+    await vi.waitFor(() => expect(getMenu()).toBeNull())
+  })
+
+  it('does not emit or close when a disabled item is clicked', async () => {
+    const actions = makeActions([
+      { key: 'view', label: 'View', icon: StubIcon },
+      { key: 'edit', label: 'Edit', icon: StubIcon, disabled: true },
+    ])
+    const wrapper = track(mountMenu(actions))
+    await wrapper.get('button').trigger('click')
+    await vi.waitFor(() => expect(getMenu()).not.toBeNull())
+
+    const editBtn = getMenuItems().find((b) => b.textContent?.includes('Edit'))!
+    expect(editBtn.disabled).toBe(true)
+    expect(editBtn.className).toContain('cursor-not-allowed')
+
+    editBtn.click()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.emitted('action')).toBeFalsy()
+    // Menu remains open.
+    expect(getMenu()).not.toBeNull()
+  })
+
+  it('does not render hidden actions', async () => {
+    const actions = makeActions([
+      { key: 'view', label: 'View', icon: StubIcon },
+      { key: 'secret', label: 'Secret', icon: StubIcon, hidden: true },
+      { key: 'delete', label: 'Delete', icon: StubIcon },
+    ])
+    const wrapper = track(mountMenu(actions))
+    await wrapper.get('button').trigger('click')
+    await vi.waitFor(() => expect(getMenu()).not.toBeNull())
+
+    const labels = getMenuItems().map((b) => b.textContent?.trim())
+    expect(labels.some((l) => l?.includes('Secret'))).toBe(false)
+    expect(getMenuItems()).toHaveLength(2)
+  })
+
+  it('applies the danger variant styling branch', async () => {
+    const wrapper = track(mountMenu())
+    await wrapper.get('button').trigger('click')
+    await vi.waitFor(() => expect(getMenu()).not.toBeNull())
+
+    const deleteBtn = getMenuItems().find((b) => b.textContent?.includes('Delete'))!
+    expect(deleteBtn.className).toContain('text-clay-600')
+
+    const viewBtn = getMenuItems().find((b) => b.textContent?.includes('View'))!
+    expect(viewBtn.className).toContain('text-stone-700')
+    expect(viewBtn.className).not.toContain('text-clay-600')
+  })
+
+  it('closes when the Escape key is pressed', async () => {
+    const wrapper = track(mountMenu())
+    await wrapper.get('button').trigger('click')
+    await vi.waitFor(() => expect(getMenu()).not.toBeNull())
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await vi.waitFor(() => expect(getMenu()).toBeNull())
+    expect(wrapper.get('button').attributes('aria-expanded')).toBe('false')
+  })
+
+  it('ignores non-Escape keydown events', async () => {
+    const wrapper = track(mountMenu())
+    await wrapper.get('button').trigger('click')
+    await vi.waitFor(() => expect(getMenu()).not.toBeNull())
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))
+    await wrapper.vm.$nextTick()
+    expect(getMenu()).not.toBeNull()
+  })
+
+  it('closes when the scrim/backdrop is clicked', async () => {
+    const wrapper = track(mountMenu())
+    await wrapper.get('button').trigger('click')
+    await vi.waitFor(() => expect(getMenu()).not.toBeNull())
+
+    const scrim = getScrim()
+    expect(scrim).not.toBeNull()
+    scrim!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await vi.waitFor(() => expect(getMenu()).toBeNull())
+  })
+
+  describe('positioning (menuStyle from trigger rect)', () => {
+    function stubRect(trigger: HTMLElement, rect: Partial<DOMRect>) {
+      const full: DOMRect = {
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: 0,
+        height: 0,
+        toJSON: () => ({}),
+        ...rect,
+      } as DOMRect
+      vi.spyOn(trigger, 'getBoundingClientRect').mockReturnValue(full)
+    }
+
+    it('computes a right-aligned, viewport-clamped position below the trigger', async () => {
+      const wrapper = track(mountMenu())
+      const trigger = wrapper.get('button').element as HTMLElement
+
+      // Plenty of room below: top=100, bottom=140, right=500.
+      stubRect(trigger, { top: 100, bottom: 140, right: 500, left: 456, width: 44, height: 40 })
+
+      await wrapper.get('button').trigger('click')
+      await vi.waitFor(() => expect(getMenu()).not.toBeNull())
+
+      const menu = getMenu()!
+      // top = bottom + 4 = 144; left = right - MENU_WIDTH(208) = 292.
+      expect(menu.style.top).toBe('144px')
+      expect(menu.style.left).toBe('292px')
     })
 
-    it('should not handle action click when disabled', () => {
-      const mockEmit = vi.fn()
-      const handleAction = (action: any, isOpen: { value: boolean }, emit: typeof mockEmit) => {
-        if (!action.disabled) {
-          isOpen.value = false
-          emit('action', action.key)
-        }
-      }
-      
-      const mockAction = {
-        key: 'delete',
-        label: 'Delete',
-        disabled: true
-      }
-      
-      const isOpen = { value: true }
-      handleAction(mockAction, isOpen, mockEmit)
-      
-      expect(isOpen.value).toBe(true)
-      expect(mockEmit).not.toHaveBeenCalled()
+    it('clamps left to a minimum of 8px when the trigger is near the left edge', async () => {
+      const wrapper = track(mountMenu())
+      const trigger = wrapper.get('button').element as HTMLElement
+
+      // right - 208 would be negative, so left clamps up to 8.
+      stubRect(trigger, { top: 100, bottom: 140, right: 50, left: 6, width: 44, height: 40 })
+
+      await wrapper.get('button').trigger('click')
+      await vi.waitFor(() => expect(getMenu()).not.toBeNull())
+
+      expect(getMenu()!.style.left).toBe('8px')
     })
 
-    it('should emit correct action key', () => {
-      const mockEmit = vi.fn()
-      const handleAction = (action: any, isOpen: { value: boolean }, emit: typeof mockEmit) => {
-        if (!action.disabled) {
-          isOpen.value = false
-          emit('action', action.key)
-        }
+    it('flips the menu above the trigger when there is no room below', async () => {
+      const originalInnerHeight = window.innerHeight
+      Object.defineProperty(window, 'innerHeight', { value: 600, writable: true, configurable: true })
+
+      try {
+        const wrapper = track(mountMenu())
+        const trigger = wrapper.get('button').element as HTMLElement
+
+        // Trigger near the bottom: bottom=580 close to innerHeight=600, but top=540
+        // leaves room above. estHeight = 3*52 + 8 = 164.
+        stubRect(trigger, { top: 540, bottom: 580, right: 500, left: 456, width: 44, height: 40 })
+
+        await wrapper.get('button').trigger('click')
+        await vi.waitFor(() => expect(getMenu()).not.toBeNull())
+
+        // Flipped: top = rect.top - estHeight - 4 = 540 - 164 - 4 = 372.
+        expect(getMenu()!.style.top).toBe('372px')
+      } finally {
+        Object.defineProperty(window, 'innerHeight', {
+          value: originalInnerHeight,
+          writable: true,
+          configurable: true,
+        })
       }
-      
-      const actions = [
-        { key: 'view', label: 'View', disabled: false },
-        { key: 'edit', label: 'Edit', disabled: false },
-        { key: 'delete', label: 'Delete', disabled: false }
-      ]
-      
-      const isOpen = { value: true }
-      actions.forEach(action => {
-        handleAction(action, isOpen, mockEmit)
-      })
-      
-      expect(mockEmit).toHaveBeenCalledWith('action', 'view')
-      expect(mockEmit).toHaveBeenCalledWith('action', 'edit')
-      expect(mockEmit).toHaveBeenCalledWith('action', 'delete')
+    })
+
+    it('repositions on window scroll while open', async () => {
+      const wrapper = track(mountMenu())
+      const trigger = wrapper.get('button').element as HTMLElement
+
+      stubRect(trigger, { top: 100, bottom: 140, right: 500, left: 456, width: 44, height: 40 })
+      await wrapper.get('button').trigger('click')
+      await vi.waitFor(() => expect(getMenu()).not.toBeNull())
+      expect(getMenu()!.style.top).toBe('144px')
+
+      // Move the trigger and fire scroll -> menu should recompute.
+      stubRect(trigger, { top: 200, bottom: 240, right: 500, left: 456, width: 44, height: 40 })
+      window.dispatchEvent(new Event('scroll'))
+      await vi.waitFor(() => expect(getMenu()!.style.top).toBe('244px'))
     })
   })
 
-  describe('Toggle Logic', () => {
-    it('should toggle dropdown open state', () => {
-      const toggleDropdown = (isOpen: { value: boolean }) => {
-        isOpen.value = !isOpen.value
-      }
-      
-      const isOpen = { value: false }
-      
-      toggleDropdown(isOpen)
-      expect(isOpen.value).toBe(true)
-      
-      toggleDropdown(isOpen)
-      expect(isOpen.value).toBe(false)
-    })
+  it('cleans up listeners on unmount without errors', async () => {
+    const removeWinSpy = vi.spyOn(window, 'removeEventListener')
+    const removeDocSpy = vi.spyOn(document, 'removeEventListener')
 
-    it('should close dropdown when clicking action', () => {
-      const mockEmit = vi.fn()
-      const handleAction = (action: any, isOpen: { value: boolean }, emit: typeof mockEmit) => {
-        if (!action.disabled) {
-          isOpen.value = false
-          emit('action', action.key)
-        }
-      }
-      
-      const isOpen = { value: true }
-      const mockAction = { key: 'test', label: 'Test', disabled: false }
-      
-      handleAction(mockAction, isOpen, mockEmit)
-      expect(isOpen.value).toBe(false)
-    })
+    const wrapper = mountMenu()
+    await wrapper.get('button').trigger('click')
+    await vi.waitFor(() => expect(getMenu()).not.toBeNull())
 
-    it('should close dropdown on outside click', () => {
-      const handleOutsideClick = (isOpen: { value: boolean }) => {
-        isOpen.value = false
-      }
-      
-      const isOpen = { value: true }
-      handleOutsideClick(isOpen)
-      expect(isOpen.value).toBe(false)
-    })
+    wrapper.unmount()
+
+    // Scroll + resize (window) and keydown (document) listeners removed.
+    expect(removeWinSpy).toHaveBeenCalledWith('scroll', expect.any(Function), true)
+    expect(removeWinSpy).toHaveBeenCalledWith('resize', expect.any(Function))
+    expect(removeDocSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
+
+    // After unmount, dispatching the events that the (removed) listeners handled
+    // must not throw and must not resurrect any teleported menu.
+    expect(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      window.dispatchEvent(new Event('scroll'))
+      window.dispatchEvent(new Event('resize'))
+    }).not.toThrow()
+    expect(getMenu()).toBeNull()
   })
 
-  describe('Keyboard Event Handling Logic', () => {
-    it('should close dropdown on Escape key', () => {
-      const handleKeydown = (event: { key: string }, isOpen: { value: boolean }) => {
-        if (event.key === 'Escape') {
-          isOpen.value = false
-        }
-      }
-      
-      const isOpen = { value: true }
-      const escapeEvent = { key: 'Escape' }
-      
-      handleKeydown(escapeEvent, isOpen)
-      expect(isOpen.value).toBe(false)
-    })
-
-    it('should not close dropdown on other keys', () => {
-      const handleKeydown = (event: { key: string }, isOpen: { value: boolean }) => {
-        if (event.key === 'Escape') {
-          isOpen.value = false
-        }
-      }
-      
-      const isOpen = { value: true }
-      const enterEvent = { key: 'Enter' }
-      const spaceEvent = { key: ' ' }
-      
-      handleKeydown(enterEvent, isOpen)
-      expect(isOpen.value).toBe(true)
-      
-      handleKeydown(spaceEvent, isOpen)
-      expect(isOpen.value).toBe(true)
-    })
-  })
-
-  describe('Action Classification Logic', () => {
-    it('should identify visible actions correctly', () => {
-      const getVisibleActions = (actions: any[]) => {
-        return actions.filter(action => !action.hidden)
-      }
-      
-      const allActions = [
-        { key: 'view', label: 'View', hidden: false },
-        { key: 'edit', label: 'Edit', hidden: false },
-        { key: 'admin', label: 'Admin', hidden: true },
-        { key: 'delete', label: 'Delete', hidden: false }
-      ]
-      
-      const visibleActions = getVisibleActions(allActions)
-      expect(visibleActions).toHaveLength(3)
-      expect(visibleActions.map(a => a.key)).toEqual(['view', 'edit', 'delete'])
-    })
-
-    it('should identify enabled actions correctly', () => {
-      const getEnabledActions = (actions: any[]) => {
-        return actions.filter(action => !action.disabled)
-      }
-      
-      const allActions = [
-        { key: 'view', label: 'View', disabled: false },
-        { key: 'edit', label: 'Edit', disabled: true },
-        { key: 'delete', label: 'Delete', disabled: false }
-      ]
-      
-      const enabledActions = getEnabledActions(allActions)
-      expect(enabledActions).toHaveLength(2)
-      expect(enabledActions.map(a => a.key)).toEqual(['view', 'delete'])
-    })
-
-    it('should identify danger variant actions', () => {
-      const getDangerActions = (actions: any[]) => {
-        return actions.filter(action => action.variant === 'danger')
-      }
-      
-      const allActions = [
-        { key: 'view', label: 'View', variant: 'default' },
-        { key: 'edit', label: 'Edit', variant: 'default' },
-        { key: 'delete', label: 'Delete', variant: 'danger' }
-      ]
-      
-      const dangerActions = getDangerActions(allActions)
-      expect(dangerActions).toHaveLength(1)
-      expect(dangerActions[0].key).toBe('delete')
-    })
-  })
-
-  describe('CSS Classes Generation Logic', () => {
-    it('should generate correct classes for enabled default action', () => {
-      const getActionClasses = (action: any) => {
-        const baseClasses = 'w-full text-left px-4 py-3 text-sm flex items-center space-x-3 transition-colors'
-        
-        if (action.disabled) {
-          return `${baseClasses} text-gray-400 dark:text-gray-500 cursor-not-allowed`
-        }
-        
-        if (action.variant === 'danger') {
-          return `${baseClasses} text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20`
-        }
-        
-        return `${baseClasses} text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700`
-      }
-      
-      const defaultAction = {
-        key: 'edit',
-        label: 'Edit',
-        disabled: false,
-        variant: 'default'
-      }
-      
-      const classes = getActionClasses(defaultAction)
-      expect(classes).toContain('text-gray-700')
-      expect(classes).toContain('dark:text-gray-300')
-      expect(classes).toContain('hover:bg-gray-50')
-      expect(classes).toContain('dark:hover:bg-gray-700')
-    })
-
-    it('should generate correct classes for danger action', () => {
-      const getActionClasses = (action: any) => {
-        const baseClasses = 'w-full text-left px-4 py-3 text-sm flex items-center space-x-3 transition-colors'
-        
-        if (action.disabled) {
-          return `${baseClasses} text-gray-400 dark:text-gray-500 cursor-not-allowed`
-        }
-        
-        if (action.variant === 'danger') {
-          return `${baseClasses} text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20`
-        }
-        
-        return `${baseClasses} text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700`
-      }
-      
-      const dangerAction = {
-        key: 'delete',
-        label: 'Delete',
-        disabled: false,
-        variant: 'danger'
-      }
-      
-      const classes = getActionClasses(dangerAction)
-      expect(classes).toContain('text-red-600')
-      expect(classes).toContain('dark:text-red-400')
-      expect(classes).toContain('hover:bg-red-50')
-      expect(classes).toContain('dark:hover:bg-red-900/20')
-    })
-
-    it('should generate correct classes for disabled action', () => {
-      const getActionClasses = (action: any) => {
-        const baseClasses = 'w-full text-left px-4 py-3 text-sm flex items-center space-x-3 transition-colors'
-        
-        if (action.disabled) {
-          return `${baseClasses} text-gray-400 dark:text-gray-500 cursor-not-allowed`
-        }
-        
-        if (action.variant === 'danger') {
-          return `${baseClasses} text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20`
-        }
-        
-        return `${baseClasses} text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700`
-      }
-      
-      const disabledAction = {
-        key: 'edit',
-        label: 'Edit',
-        disabled: true
-      }
-      
-      const classes = getActionClasses(disabledAction)
-      expect(classes).toContain('text-gray-400')
-      expect(classes).toContain('dark:text-gray-500')
-      expect(classes).toContain('cursor-not-allowed')
-    })
-
-    it('should generate button classes correctly', () => {
-      const getButtonClasses = () => {
-        return 'p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'
-      }
-      
-      const buttonClasses = getButtonClasses()
-      expect(buttonClasses).toContain('p-2')
-      expect(buttonClasses).toContain('text-gray-400')
-      expect(buttonClasses).toContain('hover:text-gray-600')
-      expect(buttonClasses).toContain('rounded-full')
-      expect(buttonClasses).toContain('transition-colors')
-    })
-
-    it('should generate dropdown panel classes correctly', () => {
-      const getDropdownClasses = () => {
-        return 'absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50'
-      }
-      
-      const dropdownClasses = getDropdownClasses()
-      expect(dropdownClasses).toContain('absolute')
-      expect(dropdownClasses).toContain('right-0')
-      expect(dropdownClasses).toContain('top-full')
-      expect(dropdownClasses).toContain('w-48')
-      expect(dropdownClasses).toContain('bg-white')
-      expect(dropdownClasses).toContain('shadow-lg')
-      expect(dropdownClasses).toContain('z-50')
-    })
-  })
-
-  describe('Props Validation Logic', () => {
-    it('should validate DropdownAction interface', () => {
-      interface DropdownAction {
-        key: string
-        label: string
-        icon: any
-        variant?: 'default' | 'danger'
-        disabled?: boolean
-        hidden?: boolean
-      }
-      
-      const validateAction = (action: any): action is DropdownAction => {
-        return (
-          typeof action.key === 'string' &&
-          typeof action.label === 'string' &&
-          action.icon !== undefined &&
-          (action.variant === undefined || ['default', 'danger'].includes(action.variant)) &&
-          (action.disabled === undefined || typeof action.disabled === 'boolean') &&
-          (action.hidden === undefined || typeof action.hidden === 'boolean')
-        )
-      }
-      
-      const validAction = {
-        key: 'edit',
-        label: 'Edit Item',
-        icon: 'EditIcon',
-        variant: 'default' as const,
-        disabled: false,
-        hidden: false
-      }
-      
-      expect(validateAction(validAction)).toBe(true)
-      
-      const invalidAction = {
-        key: 123, // Should be string
-        label: 'Edit Item'
-      }
-      
-      expect(validateAction(invalidAction)).toBe(false)
-    })
-
-    it('should validate Props interface', () => {
-      interface Props {
-        actions: Array<{
-          key: string
-          label: string
-          icon: any
-          variant?: 'default' | 'danger'
-          disabled?: boolean
-          hidden?: boolean
-        }>
-      }
-      
-      const validateProps = (props: any): props is Props => {
-        return (
-          Array.isArray(props.actions) &&
-          props.actions.every((action: any) => 
-            typeof action.key === 'string' && 
-            typeof action.label === 'string' &&
-            action.icon !== undefined
-          )
-        )
-      }
-      
-      const validProps = {
-        actions: [
-          { key: 'edit', label: 'Edit', icon: 'EditIcon' },
-          { key: 'delete', label: 'Delete', icon: 'DeleteIcon', variant: 'danger' as const }
-        ]
-      }
-      
-      expect(validateProps(validProps)).toBe(true)
-      
-      const invalidProps = {
-        actions: 'not an array'
-      }
-      
-      expect(validateProps(invalidProps)).toBe(false)
-    })
-  })
-
-  describe('Event Listener Management Logic', () => {
-    it('should validate keydown event listener setup', () => {
-      const mockEventManager = {
-        listeners: new Map<string, Function>(),
-        addEventListener: (event: string, handler: Function) => {
-          mockEventManager.listeners.set(event, handler)
-        },
-        removeEventListener: (event: string) => {
-          mockEventManager.listeners.delete(event)
-        }
-      }
-      
-      const keydownHandler = (e: { key: string }) => {
-        if (e.key === 'Escape') {
-          // Close dropdown logic
-        }
-      }
-      
-      mockEventManager.addEventListener('keydown', keydownHandler)
-      expect(mockEventManager.listeners.has('keydown')).toBe(true)
-      
-      mockEventManager.removeEventListener('keydown')
-      expect(mockEventManager.listeners.has('keydown')).toBe(false)
-    })
-  })
-
-  describe('Dropdown State Management', () => {
-    it('should manage dropdown visibility state', () => {
-      const dropdownState = {
-        isOpen: false,
-        toggle: () => {
-          dropdownState.isOpen = !dropdownState.isOpen
-        },
-        close: () => {
-          dropdownState.isOpen = false
-        },
-        open: () => {
-          dropdownState.isOpen = true
-        }
-      }
-      
-      expect(dropdownState.isOpen).toBe(false)
-      
-      dropdownState.open()
-      expect(dropdownState.isOpen).toBe(true)
-      
-      dropdownState.close()
-      expect(dropdownState.isOpen).toBe(false)
-      
-      dropdownState.toggle()
-      expect(dropdownState.isOpen).toBe(true)
-      
-      dropdownState.toggle()
-      expect(dropdownState.isOpen).toBe(false)
-    })
-  })
-
-  describe('Translation Integration', () => {
-    it('should use correct translation key for actions button', () => {
-      const mockTranslate = (key: string) => {
-        const translations: Record<string, string> = {
-          'common.actions': 'Actions'
-        }
-        return translations[key] || key
-      }
-      
-      expect(mockTranslate('common.actions')).toBe('Actions')
-    })
-  })
-
-  describe('Accessibility Features', () => {
-    it('should provide proper button attributes', () => {
-      const getButtonAttributes = () => {
-        return {
-          title: 'common.actions',
-          'aria-expanded': false,
-          'aria-haspopup': true
-        }
-      }
-      
-      const attributes = getButtonAttributes()
-      expect(attributes.title).toBe('common.actions')
-      expect(attributes['aria-expanded']).toBe(false)
-      expect(attributes['aria-haspopup']).toBe(true)
-    })
-
-    it('should handle keyboard navigation', () => {
-      const handleArrowNavigation = (
-        event: { key: string },
-        actions: any[],
-        currentIndex: number
-      ) => {
-        if (event.key === 'ArrowDown') {
-          return Math.min(currentIndex + 1, actions.length - 1)
-        }
-        if (event.key === 'ArrowUp') {
-          return Math.max(currentIndex - 1, 0)
-        }
-        return currentIndex
-      }
-      
-      const actions = [
-        { key: 'view', label: 'View' },
-        { key: 'edit', label: 'Edit' },
-        { key: 'delete', label: 'Delete' }
-      ]
-      
-      expect(handleArrowNavigation({ key: 'ArrowDown' }, actions, 0)).toBe(1)
-      expect(handleArrowNavigation({ key: 'ArrowUp' }, actions, 2)).toBe(1)
-      expect(handleArrowNavigation({ key: 'ArrowDown' }, actions, 2)).toBe(2) // At end
-      expect(handleArrowNavigation({ key: 'ArrowUp' }, actions, 0)).toBe(0) // At start
-    })
-  })
-
-  describe('Click Event Handling', () => {
-    it('should handle click outside dropdown', () => {
-      const handleClickOutside = (
-        event: { target: any },
-        dropdownRef: { contains: (target: any) => boolean },
-        isOpen: { value: boolean }
-      ) => {
-        if (isOpen.value && !dropdownRef.contains(event.target)) {
-          isOpen.value = false
-        }
-      }
-      
-      const mockDropdownRef = {
-        contains: (target: any) => target === 'inside'
-      }
-      
-      const isOpen = { value: true }
-      
-      // Click outside
-      handleClickOutside({ target: 'outside' }, mockDropdownRef, isOpen)
-      expect(isOpen.value).toBe(false)
-      
-      // Reset and click inside
-      isOpen.value = true
-      handleClickOutside({ target: 'inside' }, mockDropdownRef, isOpen)
-      expect(isOpen.value).toBe(true)
-    })
-
-    it('should stop event propagation on dropdown clicks', () => {
-      const mockEvent = {
-        stopPropagation: vi.fn()
-      }
-      
-      const handleDropdownClick = (event: typeof mockEvent) => {
-        event.stopPropagation()
-      }
-      
-      handleDropdownClick(mockEvent)
-      expect(mockEvent.stopPropagation).toHaveBeenCalled()
-    })
-  })
-
-  describe('Error Handling', () => {
-    it('should handle missing icon gracefully', () => {
-      const renderActionIcon = (action: { icon: any }) => {
-        if (!action.icon) {
-          return null // or a default icon
-        }
-        return action.icon
-      }
-      
-      expect(renderActionIcon({ icon: null })).toBe(null)
-      expect(renderActionIcon({ icon: 'EditIcon' })).toBe('EditIcon')
-    })
-
-    it('should handle empty actions array', () => {
-      const getVisibleActions = (actions: any[]) => {
-        return actions.filter(action => !action.hidden)
-      }
-      
-      expect(getVisibleActions([])).toEqual([])
-    })
-
-    it('should handle malformed action objects', () => {
-      const safeGetActionKey = (action: any) => {
-        return action?.key || 'unknown'
-      }
-      
-      expect(safeGetActionKey(null)).toBe('unknown')
-      expect(safeGetActionKey({})).toBe('unknown')
-      expect(safeGetActionKey({ key: 'test' })).toBe('test')
-    })
-  })
-
-  describe('Component Integration', () => {
-    it('should handle component import without errors', async () => {
-      const CardDropdownMenu = await import('../../components/CardDropdownMenu.vue')
-      expect(CardDropdownMenu.default).toBeDefined()
-    })
-
-    it('should validate Lucide icon integration', () => {
-      const validateIcon = (icon: any) => {
-        return icon && typeof icon === 'object'
-      }
-      
-      // Mock Lucide icon structure
-      const mockIcon = { template: '<svg>...</svg>' }
-      expect(validateIcon(mockIcon)).toBe(true)
-    })
-  })
-
-  describe('Z-Index and Layering', () => {
-    it('should validate dropdown z-index hierarchy', () => {
-      const dropdownZIndex = 50
-      const backdropZIndex = 40
-      
-      expect(dropdownZIndex).toBeGreaterThan(backdropZIndex)
-    })
-
-    it('should ensure proper overlay stacking', () => {
-      const getOverlayClasses = () => ({
-        backdrop: 'fixed inset-0 z-40',
-        dropdown: 'z-50'
-      })
-      
-      const classes = getOverlayClasses()
-      expect(classes.backdrop).toContain('z-40')
-      expect(classes.dropdown).toContain('z-50')
-    })
-  })
-
-  describe('Performance Considerations', () => {
-    it('should handle large action arrays efficiently', () => {
-      const processActions = (actions: any[]) => {
-        return actions
-          .filter(action => !action.hidden)
-          .filter(action => !action.disabled)
-      }
-      
-      const largeActionList = Array.from({ length: 100 }, (_, i) => ({
-        key: `action-${i}`,
-        label: `Action ${i}`,
-        icon: 'Icon',
-        hidden: i % 3 === 0,
-        disabled: i % 5 === 0
-      }))
-      
-      expect(() => processActions(largeActionList)).not.toThrow()
-      const processed = processActions(largeActionList)
-      expect(processed.length).toBeLessThan(largeActionList.length)
-    })
+  it('component import is defined', () => {
+    expect(CardDropdownMenu).toBeDefined()
   })
 })

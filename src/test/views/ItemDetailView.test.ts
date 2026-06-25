@@ -128,7 +128,48 @@ vi.mock('../../services/pocketbase', () => {
     },
     deliveryItemService: {
       getByDeliveryIds: vi.fn().mockResolvedValue([]),
-      getByItemId: vi.fn().mockResolvedValue([])
+      getByItemId: vi.fn().mockResolvedValue([]),
+      // ItemDetailView now fetches the item's delivery history via getByItem.
+      // Return the delivery_items for item-1, each carrying its parent delivery
+      // (with delivery_date + vendor expand) the way the real query does.
+      getByItem: vi.fn().mockResolvedValue([
+        {
+          id: 'di-1',
+          delivery: 'delivery-1',
+          item: 'item-1',
+          quantity: 100,
+          unit_price: 100,
+          total_amount: 10000,
+          notes: 'Test note',
+          site: 'site-1',
+          expand: {
+            delivery: {
+              id: 'delivery-1',
+              delivery_date: '2024-01-15',
+              payment_status: 'paid',
+              expand: { vendor: { name: 'Test Vendor' } }
+            }
+          }
+        },
+        {
+          id: 'di-2',
+          delivery: 'delivery-2',
+          item: 'item-1',
+          quantity: 50,
+          unit_price: 110,
+          total_amount: 5500,
+          notes: '',
+          site: 'site-1',
+          expand: {
+            delivery: {
+              id: 'delivery-2',
+              delivery_date: '2024-01-20',
+              payment_status: 'pending',
+              expand: { vendor: { name: 'Vendor Two' } }
+            }
+          }
+        }
+      ])
     },
     getCurrentSiteId: vi.fn(() => 'site-1'),
     setCurrentSiteId: vi.fn(),

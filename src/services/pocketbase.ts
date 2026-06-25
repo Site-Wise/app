@@ -1424,33 +1424,49 @@ export class VendorService {
       .reduce((sum, payment) => sum + payment.amount, 0);
   }
 
-  // Synchronous calculation methods for use with existing data
+  // Synchronous calculation methods for use with existing data.
+  //
+  // Outstanding is summed PER ITEM (each clamped at 0), never netted globally across a
+  // vendor: an advance/overpayment on one delivery or booking must not erase a genuine
+  // balance owed on another. The source of truth for "how much is paid against an item"
+  // is the payment_allocations pivot (the deprecated paid_amount/payment_status fields
+  // are always 0 from the API). Because every delivery/booking belongs to exactly one
+  // vendor, summing this across all vendors equals the site-wide outstanding the
+  // dashboard shows.
+  //
+  // `payments` must be loaded via paymentService.getAll() so each carries its
+  // expanded `payment_allocations`.
   static calculateOutstandingFromData(
     vendorId: string,
     deliveries: Delivery[],
     serviceBookings: ServiceBooking[],
     payments: Payment[]
   ): number {
-    // Calculate total amount due from deliveries
-    const deliveriesTotal = deliveries
+    const allocations = payments.flatMap(p => p.expand?.payment_allocations || []);
+
+    // Deliveries: outstanding = total_amount - allocated (clamped at 0).
+    const deliveriesOutstanding = deliveries
       .filter(delivery => delivery.vendor === vendorId)
-      .reduce((sum, delivery) => sum + delivery.total_amount, 0);
+      .reduce((sum, delivery) => {
+        const allocated = allocations
+          .filter(a => a.delivery === delivery.id)
+          .reduce((s, a) => s + a.allocated_amount, 0);
+        const outstanding = delivery.total_amount - allocated;
+        return sum + (outstanding > 0 ? outstanding : 0);
+      }, 0);
 
-    // Calculate total amount due from service bookings based on progress percentage
-    const serviceBookingsTotal = serviceBookings
+    // Service bookings: due is the progress-based amount (total scaled by percent
+    // completed), minus what's been allocated to the booking (clamped at 0).
+    const serviceBookingsOutstanding = serviceBookings
       .filter(booking => booking.vendor === vendorId)
-      .reduce((sum, booking) => sum + ServiceBookingService.calculateProgressBasedAmount(booking), 0);
+      .reduce((sum, booking) => {
+        const allocated = allocations
+          .filter(a => a.service_booking === booking.id)
+          .reduce((s, a) => s + a.allocated_amount, 0);
+        return sum + ServiceBookingService.calculateOutstandingAmountFromData(booking, allocated);
+      }, 0);
 
-    // Calculate total payments made to this vendor
-    const totalPaid = payments
-      .filter(payment => payment.vendor === vendorId)
-      .reduce((sum, payment) => sum + payment.amount, 0);
-
-    // Outstanding = Total Due - Total Paid
-    const totalDue = deliveriesTotal + serviceBookingsTotal;
-    const outstanding = totalDue - totalPaid;
-
-    return outstanding > 0 ? outstanding : 0;
+    return deliveriesOutstanding + serviceBookingsOutstanding;
   }
 
   static calculateTotalPaidFromData(vendorId: string, payments: Payment[]): number {
@@ -1500,6 +1516,39 @@ export class QuotationService {
     } catch (error) {
       return null;
     }
+  }
+
+  async getByVendor(vendorId: string): Promise<Quotation[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('quotations').getFullList({
+      filter: `site="${siteId}" && vendor="${vendorId}"`,
+      expand: 'vendor,item,service'
+    });
+    return records.map(record => this.mapRecordToQuotation(record));
+  }
+
+  async getByItem(itemId: string): Promise<Quotation[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('quotations').getFullList({
+      filter: `site="${siteId}" && item="${itemId}"`,
+      expand: 'vendor,item,service'
+    });
+    return records.map(record => this.mapRecordToQuotation(record));
+  }
+
+  async getByService(serviceId: string): Promise<Quotation[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('quotations').getFullList({
+      filter: `site="${siteId}" && service="${serviceId}"`,
+      expand: 'vendor,item,service'
+    });
+    return records.map(record => this.mapRecordToQuotation(record));
   }
 
   async create(data: Omit<Quotation, 'id' | 'site'>): Promise<Quotation> {
@@ -1639,6 +1688,28 @@ export class ServiceBookingService {
     } catch (error) {
       return null;
     }
+  }
+
+  async getByService(serviceId: string): Promise<ServiceBooking[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('service_bookings').getFullList({
+      filter: `site="${siteId}" && service="${serviceId}"`,
+      expand: 'vendor,service'
+    });
+    return records.map(record => this.mapRecordToServiceBooking(record));
+  }
+
+  async getByVendor(vendorId: string): Promise<ServiceBooking[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('service_bookings').getFullList({
+      filter: `site="${siteId}" && vendor="${vendorId}"`,
+      expand: 'vendor,service'
+    });
+    return records.map(record => this.mapRecordToServiceBooking(record));
   }
 
   async create(data: Omit<ServiceBooking, 'id' | 'site'>): Promise<ServiceBooking> {
@@ -1834,6 +1905,30 @@ export class PaymentService {
     } catch (error) {
       return null;
     }
+  }
+
+  async getByVendor(vendorId: string): Promise<Payment[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('payments').getFullList({
+      filter: `site="${siteId}" && vendor="${vendorId}"`,
+      expand: 'vendor,account,deliveries,service_bookings,payment_allocations,payment_allocations.delivery,payment_allocations.service_booking,payment_allocations.service_booking.service,credit_notes',
+      sort: '-payment_date'
+    });
+    return records.map(record => this.mapRecordToPayment(record));
+  }
+
+  async getByAccount(accountId: string): Promise<Payment[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('payments').getFullList({
+      filter: `site="${siteId}" && account="${accountId}"`,
+      expand: 'vendor,account,deliveries,service_bookings,payment_allocations,payment_allocations.delivery,payment_allocations.service_booking,payment_allocations.service_booking.service,credit_notes',
+      sort: '-payment_date'
+    });
+    return records.map(record => this.mapRecordToPayment(record));
   }
 
   async create(data: any): Promise<Payment> {
@@ -2437,6 +2532,26 @@ export class PaymentAllocationService {
       .getFullList({
         filter: `site="${siteId}"`,
         expand: 'delivery,service_booking,service_booking.service'
+      });
+    return records.map(record => this.mapRecordToPaymentAllocation(record));
+  }
+
+  /**
+   * Lightweight allocations fetch for delivery payment-status calculation.
+   * Same rows as getAll() (site-scoped) but with NO expand — the calc only needs
+   * each allocation's `delivery` id + `allocated_amount`, so we skip the heavy
+   * delivery/service_booking/service expand that getAll() carries (the main cost
+   * of that request). Allocations not tied to a delivery simply never match a
+   * delivery in the calc, so they're harmless. Much smaller payload, same result.
+   */
+  async getDeliveryAllocations(): Promise<PaymentAllocation[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const records = await pb.collection('payment_allocations')
+      .getFullList({
+        filter: `site="${siteId}"`,
+        requestKey: 'delivery-status-allocations'
       });
     return records.map(record => this.mapRecordToPaymentAllocation(record));
   }
@@ -4060,6 +4175,89 @@ export class DeliveryService {
     return records.map(record => this.mapRecordToDelivery(record));
   }
 
+  /**
+   * Paginated, site-isolated fetch mirroring getAll()'s filter/expand/sort.
+   * Used for infinite scrolling in the deliveries list.
+   */
+  async getList(
+    page: number,
+    perPage: number,
+    sort: string = '-delivery_date'
+  ): Promise<{ items: Delivery[]; totalItems: number; totalPages: number }> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const result = await pb.collection('deliveries').getList(page, perPage, {
+      filter: `site="${siteId}"`,
+      expand: 'vendor,delivery_items,delivery_items.item',
+      sort,
+      // Distinct requestKey so the browse list isn't auto-cancelled by the
+      // concurrent getAllWithPhotos() request to the same collection. A stable
+      // key still lets a newer browse load supersede a stale one on site switch.
+      requestKey: 'deliveries-list'
+    });
+
+    return {
+      items: result.items.map(record => this.mapRecordToDelivery(record)),
+      totalItems: result.totalItems,
+      totalPages: result.totalPages
+    };
+  }
+
+  /**
+   * Paginated, site-isolated fetch of deliveries for a single vendor. Mirrors
+   * getList() exactly but adds a vendor filter; backs the deep-link/filter
+   * feature (e.g. /deliveries?vendor=<id>) and composes with infinite scroll.
+   */
+  async getByVendor(
+    vendorId: string,
+    page: number,
+    perPage: number,
+    sort: string = '-delivery_date'
+  ): Promise<{ items: Delivery[]; totalItems: number; totalPages: number }> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    const result = await pb.collection('deliveries').getList(page, perPage, {
+      filter: `site="${siteId}" && vendor="${vendorId}"`,
+      expand: 'vendor,delivery_items,delivery_items.item',
+      sort,
+      // Distinct requestKey so this vendor-filtered browse isn't auto-cancelled
+      // by the concurrent getList()/getAllWithPhotos() queries to the same
+      // deliveries collection.
+      requestKey: 'deliveries-by-vendor'
+    });
+
+    return {
+      items: result.items.map(record => this.mapRecordToDelivery(record)),
+      totalItems: result.totalItems,
+      totalPages: result.totalPages
+    };
+  }
+
+  /**
+   * Lightweight, site-isolated query that returns only deliveries that have
+   * photos, with just enough expand to build the "view all images" gallery
+   * overlays. Independent of the paginated browse list so image coverage stays
+   * complete across all deliveries for the site.
+   */
+  async getAllWithPhotos(): Promise<Delivery[]> {
+    const siteId = getCurrentSiteId();
+    if (!siteId) throw new Error('No site selected');
+
+    // Only deliveries that actually have photos. Keeps the payload small without
+    // a fragile field-projection (the mapper needs the full record shape).
+    const records = await pb.collection('deliveries').getFullList({
+      filter: `site="${siteId}" && photos:length>0`,
+      expand: 'vendor,delivery_items,delivery_items.item',
+      sort: '-delivery_date',
+      // Distinct requestKey so this doesn't auto-cancel (or get cancelled by) the
+      // browse getList() request to the same deliveries collection.
+      requestKey: 'deliveries-photos'
+    });
+    return records.map(record => this.mapRecordToDelivery(record));
+  }
+
   async getById(id: string): Promise<Delivery> {
     const siteId = getCurrentSiteId();
     if (!siteId) throw new Error('No site selected');
@@ -4343,6 +4541,20 @@ export class DeliveryItemService {
     return records.map(record => this.mapRecordToDeliveryItem(record));
   }
 
+  async getByItem(itemId: string): Promise<DeliveryItem[]> {
+    const currentSite = getCurrentSiteId();
+    if (!currentSite) {
+      throw new Error('No site selected');
+    }
+
+    const records = await pb.collection('delivery_items').getFullList({
+      filter: `site="${currentSite}" && item="${itemId}"`,
+      expand: 'delivery,delivery.vendor,item',
+      sort: '-created'
+    });
+    return records.map(record => this.mapRecordToDeliveryItem(record));
+  }
+
   async getById(id: string): Promise<DeliveryItem> {
     const currentSite = getCurrentSiteId();
     if (!currentSite) {
@@ -4579,6 +4791,26 @@ export class DeliveryItemService {
       total_amount: record.total_amount,
       payment_status: record.payment_status,
       paid_amount: record.paid_amount || 0,
+      site: record.site,
+      created: record.created,
+      updated: record.updated,
+      // Carry the nested vendor expand when present (e.g. delivery_items fetched with
+      // expand 'delivery,delivery.vendor') so callers can read delivery.expand.vendor.
+      expand: record.expand?.vendor ? {
+        vendor: this.mapRecordToVendorForDelivery(record.expand.vendor)
+      } : undefined
+    };
+  }
+
+  private mapRecordToVendorForDelivery(record: RecordModel): Vendor {
+    return {
+      id: record.id,
+      name: record.name,
+      contact_person: record.contact_person,
+      email: record.email,
+      phone: record.phone,
+      address: record.address,
+      tags: record.tags || [],
       site: record.site,
       created: record.created,
       updated: record.updated

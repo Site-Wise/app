@@ -103,7 +103,7 @@
             <div class="lg:hidden p-4 bg-white dark:bg-ink-3 border border-stone-200 dark:border-ink-4 rounded-lg">
               <div class="flex items-center justify-between mb-3">
                 <span class="text-sm font-medium text-stone-500 dark:text-stone-400">{{ t('tools.rebarEstimator.entry') }} #{{ index + 1 }}</span>
-                <button v-if="rebarCalc.entries.value.length > 1" @click="rebarCalc.removeEntry(entry.id)" class="p-1 text-clay-600 dark:text-clay-400 hover:text-clay-700 dark:hover:text-clay-300 rounded">
+                <button v-if="rebarCalc.entries.value.length > 1" @click="rebarCalc.removeEntry(entry.id)" class="min-h-touch min-w-[44px] inline-flex items-center justify-center text-clay-600 dark:text-clay-400 hover:text-clay-700 dark:hover:text-clay-300 rounded">
                   <X class="h-4 w-4" />
                 </button>
               </div>

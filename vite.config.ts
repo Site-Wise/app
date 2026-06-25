@@ -21,7 +21,7 @@ export default defineConfig({
         name: 'SiteWise - Construction Site Management',
         short_name: 'SiteWise',
         description: 'A comprehensive construction site management application for tracking items, vendors, deliveries, and payments',
-        theme_color: '#2563eb',
+        theme_color: '#0A0E0D',
         background_color: '#ffffff',
         display: 'standalone',
         id: '/',
@@ -57,7 +57,29 @@ export default defineConfig({
         // This helps suppress browser-native update notifications
         clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // Keep the heavy on-demand PDF/export stack out of the first SW-install
+        // download (~2 MB). These chunks are only needed when a user actually
+        // generates a PDF, so they load at runtime (cached on first use below).
+        globIgnores: [
+          '**/pdf.worker*',
+          '**/pdf-*',
+          '**/jspdf*',
+          '**/html2canvas*'
+        ],
         runtimeCaching: [
+          {
+            // On-demand PDF/export chunks: cache on first use so subsequent
+            // PDF generation works offline, without bloating SW install.
+            urlPattern: /\/assets\/(pdf\.worker|pdf-|jspdf|html2canvas).*\.js$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'pdf-export-cache',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              }
+            }
+          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
@@ -111,7 +133,20 @@ export default defineConfig({
   envPrefix: ['VITE_', 'TAURI_'],
   build: {
     rollupOptions: {
-      external: isTauri ? [] : ['@tauri-apps/api/tauri']
+      external: isTauri ? [] : ['@tauri-apps/api/tauri'],
+      output: {
+        // Split a stable framework vendor chunk (vue, vue-router, pinia,
+        // pocketbase) so it caches independently of fast-changing app code.
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (
+              /[\\/]node_modules[\\/](@?vue|vue-router|pinia|pocketbase)([\\/]|$)/.test(id)
+            ) {
+              return 'vendor';
+            }
+          }
+        }
+      }
     }
   },
   css: {

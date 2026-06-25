@@ -25,16 +25,24 @@
 
     <!-- Loading State: skeleton card grid -->
     <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6" aria-hidden="true">
-      <div v-for="i in 6" :key="i" class="card flex flex-col gap-3">
+      <div v-for="i in 6" :key="'skel-' + i" class="card card-interactive flex flex-col">
+        <!-- Card header: title + category meta -->
         <div class="flex items-start justify-between">
           <div class="flex-1 min-w-0 space-y-2">
             <Skeleton height="1.25rem" width="60%" />
             <Skeleton height="0.875rem" width="40%" />
           </div>
         </div>
+        <!-- Stat strip -->
         <div class="mt-auto pt-4 border-t border-stone-200 dark:border-ink-4 flex items-end justify-between gap-4">
-          <Skeleton height="1.5rem" width="45%" />
-          <Skeleton height="1.5rem" width="30%" />
+          <div class="space-y-1.5">
+            <Skeleton height="0.625rem" width="4rem" />
+            <Skeleton height="1.5rem" width="4rem" />
+          </div>
+          <div class="space-y-1.5 flex flex-col items-end">
+            <Skeleton height="0.625rem" width="3rem" />
+            <Skeleton height="1.5rem" width="2.5rem" />
+          </div>
         </div>
       </div>
     </div>
@@ -179,7 +187,7 @@
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('services.serviceName')
               }}</label>
               <input ref="nameInputRef" v-model="form.name" type="text" required class="input mt-1"
-                :placeholder="t('forms.enterServiceName')" autofocus />
+                :placeholder="t('forms.enterServiceName')" autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
             </div>
 
             <!-- <div>
@@ -219,7 +227,7 @@
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('services.standardRate')
                 }}</label>
                 <input v-model.number="form.standard_rate" type="number" step="0.01" class="input mt-1"
-                  :placeholder="t('forms.enterRate')" />
+                  :placeholder="t('forms.enterRate')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
               </div>
             </div>
 
@@ -227,7 +235,7 @@
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.description')
               }}</label>
               <textarea v-model="form.description" class="input mt-1" rows="3"
-                :placeholder="t('forms.enterServiceDescription')"></textarea>
+                :placeholder="t('forms.enterServiceDescription')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
             </div>
 
             <!-- Tags -->
@@ -296,6 +304,7 @@ import {
   type Tag as TagType
 } from '../services/pocketbase';
 import { useServiceSearch } from '../composables/useSearch';
+import { computeServiceBookingCounts, getServiceBookingsCount as getBookingsCount } from '../utils/serviceAggregations';
 
 const { t } = useI18n();
 const { canUpdate, canDelete } = usePermissions();
@@ -355,9 +364,12 @@ const getServiceIcon = (category: Service['category']) => {
   return icons[category] || Wrench;
 };
 
-const getServiceBookingsCount = (serviceId: string) => {
-  return serviceBookings.value?.filter(booking => booking.service === serviceId).length || 0;
-};
+// Precompute booking counts ONCE per bookings change so each service card reads its
+// count via an O(1) Map lookup instead of re-filtering all bookings per card.
+const serviceBookingCounts = computed(() => computeServiceBookingCounts(serviceBookings.value));
+
+const getServiceBookingsCount = (serviceId: string) =>
+  getBookingsCount(serviceBookingCounts.value, serviceId);
 
 
 const viewServiceDetail = (serviceId: string) => {
@@ -402,7 +414,7 @@ const saveService = async () => {
   }
 };
 
-const editService = (service: Service) => {
+const editService = async (service: Service) => {
   editingService.value = service;
   Object.assign(form, {
     name: service.name,
@@ -415,7 +427,9 @@ const editService = (service: Service) => {
     is_active: service.is_active
   });
   showAddModal.value = true;
-  openModal('services-edit-modal');
+  openModal('services-edit-modal', closeModal);
+  await nextTick();
+  if (typeof nameInputRef.value?.focus === 'function') nameInputRef.value.focus();
 };
 
 const toggleServiceStatus = async (service: Service) => {
@@ -505,7 +519,7 @@ const handleAddService = async () => {
   }
 
   showAddModal.value = true;
-  openModal('services-add-modal');
+  openModal('services-add-modal', closeModal);
   await nextTick();
   nameInputRef.value?.focus();
 };
@@ -513,7 +527,7 @@ const handleAddService = async () => {
 const handleQuickAction = async () => {
   if (canCreateService.value) {
     showAddModal.value = true;
-    openModal('services-add-modal');
+    openModal('services-add-modal', closeModal);
     await nextTick();
     nameInputRef.value?.focus();
   }

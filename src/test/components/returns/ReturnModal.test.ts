@@ -593,4 +593,290 @@ describe('ReturnModal Logic', () => {
       expect(maxQuantity).toBe(70)
     })
   })
+
+  describe('Return Item Add / Remove', () => {
+    it('opens the item-selection sheet when adding an item with a vendor set', async () => {
+      wrapper = mount(ReturnModal, {
+        global: { plugins: [pinia] },
+        props: {
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
+        }
+      })
+
+      wrapper.vm.form.vendor = 'vendor-1'
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.addReturnItem()
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showItemSelection).toBe(true)
+    })
+
+    it('does not open the item-selection sheet without a vendor', async () => {
+      wrapper = mount(ReturnModal, {
+        global: { plugins: [pinia] },
+        props: {
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
+        }
+      })
+
+      wrapper.vm.form.vendor = ''
+      wrapper.vm.addReturnItem()
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showItemSelection).toBe(false)
+    })
+
+    it('appends a selected delivery item with rate prefilled from unit price', async () => {
+      wrapper = mount(ReturnModal, {
+        global: { plugins: [pinia] },
+        props: {
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
+        }
+      })
+
+      wrapper.vm.selectDeliveryItem({ id: 'item-1', unit_price: 42, quantity: 10 } as any)
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.returnItems).toHaveLength(1)
+      expect(wrapper.vm.returnItems[0].delivery_item).toBe('item-1')
+      expect(wrapper.vm.returnItems[0].return_rate).toBe(42)
+      expect(wrapper.vm.returnItems[0].quantity_returned).toBe(0)
+      // Selecting closes the nested sheet
+      expect(wrapper.vm.showItemSelection).toBe(false)
+    })
+
+    it('removes a return item by index', async () => {
+      wrapper = mount(ReturnModal, {
+        global: { plugins: [pinia] },
+        props: {
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
+        }
+      })
+
+      wrapper.vm.returnItems = [
+        { delivery_item: 'item-1', quantity_returned: 1, return_rate: 50, return_amount: 50, condition: 'damaged', item_notes: '' },
+        { delivery_item: 'item-2', quantity_returned: 2, return_rate: 30, return_amount: 60, condition: 'opened', item_notes: '' }
+      ]
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.removeReturnItem(0)
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.returnItems).toHaveLength(1)
+      expect(wrapper.vm.returnItems[0].delivery_item).toBe('item-2')
+    })
+  })
+
+  describe('Return Amount Recalculation', () => {
+    it('recomputes a line return amount from quantity and rate', async () => {
+      wrapper = mount(ReturnModal, {
+        global: { plugins: [pinia] },
+        props: {
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
+        }
+      })
+
+      wrapper.vm.returnItems = [
+        { delivery_item: 'item-1', quantity_returned: 4, return_rate: 25, return_amount: 0, condition: 'damaged', item_notes: '' }
+      ]
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.updateReturnAmount(0)
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.returnItems[0].return_amount).toBe(100)
+    })
+
+    it('aggregates the total return amount across items and syncs the form', async () => {
+      wrapper = mount(ReturnModal, {
+        global: { plugins: [pinia] },
+        props: {
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
+        }
+      })
+
+      wrapper.vm.returnItems = [
+        { delivery_item: 'item-1', quantity_returned: 4, return_rate: 25, return_amount: 100, condition: 'damaged', item_notes: '' },
+        { delivery_item: 'item-2', quantity_returned: 2, return_rate: 50, return_amount: 100, condition: 'opened', item_notes: '' }
+      ]
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.totalReturnAmount).toBe(200)
+      // watcher syncs form.total_return_amount
+      expect(wrapper.vm.form.total_return_amount).toBe(200)
+    })
+  })
+
+  describe('Edit Mode Prefill', () => {
+    it('prefills the form from existing return data', () => {
+      wrapper = mount(ReturnModal, {
+        global: { plugins: [pinia] },
+        props: {
+          isEdit: true,
+          returnData: {
+            id: 'return-1',
+            vendor: 'vendor-9',
+            return_date: '2024-03-03',
+            reason: 'wrong_item',
+            notes: 'mismatched delivery',
+            photos: ['p1.jpg'],
+            status: 'initiated',
+            total_return_amount: 1500
+          },
+          vendors: [{ id: 'vendor-9', contact_person: 'Edit Vendor', name: 'Edit Co' }]
+        }
+      })
+
+      expect(wrapper.vm.form.vendor).toBe('vendor-9')
+      expect(wrapper.vm.form.return_date).toBe('2024-03-03')
+      expect(wrapper.vm.form.reason).toBe('wrong_item')
+      expect(wrapper.vm.form.notes).toBe('mismatched delivery')
+      expect(wrapper.vm.form.total_return_amount).toBe(1500)
+    })
+  })
+
+  describe('Submit Validation Guards', () => {
+    it('does not submit when there are no return items', async () => {
+      const { vendorReturnService } = await import('../../../services/pocketbase')
+      wrapper = mount(ReturnModal, {
+        global: { plugins: [pinia] },
+        props: {
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
+        }
+      })
+
+      wrapper.vm.returnItems = []
+      await wrapper.vm.handleSubmit()
+
+      expect(vendorReturnService.create).not.toHaveBeenCalled()
+      expect(wrapper.emitted('save')).toBeFalsy()
+    })
+
+    it('does not submit when reason is missing', async () => {
+      const { vendorReturnService } = await import('../../../services/pocketbase')
+      wrapper = mount(ReturnModal, {
+        global: { plugins: [pinia] },
+        props: {
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
+        }
+      })
+
+      wrapper.vm.form.reason = ''
+      wrapper.vm.returnItems = [
+        { delivery_item: 'item-1', quantity_returned: 1, return_rate: 50, return_amount: 50, condition: 'damaged', item_notes: '' }
+      ]
+      await wrapper.vm.handleSubmit()
+
+      expect(vendorReturnService.create).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('Submit Payload Building', () => {
+    it('creates a return then a return item with the site stamped on (create mode)', async () => {
+      const { vendorReturnService, vendorReturnItemService } = await import('../../../services/pocketbase')
+      wrapper = mount(ReturnModal, {
+        global: { plugins: [pinia] },
+        props: {
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
+        }
+      })
+
+      Object.assign(wrapper.vm.form, {
+        vendor: 'vendor-1',
+        return_date: '2024-04-04',
+        reason: 'damaged',
+        notes: 'broken items'
+      })
+      wrapper.vm.returnItems = [
+        { delivery_item: 'item-1', quantity_returned: 3, return_rate: 20, return_amount: 60, condition: 'damaged', item_notes: 'note' }
+      ]
+      await wrapper.vm.$nextTick()
+
+      await wrapper.vm.handleSubmit()
+
+      expect(vendorReturnService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          vendor: 'vendor-1',
+          return_date: '2024-04-04',
+          reason: 'damaged',
+          notes: 'broken items',
+          status: 'initiated'
+        })
+      )
+      expect(vendorReturnItemService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          vendor_return: 'return-1',
+          delivery_item: 'item-1',
+          quantity_returned: 3,
+          return_rate: 20,
+          return_amount: 60,
+          condition: 'damaged',
+          site: 'site-1'
+        })
+      )
+      expect(wrapper.emitted('save')).toBeTruthy()
+    })
+
+    it('updates the existing return in edit mode', async () => {
+      const { vendorReturnService } = await import('../../../services/pocketbase')
+      wrapper = mount(ReturnModal, {
+        global: { plugins: [pinia] },
+        props: {
+          isEdit: true,
+          returnData: {
+            id: 'return-existing',
+            vendor: 'vendor-1',
+            return_date: '2024-01-01',
+            reason: 'damaged',
+            status: 'initiated',
+            total_return_amount: 0
+          },
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
+        }
+      })
+
+      wrapper.vm.returnItems = [
+        { delivery_item: 'item-1', quantity_returned: 1, return_rate: 50, return_amount: 50, condition: 'damaged', item_notes: '' }
+      ]
+      await wrapper.vm.$nextTick()
+
+      await wrapper.vm.handleSubmit()
+
+      expect(vendorReturnService.update).toHaveBeenCalledWith('return-existing', expect.any(Object))
+      expect(vendorReturnService.create).not.toHaveBeenCalled()
+    })
+
+    it('surfaces a toast error and keeps loading false when create fails', async () => {
+      const { vendorReturnService } = await import('../../../services/pocketbase')
+      vi.mocked(vendorReturnService.create).mockRejectedValueOnce(new Error('boom'))
+      wrapper = mount(ReturnModal, {
+        global: { plugins: [pinia] },
+        props: {
+          isEdit: false,
+          vendors: [{ id: 'vendor-1', contact_person: 'Test Vendor', name: 'Vendor Co' }]
+        }
+      })
+
+      Object.assign(wrapper.vm.form, { vendor: 'vendor-1', reason: 'damaged' })
+      wrapper.vm.returnItems = [
+        { delivery_item: 'item-1', quantity_returned: 1, return_rate: 50, return_amount: 50, condition: 'damaged', item_notes: '' }
+      ]
+      await wrapper.vm.$nextTick()
+
+      await wrapper.vm.handleSubmit()
+
+      expect(wrapper.emitted('save')).toBeFalsy()
+      expect(wrapper.vm.loading).toBe(false)
+    })
+  })
 })

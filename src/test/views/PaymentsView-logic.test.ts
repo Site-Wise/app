@@ -197,6 +197,65 @@ describe('PaymentsView Logic', () => {
     })
   })
 
+  // Exercises the real useTableSort composable with the SAME accessor the
+  // PaymentsView desktop table uses, so the column->value mapping is covered.
+  describe('Desktop Table Sort (useTableSort + accessor)', () => {
+    const rows: any[] = [
+      {
+        id: 'pay-1', amount: 50000, payment_date: '2024-01-15',
+        expand: { vendor: { contact_person: 'Beta Co.' }, account: { name: 'Cash' } }
+      },
+      {
+        id: 'pay-2', amount: 30000, payment_date: '2024-01-10',
+        expand: { vendor: { contact_person: 'Alpha Co.' }, account: { name: 'Bank' } }
+      },
+      {
+        id: 'pay-3', amount: 75000, payment_date: '2024-01-20',
+        expand: { vendor: { contact_person: 'Gamma Co.' }, account: { name: 'Wallet' } }
+      }
+    ]
+
+    // Mirrors the accessor wired into PaymentsView.vue.
+    const accessor = (row: any, key: string): unknown => {
+      switch (key) {
+        case 'vendor': return row.expand?.vendor?.contact_person
+        case 'account': return row.expand?.account?.name
+        case 'amount': return row.amount
+        case 'date': return row.payment_date
+        case 'status': return row.status
+        default: return undefined
+      }
+    }
+
+    it('defaults to date descending', async () => {
+      const { useTableSort } = await import('../../composables/useTableSort')
+      const { sortRows } = useTableSort({ defaultKey: 'date', defaultDir: 'desc' })
+      const ids = sortRows(rows, accessor).map(r => r.id)
+      expect(ids).toEqual(['pay-3', 'pay-1', 'pay-2'])
+    })
+
+    it('toggleSort("amount") sorts amount-descending then flips to ascending', async () => {
+      const { useTableSort } = await import('../../composables/useTableSort')
+      const sort = useTableSort({ defaultKey: 'date', defaultDir: 'desc' })
+
+      sort.toggleSort('amount')
+      expect(sort.sortKey.value).toBe('amount')
+      expect(sort.sortDir.value).toBe('desc')
+      expect(sort.sortRows(rows, accessor).map(r => r.id)).toEqual(['pay-3', 'pay-1', 'pay-2'])
+
+      sort.toggleSort('amount')
+      expect(sort.sortDir.value).toBe('asc')
+      expect(sort.sortRows(rows, accessor).map(r => r.id)).toEqual(['pay-2', 'pay-1', 'pay-3'])
+    })
+
+    it('sorts by vendor via the expanded contact_person accessor', async () => {
+      const { useTableSort } = await import('../../composables/useTableSort')
+      const sort = useTableSort({ defaultKey: 'date', defaultDir: 'desc' })
+      sort.setSort('vendor', 'asc')
+      expect(sort.sortRows(rows, accessor).map(r => r.id)).toEqual(['pay-2', 'pay-1', 'pay-3'])
+    })
+  })
+
   describe('Payment Amount Calculations', () => {
     it('should calculate total payments', () => {
       const payments = [

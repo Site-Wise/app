@@ -101,7 +101,7 @@ describe('useOnboarding', () => {
     expect(isOnboardingDisabled.value).toBe(false);
   });
 
-  it('should mark tour as shown', () => {
+  it('should mark tour as shown', async () => {
     const { startTour } = useOnboarding();
     const mockTour = {
       id: 'test-tour',
@@ -116,8 +116,9 @@ describe('useOnboarding', () => {
       showOnce: true
     };
 
-    startTour(mockTour);
-    
+    // startTour is async now (it lazy-loads driver.js inside).
+    await startTour(mockTour);
+
     expect(driver).toHaveBeenCalled();
   });
 
@@ -167,11 +168,11 @@ describe('useOnboarding', () => {
     expect(localStorage.removeItem).toHaveBeenCalledWith('sitewise_onboarding_disabled');
   });
 
-  it('should show feature tour even if onboarding is disabled', () => {
+  it('should show feature tour even if onboarding is disabled', async () => {
     localStorageMock['sitewise_onboarding_disabled'] = 'true';
     const { showFeatureTour } = useOnboarding();
-    
-    showFeatureTour('new_feature', [
+
+    await showFeatureTour('new_feature', [
       {
         popover: {
           title: 'New Feature',
@@ -179,11 +180,11 @@ describe('useOnboarding', () => {
         }
       }
     ]);
-    
+
     expect(driver).toHaveBeenCalled();
   });
 
-  it('should handle tour with custom element selector', () => {
+  it('should handle tour with custom element selector', async () => {
     const { startTour } = useOnboarding();
     const mockTour = {
       id: 'element-tour',
@@ -199,8 +200,8 @@ describe('useOnboarding', () => {
       ]
     };
 
-    startTour(mockTour);
-    
+    await startTour(mockTour);
+
     expect(driver).toHaveBeenCalled();
     const driverCall = vi.mocked(driver).mock.calls[0][0];
     expect(driverCall.steps[0].element).toBe('[data-tour="test-element"]');

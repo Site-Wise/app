@@ -568,15 +568,19 @@ describe('UserManagementView Logic', () => {
 
   describe('Invitation Expiry Date Calculation', () => {
     it('should calculate 7-day expiry from current date', () => {
-      const calculateExpiryDate = () => {
-        const expiryDate = new Date()
+      // Use a fixed reference time for both ends so the diff is deterministic.
+      // Calling new Date() twice made this flaky: when the two calls landed in
+      // different milliseconds the diff was 6.999.. days and Math.floor gave 6.
+      const fixedNow = new Date('2024-01-15T10:00:00Z').getTime()
+      const calculateExpiryDate = (fromTime: number) => {
+        const expiryDate = new Date(fromTime)
         expiryDate.setDate(expiryDate.getDate() + 7)
         return expiryDate
       }
 
-      const expiry = calculateExpiryDate()
-      const now = new Date()
-      const diffInDays = Math.floor((expiry.getTime() - now.getTime()) / 86400000)
+      const expiry = calculateExpiryDate(fixedNow)
+      const now = new Date(fixedNow)
+      const diffInDays = Math.round((expiry.getTime() - now.getTime()) / 86400000)
 
       expect(diffInDays).toBe(7)
     })

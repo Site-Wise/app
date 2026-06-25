@@ -168,9 +168,9 @@
           <!-- Chart Container -->
           <div
             class="relative bg-cream-2 dark:bg-ink-2 rounded-lg p-3 sm:p-6 border border-stone-200 dark:border-ink-4">
-            <!-- Chart.js Line Chart -->
+            <!-- Chart.js Line Chart (lazy-loaded, off the critical path) -->
             <div class="h-48 sm:h-64">
-              <Line :data="chartData" :options="chartOptions" />
+              <DashboardLineChart :data="chartData" :options="chartOptions" />
             </div>
           </div>
         </div>
@@ -201,12 +201,24 @@
                 v-for="row in recentTransactions"
                 :key="row.id"
                 class="rounded-none border-b border-stone-200 dark:border-ink-4 last:border-b-0 lg:hover:bg-cream-2 lg:dark:hover:bg-ink-2"
+                :class="isRowNavigable(row) ? 'cursor-pointer hover:bg-cream-2 dark:hover:bg-ink-2' : ''"
+                @click="isRowNavigable(row) && openLedgerRow(row)"
               >
                 <!-- Desktop cells -->
                 <td class="hidden lg:table-cell px-4 py-3 font-mono sw-tabular text-stone-600 dark:text-stone-300">
                   {{ formatLedgerDate(row.date) }}
                 </td>
-                <td class="hidden lg:table-cell px-4 py-3 text-ink dark:text-cream">{{ row.vendorName }}</td>
+                <td class="hidden lg:table-cell px-4 py-3 text-ink dark:text-cream">
+                  <RecordLink
+                    v-if="row.vendorId"
+                    type="vendor"
+                    mode="detail"
+                    :id="row.vendorId"
+                    :label="row.vendorLabel"
+                  />
+                  <span v-else>{{ row.vendorLabel }}</span>
+                  <div v-if="row.vendorCompany" class="text-xs text-stone-500 dark:text-stone-400">{{ row.vendorCompany }}</div>
+                </td>
                 <td class="hidden lg:table-cell px-4 py-3">
                   <span class="inline-flex items-center gap-2 text-stone-600 dark:text-stone-300">
                     <span class="h-2 w-2 rounded-[2px]" :style="{ backgroundColor: categoryDotColor(row.category) }"></span>
@@ -226,8 +238,18 @@
                     <div class="min-w-0">
                       <div class="flex items-center gap-2">
                         <span class="h-2 w-2 rounded-[2px] shrink-0" :style="{ backgroundColor: categoryDotColor(row.category) }"></span>
-                        <span class="font-medium text-ink dark:text-cream truncate">{{ row.vendorName }}</span>
+                        <span class="font-medium truncate">
+                          <RecordLink
+                            v-if="row.vendorId"
+                            type="vendor"
+                            mode="detail"
+                            :id="row.vendorId"
+                            :label="row.vendorLabel"
+                          />
+                          <span v-else class="text-ink dark:text-cream">{{ row.vendorLabel }}</span>
+                        </span>
                       </div>
+                      <div v-if="row.vendorCompany" class="mt-0.5 text-xs text-stone-500 dark:text-stone-400 truncate">{{ row.vendorCompany }}</div>
                       <div class="mt-0.5 flex items-center gap-1.5 text-xs text-stone-500 dark:text-stone-400">
                         <span>{{ categoryLabel(row.category) }}</span>
                         <span class="text-stone-400 dark:text-stone-500">•</span>
@@ -250,32 +272,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, defineAsyncComponent } from 'vue';
+import { useRouter } from 'vue-router';
 import { TrendingUp, Undo2, Wallet, DollarSign, BarChart3 } from 'lucide-vue-next';
-import { Line } from 'vue-chartjs';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-} from 'chart.js';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
+import ChartLoadingPlaceholder from '../components/charts/ChartLoadingPlaceholder.vue';
+
+// Lazy-load chart.js (heavy) so the dashboard stats/cards paint without waiting
+// for the chart bundle on the critical/landing path.
+const DashboardLineChart = defineAsyncComponent({
+  loader: () => import('../components/charts/DashboardLineChart.vue'),
+  loadingComponent: ChartLoadingPlaceholder
+});
 import Skeleton from '../components/Skeleton.vue';
+import RecordLink from '../components/RecordLink.vue';
 import { useSite } from '../composables/useSite';
 import { useSiteData } from '../composables/useSiteData';
 import { useI18n } from '../composables/useI18n';
@@ -285,17 +295,18 @@ import {
   paymentService,
   deliveryService,
   serviceBookingService,
-  ServiceBookingService,
   vendorRefundService,
   vendorReturnService,
   vendorCreditNoteService,
   vendorService
 } from '../services/pocketbase';
+import { computeDashboardStats } from '../utils/dashboardStats';
 import { useSiteStore } from '../stores/site';
 import NewUserOnboarding from '../components/NewUserOnboarding.vue';
 
 const { t } = useI18n();
 const { isDark } = useTheme();
+const router = useRouter();
 
 const { currentSite } = useSite();
 const siteStore = useSiteStore();
@@ -361,90 +372,23 @@ const creditNotes = computed(() => dashboardData.value?.creditNotes || []);
 const vendors = computed(() => dashboardData.value?.vendors || []);
 
 
-const stats = computed(() => {
-  // Calculate gross expenses from deliveries and service bookings
-  const grossExpenses = deliveries.value.reduce((sum, delivery) => {
-    return sum + delivery.total_amount;
-  }, 0) + serviceBookings.value.reduce((sum, booking) => {
-    return sum + booking.total_amount;
-  }, 0);
-
-  // Calculate total refunds received
-  const totalRefunds = vendorRefunds.value.reduce((sum, refund) => {
-    return sum + refund.refund_amount;
-  }, 0);
-
-  // Net expenses = Gross expenses - Refunds
-  const totalExpenses = grossExpenses - totalRefunds;
-
-  const totalSqft = currentSite.value?.total_planned_area || 1;
-  const expensePerSqft = Math.round(totalExpenses / totalSqft);
-
-  // Calculate total amount due from deliveries
-  const deliveriesTotal = deliveries.value.reduce((sum, delivery) => sum + delivery.total_amount, 0);
-
-  // Calculate total amount due from service bookings based on progress percentage
-  const serviceBookingsTotal = serviceBookings.value.reduce((sum, booking) => {
-    return sum + ServiceBookingService.calculateProgressBasedAmount(booking);
-  }, 0);
-
-  // Calculate total payments made
-  const totalPaid = payments.value.reduce((sum, payment) => sum + payment.amount, 0);
-
-  // Outstanding = Total Due - Total Paid
-  const totalDue = deliveriesTotal + serviceBookingsTotal;
-  const outstandingAmount = totalDue - totalPaid > 0 ? totalDue - totalPaid : 0;
-
-  // Count of deliveries that are not fully paid (honest "unpaid" note for the outstanding tile)
-  const unpaidCount = deliveries.value.filter(
-    d => (d.paid_amount || 0) < d.total_amount
-  ).length;
-
-  // Advances = money paid to vendors that isn't (fully) attributed to a delivery or
-  // service booking yet. Per payment: max(0, amount - sum(allocated_amount)).
-  let advances = 0;
-  let advanceCount = 0;
-  for (const payment of payments.value) {
-    const allocations = payment.expand?.payment_allocations || [];
-    const allocated = allocations.reduce((sum, a) => sum + (a.allocated_amount || 0), 0);
-    const unattributed = payment.amount - allocated;
-    if (unattributed > 0) {
-      advances += unattributed;
-      advanceCount += 1;
-    }
-  }
-
-  // Pending recovery = money owed back on vendor returns that haven't been settled
-  // yet — i.e. returns (not rejected) with neither a linked refund/adjustment nor a
-  // credit note. The moment a credit note or refund is recorded, the return drops off.
-  const refundedReturnIds = new Set(
-    vendorRefunds.value.map(r => r.vendor_return).filter(Boolean)
-  );
-  const creditedReturnIds = new Set(
-    creditNotes.value.map(cn => cn.return_id).filter(Boolean)
-  );
-  let pendingRecovery = 0;
-  let pendingRecoveryCount = 0;
-  for (const ret of vendorReturns.value) {
-    if (ret.status === 'rejected') continue;
-    const settled = refundedReturnIds.has(ret.id!) || creditedReturnIds.has(ret.id!);
-    if (!settled) {
-      pendingRecovery += ret.total_return_amount || 0;
-      pendingRecoveryCount += 1;
-    }
-  }
-
-  return {
-    totalExpenses,
-    expensePerSqft,
-    outstandingAmount,
-    unpaidCount,
-    advances,
-    advanceCount,
-    pendingRecovery,
-    pendingRecoveryCount
-  };
-});
+// Dashboard tile numbers are computed by the pure computeDashboardStats helper
+// (src/utils/dashboardStats.ts). The math — gross/net expenses, expense-per-sqft,
+// per-item-clamped site outstanding, unpaid count, advances and pending recovery — is
+// pinned by the financial safety-net test, which binds to that same helper. This view
+// only supplies the loaded collections; the deferred shared-cache refactor will change
+// only WHERE those collections come from, not the numbers.
+const stats = computed(() =>
+  computeDashboardStats({
+    deliveries: deliveries.value,
+    serviceBookings: serviceBookings.value,
+    payments: payments.value,
+    vendorRefunds: vendorRefunds.value,
+    vendorReturns: vendorReturns.value,
+    creditNotes: creditNotes.value,
+    totalPlannedArea: currentSite.value?.total_planned_area || 1,
+  })
+);
 
 // Payments chart period — toggle between last 7 and last 30 days.
 const chartPeriod = ref<'week' | 'month'>('week');
@@ -577,10 +521,19 @@ const periodPaymentTotal = computed(() => {
 
 // ---- Recent transactions ledger (design-system LedgerTable) ----
 type LedgerCategory = 'material' | 'service' | 'payment';
+type LedgerKind = 'delivery' | 'serviceBooking' | 'payment';
 interface LedgerRow {
   id: string;
+  // Source record kind + its raw record id, used to deep-link the row to the
+  // underlying record's category view (delivery/booking/payment).
+  kind: LedgerKind;
+  recordId?: string;
   date: string; // ISO date used for sorting
-  vendorName: string;
+  // App-wide vendor display convention: contact_person is the prominent label,
+  // company `name` is a muted subtext shown only when BOTH exist.
+  vendorId?: string;
+  vendorLabel: string;
+  vendorCompany?: string;
   category: LedgerCategory;
   amount: number;
   // semantic status mapped to sw-badge variant
@@ -588,11 +541,21 @@ interface LedgerRow {
   statusVariant: 'success' | 'accent' | 'danger';
 }
 
-// Resolve a vendor id to its display name from the loaded vendors array.
-const vendorNameById = (vendorId?: string): string => {
-  if (!vendorId) return t('common.unknownVendor');
-  const match = vendors.value.find(v => v.id === vendorId);
-  return match?.name || t('common.unknownVendor');
+// Resolve a vendor id to its display parts from the loaded vendors array.
+// Mirrors VendorsView/VendorOption: contact_person as main label (fallback to
+// company name, then unknown-vendor fallback); company name kept separately so
+// it can be rendered as muted subtext only when both values exist.
+const vendorPartsById = (vendorId?: string): { id?: string; label: string; company?: string } => {
+  const match = vendorId ? vendors.value.find(v => v.id === vendorId) : undefined;
+  const contactPerson = match?.contact_person;
+  const company = match?.name;
+  const label = contactPerson || company || t('common.unknownVendor');
+  return {
+    id: match?.id,
+    label,
+    // Only expose company as subtext when both contact_person and name exist.
+    company: contactPerson && company ? company : undefined
+  };
 };
 
 // Map a delivery/booking payment_status to a badge variant + label.
@@ -624,10 +587,15 @@ const recentTransactions = computed<LedgerRow[]>(() => {
 
   for (const d of deliveries.value) {
     const status = statusFromPayment(d.payment_status);
+    const vendor = vendorPartsById(d.vendor);
     rows.push({
       id: `delivery-${d.id}`,
+      kind: 'delivery',
+      recordId: d.id,
       date: d.delivery_date,
-      vendorName: vendorNameById(d.vendor),
+      vendorId: vendor.id,
+      vendorLabel: vendor.label,
+      vendorCompany: vendor.company,
       category: 'material',
       amount: d.total_amount,
       statusKey: status.key,
@@ -637,10 +605,15 @@ const recentTransactions = computed<LedgerRow[]>(() => {
 
   for (const b of serviceBookings.value) {
     const status = statusFromPayment(b.payment_status);
+    const vendor = vendorPartsById(b.vendor);
     rows.push({
       id: `booking-${b.id}`,
+      kind: 'serviceBooking',
+      recordId: b.id,
       date: b.start_date,
-      vendorName: vendorNameById(b.vendor),
+      vendorId: vendor.id,
+      vendorLabel: vendor.label,
+      vendorCompany: vendor.company,
       category: 'service',
       amount: b.total_amount,
       statusKey: status.key,
@@ -649,10 +622,15 @@ const recentTransactions = computed<LedgerRow[]>(() => {
   }
 
   for (const p of payments.value) {
+    const vendor = vendorPartsById(p.vendor);
     rows.push({
       id: `payment-${p.id}`,
+      kind: 'payment',
+      recordId: p.id,
       date: p.payment_date || p.created || '',
-      vendorName: vendorNameById(p.vendor),
+      vendorId: vendor.id,
+      vendorLabel: vendor.label,
+      vendorCompany: vendor.company,
       category: 'payment',
       amount: p.amount,
       statusKey: 'common.paid',
@@ -679,6 +657,29 @@ const formatRupees = (amount: number): string =>
 
 const badgeClass = (variant: 'success' | 'accent' | 'danger'): string =>
   `sw-badge sw-badge--${variant}`;
+
+// A row is navigable only when it carries a resolvable source record id.
+const isRowNavigable = (row: LedgerRow): boolean => !!row.recordId;
+
+// Deep-link a ledger row to its source record's category view, passing the
+// record id using each view's deep-link query convention:
+//   payment        -> /payments?paymentId=<id>   (PaymentsView opens the modal)
+//   delivery       -> /deliveries?id=<id>
+//   serviceBooking -> /service-bookings?id=<id>
+const openLedgerRow = (row: LedgerRow): void => {
+  if (!row.recordId) return;
+  switch (row.kind) {
+    case 'payment':
+      router.push({ path: '/payments', query: { paymentId: row.recordId } });
+      break;
+    case 'delivery':
+      router.push({ path: '/deliveries', query: { id: row.recordId } });
+      break;
+    case 'serviceBooking':
+      router.push({ path: '/service-bookings', query: { id: row.recordId } });
+      break;
+  }
+};
 
 // "Overview · April 2026" eyebrow, matching the design-system dashboard kit.
 const overviewLabel = computed(() => {

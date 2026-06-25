@@ -64,8 +64,32 @@
       <SearchBox v-model="searchQuery" :placeholder="t('search.vendors')" :search-loading="searchLoading" />
     </div>
 
+    <!-- Loading State: skeleton card grid -->
+    <div v-if="vendorsLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6" aria-hidden="true">
+      <div v-for="i in 6" :key="'skel-' + i" class="card-interactive flex flex-col">
+        <!-- Card header: title + meta line -->
+        <div class="flex items-start justify-between">
+          <div class="flex-1 min-w-0 space-y-2">
+            <Skeleton height="1.25rem" width="55%" />
+            <Skeleton height="0.875rem" width="40%" />
+          </div>
+        </div>
+        <!-- Stat strip -->
+        <div class="mt-auto pt-4 border-t border-stone-200 dark:border-ink-4 flex items-end justify-between gap-4">
+          <div class="space-y-1.5">
+            <Skeleton height="0.625rem" width="4rem" />
+            <Skeleton height="1.5rem" width="4.5rem" />
+          </div>
+          <div class="space-y-1.5 flex flex-col items-end">
+            <Skeleton height="0.625rem" width="3rem" />
+            <Skeleton height="1.5rem" width="3.5rem" />
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Vendors Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
       <div v-for="vendor in vendors" :key="vendor.id"
         class="card-interactive group flex flex-col"
         @click="viewVendorDetail(vendor.id!)">
@@ -188,18 +212,18 @@
               <div>
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('vendors.contactPerson') }}</label>
                 <input ref="firstInputRef" v-model="form.contact_person" type="text" class="input mt-1"
-                  :placeholder="t('forms.enterContactPerson')" autofocus />
+                  :placeholder="t('forms.enterContactPerson')" autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
               </div>
 
               <div>
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('vendors.companyName') }}</label>
-                <input v-model="form.name" type="text" class="input mt-1" :placeholder="t('forms.enterCompanyName')" />
+                <input v-model="form.name" type="text" class="input mt-1" :placeholder="t('forms.enterCompanyName')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
               </div>
 
               <div>
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('vendors.paymentDetails') }}</label>
                 <textarea v-model="form.payment_details" class="input mt-1" rows="2"
-                  :placeholder="t('forms.enterPaymentDetails')"></textarea>
+                  :placeholder="t('forms.enterPaymentDetails')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
               </div>
 
               <div>
@@ -215,7 +239,7 @@
               <div>
                 <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.address') }}</label>
                 <textarea v-model="form.address" class="input mt-1" rows="2"
-                  :placeholder="t('forms.enterAddress')"></textarea>
+                  :placeholder="t('forms.enterAddress')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
               </div>
 
               <!-- Tags -->
@@ -251,6 +275,7 @@ import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
 import { useQuickActionModal } from '../composables/useQuickActionModal';
+import Skeleton from '../components/Skeleton.vue';
 import TagSelector from '../components/TagSelector.vue';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
@@ -297,7 +322,7 @@ const router = useRouter();
 const { searchQuery, loading: searchLoading, results: searchResults } = useVendorSearch();
 
 // Use site data management
-const { data: vendorsData, reload: reloadVendors } = useSiteData(
+const { data: vendorsData, loading: vendorsLoading, reload: reloadVendors } = useSiteData(
   async () => await vendorService.getAll()
 );
 
@@ -469,7 +494,7 @@ const saveVendor = async () => {
   }
 };
 
-const editVendor = (vendor: Vendor) => {
+const editVendor = async (vendor: Vendor) => {
   editingVendor.value = vendor;
   Object.assign(form, {
     contact_person: vendor.contact_person || '',
@@ -480,6 +505,8 @@ const editVendor = (vendor: Vendor) => {
     address: vendor.address || '',
     tags: vendor.tags ? [...vendor.tags] : []
   });
+  await nextTick();
+  if (typeof firstInputRef.value?.focus === 'function') firstInputRef.value.focus();
 };
 
 const deleteVendor = async (id: string) => {

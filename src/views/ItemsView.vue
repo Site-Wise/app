@@ -24,8 +24,32 @@
       <SearchBox v-model="searchQuery" :placeholder="t('search.items')" :search-loading="searchLoading" />
     </div>
 
+    <!-- Loading State: skeleton card grid -->
+    <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6" aria-hidden="true">
+      <div v-for="i in 6" :key="'skel-' + i" class="card-interactive flex flex-col">
+        <!-- Card header: title + unit -->
+        <div class="flex items-start justify-between">
+          <div class="flex-1 min-w-0 space-y-2">
+            <Skeleton height="1.25rem" width="60%" />
+            <Skeleton height="0.875rem" width="35%" />
+          </div>
+        </div>
+        <!-- Stat strip -->
+        <div class="mt-auto pt-4 border-t border-stone-200 dark:border-ink-4 flex items-end justify-between gap-4">
+          <div class="space-y-1.5">
+            <Skeleton height="0.625rem" width="4rem" />
+            <Skeleton height="1.5rem" width="3rem" />
+          </div>
+          <div class="space-y-1.5 flex flex-col items-end">
+            <Skeleton height="0.625rem" width="3rem" />
+            <Skeleton height="1.5rem" width="4rem" />
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Items Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6" data-tour="items-table">
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6" data-tour="items-table">
       <div v-for="item in items" :key="item.id"
         class="card-interactive group flex flex-col"
         @click="viewItemDetail(item.id!)">
@@ -141,14 +165,14 @@
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.name') }}</label>
               <input ref="nameInputRef" v-model="form.name" type="text" required class="input mt-1"
-                :placeholder="t('forms.enterItemName')" autofocus />
+                :placeholder="t('forms.enterItemName')" autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.description')
                 }}</label>
               <textarea v-model="form.description" class="input mt-1" rows="3"
-                :placeholder="t('forms.enterDescription')"></textarea>
+                :placeholder="t('forms.enterDescription')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
             </div>
 
             <div>
@@ -208,6 +232,7 @@ import { useI18n } from '../composables/useI18n';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
+import Skeleton from '../components/Skeleton.vue';
 import TagSelector from '../components/TagSelector.vue';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
@@ -221,6 +246,7 @@ import {
 } from '../services/pocketbase';
 import { usePermissions } from '../composables/usePermissions';
 import { useModalState } from '../composables/useModalState';
+import { computeItemDeliveryStats, getDeliveredQuantity, getAveragePrice } from '../utils/itemAggregations';
 
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
@@ -234,7 +260,7 @@ const router = useRouter();
 const { searchQuery, loading: searchLoading, results: searchResults } = useItemSearch();
 
 // Use site-aware data loading
-const { data: itemsData, reload: reloadItems } = useSiteData(async () => {
+const { data: itemsData, loading, reload: reloadItems } = useSiteData(async () => {
   const [items, deliveries, allTags] = await Promise.all([
     itemService.getAll(),
     deliveryService.getAll(),
@@ -278,19 +304,12 @@ const form = reactive({
 });
 
 
-const getItemDeliveredQuantity = (itemId: string) => {
-  let totalQuantity = 0;
-  deliveries.value.forEach(delivery => {
-    if (delivery.expand?.delivery_items) {
-      delivery.expand.delivery_items.forEach(deliveryItem => {
-        if (deliveryItem.item === itemId) {
-          totalQuantity += deliveryItem.quantity;
-        }
-      });
-    }
-  });
-  return totalQuantity;
-};
+// Precompute per-item delivery stats ONCE per deliveries change, so each item card
+// reads its totals via an O(1) Map lookup instead of re-scanning every delivery.
+const itemDeliveryStats = computed(() => computeItemDeliveryStats(deliveries.value));
+
+const getItemDeliveredQuantity = (itemId: string) =>
+  getDeliveredQuantity(itemDeliveryStats.value, itemId);
 
 // Units must not change once deliveries exist for the item — changing the unit
 // would silently corrupt delivered-quantity and average-price calculations.
@@ -298,23 +317,8 @@ const editingItemHasDeliveries = computed(() =>
   !!editingItem.value && getItemDeliveredQuantity(editingItem.value.id!) > 0
 );
 
-const getItemAveragePrice = (itemId: string) => {
-  let totalValue = 0;
-  let totalQuantity = 0;
-
-  deliveries.value.forEach(delivery => {
-    if (delivery.expand?.delivery_items) {
-      delivery.expand.delivery_items.forEach(deliveryItem => {
-        if (deliveryItem.item === itemId) {
-          totalValue += deliveryItem.total_amount;
-          totalQuantity += deliveryItem.quantity;
-        }
-      });
-    }
-  });
-
-  return totalQuantity > 0 ? totalValue / totalQuantity : 0;
-};
+const getItemAveragePrice = (itemId: string) =>
+  getAveragePrice(itemDeliveryStats.value, itemId);
 
 const getUnitDisplay = (unitKey: string) => {
   // If translation exists, show "Translation (key)", otherwise just show the key
@@ -380,7 +384,7 @@ const handleAddItem = async () => {
     return;
   }
   showAddModal.value = true;
-  openModal('items-add-modal');
+  openModal('items-add-modal', closeModal);
   await nextTick();
   nameInputRef.value?.focus();
 };
@@ -410,7 +414,7 @@ const saveItem = async () => {
   }
 };
 
-const editItem = (item: Item) => {
+const editItem = async (item: Item) => {
   editingItem.value = item;
   Object.assign(form, {
     name: item.name,
@@ -419,7 +423,9 @@ const editItem = (item: Item) => {
     tags: item.tags || []
   });
   showAddModal.value = true;
-  openModal('items-edit-modal');
+  openModal('items-edit-modal', closeModal);
+  await nextTick();
+  if (typeof nameInputRef.value?.focus === 'function') nameInputRef.value.focus();
 };
 
 const cloneItem = async (item: Item) => {
@@ -441,7 +447,7 @@ const cloneItem = async (item: Item) => {
 
   // Show the modal
   showAddModal.value = true;
-  openModal('items-clone-modal');
+  openModal('items-clone-modal', closeModal);
   await nextTick();
   nameInputRef.value?.focus();
 };
@@ -480,7 +486,7 @@ const closeModal = () => {
 
 const handleQuickAction = async () => {
   showAddModal.value = true;
-  openModal('items-add-modal');
+  openModal('items-add-modal', closeModal);
   await nextTick();
   nameInputRef.value?.focus();
 };

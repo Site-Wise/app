@@ -134,7 +134,7 @@
             <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.amount') }}</label>
             <div class="flex items-center gap-2">
               <input v-model.number="form.amount" type="number" step="0.01" required class="input mt-1 flex-1 font-mono tabular-nums"
-                placeholder="0.00" :disabled="loading" @input="handleAmountChange" />
+                placeholder="0.00" :disabled="loading" @input="handleAmountChange" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
               <button v-if="form.vendor && actualVendorOutstanding > 0 && form.amount !== actualVendorOutstanding"
                 type="button" @click="payAllOutstanding" :disabled="loading"
                 class="mt-1 px-3 py-2 text-xs font-medium text-amber-700 dark:text-amber hover:text-amber-800 dark:hover:text-amber-600 border border-amber/40 dark:border-amber/40 rounded-md hover:bg-amber/10 dark:hover:bg-amber/10 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] min-h-[44px]">
@@ -403,13 +403,13 @@
           <div>
             <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.reference') }}</label>
             <input v-model="form.reference" type="text" class="input mt-1 font-mono"
-              :placeholder="t('forms.checkNumber')" :disabled="loading" />
+              :placeholder="t('forms.checkNumber')" :disabled="loading" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
           </div>
 
           <div>
             <label class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ t('common.notes') }}</label>
             <textarea v-model="form.notes" class="input mt-1" rows="3" :placeholder="t('forms.paymentNotes')"
-              :disabled="loading"></textarea>
+              :disabled="loading" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
           </div>
         </div>
       </form>

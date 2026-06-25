@@ -15,6 +15,29 @@ vi.mock('../../composables/useSite', () => ({
   })
 }))
 
+// Mock useUrlFilters — controllable per-test via the shared `mockFilters` object.
+// `filters` is a plain reactive record; tests mutate `mockFilters.value` before
+// mounting (or clear it) to exercise the loader's relation-filter branching.
+const mockFilters = vi.hoisted(() => ({ value: {} as Record<string, string> }))
+vi.mock('../../composables/useUrlFilters', () => {
+  const { reactive, computed } = require('vue')
+  return {
+    useUrlFilters: () => {
+      const filters = reactive({ ...mockFilters.value })
+      return {
+        filters,
+        hasActiveFilter: computed(() => Object.keys(filters).length > 0),
+        activeFilterEntries: computed(() =>
+          Object.entries(filters).map(([key, value]) => ({ key, value }))
+        ),
+        setFilter: vi.fn(),
+        clearFilter: vi.fn(),
+        openRecord: vi.fn()
+      }
+    }
+  }
+})
+
 // Mock search composable
 vi.mock('../../composables/useSearch', () => ({
   useQuotationSearch: () => {
@@ -58,6 +81,9 @@ vi.mock('../../composables/useI18n', () => ({
         'forms.enterValidUntil': 'Enter valid until date',
         'forms.enterNotes': 'Enter notes',
         'messages.confirmDelete': 'Are you sure you want to delete this {item}?',
+        'common.filteredBy': 'Filtered by {label}',
+        'common.filtered': 'filtered',
+        'common.clearFilter': 'Clear filter',
         'units.kg': 'kg',
         'units.pcs': 'pcs'
       }
@@ -123,6 +149,9 @@ vi.mock('../../services/pocketbase', () => {
   return {
     quotationService: {
       getAll: vi.fn().mockResolvedValue([mockQuotation]),
+      getByVendor: vi.fn().mockResolvedValue([mockQuotation]),
+      getByItem: vi.fn().mockResolvedValue([mockQuotation]),
+      getByService: vi.fn().mockResolvedValue([mockQuotation]),
       create: vi.fn().mockResolvedValue({ id: 'new-quotation' }),
       update: vi.fn().mockResolvedValue(mockQuotation),
       delete: vi.fn().mockResolvedValue(true)
@@ -132,6 +161,18 @@ vi.mock('../../services/pocketbase', () => {
     },
     vendorService: {
       getAll: vi.fn().mockResolvedValue([mockVendor])
+    },
+    deliveryService: {
+      getAll: vi.fn().mockResolvedValue([])
+    },
+    serviceBookingService: {
+      getAll: vi.fn().mockResolvedValue([])
+    },
+    paymentService: {
+      getAll: vi.fn().mockResolvedValue([])
+    },
+    VendorService: {
+      calculateOutstandingFromData: vi.fn().mockReturnValue(0)
     },
     getCurrentSiteId: vi.fn().mockReturnValue('site-1'),
     setCurrentSiteId: vi.fn(),
@@ -170,7 +211,11 @@ describe('QuotationsView', () => {
       global: {
         plugins: [router, pinia],
         stubs: {
-          'router-link': true
+          'router-link': true,
+          RecordLink: {
+            props: ['type', 'id', 'label', 'mode', 'target', 'filterKey'],
+            template: '<span class="record-link-stub">{{ label }}</span>'
+          }
         }
       }
     })
@@ -178,7 +223,9 @@ describe('QuotationsView', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks()
-    
+    // Reset URL filters to unfiltered between tests.
+    mockFilters.value = {}
+
     const { pinia: testPinia, siteStore: testSiteStore } = setupTestPinia()
     pinia = testPinia
     siteStore = testSiteStore
@@ -548,6 +595,219 @@ describe('QuotationsView', () => {
     it('should handle add quotation keyboard shortcut', async () => {
       await wrapper.vm.handleAddQuotation()
       expect(wrapper.vm.showAddModal).toBe(true)
+    })
+  })
+
+  describe('Relation Filtering', () => {
+    // Helper: build a wrapper whose useSiteData mock actually INVOKES the loader so
+    // we can assert which quotationService branch runs for the active filter.
+    const mountWithInvokingLoader = async () => {
+      const { useSiteData } = await import('../../composables/useSiteData')
+      vi.mocked(useSiteData).mockImplementation((serviceFunction: any) => {
+        const { ref } = require('vue')
+        const funcString = serviceFunction.toString()
+        // Only invoke the primary quotations loader; leave the others inert.
+        if (funcString.includes('quotationService.getByVendor')) {
+          // Fire-and-forget: kicks off the branch so the spy records the call.
+          serviceFunction('site-1')
+        }
+        return {
+          data: ref([]),
+          loading: ref(false),
+          error: ref(null),
+          reload: vi.fn()
+        }
+      })
+      const w = createWrapper()
+      await w.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 0))
+      return w
+    }
+
+    it('branches to getByVendor when ?vendor is active', async () => {
+      const { quotationService } = await import('../../services/pocketbase')
+      mockFilters.value = { vendor: 'vendor-9' }
+
+      const w = await mountWithInvokingLoader()
+
+      expect(quotationService.getByVendor).toHaveBeenCalledWith('vendor-9')
+      expect(quotationService.getByItem).not.toHaveBeenCalled()
+      expect(quotationService.getByService).not.toHaveBeenCalled()
+      w.unmount()
+    })
+
+    it('branches to getByItem when only ?item is active', async () => {
+      const { quotationService } = await import('../../services/pocketbase')
+      mockFilters.value = { item: 'item-9' }
+
+      const { useSiteData } = await import('../../composables/useSiteData')
+      vi.mocked(useSiteData).mockImplementation((serviceFunction: any) => {
+        const { ref } = require('vue')
+        if (serviceFunction.toString().includes('quotationService.getByVendor')) {
+          serviceFunction('site-1')
+        }
+        return { data: ref([]), loading: ref(false), error: ref(null), reload: vi.fn() }
+      })
+      const w = createWrapper()
+      await w.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      expect(quotationService.getByItem).toHaveBeenCalledWith('item-9')
+      expect(quotationService.getByVendor).not.toHaveBeenCalled()
+      expect(quotationService.getAll).not.toHaveBeenCalled()
+      w.unmount()
+    })
+
+    it('shows a dismissible filter chip when a filter is active', async () => {
+      mockFilters.value = { vendor: 'vendor-1' }
+      const w = createWrapper()
+      await w.vm.$nextTick()
+
+      expect(w.vm.hasActiveFilter).toBe(true)
+      // The chip clear button carries the clearFilter title.
+      expect(w.text()).toContain('Filtered by')
+      w.unmount()
+    })
+
+    it('does not show the chip when no filter is active', () => {
+      expect(wrapper.vm.hasActiveFilter).toBe(false)
+    })
+  })
+
+  describe('Row / Card View Affordance', () => {
+    it('opens the detail (edit) modal when a desktop row is clicked', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      const row = wrapper.find('tbody tr')
+      expect(row.exists()).toBe(true)
+      // Row signals it is a clickable view-details surface.
+      expect(row.classes()).toContain('cursor-pointer')
+
+      await row.trigger('click')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showAddModal).toBe(true)
+      expect(wrapper.vm.editingQuotation).toBeTruthy()
+      expect(wrapper.vm.editingQuotation.id).toBe('quotation-1')
+    })
+
+    it('does not open the modal when the actions cell is clicked (click.stop protection)', async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // The actions <td> carries @click.stop so action buttons never trigger view.
+      const actionsCell = wrapper.findAll('tbody tr td').at(-1)
+      await actionsCell.trigger('click')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showAddModal).toBe(false)
+      expect(wrapper.vm.editingQuotation).toBeFalsy()
+    })
+  })
+
+  describe('Column Sorting', () => {
+    // Build a wrapper with several quotations to verify ordering changes.
+    const sortQuotations = [
+      {
+        id: 'q-a', vendor: 'v-1', item: 'i-1', unit_price: 30, minimum_quantity: 5,
+        valid_until: '2024-01-10', status: 'pending', site: 'site-1',
+        expand: { vendor: { id: 'v-1', contact_person: 'Charlie' }, item: { id: 'i-1', name: 'Bricks', unit: 'pcs' } }
+      },
+      {
+        id: 'q-b', vendor: 'v-2', item: 'i-2', unit_price: 10, minimum_quantity: 50,
+        valid_until: '2024-12-31', status: 'approved', site: 'site-1',
+        expand: { vendor: { id: 'v-2', contact_person: 'Alice' }, item: { id: 'i-2', name: 'Cement', unit: 'kg' } }
+      },
+      {
+        id: 'q-c', vendor: 'v-3', item: 'i-3', unit_price: 20, minimum_quantity: 100,
+        valid_until: '2024-06-15', status: 'rejected', site: 'site-1',
+        expand: { vendor: { id: 'v-3', contact_person: 'Bob' }, item: { id: 'i-3', name: 'Aggregate', unit: 'kg' } }
+      }
+    ]
+
+    const mountWithSortData = async () => {
+      const { useSiteData } = await import('../../composables/useSiteData')
+      vi.mocked(useSiteData).mockImplementation((serviceFunction: any) => {
+        const { ref } = require('vue')
+        if (serviceFunction.toString().includes('quotationService.getAll')) {
+          return { data: ref(sortQuotations), loading: ref(false), error: ref(null), reload: vi.fn() }
+        }
+        return { data: ref([]), loading: ref(false), error: ref(null), reload: vi.fn() }
+      })
+      const w = createWrapper()
+      await w.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 0))
+      return w
+    }
+
+    it('defaults to valid_until descending', async () => {
+      const w = await mountWithSortData()
+      expect(w.vm.sortKey).toBe('valid_until')
+      expect(w.vm.sortDir).toBe('desc')
+      // Newest valid_until first: q-b (2024-12-31), q-c (2024-06-15), q-a (2024-01-10)
+      const ids = w.vm.displayedQuotations.map((q: any) => q.id)
+      expect(ids).toEqual(['q-b', 'q-c', 'q-a'])
+      w.unmount()
+    })
+
+    it('sets sortKey/sortDir and reorders when a sortable header is clicked', async () => {
+      const w = await mountWithSortData()
+      // Click the unit_price header -> ascending (default dir 'desc'? toggleSort uses defaultDir)
+      w.vm.toggleSort('unit_price')
+      await w.vm.$nextTick()
+      expect(w.vm.sortKey).toBe('unit_price')
+      // toggleSort on a new key uses the composable's default direction (desc)
+      expect(w.vm.sortDir).toBe('desc')
+      // unit_price desc: q-a (30), q-c (20), q-b (10)
+      expect(w.vm.displayedQuotations.map((q: any) => q.id)).toEqual(['q-a', 'q-c', 'q-b'])
+      w.unmount()
+    })
+
+    it('flips direction when the same header is clicked again', async () => {
+      const w = await mountWithSortData()
+      w.vm.toggleSort('unit_price')
+      await w.vm.$nextTick()
+      expect(w.vm.sortDir).toBe('desc')
+      w.vm.toggleSort('unit_price')
+      await w.vm.$nextTick()
+      expect(w.vm.sortDir).toBe('asc')
+      // unit_price asc: q-b (10), q-c (20), q-a (30)
+      expect(w.vm.displayedQuotations.map((q: any) => q.id)).toEqual(['q-b', 'q-c', 'q-a'])
+      w.unmount()
+    })
+
+    it('sorts by vendor contact_person via the accessor', async () => {
+      const w = await mountWithSortData()
+      w.vm.toggleSort('vendor')
+      w.vm.sortDir = 'asc'
+      await w.vm.$nextTick()
+      // vendor asc by contact_person: Alice (q-b), Bob (q-c), Charlie (q-a)
+      expect(w.vm.displayedQuotations.map((q: any) => q.id)).toEqual(['q-b', 'q-c', 'q-a'])
+      w.unmount()
+    })
+
+    it('sorts by item name via the accessor', async () => {
+      const w = await mountWithSortData()
+      w.vm.toggleSort('item')
+      w.vm.sortDir = 'asc'
+      await w.vm.$nextTick()
+      // item asc by name: Aggregate (q-c), Bricks (q-a), Cement (q-b)
+      expect(w.vm.displayedQuotations.map((q: any) => q.id)).toEqual(['q-c', 'q-a', 'q-b'])
+      w.unmount()
+    })
+
+    it('renders SortableTh headers that emit sort on click', async () => {
+      const w = await mountWithSortData()
+      const headers = w.findAllComponents({ name: 'SortableTh' })
+      expect(headers.length).toBe(6)
+      // Click the Status header
+      const statusHeader = headers.find((h: any) => h.props('sortKey') === 'status')
+      expect(statusHeader).toBeTruthy()
+      await statusHeader!.trigger('click')
+      await w.vm.$nextTick()
+      expect(w.vm.sortKey).toBe('status')
+      w.unmount()
     })
   })
 

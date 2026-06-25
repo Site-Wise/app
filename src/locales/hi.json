@@ -1,6 +1,9 @@
 {
   "common": {
     "loading": "लोड हो रहा है",
+    "loadMore": "और लोड करें",
+    "loadingMore": "और लोड हो रहा है",
+    "loadedMore": "{count} और लोड किए गए",
     "save": "सेव करें",
     "cancel": "रद्द करें",
     "continue": "जारी रखें",
@@ -24,6 +27,9 @@
     "searchAction": "खोजें",
     "filter": "फिल्टर",
     "clearFilters": "हटाएं",
+    "clearFilter": "फ़िल्टर हटाएं",
+    "filteredBy": "{label} द्वारा फ़िल्टर किया गया",
+    "filtered": "फ़िल्टर किया गया",
     "export": "निर्यात",
     "import": "आयात",
     "refresh": "रीफ्रेश",
@@ -114,6 +120,7 @@
     "payments": "विक्रेता या खाते से भुगतान खोजें...",
     "returns": "विक्रेता, कारण, या स्थिति से वापसी खोजें...",
     "noResults": "कोई परिणाम नहीं मिला",
+    "noVendorsFound": "\"{query}\" से मेल खाने वाला कोई विक्रेता नहीं मिला",
     "resultsCount": "{count} परिणाम मिले"
   },
   "filters": {
@@ -384,6 +391,7 @@
     "title": "विक्रेता",
     "subtitle": "अपने विक्रेता संपर्कों और संबंधों का प्रबंधन करें",
     "addVendor": "विक्रेता जोड़ें",
+    "viewDeliveries": "डिलीवरी देखें",
     "editVendor": "विक्रेता संपादित करें",
     "deleteVendor": "विक्रेता हटाएं",
     "companyName": "कंपनी का नाम (वैकल्पिक)",
@@ -479,6 +487,7 @@
       "other": "अन्य"
     },
     "unnamedVendor": "अज्ञात विक्रेता",
+    "pendingItems": "{count} लंबित आइटम",
     "totalDeliveries": "कुल डिलीवरी",
     "recentDeliveries": "हाल की डिलीवरी",
     "paymentHistory": "भुगतान इतिहास",
@@ -745,6 +754,8 @@
     "title": "डिलीवरी",
     "subtitle": "मल्टी-आइटम डिलीवरी ट्रैक करें और रसीदों का प्रबंधन करें",
     "recordDelivery": "डिलीवरी रिकॉर्ड करें",
+    "filteredByVendor": "{vendor} द्वारा फ़िल्टर किया गया",
+    "filteredByVendorGeneric": "विक्रेता द्वारा फ़िल्टर किया गया",
     "editDelivery": "डिलीवरी संपादित करें",
     "deleteDelivery": "डिलीवरी हटाएं",
     "deliveryDate": "डिलीवरी दिनांक",
@@ -1299,7 +1310,16 @@
     "pdfConversionError": "PDF परिवर्तित करने में विफल। कृपया पुनः प्रयास करें।",
     "pdfNotAccepted": "इस अपलोड के लिए PDF फ़ाइलें स्वीकार नहीं की जाती हैं।",
     "pdfPageCount": "{count} पृष्ठ | {count} पृष्ठ",
-    "estimatedSize": "अनुमानित आकार: {size}"
+    "estimatedSize": "अनुमानित आकार: {size}",
+    "supportedFilesHint": "समर्थित: छवियां और PDF। पासवर्ड-संरक्षित PDF को पासवर्ड से अनलॉक किया जा सकता है।",
+    "pdfLimitsHint": "PDF अधिकतम {max} पृष्ठों तक सीमित हैं।",
+    "pdfTooManyPages": "इस PDF में {count} पृष्ठ हैं; अधिकतम {max} है। कृपया छोटा PDF अपलोड करें या उसे विभाजित करें।",
+    "pdfPasswordProtected": "यह PDF पासवर्ड-संरक्षित है। इसे अनलॉक करने के लिए पासवर्ड दर्ज करें, या अनलॉक की गई PDF अपलोड करें।",
+    "pdfIncorrectPassword": "गलत पासवर्ड, पुनः प्रयास करें।",
+    "pdfPasswordTitle": "पासवर्ड-संरक्षित PDF",
+    "pdfPasswordPrompt": "यह PDF पासवर्ड-संरक्षित है। इसे अनलॉक करके परिवर्तित करने के लिए पासवर्ड दर्ज करें।",
+    "pdfPasswordLabel": "PDF पासवर्ड",
+    "pdfUnlock": "अनलॉक करें"
   },
   "badges": {
     "new": "नया",

@@ -138,7 +138,8 @@
                 {{ formatDate(booking.start_date) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-ink dark:text-cream">
-                {{ booking.expand?.vendor?.name || 'Unknown Vendor' }}
+                {{ booking.expand?.vendor?.contact_person || booking.expand?.vendor?.name || 'Unknown Vendor' }}
+                <span v-if="booking.expand?.vendor?.name && booking.expand?.vendor?.contact_person" class="block text-xs text-stone-500 dark:text-stone-400">{{ booking.expand?.vendor?.name }}</span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-mono sw-tabular text-ink dark:text-cream">
                 {{ booking.duration }} {{ service.unit }}
@@ -191,12 +192,13 @@ import {
   DollarSign,
   Loader2
 } from 'lucide-vue-next';
-import { 
-  serviceService, 
+import {
+  serviceService,
   serviceBookingService,
   type Service,
   type ServiceBooking
 } from '../services/pocketbase';
+import { selectServiceBookings } from '../utils/detailViewSelectors';
 
 const route = useRoute();
 const router = useRouter();
@@ -238,16 +240,18 @@ const loadServiceData = async () => {
   const serviceId = route.params.id as string;
   
   try {
-    const [allServices, allBookings] = await Promise.all([
-      serviceService.getAll(),
-      serviceBookingService.getAll()
+    // Targeted queries: the single service by id, and only this service's bookings
+    // instead of getAll() + JS find()/filter().
+    const [serviceRecord, serviceBookingsData] = await Promise.all([
+      serviceService.getById(serviceId),
+      serviceBookingService.getByService(serviceId)
     ]);
-    
-    service.value = allServices.find(s => s.id === serviceId) || null;
-    serviceBookings.value = allBookings
-      .filter(booking => booking.service === serviceId)
-      .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
-      
+
+    service.value = serviceRecord;
+    // selectServiceBookings re-applies the service-id membership + ascending start_date
+    // sort, keeping the displayed set identical to the previous client-side filter.
+    serviceBookings.value = selectServiceBookings(serviceBookingsData, serviceId);
+
     if (!service.value) {
       router.push('/services');
       return;

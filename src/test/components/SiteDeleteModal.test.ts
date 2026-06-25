@@ -1,4 +1,39 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
+import SiteDeleteModal from '../../components/SiteDeleteModal.vue'
+
+// --- Mocks for the mounted-component suite -------------------------------
+const disownSiteMock = vi.fn().mockResolvedValue(true)
+const toastSuccessMock = vi.fn()
+const toastErrorMock = vi.fn()
+const routerPushMock = vi.fn()
+const siteStoreState = {
+  currentSiteId: 'site-1',
+  userSites: [] as Array<{ id: string }>,
+  clearCurrentSite: vi.fn().mockResolvedValue(undefined),
+  loadUserSites: vi.fn().mockResolvedValue(undefined),
+}
+
+vi.mock('../../composables/useI18n', () => ({
+  useI18n: () => ({ t: (key: string) => key }),
+}))
+
+vi.mock('../../composables/useToast', () => ({
+  useToast: () => ({ success: toastSuccessMock, error: toastErrorMock }),
+}))
+
+vi.mock('../../stores/site', () => ({
+  useSiteStore: () => siteStoreState,
+}))
+
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push: routerPushMock }),
+}))
+
+vi.mock('../../services/pocketbase', () => ({
+  siteService: { disownSite: (...args: unknown[]) => disownSiteMock(...args) },
+}))
 
 describe('SiteDeleteModal Logic', () => {
   beforeEach(() => {
@@ -506,7 +541,7 @@ describe('SiteDeleteModal Logic', () => {
 
     it('should validate warning message classes', () => {
       const warningClasses = 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl p-4 mb-6'
-      
+
       expect(warningClasses).toContain('bg-red-50')
       expect(warningClasses).toContain('dark:bg-red-900/20')
       expect(warningClasses).toContain('border-red-200')
@@ -514,3 +549,134 @@ describe('SiteDeleteModal Logic', () => {
     })
   })
 })
+
+// --- Mounted-component behaviour ----------------------------------------
+describe('SiteDeleteModal (mounted)', () => {
+  const site = {
+    id: 'site-1',
+    name: 'Test Site',
+    total_units: 100,
+    total_planned_area: 50000,
+  } as any
+
+  let wrapper: ReturnType<typeof mount> | null = null
+
+  const mountModal = (props: Record<string, unknown> = {}) =>
+    mount(SiteDeleteModal as any, {
+      props: { visible: true, site, ...props },
+      global: { stubs: { AlertTriangle: true, Trash2: true, Loader2: true, X: true } },
+    })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    siteStoreState.currentSiteId = 'site-1'
+    siteStoreState.userSites = []
+  })
+
+  afterEach(() => {
+    wrapper?.unmount()
+    wrapper = null
+  })
+
+  const deleteButton = () =>
+    wrapper!.findAll('button').find((b) => b.text().includes('sites.delete.confirm') || b.text().includes('sites.delete.deleting'))!
+
+  it('does not render when not visible', () => {
+    wrapper = mountModal({ visible: false })
+    expect(wrapper.find('input').exists()).toBe(false)
+  })
+
+  it('keeps the delete button disabled until the typed name matches exactly', async () => {
+    wrapper = mountModal()
+    const btn = deleteButton()
+    expect(btn.attributes('disabled')).toBeDefined()
+
+    await wrapper.find('input').setValue('Wrong Name')
+    expect(deleteButton().attributes('disabled')).toBeDefined()
+
+    await wrapper.find('input').setValue('Test Site')
+    expect(deleteButton().attributes('disabled')).toBeUndefined()
+  })
+
+  it('emits close when the cancel button is clicked', async () => {
+    wrapper = mountModal()
+    const cancel = wrapper.findAll('button').find((b) => b.text().includes('common.cancel'))!
+    await cancel.trigger('click')
+    expect(wrapper.emitted('close')).toBeTruthy()
+  })
+
+  it('emits close when the backdrop is clicked', async () => {
+    wrapper = mountModal()
+    await wrapper.find('.fixed.inset-0').trigger('click')
+    expect(wrapper.emitted('close')).toBeTruthy()
+  })
+
+  it('runs the delete flow and emits deleted + close on success', async () => {
+    wrapper = mountModal()
+    await wrapper.find('input').setValue('Test Site')
+    await deleteButton().trigger('click')
+    await flushPromises()
+
+    expect(disownSiteMock).toHaveBeenCalledWith('site-1')
+    expect(siteStoreState.clearCurrentSite).toHaveBeenCalled()
+    expect(siteStoreState.loadUserSites).toHaveBeenCalled()
+    // No remaining sites -> navigate home.
+    expect(routerPushMock).toHaveBeenCalledWith('/')
+    expect(toastSuccessMock).toHaveBeenCalled()
+    expect(wrapper.emitted('deleted')).toBeTruthy()
+    expect(wrapper.emitted('close')).toBeTruthy()
+  })
+
+  it('reloads sites without clearing when deleting a non-current site', async () => {
+    siteStoreState.currentSiteId = 'other-site'
+    wrapper = mountModal()
+    await wrapper.find('input').setValue('Test Site')
+    await deleteButton().trigger('click')
+    await flushPromises()
+
+    expect(siteStoreState.clearCurrentSite).not.toHaveBeenCalled()
+    expect(siteStoreState.loadUserSites).toHaveBeenCalled()
+    expect(routerPushMock).not.toHaveBeenCalled()
+  })
+
+  it('shows an error toast and does not emit deleted when disownSite rejects', async () => {
+    disownSiteMock.mockRejectedValueOnce(new Error('boom'))
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    wrapper = mountModal()
+    await wrapper.find('input').setValue('Test Site')
+    await deleteButton().trigger('click')
+    await flushPromises()
+
+    expect(toastErrorMock).toHaveBeenCalledWith('sites.delete.error')
+    expect(wrapper.emitted('deleted')).toBeFalsy()
+    // deleting flag reset in finally.
+    expect(deleteButton().attributes('disabled')).toBeUndefined()
+    errSpy.mockRestore()
+  })
+
+  it('ignores delete when confirmation text does not match', async () => {
+    wrapper = mountModal()
+    // Force-click even though disabled — handler must guard internally.
+    ;(wrapper.vm as any).handleDelete()
+    await flushPromises()
+    expect(disownSiteMock).not.toHaveBeenCalled()
+  })
+
+  it('resets the confirmation text each time the modal re-opens', async () => {
+    wrapper = mountModal({ visible: false })
+    await wrapper.setProps({ visible: true })
+    await nextTick()
+    await wrapper.find('input').setValue('Test Site')
+    expect((wrapper.vm as any).confirmationText).toBe('Test Site')
+
+    await wrapper.setProps({ visible: false })
+    await wrapper.setProps({ visible: true })
+    await nextTick()
+    expect((wrapper.vm as any).confirmationText).toBe('')
+  })
+})
+
+// Local flushPromises helper (avoids extra import churn in the legacy suite).
+function flushPromises() {
+  return new Promise((resolve) => setTimeout(resolve, 0))
+}

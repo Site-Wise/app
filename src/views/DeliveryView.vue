@@ -144,15 +144,61 @@
       </div>
     </div>
 
-    <!-- xl+ Table View -->
-    <div class="hidden xl:block overflow-x-auto rounded-lg border border-stone-200 dark:border-ink-4 shadow-card dark:shadow-inset-hi">
+    <!-- Active vendor-filter chip: dismissible so the user is never stuck on a
+         filtered view. Shown on both mobile and desktop. -->
+    <div v-if="hasActiveFilter" class="mb-4 flex items-center gap-2">
+      <span
+        class="inline-flex items-center gap-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 pl-3 pr-1 py-1 text-sm font-medium"
+      >
+        <span class="truncate max-w-[60vw] sm:max-w-xs">
+          {{ filterVendorName ? t('delivery.filteredByVendor', { vendor: filterVendorName }) : t('delivery.filteredByVendorGeneric') }}
+        </span>
+        <button
+          type="button"
+          @click="clearFilter('vendor')"
+          class="flex items-center justify-center h-11 w-11 sm:h-7 sm:w-7 -my-2 sm:my-0 rounded-full text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800/40 transition-colors"
+          :title="t('common.clearFilter')"
+          :aria-label="t('common.clearFilter')"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </span>
+    </div>
+
+    <!-- xl+ Table View: fixed-height internal scroller (page itself doesn't scroll
+         on desktop); the table header stays pinned while rows scroll. -->
+    <div
+      ref="tableScrollContainer"
+      class="hidden xl:block overflow-x-auto xl:overflow-y-auto xl:max-h-[calc(100vh-13rem)] rounded-lg border border-stone-200 dark:border-ink-4 shadow-card dark:shadow-inset-hi"
+    >
       <table class="min-w-full divide-y divide-stone-200 dark:divide-ink-4">
-          <thead class="bg-cream-2 dark:bg-ink-2">
+          <thead class="bg-cream-2 dark:bg-ink-2 sticky top-0 z-10">
             <tr>
-              <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">{{ t('common.vendor') }}</th>
-              <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">{{ t('delivery.deliveryDate') }}</th>
+              <!-- Server-sortable (DB-backed) columns. -->
+              <SortableTh
+                sort-key="vendor" :active-key="sortKey" :direction="sortDir" @sort="toggleSort"
+                align="left"
+                th-class="px-4 py-3 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4"
+                :label="t('common.vendor')"
+              />
+              <SortableTh
+                sort-key="deliveryDate" :active-key="sortKey" :direction="sortDir" @sort="toggleSort"
+                align="right"
+                th-class="px-4 py-3 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4"
+                :label="t('delivery.deliveryDate')"
+              />
+              <!-- Item count is CLIENT-COMPUTED (derived from expand.delivery_items
+                   after load) so it has no server field; sorting it server-side
+                   would only reorder loaded pages. Kept NON-sortable. -->
               <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">{{ t('delivery.itemCount') }}</th>
-              <th class="px-4 py-3 text-right text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">{{ t('common.total') }}</th>
+              <SortableTh
+                sort-key="total" :active-key="sortKey" :direction="sortDir" @sort="toggleSort"
+                align="right"
+                th-class="px-4 py-3 text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4"
+                :label="t('common.total')"
+              />
+              <!-- Payment status is CLIENT-COMPUTED (calculated from allocations
+                   after load), so it is NOT server-sortable. Kept NON-sortable. -->
               <th class="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-ink-4">{{ t('delivery.paymentStatus') }}</th>
               <th class="relative px-4 py-3 border-b border-stone-200 dark:border-ink-4"><span class="sr-only">{{ t('common.actions') }}</span></th>
             </tr>
@@ -184,10 +230,16 @@
               </td>
             </tr>
             <tr v-else v-for="delivery in deliveries" :key="delivery.id"
+                @click="viewDelivery(delivery)"
                 class="cursor-pointer hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap">
               <td class="px-4 py-3.5 whitespace-nowrap">
                 <div class="font-medium text-sm text-ink dark:text-cream">
-                  {{ delivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}
+                  <RecordLink
+                    type="vendor"
+                    mode="detail"
+                    :id="delivery.vendor"
+                    :label="delivery.expand?.vendor?.contact_person || t('common.unknownVendor') || 'Unknown Vendor'"
+                  />
                 </div>
                 <div v-if="delivery.expand?.vendor?.name" class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
                   {{ delivery.expand.vendor.name }}
@@ -220,27 +272,21 @@
                 </span>
               </td>
               <td class="px-4 py-3.5 whitespace-nowrap text-right">
-                <!-- Desktop Action Buttons -->
-                <div class="flex items-center justify-end space-x-1" @click.stop>
-                  <button
-                    @click="viewDelivery(delivery)"
-                    class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
-                    :title="t('common.view')"
-                  >
-                    <Eye class="h-4 w-4" />
-                  </button>
+                <!-- Desktop Action Buttons. Row click opens the view; these sit
+                     above it via @click.stop so edit/delete never trigger view. -->
+                <div class="relative flex items-center justify-end gap-1" @click.stop>
                   <button
                     v-if="canEditDelete && delivery.payment_status === 'pending'"
-                    @click="editDelivery(delivery)"
-                    class="h-8 w-8 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
+                    @click.stop="editDelivery(delivery)"
+                    class="h-9 w-9 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-ink dark:hover:text-cream rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
                     :title="t('common.edit')"
                   >
                     <Edit2 class="h-4 w-4" />
                   </button>
                   <button
                     v-if="canEditDelete && delivery.payment_status === 'pending'"
-                    @click="deleteDelivery(delivery)"
-                    class="h-8 w-8 flex items-center justify-center text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
+                    @click.stop="deleteDelivery(delivery)"
+                    class="h-9 w-9 flex items-center justify-center text-clay-500 dark:text-clay-400 hover:text-clay-600 dark:hover:text-clay-300 rounded-md hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors duration-150"
                     :title="t('common.deleteAction')"
                   >
                     <Trash2 class="h-4 w-4" />
@@ -250,6 +296,16 @@
             </tr>
           </tbody>
         </table>
+        <!-- Desktop sentinel: lives INSIDE the scroll container so the
+             IntersectionObserver targets it against that container, not the viewport. -->
+        <InfiniteScrollSentinel
+          v-if="!searchQuery.trim() && !loading && deliveriesHasMore"
+          :has-more="deliveriesHasMore"
+          :loading-more="deliveriesLoadingMore"
+          :loaded-count="lastLoadedCount"
+          :root="tableScrollContainer"
+          @load-more="loadMoreDeliveries"
+        />
     </div>
 
     <!-- Mobile/Tablet Card View (< xl) -->
@@ -296,16 +352,23 @@
           </p>
         </div>
 
-        <!-- Delivery cards -->
+        <!-- Delivery cards. Tapping the card opens the view; the actions
+             dropdown stops propagation so it never triggers view. -->
         <div v-else v-for="delivery in deliveries" :key="delivery.id"
-             class="bg-white dark:bg-ink-3 rounded-lg shadow-card dark:shadow-inset-hi border border-stone-200 dark:border-ink-4 overflow-hidden">
+             @click="viewDelivery(delivery)"
+             class="bg-white dark:bg-ink-3 rounded-lg shadow-card dark:shadow-inset-hi border border-stone-200 dark:border-ink-4 overflow-hidden cursor-pointer hover:bg-cream-2 dark:hover:bg-ink-2 transition-colors duration-150 ease-snap">
 
           <!-- Card Header: vendor + status + actions -->
           <div class="flex items-start justify-between px-4 pt-4 pb-3">
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <h3 class="font-display text-sm font-semibold text-ink dark:text-cream truncate">
-                  {{ delivery.expand?.vendor?.contact_person || 'Unknown Vendor' }}
+                  <RecordLink
+                    type="vendor"
+                    mode="detail"
+                    :id="delivery.vendor"
+                    :label="delivery.expand?.vendor?.contact_person || t('common.unknownVendor') || 'Unknown Vendor'"
+                  />
                 </h3>
                 <span :class="`status-${delivery.payment_status}`">
                   {{ t(`common.${delivery.payment_status}`) }}
@@ -348,6 +411,18 @@
         </div>
       </div>
     </div>
+
+    <!-- Mobile/tablet sentinel (< xl): the page scrolls here, so the observer
+         uses the viewport. Hidden on xl where the desktop sentinel (inside the
+         table scroller) takes over. Browse only; dormant during search. -->
+    <InfiniteScrollSentinel
+      v-if="!searchQuery.trim() && !loading && deliveriesHasMore"
+      class="xl:hidden"
+      :has-more="deliveriesHasMore"
+      :loading-more="deliveriesLoadingMore"
+      :loaded-count="lastLoadedCount"
+      @load-more="loadMoreDeliveries"
+    />
 
     <!-- Multi-Item Delivery Modal -->
     <MultiItemDeliveryModal
@@ -527,7 +602,12 @@
                   </tr>
                   <tr v-else v-for="deliveryItem in viewingDelivery.expand.delivery_items" :key="deliveryItem.id">
                     <td class="px-4 py-3 text-sm text-ink dark:text-cream">
-                      <div>{{ deliveryItem.expand?.item?.name || 'Unknown Item' }}</div>
+                      <RecordLink
+                        type="item"
+                        mode="detail"
+                        :id="deliveryItem.item"
+                        :label="deliveryItem.expand?.item?.name || 'Unknown Item'"
+                      />
                       <div v-if="deliveryItem.notes" class="text-xs text-stone-500 dark:text-stone-400 mt-1">
                         {{ deliveryItem.notes }}
                       </div>
@@ -588,20 +668,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { useEventListener } from '@vueuse/core';
 import { Plus, Edit2, Trash2, Loader2, Eye, X, Images, MoreVertical, AlertCircle, Link2 } from 'lucide-vue-next';
 import Skeleton from '../components/Skeleton.vue';
+import RecordLink from '../components/RecordLink.vue';
+import SortableTh from '../components/SortableTh.vue';
+import { useTableSort } from '../composables/useTableSort';
 import { useI18n } from '../composables/useI18n';
+import { useUrlFilters } from '../composables/useUrlFilters';
+import { useModalEscape } from '../composables/useModalEscape';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
+import { useInfiniteSiteData } from '../composables/useInfiniteSiteData';
 import { useQuickActionModal } from '../composables/useQuickActionModal';
 import { useDeliverySearch } from '../composables/useSearch';
 import ImageSlider from '../components/ImageSlider.vue';
 import MultiItemDeliveryModal from '../components/delivery/MultiItemDeliveryModal.vue';
 import SearchBox from '../components/SearchBox.vue';
 import CardDropdownMenu from '../components/CardDropdownMenu.vue';
+import InfiniteScrollSentinel from '../components/InfiniteScrollSentinel.vue';
 import { 
   deliveryService,
   vendorReturnService,
@@ -612,31 +700,101 @@ import { usePermissions } from '../composables/usePermissions';
 import { DeliveryPaymentCalculator, type DeliveryWithPaymentStatus } from '../services/deliveryUtils';
 import { useModalState } from '../composables/useModalState';
 
+const route = useRoute();
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error, info: showInfoToast } = useToast();
 const { canDelete } = usePermissions();
 const { openModal, closeModal } = useModalState();
 
+// URL-driven relation filter (?vendor=<id>) for cross-linking from VendorDetailView.
+const { filters, hasActiveFilter, clearFilter } = useUrlFilters(['vendor']);
+
+// Column sorting. Only DB-backed columns are server-sortable (deliveryDate,
+// total, vendor). The displayed `deliveries` are switched between server-paged
+// browse rows and the full search result set, so:
+//   - BROWSE mode: sorting is SERVER-SIDE (the order must be correct across ALL
+//     pages, not just the loaded ones), driven by `serverSort` -> reload.
+//   - SEARCH mode: results are a separate, full (non-paginated) set, so we sort
+//     them CLIENT-side via `sortRows`.
+const { sortKey, sortDir, toggleSort, sortRows } = useTableSort<DeliveryWithPaymentStatus>({
+  defaultKey: 'deliveryDate',
+  defaultDir: 'desc'
+});
+
+// Map the UI sortKey -> the PocketBase field for the DB-backed (server-sortable)
+// columns, then build the `field`/`-field` sort string from the direction.
+// CLIENT-COMPUTED columns (item count, payment status) are derived AFTER load and
+// therefore have no server field — they are intentionally NON-sortable (rendered
+// as plain <th>), so any unknown key here falls back to the delivery_date sort.
+const SORT_FIELD_MAP: Record<string, string> = {
+  deliveryDate: 'delivery_date',
+  total: 'total_amount',
+  vendor: 'vendor'
+};
+const serverSort = computed(() => {
+  const field = SORT_FIELD_MAP[sortKey.value ?? 'deliveryDate'] ?? 'delivery_date';
+  return `${sortDir.value === 'desc' ? '-' : ''}${field}`;
+});
+
 // Use site data management
-// Load deliveries data
-const { data: allDeliveriesData, loading: deliveriesLoading, reload: reloadDeliveries } = useSiteData(
-  async () => {
-    const deliveryData = await deliveryService.getAll();
-    // Sort deliveries by delivery date descending (newest first)
-    return deliveryData.sort((a, b) => 
-      new Date(b.delivery_date).getTime() - new Date(a.delivery_date).getTime()
-    );
-  }
+// Browse deliveries with incremental (infinite-scroll) loading. The server sorts
+// by `serverSort` (default -delivery_date), so accumulated pages stay in the
+// chosen order across pagination. The loader branches on the active vendor
+// filter: getByVendor when filtering, getList otherwise. Both are paginated with
+// the same shape, so infinite scroll composes transparently with the filtered set.
+const {
+  items: infiniteDeliveries,
+  loading: deliveriesLoading,
+  loadingMore: deliveriesLoadingMore,
+  hasMore: deliveriesHasMore,
+  loadMore: loadMoreDeliveries,
+  reload: reloadDeliveries,
+  patchItem: patchDelivery,
+  removeItem: removeDelivery,
+  prependItem: prependDelivery
+} = useInfiniteSiteData<Delivery>(
+  (_siteId, page, perPage) =>
+    filters.vendor
+      ? deliveryService.getByVendor(filters.vendor, page, perPage, serverSort.value)
+      : deliveryService.getList(page, perPage, serverSort.value),
+  { perPage: 50 }
 );
+
+// When the vendor filter OR the server sort changes, reset + reload the infinite
+// list from page 1. reloadDeliveries() resets pagination and the composable's
+// currentLoadId guard + distinct requestKeys prevent the auto-cancel race — so
+// NO onMounted loader is needed.
+watch(() => filters.vendor, () => reloadDeliveries());
+watch(serverSort, () => reloadDeliveries());
+
+// Vendor name for the dismissible filter chip, derived reactively from the first
+// loaded filtered delivery. Falls back to a generic label until results arrive.
+const filterVendorName = computed(() => {
+  const list = infiniteDeliveries.value || [];
+  return list[0]?.expand?.vendor?.contact_person || '';
+});
 
 // Load payment allocations separately
 const { data: paymentAllocationsData } = useSiteData(
   async () => {
     try {
-      return await paymentAllocationService.getAll();
+      return await paymentAllocationService.getDeliveryAllocations();
     } catch (error) {
       console.error('Error loading payment allocations:', error);
+      return [];
+    }
+  }
+);
+
+// Lightweight, full-coverage photo source for "View all images". Independent of
+// the paginated browse list so image coverage spans ALL deliveries for the site.
+const { data: photoDeliveriesData, reload: reloadPhotoDeliveries } = useSiteData(
+  async () => {
+    try {
+      return await deliveryService.getAllWithPhotos();
+    } catch (error) {
+      console.error('Error loading delivery photos:', error);
       return [];
     }
   }
@@ -662,12 +820,33 @@ const viewingDeliveryAllocatedAmount = computed(() => {
     .reduce((sum, allocation) => sum + allocation.allocated_amount, 0);
 });
 
-// Display items: use search results if searching, otherwise all items with calculated payment status
+// Accessor mapping a sortKey -> the comparable value on an (enhanced) delivery
+// row, used ONLY for client-side sorting of the search result set.
+const sortAccessor = (row: DeliveryWithPaymentStatus, key: string): unknown => {
+  switch (key) {
+    case 'deliveryDate': return row.delivery_date;
+    case 'total': return row.total_amount;
+    case 'vendor': return row.expand?.vendor?.contact_person ?? '';
+    default: return undefined;
+  }
+};
+
+// Display items: use search results if searching, otherwise the accumulated
+// infinite-scroll browse pages — both enhanced with calculated payment status.
 const deliveries = computed((): DeliveryWithPaymentStatus[] => {
-  const baseDeliveries = searchQuery.value.trim() ? searchResults.value : (allDeliveriesData.value || []);
   const allocations = paymentAllocations.value || [];
-  
-  return DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus(baseDeliveries, allocations);
+
+  if (searchQuery.value.trim()) {
+    // SEARCH mode: results are a full (non-paginated) set, so sort CLIENT-side by
+    // the active column. Enhance first so the accessor can read computed fields.
+    const enhanced = DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus(searchResults.value, allocations);
+    return sortRows(enhanced, sortAccessor);
+  }
+
+  // BROWSE mode: rows already arrive sorted from the server (across all pages).
+  // Do NOT re-sort client-side here — that would only reorder the loaded pages
+  // and produce an inconsistent order relative to not-yet-loaded rows.
+  return DeliveryPaymentCalculator.enhanceDeliveriesWithPaymentStatus(infiniteDeliveries.value || [], allocations);
 });
 
 // Removed unused allDeliveries computed property
@@ -676,6 +855,9 @@ const editingDelivery = ref<Delivery | null>(null);
 const viewingDelivery = ref<Delivery | null>(null);
 const loadingDeliveryDetails = ref(false);
 const showMobileActionMenu = ref(false);
+// Scroll container for the desktop table (fixed-height internal scroller). The
+// infinite-scroll sentinel observes against this element on xl screens.
+const tableScrollContainer = ref<HTMLElement | null>(null);
 
 // Return information storage
 const returnInfo = ref<Record<string, {
@@ -706,6 +888,18 @@ const allImagesGalleryData = ref<{
 }>({ images: [], overlayInfo: [] });
 const loading = computed(() => deliveriesLoading.value);
 
+// Track how many rows the most recent "load more" appended, for the sentinel's
+// aria-live announcement.
+const lastLoadedCount = ref(0);
+let prevItemCount = 0;
+watch(infiniteDeliveries, (now) => {
+  const delta = (now?.length || 0) - prevItemCount;
+  if (delta > 0 && prevItemCount > 0) {
+    lastLoadedCount.value = delta;
+  }
+  prevItemCount = now?.length || 0;
+});
+
 const canCreateDelivery = computed(() => {
   return !isReadOnly.value && checkCreateLimit('deliveries');
 });
@@ -714,19 +908,27 @@ const canEditDelete = computed(() => {
   return !isReadOnly.value && canDelete.value;
 });
 
+// Sourced from a dedicated full-coverage photo query (not the paginated browse
+// list) so "View all images" keeps spanning every delivery for the site.
 const allImages = computed(() => {
-  if (!deliveries.value) return [];
-  
+  // When searching/filtering, the gallery must track the FILTERED list so the
+  // image count shrinks with the results (the expected behavior). When browsing,
+  // use the dedicated full-coverage photo query so "view all images" spans every
+  // delivery for the site, not just the currently-loaded infinite-scroll pages.
+  const source = searchQuery.value.trim()
+    ? deliveries.value
+    : (photoDeliveriesData.value || []);
+
   const images: Array<{ delivery: Delivery; photo: string; index: number }> = [];
-  
-  deliveries.value.forEach(delivery => {
+
+  source.forEach(delivery => {
     if (delivery.photos && delivery.photos.length > 0) {
       delivery.photos.forEach((photo, index) => {
         images.push({ delivery, photo, index });
       });
     }
   });
-  
+
   return images;
 });
 
@@ -746,12 +948,6 @@ const searchResultsTotal = computed(() => {
 const getDeliveryActions = (delivery: Delivery) => {
   return [
     {
-      key: 'view',
-      label: t('common.view'),
-      icon: Eye,
-      variant: 'default' as const
-    },
-    {
       key: 'edit',
       label: t('common.edit'),
       icon: Edit2,
@@ -770,9 +966,6 @@ const getDeliveryActions = (delivery: Delivery) => {
 
 const handleDeliveryAction = (delivery: Delivery, action: string) => {
   switch (action) {
-    case 'view':
-      viewDelivery(delivery);
-      break;
     case 'edit':
       editDelivery(delivery);
       break;
@@ -836,27 +1029,32 @@ const viewAllImages = () => {
   showPhotoGallery.value = true;
 };
 
-const reloadAllData = async () => {
+
+// Fetch the fully-expanded delivery (vendor + delivery_items.item) so an
+// in-place insert/update renders identically to a browse-loaded row.
+const fetchExpandedDelivery = async (id: string): Promise<Delivery | null> => {
   try {
-    await reloadDeliveries();
-    // Load all items for search functionality
-    loadAll();
+    return await deliveryService.getById(id);
   } catch (err) {
-    console.error('Error loading deliveries:', err);
-    error(t('delivery.loadError'));
+    console.error('Error fetching expanded delivery:', err);
+    return null;
   }
 };
 
 const handleAddDelivery = () => {
   editingDelivery.value = null;
   showAddModal.value = true;
-  openModal('delivery-add-modal');
+  // NOTE: the MultiItemDeliveryModal child registers itself with the modal
+  // manager ('multi-item-delivery-modal') on mount, so DeliveryView must NOT
+  // also push a 'delivery-add-modal' entry — that would create a duplicate
+  // history entry for the same visual sheet. The child's entry drives both
+  // back-button close and FAB hiding.
 };
 
 const editDelivery = (delivery: Delivery) => {
   editingDelivery.value = delivery;
   showAddModal.value = true;
-  openModal('delivery-edit-modal');
+  // See handleAddDelivery: registration is owned by the child modal component.
 };
 
 const orphanedItemsFound = ref(false);
@@ -866,7 +1064,7 @@ const viewDelivery = async (delivery: Delivery) => {
   try {
     loadingDeliveryDetails.value = true;
     orphanedItemsFound.value = false;
-    openModal('delivery-view-modal');
+    openModal('delivery-view-modal', closeViewModal);
     // Fetch the full delivery with all expanded relationships
     const fullDelivery = await deliveryService.getById(delivery.id!);
     
@@ -914,10 +1112,12 @@ const reconnectOrphanedItems = async () => {
     // Update the viewing delivery with the reconnected data
     viewingDelivery.value = updatedDelivery;
     orphanedItemsFound.value = false;
-    
-    // Also reload the main deliveries list to reflect the change
-    await reloadDeliveries();
-    
+
+    // Patch the single row in the browse list to reflect the change in place.
+    if (updatedDelivery.id) {
+      patchDelivery(updatedDelivery.id, updatedDelivery);
+    }
+
     success(t('delivery.itemsReconnected'));
   } catch (err) {
     console.error('Error reconnecting delivery items:', err);
@@ -961,7 +1161,11 @@ const deleteDelivery = async (delivery: Delivery) => {
   try {
     await deliveryService.delete(delivery.id!);
     success(t('delivery.deleteSuccess'));
-    await reloadAllData();
+    // Remove the single row in place (no scroll jump / full reload).
+    removeDelivery(delivery.id!);
+    // Keep search index + photo gallery coverage in sync.
+    loadAll();
+    await reloadPhotoDeliveries();
   } catch (err) {
     console.error('Error deleting delivery:', err);
     
@@ -987,15 +1191,32 @@ const closeAddModal = () => {
   closeModal('delivery-edit-modal');
 };
 
-const handleDeliverySaved = () => {
-  // For new deliveries, modal stays open but refreshes the list
-  reloadAllData();
+const handleDeliverySaved = async (delivery: Delivery) => {
+  // New delivery: insert in place at the top (server-sorted newest-first) so the
+  // list and scroll position stay put. Re-fetch for full expand (vendor/items).
+  const expanded = (delivery?.id ? await fetchExpandedDelivery(delivery.id) : null) || delivery;
+  if (expanded?.id) {
+    prependDelivery(expanded);
+  } else {
+    // Fallback to a full reload if we couldn't resolve the new record.
+    await reloadDeliveries();
+  }
+  // Keep search index + photo gallery coverage fresh.
+  loadAll();
+  await reloadPhotoDeliveries();
 };
 
-const handleDeliveryEditSuccess = () => {
-  // For edits, close the modal and refresh
+const handleDeliveryEditSuccess = async (delivery: Delivery) => {
+  // For edits, close the modal and patch the single row in place (no scroll jump).
   closeAddModal();
-  reloadAllData();
+  const expanded = (delivery?.id ? await fetchExpandedDelivery(delivery.id) : null) || delivery;
+  if (expanded?.id) {
+    patchDelivery(expanded.id, expanded);
+  } else {
+    await reloadDeliveries();
+  }
+  loadAll();
+  await reloadPhotoDeliveries();
 };
 
 
@@ -1057,6 +1278,10 @@ const closeViewModal = () => {
   closeModal('delivery-view-modal');
 };
 
+// Document-level ESC so the view modal closes without the user first clicking
+// inside it (the focus-dependent @keydown.esc only worked once focused).
+useModalEscape(() => closeViewModal(), () => !!viewingDelivery.value);
+
 
 // Handle 'show-add-modal' event from FAB
 const handleShowAddModal = () => {
@@ -1070,24 +1295,43 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
   }
 };
 
+// Deep-link auto-open: when the dashboard (or any cross-link) navigates to
+// /deliveries?id=<id>, open that delivery's view modal. This runs independently
+// of the paginated browse list (useInfiniteSiteData) — it loads the record
+// directly via the site-scoped getById, mirroring how PaymentsView handles
+// ?paymentId. Graceful: if the id is missing/unknown, we silently do nothing
+// (no error toast). The `?vendor=` filter is untouched and keeps working.
+const openDeliveryFromQuery = async (id: string) => {
+  try {
+    const delivery = await deliveryService.getById(id);
+    if (!delivery) return;
+    // Reuse the existing view handler so the full expand / orphaned-item /
+    // return-info loading logic stays in one place.
+    await viewDelivery(delivery);
+  } catch {
+    // Not found or cross-site / network error: don't open, don't toast.
+  }
+};
+
+watch(
+  // Null-safe: `route` is undefined when the component is mounted without a
+  // router (e.g. some isolated unit tests). In that case there is simply no
+  // deep-link to honour, so we read nothing rather than throwing.
+  () => route?.query?.id,
+  (id) => {
+    if (typeof id === 'string' && id) {
+      void openDeliveryFromQuery(id);
+    }
+  },
+  { immediate: true }
+);
+
 // Event listeners using @vueuse/core
 useQuickActionModal(handleShowAddModal);
 useEventListener(window, 'keydown', handleKeyboardShortcut);
 </script>
 
 <style scoped>
-.status-pending {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300;
-}
-
-.status-partial {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300;
-}
-
-.status-paid {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-forest-100 text-forest-800 dark:bg-forest-900 dark:text-forest-300;
-}
-
 .btn-primary {
   @apply bg-amber-500 hover:bg-amber-600 text-ink font-medium py-2 px-4 rounded-md transition-colors duration-150 ease-in-out;
 }

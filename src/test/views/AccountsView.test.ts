@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
+import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { setupTestPinia } from '../utils/test-setup'
 
@@ -71,7 +72,7 @@ vi.mock('../../composables/useSiteData', () => ({
         }
       ]
     },
-    loading: { value: false },
+    loading: ref(false),
     reload: vi.fn()
   })
 }))

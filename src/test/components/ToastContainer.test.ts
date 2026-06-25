@@ -1,11 +1,222 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle, 
-  Info, 
-  X 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { nextTick } from 'vue'
+import { mount } from '@vue/test-utils'
+import {
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Info,
+  X
 } from 'lucide-vue-next'
+import ToastContainer from '../../components/ToastContainer.vue'
+import { useToast } from '../../composables/useToast'
+
+vi.mock('../../composables/useI18n', () => ({
+  useI18n: () => ({ t: (key: string) => key }),
+}))
+
+// Mount with Teleport disabled so rendered toasts stay inside the wrapper tree.
+const mountToasts = () =>
+  mount(ToastContainer, {
+    global: { stubs: { teleport: true } },
+  })
+
+describe('ToastContainer.vue rendering', () => {
+  beforeEach(() => {
+    // Start each test from a clean, empty toast store.
+    useToast().clearAll()
+    vi.useRealTimers()
+  })
+
+  afterEach(() => {
+    useToast().clearAll()
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  it('renders nothing when there are no toasts (empty state)', async () => {
+    const wrapper = mountToasts()
+    await nextTick()
+    expect(wrapper.findAll('.toast-card').length).toBe(0)
+    wrapper.unmount()
+  })
+
+  it('renders a toast card for each toast in the store', async () => {
+    const { addToast } = useToast()
+    addToast({ message: 'First', type: 'info', persistent: true })
+    addToast({ message: 'Second', type: 'success', persistent: true })
+
+    const wrapper = mountToasts()
+    await nextTick()
+
+    const cards = wrapper.findAll('.toast-card')
+    expect(cards.length).toBe(2)
+    expect(wrapper.text()).toContain('First')
+    expect(wrapper.text()).toContain('Second')
+    wrapper.unmount()
+  })
+
+  it('renders the correct icon and tinted chip per toast type', async () => {
+    const { addToast } = useToast()
+    addToast({ message: 's', type: 'success', persistent: true })
+    addToast({ message: 'e', type: 'error', persistent: true })
+    addToast({ message: 'w', type: 'warning', persistent: true })
+    addToast({ message: 'i', type: 'info', persistent: true })
+
+    const wrapper = mountToasts()
+    await nextTick()
+
+    // Icon mapping (via the exposed helper used in the template).
+    const vm = wrapper.vm as any
+    expect(vm.getToastIcon('success')).toBe(CheckCircle)
+    expect(vm.getToastIcon('error')).toBe(XCircle)
+    expect(vm.getToastIcon('warning')).toBe(AlertTriangle)
+    expect(vm.getToastIcon('info')).toBe(Info)
+
+    const cards = wrapper.findAll('.toast-card')
+    // success chip + accent + icon colors
+    expect(cards[0].html()).toContain('bg-forest-50')
+    expect(cards[0].html()).toContain('bg-forest-500')
+    expect(cards[0].html()).toContain('text-forest-600')
+    // error
+    expect(cards[1].html()).toContain('bg-clay-50')
+    expect(cards[1].html()).toContain('bg-clay-500')
+    // warning
+    expect(cards[2].html()).toContain('bg-amber-50')
+    expect(cards[2].html()).toContain('bg-amber-500')
+    // info
+    expect(cards[3].html()).toContain('bg-stone-100')
+    wrapper.unmount()
+  })
+
+  it('renders an aria-labelled close button per toast type', async () => {
+    const { addToast } = useToast()
+    addToast({ message: 'oops', type: 'error', persistent: true })
+
+    const wrapper = mountToasts()
+    await nextTick()
+
+    expect(wrapper.find('[aria-label="Close error notification"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('removes a toast when its close button is clicked (manual dismiss)', async () => {
+    const { addToast, toasts } = useToast()
+    const id = addToast({ message: 'dismiss me', type: 'info', persistent: true })
+
+    const wrapper = mountToasts()
+    await nextTick()
+    expect(wrapper.findAll('.toast-card').length).toBe(1)
+
+    await wrapper.find('[aria-label="Close info notification"]').trigger('click')
+    await nextTick()
+
+    expect(toasts.value.find(t => t.id === id)).toBeUndefined()
+    expect(wrapper.findAll('.toast-card').length).toBe(0)
+    wrapper.unmount()
+  })
+
+  it('shows a progress affordance for non-persistent toasts only', async () => {
+    const { addToast } = useToast()
+    addToast({ message: 'auto', type: 'success', duration: 4000, persistent: false })
+    addToast({ message: 'sticky', type: 'error', persistent: true })
+
+    const wrapper = mountToasts()
+    await nextTick()
+
+    const cards = wrapper.findAll('.toast-card')
+    expect(cards[0].find('.toast-progress').exists()).toBe(true)
+    expect(cards[1].find('.toast-progress').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('pauses the progress bar on hover and resumes on leave', async () => {
+    const { addToast } = useToast()
+    addToast({ message: 'hover', type: 'info', duration: 4000, persistent: false })
+
+    const wrapper = mountToasts()
+    await nextTick()
+
+    const card = wrapper.find('.toast-card')
+    await card.trigger('mouseenter')
+    expect(card.find('.toast-progress').classes()).toContain('is-paused')
+
+    await card.trigger('mouseleave')
+    expect(card.find('.toast-progress').classes()).not.toContain('is-paused')
+    wrapper.unmount()
+  })
+
+  it('shows the "close all" pill for multiple toasts and clears them on click', async () => {
+    const { addToast, toasts } = useToast()
+    addToast({ message: 'a', type: 'info', persistent: true })
+    addToast({ message: 'b', type: 'info', persistent: true })
+
+    const wrapper = mountToasts()
+    await nextTick()
+
+    const pill = wrapper.find('button.rounded-full')
+    expect(wrapper.text()).toContain('common.closeAll')
+
+    await pill.trigger('click')
+    await nextTick()
+    expect(toasts.value.length).toBe(0)
+    expect(wrapper.findAll('.toast-card').length).toBe(0)
+    wrapper.unmount()
+  })
+
+  it('shows the "close all" pill for a single persistent toast', async () => {
+    const { addToast } = useToast()
+    addToast({ message: 'sticky', type: 'error', persistent: true })
+
+    const wrapper = mountToasts()
+    await nextTick()
+    expect(wrapper.text()).toContain('common.closeAll')
+    wrapper.unmount()
+  })
+
+  it('hides the "close all" pill for a single non-persistent toast', async () => {
+    const { addToast } = useToast()
+    addToast({ message: 'solo', type: 'success', duration: 4000, persistent: false })
+
+    const wrapper = mountToasts()
+    await nextTick()
+    expect(wrapper.text()).not.toContain('common.closeAll')
+    wrapper.unmount()
+  })
+
+  it('auto-dismisses a non-persistent toast after its duration', async () => {
+    vi.useFakeTimers()
+    const { addToast, toasts } = useToast()
+    const id = addToast({ message: 'temporary', type: 'success', duration: 1000, persistent: false })
+
+    const wrapper = mountToasts()
+    await nextTick()
+    expect(wrapper.findAll('.toast-card').length).toBe(1)
+
+    // Advance past the toast duration; the store removes it via setTimeout.
+    vi.advanceTimersByTime(1000)
+    await nextTick()
+
+    expect(toasts.value.find(t => t.id === id)).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  it('does not auto-dismiss a persistent toast', async () => {
+    vi.useFakeTimers()
+    const { addToast, toasts } = useToast()
+    const id = addToast({ message: 'pinned', type: 'error', persistent: true })
+
+    const wrapper = mountToasts()
+    await nextTick()
+
+    vi.advanceTimersByTime(60_000)
+    await nextTick()
+
+    expect(toasts.value.find(t => t.id === id)).toBeDefined()
+    expect(wrapper.findAll('.toast-card').length).toBe(1)
+    wrapper.unmount()
+  })
+})
 
 describe('ToastContainer Logic', () => {
   beforeEach(() => {

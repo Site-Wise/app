@@ -35,11 +35,20 @@ vi.mock('../composables/useTheme', () => ({
   })
 }))
 
+const mockLoadLanguage = vi.fn().mockResolvedValue(undefined)
+
 vi.mock('../composables/useI18n', () => ({
   useI18n: () => ({
-    currentLanguage: mockCurrentLanguage
+    currentLanguage: mockCurrentLanguage,
+    loadLanguage: mockLoadLanguage
   })
 }))
+
+// Wait for the async bootstrap() in main.ts (it awaits loadLanguage before mount)
+const flushBootstrap = async () => {
+  await Promise.resolve()
+  await Promise.resolve()
+}
 
 // Mock CSS import
 vi.mock('../style.css', () => ({}))
@@ -73,6 +82,7 @@ describe('main.ts', () => {
   it('should initialize the Vue application correctly', async () => {
     // Import main.ts to trigger initialization
     await import('../main')
+    await flushBootstrap()
 
     // Verify createApp was called
     expect(mockCreateApp).toHaveBeenCalledTimes(1)
@@ -106,7 +116,8 @@ describe('main.ts', () => {
 
   it('should initialize theme before mounting', async () => {
     await import('../main')
-    
+    await flushBootstrap()
+
     // Verify initializeTheme was called before mount
     expect(mockInitializeTheme).toHaveBeenCalledBefore(mockMount as any)
   })
@@ -123,7 +134,8 @@ describe('main.ts', () => {
 
   it('should setup plugins in correct order', async () => {
     await import('../main')
-    
+    await flushBootstrap()
+
     // Verify plugins were added in correct order
     const useCalls = mockUse.mock.calls
     expect(useCalls).toHaveLength(2)
