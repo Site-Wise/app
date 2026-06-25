@@ -318,4 +318,77 @@ describe('DashboardView', () => {
     // Check that the chart component is rendered
     expect(wrapper.find('.mock-chart').exists()).toBe(true)
   })
+
+  describe('Recent Transactions row navigation', () => {
+    let router: any
+    let pushSpy: any
+    let localWrapper: any
+
+    beforeEach(async () => {
+      const { pinia: testPinia } = setupTestPinia()
+      router = createMockRouter()
+      pushSpy = vi.spyOn(router, 'push').mockResolvedValue(undefined as any)
+
+      localWrapper = mount(DashboardView, {
+        global: {
+          plugins: [router, testPinia],
+          stubs: {
+            'router-link': true,
+            'Line': {
+              name: 'Line',
+              template: '<div class="mock-chart">Chart Component</div>',
+              props: ['data', 'options']
+            }
+          }
+        }
+      })
+      await flushPromises()
+      await localWrapper.vm.$nextTick()
+    })
+
+    afterEach(() => {
+      localWrapper?.unmount()
+      pushSpy?.mockRestore()
+    })
+
+    // Rows are sorted by date desc. Mock data dates:
+    //   payment  -> 2024-01-20
+    //   delivery -> 2024-01-15
+    //   booking  -> 2024-01-10
+    // So clickable ledger rows render in order: [payment, delivery, booking].
+    const getLedgerRows = () => localWrapper.findAll('tbody tr')
+
+    it('navigates a payment row to /payments?paymentId=<id>', async () => {
+      const rows = getLedgerRows()
+      expect(rows.length).toBeGreaterThanOrEqual(3)
+      await rows[0].trigger('click')
+      expect(pushSpy).toHaveBeenCalledWith({
+        path: '/payments',
+        query: { paymentId: 'payment-1' }
+      })
+    })
+
+    it('navigates a delivery row to /deliveries?id=<id>', async () => {
+      const rows = getLedgerRows()
+      await rows[1].trigger('click')
+      expect(pushSpy).toHaveBeenCalledWith({
+        path: '/deliveries',
+        query: { id: 'delivery-1' }
+      })
+    })
+
+    it('navigates a service booking row to /service-bookings?id=<id>', async () => {
+      const rows = getLedgerRows()
+      await rows[2].trigger('click')
+      expect(pushSpy).toHaveBeenCalledWith({
+        path: '/service-bookings',
+        query: { id: 'booking-1' }
+      })
+    })
+
+    it('marks navigable rows with cursor-pointer', () => {
+      const rows = getLedgerRows()
+      expect(rows[0].classes()).toContain('cursor-pointer')
+    })
+  })
 })

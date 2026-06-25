@@ -201,6 +201,8 @@
                 v-for="row in recentTransactions"
                 :key="row.id"
                 class="rounded-none border-b border-stone-200 dark:border-ink-4 last:border-b-0 lg:hover:bg-cream-2 lg:dark:hover:bg-ink-2"
+                :class="isRowNavigable(row) ? 'cursor-pointer hover:bg-cream-2 dark:hover:bg-ink-2' : ''"
+                @click="isRowNavigable(row) && openLedgerRow(row)"
               >
                 <!-- Desktop cells -->
                 <td class="hidden lg:table-cell px-4 py-3 font-mono sw-tabular text-stone-600 dark:text-stone-300">
@@ -271,6 +273,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, defineAsyncComponent } from 'vue';
+import { useRouter } from 'vue-router';
 import { TrendingUp, Undo2, Wallet, DollarSign, BarChart3 } from 'lucide-vue-next';
 
 import ChartLoadingPlaceholder from '../components/charts/ChartLoadingPlaceholder.vue';
@@ -303,6 +306,7 @@ import NewUserOnboarding from '../components/NewUserOnboarding.vue';
 
 const { t } = useI18n();
 const { isDark } = useTheme();
+const router = useRouter();
 
 const { currentSite } = useSite();
 const siteStore = useSiteStore();
@@ -517,8 +521,13 @@ const periodPaymentTotal = computed(() => {
 
 // ---- Recent transactions ledger (design-system LedgerTable) ----
 type LedgerCategory = 'material' | 'service' | 'payment';
+type LedgerKind = 'delivery' | 'serviceBooking' | 'payment';
 interface LedgerRow {
   id: string;
+  // Source record kind + its raw record id, used to deep-link the row to the
+  // underlying record's category view (delivery/booking/payment).
+  kind: LedgerKind;
+  recordId?: string;
   date: string; // ISO date used for sorting
   // App-wide vendor display convention: contact_person is the prominent label,
   // company `name` is a muted subtext shown only when BOTH exist.
@@ -581,6 +590,8 @@ const recentTransactions = computed<LedgerRow[]>(() => {
     const vendor = vendorPartsById(d.vendor);
     rows.push({
       id: `delivery-${d.id}`,
+      kind: 'delivery',
+      recordId: d.id,
       date: d.delivery_date,
       vendorId: vendor.id,
       vendorLabel: vendor.label,
@@ -597,6 +608,8 @@ const recentTransactions = computed<LedgerRow[]>(() => {
     const vendor = vendorPartsById(b.vendor);
     rows.push({
       id: `booking-${b.id}`,
+      kind: 'serviceBooking',
+      recordId: b.id,
       date: b.start_date,
       vendorId: vendor.id,
       vendorLabel: vendor.label,
@@ -612,6 +625,8 @@ const recentTransactions = computed<LedgerRow[]>(() => {
     const vendor = vendorPartsById(p.vendor);
     rows.push({
       id: `payment-${p.id}`,
+      kind: 'payment',
+      recordId: p.id,
       date: p.payment_date || p.created || '',
       vendorId: vendor.id,
       vendorLabel: vendor.label,
@@ -642,6 +657,29 @@ const formatRupees = (amount: number): string =>
 
 const badgeClass = (variant: 'success' | 'accent' | 'danger'): string =>
   `sw-badge sw-badge--${variant}`;
+
+// A row is navigable only when it carries a resolvable source record id.
+const isRowNavigable = (row: LedgerRow): boolean => !!row.recordId;
+
+// Deep-link a ledger row to its source record's category view, passing the
+// record id using each view's deep-link query convention:
+//   payment        -> /payments?paymentId=<id>   (PaymentsView opens the modal)
+//   delivery       -> /deliveries?id=<id>
+//   serviceBooking -> /service-bookings?id=<id>
+const openLedgerRow = (row: LedgerRow): void => {
+  if (!row.recordId) return;
+  switch (row.kind) {
+    case 'payment':
+      router.push({ path: '/payments', query: { paymentId: row.recordId } });
+      break;
+    case 'delivery':
+      router.push({ path: '/deliveries', query: { id: row.recordId } });
+      break;
+    case 'serviceBooking':
+      router.push({ path: '/service-bookings', query: { id: row.recordId } });
+      break;
+  }
+};
 
 // "Overview · April 2026" eyebrow, matching the design-system dashboard kit.
 const overviewLabel = computed(() => {
