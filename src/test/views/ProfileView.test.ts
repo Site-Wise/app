@@ -255,12 +255,16 @@ describe('ProfileView', () => {
       // Submit form
       await wrapper.find('form').trigger('submit')
 
-      expect(mockUpdate).toHaveBeenCalledWith('user-1', {
-        name: 'Jane Doe',
-        email: 'jane@example.com',
-        phone: '+919876543211'
+      // Poll for the async submit handler (update -> refreshAuth) to settle;
+      // a bare assert after trigger() is racy under full-suite load.
+      await vi.waitFor(() => {
+        expect(mockUpdate).toHaveBeenCalledWith('user-1', {
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          phone: '+919876543211'
+        })
+        expect(mockRefreshAuth).toHaveBeenCalled()
       })
-      expect(mockRefreshAuth).toHaveBeenCalled()
     })
 
     it('should handle empty phone number correctly', async () => {

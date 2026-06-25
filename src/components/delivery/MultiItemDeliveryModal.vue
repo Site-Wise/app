@@ -425,6 +425,19 @@ const payments = ref<Payment[]>([]);
 const serviceBookings = ref<ServiceBooking[]>([]);
 const deliveries = ref<Delivery[]>([]);
 const vendorInputRef = ref<InstanceType<typeof VendorSearchBox>>();
+
+// Track deferred focus timers so they can be cancelled if the component
+// unmounts before they fire. Without this, a pending focus callback can run
+// after teardown (e.g. in tests) where refs/DOM are gone.
+const pendingFocusTimers = new Set<ReturnType<typeof setTimeout>>();
+const deferFocus = (fn: () => void, delay: number) => {
+  const id = setTimeout(() => {
+    pendingFocusTimers.delete(id);
+    fn();
+  }, delay);
+  pendingFocusTimers.add(id);
+};
+
 const selectedFilesForUpload = ref<File[]>([]);
 const existingPhotos = ref<string[]>([]);
 const showPhotoGallery = ref(false);
@@ -754,7 +767,7 @@ const nextStep = async () => {
     // Auto-focus item selector when moving to step 1 (items step)
     if (currentStep.value === 1) {
       await nextTick();
-      setTimeout(() => {
+      deferFocus(() => {
         newItemRowRef.value?.focusItemSelector();
       }, 50);
     }
@@ -768,7 +781,7 @@ const previousStep = async () => {
     // Auto-focus vendor input when going back to step 0
     if (currentStep.value === 0) {
       await nextTick();
-      setTimeout(() => {
+      deferFocus(() => {
         vendorInputRef.value?.focus();
       }, 50);
     }
@@ -932,7 +945,7 @@ const resetForm = async () => {
 
   // Focus vendor input after form reset
   await nextTick();
-  setTimeout(() => {
+  deferFocus(() => {
     vendorInputRef.value?.focus();
   }, 50);
 };
@@ -1003,7 +1016,7 @@ onMounted(async () => {
 
   // Focus vendor input after modal is opened and DOM is ready
   await nextTick();
-  setTimeout(() => {
+  deferFocus(() => {
     vendorInputRef.value?.focus();
   }, 100);
 
@@ -1012,6 +1025,10 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  // Cancel any deferred focus timers so their callbacks never run after the
+  // component (and its refs/DOM) have been torn down.
+  pendingFocusTimers.forEach(clearTimeout);
+  pendingFocusTimers.clear();
   closeModal('multi-item-delivery-modal');
 });
 </script>
