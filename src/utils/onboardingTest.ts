@@ -1,5 +1,6 @@
 // Simple utility to test onboarding functionality
 // Run this in browser console to reset and test tours
+import { useOnboarding } from '../composables/useOnboarding';
 
 export function resetOnboardingForTesting() {
   // Clear all onboarding localStorage keys
@@ -17,26 +18,24 @@ export function resetOnboardingForTesting() {
 }
 
 export function forceShowDashboardTour() {
-  // Import and force start dashboard tour
-  import('../composables/useOnboarding').then(({ useOnboarding }) => {
-    const { startTour } = useOnboarding();
-    // Create dashboard tour config manually
-    const dashboardTour = {
-      id: 'dashboard',
-      steps: [
-        {
-          popover: {
-            title: 'onboarding.dashboard.welcome.title',
-            description: 'onboarding.dashboard.welcome.description',
-            side: 'bottom' as const,
-            align: 'center' as const
-          }
+  // Force start the dashboard tour. useOnboarding is statically imported (it's
+  // already in the app shell via AppLayout), so no dynamic import is needed.
+  const { startTour } = useOnboarding();
+  const dashboardTour = {
+    id: 'dashboard',
+    steps: [
+      {
+        popover: {
+          title: 'onboarding.dashboard.welcome.title',
+          description: 'onboarding.dashboard.welcome.description',
+          side: 'bottom' as const,
+          align: 'center' as const
         }
-      ],
-      showOnce: true
-    };
-    startTour(dashboardTour, true); // Force show dashboard tour
-  });
+      }
+    ],
+    showOnce: true
+  };
+  startTour(dashboardTour, true); // Force show dashboard tour
 }
 
 // Make functions available globally for testing

@@ -211,6 +211,7 @@ import {
   isPdfFile,
   getEstimatedImageSize,
   classifyPdfError,
+  convertPdfToImages,
   MAX_PDF_PAGES,
   type PdfErrorKind,
 } from '../utils/pdfToImage'
@@ -499,8 +500,8 @@ const handlePdfConversion = async () => {
   passwordError.value = ''
 
   try {
-    const { convertPdfToImages } = await import('../utils/pdfToImage')
-
+    // pdfToImage is statically imported above; it lazy-loads pdfjs-dist internally,
+    // so pdf.js stays in its own chunk without an (ineffective) dynamic import here.
     const images = await convertPdfToImages(fileToConvert, {
       dpi: 150,
       format: 'jpeg',
