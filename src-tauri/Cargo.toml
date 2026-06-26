@@ -9,14 +9,30 @@ default-run = "sitewise"
 edition = "2021"
 rust-version = "1.77.2"
 
+# The library target is required for mobile (Android/iOS) builds. Tauri's mobile
+# tooling compiles the app as a shared/static library and provides the platform
+# entry point; the `run()` function in lib.rs is shared by desktop and mobile.
+[lib]
+name = "sitewise_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
 [build-dependencies]
 tauri-build = { version = "2.0", features = [] }
 
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "2.0", features = ["tray-icon"] }
+# Base tauri dependency MUST stay tray-icon-free: the `tray-icon` feature pulls
+# in desktop-only crates that do not compile for Android/iOS. The desktop tray is
+# enabled only via the desktop-target dependency table below.
+tauri = { version = "2.0", features = [] }
 tauri-plugin-notification = "2.0"
+
+# The system tray is a desktop-only capability. The `tray-icon` Cargo feature
+# pulls in desktop-only dependencies that do not compile for Android/iOS, so it
+# is only enabled when building for a desktop target.
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri = { version = "2.0", features = ["tray-icon"] }
 
 [features]
 default = ["custom-protocol"]
