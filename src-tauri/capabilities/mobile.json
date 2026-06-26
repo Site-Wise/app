@@ -1,0 +1,8 @@
+{
+  "$schema": "https://schema.tauri.app/schema/2.0.0/capability.json",
+  "identifier": "mobile-biometric",
+  "description": "Biometric unlock permissions (Android / iOS only).",
+  "platforms": ["android", "iOS"],
+  "windows": ["main"],
+  "permissions": ["biometric:default"]
+}

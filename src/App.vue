@@ -38,6 +38,8 @@
       </div>
     </div>
     <ToastContainer />
+    <!-- First sign-in: offer biometric quick unlock -->
+    <BiometricSetupModal v-model="showBiometricSetup" />
     <!-- PWA prompts shown for all users -->
     <PWAPrompt />
     <PWAUpdateNotification />
@@ -45,15 +47,17 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useAuth } from './composables/useAuth';
 import { useSite } from './composables/useSite';
 import { useSiteStore } from './stores/site';
 import { usePlatform } from './composables/usePlatform';
 import { useNativeNotifications } from './composables/useNativeNotifications';
+import { useBiometricAuth } from './composables/useBiometricAuth';
 import AppLayout from './components/AppLayout.vue';
 import SiteSelectionView from './views/SiteSelectionView.vue';
 import ToastContainer from './components/ToastContainer.vue';
+import BiometricSetupModal from './components/BiometricSetupModal.vue';
 import PWAUpdateNotification from './components/PWAUpdateNotification.vue';
 import PWAPrompt from './components/PWAPrompt.vue';
 
@@ -66,6 +70,15 @@ const { isAuthenticated } = useAuth();
 const { hasSiteAccess, isReadyForRouting, loadUserSites } = useSite();
 const { platformInfo } = usePlatform();
 const { requestPermission } = useNativeNotifications();
+const { shouldOfferSetup } = useBiometricAuth();
+
+// First-sign-in biometric setup prompt.
+const showBiometricSetup = ref(false);
+const maybeOfferBiometricSetup = async () => {
+  if (await shouldOfferSetup()) {
+    showBiometricSetup.value = true;
+  }
+};
 
 // Import PWA testing utilities in development
 if (import.meta.env.DEV) {
@@ -77,12 +90,15 @@ watch(() => isAuthenticated.value, async (newValue, oldValue) => {
   // Handle login
   if (newValue && !oldValue) {
     await loadUserSites();
-    
+
     // Request notification permission if supported
     if (platformInfo.value.isTauri || 'Notification' in window) {
       await requestPermission();
     }
-  } 
+
+    // Offer biometric quick unlock on first interactive sign-in.
+    maybeOfferBiometricSetup();
+  }
   // Handle logout - clear site data to prevent race conditions  
   else if (!newValue && oldValue) {
     const siteStore = useSiteStore();

@@ -40,8 +40,18 @@ fn get_platform_info() -> Result<serde_json::Value, String> {
 // platform glue that invokes this function.
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_notification::init())
+    #[allow(unused_mut)]
+    let mut builder = tauri::Builder::default().plugin(tauri_plugin_notification::init());
+
+    // Biometric unlock (Touch ID / Face ID / fingerprint) is a mobile-only
+    // capability. The plugin compiles for Android/iOS only, so it is registered
+    // behind `cfg(mobile)`; desktop builds are unaffected.
+    #[cfg(mobile)]
+    {
+        builder = builder.plugin(tauri_plugin_biometric::init());
+    }
+
+    builder
         .setup(|app| {
             // The system tray is desktop-only. Mobile platforms have no tray.
             #[cfg(desktop)]

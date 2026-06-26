@@ -34,6 +34,13 @@ tauri-plugin-notification = "2.0"
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri = { version = "2.0", features = ["tray-icon"] }
 
+# Biometric authentication (Touch ID / Face ID / fingerprint) is a mobile-only
+# capability. The plugin only builds for Android/iOS, so it is scoped to mobile
+# targets and registered behind `#[cfg(mobile)]` in lib.rs. Desktop builds never
+# see this dependency.
+[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
+tauri-plugin-biometric = "2.0"
+
 [features]
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]

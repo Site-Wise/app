@@ -174,6 +174,40 @@
               </div>
             </form>
           </div>
+
+          <!-- Security: biometric quick unlock -->
+          <div v-if="biometricSupported" class="sm:col-span-2">
+            <div class="border-t border-stone-200 dark:border-ink-4 pt-6">
+              <h3 class="text-lg font-display font-medium text-ink dark:text-cream mb-4">
+                {{ t('biometric.settingsTitle') }}
+              </h3>
+              <div class="flex items-center justify-between gap-4 rounded-xl bg-cream-2 dark:bg-ink-2 border border-stone-200 dark:border-ink-4 p-4">
+                <div class="flex items-start gap-3 min-w-0">
+                  <span class="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-500/15">
+                    <component :is="biometricIcon" class="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  </span>
+                  <div class="min-w-0">
+                    <p class="text-sm font-medium text-stone-800 dark:text-stone-200">
+                      {{ t('biometric.settingsLabel', { method: biometricMethodLabel }) }}
+                    </p>
+                    <p class="text-xs text-stone-600 dark:text-stone-400 mt-0.5">
+                      {{ t('biometric.settingsDescription', { method: biometricMethodLabel }) }}
+                    </p>
+                    <p v-if="isBiometricEnabled" class="text-xs font-medium text-forest-600 dark:text-forest-400 mt-1 flex items-center gap-1">
+                      <Check class="h-3.5 w-3.5" /> {{ t('biometric.settingsEnabledOn') }}
+                    </p>
+                  </div>
+                </div>
+                <ToggleSwitch
+                  :model-value="isBiometricEnabled"
+                  :disabled="biometricBusy"
+                  size="lg"
+                  :aria-label="t('biometric.settingsTitle')"
+                  @update:model-value="onToggleBiometric"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -184,11 +218,35 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useAuth } from '../composables/useAuth';
 import { useI18n } from '../composables/useI18n';
+import { useBiometricAuth } from '../composables/useBiometricAuth';
 import { pb } from '../services/pocketbase';
-import { AlertCircle, Loader2 } from 'lucide-vue-next';
+import { AlertCircle, Loader2, Check, Fingerprint, ScanFace } from 'lucide-vue-next';
+import ToggleSwitch from '../components/ToggleSwitch.vue';
 
 const { user, refreshAuth } = useAuth();
 const { t } = useI18n();
+
+// Biometric quick-unlock controls.
+const {
+  isSupported: biometricSupported,
+  isEnabled: isBiometricEnabled,
+  isBusy: biometricBusy,
+  method: biometricMethod,
+  methodLabel: biometricMethodLabel,
+  ensureChecked: ensureBiometricChecked,
+  enable: enableBiometric,
+  disable: disableBiometric,
+} = useBiometricAuth();
+
+const biometricIcon = computed(() => (biometricMethod.value === 'face' ? ScanFace : Fingerprint));
+
+const onToggleBiometric = async (value: boolean) => {
+  if (value) {
+    await enableBiometric();
+  } else {
+    disableBiometric();
+  }
+};
 
 const loading = ref(false);
 const error = ref('');
@@ -290,5 +348,6 @@ const handleUpdateProfile = async () => {
 
 onMounted(() => {
   resetForm();
+  ensureBiometricChecked();
 });
 </script>

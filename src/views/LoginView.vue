@@ -51,6 +51,15 @@
           <span class="text-2xl font-display font-bold tracking-tight text-ink dark:text-cream">Sitewise</span>
         </div>
 
+        <!-- Biometric quick unlock (returning users on this device) -->
+        <BiometricUnlockPanel
+          v-if="showBiometricUnlock"
+          class="py-4"
+          @unlocked="handleBiometricUnlocked"
+          @use-password="showBiometricUnlock = false"
+        />
+
+        <template v-else>
         <!-- Heading -->
         <div class="mb-7">
           <h2 class="sw-h2 text-ink dark:text-cream">
@@ -371,6 +380,7 @@
             </button>
           </p>
         </form>
+        </template>
       </div>
     </div>
 
@@ -390,21 +400,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { useSite } from '../composables/useSite';
 import { useI18n } from '../composables/useI18n';
 import { useTheme } from '../composables/useTheme';
+import { useBiometricAuth } from '../composables/useBiometricAuth';
 import { AlertCircle, Loader2, Eye, EyeOff, Check } from 'lucide-vue-next';
 import TurnstileWidget from '../components/TurnstileWidget.vue';
 import LegalModal from '../components/LegalModal.vue';
+import BiometricUnlockPanel from '../components/BiometricUnlockPanel.vue';
 
 const router = useRouter();
 const route = useRoute();
-const { login, register } = useAuth();
+const { login, register, refreshAuth } = useAuth();
+const { loadUserSites } = useSite();
 const { t } = useI18n();
 const { isDark } = useTheme();
+const { ensureChecked, hasVault } = useBiometricAuth();
 
 const loading = ref(false);
 const registerLoading = ref(false);
@@ -415,6 +429,9 @@ const activeTab = ref<'login' | 'register'>(route.name === 'Register' ? 'registe
 const showValidationErrors = ref(false);
 const showTermsModal = ref(false);
 const showPrivacyModal = ref(false);
+
+// Biometric quick-unlock: shown to returning users who enabled it on this device.
+const showBiometricUnlock = ref(false);
 
 // Password visibility states
 const showLoginPassword = ref(false);
@@ -499,6 +516,13 @@ const handleLogin = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+// Restore the session via biometrics, then route in exactly like a password login.
+const handleBiometricUnlocked = async () => {
+  refreshAuth();
+  await loadUserSites();
+  router.push('/');
 };
 
 const handleRegister = async () => {
@@ -587,4 +611,13 @@ const handleRegisterTurnstileExpired = () => {
   registerTurnstileToken.value = '';
   error.value = t('auth.turnstileExpired');
 };
+
+onMounted(async () => {
+  // Offer one-tap biometric unlock when a vault exists on this device and the
+  // user landed on the sign-in screen (not registration).
+  if (activeTab.value === 'login' && hasVault()) {
+    const supported = await ensureChecked();
+    if (supported) showBiometricUnlock.value = true;
+  }
+});
 </script>
