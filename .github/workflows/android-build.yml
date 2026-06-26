@@ -7,8 +7,10 @@ name: 'Build Android App'
 #   - Manual dispatch -> builds and uploads artifacts for testing.
 #
 # Release signing is OPTIONAL: if the ANDROID_KEYSTORE_BASE64 secret is present
-# the release artifacts are signed (suitable for Play Store upload); otherwise an
-# unsigned/debug-signed build is produced so the pipeline still works end-to-end.
+# the release artifacts are signed with the upload keystore (suitable for Play
+# Store upload); otherwise the release build is signed with the Android debug key
+# so the produced APK is still INSTALLABLE for sideloading/testing. A release APK
+# left fully unsigned cannot be installed at all ("package appears to be invalid").
 
 on:
   push:
@@ -83,8 +85,11 @@ jobs:
         # branded source icon.
         run: npx tauri icon src-tauri/icons/icon.png
 
-      - name: Configure release signing
-        if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
+      - name: Configure Android signing
+        # Always runs: with a keystore secret it configures release signing,
+        # otherwise it falls back to debug-signing the release build so the APK
+        # is installable. Skipping this step entirely would leave the release
+        # APK unsigned and uninstallable.
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}

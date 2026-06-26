@@ -1,6 +1,6 @@
 [package]
 name = "sitewise"
-version = "0.1.1"
+version = "0.22.0"
 description = "SiteWise - Construction Site Management"
 authors = ["SiteWise Team"]
 license = ""
@@ -37,3 +37,13 @@ tauri = { version = "2.0", features = ["tray-icon"] }
 [features]
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
+
+# Release profile tuned for smaller binaries and APK/AAB bundle size. These
+# settings meaningfully shrink the native library shipped inside the Android
+# package (and the desktop binaries) at the cost of longer compile times.
+[profile.release]
+opt-level = "s"   # Optimize for binary size rather than raw speed
+lto = true        # Link-time optimization: strips dead code across crates
+codegen-units = 1 # Maximize cross-module optimization (smaller output)
+panic = "abort"   # Drop unwinding tables/landing pads we don't need
+strip = true      # Strip debug symbols from the final binary
