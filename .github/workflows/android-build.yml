@@ -85,6 +85,16 @@ jobs:
         # branded source icon.
         run: npx tauri icon src-tauri/icons/icon.png
 
+      - name: Apply safe-zone adaptive launcher foregrounds
+        # `tauri icon` regenerates the adaptive-icon foreground edge-to-edge, so
+        # Android's launcher mask crops the SiteWise mark. Restore our committed
+        # pre-padded foregrounds (logo within the adaptive-icon safe zone) and
+        # copy them into the generated Android project.
+        run: |
+          set -eux
+          git checkout -- src-tauri/icons/android
+          node scripts/fix-android-adaptive-icons.mjs
+
       - name: Configure Android signing
         # Always runs: with a keystore secret it configures release signing,
         # otherwise it falls back to debug-signing the release build so the APK
