@@ -7,6 +7,11 @@ This directory contains everything needed to set up PocketBase for the SiteWise 
 ```
 external_services/pocketbase/
 ├── README.md           # This file
+├── Dockerfile          # Standard production backend image
+├── Dockerfile.once     # ONCE-compatible image (port 80, /up, /storage)
+├── docker-compose.yml  # One-command local/prod backend
+├── entrypoint.sh       # Shared, env-driven container entrypoint
+├── .dockerignore       # Keeps the build context minimal
 ├── pb_schema.json      # Collection schema (import via Admin UI)
 └── pb_hooks/           # Server-side hooks (copy to PocketBase directory)
     ├── README.md       # Detailed hooks documentation
@@ -15,9 +20,85 @@ external_services/pocketbase/
     ├── process_invitations_on_acceptance.pb.js
     ├── create_user.pb.js
     ├── login.pb.js
+    ├── health.pb.js     # GET /up readiness endpoint
     ├── items.json       # Standard items seed data
     └── services.json    # Standard services seed data
 ```
+
+## Running with Docker (recommended)
+
+The hooks are bundled into a container image built on a pinned [PocketBase](https://pocketbase.io/)
+release. There are two flavours:
+
+| Image | Port | Data dir | Health | Use for |
+|---|---|---|---|---|
+| `Dockerfile` | `8090` | `/pb/pb_data` (volume) | `/api/health` | Normal self-hosting behind your own reverse proxy |
+| `Dockerfile.once` | `80` | `/storage` (volume) | `/up` | The [ONCE](https://once.com/) app server / any platform expecting the ONCE contract |
+
+### Quick start (Docker Compose)
+
+```bash
+cd external_services/pocketbase
+TURNSTILE_SECRET_KEY=your-secret docker compose up -d --build
+```
+
+Then open `http://localhost:8090/_/`, create the first superuser, and import
+`pb_schema.json` (**Settings → Import collections**). See [Setup
+Instructions](#setup-instructions) below.
+
+### Build & run manually
+
+```bash
+# Standard image (defaults to PocketBase 0.39.4 — override with --build-arg)
+docker build -t sitewise-backend external_services/pocketbase
+docker run -d --name sitewise-backend \
+  -p 8090:8090 \
+  -v sitewise_pb_data:/pb/pb_data \
+  -e TURNSTILE_SECRET_KEY=your-secret \
+  sitewise-backend
+```
+
+### Configuration
+
+The entrypoint is driven entirely by environment variables, so the same image
+works in plain Docker, Compose, Kubernetes, or ONCE:
+
+| Variable | Default (standard / ONCE) | Description |
+|---|---|---|
+| `TURNSTILE_SECRET_KEY` | — | **Required** by the signup/login hooks (Cloudflare Turnstile) |
+| `PB_HTTP` | `0.0.0.0:8090` / `0.0.0.0:80` | Bind address |
+| `PB_DATA_DIR` | `/pb/pb_data` / `/storage/pb_data` | Persistent data directory (mount a volume here) |
+| `PB_HOOKS_DIR` | `/pb/pb_hooks` | JS hooks directory |
+| `PB_MIGRATIONS_DIR` | `/pb/pb_migrations` | JS migrations directory |
+| `PB_PUBLIC_DIR` | `/pb/pb_public` | Static files directory |
+| `PB_ENCRYPTION_ENV` | — | Name of the env var holding the settings encryption key |
+| `PB_SUPERUSER_EMAIL` / `PB_SUPERUSER_PASSWORD` | — | Optional: create/update a superuser on startup (headless bootstrap) |
+
+> **Pinning the version** — both Dockerfiles default to a known-good PocketBase
+> release via `ARG PB_VERSION`. The hooks require the modern JSVM API
+> (PocketBase ≥ 0.23). Bump with `--build-arg PB_VERSION=x.y.z`.
+
+### ONCE-compatible build
+
+[ONCE](https://once.com/) (from 37signals) expects an image that serves HTTP on
+**port 80**, answers a readiness probe at **`/up`**, and stores all persistent
+data under **`/storage`**. `Dockerfile.once` satisfies all three — the `/up`
+route is added by `pb_hooks/health.pb.js`, and `PB_DATA_DIR` points at
+`/storage/pb_data` so a single mounted volume captures the whole backend.
+
+```bash
+docker build -f external_services/pocketbase/Dockerfile.once \
+  -t sitewise-backend-once external_services/pocketbase
+
+docker run -d --name sitewise-backend \
+  -p 80:80 \
+  -v sitewise_storage:/storage \
+  -e TURNSTILE_SECRET_KEY=your-secret \
+  sitewise-backend-once
+```
+
+See [docs/SELF_HOSTING.md](../../docs/SELF_HOSTING.md) for the full
+self-hosting walkthrough (frontend + backend together).
 
 ## Setup Instructions
 

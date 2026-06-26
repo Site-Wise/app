@@ -1,0 +1,36 @@
+# SiteWise PocketBase backend — standard (non-ONCE) deployment.
+#
+#   docker compose up -d --build
+#
+# Then open http://localhost:8090/_/ to create the first superuser and import
+# pb_schema.json (Settings > Import collections). See README.md for details.
+services:
+  pocketbase:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Bump to pull a newer PocketBase release (must be >= 0.23).
+        PB_VERSION: "0.39.4"
+    image: sitewise-backend:latest
+    container_name: sitewise-backend
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      # Required by the signup/login hooks (Cloudflare Turnstile).
+      TURNSTILE_SECRET_KEY: "${TURNSTILE_SECRET_KEY:-1x0000000000000000000000000000000AA}"
+      # Optional: auto-create a superuser on first boot.
+      # PB_SUPERUSER_EMAIL: "admin@example.com"
+      # PB_SUPERUSER_PASSWORD: "change-me-please"
+    volumes:
+      - pb_data:/pb/pb_data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8090/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  pb_data:

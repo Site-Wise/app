@@ -11,6 +11,7 @@ pb_hooks/
 ├── create_user.pb.js                           # Turnstile verification on signup
 ├── login.pb.js                                 # Turnstile verification on login
 ├── process_invitations_on_acceptance.pb.js     # Grants access on invitation accept
+├── health.pb.js                                # GET /up readiness endpoint
 ├── items.json                                  # Seed data: standard construction items
 └── services.json                               # Seed data: standard construction services
 ```
@@ -59,6 +60,14 @@ Utility functions used by other hooks via `require(`${__hooks}/utils.js`)`:
 - Validates Cloudflare Turnstile token from query params (`turnstileToken`)
 - Blocks login if token is missing or invalid
 - Requires `TURNSTILE_SECRET_KEY` environment variable
+
+### health.pb.js — Readiness Endpoint
+
+**`GET /up`:**
+- Unauthenticated route that returns `200 OK` (plain text)
+- Complements PocketBase's built-in `GET /api/health`
+- Matches the readiness-probe convention used by the [ONCE](https://once.com/)
+  app server and other orchestrators
 
 ### process_invitations_on_acceptance.pb.js — Invitation Handling
 
