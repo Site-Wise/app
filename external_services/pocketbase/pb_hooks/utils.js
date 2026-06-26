@@ -1,5 +1,93 @@
 // pb_hooks/utils.js
+
+// Maximum age (ms) accepted for a native app-attestation token. Kept short to
+// limit replay; covers normal request latency + minor client/server clock skew.
+const APP_TOKEN_MAX_AGE_MS = 120000
+
 module.exports = {
+  // ---------------------------------------------------------------------------
+  // Bot-protection helpers (login + signup)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Verify a Cloudflare Turnstile token (web clients). Throws on any failure.
+   */
+  verifyTurnstile: (turnstileToken, remoteIP) => {
+    const turnstileSecretKey = process.env.TURNSTILE_SECRET_KEY
+
+    if (!turnstileToken) {
+      throw new Error("Turnstile token is missing.")
+    }
+    if (!turnstileSecretKey) {
+      throw new Error("TURNSTILE_SECRET_KEY environment variable is not set.")
+    }
+
+    const formData = new FormData()
+    formData.append("secret", turnstileSecretKey)
+    formData.append("response", turnstileToken)
+    formData.append("remoteip", remoteIP)
+
+    const resp = $http.send({
+      url: "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+      method: "POST",
+      body: formData,
+      headers: { "content-type": "application/json" },
+    })
+
+    if (resp.statusCode != 200) {
+      throw new Error("Turnstile verification failed: " + resp.statusCode)
+    }
+
+    const data = resp.json
+    if (!data.success) {
+      throw new Error("Invalid Turnstile token: " + JSON.stringify(data["error-codes"]))
+    }
+  },
+
+  /**
+   * Verify a native app-attestation token (Tauri clients), which replaces
+   * Turnstile where the widget cannot render. Returns `true` only for a
+   * well-formed, fresh, correctly-signed token for the expected purpose.
+   *
+   * Token format: `v1.<purpose>.<timestampMs>.<hexHmacSha256>`
+   * Signed message: `<purpose>.<timestampMs>` (HMAC-SHA256, hex).
+   */
+  verifyAppToken: (token, expectedPurpose) => {
+    const secret = process.env.APP_ATTEST_SECRET
+    if (!secret) {
+      throw new Error("APP_ATTEST_SECRET environment variable is not set.")
+    }
+    if (!token || typeof token !== "string") return false
+
+    const parts = token.split(".")
+    if (parts.length !== 4) return false
+
+    const [version, purpose, timestamp, signature] = parts
+    if (version !== "v1") return false
+    if (purpose !== expectedPurpose) return false
+
+    const ts = parseInt(timestamp, 10)
+    if (!ts || isNaN(ts)) return false
+    if (Math.abs(Date.now() - ts) > APP_TOKEN_MAX_AGE_MS) return false
+
+    const expected = $security.hs256(`${purpose}.${timestamp}`, secret)
+    return $security.equal(expected, signature)
+  },
+
+  /**
+   * Unified gate for auth endpoints: accept either a valid Turnstile token
+   * (web) OR a valid app-attestation token (native). Throws if neither passes.
+   */
+  verifyAuthChallenge: (turnstileToken, appToken, remoteIP, purpose) => {
+    if (appToken) {
+      if (!module.exports.verifyAppToken(appToken, purpose)) {
+        throw new Error("Invalid or expired app attestation token.")
+      }
+      return
+    }
+    module.exports.verifyTurnstile(turnstileToken, remoteIP)
+  },
+
   createDefaultTierSubscription: (siteId) => {
     $app.logger().error('Was trying to create the subscriptioN!')
 
