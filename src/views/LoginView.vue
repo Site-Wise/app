@@ -129,7 +129,7 @@
           <!-- Turnstile -->
           <div class="min-h-[65px]">
             <TurnstileWidget
-              v-if="turnstileSiteKey"
+              v-if="turnstileEnabled"
               :site-key="turnstileSiteKey"
               :theme="isDark ? 'dark' : 'light'"
               @success="handleTurnstileSuccess"
@@ -141,7 +141,7 @@
 
           <button
             type="submit"
-            :disabled="loading || !turnstileToken"
+            :disabled="loading || (turnstileEnabled && !turnstileToken)"
             class="w-full btn-primary disabled:btn-disabled disabled:pointer-events-none disabled:cursor-not-allowed"
           >
             <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
@@ -341,7 +341,7 @@
           <!-- Turnstile -->
           <div class="min-h-[65px]">
             <TurnstileWidget
-              v-if="turnstileSiteKey"
+              v-if="turnstileEnabled"
               :site-key="turnstileSiteKey"
               :theme="isDark ? 'dark' : 'light'"
               @success="handleRegisterTurnstileSuccess"
@@ -353,7 +353,7 @@
 
           <button
             type="submit"
-            :disabled="registerLoading || !registerTurnstileToken || !passwordsMatch || !registerForm.legalAccepted"
+            :disabled="registerLoading || (turnstileEnabled && !registerTurnstileToken) || !passwordsMatch || !registerForm.legalAccepted"
             class="w-full btn-primary disabled:btn-disabled disabled:pointer-events-none disabled:cursor-not-allowed"
           >
             <Loader2 v-if="registerLoading" class="mr-2 h-4 w-4 animate-spin" />
@@ -399,6 +399,7 @@ import { useTheme } from '../composables/useTheme';
 import { AlertCircle, Loader2, Eye, EyeOff, Check } from 'lucide-vue-next';
 import TurnstileWidget from '../components/TurnstileWidget.vue';
 import LegalModal from '../components/LegalModal.vue';
+import { isTauriRuntime } from '../composables/usePlatform';
 
 const router = useRouter();
 const route = useRoute();
@@ -422,7 +423,12 @@ const showRegisterPassword = ref(false);
 const showConfirmPassword = ref(false);
 
 // Turnstile configuration
+// Cloudflare Turnstile cannot complete its challenge inside a native Tauri
+// webview (desktop/Android/iOS), and anyone who has installed the app has
+// already cleared that bar — so we skip the human-verification step entirely
+// in Tauri builds and only require it on the web.
 const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+const turnstileEnabled = computed(() => !!turnstileSiteKey && !isTauriRuntime());
 const turnstileToken = ref('');
 const registerTurnstileToken = ref('');
 const loginTurnstileRef = ref<InstanceType<typeof TurnstileWidget>>();
@@ -466,7 +472,7 @@ watch(() => route.name, (name) => {
 });
 
 const handleLogin = async () => {
-  if (!turnstileToken.value && turnstileSiteKey) {
+  if (turnstileEnabled.value && !turnstileToken.value) {
     error.value = t('auth.turnstileRequired');
     return;
   }
@@ -509,7 +515,7 @@ const handleRegister = async () => {
     return;
   }
 
-  if (!registerTurnstileToken.value && turnstileSiteKey) {
+  if (turnstileEnabled.value && !registerTurnstileToken.value) {
     error.value = t('auth.turnstileRequired');
     return;
   }

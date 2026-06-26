@@ -1,5 +1,19 @@
 import { ref, onMounted } from 'vue'
 
+/**
+ * Synchronous check for whether we are running inside a Tauri webview
+ * (desktop or mobile native build). Unlike `usePlatform()` this does not
+ * require an async `invoke` round-trip, so it can be used during component
+ * setup to gate UI that only makes sense on the web (e.g. the Cloudflare
+ * Turnstile widget, which cannot complete its challenge inside a native
+ * webview). Tauri v2 always injects `__TAURI_INTERNALS__` into the window.
+ */
+export function isTauriRuntime(): boolean {
+  if (typeof window === 'undefined') return false
+  const w = window as any
+  return '__TAURI_INTERNALS__' in w || '__TAURI__' in w || w.isTauri === true
+}
+
 // Dynamically import Tauri API to avoid build issues
 async function invokeTauri(command: string, args?: Record<string, any>): Promise<any> {
   try {
