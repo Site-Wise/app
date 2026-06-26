@@ -1,0 +1,13 @@
+# Keep the backend build context tiny — only the hooks and entrypoint are
+# copied into the image. Everything below is documentation / local state.
+README.md
+pb_data/
+pb_data
+*.db
+*.db-shm
+*.db-wal
+*.log
+.DS_Store
+docker-compose.yml
+.env
+.env.*

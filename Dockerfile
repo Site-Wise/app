@@ -7,11 +7,26 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install ALL dependencies — the build (vue-tsc + vite) needs devDependencies.
+# This is the builder stage only; the final nginx image carries no node_modules.
+RUN npm ci && npm cache clean --force
 
 # Copy source code
 COPY . .
+
+# Build-time frontend configuration. Vite inlines VITE_*-prefixed env vars into
+# the static bundle, so the backend URL (and friends) must be set BEFORE the
+# build. `.env` is intentionally excluded from the build context, so pass these
+# as --build-arg for self-hosting, e.g.:
+#   docker build --build-arg VITE_POCKETBASE_URL=https://api.example.com -t sitewise-frontend .
+ARG VITE_POCKETBASE_URL=http://localhost:8090
+ARG VITE_APP_NAME=SiteWise
+ARG VITE_APP_ENV=production
+ARG VITE_TURNSTILE_SITE_KEY=
+ENV VITE_POCKETBASE_URL=$VITE_POCKETBASE_URL \
+    VITE_APP_NAME=$VITE_APP_NAME \
+    VITE_APP_ENV=$VITE_APP_ENV \
+    VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY
 
 # Build the application
 RUN npm run build

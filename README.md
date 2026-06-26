@@ -130,6 +130,26 @@ npm run dev
 
 🎉 Visit **http://localhost:5173** and you're in.
 
+### Self-host with Docker
+
+Both halves of SiteWise ship as containers — the **PocketBase backend** (bundled
+with the SiteWise hooks, on a pinned release) and the **Vue frontend** (nginx).
+
+```bash
+# Backend (PocketBase) — serves on :8090, data in a named volume
+cd external_services/pocketbase
+TURNSTILE_SECRET_KEY=your-secret docker compose up -d --build
+
+# Frontend (point it at your backend at build time)
+docker build --build-arg VITE_POCKETBASE_URL=https://api.your-domain.com \
+  -t sitewise-frontend .
+docker run -d -p 8080:8080 sitewise-frontend
+```
+
+There's also an **[ONCE](https://once.com/)-compatible** backend image
+(`external_services/pocketbase/Dockerfile.once`) for one-command self-hosting on
+the ONCE app server. Full walkthrough: **[docs/SELF_HOSTING.md](docs/SELF_HOSTING.md)**.
+
 ### Run as a desktop app
 
 ```bash
@@ -226,9 +246,9 @@ graph TB
 | Document | Description |
 |----------|-------------|
 | [👥 **User Guide**](USER_GUIDE.md) | End-user manual |
+| [🐳 **Self-Hosting**](docs/SELF_HOSTING.md) | Deploy the backend + frontend with Docker (incl. ONCE) |
 | [🤝 **Contributing**](CONTRIBUTING.md) | How to contribute to the project |
 | [🔒 **Security**](SECURITY.md) | Security policy and responsible disclosure |
-| [📋 **Code of Conduct**](CODE_OF_CONDUCT.md) | Community guidelines |
 | [📋 **Code of Conduct**](CODE_OF_CONDUCT.md) | Community guidelines |
 
 ---
@@ -293,7 +313,7 @@ Forward-looking and shaped by the community — these are directions, not promis
 
 **🔜 Now**
 - [ ] Expand automated test coverage across views
-- [ ] Documented self-host / deployment guide
+- [x] Documented self-host / deployment guide
 - [ ] Deeper analytics on the dashboard
 
 **🛠️ Next**

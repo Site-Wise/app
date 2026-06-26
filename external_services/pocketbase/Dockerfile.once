@@ -1,0 +1,108 @@
+# syntax=docker/dockerfile:1
+
+# =============================================================================
+# SiteWise PocketBase backend — ONCE-compatible image
+# =============================================================================
+# Same backend as ./Dockerfile, packaged to satisfy the ONCE app server
+# contract (https://once.com / https://github.com/basecamp/once):
+#
+#   * Serves HTTP on port 80
+#   * Exposes a health/readiness endpoint at GET /up  (added via pb_hooks)
+#   * Keeps all persistent data under /storage
+#
+# This image runs as root so PocketBase can bind the privileged port 80
+# reliably under the ONCE runtime (which may apply no-new-privileges, stripping
+# file capabilities). The container is isolated by ONCE and holds no other
+# process; this mirrors how the reference ONCE apps (Campfire/Writebook) ship.
+# For an unprivileged, port-8090 deployment use the standard ./Dockerfile.
+#
+# Build:
+#   docker build -f external_services/pocketbase/Dockerfile.once \
+#     -t sitewise-backend-once external_services/pocketbase
+#
+# Run (mimicking ONCE):
+#   docker run -d --name sitewise-backend \
+#     -p 80:80 -v sitewise_storage:/storage \
+#     -e TURNSTILE_SECRET_KEY=your-secret \
+#     sitewise-backend-once
+# =============================================================================
+
+ARG PB_VERSION=0.39.4
+ARG ALPINE_VERSION=3.20
+
+# -----------------------------------------------------------------------------
+# Stage 1: download + verify the PocketBase binary for the target platform
+# -----------------------------------------------------------------------------
+FROM alpine:${ALPINE_VERSION} AS downloader
+
+ARG PB_VERSION
+ARG TARGETOS
+ARG TARGETARCH
+ARG TARGETVARIANT
+
+RUN apk add --no-cache ca-certificates unzip wget
+
+WORKDIR /download
+
+RUN set -eux; \
+    case "${TARGETARCH}${TARGETVARIANT}" in \
+      "amd64")  PB_ARCH="amd64"  ;; \
+      "arm64")  PB_ARCH="arm64"  ;; \
+      "armv7")  PB_ARCH="armv7"  ;; \
+      *) echo "Unsupported architecture: ${TARGETARCH}${TARGETVARIANT}" >&2; exit 1 ;; \
+    esac; \
+    PB_ZIP="pocketbase_${PB_VERSION}_${TARGETOS:-linux}_${PB_ARCH}.zip"; \
+    echo "Downloading ${PB_ZIP}"; \
+    wget -q "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/${PB_ZIP}" -O pocketbase.zip; \
+    unzip pocketbase.zip pocketbase -d /download; \
+    chmod +x /download/pocketbase; \
+    /download/pocketbase --version
+
+# -----------------------------------------------------------------------------
+# Stage 2: minimal runtime image
+# -----------------------------------------------------------------------------
+FROM alpine:${ALPINE_VERSION} AS production
+
+ARG PB_VERSION
+
+# wget (busybox) is used by the HEALTHCHECK; ca-certificates/tzdata for TLS &
+# correct timezones in logs and scheduled jobs.
+RUN apk add --no-cache ca-certificates tzdata wget
+
+WORKDIR /pb
+
+COPY --from=downloader /download/pocketbase /usr/local/bin/pocketbase
+
+COPY pb_hooks/ /pb/pb_hooks/
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+
+# Create the ONCE storage layout. All mutable state is rooted at /storage so a
+# single mounted volume captures the entire backend.
+RUN chmod +x /usr/local/bin/entrypoint.sh && \
+    mkdir -p /storage/pb_data /pb/pb_migrations /pb/pb_public
+
+LABEL org.opencontainers.image.title="SiteWise Backend (PocketBase, ONCE)" \
+      org.opencontainers.image.description="ONCE-compatible PocketBase backend for SiteWise" \
+      org.opencontainers.image.vendor="SiteWise" \
+      org.opencontainers.image.source="https://github.com/site-wise/app" \
+      org.opencontainers.image.licenses="O'Saasy" \
+      io.sitewise.pocketbase.version="${PB_VERSION}"
+
+# Runs as root by design (see header) to bind privileged port 80 under ONCE.
+
+# The ONCE app server mounts a single persistent volume at /storage.
+VOLUME ["/storage"]
+
+ENV PB_HTTP=0.0.0.0:80 \
+    PB_DATA_DIR=/storage/pb_data \
+    PB_HOOKS_DIR=/pb/pb_hooks \
+    PB_MIGRATIONS_DIR=/pb/pb_migrations \
+    PB_PUBLIC_DIR=/pb/pb_public
+
+EXPOSE 80
+
+# ONCE probes /up; mirror that in the container healthcheck for consistency.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:80/up || exit 1
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
