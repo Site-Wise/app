@@ -8,9 +8,15 @@ name: 'Build Android App'
 #
 # Release signing is OPTIONAL: if the ANDROID_KEYSTORE_BASE64 secret is present
 # the release artifacts are signed with the upload keystore (suitable for Play
-# Store upload); otherwise the release build is signed with the Android debug key
-# so the produced APK is still INSTALLABLE for sideloading/testing. A release APK
-# left fully unsigned cannot be installed at all ("package appears to be invalid").
+# Store upload); otherwise the release build is signed with the committed stable
+# sideload keystore (src-tauri/keys/sideload.keystore). Both paths use a STABLE
+# key so a new APK installs over a previously-installed build — signing with the
+# per-machine debug key would change the key every run and break upgrades with
+# "App not installed" / signature-conflict errors.
+#
+# Native builds also bake in VITE_APP_ATTEST_SECRET so the app can sign auth
+# requests (the native replacement for Cloudflare Turnstile). The matching
+# APP_ATTEST_SECRET must be set on the PocketBase server.
 
 on:
   push:
@@ -97,9 +103,10 @@ jobs:
 
       - name: Configure Android signing
         # Always runs: with a keystore secret it configures release signing,
-        # otherwise it falls back to debug-signing the release build so the APK
-        # is installable. Skipping this step entirely would leave the release
-        # APK unsigned and uninstallable.
+        # otherwise it signs the release build with the committed stable sideload
+        # keystore. Either way the release APK is signed with a STABLE key so it
+        # installs over previous builds; skipping this step would leave the
+        # release APK unsigned and uninstallable.
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -111,12 +118,16 @@ jobs:
         if: ${{ github.event_name == 'push' || inputs.build_type == 'apk' || inputs.build_type == 'both' }}
         env:
           NDK_HOME: ${{ env.NDK_HOME }}
+          # Baked into the native bundle to sign auth requests (native Turnstile
+          # replacement). Must match APP_ATTEST_SECRET on the PocketBase server.
+          VITE_APP_ATTEST_SECRET: ${{ secrets.VITE_APP_ATTEST_SECRET }}
         run: npm run build:android:apk
 
       - name: Build Android AAB
         if: ${{ github.event_name == 'push' || inputs.build_type == 'aab' || inputs.build_type == 'both' }}
         env:
           NDK_HOME: ${{ env.NDK_HOME }}
+          VITE_APP_ATTEST_SECRET: ${{ secrets.VITE_APP_ATTEST_SECRET }}
         run: npm run build:android:aab
 
       - name: Collect artifacts

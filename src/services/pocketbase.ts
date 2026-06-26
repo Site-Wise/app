@@ -1,5 +1,6 @@
 import PocketBase, { type RecordModel } from 'pocketbase';
 import { batchCreate, batchUpdate, batchDelete } from './pocketbaseBatch';
+import { generateAppToken } from '../utils/appAttestation';
 
 // Get PocketBase URL from environment variables with fallback
 const POCKETBASE_URL = import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090' || 'http://127.0.0.1:8090';
@@ -590,8 +591,13 @@ export const calculatePermissions = (role: 'owner' | 'supervisor' | 'accountant'
 
 export class AuthService {
   async login(email: string, password: string, turnstileToken?: string) {
+    // Native (Tauri) builds attach a signed app-attestation token instead of a
+    // Turnstile token, which cannot be solved inside a native webview. On the
+    // web this resolves to `undefined` and only the Turnstile token is sent.
+    const appToken = await generateAppToken('login');
     const authData = await pb.collection('users').authWithPassword(email, password, {
-      turnstileToken
+      turnstileToken,
+      appToken
     });
     return authData;
   }
@@ -606,6 +612,9 @@ export class AuthService {
     couponCode?: string,
     legalAccepted?: boolean
   ) {
+    // Native (Tauri) builds attach a signed app-attestation token in place of a
+    // Turnstile token (see login() above). Resolves to `undefined` on the web.
+    const appToken = await generateAppToken('register');
     const data = {
       email,
       password,
@@ -615,6 +624,7 @@ export class AuthService {
       couponCode,
       sites: [], // Initialize with empty sites array
       turnstileToken,
+      appToken,
       legal_accepted: legalAccepted || false,
       legal_accepted_at: legalAccepted ? new Date().toISOString() : null
     };

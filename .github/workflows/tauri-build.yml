@@ -82,6 +82,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # Baked into the desktop bundle to sign auth requests (native Turnstile
+          # replacement). Must match APP_ATTEST_SECRET on the PocketBase server.
+          VITE_APP_ATTEST_SECRET: ${{ secrets.VITE_APP_ATTEST_SECRET }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'SiteWise v__VERSION__'
