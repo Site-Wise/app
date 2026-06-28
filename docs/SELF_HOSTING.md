@@ -12,6 +12,32 @@ The backend holds all of your data. You can host them on one box or two.
 
 ---
 
+## Prebuilt images (GHCR)
+
+Every release publishes both images to the GitHub Container Registry, so you can
+`docker pull` instead of building locally:
+
+| Image | Tags |
+|---|---|
+| `ghcr.io/site-wise/app` (frontend) | `latest`, `X.Y.Z`, `X.Y`, `edge` |
+| `ghcr.io/site-wise/app-backend` (PocketBase) | `latest`, `X.Y.Z`, `X.Y`, `edge` |
+
+`latest` tracks the most recent stable `vX.Y.Z` release; `edge` tracks `main`.
+Images are multi-arch (`linux/amd64`, `linux/arm64`).
+
+```bash
+docker pull ghcr.io/site-wise/app-backend:latest
+docker pull ghcr.io/site-wise/app:latest
+```
+
+> The **frontend** image bakes `VITE_POCKETBASE_URL` in at build time. The
+> published image uses the default (`http://localhost:8090`), so for a real
+> deployment you'll usually still build the frontend yourself with your backend
+> URL (see [§2](#2-frontend-vue--nginx)). The **backend** image is fully
+> configured at runtime, so the prebuilt one is ready to use as-is.
+
+---
+
 ## 1. Backend (PocketBase)
 
 The backend is the source of truth — start here. Everything you need is in
