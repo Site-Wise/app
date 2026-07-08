@@ -1691,5 +1691,78 @@
   "legal": {
     "termsAndConditions": "Terms and Conditions",
     "privacyPolicy": "Privacy Policy"
+  },
+  "milestones": {
+    "badge": "Milestone",
+    "dismiss": "Nice!",
+    "aria": "Milestone reached — celebration",
+    "deliveries": {
+      "1": {
+        "title": "First delivery logged! 🎉",
+        "message": "Every big project starts with a single load. You're officially tracking deliveries — here's to hundreds more."
+      },
+      "10": {
+        "title": "10 deliveries in! 🚚",
+        "message": "Ten loads on the books. Your site records are really taking shape."
+      },
+      "25": {
+        "title": "25 deliveries strong 💪",
+        "message": "Twenty-five deliveries logged — that's a paper trail worth trusting."
+      },
+      "50": {
+        "title": "50 deliveries — halfway to a century!",
+        "message": "Fifty deliveries tracked without breaking a sweat. Your records are rock solid."
+      },
+      "100": {
+        "title": "100 deliveries — century! 🏆",
+        "message": "One hundred deliveries logged on this site. That's serious dedication to getting it right."
+      },
+      "250": {
+        "title": "250 deliveries logged 🌟",
+        "message": "Two hundred and fifty loads accounted for. Your site runs on solid data."
+      },
+      "500": {
+        "title": "500 deliveries — incredible!",
+        "message": "Half a thousand deliveries tracked. You've built a record most sites would envy."
+      },
+      "1000": {
+        "title": "1,000 deliveries — legendary! 👑",
+        "message": "One thousand deliveries logged. You're not just running a site, you're mastering it."
+      }
+    },
+    "payments": {
+      "1": {
+        "title": "First payment recorded! 🎉",
+        "message": "The first of many. Your books just opened — clean, clear, and under control."
+      },
+      "10": {
+        "title": "10 payments logged 💰",
+        "message": "Ten payments tracked. Your cash-flow story is coming together nicely."
+      },
+      "25": {
+        "title": "25 payments strong",
+        "message": "Twenty-five payments on record. Your accounts stay honest."
+      },
+      "50": {
+        "title": "50 payments — halfway to a century!",
+        "message": "Fifty payments logged. Your financial trail is spotless."
+      },
+      "100": {
+        "title": "100 payments — century! 🏆",
+        "message": "One hundred payments recorded on this site. That's bookkeeping done right."
+      },
+      "250": {
+        "title": "250 payments logged 🌟",
+        "message": "Two hundred and fifty payments accounted for. Your ledger is a work of art."
+      },
+      "500": {
+        "title": "500 payments — remarkable!",
+        "message": "Half a thousand payments tracked. Few sites keep books this tight."
+      },
+      "1000": {
+        "title": "1,000 payments — legendary! 👑",
+        "message": "One thousand payments recorded. You've turned bookkeeping into a superpower."
+      }
+    }
   }
 }
