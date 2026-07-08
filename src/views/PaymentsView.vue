@@ -1456,6 +1456,16 @@ onMounted(async () => {
     }, 500);
   }
 
+  // Deep-link from the dashboard nudge: open the due-payments modal when there
+  // are outstanding payments to settle.
+  if (route.query.due === '1') {
+    setTimeout(() => {
+      if (hasOutstandingPayments.value) {
+        showDuePaymentsModal.value = true;
+      }
+    }, 500);
+  }
+
   // Register keyboard shortcuts
   registerShortcuts();
 });
