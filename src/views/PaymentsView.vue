@@ -817,6 +817,7 @@ import { useUrlFilters } from '../composables/useUrlFilters';
 import { useModalEscape } from '../composables/useModalEscape';
 import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
+import { useMilestones } from '../composables/useMilestones';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { useSiteData } from '../composables/useSiteData';
 import { useQuickActionModal } from '../composables/useQuickActionModal';
@@ -845,6 +846,7 @@ const route = useRoute();
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error } = useToast();
+const { celebrateMilestone } = useMilestones();
 const { registerShortcut } = useKeyboardShortcuts();
 const { openModal, closeModal: closeModalState } = useModalState();
 
@@ -1276,6 +1278,8 @@ const handlePaymentModalSubmit = async (data: any) => {
     if (mode === 'CREATE' || mode === 'PAY_NOW') {
       await paymentService.create(paymentData!);
       success(t('messages.createSuccess', { item: t('common.payment') }));
+      // Fire-and-forget: celebrate payment milestones (1st, 10th, 100th, ...).
+      celebrateMilestone('payments');
     } else if (mode === 'EDIT') {
       // In EDIT mode, merge existing allocations with new ones from the form
       // Extract existing delivery and service booking IDs from current allocations

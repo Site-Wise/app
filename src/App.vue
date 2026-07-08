@@ -38,6 +38,8 @@
       </div>
     </div>
     <ToastContainer />
+    <!-- Milestone celebrations (confetti + special toast) -->
+    <MilestoneCelebration />
     <!-- PWA prompts shown for all users -->
     <PWAPrompt />
     <PWAUpdateNotification />
@@ -54,6 +56,7 @@ import { useNativeNotifications } from './composables/useNativeNotifications';
 import AppLayout from './components/AppLayout.vue';
 import SiteSelectionView from './views/SiteSelectionView.vue';
 import ToastContainer from './components/ToastContainer.vue';
+import MilestoneCelebration from './components/MilestoneCelebration.vue';
 import PWAUpdateNotification from './components/PWAUpdateNotification.vue';
 import PWAPrompt from './components/PWAPrompt.vue';
 
