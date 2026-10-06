@@ -362,6 +362,27 @@ describe('FileUploadComponent', () => {
     })
   })
 
+  describe('modelValue sync', () => {
+    // Regression: the delivery modal remounts the uploader with the previous
+    // delivery's files and clears v-model right after. FileReader callbacks
+    // from that stale sync must not bring the old thumbnails back.
+    it('should not resurrect previews when modelValue is cleared mid-read', async () => {
+      wrapper = createWrapper({ modelValue: [mockFiles[0]] })
+
+      await wrapper.setProps({ modelValue: [] })
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      expect(wrapper.vm.previews).toHaveLength(0)
+    })
+
+    it('should rebuild previews from a non-empty modelValue on mount', async () => {
+      wrapper = createWrapper({ modelValue: [mockFiles[0]] })
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      expect(wrapper.vm.previews).toHaveLength(1)
+    })
+  })
+
   describe('File Validation', () => {
     it('should reject files that are too large', async () => {
       wrapper = createWrapper({ maxSize: 1024 }) // 1KB limit

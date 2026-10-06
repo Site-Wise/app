@@ -573,7 +573,13 @@ const updateModelValue = () => {
 // that is toggled with `v-if` (e.g. the delivery modal wizard): navigating
 // away unmounts this component and drops its local `previews`, so on remount
 // we must regenerate the thumbnails from the files still held in `modelValue`.
+// Bumped on every modelValue sync so FileReader callbacks from a superseded
+// sync (e.g. files cleared while thumbnails were still being read) are ignored
+// instead of resurrecting stale previews.
+let syncGeneration = 0
+
 watch(() => props.modelValue, (newFiles) => {
+  const generation = ++syncGeneration
   if (!newFiles || newFiles.length === 0) {
     previews.value = []
   } else {
@@ -590,6 +596,7 @@ watch(() => props.modelValue, (newFiles) => {
         const id = `${file.name}-${Date.now()}-${Math.random()}`
 
         reader.onload = (e) => {
+          if (generation !== syncGeneration) return
           const preview: FilePreview = {
             id,
             file,

@@ -1755,8 +1755,24 @@ watch(() => props.accounts, () => {
   }
 }, { deep: true });
 
-// Expose functions for testing
+// Sticky CREATE mode: after a payment is saved the parent keeps the modal open
+// and calls this so the next payment can be entered straight away. Account and
+// date are kept for convenience; vendor, amount and allocations are cleared.
+const resetForNextPayment = async () => {
+  const { account, transaction_date } = form;
+  initializeForm();
+  form.account = account;
+  form.transaction_date = transaction_date;
+  availableCreditNotes.value = [];
+  calculateVendorOutstanding();
+
+  await nextTick();
+  vendorInputRef.value?.focus();
+};
+
+// Expose functions for the parent (sticky create) and for testing
 defineExpose({
-  autoSelectCreditNotes
+  autoSelectCreditNotes,
+  resetForNextPayment
 });
 </script>

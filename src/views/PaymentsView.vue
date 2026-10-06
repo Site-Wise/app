@@ -621,7 +621,7 @@
       @pay-vendor="handleDuePaymentVendorClick" />
 
     <!-- Unified Payment Modal -->
-    <PaymentModal :is-visible="showPaymentModal" :mode="paymentModalMode" :payment="currentPayment"
+    <PaymentModal ref="paymentModalRef" :is-visible="showPaymentModal" :mode="paymentModalMode" :payment="currentPayment"
       :current-allocations="currentAllocations" :vendors="vendors" :accounts="accounts" :deliveries="deliveries"
       :service-bookings="serviceBookings" :payments="payments" :vendor-id="vendorIdForPayNow"
       :outstanding-amount="outstandingAmountForPayNow" @submit="handlePaymentModalSubmit"
@@ -945,6 +945,7 @@ const filterLabel = computed(() => {
 });
 // Unified modal state
 const showPaymentModal = ref(false);
+const paymentModalRef = ref<InstanceType<typeof PaymentModal> | null>(null);
 const paymentModalMode = ref<'CREATE' | 'PAY_NOW' | 'EDIT'>('CREATE');
 const currentPayment = ref<Payment | null>(null);
 const currentAllocations = ref<PaymentAllocation[]>([]);
@@ -1296,9 +1297,8 @@ const handlePaymentModalSubmit = async (data: any) => {
       success(t('messages.updateSuccess', { item: t('common.payment') }));
     }
 
-    // Reload data and close modal
     await reloadAllData();
-    showPaymentModal.value = false;
+    finishPaymentModalSubmit(mode);
   } catch (err: any) {
     console.error('Error saving payment:', err);
 
@@ -1326,9 +1326,8 @@ const handlePaymentModalSubmit = async (data: any) => {
           await paymentService.create(adjustedPaymentData);
           success(t('messages.createSuccess', { item: t('common.payment') }));
 
-          // Reload data and close modal
           await reloadAllData();
-          showPaymentModal.value = false;
+          finishPaymentModalSubmit(mode);
         } catch (retryErr: any) {
           console.error('Error saving payment after adjustment:', retryErr);
           error(t('messages.createError', { item: t('common.payment') }));
@@ -1357,6 +1356,16 @@ const handlePaymentModalSubmit = async (data: any) => {
     } else {
       error(t('messages.error'));
     }
+  }
+};
+
+// New payments keep the modal open (sticky, like the delivery modal) so several
+// payments can be entered in a row; PAY_NOW and EDIT close it as before.
+const finishPaymentModalSubmit = (mode: string) => {
+  if (mode === 'CREATE' && paymentModalRef.value) {
+    paymentModalRef.value.resetForNextPayment();
+  } else {
+    handlePaymentModalClose();
   }
 };
 
