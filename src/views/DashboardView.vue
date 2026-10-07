@@ -66,7 +66,7 @@
               <TrendingUp class="h-5 w-5 sm:h-8 sm:w-8 text-amber-700 dark:text-amber" />
             </div>
             <div class="sm:ml-4">
-              <p class="sw-eyebrow text-stone-500 dark:text-stone-400 min-h-[2rem]">{{ t('dashboard.totalExpenses') }}</p>
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400 min-h-8">{{ t('dashboard.totalExpenses') }}</p>
               <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">₹{{
                 formatCompactAmount(animTotalExpenses) }}
               </p>
@@ -84,7 +84,7 @@
               <Undo2 class="h-5 w-5 sm:h-8 sm:w-8 text-amber-700 dark:text-amber" />
             </div>
             <div class="sm:ml-4">
-              <p class="sw-eyebrow text-stone-500 dark:text-stone-400 min-h-[2rem]">{{ t('dashboard.pendingRecovery') }}</p>
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400 min-h-8">{{ t('dashboard.pendingRecovery') }}</p>
               <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">₹{{
                 formatCompactAmount(animPendingRecovery) }}</p>
             </div>
@@ -104,7 +104,7 @@
               <Wallet class="h-5 w-5 sm:h-8 sm:w-8 text-forest-700 dark:text-forest-400" />
             </div>
             <div class="sm:ml-4">
-              <p class="sw-eyebrow text-stone-500 dark:text-stone-400 min-h-[2rem]">{{ t('dashboard.advances') }}</p>
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400 min-h-8">{{ t('dashboard.advances') }}</p>
               <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">₹{{
                 formatCompactAmount(animAdvances) }}</p>
             </div>
@@ -124,7 +124,7 @@
               <DollarSign class="h-5 w-5 sm:h-8 sm:w-8 text-clay" />
             </div>
             <div class="sm:ml-4">
-              <p class="sw-eyebrow text-stone-500 dark:text-stone-400 min-h-[2rem]">{{ t('dashboard.outstandingAmount') }}</p>
+              <p class="sw-eyebrow text-stone-500 dark:text-stone-400 min-h-8">{{ t('dashboard.outstandingAmount') }}</p>
               <p class="font-mono sw-tabular text-lg sm:text-2xl font-semibold text-ink dark:text-cream">₹{{
                 formatCompactAmount(animOutstandingAmount) }}</p>
             </div>

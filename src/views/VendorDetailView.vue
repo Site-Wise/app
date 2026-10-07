@@ -300,7 +300,7 @@
         <div class="relative w-full max-w-5xl transform rounded-xl bg-white dark:bg-ink-3 shadow-modal transition-all max-h-[90vh] flex flex-col">
           <!-- Header -->
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-6 border-b border-stone-200 dark:border-ink-4 gap-4">
-            <div class="flex-shrink-0">
+            <div class="shrink-0">
               <h3 class="font-display text-lg font-semibold text-ink dark:text-cream">
                 {{ t('vendors.vendorLedger') }}
               </h3>
@@ -339,7 +339,7 @@
               </button>
             </div>
 
-            <div class="flex items-center gap-3 flex-shrink-0">
+            <div class="flex items-center gap-3 shrink-0">
               <!-- Export Dropdown -->
               <div class="relative export-dropdown">
                 <button @click="showExportDropdown = !showExportDropdown" class="btn-outline flex items-center text-sm">
@@ -450,7 +450,7 @@
                     <td class="px-3 py-2 text-ink dark:text-cream">
                       <div class="flex items-center justify-between gap-2">
                         <span class="truncate" :title="entry.particulars">{{ entry.particulars }}</span>
-                        <ExternalLink v-if="isEntryClickable(entry)" class="h-3 w-3 text-stone-400 flex-shrink-0" />
+                        <ExternalLink v-if="isEntryClickable(entry)" class="h-3 w-3 text-stone-400 shrink-0" />
                       </div>
                       <div v-if="entry.details" class="text-xs text-stone-500 dark:text-stone-400 mt-1 truncate" :title="entry.details">
                         {{ entry.details }}
@@ -526,7 +526,7 @@
     </div>
 
     <!-- Entry Detail Modal -->
-    <div v-if="showEntryDetailModal && selectedEntry" class="fixed inset-0 z-[70] overflow-y-auto">
+    <div v-if="showEntryDetailModal && selectedEntry" class="fixed inset-0 z-70 overflow-y-auto">
       <div class="flex min-h-full items-center justify-center p-4">
         <!-- Backdrop -->
         <div class="fixed inset-0 bg-ink/60 transition-opacity" @click="closeEntryDetail"></div>
@@ -1467,26 +1467,28 @@ onMounted(() => {
 </script>
 
 <style scoped>
+@reference "../style.css";
+
 /* Ledger table text wrapping */
 .ledger-particulars {
   @apply max-w-xs md:max-w-sm lg:max-w-md;
 }
 
 .ledger-particulars-text {
-  @apply break-words whitespace-normal;
+  @apply wrap-break-word whitespace-normal;
   word-wrap: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
 }
 
 .ledger-details-text {
-  @apply break-words whitespace-normal;
+  @apply wrap-break-word whitespace-normal;
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
 
 .ledger-reference {
-  @apply max-w-[7rem] break-words whitespace-normal;
+  @apply max-w-28 wrap-break-word whitespace-normal;
   word-wrap: break-word;
   overflow-wrap: break-word;
 }

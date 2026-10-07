@@ -2,7 +2,7 @@
   <!-- Overlay -->
   <div
     v-if="visible"
-    class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-sm"
+    class="fixed inset-0 z-60 flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-xs"
     @click="$emit('close')"
   >
     <!-- Panel -->
@@ -11,12 +11,12 @@
       @click.stop
     >
       <!-- Grab handle (mobile only) -->
-      <div class="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
+      <div class="sm:hidden flex justify-center pt-3 pb-1 shrink-0">
         <div class="mx-auto h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4" />
       </div>
 
       <!-- Sticky header -->
-      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0">
+      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 shrink-0">
         <div class="p-2 bg-clay-100 dark:bg-clay-500/15 rounded-lg">
           <AlertTriangle class="h-5 w-5 text-clay-600 dark:text-clay-400" />
         </div>
@@ -79,7 +79,7 @@
       </div>
 
       <!-- Sticky footer -->
-      <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 flex-shrink-0 pb-safe">
+      <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 shrink-0 pb-safe">
         <button
           @click="handleDelete"
           :disabled="!canDelete || deleting"

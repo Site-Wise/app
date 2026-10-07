@@ -11,7 +11,7 @@
         :style="{ backgroundColor: tag.color }">
         <span>{{ tag.name }}</span>
         <button type="button" @click="removeTag(tag.id!)"
-          class="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-md hover:bg-black hover:bg-opacity-20">
+          class="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-md hover:bg-black/20">
           <X class="w-3 h-3" />
         </button>
       </div>
@@ -36,7 +36,7 @@
         <div v-for="tag in filteredTags" :key="tag.id"
           class="flex items-center px-3 py-2 hover:bg-stone-50 dark:hover:bg-ink-4 cursor-pointer touch-manipulation"
           @click="selectTag(tag)">
-          <div class="w-3 h-3 rounded-full mr-3 flex-shrink-0" :style="{ backgroundColor: tag.color }"></div>
+          <div class="w-3 h-3 rounded-full mr-3 shrink-0" :style="{ backgroundColor: tag.color }"></div>
           <span class="flex-1 text-sm text-ink dark:text-cream">{{ tag.name }}</span>
           <span class="text-xs font-mono text-stone-500 dark:text-stone-400">({{ tag.usage_count || 0 }})</span>
         </div>

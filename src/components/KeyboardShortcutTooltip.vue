@@ -2,7 +2,7 @@
   <Teleport to="body">
     <div
       v-if="showShortcuts"
-      class="fixed inset-0 pointer-events-none z-[9999]"
+      class="fixed inset-0 pointer-events-none z-9999"
       role="tooltip"
       aria-label="Keyboard shortcuts help"
     >

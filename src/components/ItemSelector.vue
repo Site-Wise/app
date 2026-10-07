@@ -57,7 +57,7 @@
           ]"
           @click="selectItem(item)"
         >
-          <Package class="h-4 w-4 text-stone-500 dark:text-stone-400 mr-3 flex-shrink-0" />
+          <Package class="h-4 w-4 text-stone-500 dark:text-stone-400 mr-3 shrink-0" />
           <div class="flex-1">
             <div class="text-sm font-medium text-ink dark:text-cream">{{ item.name }}</div>
             <div v-if="item.description" class="text-xs text-stone-500 dark:text-stone-400">{{ item.description }}</div>
@@ -74,7 +74,7 @@
             class="flex items-center px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-500/10 cursor-pointer touch-manipulation text-amber-700 dark:text-amber-300"
             @click="handleCreateNewItem"
           >
-            <Plus class="h-4 w-4 mr-3 flex-shrink-0" />
+            <Plus class="h-4 w-4 mr-3 shrink-0" />
             <div class="flex-1">
               <div class="text-sm font-medium">{{ t('items.createNewItem') }}</div>
               <div class="text-xs opacity-80">"{{ searchQuery.trim() }}"</div>

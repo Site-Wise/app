@@ -93,7 +93,7 @@
     </div>
 
     <!-- Create Site Modal -->
-    <div v-if="showCreateModal" class="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-[60]" @click="closeCreateModal">
+    <div v-if="showCreateModal" class="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-60" @click="closeCreateModal">
       <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 m-4 mb-20 lg:mb-4" @click.stop>
         <div class="mt-3">
           <h3 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">Create New Site</h3>
@@ -135,7 +135,7 @@
     </div>
 
     <!-- Enhanced Manage Site Modal -->
-    <div v-if="showManageModal && managingSite" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[60]" @click="closeManageModal">
+    <div v-if="showManageModal && managingSite" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-60" @click="closeManageModal">
       <div class="bg-white dark:bg-ink-3 rounded-xl shadow-modal border border-stone-200 dark:border-ink-4 w-full max-w-lg" @click.stop>
         <div class="p-6">
           <div class="flex items-center gap-3 mb-6">

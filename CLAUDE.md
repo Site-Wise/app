@@ -1,7 +1,7 @@
 # Site-Wise Development Guide
 
 ## Tech Stack
-Vue 3 + TypeScript + Vite, PocketBase backend, Tauri desktop, PWA mobile, Tailwind CSS, i18n (EN/HI)
+Vue 3 + TypeScript + Vite, PocketBase backend, Tauri desktop, PWA mobile, Tailwind CSS v4, i18n (EN/HI)
 
 ## Core Files
 - `src/services/pocketbase.ts` - Data models & API client
@@ -49,6 +49,14 @@ import { pb, type Item } from '../services/pocketbase'
 - Modals: autofocus first input, handle escape key
 - Forms: `reactive<FormType>({})`, proper error handling
 - File uploads: `capture="environment"` for camera
+
+### Tailwind CSS v4
+- No `tailwind.config.js`: the theme (brand palettes, radii, shadows) lives in `@theme` in `src/style.css`; Tailwind runs via `@tailwindcss/vite`
+- Legacy palettes (`blue`, `gray`, `red`, ...) are aliased to the brand ramps there, so prefer the brand names (`amber`, `stone`, `clay`, `forest`, `ink`, `cream`)
+- `.btn-*`, `.input`, `.card`, `.status-*` are plain classes in `@layer components`: utilities on the same element override them, but they can't take variants (`disabled:btn-disabled` won't work) or be `@apply`-ed
+- Vue `<style>` blocks that use `@apply` need `@reference "../style.css";`
+- Prefer `flex`/`grid` + `gap-*` over `space-x/y-*` when children can be hidden (`v-show`, `hidden md:block`)
+- Don't put two utilities for the same property on one element (e.g. `inline-block` + `hidden`); v4 doesn't guarantee which wins
 
 ### Mobile Table Pattern
 ```vue

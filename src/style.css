@@ -1,8 +1,411 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+/* Scan only the app sources (same as the v3 `content` globs). */
+@import 'tailwindcss' source(none);
+@source '../index.html';
+@source './';
+
+/* Dark mode keys off the `.dark` class on <html> (see useTheme.ts). */
+@custom-variant dark (&:is(.dark *));
+
+/* ==========================================================================
+   Sitewise Design System — Tailwind theme
+   Brand: Ink #0A0E0D · Amber #FFB800 · Forest #22C55E · Cream #FAFAF7 ·
+          Stone #A8A29E · Clay #E8743C
+   ========================================================================== */
+@theme {
+  /* Minimum tap target (`min-h-touch`) */
+  --min-height-touch: 44px;
+
+  /* --- Brand named palettes ------------------------------------------- */
+  --color-ink: #0a0e0d;
+  --color-ink-2: #13191a;
+  --color-ink-3: #1f2625;
+  --color-ink-4: #2a3231;
+
+  --color-cream: #fafaf7;
+  --color-cream-2: #f4f1ec;
+  --color-cream-3: #ede9e1;
+
+  /* THE accent — amber. */
+  --color-amber-*: initial;
+  --color-amber: #ffb800;
+  --color-amber-50: #fffbeb;
+  --color-amber-100: #fff4d1; /* amber-soft */
+  --color-amber-200: #fee8a6;
+  --color-amber-300: #ffd968;
+  --color-amber-400: #ffc838;
+  --color-amber-500: #ffb800; /* amber — THE accent */
+  --color-amber-600: #e69f00; /* amber-deep (hover) */
+  --color-amber-700: #b87e00;
+  --color-amber-800: #8a5f00;
+  --color-amber-900: #6b4900;
+  --color-amber-950: #4a3200;
+
+  /* Warm neutral ramp — cream → stone → ink. Overrides Tailwind's stone. */
+  --color-stone-*: initial;
+  --color-stone: #a8a29e; /* stone */
+  --color-stone-50: #fafaf7; /* cream */
+  --color-stone-100: #f4f1ec; /* cream-2 */
+  --color-stone-200: #e5e5e0; /* border-light */
+  --color-stone-300: #d6d3cd;
+  --color-stone-400: #a8a29e; /* stone */
+  --color-stone-500: #78716c; /* stone-2 */
+  --color-stone-600: #57534e; /* stone-3 */
+  --color-stone-700: #3f3b38;
+  --color-stone-800: #2a3231; /* ink-4 (dark borders) */
+  --color-stone-900: #13191a; /* ink-2 */
+  --color-stone-950: #0a0e0d; /* ink */
+
+  --color-forest: #22c55e;
+  --color-forest-50: #f0fdf4;
+  --color-forest-100: #dcfce7; /* forest-soft */
+  --color-forest-200: #bbf7d0;
+  --color-forest-300: #86efac;
+  --color-forest-400: #4ade80;
+  --color-forest-500: #22c55e; /* forest */
+  --color-forest-600: #16a34a;
+  --color-forest-700: #15803d; /* forest-deep */
+  --color-forest-800: #166534;
+  --color-forest-900: #14532d;
+
+  --color-clay: #e8743c;
+  --color-clay-50: #fff7f3;
+  --color-clay-100: #ffe4d6; /* clay-soft */
+  --color-clay-200: #ffcbb0;
+  --color-clay-300: #fba882;
+  --color-clay-400: #f08a55;
+  --color-clay-500: #e8743c; /* clay */
+  --color-clay-600: #d2551f;
+  --color-clay-700: #c2410c; /* clay-deep */
+  --color-clay-800: #9a3412;
+  --color-clay-900: #7c2d12;
+
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --tracking-eyebrow: 0.08em;
+
+  /* Brand caps radii at 16px. Buttons/inputs/badges = 6px, cards = 12px. */
+  --radius-xs: 6px;
+  --radius-sm: 6px;
+  --radius-md: 6px;
+  --radius-lg: 12px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 16px;
+
+  --shadow-card: 0 1px 2px rgb(10 14 13 / 0.04), 0 4px 12px rgb(10 14 13 / 0.04);
+  --shadow-card-hover: 0 2px 4px rgb(10 14 13 / 0.05), 0 8px 24px rgb(10 14 13 / 0.08);
+  --shadow-modal: 0 24px 48px -12px rgb(10 14 13 / 0.18);
+  --shadow-inset-hi: inset 0 1px 0 rgb(255 255 255 / 0.04);
+
+  --spacing-18: 4.5rem;
+  --spacing-88: 22rem;
+
+  --ease-snap: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-cross: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --background-image-dotgrid: radial-gradient(circle, currentColor 1px, transparent 1px);
+  --background-size-dotgrid: 24px 24px;
+}
+
+/* Palette aliases. Inlined so utilities reference the brand ramp directly.
+   Legacy palettes are fully replaced (`initial`) so that shades the brand
+   ramps don't define (e.g. red-950) don't fall back to Tailwind's defaults. */
+@theme inline {
+  /* Semantic roles (drive .btn/.card/.input/.status-*) */
+  --color-primary: var(--color-amber);
+  --color-primary-50: var(--color-amber-50);
+  --color-primary-100: var(--color-amber-100);
+  --color-primary-200: var(--color-amber-200);
+  --color-primary-300: var(--color-amber-300);
+  --color-primary-400: var(--color-amber-400);
+  --color-primary-500: var(--color-amber-500);
+  --color-primary-600: var(--color-amber-600);
+  --color-primary-700: var(--color-amber-700);
+  --color-primary-800: var(--color-amber-800);
+  --color-primary-900: var(--color-amber-900);
+  --color-primary-950: var(--color-amber-950);
+
+  --color-secondary: var(--color-stone);
+  --color-secondary-50: var(--color-stone-50);
+  --color-secondary-100: var(--color-stone-100);
+  --color-secondary-200: var(--color-stone-200);
+  --color-secondary-300: var(--color-stone-300);
+  --color-secondary-400: var(--color-stone-400);
+  --color-secondary-500: var(--color-stone-500);
+  --color-secondary-600: var(--color-stone-600);
+  --color-secondary-700: var(--color-stone-700);
+  --color-secondary-800: var(--color-stone-800);
+  --color-secondary-900: var(--color-stone-900);
+  --color-secondary-950: var(--color-stone-950);
+
+  --color-success: var(--color-forest);
+  --color-success-50: var(--color-forest-50);
+  --color-success-100: var(--color-forest-100);
+  --color-success-200: var(--color-forest-200);
+  --color-success-300: var(--color-forest-300);
+  --color-success-400: var(--color-forest-400);
+  --color-success-500: var(--color-forest-500);
+  --color-success-600: var(--color-forest-600);
+  --color-success-700: var(--color-forest-700);
+  --color-success-800: var(--color-forest-800);
+  --color-success-900: var(--color-forest-900);
+
+  --color-warning: var(--color-amber);
+  --color-warning-50: var(--color-amber-50);
+  --color-warning-100: var(--color-amber-100);
+  --color-warning-200: var(--color-amber-200);
+  --color-warning-300: var(--color-amber-300);
+  --color-warning-400: var(--color-amber-400);
+  --color-warning-500: var(--color-amber-500);
+  --color-warning-600: var(--color-amber-600);
+  --color-warning-700: var(--color-amber-700);
+  --color-warning-800: var(--color-amber-800);
+  --color-warning-900: var(--color-amber-900);
+  --color-warning-950: var(--color-amber-950);
+
+  --color-error: var(--color-clay);
+  --color-error-50: var(--color-clay-50);
+  --color-error-100: var(--color-clay-100);
+  --color-error-200: var(--color-clay-200);
+  --color-error-300: var(--color-clay-300);
+  --color-error-400: var(--color-clay-400);
+  --color-error-500: var(--color-clay-500);
+  --color-error-600: var(--color-clay-600);
+  --color-error-700: var(--color-clay-700);
+  --color-error-800: var(--color-clay-800);
+  --color-error-900: var(--color-clay-900);
+
+  --color-danger: var(--color-clay);
+  --color-danger-50: var(--color-clay-50);
+  --color-danger-100: var(--color-clay-100);
+  --color-danger-200: var(--color-clay-200);
+  --color-danger-300: var(--color-clay-300);
+  --color-danger-400: var(--color-clay-400);
+  --color-danger-500: var(--color-clay-500);
+  --color-danger-600: var(--color-clay-600);
+  --color-danger-700: var(--color-clay-700);
+  --color-danger-800: var(--color-clay-800);
+  --color-danger-900: var(--color-clay-900);
+
+  --color-accent: var(--color-amber);
+  --color-accent-50: var(--color-amber-50);
+  --color-accent-100: var(--color-amber-100);
+  --color-accent-200: var(--color-amber-200);
+  --color-accent-300: var(--color-amber-300);
+  --color-accent-400: var(--color-amber-400);
+  --color-accent-500: var(--color-amber-500);
+  --color-accent-600: var(--color-amber-600);
+  --color-accent-700: var(--color-amber-700);
+  --color-accent-800: var(--color-amber-800);
+  --color-accent-900: var(--color-amber-900);
+  --color-accent-950: var(--color-amber-950);
+
+  /* Legacy hardcoded usages cascade to brand */
+  --color-blue-*: initial;
+  --color-blue: var(--color-amber);
+  --color-blue-50: var(--color-amber-50);
+  --color-blue-100: var(--color-amber-100);
+  --color-blue-200: var(--color-amber-200);
+  --color-blue-300: var(--color-amber-300);
+  --color-blue-400: var(--color-amber-400);
+  --color-blue-500: var(--color-amber-500);
+  --color-blue-600: var(--color-amber-600);
+  --color-blue-700: var(--color-amber-700);
+  --color-blue-800: var(--color-amber-800);
+  --color-blue-900: var(--color-amber-900);
+  --color-blue-950: var(--color-amber-950);
+
+  --color-indigo-*: initial;
+  --color-indigo: var(--color-amber);
+  --color-indigo-50: var(--color-amber-50);
+  --color-indigo-100: var(--color-amber-100);
+  --color-indigo-200: var(--color-amber-200);
+  --color-indigo-300: var(--color-amber-300);
+  --color-indigo-400: var(--color-amber-400);
+  --color-indigo-500: var(--color-amber-500);
+  --color-indigo-600: var(--color-amber-600);
+  --color-indigo-700: var(--color-amber-700);
+  --color-indigo-800: var(--color-amber-800);
+  --color-indigo-900: var(--color-amber-900);
+  --color-indigo-950: var(--color-amber-950);
+
+  --color-sky-*: initial;
+  --color-sky: var(--color-amber);
+  --color-sky-50: var(--color-amber-50);
+  --color-sky-100: var(--color-amber-100);
+  --color-sky-200: var(--color-amber-200);
+  --color-sky-300: var(--color-amber-300);
+  --color-sky-400: var(--color-amber-400);
+  --color-sky-500: var(--color-amber-500);
+  --color-sky-600: var(--color-amber-600);
+  --color-sky-700: var(--color-amber-700);
+  --color-sky-800: var(--color-amber-800);
+  --color-sky-900: var(--color-amber-900);
+  --color-sky-950: var(--color-amber-950);
+
+  --color-yellow-*: initial;
+  --color-yellow: var(--color-amber);
+  --color-yellow-50: var(--color-amber-50);
+  --color-yellow-100: var(--color-amber-100);
+  --color-yellow-200: var(--color-amber-200);
+  --color-yellow-300: var(--color-amber-300);
+  --color-yellow-400: var(--color-amber-400);
+  --color-yellow-500: var(--color-amber-500);
+  --color-yellow-600: var(--color-amber-600);
+  --color-yellow-700: var(--color-amber-700);
+  --color-yellow-800: var(--color-amber-800);
+  --color-yellow-900: var(--color-amber-900);
+  --color-yellow-950: var(--color-amber-950);
+
+  --color-gray-*: initial;
+  --color-gray: var(--color-stone);
+  --color-gray-50: var(--color-stone-50);
+  --color-gray-100: var(--color-stone-100);
+  --color-gray-200: var(--color-stone-200);
+  --color-gray-300: var(--color-stone-300);
+  --color-gray-400: var(--color-stone-400);
+  --color-gray-500: var(--color-stone-500);
+  --color-gray-600: var(--color-stone-600);
+  --color-gray-700: var(--color-stone-700);
+  --color-gray-800: var(--color-stone-800);
+  --color-gray-900: var(--color-stone-900);
+  --color-gray-950: var(--color-stone-950);
+
+  --color-slate-*: initial;
+  --color-slate: var(--color-stone);
+  --color-slate-50: var(--color-stone-50);
+  --color-slate-100: var(--color-stone-100);
+  --color-slate-200: var(--color-stone-200);
+  --color-slate-300: var(--color-stone-300);
+  --color-slate-400: var(--color-stone-400);
+  --color-slate-500: var(--color-stone-500);
+  --color-slate-600: var(--color-stone-600);
+  --color-slate-700: var(--color-stone-700);
+  --color-slate-800: var(--color-stone-800);
+  --color-slate-900: var(--color-stone-900);
+  --color-slate-950: var(--color-stone-950);
+
+  --color-neutral-*: initial;
+  --color-neutral: var(--color-stone);
+  --color-neutral-50: var(--color-stone-50);
+  --color-neutral-100: var(--color-stone-100);
+  --color-neutral-200: var(--color-stone-200);
+  --color-neutral-300: var(--color-stone-300);
+  --color-neutral-400: var(--color-stone-400);
+  --color-neutral-500: var(--color-stone-500);
+  --color-neutral-600: var(--color-stone-600);
+  --color-neutral-700: var(--color-stone-700);
+  --color-neutral-800: var(--color-stone-800);
+  --color-neutral-900: var(--color-stone-900);
+  --color-neutral-950: var(--color-stone-950);
+
+  --color-zinc-*: initial;
+  --color-zinc: var(--color-stone);
+  --color-zinc-50: var(--color-stone-50);
+  --color-zinc-100: var(--color-stone-100);
+  --color-zinc-200: var(--color-stone-200);
+  --color-zinc-300: var(--color-stone-300);
+  --color-zinc-400: var(--color-stone-400);
+  --color-zinc-500: var(--color-stone-500);
+  --color-zinc-600: var(--color-stone-600);
+  --color-zinc-700: var(--color-stone-700);
+  --color-zinc-800: var(--color-stone-800);
+  --color-zinc-900: var(--color-stone-900);
+  --color-zinc-950: var(--color-stone-950);
+
+  --color-orange-*: initial;
+  --color-orange: var(--color-clay);
+  --color-orange-50: var(--color-clay-50);
+  --color-orange-100: var(--color-clay-100);
+  --color-orange-200: var(--color-clay-200);
+  --color-orange-300: var(--color-clay-300);
+  --color-orange-400: var(--color-clay-400);
+  --color-orange-500: var(--color-clay-500);
+  --color-orange-600: var(--color-clay-600);
+  --color-orange-700: var(--color-clay-700);
+  --color-orange-800: var(--color-clay-800);
+  --color-orange-900: var(--color-clay-900);
+
+  --color-red-*: initial;
+  --color-red: var(--color-clay);
+  --color-red-50: var(--color-clay-50);
+  --color-red-100: var(--color-clay-100);
+  --color-red-200: var(--color-clay-200);
+  --color-red-300: var(--color-clay-300);
+  --color-red-400: var(--color-clay-400);
+  --color-red-500: var(--color-clay-500);
+  --color-red-600: var(--color-clay-600);
+  --color-red-700: var(--color-clay-700);
+  --color-red-800: var(--color-clay-800);
+  --color-red-900: var(--color-clay-900);
+
+  --color-rose-*: initial;
+  --color-rose: var(--color-clay);
+  --color-rose-50: var(--color-clay-50);
+  --color-rose-100: var(--color-clay-100);
+  --color-rose-200: var(--color-clay-200);
+  --color-rose-300: var(--color-clay-300);
+  --color-rose-400: var(--color-clay-400);
+  --color-rose-500: var(--color-clay-500);
+  --color-rose-600: var(--color-clay-600);
+  --color-rose-700: var(--color-clay-700);
+  --color-rose-800: var(--color-clay-800);
+  --color-rose-900: var(--color-clay-900);
+
+  --color-green-*: initial;
+  --color-green: var(--color-forest);
+  --color-green-50: var(--color-forest-50);
+  --color-green-100: var(--color-forest-100);
+  --color-green-200: var(--color-forest-200);
+  --color-green-300: var(--color-forest-300);
+  --color-green-400: var(--color-forest-400);
+  --color-green-500: var(--color-forest-500);
+  --color-green-600: var(--color-forest-600);
+  --color-green-700: var(--color-forest-700);
+  --color-green-800: var(--color-forest-800);
+  --color-green-900: var(--color-forest-900);
+
+  --color-emerald-*: initial;
+  --color-emerald: var(--color-forest);
+  --color-emerald-50: var(--color-forest-50);
+  --color-emerald-100: var(--color-forest-100);
+  --color-emerald-200: var(--color-forest-200);
+  --color-emerald-300: var(--color-forest-300);
+  --color-emerald-400: var(--color-forest-400);
+  --color-emerald-500: var(--color-forest-500);
+  --color-emerald-600: var(--color-forest-600);
+  --color-emerald-700: var(--color-forest-700);
+  --color-emerald-800: var(--color-forest-800);
+  --color-emerald-900: var(--color-forest-900);
+}
+
+/* Tailwind v4 changed a few preflight defaults; keep the v3 look. */
+@layer base {
+  /* Default border colour was gray-200 (not currentColor). */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+
+  /* Placeholders were gray-400 (not 50% currentColor). */
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  /* Buttons used the pointer cursor. */
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}
 
 /* ==========================================================================
    Sitewise Design System — tokens
@@ -111,71 +514,88 @@
   }
 }
 
+/* Component classes stay in the components layer so utilities on the same
+   element (e.g. `btn-primary px-3`, `input pr-10`) override them. They can't
+   be targeted by @apply in v4, so shared bases are expressed as grouped
+   selectors instead of `@apply btn` / `@apply card` / `@apply status-badge`. */
 @layer components {
   /* ---- Buttons --------------------------------------------------------- */
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 px-5 h-11 border border-transparent text-base font-semibold rounded-md transition-all duration-150 ease-snap focus:outline-none active:scale-[0.98] min-h-touch whitespace-nowrap;
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-disabled,
+  .btn-outline,
+  .btn-ghost,
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-5 h-11 border border-transparent text-base font-semibold rounded-md transition-all duration-150 ease-snap focus:outline-hidden active:scale-[0.98] min-h-touch whitespace-nowrap;
   }
 
   /* Primary = amber. The one accent. Ink text on amber. */
   .btn-primary {
-    @apply btn bg-amber-500 text-ink hover:bg-amber-600 active:bg-amber-600 focus-visible:ring-2 focus-visible:ring-amber-500/40;
+    @apply bg-amber-500 text-ink hover:bg-amber-600 active:bg-amber-600 focus-visible:ring-2 focus-visible:ring-amber-500/40;
   }
 
   /* Secondary = ink (dark solid). Cream text. */
   .btn-secondary {
-    @apply btn bg-ink text-cream hover:bg-ink-2 active:bg-ink-2 dark:bg-cream dark:text-ink dark:hover:bg-cream-2;
+    @apply bg-ink text-cream hover:bg-ink-2 active:bg-ink-2 dark:bg-cream dark:text-ink dark:hover:bg-cream-2;
   }
 
   .btn-disabled {
-    @apply btn bg-stone-200 dark:bg-ink-4 text-stone-400 dark:text-stone-500 cursor-not-allowed;
+    @apply bg-stone-200 dark:bg-ink-4 text-stone-400 dark:text-stone-500 cursor-not-allowed;
   }
 
   .btn-outline {
-    @apply btn bg-transparent text-ink dark:text-cream border-stone-200 dark:border-ink-4 hover:border-ink dark:hover:border-cream active:bg-cream-2 dark:active:bg-ink-2;
+    @apply bg-transparent text-ink dark:text-cream border-stone-200 dark:border-ink-4 hover:border-ink dark:hover:border-cream active:bg-cream-2 dark:active:bg-ink-2;
   }
 
   .btn-ghost {
-    @apply btn bg-transparent text-ink dark:text-cream border-transparent hover:bg-cream-2 dark:hover:bg-ink-2 active:bg-cream-3 dark:active:bg-ink-3;
+    @apply bg-transparent text-ink dark:text-cream border-transparent hover:bg-cream-2 dark:hover:bg-ink-2 active:bg-cream-3 dark:active:bg-ink-3;
   }
 
   .btn-danger {
-    @apply btn bg-clay-500 text-white hover:bg-clay-600 active:bg-clay-700 focus-visible:ring-2 focus-visible:ring-clay-500/40;
+    @apply bg-clay-500 text-white hover:bg-clay-600 active:bg-clay-700 focus-visible:ring-2 focus-visible:ring-clay-500/40;
   }
 
   /* ---- Inputs ---------------------------------------------------------- */
   .input {
-    @apply block w-full px-4 h-11 border border-stone-200 dark:border-ink-4 rounded-md placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:border-ink dark:focus:border-cream transition-colors duration-150 ease-snap bg-white dark:bg-ink-3 text-ink dark:text-cream min-h-touch text-base sm:text-sm;
+    @apply block w-full px-4 h-11 border border-stone-200 dark:border-ink-4 rounded-md placeholder-stone-400 dark:placeholder-stone-500 focus:outline-hidden focus:border-ink dark:focus:border-cream transition-colors duration-150 ease-snap bg-white dark:bg-ink-3 text-ink dark:text-cream min-h-touch text-base sm:text-sm;
   }
 
   /* ---- Cards ----------------------------------------------------------- */
-  .card {
+  .card,
+  .card-interactive {
     @apply bg-white dark:bg-ink-3 rounded-lg shadow-card dark:shadow-inset-hi border border-stone-200 dark:border-ink-4 p-5 transition-all duration-150 ease-snap;
   }
 
+  /* Includes the `touch-feedback` utility (transition + :active press). */
   .card-interactive {
-    @apply card cursor-pointer hover:border-ink/30 dark:hover:border-cream/30 hover:shadow-card-hover dark:hover:shadow-inset-hi touch-feedback;
+    @apply cursor-pointer hover:border-ink/30 dark:hover:border-cream/30 hover:shadow-card-hover dark:hover:shadow-inset-hi transition-all duration-150 ease-out active:scale-[0.97] active:opacity-80;
   }
 
   /* ---- Status badges --------------------------------------------------- */
-  .status-badge {
-    @apply inline-flex items-center gap-1 px-2 py-1 min-h-[1.5rem] rounded-md text-xs font-semibold tracking-wide leading-tight;
+  .status-badge,
+  .status-pending,
+  .status-paid,
+  .status-partial,
+  .status-overdue {
+    @apply inline-flex items-center gap-1 px-2 py-1 min-h-6 rounded-md text-xs font-semibold tracking-wide;
+    line-height: 1.25;
   }
 
   .status-pending {
-    @apply status-badge bg-amber-100 dark:bg-amber-500/15 text-amber-900 dark:text-amber-300;
+    @apply bg-amber-100 dark:bg-amber-500/15 text-amber-900 dark:text-amber-300;
   }
 
   .status-paid {
-    @apply status-badge bg-forest-100 dark:bg-forest-500/15 text-forest-700 dark:text-forest-400;
+    @apply bg-forest-100 dark:bg-forest-500/15 text-forest-700 dark:text-forest-400;
   }
 
   .status-partial {
-    @apply status-badge bg-stone-100 dark:bg-ink-4 text-stone-600 dark:text-stone-300;
+    @apply bg-stone-100 dark:bg-ink-4 text-stone-600 dark:text-stone-300;
   }
 
   .status-overdue {
-    @apply status-badge bg-clay-100 dark:bg-clay-500/15 text-clay-700 dark:text-clay-400;
+    @apply bg-clay-100 dark:bg-clay-500/15 text-clay-700 dark:text-clay-400;
   }
 }
 
@@ -188,21 +608,25 @@
     @apply text-xs font-semibold uppercase tracking-eyebrow text-stone-500 dark:text-stone-400;
   }
 
-  .sw-h1 { font-family: var(--sw-font-display); @apply text-4xl font-bold tracking-tight leading-[1.02] text-ink dark:text-cream; }
-  .sw-h2 { font-family: var(--sw-font-display); @apply text-3xl font-bold tracking-tight leading-[1.05] text-ink dark:text-cream; }
-  .sw-h3 { font-family: var(--sw-font-display); @apply text-2xl font-semibold tracking-tight leading-[1.1] text-ink dark:text-cream; }
-  .sw-h4 { font-family: var(--sw-font-display); @apply text-xl font-semibold leading-snug text-ink dark:text-cream; }
+  /* Line-heights are plain declarations (not leading-*) so a size utility on the
+     element, e.g. `sw-stat text-xl`, still sets its own line-height. */
+  .sw-h1 { font-family: var(--sw-font-display); @apply text-4xl font-bold tracking-tight text-ink dark:text-cream; line-height: 1.02; }
+  .sw-h2 { font-family: var(--sw-font-display); @apply text-3xl font-bold tracking-tight text-ink dark:text-cream; line-height: 1.05; }
+  .sw-h3 { font-family: var(--sw-font-display); @apply text-2xl font-semibold tracking-tight text-ink dark:text-cream; line-height: 1.1; }
+  .sw-h4 { font-family: var(--sw-font-display); @apply text-xl font-semibold text-ink dark:text-cream; line-height: 1.375; }
 
   .sw-stat {
     font-family: var(--sw-font-display);
     font-variant-numeric: tabular-nums;
-    @apply text-2xl font-semibold tracking-tight leading-none text-ink dark:text-cream;
+    @apply text-2xl font-semibold tracking-tight text-ink dark:text-cream;
+    line-height: 1;
   }
 
   .sw-mega {
     font-family: var(--sw-font-display);
     font-variant-numeric: tabular-nums;
-    @apply text-5xl font-bold tracking-tighter leading-none text-ink dark:text-cream;
+    @apply text-5xl font-bold tracking-tighter text-ink dark:text-cream;
+    line-height: 1;
   }
 
   .sw-mono {
@@ -217,26 +641,26 @@
     @apply bg-white dark:bg-ink-3 border border-stone-200 dark:border-ink-4 rounded-lg shadow-card dark:shadow-inset-hi p-6;
   }
 
-  .sw-badge { @apply inline-flex items-center gap-1 px-2 py-1 min-h-[1.5rem] rounded-md text-xs font-semibold leading-tight; }
+  .sw-badge { @apply inline-flex items-center gap-1 px-2 py-1 min-h-6 rounded-md text-xs font-semibold; line-height: 1.25; }
   .sw-badge--success { @apply bg-forest-100 text-forest-700 dark:bg-forest-500/15 dark:text-forest-400; }
   .sw-badge--danger  { @apply bg-clay-100 text-clay-700 dark:bg-clay-500/15 dark:text-clay-400; }
   .sw-badge--accent  { @apply bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-300; }
   .sw-badge--neutral { @apply bg-stone-100 text-stone-600 dark:bg-ink-4 dark:text-stone-300; }
 }
 
-@layer utilities {
-  /* Dot grid background — graph-paper / blueprint reference, hero only.
-     Painted via a ::before overlay so it can wrap content without washing it
-     out (opacity applies only to the dot layer, never the children). */
-  .sw-dotgrid {
-    position: relative;
-    isolation: isolate;
-  }
-  .sw-dotgrid > * {
+/* Dot grid background — graph-paper / blueprint reference, hero only.
+   Painted via a ::before overlay so it can wrap content without washing it
+   out (opacity applies only to the dot layer, never the children). */
+@utility sw-dotgrid {
+  position: relative;
+  isolation: isolate;
+
+  & > * {
     position: relative;
     z-index: 1;
   }
-  .sw-dotgrid::before {
+
+  &::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -249,91 +673,88 @@
 }
 
 /* Custom scrollbar */
-@layer utilities {
-  .scrollbar-thin {
-    scrollbar-width: thin;
-  }
+@utility scrollbar-thin {
+  scrollbar-width: thin;
 
-  .scrollbar-thin::-webkit-scrollbar {
+  &::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
 
-  .scrollbar-thin::-webkit-scrollbar-track {
+  &::-webkit-scrollbar-track {
     @apply bg-cream-2 dark:bg-ink-2;
   }
 
-  .scrollbar-thin::-webkit-scrollbar-thumb {
+  &::-webkit-scrollbar-thumb {
     @apply bg-stone-300 dark:bg-ink-4 rounded-full;
   }
 
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  &::-webkit-scrollbar-thumb:hover {
     @apply bg-stone-400 dark:bg-stone-500;
   }
 }
 
-/* Mobile-native utilities */
-@layer utilities {
-  /* Touch feedback for native feel */
-  .touch-feedback {
-    @apply transition-all duration-150 ease-out;
-  }
+/* ---- Mobile-native utilities ------------------------------------------- */
 
-  .touch-feedback:active {
+/* Touch feedback for native feel */
+@utility touch-feedback {
+  @apply transition-all duration-150 ease-out;
+
+  &:active {
     @apply scale-[0.97] opacity-80;
   }
+}
 
-  /* Prevent text selection on touch */
-  .touch-none-select {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-  }
+/* Prevent text selection on touch */
+@utility touch-none-select {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
 
-  /* Smooth momentum scrolling */
-  .scroll-smooth-touch {
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-  }
+/* Smooth momentum scrolling */
+@utility scroll-smooth-touch {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
 
-  /* Hide scrollbar but keep functionality */
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+/* Hide scrollbar but keep functionality */
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 
-  .scrollbar-hide::-webkit-scrollbar {
+  &::-webkit-scrollbar {
     display: none;
   }
+}
 
-  /* Safe area aware bottom padding */
-  .pb-safe {
-    padding-bottom: max(1rem, env(safe-area-inset-bottom));
-  }
+/* Safe area aware bottom padding */
+@utility pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
 
-  .pb-safe-nav {
-    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
-  }
+@utility pb-safe-nav {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+}
 
-  /* Bottom nav height accounting for safe area */
-  .h-nav-safe {
-    height: calc(4rem + env(safe-area-inset-bottom));
-    padding-bottom: env(safe-area-inset-bottom);
-    /* Force GPU acceleration to stabilize position during mobile browser UI changes */
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-  }
+/* Bottom nav height accounting for safe area */
+@utility h-nav-safe {
+  height: calc(4rem + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  /* Force GPU acceleration to stabilize position during mobile browser UI changes */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
 
-  /* Safe area bottom margin for FAB positioning */
-  .mb-safe-bottom {
-    margin-bottom: env(safe-area-inset-bottom);
-  }
+/* Safe area bottom margin for FAB positioning */
+@utility mb-safe-bottom {
+  margin-bottom: env(safe-area-inset-bottom);
 }
 
 /* Modal utilities - ensure modals appear above bottom nav */
 @layer components {
   .modal-overlay {
-    @apply fixed inset-0 z-[60] overflow-y-auto;
+    @apply fixed inset-0 z-60 overflow-y-auto;
   }
 
   .modal-content {
@@ -410,20 +831,18 @@
 }
 
 /* Skeleton loader — branded shimmer. Used by Skeleton.vue and ad-hoc placeholders. */
-@layer utilities {
-  .sw-skeleton {
-    position: relative;
-    overflow: hidden;
-    background-color: var(--sw-cream-2);
-    background-image: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgb(0 0 0 / 0.045) 50%,
-      transparent 100%
-    );
-    background-size: 200% 100%;
-    animation: sw-shimmer 1.4s ease-in-out infinite;
-  }
+@utility sw-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--sw-cream-2);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(0 0 0 / 0.045) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: sw-shimmer 1.4s ease-in-out infinite;
 }
 
 .dark .sw-skeleton {

@@ -164,7 +164,7 @@
 
     <!-- Add/Edit Modal -->
     <div v-if="showAddModal || editingAccount"
-      class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60"
+      class="fixed inset-0 z-60 flex items-end sm:items-center justify-center bg-ink/60"
       @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
       <div
         class="w-full sm:max-w-lg bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden"
@@ -244,7 +244,7 @@
 
               <div class="flex items-center">
                 <input v-model="form.is_active" type="checkbox" id="is_active"
-                  class="rounded border-stone-300 dark:border-ink-4 text-amber focus:ring-amber" />
+                  class="rounded-sm border-stone-300 dark:border-ink-4 text-amber focus:ring-amber" />
                 <label for="is_active" class="ml-2 text-sm text-stone-700 dark:text-stone-300">{{ t('accounts.isActive')
                 }}</label>
               </div>
@@ -252,7 +252,7 @@
           </div>
 
           <!-- Sticky footer -->
-          <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex gap-3">
+          <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-safe flex gap-3">
             <button type="submit" :disabled="loading" class="flex-1 btn-primary">
               <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
               {{ loading ? (editingAccount ? t('common.updating') : t('common.creating')) : (editingAccount ? t('common.update') : t('common.create')) }}

@@ -144,7 +144,7 @@
 
     <!-- Add/Edit Modal -->
     <div v-if="showAddModal || editingItem"
-      class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-[60]" @click="closeModal"
+      class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-60" @click="closeModal"
       @keydown.esc="closeModal" tabindex="-1">
       <div
         class="relative top-20 mx-auto w-full max-w-md shadow-modal rounded-xl bg-white dark:bg-ink-3 border border-stone-200 dark:border-ink-4 m-4 mb-20 lg:mb-4"
