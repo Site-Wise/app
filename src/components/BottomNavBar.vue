@@ -1,6 +1,6 @@
 <template>
   <nav
-    class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/[0.92] dark:bg-ink-3/[0.92] backdrop-blur-xl backdrop-saturate-150 border-t border-stone-200 dark:border-ink-4 h-nav-safe will-change-transform"
+    class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/92 dark:bg-ink-3/92 backdrop-blur-xl backdrop-saturate-150 border-t border-stone-200 dark:border-ink-4 h-nav-safe will-change-transform"
     role="navigation"
     :aria-label="t('nav.mainNavigation')"
   >
@@ -23,7 +23,7 @@
           :class="{ 'scale-110': item.current }"
           :aria-hidden="true"
         />
-        <span class="text-[10px] font-medium truncate max-w-[4rem]">
+        <span class="text-[10px] font-medium truncate max-w-16">
           {{ t(item.nameKey) }}
         </span>
       </router-link>

@@ -28,7 +28,7 @@
             : 'bg-amber-50 dark:bg-amber-500/10 border-2 border-amber-300 dark:border-amber-500/40'"
         >
           <div
-            class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+            class="shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
             :class="hasVendors
               ? 'bg-green-100 dark:bg-green-900/40'
               : 'bg-amber-100 dark:bg-amber-500/20'"
@@ -71,7 +71,7 @@
             : 'bg-amber-50 dark:bg-amber-500/10 border-2 border-amber-300 dark:border-amber-500/40'"
         >
           <div
-            class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+            class="shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
             :class="hasDeliveriesOrBookings
               ? 'bg-green-100 dark:bg-green-900/40'
               : 'bg-amber-100 dark:bg-amber-500/20'"
@@ -120,7 +120,7 @@
           v-if="!hasVendors"
           class="flex items-start gap-4 p-4 rounded-lg bg-stone-50 dark:bg-ink-2/50 border border-stone-200 dark:border-ink-4 opacity-60"
         >
-          <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-stone-200 dark:bg-ink-3">
+          <div class="shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-stone-200 dark:bg-ink-3">
             <Lock class="w-5 h-5 text-stone-400 dark:text-stone-500" />
           </div>
           <div class="flex-1 min-w-0">
@@ -139,7 +139,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <!-- Tip 1: Items -->
       <div class="card p-4 flex items-start gap-3">
-        <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center">
+        <div class="shrink-0 w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center">
           <Package class="w-5 h-5 text-amber-700 dark:text-amber-400" />
         </div>
         <div>
@@ -161,7 +161,7 @@
 
       <!-- Tip 2: Services -->
       <div class="card p-4 flex items-start gap-3">
-        <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-stone-100 dark:bg-ink-2 flex items-center justify-center">
+        <div class="shrink-0 w-10 h-10 rounded-lg bg-stone-100 dark:bg-ink-2 flex items-center justify-center">
           <Wrench class="w-5 h-5 text-stone-700 dark:text-stone-300" />
         </div>
         <div>
@@ -183,7 +183,7 @@
 
       <!-- Tip 3: Accounts -->
       <div class="card p-4 flex items-start gap-3">
-        <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+        <div class="shrink-0 w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
           <Wallet class="w-5 h-5 text-green-600 dark:text-green-400" />
         </div>
         <div>

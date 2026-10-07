@@ -136,7 +136,7 @@
     </div>
 
     <!-- Create Site Modal -->
-    <div v-if="showCreateModal" class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-[60]" @click="showCreateModal = false" @keydown.esc="showCreateModal = false" tabindex="-1">
+    <div v-if="showCreateModal" class="fixed inset-0 bg-ink/60 overflow-y-auto h-full w-full z-60" @click="showCreateModal = false" @keydown.esc="showCreateModal = false" tabindex="-1">
       <div class="relative top-20 mx-auto p-5 border w-96 shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 mb-20 lg:mb-4" @click.stop>
         <div class="mt-3">
           <h3 class="text-lg font-display font-medium text-ink dark:text-cream mb-4">Create New Site</h3>

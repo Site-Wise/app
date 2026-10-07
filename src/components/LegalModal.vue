@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="isVisible"
-    class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-sm"
+    class="fixed inset-0 z-60 flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-xs"
     @click="handleBackdropClick"
     @keydown.esc="handleEscape"
     tabindex="-1"
@@ -12,12 +12,12 @@
       @click.stop
     >
       <!-- Grab handle (mobile only) -->
-      <div class="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
+      <div class="sm:hidden flex justify-center pt-3 pb-1 shrink-0">
         <div class="mx-auto h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4" />
       </div>
 
       <!-- Sticky header -->
-      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0">
+      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 shrink-0">
         <h3 class="font-display text-lg font-semibold text-ink dark:text-cream flex-1">{{ title }}</h3>
         <button
           @click="handleClose"
@@ -37,7 +37,7 @@
       </div>
 
       <!-- Sticky footer -->
-      <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 flex-shrink-0 pb-safe">
+      <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 shrink-0 pb-safe">
         <button @click="handleClose" class="flex-1 btn-outline active:scale-[0.98]">
           {{ t('common.close') }}
         </button>

@@ -30,7 +30,7 @@
     <!-- Responsive dropdown -->
     <div
       v-if="dropdownOpen"
-      class="absolute right-0 mt-2 w-48 bg-white dark:bg-ink-3 rounded-lg shadow-modal border border-stone-200 dark:border-ink-4 z-[60] max-h-64 overflow-y-auto"
+      class="absolute right-0 mt-2 w-48 bg-white dark:bg-ink-3 rounded-lg shadow-modal border border-stone-200 dark:border-ink-4 z-60 max-h-64 overflow-y-auto"
       role="menu"
     >
       <!-- Language options -->
@@ -53,7 +53,7 @@
             <div class="font-medium text-sm truncate">{{ language.nativeName }}</div>
             <div class="text-xs text-stone-600 dark:text-stone-400 truncate md:block hidden">{{ language.name }}</div>
           </div>
-          <div class="ml-3 flex-shrink-0">
+          <div class="ml-3 shrink-0">
             <Check
               v-if="currentLanguage === language.code"
               class="h-4 w-4 md:h-5 md:w-5 text-amber-600 dark:text-amber-400"
@@ -68,7 +68,7 @@
     <div
       v-if="dropdownOpen"
       @click="dropdownOpen = false"
-      class="fixed inset-0 bg-black bg-opacity-25 z-40 md:hidden"
+      class="fixed inset-0 bg-black/25 z-40 md:hidden"
     ></div>
     -->
   </div>

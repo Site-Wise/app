@@ -27,7 +27,7 @@
       >
         <div
           v-if="isOpen"
-          class="fixed inset-0 z-[60] bg-black/10 lg:bg-transparent"
+          class="fixed inset-0 z-60 bg-black/10 lg:bg-transparent"
           @click="close"
         />
       </Transition>
@@ -43,7 +43,7 @@
         <div
           v-if="isOpen"
           :style="menuStyle"
-          class="fixed w-52 origin-top-right bg-white dark:bg-ink-3 rounded-lg shadow-modal border border-stone-200 dark:border-ink-4 z-[70] overflow-hidden"
+          class="fixed w-52 origin-top-right bg-white dark:bg-ink-3 rounded-lg shadow-modal border border-stone-200 dark:border-ink-4 z-70 overflow-hidden"
           role="menu"
           @click.stop
         >
@@ -63,7 +63,7 @@
                       : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 active:bg-stone-200 dark:active:bg-ink-2'
                 ]"
               >
-                <component :is="action.icon" class="h-5 w-5 flex-shrink-0" />
+                <component :is="action.icon" class="h-5 w-5 shrink-0" />
                 <span class="font-medium">{{ action.label }}</span>
               </button>
             </template>

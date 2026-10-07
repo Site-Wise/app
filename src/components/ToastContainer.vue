@@ -16,10 +16,10 @@
           <button
             @click="clearAll"
             class="pointer-events-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium
-                   text-ink/70 dark:text-cream/70 bg-white/90 dark:bg-ink-3/90 backdrop-blur-sm
+                   text-ink/70 dark:text-cream/70 bg-white/90 dark:bg-ink-3/90 backdrop-blur-xs
                    border border-stone-200/80 dark:border-ink-4 shadow-card
                    hover:text-ink dark:hover:text-cream hover:border-stone-300 dark:hover:border-stone-600
-                   transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60"
+                   transition-colors duration-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500/60"
           >
             <X class="h-3.5 w-3.5" />
             {{ t('common.closeAll') }}
@@ -47,7 +47,7 @@
 
           <!-- Tinted icon chip -->
           <div
-            class="flex-shrink-0 grid place-items-center h-9 w-9 rounded-lg"
+            class="shrink-0 grid place-items-center h-9 w-9 rounded-lg"
             :class="getChipClasses(toast.type)"
           >
             <component :is="getToastIcon(toast.type)" class="h-5 w-5" :class="getIconClasses(toast.type)" />
@@ -55,7 +55,7 @@
 
           <!-- Message -->
           <div class="flex-1 min-w-0 py-0.5">
-            <p class="text-sm font-medium leading-snug break-words text-ink dark:text-cream">
+            <p class="text-sm font-medium leading-snug wrap-break-word text-ink dark:text-cream">
               {{ toast.message }}
             </p>
           </div>
@@ -63,10 +63,10 @@
           <!-- Close -->
           <button
             @click="removeToast(toast.id)"
-            class="flex-shrink-0 -mr-1 -mt-1 grid place-items-center h-11 w-11 rounded-lg
+            class="shrink-0 -mr-1 -mt-1 grid place-items-center h-11 w-11 rounded-lg
                    text-stone-400 dark:text-stone-500 transition-colors duration-200
                    hover:text-ink dark:hover:text-cream hover:bg-stone-100 dark:hover:bg-ink-4
-                   focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60"
+                   focus:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500/60"
             :aria-label="`Close ${toast.type} notification`"
           >
             <X class="h-4 w-4" />

@@ -213,7 +213,7 @@
           <!-- Action -->
           <div class="mt-3 flex justify-end border-t border-stone-200 dark:border-ink-4 pt-3">
             <button @click="viewDelivery(deliveryItem)"
-              class="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-md text-sm font-medium text-stone-600 dark:text-stone-300 hover:text-amber-700 dark:hover:text-amber-400 hover:bg-cream-3 dark:hover:bg-ink-4 transition-colors">
+              class="inline-flex items-center gap-1.5 min-h-touch px-3 rounded-md text-sm font-medium text-stone-600 dark:text-stone-300 hover:text-amber-700 dark:hover:text-amber-400 hover:bg-cream-3 dark:hover:bg-ink-4 transition-colors">
               <Eye class="h-4 w-4" />
               View Delivery
             </button>

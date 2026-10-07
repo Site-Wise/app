@@ -142,7 +142,7 @@
           <button
             type="submit"
             :disabled="loading || (turnstileEnabled && !turnstileToken)"
-            class="w-full btn-primary disabled:btn-disabled disabled:pointer-events-none disabled:cursor-not-allowed"
+            class="w-full btn-primary disabled:bg-stone-200 dark:disabled:bg-ink-4 disabled:text-stone-400 dark:disabled:text-stone-500 disabled:cursor-not-allowed disabled:pointer-events-none"
           >
             <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
             {{ loading ? t('auth.signingIn') : t('auth.signIn') }}
@@ -310,7 +310,7 @@
                 type="checkbox"
                 v-model="registerForm.legalAccepted"
                 required
-                class="mt-0.5 h-4 w-4 text-amber-500 focus:ring-amber-500 border-stone-300 dark:border-ink-4 rounded"
+                class="mt-0.5 h-4 w-4 text-amber-500 focus:ring-amber-500 border-stone-300 dark:border-ink-4 rounded-sm"
               />
               <div class="text-sm text-stone-700 dark:text-stone-300 leading-relaxed">
                 <span>I agree to the</span>
@@ -354,7 +354,7 @@
           <button
             type="submit"
             :disabled="registerLoading || (turnstileEnabled && !registerTurnstileToken) || !passwordsMatch || !registerForm.legalAccepted"
-            class="w-full btn-primary disabled:btn-disabled disabled:pointer-events-none disabled:cursor-not-allowed"
+            class="w-full btn-primary disabled:bg-stone-200 dark:disabled:bg-ink-4 disabled:text-stone-400 dark:disabled:text-stone-500 disabled:cursor-not-allowed disabled:pointer-events-none"
           >
             <Loader2 v-if="registerLoading" class="mr-2 h-4 w-4 animate-spin" />
             {{ t('auth.createAccount') }}

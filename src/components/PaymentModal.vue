@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="isVisible"
-    class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-sm"
+    class="fixed inset-0 z-60 flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-xs"
     @click="handleBackdropClick"
     @keydown.esc="handleEscape"
     tabindex="-1"
@@ -12,13 +12,13 @@
       @click.stop
     >
       <!-- Grab handle (mobile only) -->
-      <div class="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
+      <div class="sm:hidden flex justify-center pt-3 pb-1 shrink-0">
         <div class="mx-auto h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4" />
       </div>
 
       <!-- Sticky header -->
-      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0">
-        <component :is="modalIcon" class="h-5 w-5 flex-shrink-0" :class="modalIconColor" />
+      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 shrink-0">
+        <component :is="modalIcon" class="h-5 w-5 shrink-0" :class="modalIconColor" />
         <h3 class="font-display text-lg font-semibold text-ink dark:text-cream flex-1">{{ modalTitle }}</h3>
         <button
           type="button"
@@ -77,7 +77,7 @@
               t('payments.availableCreditNotes') }}</label>
             <div class="mt-2 space-y-2 max-h-32 overflow-y-auto overscroll-contain">
               <div v-for="creditNote in availableCreditNotes" :key="creditNote.id" :class="[
-                'p-2 rounded transition-colors cursor-pointer',
+                'p-2 rounded-sm transition-colors cursor-pointer',
                 'hover:bg-stone-100 dark:hover:bg-ink-4',
                 loading ? 'cursor-not-allowed' : 'cursor-pointer'
               ]" @click="handleCreditNoteRowClick(creditNote.id)">
@@ -137,7 +137,7 @@
                 placeholder="0.00" :disabled="loading" @input="handleAmountChange" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
               <button v-if="form.vendor && actualVendorOutstanding > 0 && form.amount !== actualVendorOutstanding"
                 type="button" @click="payAllOutstanding" :disabled="loading"
-                class="mt-1 px-3 py-2 text-xs font-medium text-amber-700 dark:text-amber hover:text-amber-800 dark:hover:text-amber-600 border border-amber/40 dark:border-amber/40 rounded-md hover:bg-amber/10 dark:hover:bg-amber/10 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] min-h-[44px]">
+                class="mt-1 px-3 py-2 text-xs font-medium text-amber-700 dark:text-amber hover:text-amber-800 dark:hover:text-amber-600 border border-amber/40 dark:border-amber/40 rounded-md hover:bg-amber/10 dark:hover:bg-amber/10 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] min-h-touch">
                 Pay All (<span class="font-mono tabular-nums">₹{{ actualVendorOutstanding.toFixed(2) }}</span>)
               </button>
             </div>
@@ -339,7 +339,7 @@
             <h4 class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-2">{{ t('common.deliveries') }}</h4>
             <div class="space-y-2 max-h-40 overflow-y-auto overscroll-contain">
               <div v-for="delivery in selectableDeliveries" :key="delivery.id" :class="[
-                'p-2 rounded transition-colors cursor-pointer',
+                'p-2 rounded-sm transition-colors cursor-pointer',
                 isAccountRequiredForSelection
                   ? 'opacity-50 cursor-not-allowed'
                   : 'hover:bg-stone-100 dark:hover:bg-ink-4',
@@ -364,7 +364,7 @@
             <h4 class="sw-eyebrow text-stone-500 dark:text-stone-400 mb-2">{{ t('common.serviceBookings') }}</h4>
             <div class="space-y-2 max-h-40 overflow-y-auto overscroll-contain">
               <div v-for="booking in selectableBookings" :key="booking.id" :class="[
-                'p-2 rounded transition-colors cursor-pointer',
+                'p-2 rounded-sm transition-colors cursor-pointer',
                 isAccountRequiredForSelection
                   ? 'opacity-50 cursor-not-allowed'
                   : 'hover:bg-stone-100 dark:hover:bg-ink-4',
@@ -415,7 +415,7 @@
       </form>
 
       <!-- Sticky footer with action buttons -->
-      <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 flex-shrink-0 pb-safe">
+      <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 shrink-0 pb-safe">
         <button type="button" @click="handleCancel" class="btn-outline active:scale-[0.98]" :disabled="loading">
           {{ t('common.cancel') }}
         </button>

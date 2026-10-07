@@ -263,7 +263,7 @@
     </div>
 
     <!-- Edit Account Modal -->
-    <div v-if="showEditModal" class="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-[60]" @click="showEditModal = false" @keydown.esc="showEditModal = false" tabindex="-1">
+    <div v-if="showEditModal" class="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-60" @click="showEditModal = false" @keydown.esc="showEditModal = false" tabindex="-1">
       <div class="relative top-20 mx-auto p-5 border w-96 shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 mb-20 lg:mb-4" @click.stop>
         <div class="mt-3">
           <h3 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">Edit Account</h3>
@@ -301,7 +301,7 @@
             </div>
 
             <div class="flex items-center">
-              <input v-model="editForm.is_active" type="checkbox" id="edit_is_active" class="rounded border-stone-300 dark:border-ink-4 text-amber focus:ring-amber" />
+              <input v-model="editForm.is_active" type="checkbox" id="edit_is_active" class="rounded-sm border-stone-300 dark:border-ink-4 text-amber focus:ring-amber" />
               <label for="edit_is_active" class="ml-2 text-sm text-stone-700 dark:text-stone-300">Account is active</label>
             </div>
             
@@ -320,7 +320,7 @@
     </div>
 
     <!-- Credit Entry Modal -->
-    <div v-if="showCreditModal" class="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-[60]" @click="showCreditModal = false" @keydown.esc="showCreditModal = false" tabindex="-1">
+    <div v-if="showCreditModal" class="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-60" @click="showCreditModal = false" @keydown.esc="showCreditModal = false" tabindex="-1">
       <div class="relative top-20 mx-auto p-5 border w-96 shadow-modal rounded-xl bg-white dark:bg-ink-3 border-stone-200 dark:border-ink-4 mb-20 lg:mb-4" @click.stop>
         <div class="mt-3">
           <h3 class="font-display text-lg font-semibold text-ink dark:text-cream mb-4">Add Credit Entry</h3>

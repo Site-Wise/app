@@ -17,8 +17,6 @@ styling:
   - changed-files:
     - any-glob-to-any-file:
       - 'src/**/*.css'
-      - 'tailwind.config.js'
-      - 'postcss.config.js'
 
 # Testing changes
 testing:

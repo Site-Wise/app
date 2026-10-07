@@ -169,8 +169,8 @@ describe('PhotoGallery.vue', () => {
     });
 
     await wrapper.find('.grid > div').trigger('click');
-    // Thumbnail strip lives in the bottom chrome; each thumb is a flex-shrink-0 button.
-    await wrapper.findAll('.bottom-0 .flex-shrink-0')[2].trigger('click');
+    // Thumbnail strip lives in the bottom chrome; each thumb is a shrink-0 button.
+    await wrapper.findAll('.bottom-0 .shrink-0')[2].trigger('click');
     expect(wrapper.find('img.max-h-screen').attributes('src')).toContain('photo3.jpg');
   });
 
@@ -196,7 +196,7 @@ describe('PhotoGallery.vue', () => {
     (wrapper.vm as any).photoLoading = true;
     await nextTick();
     // Loading spinner container uses the rounded-2xl backdrop pill in the gallery.
-    expect(wrapper.find('.rounded-2xl.backdrop-blur-sm').exists()).toBe(true);
+    expect(wrapper.find('.rounded-2xl.backdrop-blur-xs').exists()).toBe(true);
   });
 
   // ---------------------------------------------------------------------------
@@ -279,12 +279,12 @@ describe('PhotoGallery.vue', () => {
 
   it('syncs the active index when a thumbnail is selected', async () => {
     const wrapper = await openGallery(['photo1.jpg', 'photo2.jpg', 'photo3.jpg']);
-    const thumbs = wrapper.findAll('.bottom-0 .flex-shrink-0');
+    const thumbs = wrapper.findAll('.bottom-0 .shrink-0');
 
     await thumbs[1].trigger('click');
     expect((wrapper.vm as any).currentPhotoIndex).toBe(1);
     // Active thumbnail gets the clay border highlight.
-    expect(wrapper.findAll('.bottom-0 .flex-shrink-0')[1].classes()).toContain('border-clay-500');
+    expect(wrapper.findAll('.bottom-0 .shrink-0')[1].classes()).toContain('border-clay-500');
     expect(wrapper.find('.font-mono.sw-tabular').text()).toBe('2 / 3');
   });
 
@@ -353,11 +353,11 @@ describe('PhotoGallery.vue', () => {
     const wrapper = await openGallery(['photo1.jpg']);
     (wrapper.vm as any).photoLoading = true;
     await nextTick();
-    expect(wrapper.find('.rounded-2xl.backdrop-blur-sm').exists()).toBe(true);
+    expect(wrapper.find('.rounded-2xl.backdrop-blur-xs').exists()).toBe(true);
 
     await wrapper.find('img.max-h-screen').trigger('load');
     expect((wrapper.vm as any).photoLoading).toBe(false);
-    expect(wrapper.find('.rounded-2xl.backdrop-blur-sm').exists()).toBe(false);
+    expect(wrapper.find('.rounded-2xl.backdrop-blur-xs').exists()).toBe(false);
   });
 
   it('renders the overlay counter info for the current photo', async () => {
@@ -370,13 +370,13 @@ describe('PhotoGallery.vue', () => {
     // Single photo: no nav arrows, no thumbnail strip.
     expect(single.find('[aria-label="photos.nextPhoto"]').exists()).toBe(false);
     expect(single.find('[aria-label="photos.previousPhoto"]').exists()).toBe(false);
-    expect(single.findAll('.bottom-0 .flex-shrink-0').length).toBe(0);
+    expect(single.findAll('.bottom-0 .shrink-0').length).toBe(0);
     expect(single.find('.font-mono.sw-tabular').text()).toBe('1 / 1');
     single.unmount();
 
     const multi = await openGallery(['1.jpg', '2.jpg']);
     expect(multi.find('[aria-label="photos.nextPhoto"]').exists()).toBe(true);
-    expect(multi.findAll('.bottom-0 .flex-shrink-0').length).toBe(2);
+    expect(multi.findAll('.bottom-0 .shrink-0').length).toBe(2);
   });
 
   it('does not render the +N indicator for a single photo', async () => {

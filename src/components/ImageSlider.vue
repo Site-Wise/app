@@ -1,7 +1,7 @@
 <template>
   <div 
     v-if="show" 
-    class="fixed inset-0 bg-black bg-opacity-95 z-[60] flex items-center justify-center"
+    class="fixed inset-0 bg-black/95 z-60 flex items-center justify-center"
     @click="handleBackdropClick"
     @keydown.escape="close"
     tabindex="0"
@@ -12,14 +12,14 @@
     <!-- Close Button -->
     <button 
       @click="close"
-      class="absolute top-4 right-4 z-60 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-3 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white"
+      class="absolute top-4 right-4 z-60 bg-black/50 hover:bg-black/70 text-white rounded-full p-3 transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-white"
       :aria-label="t('common.close')"
     >
       <X class="h-6 w-6" />
     </button>
 
     <!-- Image Counter -->
-    <div v-if="images.length > 1" class="absolute top-4 left-4 z-60 bg-black bg-opacity-50 text-white px-4 py-2 rounded-md text-sm font-mono sw-tabular font-medium">
+    <div v-if="images.length > 1" class="absolute top-4 left-4 z-60 bg-black/50 text-white px-4 py-2 rounded-md text-sm font-mono sw-tabular font-medium">
       {{ currentIndex + 1 }} / {{ images.length }}
     </div>
 
@@ -27,7 +27,7 @@
     <button 
       v-if="images.length > 1 && currentIndex > 0"
       @click="previousImage"
-      class="absolute left-4 top-1/2 transform -translate-y-1/2 z-60 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-3 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white"
+      class="absolute left-4 top-1/2 transform -translate-y-1/2 z-60 bg-black/50 hover:bg-black/70 text-white rounded-full p-3 transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-white"
       :aria-label="t('common.previous')"
     >
       <ChevronLeft class="h-8 w-8" />
@@ -36,7 +36,7 @@
     <button 
       v-if="images.length > 1 && currentIndex < images.length - 1"
       @click="nextImage"
-      class="absolute right-4 top-1/2 transform -translate-y-1/2 z-60 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-3 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white"
+      class="absolute right-4 top-1/2 transform -translate-y-1/2 z-60 bg-black/50 hover:bg-black/70 text-white rounded-full p-3 transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-white"
       :aria-label="t('common.next')"
     >
       <ChevronRight class="h-8 w-8" />
@@ -49,7 +49,7 @@
     >
       <!-- Loading Spinner -->
       <div v-if="imageLoading" class="absolute inset-0 flex items-center justify-center">
-        <div class="bg-black bg-opacity-60 rounded-lg p-6">
+        <div class="bg-black/60 rounded-lg p-6">
           <Loader2 class="h-8 w-8 text-white animate-spin" />
         </div>
       </div>
@@ -75,7 +75,7 @@
       <!-- Overlay Information -->
       <div 
         v-if="currentOverlayInfo && !imageLoading && !imageError"
-        class="absolute top-4 right-4 sm:top-6 sm:right-6 bg-black bg-opacity-75 text-white rounded-lg p-3 sm:p-4 max-w-xs sm:max-w-sm shadow-lg backdrop-blur-sm"
+        class="absolute top-4 right-4 sm:top-6 sm:right-6 bg-black/75 text-white rounded-lg p-3 sm:p-4 max-w-xs sm:max-w-sm shadow-lg backdrop-blur-xs"
       >
         <div class="space-y-2 text-sm">
           <div v-if="currentOverlayInfo.vendorName" class="font-semibold">
@@ -94,7 +94,7 @@
               <div
                 v-for="item in currentOverlayInfo.items.slice(0, 3)"
                 :key="item"
-                class="text-xs bg-ink-4 bg-opacity-50 rounded px-2 py-1"
+                class="text-xs bg-ink-4/50 rounded-sm px-2 py-1"
               >
                 {{ item }}
               </div>
@@ -110,13 +110,13 @@
     <!-- Thumbnail Strip -->
     <div 
       v-if="images.length > 1" 
-      class="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-60 flex items-center space-x-2 bg-black bg-opacity-50 rounded-lg p-3 max-w-[90vw] overflow-x-auto scrollbar-hide"
+      class="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-60 flex items-center space-x-2 bg-black/50 rounded-lg p-3 max-w-[90vw] overflow-x-auto scrollbar-hide"
     >
       <div 
         v-for="(image, index) in images" 
         :key="index"
         @click="currentIndex = index"
-        class="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden cursor-pointer border-2 transition-all duration-200 hover:scale-105"
+        class="shrink-0 w-16 h-16 rounded-lg overflow-hidden cursor-pointer border-2 transition-all duration-200 hover:scale-105"
         :class="{ 
           'border-white shadow-lg': index === currentIndex, 
           'border-transparent hover:border-stone-300': index !== currentIndex
@@ -131,7 +131,7 @@
     </div>
 
     <!-- Keyboard Navigation Hint -->
-    <div v-if="images.length > 1" class="absolute bottom-20 right-4 z-60 bg-black bg-opacity-50 text-white text-xs px-3 py-2 rounded-lg">
+    <div v-if="images.length > 1" class="absolute bottom-20 right-4 z-60 bg-black/50 text-white text-xs px-3 py-2 rounded-lg">
       {{ t('common.useArrowKeys') }}
     </div>
   </div>

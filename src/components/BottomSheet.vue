@@ -4,7 +4,7 @@
     <Transition name="bottom-sheet-overlay">
       <div
         v-if="modelValue"
-        class="fixed inset-0 z-[60] bg-ink/60 backdrop-blur-sm"
+        class="fixed inset-0 z-60 bg-ink/60 backdrop-blur-xs"
         @click="handleOverlayClick"
       />
     </Transition>
@@ -13,7 +13,7 @@
     <Transition :name="isMobile ? 'bottom-sheet' : 'modal-fade'">
       <div
         v-if="modelValue"
-        class="fixed z-[60]"
+        class="fixed z-60"
         :class="containerClasses"
         role="dialog"
         :aria-modal="true"
@@ -29,7 +29,7 @@
           @touchend="handleTouchEnd"
         >
           <!-- Grab handle (mobile only) -->
-          <div class="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0 cursor-grab active:cursor-grabbing">
+          <div class="sm:hidden flex justify-center pt-3 pb-1 shrink-0 cursor-grab active:cursor-grabbing">
             <div class="mx-auto h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4" />
           </div>
 
@@ -37,7 +37,7 @@
           <div
             v-if="title || $slots.header"
             :id="titleId"
-            class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0"
+            class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 shrink-0"
           >
             <slot name="header">
               <h2 class="font-display text-lg font-semibold text-ink dark:text-cream flex-1">
@@ -62,7 +62,7 @@
           <!-- Footer -->
           <div
             v-if="$slots.footer"
-            class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 flex-shrink-0 pb-safe"
+            class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 shrink-0 pb-safe"
           >
             <slot name="footer" />
           </div>

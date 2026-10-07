@@ -84,7 +84,7 @@ describe('TriStateCheckbox', () => {
       const checkbox = wrapper.find('button[role="checkbox"]');
       expect(checkbox.classes().join(' ')).toContain('bg-blue-500');
       expect(checkbox.classes().join(' ')).toContain('border-blue-500');
-      expect(wrapper.find('.bg-white.rounded-sm').exists()).toBe(true); // Partial indicator
+      expect(wrapper.find('.bg-white.rounded-xs').exists()).toBe(true); // Partial indicator
     });
   });
 

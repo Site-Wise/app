@@ -177,7 +177,7 @@
                   <div class="p-4 space-y-3">
                     <div class="flex items-start justify-between gap-3">
                       <div class="flex items-center gap-3 min-w-0">
-                        <div class="h-9 w-9 rounded-lg bg-stone-100 dark:bg-ink-2 flex-shrink-0"></div>
+                        <div class="h-9 w-9 rounded-lg bg-stone-100 dark:bg-ink-2 shrink-0"></div>
                         <div class="space-y-1.5 min-w-0">
                           <Skeleton height="1rem" width="10rem" />
                           <Skeleton height="0.75rem" width="7rem" />
@@ -261,7 +261,7 @@
                   <!-- Top row: vendor + status -->
                   <div class="flex items-start justify-between gap-3 mb-3">
                     <div class="flex items-center gap-3 min-w-0">
-                      <div class="h-9 w-9 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
+                      <div class="h-9 w-9 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
                         <RotateCcw class="h-4 w-4 text-amber-600 dark:text-amber-400" />
                       </div>
                       <div class="min-w-0">
@@ -278,7 +278,7 @@
                         </div>
                       </div>
                     </div>
-                    <span :class="getStatusClass(returnItem.status)" class="flex-shrink-0">
+                    <span :class="getStatusClass(returnItem.status)" class="shrink-0">
                       {{ t(`vendors.returnStatuses.${returnItem.status}`) }}
                     </span>
                   </div>
@@ -313,7 +313,7 @@
                     <button
                       v-if="returnItem.status === 'initiated'"
                       @click.stop="approveReturn(returnItem)"
-                      class="btn-primary text-xs min-h-[44px] py-2 px-3 flex items-center bg-forest-600 hover:bg-forest-700"
+                      class="btn-primary text-xs min-h-touch py-2 px-3 flex items-center bg-forest-600 hover:bg-forest-700"
                     >
                       <Check class="h-4 w-4 mr-1.5" />
                       {{ t('common.approve') }}
@@ -321,7 +321,7 @@
                     <button
                       v-if="returnItem.status === 'approved' && returnItem.processing_option !== 'credit_note'"
                       @click.stop="processRefund(returnItem)"
-                      class="btn-primary text-xs min-h-[44px] py-2 px-3 flex items-center"
+                      class="btn-primary text-xs min-h-touch py-2 px-3 flex items-center"
                     >
                       <DollarSign class="h-4 w-4 mr-1.5" />
                       {{ t('vendors.refund') }}

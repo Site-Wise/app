@@ -1,16 +1,16 @@
 <template>
   <!-- Overlay: bottom-sheet on mobile, centered dialog on desktop -->
-  <div class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-sm">
+  <div class="fixed inset-0 z-60 flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-xs">
     <!-- Panel -->
     <div
       class="w-full sm:max-w-lg bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden"
       @click.stop
     >
       <!-- Grab handle (mobile only) -->
-      <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden flex-shrink-0" />
+      <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden shrink-0" />
 
       <!-- Sticky header -->
-      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0">
+      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 shrink-0">
         <div class="flex-1 min-w-0">
           <h3 class="font-display text-lg font-semibold text-ink dark:text-cream truncate">
             {{ t('vendors.processRefund') }}
@@ -18,7 +18,7 @@
         </div>
         <button
           @click="$emit('close')"
-          class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors flex-shrink-0 active:scale-[0.98]"
+          class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors shrink-0 active:scale-[0.98]"
           :aria-label="t('common.close')"
         >
           <X class="h-5 w-5" />
@@ -115,7 +115,7 @@
               step="0.01"
               :max="maxRefundAmount"
               required
-              class="input mt-1 font-mono sw-tabular min-h-[44px]"
+              class="input mt-1 font-mono sw-tabular min-h-touch"
               placeholder="0.00"
               autocomplete="off"
               autocorrect="off"
@@ -134,7 +134,7 @@
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
                 {{ t('vendors.creditNoteExpiry') }}
               </label>
-              <input v-model="form.expiry_date" type="date" class="input mt-1 min-h-[44px]" />
+              <input v-model="form.expiry_date" type="date" class="input mt-1 min-h-touch" />
               <p class="text-xs text-stone-500 dark:text-stone-400 mt-1">
                 {{ t('vendors.leaveEmptyNoExpiry') }}
               </p>
@@ -148,7 +148,7 @@
               <input
                 v-model="form.credit_reference"
                 type="text"
-                class="input mt-1 min-h-[44px]"
+                class="input mt-1 min-h-touch"
                 placeholder="CN-2024-001"
                 autocomplete="off"
                 autocorrect="off"
@@ -168,7 +168,7 @@
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
                 {{ t('vendors.refundDate') }} *
               </label>
-              <input v-model="form.refund_date" type="date" :required="form.processing_option === 'refund'" class="input mt-1 min-h-[44px]" />
+              <input v-model="form.refund_date" type="date" :required="form.processing_option === 'refund'" class="input mt-1 min-h-touch" />
             </div>
 
             <!-- Payment Account -->
@@ -176,7 +176,7 @@
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
                 {{ t('vendors.refundAccount') }} *
               </label>
-              <select v-model="form.account" :required="form.processing_option === 'refund'" class="input mt-1 min-h-[44px]">
+              <select v-model="form.account" :required="form.processing_option === 'refund'" class="input mt-1 min-h-touch">
                 <option value="">{{ t('common.select') }}</option>
                 <option v-for="account in activeAccounts" :key="account.id" :value="account.id">
                   {{ account.name }} ({{ account.type.replace('_', ' ') }}) - ₹{{ account.current_balance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
@@ -192,7 +192,7 @@
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
                 {{ t('vendors.refundMethod') }} *
               </label>
-              <select v-model="form.refund_method" :required="form.processing_option === 'refund'" class="input mt-1 min-h-[44px]">
+              <select v-model="form.refund_method" :required="form.processing_option === 'refund'" class="input mt-1 min-h-touch">
                 <option value="">{{ t('common.select') }}</option>
                 <option value="cash">{{ t('vendors.refundMethods.cash') }}</option>
                 <option value="bank_transfer">{{ t('vendors.refundMethods.bank_transfer') }}</option>
@@ -211,7 +211,7 @@
             <input
               v-model="form.reference"
               type="text"
-              class="input mt-1 min-h-[44px]"
+              class="input mt-1 min-h-touch"
               :placeholder="t('vendors.refundTransactionPlaceholder')"
               autocomplete="off"
               autocorrect="off"
@@ -240,7 +240,7 @@
           <!-- Confirmation banner -->
           <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4">
             <div class="flex gap-3">
-              <AlertTriangle class="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <AlertTriangle class="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
               <div class="text-sm min-w-0">
                 <h4 class="font-medium text-amber-800 dark:text-amber-300 mb-1">
                   {{ form.processing_option === 'credit_note' ? t('vendors.confirmCreditNoteTitle') : t('vendors.confirmRefundTitle') }}
@@ -260,18 +260,18 @@
       </form>
 
       <!-- Sticky footer -->
-      <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 pb-[max(1rem,env(safe-area-inset-bottom))] flex-shrink-0">
+      <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 pb-safe shrink-0">
         <button
           type="button"
           @click="$emit('close')"
-          class="btn-outline min-h-[44px] active:scale-[0.98]"
+          class="btn-outline min-h-touch active:scale-[0.98]"
         >
           {{ t('common.cancel') }}
         </button>
         <button
           type="button"
           :disabled="loading || form.refund_amount <= 0 || form.refund_amount > maxRefundAmount"
-          class="flex-1 btn-primary min-h-[44px] active:scale-[0.98]"
+          class="flex-1 btn-primary min-h-touch active:scale-[0.98]"
           @click.prevent="handleSubmit"
         >
           <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />

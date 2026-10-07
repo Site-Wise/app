@@ -8,7 +8,7 @@
           {{ t('delivery.subtitle') }}
         </p>
       </div>
-      <div class="flex items-center space-x-3">
+      <div class="flex items-center gap-3">
         <button 
           @click="viewAllImages"
           :disabled="allImages.length === 0"
@@ -382,7 +382,7 @@
             </div>
 
             <!-- Card Actions Dropdown -->
-            <div class="relative ml-2 flex-shrink-0">
+            <div class="relative ml-2 shrink-0">
               <CardDropdownMenu
                 :actions="getDeliveryActions(delivery)"
                 @action="handleDeliveryAction(delivery, $event)"
@@ -434,7 +434,7 @@
     />
 
     <!-- View Modal -->
-    <div v-if="viewingDelivery" class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60" @keydown.esc="closeViewModal" tabindex="-1">
+    <div v-if="viewingDelivery" class="fixed inset-0 z-60 flex items-end sm:items-center justify-center bg-ink/60" @keydown.esc="closeViewModal" tabindex="-1">
       <div @click.stop class="w-full sm:max-w-2xl bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden">
 
         <!-- Grab handle (mobile) -->
@@ -443,7 +443,7 @@
         </div>
 
         <!-- Sticky header -->
-        <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-stone-200 dark:border-ink-4 flex-shrink-0">
+        <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-stone-200 dark:border-ink-4 shrink-0">
           <div class="flex items-center gap-3">
             <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30">
               <Eye class="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -509,7 +509,7 @@
             <div>
               <h4 class="font-display font-medium text-stone-600 dark:text-stone-300 mb-3">{{ t('delivery.photos') }}</h4>
               <div v-if="viewingDelivery.photos && viewingDelivery.photos.length > 0" class="flex gap-2">
-                <div class="flex-shrink-0 relative group">
+                <div class="shrink-0 relative group">
                   <img
                     :src="getPhotoUrl(viewingDelivery.id!, viewingDelivery.photos[0])"
                     :alt="'Photo 1'"
@@ -590,7 +590,7 @@
                         <div class="text-xs">
                           {{ t('delivery.oldDataNotice') }}
                         </div>
-                        <div v-if="isDev" class="text-xs mt-4 p-2 bg-stone-100 dark:bg-ink-3 rounded">
+                        <div v-if="isDev" class="text-xs mt-4 p-2 bg-stone-100 dark:bg-ink-3 rounded-sm">
                           <div>Debug Info:</div>
                           <div>Delivery ID: {{ viewingDelivery.id }}</div>
                           <div>Has expand: {{ !!viewingDelivery.expand }}</div>
@@ -649,7 +649,7 @@
         </div>
 
         <!-- Sticky footer -->
-        <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex justify-end flex-shrink-0">
+        <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-safe flex justify-end shrink-0">
           <button @click="closeViewModal" class="btn-outline">{{ t('common.close') }}</button>
         </div>
 
@@ -1332,6 +1332,8 @@ useEventListener(window, 'keydown', handleKeyboardShortcut);
 </script>
 
 <style scoped>
+@reference "../style.css";
+
 .btn-primary {
   @apply bg-amber-500 hover:bg-amber-600 text-ink font-medium py-2 px-4 rounded-md transition-colors duration-150 ease-in-out;
 }
