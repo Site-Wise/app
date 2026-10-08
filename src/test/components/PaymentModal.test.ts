@@ -772,4 +772,47 @@ describe('PaymentModal.vue', () => {
       expect(wrapper.vm.form.account).toBe('account2');
     });
   });
+
+  describe('resetForNextPayment (sticky create)', () => {
+    it('clears vendor, amount and allocations but keeps account and date', async () => {
+      wrapper = mount(PaymentModal, {
+        props: {
+          isVisible: true,
+          mode: 'CREATE',
+          vendors: mockVendors,
+          accounts: mockAccounts,
+          deliveries: mockDeliveries,
+          serviceBookings: mockServiceBookings,
+          payments: mockPayments,
+        },
+      });
+      await nextTick();
+
+      Object.assign(wrapper.vm.form, {
+        vendor: 'vendor1',
+        account: 'account2',
+        amount: 200,
+        transaction_date: '2024-07-10',
+        reference: 'REF-1',
+        notes: 'first payment',
+        deliveries: ['delivery1'],
+        delivery_allocations: { delivery1: { state: 'checked', amount: 200 } },
+      });
+      wrapper.vm.availableCreditNotes = [{ id: 'cn1', balance: 50 }];
+
+      await wrapper.vm.resetForNextPayment();
+
+      const form = wrapper.vm.form;
+      expect(form.vendor).toBe('');
+      expect(form.amount).toBe(0);
+      expect(form.reference).toBe('');
+      expect(form.notes).toBe('');
+      expect(form.deliveries).toEqual([]);
+      expect(form.delivery_allocations).toEqual({});
+      expect(form.account).toBe('account2');
+      expect(form.transaction_date).toBe('2024-07-10');
+      expect(wrapper.vm.availableCreditNotes).toEqual([]);
+      expect(wrapper.vm.vendorOutstanding).toBe(0);
+    });
+  });
 });

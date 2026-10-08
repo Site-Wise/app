@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { computed } from 'vue'
 import PaymentsView from '../../views/PaymentsView.vue'
+import PaymentModal from '../../components/PaymentModal.vue'
+import { paymentService } from '../../services/pocketbase'
 import { createMockRouter } from '../utils/test-utils'
 import { setupTestPinia } from '../utils/test-setup'
 
@@ -925,6 +927,96 @@ describe('PaymentsView - Mobile Responsive Design', () => {
       // toggle default is desc -> XYZ first.
       const ids = wrapper.vm.payments.map((p: any) => p.id)
       expect(ids).toEqual(['payment-2', 'payment-1'])
+    })
+  })
+
+  describe('Sticky Payment Modal', () => {
+    const submitData = (mode: string) => ({
+      mode,
+      payment: null,
+      form: {
+        vendor: 'vendor-1',
+        account: 'account-1',
+        amount: 1000,
+        transaction_date: '2024-02-01',
+        reference: '',
+        notes: '',
+        deliveries: [],
+        service_bookings: [],
+        credit_notes: [],
+        delivery_allocations: {},
+        service_booking_allocations: {},
+        credit_note_allocations: {}
+      }
+    })
+
+    const flush = async () => {
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+    }
+
+    it('keeps the modal open and resets it for the next payment after CREATE', async () => {
+      wrapper = createWrapper()
+      await flush()
+
+      wrapper.vm.handleAddPayment()
+      await flush()
+
+      const modal = wrapper.findComponent(PaymentModal)
+      Object.assign(modal.vm.form, { vendor: 'vendor-1', account: 'account-1', amount: 1000, transaction_date: '2024-02-01' })
+
+      await wrapper.vm.handlePaymentModalSubmit(submitData('CREATE'))
+      await flush()
+
+      expect(paymentService.create).toHaveBeenCalled()
+      expect(wrapper.vm.showPaymentModal).toBe(true)
+      expect(modal.vm.form.vendor).toBe('')
+      expect(modal.vm.form.amount).toBe(0)
+      expect(modal.vm.form.account).toBe('account-1')
+      expect(modal.vm.form.transaction_date).toBe('2024-02-01')
+    })
+
+    it('also stays open after a CREATE retried with credit note balance adjustment', async () => {
+      wrapper = createWrapper()
+      await flush()
+
+      wrapper.vm.handleAddPayment()
+      await flush()
+
+      const balanceError: any = new Error('CREDIT_NOTE_BALANCE_CHANGED')
+      balanceError.details = { reference: 'CN-1', requestedAmount: 500, availableAmount: 300 }
+      vi.mocked(paymentService.create).mockRejectedValueOnce(balanceError)
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+      await wrapper.vm.handlePaymentModalSubmit(submitData('CREATE'))
+      await flush()
+
+      expect(confirmSpy).toHaveBeenCalled()
+      expect(paymentService.create).toHaveBeenLastCalledWith(
+        expect.objectContaining({ allowBalanceAdjustment: true })
+      )
+      expect(wrapper.vm.showPaymentModal).toBe(true)
+      expect(wrapper.findComponent(PaymentModal).vm.form.vendor).toBe('')
+      confirmSpy.mockRestore()
+    })
+
+    it('closes the modal after a PAY_NOW payment', async () => {
+      wrapper = createWrapper()
+      await flush()
+
+      wrapper.vm.paymentModalMode = 'PAY_NOW'
+      wrapper.vm.vendorIdForPayNow = 'vendor-1'
+      wrapper.vm.showPaymentModal = true
+      await flush()
+
+      await wrapper.vm.handlePaymentModalSubmit(submitData('PAY_NOW'))
+      await flush()
+
+      expect(paymentService.create).toHaveBeenCalled()
+      expect(wrapper.vm.showPaymentModal).toBe(false)
+      expect(wrapper.vm.paymentModalMode).toBe('CREATE')
+      expect(wrapper.vm.vendorIdForPayNow).toBe('')
     })
   })
 })
