@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-4">
+  <div class="flex flex-col gap-4">
     <!-- Desktop/Tablet: Traditional drag-drop interface -->
     <div v-if="!isMobile"
          class="file-upload-component"
@@ -123,7 +123,7 @@
     </div>
 
     <!-- PDF Conversion Modal -->
-    <div v-if="showPdfModal" class="fixed inset-0 bg-ink/60 z-[60] flex items-center justify-center p-4">
+    <div v-if="showPdfModal" class="fixed inset-0 bg-ink/60 z-60 flex items-center justify-center p-4">
       <div class="bg-white dark:bg-ink-3 rounded-xl shadow-modal border border-stone-200 dark:border-ink-4 p-6 max-w-md w-full mx-4">
         <h3 class="text-lg font-medium text-ink dark:text-cream mb-4">
           {{ pdfNeedsPassword ? t('fileUpload.pdfPasswordTitle') : t('fileUpload.pdfConversion') }}
@@ -626,6 +626,8 @@ watch(() => props.modelValue, (newFiles) => {
 </script>
 
 <style scoped>
+@reference "../style.css";
+
 .file-upload-component {
   @apply border-2 border-dashed border-stone-300 dark:border-ink-4 rounded-lg p-8 text-center transition-colors cursor-pointer hover:border-stone-400 dark:hover:border-stone-500 block;
 }

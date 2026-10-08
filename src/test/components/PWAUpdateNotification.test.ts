@@ -248,7 +248,7 @@ describe('PWAUpdateNotification Logic', () => {
 
     it('should generate correct update button classes', () => {
       const getUpdateButtonClasses = (disabled: boolean) => {
-        const baseClasses = 'inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors'
+        const baseClasses = 'inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors'
         
         if (disabled) {
           return `${baseClasses} disabled:opacity-50 disabled:cursor-not-allowed`
@@ -269,7 +269,7 @@ describe('PWAUpdateNotification Logic', () => {
 
     it('should generate correct dismiss button classes', () => {
       const getDismissButtonClasses = () => {
-        return 'inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+        return 'inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
       }
       
       const dismissClasses = getDismissButtonClasses()
@@ -281,7 +281,7 @@ describe('PWAUpdateNotification Logic', () => {
 
     it('should generate correct close button classes', () => {
       const getCloseButtonClasses = () => {
-        return 'inline-flex text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+        return 'inline-flex text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
       }
       
       const closeClasses = getCloseButtonClasses()
@@ -356,13 +356,13 @@ describe('PWAUpdateNotification Logic', () => {
 
     it('should handle focus management correctly', () => {
       const focusStates = {
-        updateButton: 'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
-        dismissButton: 'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
-        closeButton: 'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+        updateButton: 'focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
+        dismissButton: 'focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
+        closeButton: 'focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
       }
       
       Object.values(focusStates).forEach(focusClass => {
-        expect(focusClass).toContain('focus:outline-none')
+        expect(focusClass).toContain('focus:outline-hidden')
         expect(focusClass).toContain('focus:ring-2')
         expect(focusClass).toContain('focus:ring-blue-500')
       })

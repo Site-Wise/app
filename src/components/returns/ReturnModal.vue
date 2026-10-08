@@ -1,7 +1,7 @@
 <template>
   <!-- Overlay: bottom-sheet on mobile, centered dialog on desktop -->
   <div
-    class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-sm"
+    class="fixed inset-0 z-60 flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-xs"
     @click="$emit('close')"
   >
     <!-- Panel -->
@@ -10,10 +10,10 @@
       @click.stop
     >
       <!-- Grab handle (mobile only) -->
-      <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden flex-shrink-0" />
+      <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden shrink-0" />
 
       <!-- Sticky header -->
-      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0">
+      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 shrink-0">
         <div class="flex-1 min-w-0">
           <h3 class="font-display text-lg font-semibold text-ink dark:text-cream truncate">
             {{ isEdit ? t('vendors.editReturn') : t('vendors.createReturn') }}
@@ -21,7 +21,7 @@
         </div>
         <button
           @click="$emit('close')"
-          class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors flex-shrink-0 active:scale-[0.98]"
+          class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors shrink-0 active:scale-[0.98]"
           :aria-label="t('common.close')"
         >
           <X class="h-5 w-5" />
@@ -55,7 +55,7 @@
             <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
               {{ t('vendors.returnDate') }} *
             </label>
-            <input v-model="form.return_date" type="date" required class="input mt-1 min-h-[44px]" />
+            <input v-model="form.return_date" type="date" required class="input mt-1 min-h-touch" />
           </div>
 
           <!-- Return Reason -->
@@ -63,7 +63,7 @@
             <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
               {{ t('vendors.returnReason') }} *
             </label>
-            <select v-model="form.reason" required class="input mt-1 min-h-[44px]">
+            <select v-model="form.reason" required class="input mt-1 min-h-touch">
               <option value="">{{ t('vendors.selectReason') }}</option>
               <option value="damaged">{{ t('vendors.returnReasons.damaged') }}</option>
               <option value="wrong_item">{{ t('vendors.returnReasons.wrong_item') }}</option>
@@ -109,7 +109,7 @@
                   <button
                     type="button"
                     @click="removeReturnItem(index)"
-                    class="text-clay-600 dark:text-clay-400 hover:text-clay-700 dark:hover:text-clay-300 min-h-touch min-w-[44px] inline-flex items-center justify-center rounded active:scale-[0.98]"
+                    class="text-clay-600 dark:text-clay-400 hover:text-clay-700 dark:hover:text-clay-300 min-h-touch min-w-[44px] inline-flex items-center justify-center rounded-sm active:scale-[0.98]"
                   >
                     <Trash2 class="h-4 w-4" />
                   </button>
@@ -138,7 +138,7 @@
                       step="0.01"
                       :max="getAvailableQuantity(item.delivery_item, item.delivery_item_data?.quantity || 0)"
                       required
-                      class="input text-sm font-mono sw-tabular min-h-[44px]"
+                      class="input text-sm font-mono sw-tabular min-h-touch"
                       @input="updateReturnAmount(index)"
                       autocomplete="off"
                       autocorrect="off"
@@ -156,7 +156,7 @@
                       type="number"
                       step="0.01"
                       required
-                      class="input text-sm font-mono sw-tabular min-h-[44px]"
+                      class="input text-sm font-mono sw-tabular min-h-touch"
                       @input="updateReturnAmount(index)"
                       autocomplete="off"
                       autocorrect="off"
@@ -171,7 +171,7 @@
                     <label class="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1">
                       {{ t('vendors.itemCondition') }} *
                     </label>
-                    <select v-model="item.condition" required class="input text-sm min-h-[44px]">
+                    <select v-model="item.condition" required class="input text-sm min-h-touch">
                       <option value="">{{ t('common.select') }}</option>
                       <option value="unopened">{{ t('vendors.itemConditions.unopened') }}</option>
                       <option value="opened">{{ t('vendors.itemConditions.opened') }}</option>
@@ -184,7 +184,7 @@
                     <label class="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1">
                       {{ t('vendors.returnAmount') }}
                     </label>
-                    <div class="text-sm font-medium text-ink dark:text-cream font-mono sw-tabular min-h-[44px] flex items-center">
+                    <div class="text-sm font-medium text-ink dark:text-cream font-mono sw-tabular min-h-touch flex items-center">
                       ₹{{ item.return_amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                     </div>
                   </div>
@@ -257,11 +257,11 @@
       </form>
 
       <!-- Sticky footer -->
-      <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 pb-[max(1rem,env(safe-area-inset-bottom))] flex-shrink-0">
+      <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 pb-safe shrink-0">
         <button
           type="button"
           @click="$emit('close')"
-          class="btn-outline min-h-[44px] active:scale-[0.98]"
+          class="btn-outline min-h-touch active:scale-[0.98]"
         >
           {{ t('common.cancel') }}
         </button>
@@ -269,7 +269,7 @@
           type="submit"
           form=""
           :disabled="loading || returnItems.length === 0"
-          class="flex-1 btn-primary min-h-[44px] active:scale-[0.98]"
+          class="flex-1 btn-primary min-h-touch active:scale-[0.98]"
           @click.prevent="handleSubmit"
         >
           <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
@@ -281,7 +281,7 @@
     <!-- Delivery Items Selection Modal (nested bottom-sheet) -->
     <div
       v-if="showItemSelection"
-      class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-ink/60"
+      class="fixed inset-0 z-70 flex items-end sm:items-center justify-center bg-ink/60"
       @click="closeItemSelection"
       @keydown.esc="closeItemSelection"
     >
@@ -290,10 +290,10 @@
         @click.stop
       >
         <!-- Grab handle (mobile only) -->
-        <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden flex-shrink-0" />
+        <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden shrink-0" />
 
         <!-- Header -->
-        <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0">
+        <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 shrink-0">
           <div class="flex-1 min-w-0">
             <h3 class="font-display text-lg font-semibold text-ink dark:text-cream truncate">
               {{ t('vendors.selectItemsToReturn') }}
@@ -301,7 +301,7 @@
           </div>
           <button
             @click="closeItemSelection"
-            class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors flex-shrink-0 active:scale-[0.98]"
+            class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors shrink-0 active:scale-[0.98]"
             :aria-label="t('common.close')"
           >
             <X class="h-5 w-5" />
@@ -313,7 +313,7 @@
           <div
             v-for="item in availableDeliveryItems"
             :key="item.id"
-            class="p-4 border border-stone-200 dark:border-ink-4 rounded-xl hover:bg-cream-2 dark:hover:bg-ink-2 cursor-pointer transition-colors active:scale-[0.99] min-h-[44px]"
+            class="p-4 border border-stone-200 dark:border-ink-4 rounded-xl hover:bg-cream-2 dark:hover:bg-ink-2 cursor-pointer transition-colors active:scale-[0.99] min-h-touch"
             @click="selectDeliveryItem(item)"
           >
             <div class="flex justify-between items-start gap-3">
@@ -331,7 +331,7 @@
                   ({{ deliveryItemsReturnInfo[item.id!].totalReturned }} {{ t('common.of') }} {{ item.quantity }} {{ t('vendors.alreadyReturned') }})
                 </div>
               </div>
-              <div class="text-sm font-medium text-ink dark:text-cream font-mono sw-tabular flex-shrink-0">
+              <div class="text-sm font-medium text-ink dark:text-cream font-mono sw-tabular shrink-0">
                 ₹{{ item.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
               </div>
             </div>

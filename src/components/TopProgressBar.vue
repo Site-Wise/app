@@ -1,6 +1,6 @@
 <template>
   <div
-    class="fixed top-0 left-0 right-0 z-[100] h-0.5 pointer-events-none"
+    class="fixed top-0 left-0 right-0 z-100 h-0.5 pointer-events-none"
     :class="visible ? 'opacity-100' : 'opacity-0'"
     aria-hidden="true"
   >

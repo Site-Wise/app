@@ -68,7 +68,7 @@
             <button
               type="submit"
               :disabled="loading || !email"
-              class="w-full btn-primary disabled:btn-disabled"
+              class="w-full btn-primary disabled:bg-stone-200 dark:disabled:bg-ink-4 disabled:text-stone-400 dark:disabled:text-stone-500 disabled:cursor-not-allowed"
             >
               <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
               {{ loading ? t('auth.sendingResetLink') : t('auth.sendResetLink') }}

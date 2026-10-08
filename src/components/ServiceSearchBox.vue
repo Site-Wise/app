@@ -14,7 +14,7 @@
         @keydown.up.prevent="navigateUp"
         @keydown.enter.prevent="selectCurrent"
         @keydown.escape.prevent="closeDropdown"
-        class="w-full px-4 py-3 pl-10 pr-4 text-sm border border-stone-200 dark:border-ink-4 rounded-md bg-white dark:bg-ink-3 text-ink dark:text-cream placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:border-ink dark:focus:border-cream"
+        class="w-full px-4 py-3 pl-10 pr-4 text-sm border border-stone-200 dark:border-ink-4 rounded-md bg-white dark:bg-ink-3 text-ink dark:text-cream placeholder-stone-400 dark:placeholder-stone-500 focus:outline-hidden focus:border-ink dark:focus:border-cream"
         :class="{
           'border-clay-500 dark:border-clay-500': hasError,
           'pr-20': selectedService && !searchQuery && selectedService.standard_rate,
@@ -63,7 +63,7 @@
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center">
-            <div class="flex-shrink-0 w-2 h-2 bg-forest-500 rounded-full mr-3"></div>
+            <div class="shrink-0 w-2 h-2 bg-forest-500 rounded-full mr-3"></div>
             <div>
               <span class="text-sm font-medium text-ink dark:text-cream">
                 {{ selectedService.name }}

@@ -14,7 +14,7 @@
           class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
           loading="lazy"
         />
-        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
           <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <div class="bg-white dark:bg-ink-3 rounded-full p-2 shadow-modal">
               <Eye class="h-5 w-5 text-stone-700 dark:text-stone-300" />
@@ -38,7 +38,7 @@
     <!-- Gallery Modal -->
     <div
       v-if="showGallery"
-      class="fixed inset-0 bg-black/95 z-[60] flex items-center justify-center select-none"
+      class="fixed inset-0 bg-black/95 z-60 flex items-center justify-center select-none"
       @keydown.escape="closeGallery"
       tabindex="0"
       role="dialog"
@@ -47,18 +47,18 @@
     >
       <!-- Top chrome: counter + close. Auto-hides on mobile when controls are toggled off -->
       <div
-        class="absolute top-0 inset-x-0 z-[62] flex items-center justify-between gap-3 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] transition-opacity duration-300"
+        class="absolute top-0 inset-x-0 z-62 flex items-center justify-between gap-3 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] transition-opacity duration-300"
         :class="chromeVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'"
       >
         <!-- Photo Counter -->
-        <div class="bg-ink/60 backdrop-blur-sm text-cream px-3 py-1.5 rounded-full text-sm font-mono sw-tabular">
+        <div class="bg-ink/60 backdrop-blur-xs text-cream px-3 py-1.5 rounded-full text-sm font-mono sw-tabular">
           {{ currentPhotoIndex + 1 }} / {{ photos.length }}
         </div>
 
         <!-- Close Button -->
         <button
           @click.stop="closeGallery"
-          class="grid place-items-center h-11 w-11 bg-ink/60 backdrop-blur-sm hover:bg-ink/80 text-cream rounded-full transition-all duration-200"
+          class="grid place-items-center h-11 w-11 bg-ink/60 backdrop-blur-xs hover:bg-ink/80 text-cream rounded-full transition-all duration-200"
           :aria-label="t('photos.closeGallery')"
         >
           <X class="h-6 w-6" />
@@ -69,7 +69,7 @@
       <button
         v-if="photos.length > 1"
         @click.stop="previousPhoto"
-        class="hidden md:grid place-items-center absolute left-4 top-1/2 -translate-y-1/2 z-[61] h-12 w-12 bg-ink/60 backdrop-blur-sm hover:bg-ink/80 text-cream rounded-full transition-all duration-200"
+        class="hidden md:grid place-items-center absolute left-4 top-1/2 -translate-y-1/2 z-61 h-12 w-12 bg-ink/60 backdrop-blur-xs hover:bg-ink/80 text-cream rounded-full transition-all duration-200"
         :disabled="currentPhotoIndex === 0"
         :class="{ 'opacity-40 cursor-not-allowed': currentPhotoIndex === 0 }"
         :aria-label="t('photos.previousPhoto')"
@@ -80,7 +80,7 @@
       <button
         v-if="photos.length > 1"
         @click.stop="nextPhoto"
-        class="hidden md:grid place-items-center absolute right-4 top-1/2 -translate-y-1/2 z-[61] h-12 w-12 bg-ink/60 backdrop-blur-sm hover:bg-ink/80 text-cream rounded-full transition-all duration-200"
+        class="hidden md:grid place-items-center absolute right-4 top-1/2 -translate-y-1/2 z-61 h-12 w-12 bg-ink/60 backdrop-blur-xs hover:bg-ink/80 text-cream rounded-full transition-all duration-200"
         :disabled="currentPhotoIndex === photos.length - 1"
         :class="{ 'opacity-40 cursor-not-allowed': currentPhotoIndex === photos.length - 1 }"
         :aria-label="t('photos.nextPhoto')"
@@ -111,7 +111,7 @@
 
         <!-- Loading Spinner -->
         <div v-if="photoLoading" class="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div class="bg-ink/60 backdrop-blur-sm rounded-2xl p-4">
+          <div class="bg-ink/60 backdrop-blur-xs rounded-2xl p-4">
             <Loader2 class="h-8 w-8 text-cream animate-spin" />
           </div>
         </div>
@@ -119,19 +119,19 @@
 
       <!-- Bottom chrome: actions + (desktop) thumbnail strip. Auto-hides on mobile. -->
       <div
-        class="absolute bottom-0 inset-x-0 z-[62] flex flex-col items-center gap-3 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-opacity duration-300"
+        class="absolute bottom-0 inset-x-0 z-62 flex flex-col items-center gap-3 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-opacity duration-300"
         :class="chromeVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'"
       >
         <!-- Thumbnail Strip: desktop only — swipe + counter make it redundant on mobile -->
         <div
           v-if="photos.length > 1"
-          class="hidden md:flex items-center gap-2 bg-ink/60 backdrop-blur-sm rounded-xl p-2 max-w-[90vw] overflow-x-auto"
+          class="hidden md:flex items-center gap-2 bg-ink/60 backdrop-blur-xs rounded-xl p-2 max-w-[90vw] overflow-x-auto"
         >
           <button
             v-for="(photo, index) in photos"
             :key="index"
             @click.stop="goToPhoto(index)"
-            class="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200"
+            class="shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200"
             :class="index === currentPhotoIndex
               ? 'border-clay-500'
               : 'border-transparent hover:border-stone-400 opacity-70 hover:opacity-100'"
@@ -146,7 +146,7 @@
         </div>
 
         <!-- Photo Actions -->
-        <div class="flex items-center gap-2 bg-ink/60 backdrop-blur-sm rounded-full p-1.5">
+        <div class="flex items-center gap-2 bg-ink/60 backdrop-blur-xs rounded-full p-1.5">
           <button
             @click.stop="downloadPhoto"
             class="grid place-items-center h-11 w-11 hover:bg-ink/80 text-cream rounded-full transition-all duration-200"

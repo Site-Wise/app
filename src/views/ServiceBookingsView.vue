@@ -8,7 +8,7 @@
           {{ t('serviceBookings.subtitle') }}
         </p>
       </div>
-      <div class="flex items-center space-x-3">
+      <div class="flex items-center gap-3">
         <button
           @click="viewAllImages"
           :disabled="allImages.length === 0"
@@ -393,7 +393,7 @@
     </div>
 
     <!-- Add/Edit Modal -->
-    <div v-if="showAddModal || editingBooking" class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
+    <div v-if="showAddModal || editingBooking" class="fixed inset-0 z-60 flex items-end sm:items-center justify-center bg-ink/60" @click="closeModal" @keydown.esc="closeModal" tabindex="-1">
       <div class="w-full sm:max-w-lg bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden" @click.stop>
         <!-- Grab handle (mobile only) -->
         <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden"></div>
@@ -416,7 +416,7 @@
 
         <!-- Scrollable body -->
         <form @submit.prevent="() => saveBooking()" @keydown="handleKeydown" class="flex flex-col flex-1 overflow-hidden">
-          <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5 space-y-4">
+          <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5 flex flex-col gap-4">
             <div>
               <label class="block text-sm font-medium text-stone-600 dark:text-stone-300">{{ t('services.service') }}</label>
               <ServiceSearchBox
@@ -564,7 +564,7 @@
               <div v-if="existingBookingPhotos.length > 0" class="mb-4">
                 <p class="text-sm text-stone-600 dark:text-stone-400 mb-2">{{ t('delivery.existingPhotos') }}</p>
                 <div class="flex gap-2 overflow-x-auto pb-2">
-                  <div v-for="(photo, index) in existingBookingPhotos" :key="photo" class="relative group flex-shrink-0">
+                  <div v-for="(photo, index) in existingBookingPhotos" :key="photo" class="relative group shrink-0">
                     <img :src="getBookingPhotoUrl(editingBooking!.id!, photo)" :alt="`Photo ${index + 1}`"
                       class="w-16 h-16 object-cover rounded-lg border border-stone-200 dark:border-ink-4" />
                     <div class="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -589,7 +589,7 @@
           </div>
 
           <!-- Sticky footer -->
-          <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex gap-3">
+          <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-safe flex gap-3">
             <button type="submit" :disabled="loading" class="flex-1 btn-primary">
               <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
               {{ loading ? (editingBooking ? t('common.updating') : t('common.creating')) : (editingBooking ? t('common.update') : t('common.create')) }}
@@ -603,7 +603,7 @@
     </div>
 
     <!-- View Modal -->
-    <div v-if="viewingBooking" class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60" @click="viewingBooking = null" @keydown.esc="viewingBooking = null" tabindex="-1">
+    <div v-if="viewingBooking" class="fixed inset-0 z-60 flex items-end sm:items-center justify-center bg-ink/60" @click="viewingBooking = null" @keydown.esc="viewingBooking = null" tabindex="-1">
       <div class="w-full sm:max-w-2xl bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden" @click.stop>
         <!-- Grab handle (mobile only) -->
         <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden"></div>
@@ -689,7 +689,7 @@
         </div>
 
         <!-- Sticky footer -->
-        <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex gap-3">
+        <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-safe flex gap-3">
           <button type="button" @click="viewingBooking = null" class="flex-1 btn-outline">
             {{ t('common.close') }}
           </button>

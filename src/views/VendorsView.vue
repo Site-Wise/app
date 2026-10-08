@@ -7,7 +7,7 @@
           {{ t('vendors.subtitle') }}
         </p>
       </div>
-      <div class="flex items-center space-x-3">
+      <div class="flex items-center gap-3">
         <!-- Export All Ledgers Dropdown -->
         <div class="relative export-all-dropdown hidden md:block">
           <button
@@ -180,7 +180,7 @@
 
     <!-- Add/Edit Modal -->
     <div v-if="showAddModal || editingVendor"
-      class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60"
+      class="fixed inset-0 z-60 flex items-end sm:items-center justify-center bg-ink/60"
       @click="closeModal"
       @keydown.esc="closeModal"
       tabindex="-1">
@@ -249,7 +249,7 @@
           </div>
 
           <!-- Sticky footer -->
-          <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex gap-3">
+          <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-safe flex gap-3">
             <button type="submit" :disabled="loading" class="flex-1 btn-primary">
               <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
               {{ loading ? (editingVendor ? t('common.updating') : t('common.creating')) : (editingVendor ? t('common.update') : t('common.create')) }}

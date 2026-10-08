@@ -235,7 +235,7 @@
             <td class="px-4 py-3.5 whitespace-nowrap">
               <div v-if="payment.expand?.account" class="flex items-center gap-2">
                 <component :is="getAccountIcon(payment.expand.account.type)"
-                  class="h-4 w-4 text-stone-400 dark:text-stone-500 flex-shrink-0" />
+                  class="h-4 w-4 text-stone-400 dark:text-stone-500 shrink-0" />
                 <span class="text-sm text-stone-600 dark:text-stone-400">
                   <RecordLink
                     type="account"
@@ -246,7 +246,7 @@
                 </span>
               </div>
               <div v-if="payment.credit_notes && payment.credit_notes.length > 0" class="flex items-center gap-2 mt-0.5">
-                <svg class="h-4 w-4 text-forest-600 dark:text-forest-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="h-4 w-4 text-forest-600 dark:text-forest-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
@@ -370,7 +370,7 @@
               </div>
             </div>
             <!-- Card actions dropdown (sits above clickable card) -->
-            <div class="relative ml-2 flex-shrink-0" @click.stop>
+            <div class="relative ml-2 shrink-0" @click.stop>
               <CardDropdownMenu :actions="getPaymentActions(payment)"
                 @action="handlePaymentAction(payment, $event)" />
             </div>
@@ -628,7 +628,7 @@
       @close="handlePaymentModalClose" />
 
     <!-- View Payment Modal -->
-    <div v-if="viewingPayment" class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60"
+    <div v-if="viewingPayment" class="fixed inset-0 z-60 flex items-end sm:items-center justify-center bg-ink/60"
       @click="closePaymentViewModal()"
       @keydown.esc="closePaymentViewModal()" tabindex="-1">
       <div
@@ -641,8 +641,8 @@
         </div>
 
         <!-- Sticky header -->
-        <div class="flex items-center gap-3 px-5 sm:px-6 pt-4 sm:pt-5 pb-4 border-b border-stone-200 dark:border-ink-4 flex-shrink-0">
-          <div class="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg bg-amber/10 dark:bg-amber/15">
+        <div class="flex items-center gap-3 px-5 sm:px-6 pt-4 sm:pt-5 pb-4 border-b border-stone-200 dark:border-ink-4 shrink-0">
+          <div class="shrink-0 flex items-center justify-center w-9 h-9 rounded-lg bg-amber/10 dark:bg-amber/15">
             <CreditCard class="h-5 w-5 text-amber" />
           </div>
           <div class="flex-1 min-w-0">
@@ -651,7 +651,7 @@
           </div>
           <button
             @click="closePaymentViewModal()"
-            class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-ink-4 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
+            class="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-ink-4 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
             <X class="h-4 w-4" />
           </button>
         </div>
@@ -700,7 +700,7 @@
               <span class="font-medium text-stone-700 dark:text-stone-300">Credit Notes Used:</span>
               <div class="ml-2 mt-2 space-y-2">
                 <div v-for="creditNoteId in viewingPayment.credit_notes" :key="creditNoteId"
-                  class="flex items-center justify-between p-2 bg-forest/5 dark:bg-forest/10 rounded border border-forest/30 dark:border-forest/40">
+                  class="flex items-center justify-between p-2 bg-forest/5 dark:bg-forest/10 rounded-sm border border-forest/30 dark:border-forest/40">
                   <div>
                     <p class="text-sm font-medium text-forest">
                       {{ getCreditNoteDisplay(creditNoteId) }}
@@ -769,7 +769,7 @@
         </div>
 
         <!-- Sticky footer -->
-        <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex gap-3 flex-shrink-0">
+        <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-safe flex gap-3 shrink-0">
           <button v-if="viewingPayment && canPaymentBeEdited(viewingPayment, viewingPaymentAllocations)"
             @click="startEditPayment(viewingPayment)" class="flex-1 btn-primary">
             {{ t('common.edit') }}

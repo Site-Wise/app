@@ -1,7 +1,7 @@
 <template>
   <!-- Overlay: click-scrim-to-close, Esc closes -->
   <div
-    class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-sm"
+    class="fixed inset-0 z-60 flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-xs"
     @click="$emit('close')"
     @keydown.esc="$emit('close')"
     tabindex="-1"
@@ -12,10 +12,10 @@
       @click.stop
     >
       <!-- Mobile grab handle -->
-      <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden flex-shrink-0"></div>
+      <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden shrink-0"></div>
 
       <!-- Sticky Header -->
-      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex-shrink-0">
+      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 shrink-0">
         <div class="flex items-start gap-3">
           <div class="flex-1 min-w-0">
             <!-- Single step indicator: "STEP 1 OF 3 · Delivery Info" -->
@@ -33,7 +33,7 @@
           <!-- Close button with ≥44px hit area -->
           <button
             @click="$emit('close')"
-            class="h-9 w-9 rounded-md flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors active:scale-95 flex-shrink-0 -mt-1"
+            class="h-9 w-9 rounded-md flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-2 transition-colors active:scale-95 shrink-0 -mt-1"
             aria-label="Close"
           >
             <X class="h-5 w-5" />
@@ -65,13 +65,13 @@
 
             <div>
               <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">{{ t('delivery.deliveryDate') }} *</label>
-              <input v-model="deliveryForm.delivery_date" type="date" required class="input min-h-[44px]" />
+              <input v-model="deliveryForm.delivery_date" type="date" required class="input min-h-touch" />
             </div>
           </div>
 
           <div>
             <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">{{ t('delivery.deliveryReference') }}</label>
-            <input v-model="deliveryForm.delivery_reference" type="text" class="input min-h-[44px]"
+            <input v-model="deliveryForm.delivery_reference" type="text" class="input min-h-touch"
               :placeholder="t('delivery.deliveryReferencePlaceholder')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
           </div>
 
@@ -89,7 +89,7 @@
               <p class="text-sm text-stone-600 dark:text-stone-400 mb-2">{{ t('delivery.existingPhotos') }}</p>
               <div
                 class="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-ink-4 scrollbar-track-stone-100 dark:scrollbar-track-ink-2">
-                <div v-for="(photo, index) in existingPhotos" :key="photo" class="relative group flex-shrink-0">
+                <div v-for="(photo, index) in existingPhotos" :key="photo" class="relative group shrink-0">
                   <img :src="getPhotoUrl(props.editingDelivery!.id!, photo)" :alt="`Existing photo ${index + 1}`"
                     class="w-16 h-16 object-cover rounded-lg border border-stone-200 dark:border-ink-4 cursor-pointer hover:opacity-75 transition-opacity hover:scale-105"
                     @click="openPhotoGallery(index)" />
@@ -129,7 +129,7 @@
               <div class="text-sm font-medium text-ink dark:text-cream">
                 {{ t('deliveryForm.newItem') }}
               </div>
-              <button @click="saveNewItem" :disabled="!isNewItemValid" class="btn-primary btn-sm min-h-[44px] px-4 active:scale-[0.98]"
+              <button @click="saveNewItem" :disabled="!isNewItemValid" class="btn-primary btn-sm min-h-touch px-4 active:scale-[0.98]"
                 :class="{ 'opacity-50 cursor-not-allowed': !isNewItemValid }">
                 <Plus class="h-4 w-4" />
               </button>
@@ -152,14 +152,14 @@
           </div>
 
           <!-- Completed Items List -->
-          <div v-if="completedDeliveryItems.length > 0" class="space-y-2 sm:space-y-4">
+          <div v-if="completedDeliveryItems.length > 0" class="flex flex-col gap-2 sm:gap-4">
             <div
               class="sw-eyebrow text-stone-600 dark:text-stone-300 border-b border-stone-200 dark:border-ink-4 pb-2 flex items-center justify-between">
               <span>{{ t('deliveryForm.addedItems') }}</span>
               <!-- Collapse/Expand all on mobile -->
               <button
                 @click="toggleAllItemsExpanded"
-                class="sm:hidden text-xs text-ink dark:text-cream hover:underline min-h-[44px] px-2"
+                class="sm:hidden text-xs text-ink dark:text-cream hover:underline min-h-touch px-2"
               >
                 {{ allItemsExpanded ? t('common.collapseAll') : t('common.expandAll') }}
               </button>
@@ -189,7 +189,7 @@
                   <div class="flex items-center space-x-2 ml-2">
                     <button
                       @click.stop="removeDeliveryItem(deliveryItems.indexOf(item))"
-                      class="min-h-[44px] min-w-[44px] flex items-center justify-center text-clay-500 hover:text-clay-700 dark:text-clay-400 dark:hover:text-clay-300 active:scale-95 rounded-md"
+                      class="min-h-touch min-w-[44px] flex items-center justify-center text-clay-500 hover:text-clay-700 dark:text-clay-400 dark:hover:text-clay-300 active:scale-95 rounded-md"
                       :title="t('delivery.removeItem')"
                     >
                       <Trash2 class="h-4 w-4" />
@@ -273,7 +273,7 @@
                   <div class="flex items-center space-x-2">
                     <span class="text-stone-500 dark:text-stone-400">₹</span>
                     <input v-model.number="deliveryForm.rounded_off_with" type="number" step="0.01"
-                      class="w-24 px-2 py-2 text-center text-sm font-mono sw-tabular border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream focus:ring-2 focus:ring-amber-500 focus:border-transparent min-h-[44px]"
+                      class="w-24 px-2 py-2 text-center text-sm font-mono sw-tabular border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream focus:ring-2 focus:ring-amber-500 focus:border-transparent min-h-touch"
                       :placeholder="t('delivery.enterRoundOff')" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
                   </div>
                 </div>
@@ -293,7 +293,7 @@
       <!-- End Scrollable Body -->
 
       <!-- Sticky Footer -->
-      <div class="sticky bottom-0 flex-shrink-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div class="sticky bottom-0 shrink-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-safe">
 
         <!-- Keyboard shortcut hints (desktop) -->
         <div class="hidden md:flex items-center justify-between mb-3 text-xs text-stone-400 dark:text-stone-500">
@@ -310,11 +310,11 @@
         <div class="flex gap-3">
           <!-- Back / Cancel -->
           <div class="flex gap-2">
-            <button v-if="currentStep > 0" @click="previousStep" class="btn-outline min-h-[44px] active:scale-[0.98]" :disabled="loading">
+            <button v-if="currentStep > 0" @click="previousStep" class="btn-outline min-h-touch active:scale-[0.98]" :disabled="loading">
               <ArrowLeft class="mr-1.5 h-4 w-4" />
               {{ t('common.back') }}
             </button>
-            <button v-else @click="$emit('close')" class="btn-outline min-h-[44px] active:scale-[0.98]" :disabled="loading">
+            <button v-else @click="$emit('close')" class="btn-outline min-h-touch active:scale-[0.98]" :disabled="loading">
               {{ t('common.cancel') }}
             </button>
           </div>
@@ -324,7 +324,7 @@
             v-if="currentStep < steps.length - 1"
             @click="nextStep"
             :disabled="!canProceedToNextStep || loading"
-            class="btn-primary flex-1 min-h-[44px] active:scale-[0.98]"
+            class="btn-primary flex-1 min-h-touch active:scale-[0.98]"
             :class="{ 'opacity-50 cursor-not-allowed': !canProceedToNextStep || loading }"
           >
             {{ t('common.next') }}
@@ -335,7 +335,7 @@
             v-else
             @click="saveDelivery"
             :disabled="loading || !canSubmit"
-            class="btn-primary flex-1 min-h-[44px] active:scale-[0.98]"
+            class="btn-primary flex-1 min-h-touch active:scale-[0.98]"
             :class="{ 'opacity-50 cursor-not-allowed': loading || !canSubmit }"
           >
             <Loader2 v-if="loading" class="mr-1.5 h-4 w-4 animate-spin" />

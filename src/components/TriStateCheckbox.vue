@@ -5,8 +5,8 @@
       @click="clickableRow ? undefined : handleClick"
       :disabled="disabled"
       :class="[
-        'relative w-5 h-5 rounded border-2 transition-all duration-200',
-        'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 dark:focus:ring-offset-ink-3',
+        'relative w-5 h-5 rounded-sm border-2 transition-all duration-200',
+        'focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 dark:focus:ring-offset-ink-3',
         disabled ? 'opacity-50 cursor-not-allowed' : clickableRow ? 'cursor-default' : 'cursor-pointer',
         checkboxClasses
       ]"
@@ -27,7 +27,7 @@
         v-else-if="state === 'partial'"
         class="absolute inset-0 flex items-center justify-center"
       >
-        <div class="w-2 h-2 bg-white rounded-sm"></div>
+        <div class="w-2 h-2 bg-white rounded-xs"></div>
       </div>
     </button>
     

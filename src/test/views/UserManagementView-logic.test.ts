@@ -157,9 +157,9 @@ describe('UserManagementView Logic', () => {
     it('should return correct gradient for owner role', () => {
       const getAvatarClass = (role: string) => {
         const classes = {
-          owner: 'h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center',
-          supervisor: 'h-10 w-10 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center',
-          accountant: 'h-10 w-10 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 flex items-center justify-center'
+          owner: 'h-10 w-10 rounded-full bg-linear-to-r from-blue-500 to-blue-600 flex items-center justify-center',
+          supervisor: 'h-10 w-10 rounded-full bg-linear-to-r from-green-500 to-green-600 flex items-center justify-center',
+          accountant: 'h-10 w-10 rounded-full bg-linear-to-r from-amber-500 to-amber-600 flex items-center justify-center'
         }
         return classes[role as keyof typeof classes] || 'h-10 w-10 rounded-full bg-gray-500 flex items-center justify-center'
       }
@@ -170,9 +170,9 @@ describe('UserManagementView Logic', () => {
     it('should return correct gradient for supervisor role', () => {
       const getAvatarClass = (role: string) => {
         const classes = {
-          owner: 'h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center',
-          supervisor: 'h-10 w-10 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center',
-          accountant: 'h-10 w-10 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 flex items-center justify-center'
+          owner: 'h-10 w-10 rounded-full bg-linear-to-r from-blue-500 to-blue-600 flex items-center justify-center',
+          supervisor: 'h-10 w-10 rounded-full bg-linear-to-r from-green-500 to-green-600 flex items-center justify-center',
+          accountant: 'h-10 w-10 rounded-full bg-linear-to-r from-amber-500 to-amber-600 flex items-center justify-center'
         }
         return classes[role as keyof typeof classes] || 'h-10 w-10 rounded-full bg-gray-500 flex items-center justify-center'
       }
@@ -183,9 +183,9 @@ describe('UserManagementView Logic', () => {
     it('should return correct gradient for accountant role', () => {
       const getAvatarClass = (role: string) => {
         const classes = {
-          owner: 'h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center',
-          supervisor: 'h-10 w-10 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center',
-          accountant: 'h-10 w-10 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 flex items-center justify-center'
+          owner: 'h-10 w-10 rounded-full bg-linear-to-r from-blue-500 to-blue-600 flex items-center justify-center',
+          supervisor: 'h-10 w-10 rounded-full bg-linear-to-r from-green-500 to-green-600 flex items-center justify-center',
+          accountant: 'h-10 w-10 rounded-full bg-linear-to-r from-amber-500 to-amber-600 flex items-center justify-center'
         }
         return classes[role as keyof typeof classes] || 'h-10 w-10 rounded-full bg-gray-500 flex items-center justify-center'
       }
@@ -196,9 +196,9 @@ describe('UserManagementView Logic', () => {
     it('should return gray fallback for unknown role', () => {
       const getAvatarClass = (role: string) => {
         const classes = {
-          owner: 'h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center',
-          supervisor: 'h-10 w-10 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center',
-          accountant: 'h-10 w-10 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 flex items-center justify-center'
+          owner: 'h-10 w-10 rounded-full bg-linear-to-r from-blue-500 to-blue-600 flex items-center justify-center',
+          supervisor: 'h-10 w-10 rounded-full bg-linear-to-r from-green-500 to-green-600 flex items-center justify-center',
+          accountant: 'h-10 w-10 rounded-full bg-linear-to-r from-amber-500 to-amber-600 flex items-center justify-center'
         }
         return classes[role as keyof typeof classes] || 'h-10 w-10 rounded-full bg-gray-500 flex items-center justify-center'
       }
@@ -209,9 +209,9 @@ describe('UserManagementView Logic', () => {
     it('should include common styling for all roles', () => {
       const getAvatarClass = (role: string) => {
         const classes = {
-          owner: 'h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center',
-          supervisor: 'h-10 w-10 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center',
-          accountant: 'h-10 w-10 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 flex items-center justify-center'
+          owner: 'h-10 w-10 rounded-full bg-linear-to-r from-blue-500 to-blue-600 flex items-center justify-center',
+          supervisor: 'h-10 w-10 rounded-full bg-linear-to-r from-green-500 to-green-600 flex items-center justify-center',
+          accountant: 'h-10 w-10 rounded-full bg-linear-to-r from-amber-500 to-amber-600 flex items-center justify-center'
         }
         return classes[role as keyof typeof classes] || 'h-10 w-10 rounded-full bg-gray-500 flex items-center justify-center'
       }

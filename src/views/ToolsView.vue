@@ -31,7 +31,7 @@
     </div>
 
     <!-- Tool Cards -->
-    <div class="space-y-6">
+    <div class="flex flex-col gap-6">
       <!-- Rebar Weight Estimator -->
       <div v-show="activeTool === 'rebar'" class="card">
         <div class="flex items-center justify-between mb-4">
@@ -92,7 +92,7 @@
                 <button
                   v-if="rebarCalc.entries.value.length > 1"
                   @click="rebarCalc.removeEntry(entry.id)"
-                  class="p-1 text-clay-600 dark:text-clay-400 hover:text-clay-700 dark:hover:text-clay-300 rounded"
+                  class="p-1 text-clay-600 dark:text-clay-400 hover:text-clay-700 dark:hover:text-clay-300 rounded-sm"
                 >
                   <X class="h-4 w-4" />
                 </button>
@@ -103,7 +103,7 @@
             <div class="lg:hidden p-4 bg-white dark:bg-ink-3 border border-stone-200 dark:border-ink-4 rounded-lg">
               <div class="flex items-center justify-between mb-3">
                 <span class="text-sm font-medium text-stone-500 dark:text-stone-400">{{ t('tools.rebarEstimator.entry') }} #{{ index + 1 }}</span>
-                <button v-if="rebarCalc.entries.value.length > 1" @click="rebarCalc.removeEntry(entry.id)" class="min-h-touch min-w-[44px] inline-flex items-center justify-center text-clay-600 dark:text-clay-400 hover:text-clay-700 dark:hover:text-clay-300 rounded">
+                <button v-if="rebarCalc.entries.value.length > 1" @click="rebarCalc.removeEntry(entry.id)" class="min-h-touch min-w-[44px] inline-flex items-center justify-center text-clay-600 dark:text-clay-400 hover:text-clay-700 dark:hover:text-clay-300 rounded-sm">
                   <X class="h-4 w-4" />
                 </button>
               </div>
@@ -174,7 +174,7 @@
         <!-- Formula Info -->
         <div class="mt-4 p-3 bg-stone-50 dark:bg-ink-2 rounded-lg">
           <div class="flex items-start">
-            <Info class="h-4 w-4 text-stone-500 mr-2 mt-0.5 flex-shrink-0" />
+            <Info class="h-4 w-4 text-stone-500 mr-2 mt-0.5 shrink-0" />
             <p class="text-xs text-stone-500 dark:text-stone-400">{{ t('tools.rebarEstimator.formulaInfo') }}</p>
           </div>
         </div>
@@ -254,7 +254,7 @@
         <!-- Mix Ratio Info -->
         <div class="mt-4 p-3 bg-stone-50 dark:bg-ink-2 rounded-lg">
           <div class="flex items-start">
-            <Info class="h-4 w-4 text-stone-500 mr-2 mt-0.5 flex-shrink-0" />
+            <Info class="h-4 w-4 text-stone-500 mr-2 mt-0.5 shrink-0" />
             <p class="text-xs text-stone-500 dark:text-stone-400">{{ t('tools.concreteCalculator.formulaInfo') }}</p>
           </div>
         </div>
@@ -339,7 +339,7 @@
         <!-- Per Sqm Reference -->
         <div class="mt-4 p-3 bg-stone-50 dark:bg-ink-2 rounded-lg">
           <div class="flex items-start">
-            <Info class="h-4 w-4 text-stone-500 mr-2 mt-0.5 flex-shrink-0" />
+            <Info class="h-4 w-4 text-stone-500 mr-2 mt-0.5 shrink-0" />
             <p class="text-xs text-stone-500 dark:text-stone-400">
               {{ t('tools.plasterCalculator.perSqmInfo', { cement: formatNumber(plasterCalc.perSqm.value.cementKg), sand: formatNumber(plasterCalc.perSqm.value.sandKg) }) }}
             </p>
@@ -435,7 +435,7 @@
         <!-- Bricks per sqm reference -->
         <div class="mt-4 p-3 bg-stone-50 dark:bg-ink-2 rounded-lg">
           <div class="flex items-start">
-            <Info class="h-4 w-4 text-stone-500 mr-2 mt-0.5 flex-shrink-0" />
+            <Info class="h-4 w-4 text-stone-500 mr-2 mt-0.5 shrink-0" />
             <p class="text-xs text-stone-500 dark:text-stone-400">
               {{ t('tools.brickCalculator.perSqmInfo', { bricks: brickCalc.result.value.bricksPerSqm }) }}
             </p>

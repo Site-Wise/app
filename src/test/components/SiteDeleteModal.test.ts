@@ -510,13 +510,13 @@ describe('SiteDeleteModal Logic', () => {
 
   describe('CSS Classes Validation', () => {
     it('should validate modal overlay classes', () => {
-      const overlayClasses = 'fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50'
+      const overlayClasses = 'fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50'
       
       expect(overlayClasses).toContain('fixed')
       expect(overlayClasses).toContain('inset-0')
       expect(overlayClasses).toContain('bg-black')
-      expect(overlayClasses).toContain('bg-opacity-50')
-      expect(overlayClasses).toContain('backdrop-blur-sm')
+      expect(overlayClasses).toContain('bg-black/50')
+      expect(overlayClasses).toContain('backdrop-blur-xs')
       expect(overlayClasses).toContain('z-50')
     })
 

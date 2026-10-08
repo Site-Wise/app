@@ -1,16 +1,16 @@
 <template>
   <!-- Overlay: bottom-sheet on mobile, centered dialog on desktop -->
-  <div class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-sm">
+  <div class="fixed inset-0 z-60 flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-xs">
     <!-- Panel (wide for details view) -->
     <div
       class="w-full sm:max-w-4xl bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden"
       @click.stop
     >
       <!-- Grab handle (mobile only) -->
-      <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden flex-shrink-0" />
+      <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden shrink-0" />
 
       <!-- Sticky header -->
-      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0">
+      <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 shrink-0">
         <div class="flex-1 min-w-0">
           <h3 class="font-display text-lg font-semibold text-ink dark:text-cream truncate">
             {{ t('vendors.returnDetails') }}
@@ -21,7 +21,7 @@
         </div>
         <button
           @click="$emit('close')"
-          class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors flex-shrink-0 active:scale-[0.98]"
+          class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors shrink-0 active:scale-[0.98]"
           :aria-label="t('common.close')"
         >
           <X class="h-5 w-5" />
@@ -105,7 +105,7 @@
                         {{ t('vendors.originalDelivery') }} {{ formatDate(item.expand?.delivery_item?.expand?.delivery?.delivery_date || '') }}
                       </div>
                     </div>
-                    <span :class="getConditionClass(item.condition)" class="flex-shrink-0">
+                    <span :class="getConditionClass(item.condition)" class="shrink-0">
                       {{ t(`vendors.itemConditions.${item.condition}`) }}
                     </span>
                   </div>
@@ -137,7 +137,7 @@
                     </div>
                   </div>
 
-                  <div v-if="item.item_notes" class="mt-3 p-2 bg-cream-2 dark:bg-ink-2 rounded text-sm">
+                  <div v-if="item.item_notes" class="mt-3 p-2 bg-cream-2 dark:bg-ink-2 rounded-sm text-sm">
                     <span class="text-stone-500 dark:text-stone-400 text-xs font-medium">{{ t('common.notes') }}:</span>
                     <span class="text-ink dark:text-cream ml-1">{{ item.item_notes }}</span>
                   </div>
@@ -179,7 +179,7 @@
                 <button
                   v-if="returnData?.status === 'initiated'"
                   @click="showApprovalModal = true"
-                  class="w-full btn-primary bg-forest-600 hover:bg-forest-700 min-h-[44px] active:scale-[0.98]"
+                  class="w-full btn-primary bg-forest-600 hover:bg-forest-700 min-h-touch active:scale-[0.98]"
                 >
                   <Check class="mr-2 h-4 w-4" />
                   {{ t('vendors.approveReturn') }}
@@ -188,7 +188,7 @@
                 <button
                   v-if="returnData?.status === 'initiated'"
                   @click="showRejectionModal = true"
-                  class="w-full btn-outline border-clay-200 text-clay-600 hover:bg-clay-50 dark:border-clay-700 dark:text-clay-400 dark:hover:bg-clay-900/20 min-h-[44px] active:scale-[0.98]"
+                  class="w-full btn-outline border-clay-200 text-clay-600 hover:bg-clay-50 dark:border-clay-700 dark:text-clay-400 dark:hover:bg-clay-900/20 min-h-touch active:scale-[0.98]"
                 >
                   <X class="mr-2 h-4 w-4" />
                   {{ t('vendors.rejectReturn') }}
@@ -197,7 +197,7 @@
                 <button
                   v-if="returnData?.status === 'approved'"
                   @click="handleComplete"
-                  class="w-full btn-primary min-h-[44px] active:scale-[0.98]"
+                  class="w-full btn-primary min-h-touch active:scale-[0.98]"
                 >
                   <CheckCircle class="mr-2 h-4 w-4" />
                   {{ t('vendors.completeReturn') }}
@@ -206,7 +206,7 @@
                 <button
                   v-if="returnData?.status === 'approved' || returnData?.status === 'completed'"
                   @click="$emit('refund')"
-                  class="w-full btn-primary min-h-[44px] active:scale-[0.98]"
+                  class="w-full btn-primary min-h-touch active:scale-[0.98]"
                 >
                   <DollarSign class="mr-2 h-4 w-4" />
                   {{ t('vendors.processRefund') }}
@@ -219,7 +219,7 @@
               <h4 class="font-display text-base font-semibold text-ink dark:text-cream mb-4">{{ t('vendors.statusHistory') }}</h4>
               <div class="space-y-3">
                 <div class="flex items-center gap-3">
-                  <div class="w-2 h-2 bg-amber-500 rounded-full flex-shrink-0"></div>
+                  <div class="w-2 h-2 bg-amber-500 rounded-full shrink-0"></div>
                   <div class="text-sm min-w-0">
                     <div class="font-medium text-ink dark:text-cream">{{ t('vendors.returnInitiated') }}</div>
                     <div class="text-stone-500 dark:text-stone-400 text-xs">
@@ -229,7 +229,7 @@
                 </div>
 
                 <div v-if="returnData?.approved_at" class="flex items-center gap-3">
-                  <div class="w-2 h-2 rounded-full flex-shrink-0" :class="returnData.status === 'rejected' ? 'bg-clay-500' : 'bg-forest-500'"></div>
+                  <div class="w-2 h-2 rounded-full shrink-0" :class="returnData.status === 'rejected' ? 'bg-clay-500' : 'bg-forest-500'"></div>
                   <div class="text-sm min-w-0">
                     <div class="font-medium text-ink dark:text-cream">
                       {{ returnData.status === 'rejected' ? t('common.rejected') : t('common.approved') }}
@@ -244,7 +244,7 @@
                 </div>
 
                 <div v-if="returnData?.completion_date" class="flex items-center gap-3">
-                  <div class="w-2 h-2 bg-forest-500 rounded-full flex-shrink-0"></div>
+                  <div class="w-2 h-2 bg-forest-500 rounded-full shrink-0"></div>
                   <div class="text-sm min-w-0">
                     <div class="font-medium text-ink dark:text-cream">{{ t('common.completed') }}</div>
                     <div class="text-stone-500 dark:text-stone-400 text-xs">
@@ -254,7 +254,7 @@
                 </div>
 
                 <div v-if="returnData?.status === 'refunded'" class="flex items-center gap-3">
-                  <div class="w-2 h-2 bg-forest-500 rounded-full flex-shrink-0"></div>
+                  <div class="w-2 h-2 bg-forest-500 rounded-full shrink-0"></div>
                   <div class="text-sm min-w-0">
                     <div class="font-medium text-ink dark:text-cream">{{ t('vendors.returnStatuses.refunded') }}</div>
                     <div class="text-stone-500 dark:text-stone-400 font-mono sw-tabular text-xs">
@@ -281,7 +281,7 @@
                         {{ formatDate(creditNote.issue_date) }}
                       </div>
                     </div>
-                    <div class="text-right flex-shrink-0">
+                    <div class="text-right shrink-0">
                       <div class="text-sm font-medium text-ink dark:text-cream font-mono sw-tabular">
                         ₹{{ creditNote.credit_amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                       </div>
@@ -298,7 +298,7 @@
                       <div
                         v-for="usage in creditNoteUsage.filter(u => u.payment.credit_notes?.includes(creditNote.id!))"
                         :key="usage.payment.id"
-                        class="flex justify-between items-center p-2 bg-cream-2 dark:bg-ink-2 rounded text-sm gap-3"
+                        class="flex justify-between items-center p-2 bg-cream-2 dark:bg-ink-2 rounded-sm text-sm gap-3"
                       >
                         <div class="min-w-0">
                           <div class="font-medium text-ink dark:text-cream text-sm truncate">
@@ -308,7 +308,7 @@
                             {{ formatDate(usage.payment.payment_date) }} • {{ usage.payment.reference || t('vendors.noReference') }}
                           </div>
                         </div>
-                        <div class="text-forest-600 dark:text-forest-400 font-medium font-mono sw-tabular flex-shrink-0">
+                        <div class="text-forest-600 dark:text-forest-400 font-medium font-mono sw-tabular shrink-0">
                           -₹{{ usage.usedAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                         </div>
                       </div>
@@ -316,7 +316,7 @@
                   </div>
 
                   <!-- No usage message -->
-                  <div v-else class="mt-3 p-2 bg-cream-2 dark:bg-ink-2 rounded text-sm text-stone-500 dark:text-stone-400 text-center">
+                  <div v-else class="mt-3 p-2 bg-cream-2 dark:bg-ink-2 rounded-sm text-sm text-stone-500 dark:text-stone-400 text-center">
                     {{ t('vendors.creditNoteNotUsed') }}
                   </div>
                 </div>
@@ -342,10 +342,10 @@
       </div>
 
       <!-- Sticky footer (close only for detail view) -->
-      <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex-shrink-0">
+      <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 pb-safe shrink-0">
         <button
           @click="$emit('close')"
-          class="w-full sm:w-auto btn-outline min-h-[44px] active:scale-[0.98]"
+          class="w-full sm:w-auto btn-outline min-h-touch active:scale-[0.98]"
         >
           {{ t('common.close') }}
         </button>
@@ -355,21 +355,21 @@
     <!-- Approval Modal (nested) -->
     <div
       v-if="showApprovalModal"
-      class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-ink/60"
+      class="fixed inset-0 z-70 flex items-end sm:items-center justify-center bg-ink/60"
     >
       <div
         class="w-full sm:max-w-md bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[85vh] sm:max-h-[75vh] flex flex-col overflow-hidden"
         @click.stop
       >
         <!-- Grab handle (mobile only) -->
-        <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden flex-shrink-0" />
+        <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden shrink-0" />
 
         <!-- Header -->
-        <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0">
+        <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 shrink-0">
           <h3 class="flex-1 font-display text-lg font-semibold text-ink dark:text-cream">{{ t('vendors.approveReturn') }}</h3>
           <button
             @click="showApprovalModal = false"
-            class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors flex-shrink-0 active:scale-[0.98]"
+            class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors shrink-0 active:scale-[0.98]"
             :aria-label="t('common.close')"
           >
             <X class="h-5 w-5" />
@@ -395,18 +395,18 @@
           </div>
         </form>
 
-        <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 pb-[max(1rem,env(safe-area-inset-bottom))] flex-shrink-0">
+        <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 pb-safe shrink-0">
           <button
             type="button"
             @click="showApprovalModal = false"
-            class="btn-outline min-h-[44px] active:scale-[0.98]"
+            class="btn-outline min-h-touch active:scale-[0.98]"
           >
             {{ t('common.cancel') }}
           </button>
           <button
             type="button"
             :disabled="loading"
-            class="flex-1 btn-primary bg-forest-600 hover:bg-forest-700 min-h-[44px] active:scale-[0.98]"
+            class="flex-1 btn-primary bg-forest-600 hover:bg-forest-700 min-h-touch active:scale-[0.98]"
             @click="handleApprove"
           >
             <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
@@ -419,21 +419,21 @@
     <!-- Rejection Modal (nested) -->
     <div
       v-if="showRejectionModal"
-      class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-ink/60"
+      class="fixed inset-0 z-70 flex items-end sm:items-center justify-center bg-ink/60"
     >
       <div
         class="w-full sm:max-w-md bg-white dark:bg-ink-3 shadow-modal border border-stone-200 dark:border-ink-4 rounded-t-2xl sm:rounded-xl max-h-[85vh] sm:max-h-[75vh] flex flex-col overflow-hidden"
         @click.stop
       >
         <!-- Grab handle (mobile only) -->
-        <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden flex-shrink-0" />
+        <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-stone-300 dark:bg-ink-4 sm:hidden shrink-0" />
 
         <!-- Header -->
-        <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0">
+        <div class="sticky top-0 z-10 bg-white dark:bg-ink-3 border-b border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex items-center gap-3 shrink-0">
           <h3 class="flex-1 font-display text-lg font-semibold text-ink dark:text-cream">{{ t('vendors.rejectReturn') }}</h3>
           <button
             @click="showRejectionModal = false"
-            class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors flex-shrink-0 active:scale-[0.98]"
+            class="h-9 w-9 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors shrink-0 active:scale-[0.98]"
             :aria-label="t('common.close')"
           >
             <X class="h-5 w-5" />
@@ -460,18 +460,18 @@
           </div>
         </form>
 
-        <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 pb-[max(1rem,env(safe-area-inset-bottom))] flex-shrink-0">
+        <div class="sticky bottom-0 bg-white dark:bg-ink-3 border-t border-stone-200 dark:border-ink-4 px-5 sm:px-6 py-4 flex gap-3 pb-safe shrink-0">
           <button
             type="button"
             @click="showRejectionModal = false"
-            class="btn-outline min-h-[44px] active:scale-[0.98]"
+            class="btn-outline min-h-touch active:scale-[0.98]"
           >
             {{ t('common.cancel') }}
           </button>
           <button
             type="button"
             :disabled="loading || !rejectionNotes.trim()"
-            class="flex-1 btn-primary bg-clay-600 hover:bg-clay-700 min-h-[44px] active:scale-[0.98]"
+            class="flex-1 btn-primary bg-clay-600 hover:bg-clay-700 min-h-touch active:scale-[0.98]"
             @click="handleReject"
           >
             <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
@@ -484,7 +484,7 @@
     <!-- Photo lightbox -->
     <div
       v-if="showPhotoModal"
-      class="fixed inset-0 z-[70] bg-ink/90 flex items-center justify-center p-4"
+      class="fixed inset-0 z-70 bg-ink/90 flex items-center justify-center p-4"
       @click="showPhotoModal = false"
     >
       <img

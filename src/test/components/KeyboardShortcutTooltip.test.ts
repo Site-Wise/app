@@ -384,19 +384,19 @@ describe('KeyboardShortcutTooltip Logic', () => {
     })
 
     it('should validate kbd element classes', () => {
-      const kbdClasses = 'px-1.5 py-0.5 text-xs font-mono bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded border border-gray-300 dark:border-gray-600'
+      const kbdClasses = 'px-1.5 py-0.5 text-xs font-mono bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-sm border border-gray-300 dark:border-gray-600'
       
       expect(kbdClasses).toContain('px-1.5')
       expect(kbdClasses).toContain('py-0.5')
       expect(kbdClasses).toContain('font-mono')
       expect(kbdClasses).toContain('bg-gray-100')
       expect(kbdClasses).toContain('dark:bg-gray-700')
-      expect(kbdClasses).toContain('rounded')
+      expect(kbdClasses).toContain('rounded-sm')
       expect(kbdClasses).toContain('border')
     })
 
     it('should validate individual tooltip classes', () => {
-      const tooltipClasses = 'absolute bg-gray-900 dark:bg-gray-700 text-white text-xs px-2 py-1 rounded shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full -mt-2'
+      const tooltipClasses = 'absolute bg-gray-900 dark:bg-gray-700 text-white text-xs px-2 py-1 rounded-sm shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full -mt-2'
       
       expect(tooltipClasses).toContain('absolute')
       expect(tooltipClasses).toContain('bg-gray-900')
@@ -538,8 +538,8 @@ describe('KeyboardShortcutTooltip Logic', () => {
 
   describe('Z-Index and Layering', () => {
     it('should validate correct z-index for overlay', () => {
-      const overlayZIndex = 'z-[9999]'
-      expect(overlayZIndex).toBe('z-[9999]')
+      const overlayZIndex = 'z-9999'
+      expect(overlayZIndex).toBe('z-9999')
     })
 
     it('should ensure tooltips appear above other content', () => {

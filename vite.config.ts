@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import { fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'
+import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // Check if building for Tauri
@@ -18,6 +19,7 @@ export default defineConfig({
   },
   plugins: [
     vue(),
+    tailwindcss(),
     // Only include PWA plugin when not building for Tauri
     ...(isTauri ? [] : [VitePWA({
       registerType: 'prompt',
@@ -176,8 +178,5 @@ export default defineConfig({
         }
       }
     }
-  },
-  css: {
-    postcss: './postcss.config.js', // if you're using PostCSS
   },
 })

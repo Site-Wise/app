@@ -45,7 +45,7 @@
       <!-- Top bar -->
       <div class="sticky top-0 z-40 bg-cream dark:bg-ink border-b border-stone-200 dark:border-ink-4">
         <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-          <div class="flex items-center space-x-4">
+          <div class="flex items-center gap-4">
             <!-- Site Selector for mobile (hamburger menu removed - using bottom nav) -->
             <div class="lg:hidden">
               <SiteSelector />
@@ -83,10 +83,14 @@
             </div>
 
             <!-- Language Selector -->
-            <LanguageSelector class="hidden md:block" />
+            <div class="hidden md:block">
+              <LanguageSelector />
+            </div>
 
             <!-- Theme Toggle -->
-            <ThemeToggle class="hidden md:block" />
+            <div class="hidden md:block">
+              <ThemeToggle />
+            </div>
 
             <div class="relative inline-block" ref="userMenuRef">
               <button @click="userMenuOpen = !userMenuOpen"
@@ -142,7 +146,7 @@
                 <!-- User Menu Items -->
                 <div class="py-2 max-h-60 overflow-y-auto">
                   <button @click="goToProfile"
-                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-stone-50 dark:hover:bg-ink-4 transition-colors duration-200 touch-manipulation group text-stone-700 dark:text-stone-300 focus:bg-stone-50 dark:focus:bg-ink-4 focus:outline-none"
+                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-stone-50 dark:hover:bg-ink-4 transition-colors duration-200 touch-manipulation group text-stone-700 dark:text-stone-300 focus:bg-stone-50 dark:focus:bg-ink-4 focus:outline-hidden"
                     role="menuitem"
                     tabindex="-1">
                     <User class="mr-3 h-4 w-4 md:h-5 md:w-5" />
@@ -151,7 +155,7 @@
                     </div>
                   </button>
                   <button v-if="canManageUsers" @click="goToUserManagement"
-                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-stone-50 dark:hover:bg-ink-4 transition-colors duration-200 touch-manipulation group text-stone-700 dark:text-stone-300 focus:bg-stone-50 dark:focus:bg-ink-4 focus:outline-none"
+                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-stone-50 dark:hover:bg-ink-4 transition-colors duration-200 touch-manipulation group text-stone-700 dark:text-stone-300 focus:bg-stone-50 dark:focus:bg-ink-4 focus:outline-hidden"
                     role="menuitem"
                     tabindex="-1">
                     <Users class="mr-3 h-4 w-4 md:h-5 md:w-5" />
@@ -171,7 +175,7 @@
                   </button>
                   -->
                   <button @click="restartTour"
-                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-stone-50 dark:hover:bg-ink-4 transition-colors duration-200 touch-manipulation group text-stone-700 dark:text-stone-300 focus:bg-stone-50 dark:focus:bg-ink-4 focus:outline-none"
+                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-stone-50 dark:hover:bg-ink-4 transition-colors duration-200 touch-manipulation group text-stone-700 dark:text-stone-300 focus:bg-stone-50 dark:focus:bg-ink-4 focus:outline-hidden"
                     role="menuitem"
                     tabindex="-1">
                     <HelpCircle class="mr-3 h-4 w-4 md:h-5 md:w-5" />
@@ -180,7 +184,7 @@
                     </div>
                   </button>
                   <button @click="handleLogout"
-                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-stone-50 dark:hover:bg-ink-4 transition-colors duration-200 touch-manipulation group text-stone-700 dark:text-stone-300 focus:bg-stone-50 dark:focus:bg-ink-4 focus:outline-none"
+                    class="flex items-center w-full px-3 py-2 md:px-4 md:py-3 text-left hover:bg-stone-50 dark:hover:bg-ink-4 transition-colors duration-200 touch-manipulation group text-stone-700 dark:text-stone-300 focus:bg-stone-50 dark:focus:bg-ink-4 focus:outline-hidden"
                     role="menuitem"
                     tabindex="-1">
                     <LogOut class="mr-3 h-4 w-4 md:h-5 md:w-5" />

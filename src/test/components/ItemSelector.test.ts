@@ -614,7 +614,7 @@ describe('ItemSelector Logic', () => {
       const getIconClasses = (iconType: 'search' | 'package' | 'clear') => {
         const iconClasses = {
           search: 'h-4 w-4 text-gray-400',
-          package: 'h-4 w-4 text-gray-500 dark:text-gray-400 mr-3 flex-shrink-0',
+          package: 'h-4 w-4 text-gray-500 dark:text-gray-400 mr-3 shrink-0',
           clear: 'h-4 w-4'
         }
         return iconClasses[iconType]
@@ -622,7 +622,7 @@ describe('ItemSelector Logic', () => {
       
       expect(getIconClasses('search')).toContain('h-4 w-4')
       expect(getIconClasses('package')).toContain('mr-3')
-      expect(getIconClasses('package')).toContain('flex-shrink-0')
+      expect(getIconClasses('package')).toContain('shrink-0')
       expect(getIconClasses('clear')).toBe('h-4 w-4')
     })
   })

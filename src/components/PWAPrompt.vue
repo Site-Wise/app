@@ -13,7 +13,7 @@
       class="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-white dark:bg-ink-3 border border-stone-200 dark:border-ink-4 rounded-xl shadow-modal p-5 z-50"
     >
       <div class="flex items-start space-x-4">
-        <div class="flex-shrink-0">
+        <div class="shrink-0">
           <div class="w-12 h-12 flex items-center justify-center shadow-lg p-2">
             <img src="/logo.webp" alt="SiteWise" class="w-8 h-8 object-contain" />
           </div>
@@ -29,7 +29,7 @@
             <button
               @click="handleInstall"
               :disabled="installing"
-              class="flex-1 inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-md text-ink bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-card"
+              class="flex-1 inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-md text-ink bg-amber-500 hover:bg-amber-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-card"
             >
               <Download v-if="!installing" class="mr-2 h-4 w-4" />
               <Loader2 v-else class="mr-2 h-4 w-4 animate-spin" />
@@ -37,7 +37,7 @@
             </button>
             <button
               @click="dismiss"
-              class="px-4 py-2.5 border border-stone-300 dark:border-ink-4 text-sm font-medium rounded-md text-stone-700 dark:text-stone-300 bg-white dark:bg-ink-3 hover:bg-stone-50 dark:hover:bg-ink-4 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all duration-200"
+              class="px-4 py-2.5 border border-stone-300 dark:border-ink-4 text-sm font-medium rounded-md text-stone-700 dark:text-stone-300 bg-white dark:bg-ink-3 hover:bg-stone-50 dark:hover:bg-ink-4 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all duration-200"
             >
               {{ t('pwa.later') }}
             </button>
@@ -45,7 +45,7 @@
         </div>
         <button
           @click="dismiss"
-          class="flex-shrink-0 text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream p-1 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200"
+          class="shrink-0 text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream p-1 rounded-md hover:bg-stone-100 dark:hover:bg-ink-4 transition-colors duration-200"
         >
           <X class="h-5 w-5" />
         </button>

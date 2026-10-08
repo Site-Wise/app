@@ -18,7 +18,7 @@
     
     <div
       v-if="dropdownOpen"
-      class="absolute right-0 mt-2 w-48 bg-white dark:bg-ink-3 rounded-lg shadow-modal border border-stone-200 dark:border-ink-4 z-[60] max-h-64 overflow-y-auto"
+      class="absolute right-0 mt-2 w-48 bg-white dark:bg-ink-3 rounded-lg shadow-modal border border-stone-200 dark:border-ink-4 z-60 max-h-64 overflow-y-auto"
       role="menu"
     >
       <div class="py-2">
@@ -38,7 +38,7 @@
           <div class="flex-1 min-w-0">
             <div class="font-medium text-sm truncate">{{ t(option.labelKey) }}</div>
           </div>
-          <div class="ml-3 flex-shrink-0">
+          <div class="ml-3 shrink-0">
             <Check
               v-if="theme === option.value"
               class="h-4 w-4 md:h-5 md:w-5 text-amber-600 dark:text-amber-400"

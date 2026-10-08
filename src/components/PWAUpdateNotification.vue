@@ -16,7 +16,7 @@
     >
       <div class="bg-white dark:bg-ink-3 rounded-lg shadow-modal border border-stone-200 dark:border-ink-4 p-4">
         <div class="flex items-start">
-          <div class="flex-shrink-0">
+          <div class="shrink-0">
             <div class="flex items-center justify-center w-8 h-8 bg-amber-100 dark:bg-amber-500/15 rounded-full">
               <Download class="w-4 h-4 text-amber-600 dark:text-amber-400" />
             </div>
@@ -32,7 +32,7 @@
               <button
                 @click="handleUpdate"
                 :disabled="isUpdating"
-                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-ink bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-ink bg-amber-500 hover:bg-amber-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Loader2 v-if="isUpdating" class="w-3 h-3 mr-1 animate-spin" />
                 <Download v-else class="w-3 h-3 mr-1" />
@@ -41,17 +41,17 @@
               <button
                 @click="handleDismiss"
                 :disabled="isUpdating"
-                class="inline-flex items-center px-3 py-1.5 border border-stone-300 dark:border-ink-4 text-xs font-medium rounded-md text-stone-700 dark:text-stone-300 bg-white dark:bg-ink-3 hover:bg-stone-50 dark:hover:bg-ink-4 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                class="inline-flex items-center px-3 py-1.5 border border-stone-300 dark:border-ink-4 text-xs font-medium rounded-md text-stone-700 dark:text-stone-300 bg-white dark:bg-ink-3 hover:bg-stone-50 dark:hover:bg-ink-4 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {{ t('pwa.later') }}
               </button>
             </div>
           </div>
-          <div class="ml-4 flex-shrink-0 flex">
+          <div class="ml-4 shrink-0 flex">
             <button
               @click="handleDismiss"
               :disabled="isUpdating"
-              class="inline-flex text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              class="inline-flex text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-cream focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <span class="sr-only">{{ t('common.close') }}</span>
               <X class="w-4 h-4" />

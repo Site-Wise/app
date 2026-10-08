@@ -21,7 +21,7 @@
       <button
         v-if="!hideRemoveButton"
         @click="$emit('remove', index)"
-        class="mt-7 h-9 w-9 flex-shrink-0 inline-flex items-center justify-center rounded-md text-clay-600 hover:text-clay-700 dark:text-clay-400 dark:hover:text-clay-300 hover:bg-clay-50 dark:hover:bg-clay-500/10 transition-colors active:scale-95"
+        class="mt-7 h-9 w-9 shrink-0 inline-flex items-center justify-center rounded-md text-clay-600 hover:text-clay-700 dark:text-clay-400 dark:hover:text-clay-300 hover:bg-clay-50 dark:hover:bg-clay-500/10 transition-colors active:scale-95"
         :title="t('delivery.removeItem')"
       >
         <Trash2 class="h-4 w-4" />
@@ -44,7 +44,7 @@
           min="0.01"
           step="0.01"
           required
-          class="input font-mono sw-tabular min-h-[44px]"
+          class="input font-mono sw-tabular min-h-touch"
           :class="{ 'border-clay-400 dark:border-clay-500': errors.quantity }"
           placeholder="0"
           autocomplete="off"
@@ -75,7 +75,7 @@
             min="0.01"
             step="0.01"
             required
-            class="input pr-10 font-mono sw-tabular min-h-[44px]"
+            class="input pr-10 font-mono sw-tabular min-h-touch"
             :class="{ 'border-clay-400 dark:border-clay-500': errors.unit_price }"
             :placeholder="lastPrice !== null ? `Last: ₹${lastPrice.toFixed(2)}` : '0.00'"
             autocomplete="off"
@@ -86,7 +86,7 @@
           <button
             type="button"
             @click="toggleTaxInput('unit_price')"
-            class="tax-trigger absolute right-2 top-1/2 transform -translate-y-1/2 min-h-[36px] min-w-[36px] flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 rounded transition-colors"
+            class="tax-trigger absolute right-2 top-1/2 transform -translate-y-1/2 min-h-[36px] min-w-[36px] flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 rounded-sm transition-colors"
             :title="t('delivery.addTax')"
           >
             <Percent class="h-4 w-4" />
@@ -105,7 +105,7 @@
               min="0"
               max="100"
               step="0.1"
-              class="w-16 px-2 py-2 text-center text-sm font-mono sw-tabular border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream focus:ring-2 focus:ring-amber-500 focus:border-transparent min-h-[44px]"
+              class="w-16 px-2 py-2 text-center text-sm font-mono sw-tabular border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream focus:ring-2 focus:ring-amber-500 focus:border-transparent min-h-touch"
               placeholder="0"
               autofocus
               autocomplete="off"
@@ -119,14 +119,14 @@
             <button
               type="button"
               @click="applyTax('unit_price')"
-              class="px-3 py-2 text-xs btn-primary min-h-[44px] active:scale-95"
+              class="px-3 py-2 text-xs btn-primary min-h-touch active:scale-95"
             >
               {{ t('common.apply') }}
             </button>
             <button
               type="button"
               @click="showTaxInput = null"
-              class="px-3 py-2 text-xs btn-outline min-h-[44px] active:scale-95"
+              class="px-3 py-2 text-xs btn-outline min-h-touch active:scale-95"
             >
               {{ t('common.cancel') }}
             </button>
@@ -149,7 +149,7 @@
             min="0.01"
             step="0.01"
             required
-            class="input pr-10 font-mono sw-tabular min-h-[44px]"
+            class="input pr-10 font-mono sw-tabular min-h-touch"
             :class="{ 'border-clay-400 dark:border-clay-500': errors.total_amount }"
             placeholder="0.00"
             autocomplete="off"
@@ -160,7 +160,7 @@
           <button
             type="button"
             @click="toggleTaxInput('total_amount')"
-            class="tax-trigger absolute right-2 top-1/2 transform -translate-y-1/2 min-h-[36px] min-w-[36px] flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 rounded transition-colors"
+            class="tax-trigger absolute right-2 top-1/2 transform -translate-y-1/2 min-h-[36px] min-w-[36px] flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 rounded-sm transition-colors"
             :title="t('delivery.addTax')"
           >
             <Percent class="h-4 w-4" />
@@ -179,7 +179,7 @@
               min="0"
               max="100"
               step="0.1"
-              class="w-16 px-2 py-2 text-center text-sm font-mono sw-tabular border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream focus:ring-2 focus:ring-amber-500 focus:border-transparent min-h-[44px]"
+              class="w-16 px-2 py-2 text-center text-sm font-mono sw-tabular border border-stone-300 dark:border-ink-4 rounded-md bg-white dark:bg-ink-2 text-ink dark:text-cream focus:ring-2 focus:ring-amber-500 focus:border-transparent min-h-touch"
               placeholder="0"
               autofocus
               autocomplete="off"
@@ -193,14 +193,14 @@
             <button
               type="button"
               @click="applyTax('total_amount')"
-              class="px-3 py-2 text-xs btn-primary min-h-[44px] active:scale-95"
+              class="px-3 py-2 text-xs btn-primary min-h-touch active:scale-95"
             >
               {{ t('common.apply') }}
             </button>
             <button
               type="button"
               @click="showTaxInput = null"
-              class="px-3 py-2 text-xs btn-outline min-h-[44px] active:scale-95"
+              class="px-3 py-2 text-xs btn-outline min-h-touch active:scale-95"
             >
               {{ t('common.cancel') }}
             </button>
