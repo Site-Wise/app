@@ -1069,6 +1069,32 @@ describe('PaymentsView - Mobile Responsive Design', () => {
       expect(siteDataMocks.reload).toHaveBeenCalledTimes(1)
     })
 
+    it('gives the payment modal an empty payments list before data has loaded', async () => {
+      wrapper = createWrapper()
+      await flush()
+
+      wrapper.vm.paymentsData = null
+      await flush()
+
+      expect(wrapper.vm.loadedPayments).toEqual([])
+      expect(wrapper.findComponent(PaymentModal).props('payments')).toEqual([])
+    })
+
+    it('falls back to a full reload when the save returns no payment id', async () => {
+      wrapper = createWrapper()
+      await flush()
+
+      vi.mocked(paymentService.create).mockResolvedValueOnce({} as any)
+      vi.mocked(paymentService.getById).mockClear()
+      siteDataMocks.reload.mockClear()
+
+      await wrapper.vm.handlePaymentModalSubmit(submitData('CREATE'))
+      await flush()
+
+      expect(paymentService.getById).not.toHaveBeenCalled()
+      expect(siteDataMocks.reload).toHaveBeenCalledTimes(1)
+    })
+
     it('falls back to a full reload when fetching the saved payment throws', async () => {
       wrapper = createWrapper()
       await flush()
