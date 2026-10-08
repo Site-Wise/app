@@ -617,13 +617,13 @@
 
     <!-- Due Payments Modal -->
     <DuePaymentsModal :is-visible="showDuePaymentsModal" :vendors="vendors" :deliveries="deliveries"
-      :service-bookings="serviceBookings" :payments="payments" @close="showDuePaymentsModal = false"
+      :service-bookings="serviceBookings" :payments="loadedPayments" @close="showDuePaymentsModal = false"
       @pay-vendor="handleDuePaymentVendorClick" />
 
     <!-- Unified Payment Modal -->
     <PaymentModal ref="paymentModalRef" :is-visible="showPaymentModal" :mode="paymentModalMode" :payment="currentPayment"
       :current-allocations="currentAllocations" :vendors="vendors" :accounts="accounts" :deliveries="deliveries"
-      :service-bookings="serviceBookings" :payments="payments" :vendor-id="vendorIdForPayNow"
+      :service-bookings="serviceBookings" :payments="loadedPayments" :vendor-id="vendorIdForPayNow"
       :outstanding-amount="outstandingAmountForPayNow" @submit="handlePaymentModalSubmit"
       @close="handlePaymentModalClose" />
 
@@ -819,6 +819,7 @@ import { useSubscription } from '../composables/useSubscription';
 import { useToast } from '../composables/useToast';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { useSiteData } from '../composables/useSiteData';
+import { upsertSavedPayment } from '../utils/paymentListPatch';
 import { useQuickActionModal } from '../composables/useQuickActionModal';
 import { usePaymentSearch } from '../composables/useSearch';
 import { useModalState } from '../composables/useModalState';
@@ -925,6 +926,9 @@ const payments = computed<Payment[]>(() => {
   // sortRows is pure & stable and returns a new array (no mutation).
   return sortRows(paymentsList, paymentSortAccessor);
 });
+// Unsearched list for the payment modal: vendor dues must be computed from all
+// loaded payments, not the (possibly stale) search results shown in the table.
+const loadedPayments = computed<Payment[]>(() => paymentsData.value?.payments || []);
 const vendors = computed(() => paymentsData.value?.vendors || []);
 const accounts = computed(() => paymentsData.value?.accounts || []);
 const deliveries = computed(() => paymentsData.value?.deliveries || []);
@@ -1243,6 +1247,31 @@ const closeMobileMenu = () => {
   openMobileMenuId.value = null;
 };
 
+// After a payment is saved, patch just that payment (plus account balances) into
+// the loaded data instead of re-fetching every collection. Vendor dues shown in
+// the payment modal are computed from these lists, so they update immediately.
+// Deliveries, bookings and vendors are unchanged by a payment, so they're kept.
+const refreshAfterPaymentSaved = async (paymentId?: string) => {
+  const current = paymentsData.value;
+  try {
+    const [saved, accounts] = paymentId && current
+      ? await Promise.all([paymentService.getById(paymentId), accountService.getAll()])
+      : [null, null];
+
+    if (current && saved && accounts) {
+      paymentsData.value = {
+        ...current,
+        accounts,
+        payments: upsertSavedPayment(current.payments, saved, filters)
+      };
+      return;
+    }
+  } catch (err) {
+    console.error('Error refreshing saved payment, falling back to full reload:', err);
+  }
+  await reloadAllData();
+};
+
 const handlePaymentModalSubmit = async (data: any) => {
   const { mode, form, payment } = data;
 
@@ -1273,9 +1302,12 @@ const handlePaymentModalSubmit = async (data: any) => {
     }
   }
 
+  let savedPaymentId: string | undefined;
+
   try {
     if (mode === 'CREATE' || mode === 'PAY_NOW') {
-      await paymentService.create(paymentData!);
+      const created = await paymentService.create(paymentData!);
+      savedPaymentId = created.id;
       success(t('messages.createSuccess', { item: t('common.payment') }));
     } else if (mode === 'EDIT') {
       // In EDIT mode, merge existing allocations with new ones from the form
@@ -1294,10 +1326,11 @@ const handlePaymentModalSubmit = async (data: any) => {
 
       // Use the service method to add new allocations while preserving existing ones
       await paymentService.updateAllocations(payment.id!, allDeliveryIds, allServiceBookingIds);
+      savedPaymentId = payment.id;
       success(t('messages.updateSuccess', { item: t('common.payment') }));
     }
 
-    await reloadAllData();
+    await refreshAfterPaymentSaved(savedPaymentId);
     finishPaymentModalSubmit(mode);
   } catch (err: any) {
     console.error('Error saving payment:', err);
@@ -1323,10 +1356,10 @@ const handlePaymentModalSubmit = async (data: any) => {
         };
 
         try {
-          await paymentService.create(adjustedPaymentData);
+          const created = await paymentService.create(adjustedPaymentData);
           success(t('messages.createSuccess', { item: t('common.payment') }));
 
-          await reloadAllData();
+          await refreshAfterPaymentSaved(created.id);
           finishPaymentModalSubmit(mode);
         } catch (retryErr: any) {
           console.error('Error saving payment after adjustment:', retryErr);

@@ -3,7 +3,9 @@ import { mount } from '@vue/test-utils'
 import { computed } from 'vue'
 import PaymentsView from '../../views/PaymentsView.vue'
 import PaymentModal from '../../components/PaymentModal.vue'
-import { paymentService } from '../../services/pocketbase'
+import VendorSearchBox from '../../components/VendorSearchBox.vue'
+import DuePaymentsModal from '../../components/DuePaymentsModal.vue'
+import { paymentService, VendorService } from '../../services/pocketbase'
 import { createMockRouter } from '../utils/test-utils'
 import { setupTestPinia } from '../utils/test-setup'
 
@@ -29,6 +31,9 @@ vi.mock('../../composables/useSearch', () => ({
     }
   }
 }))
+
+// Shared reload spy so tests can assert whether a full reload happened
+const siteDataMocks = vi.hoisted(() => ({ reload: vi.fn() }))
 
 // Mock useSiteData composable
 vi.mock('../../composables/useSiteData', () => ({
@@ -161,10 +166,10 @@ vi.mock('../../composables/useSiteData', () => ({
     }
     
     return {
-      data: computed(() => mockData),
+      data: ref(mockData),
       loading: ref(false),
       error: ref(null),
-      reload: vi.fn()
+      reload: siteDataMocks.reload
     }
   }
 }))
@@ -292,7 +297,9 @@ vi.mock('../../services/pocketbase', () => ({
         }
       }
     ]),
-    create: vi.fn().mockResolvedValue({ id: 'new-payment' })
+    create: vi.fn().mockResolvedValue({ id: 'new-payment' }),
+    getById: vi.fn().mockResolvedValue(null),
+    updateAllocations: vi.fn().mockResolvedValue(undefined)
   },
   paymentAllocationService: {
     create: vi.fn().mockResolvedValue({ id: 'allocation-1' }),
@@ -999,6 +1006,118 @@ describe('PaymentsView - Mobile Responsive Design', () => {
       expect(wrapper.vm.showPaymentModal).toBe(true)
       expect(wrapper.findComponent(PaymentModal).vm.form.vendor).toBe('')
       confirmSpy.mockRestore()
+    })
+
+    it('patches the saved payment in locally so vendor dues update without a full reload', async () => {
+      wrapper = createWrapper()
+      await flush()
+
+      // Use the real dues calculation (this file stubs it to a constant).
+      const actual = await vi.importActual<typeof import('../../services/pocketbase')>('../../services/pocketbase')
+      vi.mocked(VendorService.calculateOutstandingFromData).mockImplementation(
+        actual.VendorService.calculateOutstandingFromData
+      )
+
+      // vendor-1 owes 3000 + 2000 for its two deliveries; no allocations yet.
+      wrapper.vm.handleAddPayment()
+      await flush()
+      const modal = wrapper.findComponent(PaymentModal)
+      const searchBox = modal.findComponent(VendorSearchBox)
+      modal.vm.form.vendor = 'vendor-1'
+      await flush()
+      expect(searchBox.vm.getVendorBalance({ id: 'vendor-1' }).amount).toBe(5000)
+
+      vi.mocked(paymentService.getById).mockResolvedValueOnce({
+        id: 'new-payment',
+        vendor: 'vendor-1',
+        account: 'account-1',
+        amount: 3000,
+        payment_date: '2024-02-01',
+        deliveries: ['delivery-1'],
+        service_bookings: [],
+        expand: {
+          payment_allocations: [
+            { id: 'alloc-1', payment: 'new-payment', delivery: 'delivery-1', allocated_amount: 3000 }
+          ]
+        }
+      } as any)
+      siteDataMocks.reload.mockClear()
+
+      await wrapper.vm.handlePaymentModalSubmit(submitData('CREATE'))
+      await flush()
+
+      expect(paymentService.getById).toHaveBeenCalledWith('new-payment')
+      expect(siteDataMocks.reload).not.toHaveBeenCalled()
+      expect(wrapper.vm.loadedPayments[0].id).toBe('new-payment')
+      expect(searchBox.vm.getVendorBalance({ id: 'vendor-1' }).amount).toBe(2000)
+
+      vi.mocked(VendorService.calculateOutstandingFromData).mockReset().mockReturnValue(1000)
+    })
+
+    it('falls back to a full reload when the saved payment cannot be fetched', async () => {
+      wrapper = createWrapper()
+      await flush()
+
+      wrapper.vm.handleAddPayment()
+      await flush()
+      vi.mocked(paymentService.getById).mockResolvedValueOnce(null)
+      siteDataMocks.reload.mockClear()
+
+      await wrapper.vm.handlePaymentModalSubmit(submitData('CREATE'))
+      await flush()
+
+      expect(siteDataMocks.reload).toHaveBeenCalledTimes(1)
+    })
+
+    it('falls back to a full reload when fetching the saved payment throws', async () => {
+      wrapper = createWrapper()
+      await flush()
+
+      vi.mocked(paymentService.getById).mockRejectedValueOnce(new Error('network'))
+      siteDataMocks.reload.mockClear()
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+      await wrapper.vm.handlePaymentModalSubmit(submitData('CREATE'))
+      await flush()
+
+      expect(siteDataMocks.reload).toHaveBeenCalledTimes(1)
+      consoleSpy.mockRestore()
+    })
+
+    it('refreshes only the edited payment after EDIT and closes the modal', async () => {
+      wrapper = createWrapper()
+      await flush()
+
+      const edited = { ...wrapper.vm.loadedPayments[0], amount: 7000 }
+      vi.mocked(paymentService.getById).mockResolvedValueOnce(edited)
+      siteDataMocks.reload.mockClear()
+      wrapper.vm.paymentModalMode = 'EDIT'
+      wrapper.vm.showPaymentModal = true
+
+      await wrapper.vm.handlePaymentModalSubmit({ ...submitData('EDIT'), payment: { id: edited.id } })
+      await flush()
+
+      expect(paymentService.updateAllocations).toHaveBeenCalledWith(edited.id, expect.any(Array), expect.any(Array))
+      expect(paymentService.getById).toHaveBeenCalledWith(edited.id)
+      expect(siteDataMocks.reload).not.toHaveBeenCalled()
+      expect(wrapper.vm.loadedPayments.filter((p: any) => p.id === edited.id)).toHaveLength(1)
+      expect(wrapper.vm.loadedPayments[0].amount).toBe(7000)
+      expect(wrapper.vm.showPaymentModal).toBe(false)
+    })
+
+    it('feeds the due payments modal the loaded (unsearched) payments and closes it', async () => {
+      wrapper = createWrapper()
+      await flush()
+
+      wrapper.vm.showDuePaymentsModal = true
+      await flush()
+
+      const dueModal = wrapper.findComponent(DuePaymentsModal)
+      expect(dueModal.props('payments')).toEqual(wrapper.vm.loadedPayments)
+
+      dueModal.vm.$emit('close')
+      await flush()
+      expect(wrapper.vm.showDuePaymentsModal).toBe(false)
     })
 
     it('closes the modal after a PAY_NOW payment', async () => {
