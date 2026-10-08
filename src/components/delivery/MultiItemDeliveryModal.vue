@@ -928,6 +928,11 @@ const saveDelivery = async () => {
 };
 
 const resetForm = async () => {
+  // Clear selected files BEFORE returning to step 0. The uploader on step 0 is
+  // remounted by the step change and rebuilds its previews from v-model, so
+  // clearing afterwards would let the previous delivery's photos reappear.
+  selectedFilesForUpload.value = [];
+
   // Reset to step 0
   currentStep.value = 0;
 
@@ -939,9 +944,6 @@ const resetForm = async () => {
   // Clear items and create a fresh new item form
   deliveryItems.value = [];
   await addNewItem();
-
-  // Clear selected files
-  selectedFilesForUpload.value = [];
 
   // Focus vendor input after form reset
   await nextTick();

@@ -882,6 +882,24 @@ describe('MultiItemDeliveryModal', () => {
       await wrapper.vm.resetForm()
       expect(wrapper.vm.selectedFilesForUpload.length).toBe(0)
     })
+
+    it('should clear selected files before returning to step 0', async () => {
+      // Regression: step 0's uploader remounts on the step change and rebuilds
+      // previews from v-model, so files must already be empty at that point.
+      wrapper = createWrapper()
+      await nextTick()
+
+      wrapper.vm.currentStep = 2
+      wrapper.vm.selectedFilesForUpload = [
+        new File(['photo1'], 'photo1.jpg', { type: 'image/jpeg' })
+      ]
+
+      const pending = wrapper.vm.resetForm()
+      // Synchronous part of resetForm has run: step is reset and files are gone.
+      expect(wrapper.vm.currentStep).toBe(0)
+      expect(wrapper.vm.selectedFilesForUpload).toEqual([])
+      await pending
+    })
   })
 
   describe('Delivery Items Association', () => {
