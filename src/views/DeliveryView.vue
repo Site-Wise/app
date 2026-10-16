@@ -680,6 +680,7 @@ import { useI18n } from '../composables/useI18n';
 import { useUrlFilters } from '../composables/useUrlFilters';
 import { useModalEscape } from '../composables/useModalEscape';
 import { useSubscription } from '../composables/useSubscription';
+import { useMilestones } from '../composables/useMilestones';
 import { useToast } from '../composables/useToast';
 import { useSiteData } from '../composables/useSiteData';
 import { useInfiniteSiteData } from '../composables/useInfiniteSiteData';
@@ -704,6 +705,7 @@ const route = useRoute();
 const { t } = useI18n();
 const { checkCreateLimit, isReadOnly } = useSubscription();
 const { success, error, info: showInfoToast } = useToast();
+const { celebrateMilestone } = useMilestones();
 const { canDelete } = usePermissions();
 const { openModal, closeModal } = useModalState();
 
@@ -1204,6 +1206,8 @@ const handleDeliverySaved = async (delivery: Delivery) => {
   // Keep search index + photo gallery coverage fresh.
   loadAll();
   await reloadPhotoDeliveries();
+  // Fire-and-forget: celebrate delivery milestones (1st, 10th, 100th, ...).
+  celebrateMilestone('deliveries');
 };
 
 const handleDeliveryEditSuccess = async (delivery: Delivery) => {
