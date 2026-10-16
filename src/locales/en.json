@@ -245,6 +245,30 @@
     "allSettled": "all settled",
     "material": "Material"
   },
+  "nudges": {
+    "eyebrow": "Your next move",
+    "later": "Later",
+    "dismiss": "Dismiss nudge",
+    "outstanding": {
+      "title": "Clear a pending payment",
+      "message": "{count} delivery awaiting payment ({amount}). Knock one out?",
+      "message_plural": "{count} deliveries awaiting payment ({amount}). Knock one out?",
+      "microSprint": "Takes about 2 minutes",
+      "cta": "Settle a payment"
+    },
+    "advances": {
+      "title": "Reconcile an advance",
+      "message": "{count} advance payment isn't tied to a delivery yet ({amount}). Match it up?",
+      "message_plural": "{count} advance payments aren't tied to a delivery yet ({amount}). Match them up?",
+      "microSprint": "Quick 2-minute tidy-up",
+      "cta": "Reconcile advances"
+    },
+    "celebration": {
+      "title": "You're all caught up!",
+      "message": "Every delivery is settled and every payment is accounted for. Nice work.",
+      "dismiss": "Got it"
+    }
+  },
   "items": {
     "title": "Items",
     "subtitle": "Manage your construction items and quantities",

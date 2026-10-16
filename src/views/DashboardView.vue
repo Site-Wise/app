@@ -58,6 +58,9 @@
 
     <!-- Regular Dashboard Content -->
     <template v-else>
+      <!-- Behavioral nudge: single prioritized next step (or all-clear celebration) -->
+      <DashboardNudge :stats="stats" :has-activity="hasActivity" :site-id="currentSite?.id" />
+
       <!-- Stats Cards - 2x2 grid on mobile for better space usage -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8" data-tour="quick-stats">
         <div class="card p-3 sm:p-5 flex flex-col">
@@ -303,6 +306,7 @@ import {
 import { computeDashboardStats } from '../utils/dashboardStats';
 import { useSiteStore } from '../stores/site';
 import NewUserOnboarding from '../components/NewUserOnboarding.vue';
+import DashboardNudge from '../components/DashboardNudge.vue';
 
 const { t } = useI18n();
 const { isDark } = useTheme();
@@ -388,6 +392,12 @@ const stats = computed(() =>
     creditNotes: creditNotes.value,
     totalPlannedArea: currentSite.value?.total_planned_area || 1,
   })
+);
+
+// Whether the site has real activity yet — gates the nudge's celebration state
+// so an empty (but past-onboarding) ledger doesn't read as "all caught up".
+const hasActivity = computed(
+  () => deliveries.value.length > 0 || serviceBookings.value.length > 0 || payments.value.length > 0
 );
 
 // Payments chart period — toggle between last 7 and last 30 days.
