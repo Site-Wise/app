@@ -31,7 +31,7 @@
   "dependencies": {
     "@tauri-apps/api": "^2.12.1",
     "@vueuse/core": "^15.0.0",
-    "chart.js": "^4.5.1",
+    "chart.js": "^4.6.1",
     "driver.js": "^1.4.0",
     "jspdf": "^4.0.0",
     "jszip": "^3.10.2",
